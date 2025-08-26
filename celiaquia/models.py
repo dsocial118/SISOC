@@ -55,11 +55,11 @@ class TipoCruce(models.Model):
 
 
 class RevisionTecnico(models.TextChoices):
-    PENDIENTE = 'PENDIENTE', 'Pendiente'
-    APROBADO  = 'APROBADO',  'Aprobado por el tecnico'
-    RECHAZADO = 'RECHAZADO', 'Rechazado por el tecnico'
-    SUBSANAR  = 'SUBSANAR',  'Subsanar'
-    SUBSANADO = 'SUBSANADO', 'Subsanado'   
+    PENDIENTE = "PENDIENTE", "Pendiente"
+    APROBADO = "APROBADO", "Aprobado por el tecnico"
+    RECHAZADO = "RECHAZADO", "Rechazado por el tecnico"
+    SUBSANAR = "SUBSANAR", "Subsanar"
+    SUBSANADO = "SUBSANADO", "Subsanado"
 
 
 class ResultadoSintys(models.TextChoices):
@@ -106,24 +106,27 @@ class Expediente(models.Model):
     cruce_excel = models.FileField(
         upload_to="expedientes/cruces/", null=True, blank=True
     )
-    documento = models.FileField(
-        upload_to="expedientes/prd/", null=True, blank=True
-    )
+    documento = models.FileField(upload_to="expedientes/prd/", null=True, blank=True)
 
     class Meta:
         verbose_name = "Expediente"
         verbose_name_plural = "Expedientes"
         ordering = ("-fecha_creacion", "pk")
         indexes = [
-            models.Index(fields=["usuario_provincia", "estado"], name="exp_prov_est_idx"),
+            models.Index(
+                fields=["usuario_provincia", "estado"], name="exp_prov_est_idx"
+            ),
             models.Index(fields=["estado", "fecha_creacion"], name="exp_est_fecha_idx"),
-            models.Index(fields=["usuario_provincia", "fecha_creacion"], name="exp_prov_fecha_idx"),
+            models.Index(
+                fields=["usuario_provincia", "fecha_creacion"],
+                name="exp_prov_fecha_idx",
+            ),
             models.Index(fields=["fecha_creacion"], name="exp_fecha_idx"),
         ]
 
     def __str__(self):
         return f"{self.usuario_provincia.username}"
-    
+
     @property
     def provincia(self):
         try:
@@ -151,10 +154,14 @@ class ExpedienteCiudadano(models.Model):
     creado_en = models.DateTimeField(auto_now_add=True)
     modificado_en = models.DateTimeField(auto_now=True)
     revision_tecnico = models.CharField(
-        max_length=24, choices=RevisionTecnico.choices, default=RevisionTecnico.PENDIENTE
+        max_length=24,
+        choices=RevisionTecnico.choices,
+        default=RevisionTecnico.PENDIENTE,
     )
     resultado_sintys = models.CharField(
-        max_length=10, choices=ResultadoSintys.choices, default=ResultadoSintys.SIN_CRUCE
+        max_length=10,
+        choices=ResultadoSintys.choices,
+        default=ResultadoSintys.SIN_CRUCE,
     )
     estado_cupo = models.CharField(
         max_length=8, choices=EstadoCupo.choices, default=EstadoCupo.NO_EVAL
@@ -164,7 +171,11 @@ class ExpedienteCiudadano(models.Model):
     subsanacion_solicitada_en = models.DateTimeField(null=True, blank=True)
     subsanacion_enviada_en = models.DateTimeField(null=True, blank=True)
     subsanacion_usuario = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="subsanaciones_realizadas"
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="subsanaciones_realizadas",
     )
 
     class Meta:
@@ -173,11 +184,17 @@ class ExpedienteCiudadano(models.Model):
         verbose_name_plural = "Expedientes Ciudadano"
         ordering = ("-creado_en", "pk")
         indexes = [
-            models.Index(fields=["expediente", "revision_tecnico"], name="leg_exp_rev_idx"),
+            models.Index(
+                fields=["expediente", "revision_tecnico"], name="leg_exp_rev_idx"
+            ),
             models.Index(fields=["expediente", "estado"], name="leg_exp_est_idx"),
             models.Index(fields=["expediente", "estado_cupo"], name="leg_exp_cupo_idx"),
-            models.Index(fields=["expediente", "resultado_sintys"], name="leg_exp_sin_idx"),
-            models.Index(fields=["expediente", "es_titular_activo"], name="leg_exp_tit_idx"),
+            models.Index(
+                fields=["expediente", "resultado_sintys"], name="leg_exp_sin_idx"
+            ),
+            models.Index(
+                fields=["expediente", "es_titular_activo"], name="leg_exp_tit_idx"
+            ),
             models.Index(fields=["creado_en"], name="leg_creado_idx"),
             models.Index(
                 fields=["expediente"],
@@ -193,7 +210,6 @@ class ExpedienteCiudadano(models.Model):
     def save(self, *args, **kwargs):
         self._recompute_archivos_ok()
         return super().save(*args, **kwargs)
-
 
     def __str__(self):
         return f"{self.ciudadano.documento} - {self.ciudadano.nombre} {self.ciudadano.apellido}"
@@ -233,7 +249,9 @@ class AsignacionTecnico(models.Model):
 
 
 class ProvinciaCupo(models.Model):
-    provincia = models.OneToOneField(Provincia, on_delete=models.CASCADE, related_name="cupo")
+    provincia = models.OneToOneField(
+        Provincia, on_delete=models.CASCADE, related_name="cupo"
+    )
     total_asignado = models.PositiveIntegerField(default=0)
     usados = models.PositiveIntegerField(default=0)
 
@@ -246,13 +264,33 @@ class ProvinciaCupo(models.Model):
 
 
 class CupoMovimiento(models.Model):
-    provincia = models.ForeignKey(Provincia, on_delete=models.CASCADE, related_name="movimientos_cupo")
-    expediente = models.ForeignKey(Expediente, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos_cupo")
-    legajo = models.ForeignKey(ExpedienteCiudadano, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos_cupo")
+    provincia = models.ForeignKey(
+        Provincia, on_delete=models.CASCADE, related_name="movimientos_cupo"
+    )
+    expediente = models.ForeignKey(
+        Expediente,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="movimientos_cupo",
+    )
+    legajo = models.ForeignKey(
+        ExpedienteCiudadano,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="movimientos_cupo",
+    )
     tipo = models.CharField(max_length=20, choices=TipoMovimientoCupo.choices)
     delta = models.IntegerField()
     motivo = models.CharField(max_length=255, blank=True)
-    usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos_cupo")
+    usuario = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="movimientos_cupo",
+    )
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -260,10 +298,16 @@ class CupoMovimiento(models.Model):
         verbose_name_plural = "Movimientos de Cupo"
         ordering = ("-creado_en", "pk")
         indexes = [
-            models.Index(fields=["provincia", "-creado_en"], name="cupo_prov_fecha_idx"),
-            models.Index(fields=["expediente", "-creado_en"], name="cupo_exp_fecha_idx"),
+            models.Index(
+                fields=["provincia", "-creado_en"], name="cupo_prov_fecha_idx"
+            ),
+            models.Index(
+                fields=["expediente", "-creado_en"], name="cupo_exp_fecha_idx"
+            ),
             models.Index(fields=["legajo", "-creado_en"], name="cupo_leg_fecha_idx"),
-            models.Index(fields=["tipo", "provincia", "-creado_en"], name="cupo_tipo_prov_idx"),
+            models.Index(
+                fields=["tipo", "provincia", "-creado_en"], name="cupo_tipo_prov_idx"
+            ),
         ]
 
     def __str__(self):

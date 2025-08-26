@@ -32,19 +32,20 @@ urlpatterns = [
     path(
         "expedientes/<int:pk>/legajos/<int:legajo_id>/revisar/",
         RevisarLegajoView.as_view(),
-        name="legajo_revisar"
+        name="legajo_revisar",
     ),
     path(
         "expedientes/<int:pk>/legajos/<int:legajo_id>/subsanar/",
-        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(LegajoSubsanarView.as_view()),
+        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(
+            LegajoSubsanarView.as_view()
+        ),
         name="legajo_subsanar",
     ),
-
     path(
         "expedientes/",
-        group_required(["ProvinciaCeliaquia", "CoordinadorCeliaquia", "TecnicoCeliaquia"])(
-            ExpedienteListView.as_view()
-        ),
+        group_required(
+            ["ProvinciaCeliaquia", "CoordinadorCeliaquia", "TecnicoCeliaquia"]
+        )(ExpedienteListView.as_view()),
         name="expediente_list",
     ),
     path(
@@ -59,9 +60,9 @@ urlpatterns = [
     ),
     path(
         "expedientes/<int:pk>/",
-        group_required(["ProvinciaCeliaquia", "CoordinadorCeliaquia", "TecnicoCeliaquia"])(
-            ExpedienteDetailView.as_view()
-        ),
+        group_required(
+            ["ProvinciaCeliaquia", "CoordinadorCeliaquia", "TecnicoCeliaquia"]
+        )(ExpedienteDetailView.as_view()),
         name="expediente_detail",
     ),
     path(
@@ -114,7 +115,6 @@ urlpatterns = [
         SubirCruceExcelView.as_view(),
         name="expediente_subir_cruce",
     ),
-
     path(
         "cupos/",
         group_required(["CoordinadorCeliaquia"])(CupoDashboardView.as_view()),
@@ -140,8 +140,7 @@ urlpatterns = [
         ExpedienteConfirmSubsanacionView.as_view(),
         name="expediente_confirm_subsanacion",
     ),
-
-        path(
+    path(
         "cupo/<int:provincia_id>/legajo/<int:legajo_id>/reactivar/",
         CupoReactivarLegajoView.as_view(),
         name="cupo_legajo_reactivar",

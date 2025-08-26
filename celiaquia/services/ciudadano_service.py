@@ -51,7 +51,9 @@ class CiudadanoService:
             raise ValidationError(f"Fecha de nacimiento inválida: {value}")
 
     @staticmethod
-    def get_or_create_ciudadano(datos: dict, usuario=None, expediente=None, programa_id=3) -> Ciudadano:
+    def get_or_create_ciudadano(
+        datos: dict, usuario=None, expediente=None, programa_id=3
+    ) -> Ciudadano:
         """
         - Busca o crea un Ciudadano con los datos provistos.
         - Inicializa dimensiones si es nuevo.
@@ -87,8 +89,7 @@ class CiudadanoService:
 
         # 5) Crear/obtener ciudadano
         ciudadano, created = Ciudadano.objects.get_or_create(
-            **filtro,
-            defaults={"sexo": sx}
+            **filtro, defaults={"sexo": sx}
         )
 
         if created:
@@ -101,9 +102,13 @@ class CiudadanoService:
         User = get_user_model()
         if isinstance(usuario, User):
             if expediente is not None:
-                existe_legajo = ExpedienteCiudadano.objects.filter(
-                    expediente=expediente, ciudadano=ciudadano
-                ).only("id").exists()
+                existe_legajo = (
+                    ExpedienteCiudadano.objects.filter(
+                        expediente=expediente, ciudadano=ciudadano
+                    )
+                    .only("id")
+                    .exists()
+                )
 
                 if existe_legajo:
                     try:
@@ -114,17 +119,19 @@ class CiudadanoService:
                         )
                         logger.debug(
                             "Programa %s asegurado para ciudadano %s (con legajo existente).",
-                            programa_id, ciudadano.pk
+                            programa_id,
+                            ciudadano.pk,
                         )
                     except Exception as e:
                         logger.warning(
                             "No se pudo asegurar programa para ciudadano %s: %s",
-                            ciudadano.pk, e
+                            ciudadano.pk,
+                            e,
                         )
                 else:
                     logger.debug(
                         "No se asigna programa: no existe legajo para expediente/ciudadano (%s).",
-                        ciudadano.pk
+                        ciudadano.pk,
                     )
             else:
                 try:
@@ -135,12 +142,14 @@ class CiudadanoService:
                     )
                     logger.debug(
                         "Programa %s asignado al ciudadano %s (sin validar legajo por no pasar expediente).",
-                        programa_id, ciudadano.pk
+                        programa_id,
+                        ciudadano.pk,
                     )
                 except Exception as e:
                     logger.warning(
                         "No se pudo asignar programa al ciudadano %s: %s",
-                        ciudadano.pk, e
+                        ciudadano.pk,
+                        e,
                     )
 
         return ciudadano

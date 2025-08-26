@@ -86,7 +86,9 @@ class ImportacionService:
 
     @staticmethod
     @transaction.atomic
-    def importar_legajos_desde_excel(expediente, archivo_excel, usuario, batch_size=500):
+    def importar_legajos_desde_excel(
+        expediente, archivo_excel, usuario, batch_size=500
+    ):
         from celiaquia.services.ciudadano_service import CiudadanoService
 
         try:
@@ -102,13 +104,24 @@ class ImportacionService:
             raise ValidationError(f"No se pudo leer Excel: {e}")
 
         df.columns = [str(col).strip().lower().replace(" ", "_") for col in df.columns]
-        expected = ["nombre", "apellido", "documento", "fecha_nacimiento", "tipo_documento", "sexo"]
+        expected = [
+            "nombre",
+            "apellido",
+            "documento",
+            "fecha_nacimiento",
+            "tipo_documento",
+            "sexo",
+        ]
         if set(df.columns) != set(expected):
-            raise ValidationError(f"Encabezados inválidos: {list(df.columns)} — esperados: {expected}")
+            raise ValidationError(
+                f"Encabezados inválidos: {list(df.columns)} — esperados: {expected}"
+            )
 
         df = df[expected].fillna("")
         if "fecha_nacimiento" in df.columns:
-            df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(lambda x: x.date() if hasattr(x, "date") else x)
+            df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(
+                lambda x: x.date() if hasattr(x, "date") else x
+            )
 
         estado_id = _estado_doc_pendiente_id()
         validos = errores = 0

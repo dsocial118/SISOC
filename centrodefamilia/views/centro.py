@@ -114,15 +114,18 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         ).get_page(page_curso)
 
         # (opcional, por comodidad en el template)
-        ctx["search_actividades_curso_val"] = self.request.GET.get("search_actividades_curso", "")
+        ctx["search_actividades_curso_val"] = self.request.GET.get(
+            "search_actividades_curso", ""
+        )
         ctx["total_actividades"] = qs_acts.count()
         ctx["total_recaudado"] = sum((act.ganancia or 0) for act in ctx["actividades"])
 
         # 3) Actividades de otros centros
         search_otras = self.request.GET.get("search_actividades", "").strip().lower()
         otras = (
-            ActividadCentro.objects.exclude(centro=centro)
-            .select_related("actividad", "actividad__categoria", "centro")
+            ActividadCentro.objects.exclude(centro=centro).select_related(
+                "actividad", "actividad__categoria", "centro"
+            )
             # ✅ Orden estable para evitar UnorderedObjectListWarning
             .order_by("centro__nombre", "actividad__nombre", "id")
         )
@@ -138,9 +141,9 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
                 .order_by("centro__nombre", "actividad__nombre", "id")
             )
 
-        ctx["actividades_paginados"] = Paginator(
-            otras, 5
-        ).get_page(self.request.GET.get("page_act"))
+        ctx["actividades_paginados"] = Paginator(otras, 5).get_page(
+            self.request.GET.get("page_act")
+        )
 
         # 4) Centros adheridos
         if centro.tipo == "faro":
@@ -190,7 +193,6 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
         )
 
         return ctx
-
 
 
 class CentroCreateView(LoginRequiredMixin, CreateView):

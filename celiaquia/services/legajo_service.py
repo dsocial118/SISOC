@@ -11,6 +11,7 @@ from celiaquia.models import (
 
 logger = logging.getLogger(__name__)
 
+
 @lru_cache(maxsize=1)
 def _estado_archivo_cargado_id():
     try:
@@ -37,15 +38,15 @@ def _recalc_archivos_ok(obj, update_fields):
 class LegajoService:
     @staticmethod
     def listar_legajos(expediente):
-        return (
-            expediente.expediente_ciudadanos
-            .select_related("ciudadano", "estado")
-            .order_by("creado_en")
-        )
+        return expediente.expediente_ciudadanos.select_related(
+            "ciudadano", "estado"
+        ).order_by("creado_en")
 
     @staticmethod
     @transaction.atomic
-    def subir_archivo_individual(exp_ciudadano: ExpedienteCiudadano, archivo, slot: int | None = None):
+    def subir_archivo_individual(
+        exp_ciudadano: ExpedienteCiudadano, archivo, slot: int | None = None
+    ):
         if not archivo:
             raise ValidationError("Debe proporcionar un archivo válido.")
         if slot is not None and slot not in (1, 2, 3):
@@ -69,12 +70,16 @@ class LegajoService:
 
         changed.append("modificado_en")
         exp_ciudadano.save(update_fields=changed)
-        logger.info("Legajo %s: archivo actualizado en %s.", exp_ciudadano.pk, ",".join(changed))
+        logger.info(
+            "Legajo %s: archivo actualizado en %s.", exp_ciudadano.pk, ",".join(changed)
+        )
         return exp_ciudadano
 
     @staticmethod
     @transaction.atomic
-    def subir_archivos_iniciales(exp_ciudadano: ExpedienteCiudadano, archivo1, archivo2, archivo3):
+    def subir_archivos_iniciales(
+        exp_ciudadano: ExpedienteCiudadano, archivo1, archivo2, archivo3
+    ):
         if not archivo1 or not archivo2 or not archivo3:
             raise ValidationError("Debés adjuntar los tres archivos requeridos.")
 
@@ -117,7 +122,11 @@ class LegajoService:
 
         changed.append("modificado_en")
         exp_ciudadano.save(update_fields=changed)
-        logger.info("Legajo %s: subsanación, archivos actualizados: %s.", exp_ciudadano.pk, ",".join(changed))
+        logger.info(
+            "Legajo %s: subsanación, archivos actualizados: %s.",
+            exp_ciudadano.pk,
+            ",".join(changed),
+        )
         return exp_ciudadano
 
     @staticmethod
@@ -128,8 +137,19 @@ class LegajoService:
         exp_ciudadano.revision_tecnico = RevisionTecnico.SUBSANAR
         exp_ciudadano.subsanacion_motivo = motivo.strip()[:500]
         exp_ciudadano.subsanacion_solicitada_en = timezone.now()
-        exp_ciudadano.save(update_fields=["revision_tecnico", "subsanacion_motivo", "subsanacion_solicitada_en", "modificado_en"])
-        logger.info("Legajo %s: subsanación solicitada por %s.", exp_ciudadano.pk, getattr(usuario, "username", usuario))
+        exp_ciudadano.save(
+            update_fields=[
+                "revision_tecnico",
+                "subsanacion_motivo",
+                "subsanacion_solicitada_en",
+                "modificado_en",
+            ]
+        )
+        logger.info(
+            "Legajo %s: subsanación solicitada por %s.",
+            exp_ciudadano.pk,
+            getattr(usuario, "username", usuario),
+        )
         return exp_ciudadano
 
     @staticmethod

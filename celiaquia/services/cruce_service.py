@@ -14,6 +14,7 @@ from django.utils.text import slugify
 
 try:
     from weasyprint import HTML as WPHTML  # type: ignore
+
     _WEASY_OK = True
 except Exception:
     _WEASY_OK = False
@@ -125,12 +126,15 @@ class CruceService:
                         "No se pudo leer el archivo. Formato no soportado (XLSX/XLS/CSV)."
                     )
         df.columns = [
-            str(c).strip().lower().replace("  ", " ").replace(" ", "_") for c in df.columns
+            str(c).strip().lower().replace("  ", " ").replace(" ", "_")
+            for c in df.columns
         ]
         return df
 
     @staticmethod
-    def _col_por_preferencias(df: pd.DataFrame, candidatas: set, palabra_clave: str) -> str | None:
+    def _col_por_preferencias(
+        df: pd.DataFrame, candidatas: set, palabra_clave: str
+    ) -> str | None:
         cols = set(df.columns)
         for cand in candidatas:
             if cand in cols:
@@ -167,7 +171,9 @@ class CruceService:
         if not cuits and not dnis:
             if not col_cuit and not col_dni:
                 raise ValidationError("El archivo debe tener columna 'cuit' o 'dni'.")
-            raise ValidationError("El archivo no contiene identificadores (CUIT/DNI) válidos.")
+            raise ValidationError(
+                "El archivo no contiene identificadores (CUIT/DNI) válidos."
+            )
         return {"cuits": cuits, "dnis": dnis}
 
     @staticmethod
@@ -245,7 +251,9 @@ class CruceService:
         cupo_usados = resumen.get("cupo_usados")
         cupo_disponibles = resumen.get("cupo_disponibles")
         fuera_cupo = resumen.get("fuera_cupo")
-        if (cupo_total is None or cupo_usados is None or cupo_disponibles is None) and resumen.get("cupo"):
+        if (
+            cupo_total is None or cupo_usados is None or cupo_disponibles is None
+        ) and resumen.get("cupo"):
             cupo_total = resumen["cupo"].get("total_asignado")
             cupo_usados = resumen["cupo"].get("usados")
             cupo_disponibles = resumen["cupo"].get("disponibles")
@@ -329,7 +337,11 @@ class CruceService:
 
         c.setFont("Helvetica", 9)
         if not detalle_bad and no_matcheados > 0:
-            c.drawString(margin_x + 10, y, f"— Hay {no_matcheados} sin match, pero no se generó el detalle. —")
+            c.drawString(
+                margin_x + 10,
+                y,
+                f"— Hay {no_matcheados} sin match, pero no se generó el detalle. —",
+            )
             y -= 12
         elif not detalle_bad:
             c.drawString(margin_x + 10, y, "— Sin registros —")
@@ -407,7 +419,9 @@ class CruceService:
         writer.writerow([])
         writer.writerow(["Cupo"])
         if resumen.get("cupo"):
-            writer.writerow(["total_asignado", resumen["cupo"].get("total_asignado", "")])
+            writer.writerow(
+                ["total_asignado", resumen["cupo"].get("total_asignado", "")]
+            )
             writer.writerow(["usados", resumen["cupo"].get("usados", "")])
             writer.writerow(["disponibles", resumen["cupo"].get("disponibles", "")])
             writer.writerow(["fuera_de_cupo", resumen.get("cupo_fuera_count", 0)])
@@ -438,7 +452,9 @@ class CruceService:
         estado_actual = expediente.estado.nombre
         estados_permitidos = ("ASIGNADO", "PROCESO_DE_CRUCE", "CRUCE_FINALIZADO")
         if estado_actual not in estados_permitidos:
-            raise ValidationError("El expediente no está en un estado válido para realizar el cruce.")
+            raise ValidationError(
+                "El expediente no está en un estado válido para realizar el cruce."
+            )
 
         try:
             metrics_iniciales = CupoService.metrics_por_provincia(expediente.provincia)
@@ -449,7 +465,9 @@ class CruceService:
 
         expediente.cruce_excel = archivo_excel
         expediente.usuario_modificador = usuario
-        estado_proc, _ = EstadoExpediente.objects.get_or_create(nombre="PROCESO_DE_CRUCE")
+        estado_proc, _ = EstadoExpediente.objects.get_or_create(
+            nombre="PROCESO_DE_CRUCE"
+        )
         expediente.estado = estado_proc
         expediente.save(update_fields=["cruce_excel", "usuario_modificador", "estado"])
 
@@ -458,13 +476,18 @@ class CruceService:
         set_dnis_norm = ids_archivo["dnis"]
 
         legajos_all = (
-            ExpedienteCiudadano.objects
-            .select_related("ciudadano")
+            ExpedienteCiudadano.objects.select_related("ciudadano")
             .only(
-                "id", "expediente_id", "ciudadano_id",
-                "revision_tecnico", "resultado_sintys",
-                "estado_cupo", "es_titular_activo",
-                "ciudadano__documento", "ciudadano__nombre", "ciudadano__apellido",
+                "id",
+                "expediente_id",
+                "ciudadano_id",
+                "revision_tecnico",
+                "resultado_sintys",
+                "estado_cupo",
+                "es_titular_activo",
+                "ciudadano__documento",
+                "ciudadano__nombre",
+                "ciudadano__apellido",
             )
             .filter(expediente_id=expediente.id)
         )
@@ -472,7 +495,9 @@ class CruceService:
         legajos_aprobados = list(legajos_all.filter(revision_tecnico="APROBADO"))
         total_legajos_aprobados = len(legajos_aprobados)
         if total_legajos_aprobados == 0:
-            raise ValidationError("No hay legajos APROBADOS por el técnico para cruzar con Syntys.")
+            raise ValidationError(
+                "No hay legajos APROBADOS por el técnico para cruzar con Syntys."
+            )
 
         matched_ids = []
         unmatched_ids = []
@@ -496,20 +521,24 @@ class CruceService:
 
             if match:
                 matched_ids.append(leg.pk)
-                detalle_match.append({
-                    "dni": getattr(ciu, "documento", "") or "",
-                    "cuit": cuit_ciud or "",
-                    "por": by or "",
-                    "nombre": getattr(ciu, "nombre", "") or "",
-                    "apellido": getattr(ciu, "apellido", "") or "",
-                })
+                detalle_match.append(
+                    {
+                        "dni": getattr(ciu, "documento", "") or "",
+                        "cuit": cuit_ciud or "",
+                        "por": by or "",
+                        "nombre": getattr(ciu, "nombre", "") or "",
+                        "apellido": getattr(ciu, "apellido", "") or "",
+                    }
+                )
             else:
                 unmatched_ids.append(leg.pk)
-                detalle_no_match.append({
-                    "dni": getattr(ciu, "documento", "") or "",
-                    "cuit": cuit_ciud or "",
-                    "observacion": "No está en archivo de Syntys",
-                })
+                detalle_no_match.append(
+                    {
+                        "dni": getattr(ciu, "documento", "") or "",
+                        "cuit": cuit_ciud or "",
+                        "observacion": "No está en archivo de Syntys",
+                    }
+                )
 
         if matched_ids:
             ExpedienteCiudadano.objects.filter(pk__in=matched_ids).update(
@@ -517,7 +546,9 @@ class CruceService:
             )
         if unmatched_ids:
             ExpedienteCiudadano.objects.filter(pk__in=unmatched_ids).update(
-                cruce_ok=False, resultado_sintys="NO_MATCH", observacion_cruce="No está en archivo de Syntys"
+                cruce_ok=False,
+                resultado_sintys="NO_MATCH",
+                observacion_cruce="No está en archivo de Syntys",
             )
 
         # Reserva de cupo para los matcheados. Si el ciudadano ya ocupa (activo o suspendido),
@@ -529,61 +560,64 @@ class CruceService:
                 except CupoNoConfigurado as e:
                     raise ValidationError(f"Error de cupo: {e}")
 
-        legajos_rechazados = (
-            legajos_all
-            .filter(revision_tecnico="RECHAZADO")
-            .select_related("ciudadano")
-        )
+        legajos_rechazados = legajos_all.filter(
+            revision_tecnico="RECHAZADO"
+        ).select_related("ciudadano")
         for leg in legajos_rechazados:
             ciu = leg.ciudadano
             cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
             dni_ciud = CruceService._normalize_dni_str(getattr(ciu, "documento", ""))
 
-            presente_en_archivo = (
-                (cuit_ciud and cuit_ciud in set_cuits) or
-                (dni_ciud and dni_ciud in set_dnis_norm)
+            presente_en_archivo = (cuit_ciud and cuit_ciud in set_cuits) or (
+                dni_ciud and dni_ciud in set_dnis_norm
             )
 
-            obs = "Rechazado por técnico — presente en archivo de Syntys" if presente_en_archivo \
+            obs = (
+                "Rechazado por técnico — presente en archivo de Syntys"
+                if presente_en_archivo
                 else "Rechazado por técnico — no está en archivo de Syntys"
+            )
 
-            detalle_no_match.append({
-                "dni": getattr(ciu, "documento", "") or "",
-                "cuit": cuit_ciud or "",
-                "observacion": obs,
-            })
+            detalle_no_match.append(
+                {
+                    "dni": getattr(ciu, "documento", "") or "",
+                    "cuit": cuit_ciud or "",
+                    "observacion": obs,
+                }
+            )
 
-        legajos_subsanar = (
-            legajos_all
-            .filter(revision_tecnico="SUBSANAR")
-            .select_related("ciudadano")
-        )
+        legajos_subsanar = legajos_all.filter(
+            revision_tecnico="SUBSANAR"
+        ).select_related("ciudadano")
         for leg in legajos_subsanar:
             ciu = leg.ciudadano
             cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
             motivo = getattr(leg, "subsanacion_motivo", "") or "Subsanar solicitado"
-            detalle_no_match.append({
-                "dni": getattr(ciu, "documento", "") or "",
-                "cuit": cuit_ciud or "",
-                "observacion": f"Subsanar: {motivo}",
-            })
+            detalle_no_match.append(
+                {
+                    "dni": getattr(ciu, "documento", "") or "",
+                    "cuit": cuit_ciud or "",
+                    "observacion": f"Subsanar: {motivo}",
+                }
+            )
 
         try:
             metrics_finales = CupoService.metrics_por_provincia(expediente.provincia)
         except CupoNoConfigurado:
             metrics_finales = metrics_iniciales
 
-        fuera_qs = (
-            CupoService
-            .lista_fuera_de_cupo_por_expediente(expediente.id)
-            .select_related("ciudadano")
-        )
-        detalle_fuera = [{
-            "dni": getattr(l.ciudadano, "documento", "") or "",
-            "cuit": CruceService._resolver_cuit_ciudadano(l.ciudadano) or "",
-            "nombre": getattr(l.ciudadano, "nombre", "") or "",
-            "apellido": getattr(l.ciudadano, "apellido", "") or "",
-        } for l in fuera_qs]
+        fuera_qs = CupoService.lista_fuera_de_cupo_por_expediente(
+            expediente.id
+        ).select_related("ciudadano")
+        detalle_fuera = [
+            {
+                "dni": getattr(l.ciudadano, "documento", "") or "",
+                "cuit": CruceService._resolver_cuit_ciudadano(l.ciudadano) or "",
+                "nombre": getattr(l.ciudadano, "nombre", "") or "",
+                "apellido": getattr(l.ciudadano, "apellido", "") or "",
+            }
+            for l in fuera_qs
+        ]
         fuera_count = len(detalle_fuera)
 
         aceptados = len(matched_ids)
@@ -615,20 +649,30 @@ class CruceService:
         nombre_base = slugify(f"prd-cruce-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
         try:
             pdf_bytes = CruceService._generar_prd_pdf(expediente, resumen)
-            expediente.documento.save(f"{nombre_base}.pdf", ContentFile(pdf_bytes), save=False)
+            expediente.documento.save(
+                f"{nombre_base}.pdf", ContentFile(pdf_bytes), save=False
+            )
         except Exception as e:
             logger.warning("No fue posible generar PDF (se usará CSV fallback): %s", e)
             csv_bytes = CruceService._generar_prd_csv(expediente, resumen)
-            expediente.documento.save(f"{nombre_base}.csv", ContentFile(csv_bytes), save=False)
+            expediente.documento.save(
+                f"{nombre_base}.csv", ContentFile(csv_bytes), save=False
+            )
 
-        estado_final, _ = EstadoExpediente.objects.get_or_create(nombre="CRUCE_FINALIZADO")
+        estado_final, _ = EstadoExpediente.objects.get_or_create(
+            nombre="CRUCE_FINALIZADO"
+        )
         expediente.estado = estado_final
         expediente.usuario_modificador = usuario
         expediente.save(update_fields=["documento", "estado", "usuario_modificador"])
 
         logger.info(
             "Cruce finalizado para expediente: %s  %s match / %s no-match (sobre %s aprobados). Rechazados en detalle_no_match: %s. Fuera de cupo: %s.",
-            expediente.id, aceptados, rechazados_sintys, total_legajos_aprobados,
-            len(detalle_no_match), fuera_count
+            expediente.id,
+            aceptados,
+            rechazados_sintys,
+            total_legajos_aprobados,
+            len(detalle_no_match),
+            fuera_count,
         )
         return resumen

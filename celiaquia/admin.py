@@ -7,7 +7,6 @@ from .models import (
     Expediente,
     ExpedienteCiudadano,
     AsignacionTecnico,
-
 )
 
 
@@ -37,7 +36,7 @@ class TipoCruceAdmin(admin.ModelAdmin):
 
 @admin.register(Expediente)
 class ExpedienteAdmin(admin.ModelAdmin):
-    list_display = ( "usuario_provincia", "estado", "fecha_creacion")
+    list_display = ("usuario_provincia", "estado", "fecha_creacion")
     list_filter = ("estado", "fecha_creacion")
     search_fields = ("usuario_provincia",)
     readonly_fields = ("fecha_creacion", "fecha_modificacion", "fecha_cierre")
@@ -54,7 +53,3 @@ class ExpedienteCiudadanoAdmin(admin.ModelAdmin):
 class AsignacionTecnicoAdmin(admin.ModelAdmin):
     list_display = ("expediente", "tecnico", "fecha_asignacion")
     search_fields = ("expediente__codigo", "tecnico__username")
-
-
-
-

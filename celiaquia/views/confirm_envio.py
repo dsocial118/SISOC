@@ -26,7 +26,9 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
         try:
             # Validación: todos los legajos con los 3 archivos
             faltantes_qs = expediente.expediente_ciudadanos.filter(
-                Q(archivo1__isnull=True) | Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
+                Q(archivo1__isnull=True)
+                | Q(archivo2__isnull=True)
+                | Q(archivo3__isnull=True)
             )
             if faltantes_qs.exists():
                 # Armamos un mensaje breve + devolvemos ids por si el front quiere resaltar
@@ -36,7 +38,8 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
                 ]
                 msg = (
                     "No podés confirmar el envío: hay legajos sin los 3 archivos. "
-                    + "Ejemplos: " + "; ".join(ejemplos)
+                    + "Ejemplos: "
+                    + "; ".join(ejemplos)
                     + (" …" if faltantes_qs.count() > 10 else "")
                 )
 
@@ -45,7 +48,9 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
                         {
                             "success": False,
                             "error": msg,
-                            "faltantes_ids": list(faltantes_qs.values_list("id", flat=True)),
+                            "faltantes_ids": list(
+                                faltantes_qs.values_list("id", flat=True)
+                            ),
                         },
                         status=400,
                     )
@@ -56,7 +61,6 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
             result = ExpedienteService.confirmar_envio(expediente)
             logger.info(
                 "Confirmación de envío OK. Expediente por %s",
-                
                 request.user.username,
             )
             return JsonResponse(
