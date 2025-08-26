@@ -264,7 +264,7 @@
                                 <div class="small">
                                     <div class="d-flex align-items-center justify-content-between">
                                         <div>
-                                            <span class="text-muted">Archivo 1:</span>
+                                            <span class="text-muted">DNI :</span>
                                             {% if leg.archivo1 %}
                                                 <a href="{{ leg.archivo1.url }}"
                                                    target="_blank"
@@ -295,7 +295,7 @@
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between mt-2">
                                         <div>
-                                            <span class="text-muted">Archivo 2:</span>
+                                            <span class="text-muted">Biopsia positiva y/o constancia médica:</span>
                                             {% if leg.archivo2 %}
                                                 <a href="{{ leg.archivo2.url }}"
                                                    target="_blank"
@@ -326,7 +326,7 @@
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between mt-2">
                                         <div>
-                                            <span class="text-muted">Archivo 3:</span>
+                                            <span class="text-muted">Negativa de ANSES:</span>
                                             {% if leg.archivo3 %}
                                                 <a href="{{ leg.archivo3.url }}"
                                                    target="_blank"
@@ -460,9 +460,9 @@
                             <div class="col-12">
                                 <label class="form-label">Seleccionar archivo a actualizar</label>
                                 <select name="campo" id="campo-archivo" class="form-select" required>
-                                    <option value="archivo1">Archivo 1</option>
-                                    <option value="archivo2">Archivo 2</option>
-                                    <option value="archivo3">Archivo 3</option>
+                                    <option value="archivo1">DNI</option>
+                                    <option value="archivo2">Biopsia positiva y/o constancia médica</option>
+                                    <option value="archivo3">Negativa de ANSES</option>
                                 </select>
                             </div>
                             <div class="col-12">
