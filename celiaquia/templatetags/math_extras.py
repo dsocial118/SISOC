@@ -2,6 +2,7 @@ from django import template
 
 register = template.Library()
 
+
 def _to_float(v, default=0.0):
     """Convierte el valor a float de forma segura."""
     try:
@@ -11,10 +12,12 @@ def _to_float(v, default=0.0):
     except Exception:
         return float(default)
 
+
 @register.filter
 def sum2(a, b):
     """Suma numérica robusta: {{ a|sum2:b }}"""
     return _to_float(a) + _to_float(b)
+
 
 @register.filter
 def pct(part, whole):
@@ -26,10 +29,12 @@ def pct(part, whole):
     w = _to_float(whole)
     return round((p * 100.0 / w), 2) if w else 0.0
 
+
 @register.filter
 def percent_of(part, whole):
     """Alias de pct (compatibilidad)."""
     return pct(part, whole)
+
 
 @register.filter
 def clamp(value, bounds="0,100"):
@@ -49,16 +54,19 @@ def clamp(value, bounds="0,100"):
     except Exception:
         return _to_float(value)
 
+
 @register.filter
 def mul(a, b):
     """Multiplicación: {{ a|mul:b }}"""
     return _to_float(a) * _to_float(b)
+
 
 @register.filter
 def div(a, b):
     """División segura: {{ a|div:b }}"""
     b_val = _to_float(b)
     return (_to_float(a) / b_val) if b_val else 0.0
+
 
 @register.filter
 def sub(a, b):

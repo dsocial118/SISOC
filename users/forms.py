@@ -26,7 +26,14 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["username", "email", "password", "groups", "es_usuario_provincial", "provincia"]
+        fields = [
+            "username",
+            "email",
+            "password",
+            "groups",
+            "es_usuario_provincial",
+            "provincia",
+        ]
 
     def clean(self):
         cleaned = super().clean()
@@ -43,9 +50,13 @@ class UserCreationForm(forms.ModelForm):
             user.groups.set(self.cleaned_data.get("groups", []))
 
             profile, _ = Profile.objects.get_or_create(user=user)
-            profile.es_usuario_provincial = self.cleaned_data.get("es_usuario_provincial", False)
+            profile.es_usuario_provincial = self.cleaned_data.get(
+                "es_usuario_provincial", False
+            )
             profile.provincia = (
-                self.cleaned_data.get("provincia") if self.cleaned_data.get("es_usuario_provincial") else None
+                self.cleaned_data.get("provincia")
+                if self.cleaned_data.get("es_usuario_provincial")
+                else None
             )
             profile.save()
 
@@ -77,7 +88,14 @@ class CustomUserChangeForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["username", "email", "password", "groups", "es_usuario_provincial", "provincia"]
+        fields = [
+            "username",
+            "email",
+            "password",
+            "groups",
+            "es_usuario_provincial",
+            "provincia",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -114,9 +132,13 @@ class CustomUserChangeForm(forms.ModelForm):
             user.groups.set(self.cleaned_data.get("groups", []))
 
             profile, _ = Profile.objects.get_or_create(user=user)
-            profile.es_usuario_provincial = self.cleaned_data.get("es_usuario_provincial", False)
+            profile.es_usuario_provincial = self.cleaned_data.get(
+                "es_usuario_provincial", False
+            )
             profile.provincia = (
-                self.cleaned_data.get("provincia") if self.cleaned_data.get("es_usuario_provincial") else None
+                self.cleaned_data.get("provincia")
+                if self.cleaned_data.get("es_usuario_provincial")
+                else None
             )
             profile.save()
 

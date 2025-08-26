@@ -7,10 +7,12 @@ from celiaquia.models import (
     ExpedienteCiudadano,
 )
 
+
 def validate_file_size(value):
     max_mb = 5
     if value.size > max_mb * 1024 * 1024:
         raise ValidationError(_(f"El archivo supera el tamaño máximo de {max_mb} MB."))
+
 
 class BaseStyledForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -23,6 +25,7 @@ class BaseStyledForm(forms.ModelForm):
             if input_type in ("text", "number", "email", "date"):
                 widget.attrs.setdefault("placeholder", field.label)
 
+
 class StyledForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,6 +36,7 @@ class StyledForm(forms.Form):
             widget.attrs.setdefault("class", css_class)
             if input_type in ("text", "number", "email", "date"):
                 widget.attrs.setdefault("placeholder", field.label)
+
 
 class ExpedienteForm(BaseStyledForm):
     excel_masivo = forms.FileField(
@@ -51,12 +55,14 @@ class ExpedienteForm(BaseStyledForm):
         model = Expediente
         fields = ["observaciones", "excel_masivo"]
 
+
 class ConfirmarEnvioForm(forms.Form):
     confirm = forms.BooleanField(
         label=_("¿Estás seguro de enviar este expediente?"),
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
         required=True,
     )
+
 
 class LegajoArchivoForm(BaseStyledForm):
     archivo1 = forms.FileField(
@@ -90,6 +96,7 @@ class LegajoArchivoForm(BaseStyledForm):
     class Meta:
         model = ExpedienteCiudadano
         fields = ["archivo1", "archivo2", "archivo3"]
+
 
 class LegajoSubsanacionUploadForm(BaseStyledForm):
     archivo1 = forms.FileField(
@@ -133,6 +140,7 @@ class LegajoSubsanacionUploadForm(BaseStyledForm):
             raise ValidationError(_("Debés subir al menos un archivo para subsanar."))
         return cleaned
 
+
 class SubsanacionSolicitudForm(StyledForm):
     motivo = forms.CharField(
         label=_("Motivo de la subsanación"),
@@ -140,12 +148,14 @@ class SubsanacionSolicitudForm(StyledForm):
         required=True,
     )
 
+
 class CupoBajaLegajoForm(StyledForm):
     motivo = forms.CharField(
         label=_("Motivo de la baja"),
         widget=forms.Textarea(attrs={"rows": 2}),
         required=True,
     )
+
 
 class CupoSuspenderLegajoForm(StyledForm):
     motivo = forms.CharField(

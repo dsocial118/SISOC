@@ -12,12 +12,15 @@ from celiaquia.models import Expediente, ExpedienteCiudadano, RevisionTecnico
 
 logger = logging.getLogger(__name__)
 
+
 def _in_group(user, name):
     return user.is_authenticated and user.groups.filter(name=name).exists()
+
 
 def _same_owner(user, exp) -> bool:
     # si tu modelo guarda así al dueño del expediente:
     return exp.usuario_provincia_id == user.id
+
 
 class ExpedienteConfirmSubsanacionView(View):
     def get(self, *_a, **_k):
@@ -32,16 +35,21 @@ class ExpedienteConfirmSubsanacionView(View):
         exp = get_object_or_404(Expediente, pk=pk)
 
         is_admin = user.is_superuser
-        is_prov  = _in_group(user, "ProvinciaCeliaquia")
+        is_prov = _in_group(user, "ProvinciaCeliaquia")
 
         if not (is_admin or (is_prov and _same_owner(user, exp))):
-            raise PermissionDenied("No tenés permiso para confirmar la subsanación de este expediente.")
+            raise PermissionDenied(
+                "No tenés permiso para confirmar la subsanación de este expediente."
+            )
 
         # Legajos en SUBSANAR con faltantes
         q_falta = (
-            Q(archivo1__isnull=True) | Q(archivo1="") |
-            Q(archivo2__isnull=True) | Q(archivo2="") |
-            Q(archivo3__isnull=True) | Q(archivo3="")
+            Q(archivo1__isnull=True)
+            | Q(archivo1="")
+            | Q(archivo2__isnull=True)
+            | Q(archivo2="")
+            | Q(archivo3__isnull=True)
+            | Q(archivo3="")
         )
         faltan = ExpedienteCiudadano.objects.filter(
             expediente=exp, revision_tecnico=RevisionTecnico.SUBSANAR
@@ -49,11 +57,14 @@ class ExpedienteConfirmSubsanacionView(View):
 
         if faltan.exists():
             dnis = list(faltan.values_list("ciudadano__documento", flat=True)[:10])
-            return JsonResponse({
-                "success": False,
-                "error": "Hay legajos en SUBSANAR que aún no tienen los 3 archivos.",
-                "ejemplo_dnis": dnis,
-            }, status=400)
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "Hay legajos en SUBSANAR que aún no tienen los 3 archivos.",
+                    "ejemplo_dnis": dnis,
+                },
+                status=400,
+            )
 
         # Cambiar SUBSANAR → SUBSANADO
         actualizados = ExpedienteCiudadano.objects.filter(
@@ -65,9 +76,16 @@ class ExpedienteConfirmSubsanacionView(View):
             subsanacion_usuario=user,
         )
 
-        logger.info("Confirmar subsanación exp=%s user=%s: %s legajos", exp.pk, user.id, actualizados)
+        logger.info(
+            "Confirmar subsanación exp=%s user=%s: %s legajos",
+            exp.pk,
+            user.id,
+            actualizados,
+        )
 
-        return JsonResponse({
-            "success": True,
-            "message": f"Se confirmaron {actualizados} legajos como SUBSANADO.",
-        })
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Se confirmaron {actualizados} legajos como SUBSANADO.",
+            }
+        )

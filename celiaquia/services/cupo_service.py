@@ -35,9 +35,13 @@ class CupoService:
         Devuelve: total_asignado, usados, disponibles y fuera (lista de espera).
         """
         try:
-            pc = ProvinciaCupo.objects.only("total_asignado", "usados").get(provincia=provincia)
+            pc = ProvinciaCupo.objects.only("total_asignado", "usados").get(
+                provincia=provincia
+            )
         except ProvinciaCupo.DoesNotExist:
-            raise CupoNoConfigurado(f"La provincia '{provincia}' no tiene cupo configurado.")
+            raise CupoNoConfigurado(
+                f"La provincia '{provincia}' no tiene cupo configurado."
+            )
         total = int(pc.total_asignado or 0)
         usados = int(pc.usados or 0)
         disponibles = max(total - usados, 0)
@@ -90,7 +94,9 @@ class CupoService:
     # -------------------- CONFIGURAR TOTAL --------------------
 
     @staticmethod
-    def configurar_total(provincia: Provincia, total_asignado: int, usuario=None) -> ProvinciaCupo:
+    def configurar_total(
+        provincia: Provincia, total_asignado: int, usuario=None
+    ) -> ProvinciaCupo:
         try:
             total = int(total_asignado)
         except Exception:
@@ -110,7 +116,9 @@ class CupoService:
 
     @staticmethod
     @transaction.atomic
-    def reservar_slot(*, legajo: ExpedienteCiudadano, usuario, motivo: str = "") -> bool:
+    def reservar_slot(
+        *, legajo: ExpedienteCiudadano, usuario, motivo: str = ""
+    ) -> bool:
         """
         Intenta ocupar un cupo para el legajo.
         Reglas:
@@ -122,42 +130,67 @@ class CupoService:
         """
         legajo = (
             ExpedienteCiudadano.objects.select_for_update()
-            .select_related("expediente", "expediente__usuario_provincia", "expediente__usuario_provincia__profile")
+            .select_related(
+                "expediente",
+                "expediente__usuario_provincia",
+                "expediente__usuario_provincia__profile",
+            )
             .get(pk=legajo.pk)
         )
 
         # Validar que califica para cupo
-        if not (legajo.revision_tecnico == RevisionTecnico.APROBADO and legajo.resultado_sintys == ResultadoSintys.MATCH):
+        if not (
+            legajo.revision_tecnico == RevisionTecnico.APROBADO
+            and legajo.resultado_sintys == ResultadoSintys.MATCH
+        ):
             if legajo.estado_cupo != EstadoCupo.NO_EVAL or legajo.es_titular_activo:
                 legajo.estado_cupo = EstadoCupo.NO_EVAL
                 legajo.es_titular_activo = False
-                legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
+                legajo.save(
+                    update_fields=["estado_cupo", "es_titular_activo", "modificado_en"]
+                )
             return False
 
-        provincia = getattr(legajo.expediente.usuario_provincia.profile, "provincia", None)
+        provincia = getattr(
+            legajo.expediente.usuario_provincia.profile, "provincia", None
+        )
         if not provincia:
-            raise ValidationError("El legajo no tiene provincia asociada al usuario del expediente.")
+            raise ValidationError(
+                "El legajo no tiene provincia asociada al usuario del expediente."
+            )
 
         try:
-            pc = ProvinciaCupo.objects.select_for_update().only("id", "usados", "total_asignado").get(provincia=provincia)
+            pc = (
+                ProvinciaCupo.objects.select_for_update()
+                .only("id", "usados", "total_asignado")
+                .get(provincia=provincia)
+            )
         except ProvinciaCupo.DoesNotExist:
-            raise CupoNoConfigurado(f"La provincia '{provincia}' no tiene cupo configurado.")
+            raise CupoNoConfigurado(
+                f"La provincia '{provincia}' no tiene cupo configurado."
+            )
 
         # Si ya está dentro y activo, nada para hacer
         if legajo.estado_cupo == EstadoCupo.DENTRO and legajo.es_titular_activo:
             return True
 
         # Si el ciudadano YA ocupa un cupo DENTRO en la provincia (activo o suspendido), no se puede reservar otro
-        ya_ocupa = ExpedienteCiudadano.objects.filter(
-            ciudadano_id=legajo.ciudadano_id,
-            expediente__usuario_provincia__profile__provincia=provincia,
-            estado_cupo=EstadoCupo.DENTRO,
-        ).exclude(pk=legajo.pk).exists()
+        ya_ocupa = (
+            ExpedienteCiudadano.objects.filter(
+                ciudadano_id=legajo.ciudadano_id,
+                expediente__usuario_provincia__profile__provincia=provincia,
+                estado_cupo=EstadoCupo.DENTRO,
+            )
+            .exclude(pk=legajo.pk)
+            .exists()
+        )
         if ya_ocupa:
             if legajo.estado_cupo != EstadoCupo.FUERA or legajo.es_titular_activo:
                 legajo.estado_cupo = EstadoCupo.FUERA
                 legajo.es_titular_activo = False
-                legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
+                legajo.save(
+                    update_fields=["estado_cupo", "es_titular_activo", "modificado_en"]
+                )
             return False
 
         # Chequear disponibles
@@ -166,7 +199,9 @@ class CupoService:
             if legajo.estado_cupo != EstadoCupo.FUERA or legajo.es_titular_activo:
                 legajo.estado_cupo = EstadoCupo.FUERA
                 legajo.es_titular_activo = False
-                legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
+                legajo.save(
+                    update_fields=["estado_cupo", "es_titular_activo", "modificado_en"]
+                )
             return False
 
         # Ocupar cupo
@@ -186,12 +221,19 @@ class CupoService:
             motivo=(motivo or "").strip()[:255],
             usuario=usuario,
         )
-        logger.info("Cupo ALTA: provincia=%s usados=%s legajo=%s", provincia, pc.usados, legajo.pk)
+        logger.info(
+            "Cupo ALTA: provincia=%s usados=%s legajo=%s",
+            provincia,
+            pc.usados,
+            legajo.pk,
+        )
         return True
 
     @staticmethod
     @transaction.atomic
-    def suspender_slot(*, legajo: ExpedienteCiudadano, usuario, motivo: str = "") -> bool:
+    def suspender_slot(
+        *, legajo: ExpedienteCiudadano, usuario, motivo: str = ""
+    ) -> bool:
         """
         Suspende el legajo manteniendo el cupo ocupado.
         - NO modifica ProvinciaCupo.usados.
@@ -200,12 +242,20 @@ class CupoService:
         """
         legajo = (
             ExpedienteCiudadano.objects.select_for_update()
-            .select_related("expediente", "expediente__usuario_provincia", "expediente__usuario_provincia__profile")
+            .select_related(
+                "expediente",
+                "expediente__usuario_provincia",
+                "expediente__usuario_provincia__profile",
+            )
             .get(pk=legajo.pk)
         )
-        provincia = getattr(legajo.expediente.usuario_provincia.profile, "provincia", None)
+        provincia = getattr(
+            legajo.expediente.usuario_provincia.profile, "provincia", None
+        )
         if not provincia:
-            raise ValidationError("El legajo no tiene provincia asociada al usuario del expediente.")
+            raise ValidationError(
+                "El legajo no tiene provincia asociada al usuario del expediente."
+            )
 
         # Sólo si tiene cupo DENTRO (activo o ya suspendido)
         if legajo.estado_cupo != EstadoCupo.DENTRO:
@@ -225,7 +275,11 @@ class CupoService:
                 motivo=(motivo or "Suspensión de titular").strip()[:255],
                 usuario=usuario,
             )
-            logger.info("Cupo SUSPENDIDO: provincia=%s usados (sin cambio) legajo=%s", provincia, legajo.pk)
+            logger.info(
+                "Cupo SUSPENDIDO: provincia=%s usados (sin cambio) legajo=%s",
+                provincia,
+                legajo.pk,
+            )
 
         return True
 
@@ -240,24 +294,40 @@ class CupoService:
         """
         legajo = (
             ExpedienteCiudadano.objects.select_for_update()
-            .select_related("expediente", "expediente__usuario_provincia", "expediente__usuario_provincia__profile")
+            .select_related(
+                "expediente",
+                "expediente__usuario_provincia",
+                "expediente__usuario_provincia__profile",
+            )
             .get(pk=legajo.pk)
         )
-        provincia = getattr(legajo.expediente.usuario_provincia.profile, "provincia", None)
+        provincia = getattr(
+            legajo.expediente.usuario_provincia.profile, "provincia", None
+        )
         if not provincia:
-            raise ValidationError("El legajo no tiene provincia asociada al usuario del expediente.")
+            raise ValidationError(
+                "El legajo no tiene provincia asociada al usuario del expediente."
+            )
 
         try:
-            pc = ProvinciaCupo.objects.select_for_update().only("id", "usados").get(provincia=provincia)
+            pc = (
+                ProvinciaCupo.objects.select_for_update()
+                .only("id", "usados")
+                .get(provincia=provincia)
+            )
         except ProvinciaCupo.DoesNotExist:
-            raise CupoNoConfigurado(f"La provincia '{provincia}' no tiene cupo configurado.")
+            raise CupoNoConfigurado(
+                f"La provincia '{provincia}' no tiene cupo configurado."
+            )
 
         # Sólo si estaba DENTRO se descuenta
         if legajo.estado_cupo != EstadoCupo.DENTRO:
             if legajo.estado_cupo != EstadoCupo.NO_EVAL or legajo.es_titular_activo:
                 legajo.estado_cupo = EstadoCupo.NO_EVAL
                 legajo.es_titular_activo = False
-                legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
+                legajo.save(
+                    update_fields=["estado_cupo", "es_titular_activo", "modificado_en"]
+                )
             return False
 
         if int(pc.usados or 0) > 0:
@@ -277,12 +347,19 @@ class CupoService:
             motivo=(motivo or "Baja de titular").strip()[:255],
             usuario=usuario,
         )
-        logger.info("Cupo BAJA: provincia=%s usados=%s legajo=%s", provincia, pc.usados, legajo.pk)
+        logger.info(
+            "Cupo BAJA: provincia=%s usados=%s legajo=%s",
+            provincia,
+            pc.usados,
+            legajo.pk,
+        )
         return True
-    
+
     @staticmethod
     @transaction.atomic
-    def reactivar_slot(*, legajo: ExpedienteCiudadano, usuario, motivo: str = "") -> bool:
+    def reactivar_slot(
+        *, legajo: ExpedienteCiudadano, usuario, motivo: str = ""
+    ) -> bool:
         """
         Reactiva un legajo suspendido manteniendo el cupo ocupado.
         - NO modifica ProvinciaCupo.usados.
@@ -292,12 +369,20 @@ class CupoService:
         """
         legajo = (
             ExpedienteCiudadano.objects.select_for_update()
-            .select_related("expediente", "expediente__usuario_provincia", "expediente__usuario_provincia__profile")
+            .select_related(
+                "expediente",
+                "expediente__usuario_provincia",
+                "expediente__usuario_provincia__profile",
+            )
             .get(pk=legajo.pk)
         )
-        provincia = getattr(legajo.expediente.usuario_provincia.profile, "provincia", None)
+        provincia = getattr(
+            legajo.expediente.usuario_provincia.profile, "provincia", None
+        )
         if not provincia:
-            raise ValidationError("El legajo no tiene provincia asociada al usuario del expediente.")
+            raise ValidationError(
+                "El legajo no tiene provincia asociada al usuario del expediente."
+            )
 
         # Debe estar dentro de cupo y NO activo
         if legajo.estado_cupo != EstadoCupo.DENTRO or legajo.es_titular_activo:
@@ -315,6 +400,7 @@ class CupoService:
             motivo=(motivo or "Reactivación de titular").strip()[:255],
             usuario=usuario,
         )
-        logger.info("Cupo REACTIVADO (ajuste): provincia=%s legajo=%s", provincia, legajo.pk)
+        logger.info(
+            "Cupo REACTIVADO (ajuste): provincia=%s legajo=%s", provincia, legajo.pk
+        )
         return True
-
