@@ -76,8 +76,10 @@ class EstadoCupo(models.TextChoices):
 
 class TipoMovimientoCupo(models.TextChoices):
     ALTA = "ALTA", "Alta"
+    REACTIVACION = "REACTIVACION", "Reactivacion"
     BAJA = "BAJA", "Baja"
     AJUSTE = "AJUSTE", "Ajuste"
+    SUSPENDIDO = "SUSPENDIDO", "Suspendido"
 
 
 class Expediente(models.Model):
@@ -247,7 +249,7 @@ class CupoMovimiento(models.Model):
     provincia = models.ForeignKey(Provincia, on_delete=models.CASCADE, related_name="movimientos_cupo")
     expediente = models.ForeignKey(Expediente, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos_cupo")
     legajo = models.ForeignKey(ExpedienteCiudadano, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos_cupo")
-    tipo = models.CharField(max_length=10, choices=TipoMovimientoCupo.choices)
+    tipo = models.CharField(max_length=20, choices=TipoMovimientoCupo.choices)
     delta = models.IntegerField()
     motivo = models.CharField(max_length=255, blank=True)
     usuario = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="movimientos_cupo")

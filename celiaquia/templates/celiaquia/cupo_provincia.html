@@ -11,6 +11,13 @@
 {% endblock %}
 
 {% block content %}
+<div id="cupo-root"
+     data-url-config="{% url 'cupo_provincia_detail' provincia.id %}"
+     data-url-baja-tpl="{% url 'cupo_legajo_baja' provincia.id 0 %}"
+     data-url-susp-tpl="{% url 'cupo_legajo_suspender' provincia.id 0 %}"
+     data-url-reactivar-tpl="{% url 'cupo_legajo_reactivar' provincia.id 0 %}">
+</div>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4 class="mb-0">{{ provincia }}</h4>
   <div class="d-flex gap-2">
@@ -18,7 +25,6 @@
     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalConfigCupo">
       Configurar cupo
     </button>
-    <!-- NUEVO: botón para ver histórico -->
     <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalHistorico">
       Historico
     </button>
@@ -71,6 +77,7 @@
 
 <div id="alerts"></div>
 
+<!-- Titulares activos -->
 <div class="card">
   <div class="card-header bg-light d-flex justify-content-between align-items-center">
     <span class="fw-semibold">Cupos ocupados (titulares activos)</span>
@@ -99,12 +106,21 @@
               <td data-text="{{ leg.ciudadano.nombre|default_if_none:'' }}">{{ leg.ciudadano.nombre }}</td>
               <td data-text="{{ leg.ciudadano.apellido|default_if_none:'' }}">{{ leg.ciudadano.apellido }}</td>
               <td data-text="{{ leg.expediente.codigo }}">{{ leg.expediente.codigo }}</td>
-              <td><span class="badge bg-{% if leg.revision_tecnico == 'APROBADO' %}success{% elif leg.revision_tecnico == 'RECHAZADO' %}danger{% else %}secondary{% endif %}">
-                {{ leg.revision_tecnico }}</span></td>
-              <td><span class="badge bg-{% if leg.resultado_sintys == 'MATCH' %}success{% elif leg.resultado_sintys == 'NO_MATCH' %}danger{% else %}secondary{% endif %}">
-                {{ leg.resultado_sintys }}</span></td>
-              <td><span class="badge bg-{% if leg.estado_cupo == 'DENTRO' %}primary{% else %}secondary{% endif %}">
-                {{ leg.estado_cupo }}</span></td>
+              <td>
+                <span class="badge bg-{% if leg.revision_tecnico == 'APROBADO' %}success{% elif leg.revision_tecnico == 'RECHAZADO' %}danger{% else %}secondary{% endif %}">
+                  {{ leg.revision_tecnico }}
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-{% if leg.resultado_sintys == 'MATCH' %}success{% elif leg.resultado_sintys == 'NO_MATCH' %}danger{% else %}secondary{% endif %}">
+                  {{ leg.resultado_sintys }}
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-{% if leg.estado_cupo == 'DENTRO' %}primary{% else %}secondary{% endif %}">
+                  {{ leg.estado_cupo }}
+                </span>
+              </td>
               <td>
                 {% if leg.es_titular_activo %}
                   <span class="badge bg-success">Sí</span>
@@ -114,16 +130,100 @@
               </td>
               <td class="text-end">
                 <div class="btn-group btn-group-sm">
-                  <button class="btn btn-outline-warning btn-suspender"
-                          data-legajo-id="{{ leg.id }}">Suspender</button>
-                  <button class="btn btn-outline-danger btn-baja"
-                          data-legajo-id="{{ leg.id }}">Baja</button>
+                  <button class="btn btn-outline-warning btn-suspender" data-legajo-id="{{ leg.id }}">Suspender</button>
+                  <button class="btn btn-outline-danger btn-baja" data-legajo-id="{{ leg.id }}">Baja</button>
                 </div>
               </td>
             </tr>
           {% empty %}
             <tr>
               <td colspan="9" class="text-center text-muted py-4">No hay titulares ocupando cupo.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- NUEVO: Suspendidos -->
+<div class="card mt-3">
+  <div class="card-header bg-light">
+    <span class="fw-semibold">Suspendidos (cupo ocupado, no activos)</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 80px;">DNI</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Expediente</th>
+            <th>Estado cupo</th>
+            <th>Activo</th>
+            <th class="text-end" style="width: 120px;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for leg in suspendidos %}
+            <tr>
+              <td>{{ leg.ciudadano.documento }}</td>
+              <td>{{ leg.ciudadano.nombre }}</td>
+              <td>{{ leg.ciudadano.apellido }}</td>
+              <td>{{ leg.expediente.codigo|default:leg.expediente.id }}</td>
+              <td><span class="badge bg-primary">DENTRO</span></td>
+              <td><span class="badge bg-secondary">No</span></td>
+<td class="text-end">
+  <div class="btn-group btn-group-sm">
+    <button class="btn btn-outline-success btn-reactivar"
+            data-legajo-id="{{ leg.id }}">Reactivar</button>
+    <button class="btn btn-outline-danger btn-baja"
+            data-legajo-id="{{ leg.id }}">Baja</button>
+  </div>
+</td>
+
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-3">No hay suspendidos.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- NUEVO: Lista de espera (Fuera de cupo) -->
+<div class="card mt-3">
+  <div class="card-header bg-light">
+    <span class="fw-semibold">Lista de espera (Fuera de cupo)</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th style="width: 80px;">DNI</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Expediente</th>
+            <th>Estado cupo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for leg in lista_espera %}
+            <tr>
+              <td>{{ leg.ciudadano.documento }}</td>
+              <td>{{ leg.ciudadano.nombre }}</td>
+              <td>{{ leg.ciudadano.apellido }}</td>
+              <td>{{ leg.expediente.codigo|default:leg.expediente.id }}</td>
+              <td><span class="badge bg-warning text-dark">FUERA</span></td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-3">Sin lista de espera.</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -160,7 +260,7 @@
   </div>
 </div>
 
-<!-- NUEVO: Modal Histórico -->
+<!-- Modal Histórico -->
 <div class="modal fade" id="modalHistorico" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
@@ -203,7 +303,7 @@
                     <td>{{ m.legajo.ciudadano.apellido }}</td>
                     <td>{{ m.expediente.codigo }}</td>
                     <td>
-                      <span class="badge bg-{% if m.tipo == 'ALTA' %}success{% elif m.tipo == 'BAJA' %}danger{% else %}secondary{% endif %}">
+                      <span class="badge bg-{% if m.tipo == 'ALTA' %}success{% elif m.tipo == 'BAJA' %}danger{% elif m.tipo == 'SUSPENDIDO' %}warning text-dark{% else %}secondary{% endif %}">
                         {{ m.tipo }}
                       </span>
                       {% if m.delta %}
@@ -252,7 +352,7 @@
   </div>
 </div>
 
-<!-- Modales Suspender / Baja -->
+<!-- Modal Suspender -->
 <div class="modal fade" id="modalSuspender" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <form class="modal-content" id="form-suspender" method="post">
@@ -277,6 +377,7 @@
   </div>
 </div>
 
+<!-- Modal Baja -->
 <div class="modal fade" id="modalBaja" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <form class="modal-content" id="form-baja" method="post">
@@ -303,158 +404,5 @@
 {% endblock %}
 
 {% block customJS %}
-<script>
-  (function() {
-    const urlConfig = "{% url 'cupo_provincia_detail' provincia.id %}";
-    const urlBajaTpl = "{% url 'cupo_legajo_baja' provincia.id 0 %}".replace("/0/", "/{id}/");
-    const urlSuspTpl = "{% url 'cupo_legajo_suspender' provincia.id 0 %}".replace("/0/", "/{id}/");
-
-    function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-    }
-    const csrftoken = getCookie('csrftoken');
-
-    const alerta = (msg, kind="success") => {
-      const el = document.getElementById("alerts");
-      el.innerHTML = `<div class="alert alert-${kind} alert-dismissible fade show" role="alert">
-        ${msg}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-      </div>`;
-    };
-
-    // -------- CONFIGURAR CUPO (modal) ----------
-    const formConfig = document.getElementById('form-config');
-    formConfig?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('btn-config-guardar');
-      const spin = document.getElementById('spin-config');
-      btn.disabled = true; spin.classList.remove('d-none');
-
-      const fd = new FormData(formConfig);
-      fd.set('accion', 'config');
-
-      const total = fd.get('total_asignado');
-      if (total === null || total === '' || Number(total) < 0) {
-        alerta('Ingresá un valor de cupo válido (entero ≥ 0).', 'warning');
-        btn.disabled = false; spin.classList.add('d-none');
-        return;
-      }
-
-      try {
-        const resp = await fetch(urlConfig, {
-          method: 'POST',
-          headers: { 'X-CSRFToken': csrftoken },
-          body: fd
-        });
-        const data = await resp.json();
-        if (!resp.ok || data.success === false) {
-          throw new Error(data.message || 'No se pudo guardar el cupo.');
-        }
-        alerta('Cupo actualizado correctamente.');
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfigCupo'));
-        modal.hide();
-        setTimeout(() => location.reload(), 600);
-      } catch (err) {
-        alerta(err.message || 'Error al configurar el cupo.', 'danger');
-        btn.disabled = false; spin.classList.add('d-none');
-      }
-    });
-
-    // -------- Filtro simple tabla principal ----------
-    const filtro = document.getElementById('filtro');
-    filtro?.addEventListener('input', (e) => {
-      const q = (e.target.value || '').toLowerCase();
-      document.querySelectorAll('#tabla-ocupados tbody tr[data-row]').forEach(tr => {
-        const hay = Array.from(tr.querySelectorAll('td[data-text]'))
-          .some(td => (td.getAttribute('data-text') || '').toLowerCase().includes(q));
-        tr.style.display = hay ? '' : 'none';
-      });
-    });
-
-    // -------- Modales Suspender/Baja ----------
-    const modalSusp = new bootstrap.Modal(document.getElementById('modalSuspender'));
-    const modalBaja = new bootstrap.Modal(document.getElementById('modalBaja'));
-
-    document.querySelectorAll('.btn-suspender').forEach(b => {
-      b.addEventListener('click', () => {
-        document.getElementById('suspender-legajo-id').value = b.dataset.legajoId;
-        document.getElementById('form-suspender').reset();
-        modalSusp.show();
-      });
-    });
-
-    document.querySelectorAll('.btn-baja').forEach(b => {
-      b.addEventListener('click', () => {
-        document.getElementById('baja-legajo-id').value = b.dataset.legajoId;
-        document.getElementById('form-baja').reset();
-        modalBaja.show();
-      });
-    });
-
-    // -------- Submit suspensión ----------
-    document.getElementById('form-suspender').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('btn-confirm-suspender');
-      const spin = document.getElementById('spin-suspender');
-      btn.disabled = true; spin.classList.remove('d-none');
-
-      const legajoId = document.getElementById('suspender-legajo-id').value;
-      const data = new FormData(e.target);
-      try {
-        const resp = await fetch(urlSuspTpl.replace("{id}", legajoId), {
-          method: 'POST',
-          headers: { 'X-CSRFToken': csrftoken },
-          body: data
-        });
-        const json = await resp.json();
-        if (!resp.ok || json.success === false) throw new Error(json.message || 'Error');
-        alerta('Suspensión registrada y cupo actualizado.');
-        modalSusp.hide();
-        setTimeout(() => location.reload(), 700);
-      } catch (err) {
-        alerta(err.message || 'No se pudo suspender el legajo.', 'danger');
-        btn.disabled = false; spin.classList.add('d-none');
-      }
-    });
-
-    // -------- Submit baja ----------
-    document.getElementById('form-baja').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('btn-confirm-baja');
-      const spin = document.getElementById('spin-baja');
-      btn.disabled = true; spin.classList.remove('d-none');
-
-      const legajoId = document.getElementById('baja-legajo-id').value;
-      const data = new FormData(e.target);
-      try {
-        const resp = await fetch(urlBajaTpl.replace("{id}", legajoId), {
-          method: 'POST',
-          headers: { 'X-CSRFToken': csrftoken },
-          body: data
-        });
-        const json = await resp.json();
-        if (!resp.ok || json.success === false) throw new Error(json.message || 'Error');
-        alerta('Baja registrada y cupo actualizado.');
-        modalBaja.hide();
-        setTimeout(() => location.reload(), 700);
-      } catch (err) {
-        alerta(err.message || 'No se pudo dar de baja el legajo.', 'danger');
-        btn.disabled = false; spin.classList.add('d-none');
-      }
-    });
-
-    // -------- NUEVO: filtro por documento en Histórico ----------
-    const filtroHist = document.getElementById('filtro-historico');
-    filtroHist?.addEventListener('input', (e) => {
-      const q = (e.target.value || '').toLowerCase();
-      document.querySelectorAll('#tabla-historico tbody tr[data-row]').forEach(tr => {
-        const dniCell = tr.querySelector('td:nth-child(2)');
-        const val = (dniCell?.textContent || '').toLowerCase();
-        tr.style.display = val.includes(q) ? '' : 'none';
-      });
-    });
-  })();
-</script>
+<script src="{% static 'custom/js/cupo_provincia.js' %}"></script>
 {% endblock %}
