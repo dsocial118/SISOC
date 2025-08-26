@@ -126,9 +126,7 @@ urlpatterns = [
     ),
     path(
         "intervencion/<int:intervencion_id>/documentacion/subir/",
-        group_required(["Tecnico Comedor"])(
-            subir_archivo_intervencion
-        ),
+        group_required(["Tecnico Comedor"])(subir_archivo_intervencion),
         name="subir_archivo_intervencion",
     ),
     path(
