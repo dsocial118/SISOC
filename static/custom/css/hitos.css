@@ -71,7 +71,7 @@
 /* Header del grid */
 .hitos-grid-header {
     display: grid;
-    grid-template-columns: 1.8fr 3.2fr 1.4fr 1.8fr 1.3fr;
+    grid-template-columns: 3.2fr 1.8fr 1.4fr 1.8fr;
     background: var(--bs-card-bg);
     color: var(--poncho-blanco);
     font-weight: 600;
@@ -89,6 +89,13 @@
     border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.hitos-grid-header > div:first-child {
+    justify-content: left;
+    padding-left: 2rem;
+}
+
+    
+
 .hitos-grid-header > div:last-child {
     border-right: none;
 }
@@ -96,7 +103,7 @@
 /* Filas de hitos */
 .hito-row {
     display: grid;
-    grid-template-columns: 1.8fr 3.2fr 1.4fr 1.8fr 1.3fr;
+    grid-template-columns: 3.2fr 1.8fr 1.4fr 1.8fr;
     background: var(--poncho-blanco);
     transition: all 0.3s ease;
     border-left: 4px solid transparent;
