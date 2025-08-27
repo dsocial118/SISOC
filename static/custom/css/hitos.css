@@ -559,3 +559,9 @@
 [data-bs-theme="dark"] .stat-pendientes .stat-number {
     color: #F44336;
 }
+
+.btn-restaurar.disabled {
+    background-color: #555555 !important;
+    color: #bbb !important;
+    border: 1px solid #333 !important;
+}
