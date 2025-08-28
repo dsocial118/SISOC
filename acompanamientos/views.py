@@ -43,6 +43,7 @@ class AcompanamientoDetailView(DetailView):
         )
 
         context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
+        context["fechas_hitos"] = AcompanamientoService.obtener_fechas_hitos(comedor)
 
         datos_admision = AcompanamientoService.obtener_datos_admision(comedor)
 

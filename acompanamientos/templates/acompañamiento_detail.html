@@ -176,7 +176,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.retiro_tarjeta %}vacia{% endif %}">
-                                        {{ hitos.retiro_tarjeta|yesno:'15/11/2024,—' }}
+                                        {% if hitos.retiro_tarjeta and fechas_hitos.retiro_tarjeta %}{{ fechas_hitos.retiro_tarjeta|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -211,7 +211,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.habilitacion_tarjeta %}vacia{% endif %}">
-                                        {{ hitos.habilitacion_tarjeta|yesno:'18/11/2024,—' }}
+                                        {% if hitos.habilitacion_tarjeta and fechas_hitos.habilitacion_tarjeta %}{{ fechas_hitos.habilitacion_tarjeta|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -246,7 +246,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.alta_usuario_plataforma %}vacia{% endif %}">
-                                        {{ hitos.alta_usuario_plataforma|yesno:'20/11/2024,—' }}
+                                        {% if hitos.alta_usuario_plataforma and fechas_hitos.alta_usuario_plataforma %}{{ fechas_hitos.alta_usuario_plataforma|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -281,7 +281,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.capacitacion_realizada %}vacia{% endif %}">
-                                        {{ hitos.capacitacion_realizada|yesno:'22/11/2024,—' }}
+                                        {% if hitos.capacitacion_realizada and fechas_hitos.capacitacion_realizada %}{{ fechas_hitos.capacitacion_realizada|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -318,7 +318,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.notificacion_acreditacion_1 %}vacia{% endif %}">
-                                        {{ hitos.notificacion_acreditacion_1|yesno:'25/11/2024,—' }}
+                                        {% if hitos.notificacion_acreditacion_1 and fechas_hitos.notificacion_acreditacion_1 %}{{ fechas_hitos.notificacion_acreditacion_1|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -356,7 +356,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.notificacion_acreditacion_2 %}vacia{% endif %}">
-                                        {{ hitos.notificacion_acreditacion_2|yesno:'28/11/2024,—' }}
+                                        {% if hitos.notificacion_acreditacion_2 and fechas_hitos.notificacion_acreditacion_2 %}{{ fechas_hitos.notificacion_acreditacion_2|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -394,7 +394,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.notificacion_acreditacion_3 %}vacia{% endif %}">
-                                        {{ hitos.notificacion_acreditacion_3|yesno:'01/12/2024,—' }}
+                                        {% if hitos.notificacion_acreditacion_3 and fechas_hitos.notificacion_acreditacion_3 %}{{ fechas_hitos.notificacion_acreditacion_3|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -432,7 +432,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.notificacion_acreditacion_4 %}vacia{% endif %}">
-                                        {{ hitos.notificacion_acreditacion_4|yesno:'05/12/2024,—' }}
+                                        {% if hitos.notificacion_acreditacion_4 and fechas_hitos.notificacion_acreditacion_4 %}{{ fechas_hitos.notificacion_acreditacion_4|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -470,7 +470,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.notificacion_acreditacion_5 %}vacia{% endif %}">
-                                        {{ hitos.notificacion_acreditacion_5|yesno:'08/12/2024,—' }}
+                                        {% if hitos.notificacion_acreditacion_5 and fechas_hitos.notificacion_acreditacion_5 %}{{ fechas_hitos.notificacion_acreditacion_5|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -508,7 +508,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.notificacion_acreditacion_6 %}vacia{% endif %}">
-                                        {{ hitos.notificacion_acreditacion_6|yesno:'12/12/2024,—' }}
+                                        {% if hitos.notificacion_acreditacion_6 and fechas_hitos.notificacion_acreditacion_6 %}{{ fechas_hitos.notificacion_acreditacion_6|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -545,7 +545,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.nomina_entregada_inicial %}vacia{% endif %}">
-                                        {{ hitos.nomina_entregada_inicial|yesno:'15/12/2024,—' }}
+                                        {% if hitos.nomina_entregada_inicial and fechas_hitos.nomina_entregada_inicial %}{{ fechas_hitos.nomina_entregada_inicial|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -580,7 +580,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.nomina_alta_baja_2 %}vacia{% endif %}">
-                                        {{ hitos.nomina_alta_baja_2|yesno:'18/12/2024,—' }}
+                                        {% if hitos.nomina_alta_baja_2 and fechas_hitos.nomina_alta_baja_2 %}{{ fechas_hitos.nomina_alta_baja_2|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -615,7 +615,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.nomina_alta_baja_3 %}vacia{% endif %}">
-                                        {{ hitos.nomina_alta_baja_3|yesno:'22/12/2024,—' }}
+                                        {% if hitos.nomina_alta_baja_3 and fechas_hitos.nomina_alta_baja_3 %}{{ fechas_hitos.nomina_alta_baja_3|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -650,7 +650,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.nomina_alta_baja_4 %}vacia{% endif %}">
-                                        {{ hitos.nomina_alta_baja_4|yesno:'26/12/2024,—' }}
+                                        {% if hitos.nomina_alta_baja_4 and fechas_hitos.nomina_alta_baja_4 %}{{ fechas_hitos.nomina_alta_baja_4|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -685,7 +685,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.nomina_alta_baja_5 %}vacia{% endif %}">
-                                        {{ hitos.nomina_alta_baja_5|yesno:'29/12/2024,—' }}
+                                        {% if hitos.nomina_alta_baja_5 and fechas_hitos.nomina_alta_baja_5 %}{{ fechas_hitos.nomina_alta_baja_5|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -720,7 +720,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.nomina_alta_baja_6 %}vacia{% endif %}">
-                                        {{ hitos.nomina_alta_baja_6|yesno:'02/01/2025,—' }}
+                                        {% if hitos.nomina_alta_baja_6 and fechas_hitos.nomina_alta_baja_6 %}{{ fechas_hitos.nomina_alta_baja_6|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -756,7 +756,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.certificado_prestaciones_1 %}vacia{% endif %}">
-                                        {{ hitos.certificado_prestaciones_1|yesno:'05/01/2025,—' }}
+                                        {% if hitos.certificado_prestaciones_1 and fechas_hitos.certificado_prestaciones_1 %}{{ fechas_hitos.certificado_prestaciones_1|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -793,7 +793,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.certificado_prestaciones_2 %}vacia{% endif %}">
-                                        {{ hitos.certificado_prestaciones_2|yesno:'08/01/2025,—' }}
+                                        {% if hitos.certificado_prestaciones_2 and fechas_hitos.certificado_prestaciones_2 %}{{ fechas_hitos.certificado_prestaciones_2|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -830,7 +830,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.certificado_prestaciones_3 %}vacia{% endif %}">
-                                        {{ hitos.certificado_prestaciones_3|yesno:'12/01/2025,—' }}
+                                        {% if hitos.certificado_prestaciones_3 and fechas_hitos.certificado_prestaciones_3 %}{{ fechas_hitos.certificado_prestaciones_3|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -867,7 +867,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.certificado_prestaciones_4 %}vacia{% endif %}">
-                                        {{ hitos.certificado_prestaciones_4|yesno:'15/01/2025,—' }}
+                                        {% if hitos.certificado_prestaciones_4 and fechas_hitos.certificado_prestaciones_4 %}{{ fechas_hitos.certificado_prestaciones_4|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -904,7 +904,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.certificado_prestaciones_5 %}vacia{% endif %}">
-                                        {{ hitos.certificado_prestaciones_5|yesno:'18/01/2025,—' }}
+                                        {% if hitos.certificado_prestaciones_5 and fechas_hitos.certificado_prestaciones_5 %}{{ fechas_hitos.certificado_prestaciones_5|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">
@@ -941,7 +941,7 @@
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
                                     <span class="fecha-completado {% if not hitos.certificado_prestaciones_6 %}vacia{% endif %}">
-                                        {{ hitos.certificado_prestaciones_6|yesno:'22/01/2025,—' }}
+                                        {% if hitos.certificado_prestaciones_6 and fechas_hitos.certificado_prestaciones_6 %}{{ fechas_hitos.certificado_prestaciones_6|date:'d/m/Y' }}{% else %}—{% endif %}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Acciones">

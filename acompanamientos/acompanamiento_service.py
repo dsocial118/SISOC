@@ -108,6 +108,54 @@ class AcompanamientoService:
             raise
 
     @staticmethod
+    def obtener_fechas_hitos(comedor):
+        """Obtener las fechas de las intervenciones que completaron cada hito.
+
+        Args:
+            comedor: Comedor para el cual se solicitan las fechas de hitos.
+
+        Returns:
+            dict: Diccionario con las fechas de cada hito completado.
+        """
+        try:
+            fechas_hitos = {}
+            
+            
+            intervenciones = Intervencion.objects.filter(
+                comedor=comedor
+            ).select_related('tipo_intervencion', 'subintervencion').order_by('fecha')
+            
+            
+            for intervencion in intervenciones:
+                if not intervencion.tipo_intervencion:
+                    continue
+                    
+                
+                subintervencion_nombre = ""
+                if intervencion.subintervencion:
+                    subintervencion_nombre = intervencion.subintervencion.nombre
+                
+                hitos_completados = HitosIntervenciones.objects.filter(
+                    intervencion=intervencion.tipo_intervencion.nombre,
+                    subintervencion=subintervencion_nombre
+                )
+                
+                
+                for hito_mapping in hitos_completados:
+                    
+                    for field in Hitos._meta.fields:
+                        if field.verbose_name == hito_mapping.hito:
+                            fechas_hitos[field.name] = intervencion.fecha
+                            break
+            
+            return fechas_hitos
+        except Exception:
+            logger.exception(
+                f"Error en AcompanamientoService.obtener_fechas_hitos para comedor: {comedor.pk}"
+            )
+            return {}
+
+    @staticmethod
     def importar_datos_desde_admision(comedor):
         """Copiar información relevante desde la admisión vinculada.
 
