@@ -14,7 +14,7 @@ def restaurar_hito(request, comedor_id):
     hito = get_object_or_404(Hitos, comedor_id=comedor_id)
 
     # Verifica si el campo existe en el modelo
-    if hasattr(hito, campo):
+    if hasattr(hito, campo) and campo not in ["id", "comedor", "fecha"]:
         setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
         hito.save()
         messages.success(
