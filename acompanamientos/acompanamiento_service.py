@@ -119,35 +119,33 @@ class AcompanamientoService:
         """
         try:
             fechas_hitos = {}
-            
-            
-            intervenciones = Intervencion.objects.filter(
-                comedor=comedor
-            ).select_related('tipo_intervencion', 'subintervencion').order_by('fecha')
-            
-            
+
+            intervenciones = (
+                Intervencion.objects.filter(comedor=comedor)
+                .select_related("tipo_intervencion", "subintervencion")
+                .order_by("fecha")
+            )
+
             for intervencion in intervenciones:
                 if not intervencion.tipo_intervencion:
                     continue
-                    
-                
+
                 subintervencion_nombre = ""
                 if intervencion.subintervencion:
                     subintervencion_nombre = intervencion.subintervencion.nombre
-                
+
                 hitos_completados = HitosIntervenciones.objects.filter(
                     intervencion=intervencion.tipo_intervencion.nombre,
-                    subintervencion=subintervencion_nombre
+                    subintervencion=subintervencion_nombre,
                 )
-                
-                
+
                 for hito_mapping in hitos_completados:
-                    
+
                     for field in Hitos._meta.fields:
                         if field.verbose_name == hito_mapping.hito:
                             fechas_hitos[field.name] = intervencion.fecha
                             break
-            
+
             return fechas_hitos
         except Exception:
             logger.exception(
