@@ -505,13 +505,18 @@ class TerritorialService:
     def limpiar_cache_completo(cls):
         """Limpia todo el cache de territoriales."""
         try:
-            # Limpiar Django cache
-            cache.delete(cls.CACHE_KEY_TERRITORIALES)
+            # Limpiar Django cache para todas las provincias
+            provincias = Provincia.objects.all()
+            cache_keys_limpiadas = 0
+            for provincia in provincias:
+                cache_key = cls._get_cache_key_provincia(provincia.id)
+                if cache.delete(cache_key):
+                    cache_keys_limpiadas += 1
 
             # Limpiar DB cache (marcar como inactivo)
             TerritorialCache.objects.update(activo=False)
 
-            logger.info("Cache de territoriales limpiado completamente")
+            logger.info(f"Cache de territoriales limpiado completamente: {cache_keys_limpiadas} claves de cache eliminadas")
 
         except Exception as e:
             logger.error(f"Error limpiando cache: {e}")
