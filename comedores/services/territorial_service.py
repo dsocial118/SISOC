@@ -237,9 +237,11 @@ class TerritorialService:
             ).count()
 
             # Verificar último sync exitoso para esta provincia
+            # Obtener IDs de comedores de la provincia para filtrar correctamente
+            comedores_provincia = Comedor.objects.filter(provincia_id=provincia_id).values_list('id', flat=True)
             ultimo_sync = (
                 TerritorialSyncLog.objects.filter(
-                    exitoso=True, comedor__provincia_id=provincia_id
+                    exitoso=True, comedor_id__in=comedores_provincia
                 )
                 .order_by("-fecha")
                 .first()
