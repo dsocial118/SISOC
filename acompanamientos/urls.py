@@ -19,7 +19,7 @@ urlpatterns = [
     ),
     path(
         "comedor/<int:comedor_id>/restaurar-hito/",
-        views.restaurar_hito,
+        group_required(["Tecnico Comedor"])(views.restaurar_hito),
         name="restaurar_hito",
     ),
 ]
