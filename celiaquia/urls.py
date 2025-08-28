@@ -1,5 +1,6 @@
 from django.urls import path
 from celiaquia.views.expediente_subsanacion import ExpedienteConfirmSubsanacionView
+from celiaquia.views.pago import PagoExpedienteCreateView, PagoExpedienteDetailView, PagoExpedienteExportView, PagoNominaExportActualView
 from core.decorators import group_required
 
 from celiaquia.views.expediente import (
@@ -144,5 +145,25 @@ urlpatterns = [
         "cupo/<int:provincia_id>/legajo/<int:legajo_id>/reactivar/",
         CupoReactivarLegajoView.as_view(),
         name="cupo_legajo_reactivar",
+    ),
+    path(
+        "pagos/provincia/<int:provincia_id>/crear/",
+        PagoExpedienteCreateView.as_view(),
+        name="pago_expediente_create",
+    ),
+    path(
+        "pagos/expediente/<int:pago_id>/",
+        PagoExpedienteDetailView.as_view(),
+        name="pago_expediente_detail",
+    ),
+    path(
+        "pagos/expediente/<int:pago_id>/exportar/",
+        PagoExpedienteExportView.as_view(),
+        name="pago_expediente_export",
+    ),
+    path(
+        "pagos/expediente/<int:pago_id>/exportar-nomina-actual/",
+        PagoNominaExportActualView.as_view(),
+        name="pago_nomina_export_actual",
     ),
 ]

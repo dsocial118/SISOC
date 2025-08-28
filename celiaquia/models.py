@@ -312,3 +312,70 @@ class CupoMovimiento(models.Model):
 
     def __str__(self):
         return f"{self.provincia} {self.tipo} {self.delta} ({self.creado_en:%Y-%m-%d %H:%M})"
+    
+
+
+class PagoEstado(models.TextChoices):
+    BORRADOR = "BORRADOR", "Borrador"
+    ENVIADO = "ENVIADO", "Enviado a Sintys"
+    PROCESADO = "PROCESADO", "Cruce procesado"
+    CERRADO = "CERRADO", "Cerrado"
+
+
+class PagoExpediente(models.Model):
+    provincia = models.ForeignKey(Provincia, on_delete=models.PROTECT, related_name="pagos_expedientes")
+    periodo = models.CharField(max_length=7, help_text="YYYY-MM", db_index=True)
+    estado = models.CharField(max_length=12, choices=PagoEstado.choices, default=PagoEstado.BORRADOR)
+
+    archivo_envio = models.FileField(upload_to="pagos/envios/", null=True, blank=True)
+    archivo_respuesta = models.FileField(upload_to="pagos/respuestas/", null=True, blank=True)
+
+    total_candidatos = models.PositiveIntegerField(default=0)
+    total_validados = models.PositiveIntegerField(default=0)
+    total_excluidos = models.PositiveIntegerField(default=0)
+
+    creado_por = models.ForeignKey(User, on_delete=models.PROTECT, related_name="pagos_creados")
+    modificado_por = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="pagos_modificados")
+
+    creado_en = models.DateTimeField(auto_now_add=True)
+    modificado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Expediente de Pago"
+        verbose_name_plural = "Expedientes de Pago"
+        ordering = ("-creado_en", "pk")
+        indexes = [
+            models.Index(fields=["provincia", "periodo", "estado"], name="pago_prov_per_estado_idx"),
+        ]
+
+    def __str__(self):
+        return f"Pago {self.provincia} {self.periodo} ({self.estado})"
+
+
+class PagoNominaEstado(models.TextChoices):
+    VALIDADO = "VALIDADO", "Validado para pago"
+    EXCLUIDO = "EXCLUIDO", "Excluido por cruce"
+
+
+class PagoNomina(models.Model):
+    pago = models.ForeignKey(PagoExpediente, on_delete=models.CASCADE, related_name="nomina")
+    legajo = models.ForeignKey(ExpedienteCiudadano, on_delete=models.PROTECT, related_name="pagos")
+    documento = models.CharField(max_length=16, db_index=True)
+    nombre = models.CharField(max_length=80, blank=True)
+    apellido = models.CharField(max_length=80, blank=True)
+    estado = models.CharField(max_length=12, choices=PagoNominaEstado.choices, default=PagoNominaEstado.VALIDADO)
+    observacion = models.CharField(max_length=255, blank=True)
+
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Fila nómina de pago"
+        verbose_name_plural = "Nómina de pago"
+        unique_together = ("pago", "legajo")
+        indexes = [
+            models.Index(fields=["pago", "estado"], name="pago_nomina_estado_idx"),
+            models.Index(fields=["documento"], name="pago_nomina_doc_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.documento} - {self.nombre} {self.apellido} ({self.estado})"
