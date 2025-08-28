@@ -10,7 +10,11 @@
     </div>
     <div class="hito-cell" data-label="Fecha Completado">
         <span class="fecha-completado {% if not hito_completado %}vacia{% endif %}">
-            {% if hito_completado and fecha_hito %}{{ fecha_hito|date:'d/m/Y' }}{% else %}—{% endif %}
+            {% if hito_completado and fecha_hito %}
+                {{ fecha_hito|date:'d/m/Y' }}
+            {% else %}
+                —
+            {% endif %}
         </span>
     </div>
     <div class="hito-cell" data-label="Acciones">
