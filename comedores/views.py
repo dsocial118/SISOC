@@ -270,17 +270,14 @@ class ComedorListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        query = self.request.GET.get("busqueda")
-        return ComedorService.get_comedores_filtrados(query)
+        return ComedorService.get_comedores_filtrados(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        query = self.request.GET.get("busqueda")
 
         # Datos para componentes Cotton
         context.update(
             {
-                "query": query,
                 # Breadcrumb
                 "breadcrumb_items": [
                     {"text": "Comedores", "url": reverse("comedores")},
@@ -289,6 +286,7 @@ class ComedorListView(ListView):
                 # Search bar
                 "reset_url": reverse("comedores"),
                 "add_url": reverse("comedor_crear"),
+                "comedores_filters_mode": True,
             }
         )
 
