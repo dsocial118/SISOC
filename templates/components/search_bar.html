@@ -1,18 +1,32 @@
-{% load custom_filters %}
+{% load custom_filters static %}
 {# Componente Search Bar #}
-{# Uso: {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %} #}
+{# Uso clásico (texto):
+   {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %}
+   Modo filtros combinables:
+   {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url comedores_filters_mode=True %}
+#}
 <h2 class="text-center display-4 mb-4">{{ titulo|default:"Buscar" }}</h2>
-<form method="GET">
-    <div class="row">
-        <div class="col-md-10 offset-md-1">
-            <div class="form-group">
-                <div class="input-group input-group-lg">
-                    <input type="search"
-                           class="form-control form-control-lg"
-                           placeholder="{{ placeholder|default:'Buscar' }}"
-                           title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
-                           name="busqueda"
-                           value="{{ query|default:'' }}" />
+
+{% if comedores_filters_mode %}
+    <form method="GET" id="filters-form">
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="form-group">
+                    <div class="d-flex align-items-center mb-2">
+                        <label class="me-2 mb-0">Combinar filtros con</label>
+                        <select id="filters-logic" class="form-select form-select-sm" style="width:auto;">
+                            <option value="AND" selected>AND</option>
+                            <option value="OR">OR</option>
+                        </select>
+                        <button type="button" id="add-filter" class="btn btn-sm btn-outline-primary ms-2">
+                            + Agregar filtro
+                        </button>
+                    </div>
+
+                    <div id="filters-rows" class="mb-2"></div>
+
+                    <input type="hidden" name="filters" id="filters-input" />
+
                     {% if button_append %}
                         <div class="input-group-append">
                             <button type="submit" class="btn btn-lg btn-primary">
@@ -27,8 +41,37 @@
                 </div>
             </div>
         </div>
-    </div>
-</form>
+    </form>
+{% else %}
+    <form method="GET">
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="form-group">
+                    <div class="input-group input-group-lg">
+                        <input type="search"
+                                class="form-control form-control-lg"
+                                placeholder="{{ placeholder|default:'Buscar' }}"
+                                title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
+                                name="busqueda"
+                                value="{{ query|default:'' }}" />
+                        {% if button_append %}
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-lg btn-primary">
+                                    <i class="fa fa-search"></i>
+                                </button>
+                            </div>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endif %}
+
 <div class="row mt-3">
     <div class="col-12 text-center">
         {% if reset_url_full %}
@@ -55,3 +98,8 @@
         {% endif %}
     </div>
 </div>
+{% if comedores_filters_mode %}
+    {% block customJS %}
+        <script src="{% static 'custom/js/comedores_search_bar.js' %}"></script>
+    {% endblock %}
+{% endif %}
