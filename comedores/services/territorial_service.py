@@ -6,6 +6,7 @@ import logging
 import os
 import requests
 from django.core.cache import cache
+from django.db import transaction
 from django.utils import timezone
 from typing import List, Dict, Optional, Tuple
 
@@ -457,24 +458,23 @@ class TerritorialService:
         if not territoriales_data:
             return 0
 
-        # LIMPIAR territoriales existentes de la provincia
-        TerritorialCache.objects.filter(provincia_id=provincia_id).delete()
-        logger.info(f"Limpiados territoriales existentes para provincia {provincia_id}")
+        with transaction.atomic():
+            TerritorialCache.objects.filter(provincia_id=provincia_id).delete()
+            logger.info(f"Limpiados territoriales existentes para provincia {provincia_id}")
 
-        # CREAR territoriales nuevos para la provincia
-        contador = 0
-        for territorial_data in territoriales_data:
-            TerritorialCache.objects.create(
-                gestionar_uid=territorial_data["gestionar_uid"],
-                nombre=territorial_data["nombre"],
-                provincia_id=provincia_id,
-                activo=True,
-                fecha_ultimo_sync=timezone.now(),
-            )
-            contador += 1
+            contador = 0
+            for territorial_data in territoriales_data:
+                TerritorialCache.objects.create(
+                    gestionar_uid=territorial_data["gestionar_uid"],
+                    nombre=territorial_data["nombre"],
+                    provincia_id=provincia_id,
+                    activo=True,
+                    fecha_ultimo_sync=timezone.now(),
+                )
+                contador += 1
 
-        logger.info(f"Creados {contador} territoriales para provincia {provincia_id}")
-        return contador
+            logger.info(f"Creados {contador} territoriales para provincia {provincia_id}")
+            return contador
 
     @classmethod
     def obtener_estadisticas_cache(cls) -> Dict:
