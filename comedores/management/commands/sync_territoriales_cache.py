@@ -140,9 +140,10 @@ class Command(BaseCommand):
                 )
 
                 if resultado["fuente"] in [
-                    "gestionar_sync",
-                    "db_local",
-                    "cache_django",
+                    "cache_provincia",
+                    "db_provincia", 
+                    "gestionar_provincia_sync",
+                    "fallback_provincia",
                 ]:
                     exitos += 1
                     self.stdout.write(
