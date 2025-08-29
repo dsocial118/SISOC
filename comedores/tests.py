@@ -249,7 +249,7 @@ def test_borrar_foto_legajo_elimina_archivo_y_campo(tmp_path, monkeypatch):
         ruta = comedor.foto_legajo.name
         assert fs.exists(ruta)
 
-        ComedorService.borrar_foto_legajo({"foto_legajo_borrar": "1"}, comedor)
+        ComedorService.delete_legajo_photo({"foto_legajo_borrar": "1"}, comedor)
         comedor.refresh_from_db()
 
         assert comedor.foto_legajo is None

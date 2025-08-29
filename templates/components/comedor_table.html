@@ -23,7 +23,7 @@
                                        class="font-weight-bold link-handler"
                                        title="Ver detalles">{{ comedor.nombre }}</a>
                                 </td>
-                                <td>{{ comedor.tipocomedor__nombre }}</td>
+                                <td>{{ comedor.tipocomedor__nombre | default_if_none:"-" }}</td>
                                 <td>
                                     {{ comedor.provincia__nombre | default_if_none:"-" }}, {{ comedor.municipio__nombre | default_if_none:"-" }}, {{ comedor.localidad__nombre | default_if_none:"-" }}, {{ comedor.barrio | default_if_none:"-" }}
                                 </td>
