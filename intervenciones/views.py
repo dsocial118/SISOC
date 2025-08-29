@@ -52,7 +52,7 @@ class IntervencionDetailView(TemplateView):
         context = super().get_context_data(**kwargs)
         comedor = ComedorService.get_comedor(self.kwargs["pk"])
         intervenciones, cantidad_intervenciones = (
-            ComedorService.detalle_de_intervencion(self.kwargs)
+            ComedorService.get_intervencion_detail(self.kwargs)
         )
         intervenciones = Intervencion.objects.filter(comedor=comedor)
         fecha = self.request.GET.get("fecha")

@@ -33,11 +33,11 @@ from comedores.services.filter_config import FIELD_MAP, FIELD_TYPES, TEXT_OPS, N
 
 
 class ComedorService:
-    """High-level operations related to comedores."""
+    """Operaciones de alto nivel relacionadas a comedores."""
 
     @staticmethod
     def get_comedor_by_dupla(id_dupla):
-        """Return the first comedor associated with the given dupla."""
+        """Devuelve el primer comedor asociado a la dupla dada."""
         return get_object_by_filter(Comedor, dupla=id_dupla)
 
     @staticmethod
@@ -49,7 +49,7 @@ class ComedorService:
         return Comedor.objects.get(pk=pk_send)
 
     @staticmethod
-    def detalle_de_intervencion(kwargs):
+    def get_intervencion_detail(kwargs):
         intervenciones = Intervencion.objects.filter(comedor=kwargs["pk"])
         cantidad_intervenciones = Intervencion.objects.filter(
             comedor=kwargs["pk"]
@@ -65,7 +65,7 @@ class ComedorService:
         return comedor
 
     @staticmethod
-    def borrar_imagenes(post):
+    def delete_images(post):
         pattern = re.compile(r"^imagen_ciudadano-borrar-(\d+)$")
         imagenes_ids = []
         for key in post:
@@ -77,7 +77,7 @@ class ComedorService:
         ImagenComedor.objects.filter(id__in=imagenes_ids).delete()
 
     @staticmethod
-    def borrar_foto_legajo(post, comedor_instance):
+    def delete_legajo_photo(post, comedor_instance):
         """Eliminar la foto del legajo si está marcada para borrar"""
         if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
             if comedor_instance.foto_legajo:
@@ -92,7 +92,7 @@ class ComedorService:
             comedor_instance.save(update_fields=["foto_legajo"])
 
     @staticmethod
-    def get_comedores_filtrados(request_or_get: Any) -> QuerySet:
+    def get_filtered_comedores(request_or_get: Any) -> QuerySet:
         """
         Filtra comedores a partir de un único parámetro GET `filters` (JSON URL-encoded).
 
@@ -288,7 +288,7 @@ class ComedorService:
 
     @staticmethod
     def get_comedor_detail_object(comedor_id: int):
-        """Fetch a comedor with all related objects optimized for detail view."""
+        """Obtiene un comedor con todas sus relaciones optimizadas para la vista de detalle."""
         preload_valores_comida_cache()
         qs = Comedor.objects.select_related(
             "provincia",
@@ -340,7 +340,7 @@ class ComedorService:
 
     @staticmethod
     def get_ubicaciones_ids(data):
-        """Convert location names to their corresponding IDs in ``data``."""
+        """Convierte nombres de ubicaciones a sus IDs correspondientes dentro de ``data``."""
         from configuraciones.models import (  # pylint: disable=import-outside-toplevel,no-name-in-module
             Provincia,
             Municipio,
@@ -357,7 +357,7 @@ class ComedorService:
 
     @staticmethod
     def create_or_update_referente(data, referente_instance=None):
-        """Create or update a ``Referente`` using the provided ``data``."""
+        """Crea o actualiza un ``Referente`` usando los datos provistos en ``data``."""
         referente_data = data.get("referente", {})
         referente_data["celular"] = normalize_field(referente_data.get("celular"), "-")
         referente_data["documento"] = normalize_field(
@@ -439,7 +439,7 @@ class ComedorService:
         )
 
     @staticmethod
-    def detalle_de_nomina(comedor_pk, page=1, per_page=100):
+    def get_nomina_detail(comedor_pk, page=1, per_page=100):
         qs_nomina = Nomina.objects.filter(comedor_id=comedor_pk).select_related(
             "ciudadano__sexo", "estado"
         )
