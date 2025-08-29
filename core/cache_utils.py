@@ -4,9 +4,13 @@ Utilidades para gestión de cache con invalidación automática.
 Este módulo proporciona funciones para invalidar cache cuando se actualizan los datos relacionados.
 """
 
+import logging
+
 from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+
+logger = logging.getLogger("django")
 
 
 def invalidate_cache_keys(*cache_keys):
@@ -34,7 +38,6 @@ def invalidate_cache_pattern(pattern):
     # Nota: Django cache no soporta wildcard deletion por defecto
     # Para implementación completa necesitaríamos usar Redis con scan
     # Por ahora, usaremos claves específicas
-    logger = __import__("logging").getLogger("django")
     logger.warning(f"Pattern invalidation not implemented for pattern: {pattern}")
 
 
@@ -99,6 +102,31 @@ def invalidate_intervenciones_cache():
     invalidate_cache_keys(*keys_to_invalidate)
 
 
+def invalidate_territoriales_cache():
+    """Invalida cache de territoriales (método legacy)."""
+    keys_to_invalidate = [
+        "territoriales_list",  # Legacy key
+    ]
+
+    invalidate_cache_keys(*keys_to_invalidate)
+
+
+def invalidate_territoriales_cache_provincia(provincia_id=None):
+    """Invalida cache territorial por provincia."""
+    if provincia_id:
+        cache_key = f"territoriales_provincia_{provincia_id}"
+        cache.delete(cache_key)
+        logger.info(f"Invalidado cache territorial para provincia {provincia_id}")
+    else:
+        # Invalidar todas las provincias
+        from core.models import Provincia  # pylint: disable=import-outside-toplevel
+
+        provincias = Provincia.objects.values_list("id", flat=True)
+        for prov_id in provincias:
+            cache.delete(f"territoriales_provincia_{prov_id}")
+        logger.info("Invalidado cache territorial para todas las provincias")
+
+
 def invalidate_centrodefamilia_cache(user_id=None):
     """Invalida cache relacionado con centro de familia."""
     if user_id:
@@ -149,6 +177,20 @@ def invalidate_destinatario_cache_on_change(sender, instance, **kwargs):
 def invalidate_valor_comida_cache_on_change(sender, **kwargs):
     """Invalida cache cuando cambian valores de comida."""
     invalidate_cache_keys("valores_comida_map")
+
+
+@receiver([post_save, post_delete], sender="comedores.TerritorialCache")
+def invalidate_territorial_cache_on_change(sender, instance, **kwargs):
+    """Invalida cache cuando cambian datos de territoriales por provincia."""
+    # Invalidar cache legacy
+    invalidate_territoriales_cache()
+
+    # Invalidar cache específico por provincia si existe
+    if hasattr(instance, "provincia_id") and instance.provincia_id:
+        invalidate_territoriales_cache_provincia(instance.provincia_id)
+    else:
+        # Fallback: invalidar todas las provincias
+        invalidate_territoriales_cache_provincia()
 
 
 # Funciones helper para uso en vistas

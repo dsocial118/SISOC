@@ -233,10 +233,14 @@ class ComedorService:
                 .only("prestacion", "fecha_visita")
                 .first()
             )
-
-        count = {"desayuno": 0, "almuerzo": 0, "merienda": 0, "cena": 0}
-
+        count = {
+            "desayuno": 0,
+            "almuerzo": 0,
+            "merienda": 0,
+            "cena": 0,
+        }
         if relevamiento and relevamiento.prestacion:
+            # Obtener prestación del relevamiento
             prestacion = relevamiento.prestacion
             dias = [
                 "lunes",
@@ -247,17 +251,17 @@ class ComedorService:
                 "sabado",
                 "domingo",
             ]
-            for tipo in [
+            tipos = [
                 "desayuno",
                 "almuerzo",
                 "merienda",
                 "cena",
-            ]:
+                "merienda_reforzada",
+            ]
+            for tipo in tipos:
                 count[tipo] = sum(
-                    (getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0)
-                    for dia in dias
+                    getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0 for dia in dias
                 )
-
         count_beneficiarios = sum(count.values())
         valor_cena = count["cena"] * valor_map.get("cena", 0)
         valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)

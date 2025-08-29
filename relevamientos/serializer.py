@@ -1,3 +1,4 @@
+import logging
 from rest_framework import serializers
 
 from relevamientos.models import Relevamiento
@@ -5,11 +6,16 @@ from relevamientos.models import Relevamiento
 from relevamientos.service import RelevamientoService
 from core.utils import format_fecha_django
 
+logger = logging.getLogger(__name__)
+
 
 class RelevamientoSerializer(serializers.ModelSerializer):
 
     # TODO: Refactorizar
     def clean(self):  # pylint: disable=too-many-statements,too-many-branches
+        # Convertir valores Y/N a booleanos automáticamente
+        self._convert_yn_to_boolean(self.initial_data)
+
         if "fecha_visita" in self.initial_data:
             self.initial_data["fecha_visita"] = format_fecha_django(
                 self.initial_data["fecha_visita"]
@@ -207,6 +213,108 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 self.initial_data["imagenes"] = []
 
         return self
+
+    def validate(self, attrs):
+        """Validación personalizada con mejor logging de errores."""
+        try:
+            logger.info(f"Validando relevamiento con datos: {list(attrs.keys())}")
+            return super().validate(attrs)
+        except Exception as e:
+            logger.error(f"Error en validación de relevamiento: {str(e)}")
+            logger.error(f"Datos que causaron el error: {attrs}")
+            # Intentar identificar el campo problemático
+            for field_name, field_value in attrs.items():
+                if isinstance(field_value, bool):
+                    logger.error(
+                        f"Campo booleano encontrado: {field_name} = {field_value}"
+                    )
+            raise
+
+    def _convert_yn_to_boolean(self, data):
+        """
+        Convierte selectivamente valores 'Y'/'N' a booleanos true/false.
+        Solo convierte campos que sabemos que son booleanos en Django.
+        """
+        # Campos que deben ser booleanos (lista blanca)
+        boolean_fields = {
+            # Nivel raíz
+            "responsable_es_referente",
+            "servicio_por_turnos",
+            # Campos de cocina
+            "espacio_elaboracion_alimentos",
+            "almacenamiento_alimentos_secos",
+            "heladera",
+            "freezer",
+            "recipiente_residuos_organicos",
+            "recipiente_residuos_reciclables",
+            "otros_residuos",
+            "instalacion_electrica",
+            # Campos de prestacion (temporalmente deshabilitados para debug)
+            # 'espacio_equipado', 'tiene_ventilacion', 'tiene_salida_emergencia',
+            # 'salida_emergencia_senializada', 'tiene_equipacion_incendio',
+            # 'tiene_botiquin', 'tiene_buena_iluminacion', 'tiene_sanitarios',
+            # Campos de colaboradores
+            "colaboradores_capacitados_alimentos",
+            "colaboradores_recibieron_capacitacion_alimentos",
+            "colaboradores_capacitados_salud_seguridad",
+            "colaboradores_recibieron_capacitacion_emergencias",
+            "colaboradores_recibieron_capacitacion_violencia",
+            # Campos de recursos
+            "recibe_donaciones_particulares",
+            "recibe_estado_nacional",
+            "recibe_estado_provincial",
+            "recibe_estado_municipal",
+            "recibe_otros",
+            # Campos de compras
+            "almacen_cercano",
+            "verduleria",
+            "granja",
+            "carniceria",
+            "pescaderia",
+            "supermercado",
+            "mercado_central",
+            "ferias_comunales",
+            "mayoristas",
+            "otro",
+            # Campos de anexo
+            "comedor_merendero",
+            "insumos_organizacion",
+            "servicio_internet",
+            "zona_inundable",
+            "actividades_jardin_maternal",
+            "actividades_jardin_infantes",
+            "apoyo_escolar",
+            "alfabetizacion_terminalidad",
+            "capacitaciones_talleres",
+            "promocion_salud",
+            "actividades_discapacidad",
+            "necesidades_alimentarias",
+            "actividades_recreativas",
+            "actividades_culturales",
+            "emprendimientos_productivos",
+            "actividades_religiosas",
+            "actividades_huerta",
+            "espacio_huerta",
+            "otras_actividades",
+        }
+
+        self._convert_yn_recursive(data, boolean_fields)
+
+    def _convert_yn_recursive(self, data, boolean_fields):
+        """Función recursiva para la conversión."""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if isinstance(value, str) and key in boolean_fields:
+                    if value.upper() == "Y":
+                        data[key] = True
+                    elif value.upper() == "N":
+                        data[key] = False
+                elif isinstance(value, (dict, list)):
+                    self._convert_yn_recursive(value, boolean_fields)
+        elif isinstance(data, list):
+            for item in data:
+                if isinstance(item, (dict, list)):
+                    self._convert_yn_recursive(item, boolean_fields)
 
     class Meta:
         model = Relevamiento
