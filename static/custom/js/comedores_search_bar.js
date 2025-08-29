@@ -1,5 +1,11 @@
 
 (function () {
+    /**
+     * Comedores Search Bar (filtros combinables)
+     * - Construye dinámicamente filas de filtros (campo/op/valor) y serializa
+     *   a un único parámetro GET `filters` para que el backend lo procese.
+     * - Mantiene compatibilidad con la UI existente.
+     */
     const TEXT_FIELDS = [
         { value: 'nombre', label: 'Nombre' },
         { value: 'estado', label: 'Estado' },
@@ -53,6 +59,7 @@
     const logicSelect = document.getElementById('filters-logic');
     const hiddenInput = document.getElementById('filters-input');
 
+    /** Crea un <select> con opciones dadas y clases de estilo */
     function createSelect(options, className) {
         const sel = document.createElement('select');
         sel.className = className;
@@ -65,6 +72,7 @@
         return sel;
     }
 
+    /** Opciones de campo disponibles (texto + numéricos) */
     function fieldOptions() {
         const groupLabel = (txt) => ({ value: '', label: `-- ${txt} --`, disabled: true });
         return [
@@ -73,6 +81,11 @@
         ];
     }
 
+    /**
+     * Agrega una fila de filtros.
+     * - Si `prefill` está presente, setea valores iniciales.
+     * - Ajusta operadores y visibilidad de controles según tipo/operador.
+     */
     function addRow(prefill) {
         const row = document.createElement('div');
         row.className = 'filters-row';
@@ -96,10 +109,12 @@
         removeBtn.className = 'btn btn-sm btn-outline-danger';
         removeBtn.textContent = '–';
 
+        // Helpers
         function isNumberField(f) {
             return NUMBER_FIELDS.some(n => n.value === f);
         }
 
+        /** Recalcula operadores válidos según el tipo del campo */
         function refreshOps() {
             const field = fieldSel.value;
             const isNum = isNumberField(field);
@@ -117,6 +132,7 @@
             adjustValueVisibility();
         }
 
+        /** Muestra/oculta controles de valor vs. empty_mode */
         function adjustValueVisibility() {
             const op = opSel.value;
             const field = fieldSel.value;
@@ -185,6 +201,7 @@
 
     addBtn.addEventListener('click', () => addRow());
 
+    // Serializa las filas al payload `filters` antes de enviar
     form.addEventListener('submit', (e) => {
         // construir payload
         const items = [];
