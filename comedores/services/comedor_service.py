@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Union, Any, Dict, List, Tuple
 
-from django.db.models import Q, Count, Prefetch
+from django.db.models import Q, Count, Prefetch, QuerySet
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.contrib import messages
@@ -22,13 +22,14 @@ from comedores.utils import (
     normalize_field,
     preload_valores_comida_cache,
 )
-from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 
 logger = logging.getLogger("django")
+
+from comedores.services.filter_config import FIELD_MAP, FIELD_TYPES, TEXT_OPS, NUM_OPS
 
 
 class ComedorService:
@@ -91,103 +92,24 @@ class ComedorService:
             comedor_instance.save(update_fields=["foto_legajo"])
 
     @staticmethod
-    def get_comedores_filtrados(request_or_get: Any):
+    def get_comedores_filtrados(request_or_get: Any) -> QuerySet:
         """
-        Retorna un QuerySet de comedores filtrado según un único parámetro GET `filters`
-        que contiene JSON URL-encoded con la estructura:
+        Filtra comedores a partir de un único parámetro GET `filters` (JSON URL-encoded).
+
+        Estructura esperada:
             {
-              "logic": "AND" | "OR",
+              "logic": "AND" | "OR",                # combinación global (default AND)
               "items": [
                 {"field": str, "op": str, "value": Any, "empty_mode": "both|null|blank"}
               ]
             }
 
-        Reglas:
-          - Los items del mismo `field` se combinan con OR.
-          - Los grupos por campo se combinan entre sí con `logic` global (AND por defecto).
-          - Campos y operadores están validados por whitelist; items inválidos se ignoran.
-          - Máximo 20 items para evitar queries patológicas.
+        - Items del MISMO `field` se combinan con OR.
+        - Resultados por campo se combinan con `logic` global (AND/OR).
+        - Valida por whitelist (FIELD_MAP, TEXT_OPS/NUM_OPS) y castea números de forma segura.
+        - Items inválidos se ignoran con tolerancia a errores.
+        - Devuelve un QuerySet con `.values(...)` optimizado para listado.
         """
-
-        # Campos permitidos y mapeos a lookups reales
-        FIELD_MAP: Dict[str, str] = {
-            # Texto simples
-            "nombre": "nombre",
-            "estado": "estado",
-            "calle": "calle",
-            "piso": "piso",
-            "departamento": "departamento",
-            "manzana": "manzana",
-            "lote": "lote",
-            "entre_calle_1": "entre_calle_1",
-            "entre_calle_2": "entre_calle_2",
-            "partido": "partido",
-            "barrio": "barrio",
-            "codigo_de_proyecto": "codigo_de_proyecto",
-            # FKs -> nombre
-            "organizacion": "organizacion__nombre",
-            "programa": "programa__nombre",
-            "tipocomedor": "tipocomedor__nombre",
-            "dupla": "dupla__nombre",
-            "provincia": "provincia__nombre",
-            "municipio": "municipio__nombre",
-            "localidad": "localidad__nombre",
-            "referente": "referente__nombre",
-            # Numéricos
-            "id": "id",
-            "id_externo": "id_externo",
-            "comienzo": "comienzo",
-            "numero": "numero",
-            "codigo_postal": "codigo_postal",
-            "latitud": "latitud",
-            "longitud": "longitud",
-        }
-
-        # Tipos de campo: text | number
-        FIELD_TYPES: Dict[str, str] = {
-            # Texto
-            **{
-                k: "text"
-                for k in [
-                    "nombre",
-                    "estado",
-                    "calle",
-                    "piso",
-                    "departamento",
-                    "manzana",
-                    "lote",
-                    "entre_calle_1",
-                    "entre_calle_2",
-                    "partido",
-                    "barrio",
-                    "organizacion",
-                    "programa",
-                    "tipocomedor",
-                    "dupla",
-                    "provincia",
-                    "municipio",
-                    "localidad",
-                    "referente",
-                    "codigo_de_proyecto",
-                ]
-            },
-            # Numéricos
-            **{
-                k: "number"
-                for k in [
-                    "id",
-                    "id_externo",
-                    "comienzo",
-                    "numero",
-                    "codigo_postal",
-                    "latitud",
-                    "longitud",
-                ]
-            },
-        }
-
-        TEXT_OPS = {"eq", "ne", "contains", "ncontains", "empty"}
-        NUM_OPS = {"eq", "ne", "gt", "lt", "empty"}
 
         def _coerce_value(field: str, value: Any) -> Tuple[bool, Any]:
             """Cast seguro según tipo de campo. Devuelve (ok, valor_cast)."""
@@ -204,6 +126,13 @@ class ComedorService:
             return True, value
 
         def _build_q_for_item(item: Dict[str, Any]) -> Union[Q, None]:
+            """Construye el Q() para un item de filtro.
+
+            - Valida field/op en whitelist.
+            - Maneja operador `empty` con `empty_mode` y tipos de campo.
+            - Aplica negación para `ne` y `ncontains` invirtiendo el Q.
+            - Ignora valores faltantes/strings vacíos.
+            """
             field = item.get("field")
             op = item.get("op")
             if not field or field not in FIELD_MAP:
@@ -218,21 +147,18 @@ class ComedorService:
             # Operador empty no usa value
             if op == "empty":
                 empty_mode = (item.get("empty_mode") or "both").lower()
-                clauses: List[Q] = []
-                # null aplica siempre
-                clauses.append(Q(**{f"{mapped}__isnull": True}))
+                # isnull aplica siempre; exact="" solo a campos de texto.
+                null_q = Q(**{f"{mapped}__isnull": True})
                 if ftype == "text":
-                    # blank aplica solo a campos texto
-                    clauses.append(Q(**{f"{mapped}__exact": ""}))
+                    blank_q = Q(**{f"{mapped}__exact": ""})
                     if empty_mode == "null":
-                        return Q(**{f"{mapped}__isnull": True})
+                        return null_q
                     if empty_mode == "blank":
-                        return Q(**{f"{mapped}__exact": ""})
-                    # both por defecto
-                    return clauses[0] | clauses[1]
-                else:
-                    # Para numéricos blank no aplica
-                    return Q(**{f"{mapped}__isnull": True})
+                        return blank_q
+                    # both (default)
+                    return null_q | blank_q
+                # Para numéricos blank no aplica
+                return null_q
 
             # Para otros operadores, validar y castear valor
             value = item.get("value")
@@ -271,7 +197,7 @@ class ComedorService:
             q = Q(**{lookup: casted})
             return ~q if negate else q
 
-        # Base queryset (sin filtros si `filters` inválido/ausente)
+        # Base queryset (sin filtros si `filters` inválido/ausente).
         base_qs = (
             Comedor.objects.select_related(
                 "provincia", "municipio", "localidad", "referente", "tipocomedor"
@@ -294,7 +220,7 @@ class ComedorService:
             .order_by("-id")
         )
 
-        # Obtener filters desde request o QueryDict
+        # Obtener filters desde request o QueryDict de forma robusta
         try:
             get_params = (
                 request_or_get.GET if hasattr(request_or_get, "GET") else request_or_get
@@ -323,9 +249,6 @@ class ComedorService:
         if not isinstance(items, list) or len(items) == 0:
             return base_qs
 
-        # Límite de items
-        items = items[:20]
-
         # Agrupar por field
         groups: Dict[str, List[Q]] = {}
         for it in items:
@@ -340,7 +263,7 @@ class ComedorService:
         if not groups:
             return base_qs
 
-        # Combinar grupos: mismo campo con OR; entre campos según lógica global
+        # Combinar grupos: mismo campo con OR; entre campos según lógica global.
         logic = str(payload.get("logic") or "AND").upper()
         logic = "OR" if logic == "OR" else "AND"
 
