@@ -44,7 +44,7 @@
             <table class="table table-hover table-striped mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Código</th>
+                        
                         <th>Fecha creación</th>
                         <th>Estado</th>
                         {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
@@ -56,9 +56,6 @@
                 <tbody>
                     {% for exp in expedientes %}
                         <tr data-exp-id="{{ exp.pk }}">
-                            <td>
-                                <a href="{% url 'expediente_detail' exp.pk %}" class="fw-bold">{{ exp.codigo }}</a>
-                            </td>
                             <td>{{ exp.fecha_creacion|date:"d/m/Y H:i" }}</td>
                             <td>
                                 <span class="badge {% if exp.estado.nombre == 'CREADO' %}bg-secondary {% elif exp.estado.nombre == 'EN_ESPERA' %}bg-info {% elif exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}bg-warning {% elif exp.estado.nombre == 'RECEPCIONADO' %}bg-secondary {% elif exp.estado.nombre == 'ASIGNADO' %}bg-primary {% elif exp.estado.nombre == 'PROCESO_DE_CRUCE' %}bg-dark {% elif exp.estado.nombre == 'CRUCE_FINALIZADO' %}bg-success {% else %}bg-light text-dark{% endif %}">

@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from functools import lru_cache
 
-from celiaquia.models import EstadoLegajo, ExpedienteCiudadano
+from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,18 @@ def _estado_doc_pendiente_id():
         return EstadoLegajo.objects.only("id").get(nombre="DOCUMENTO_PENDIENTE").id
     except EstadoLegajo.DoesNotExist:
         raise ValidationError("Falta el estado DOCUMENTO_PENDIENTE")
+
+
+# Estados de expediente considerados “abiertos / pre-cupo” para evitar duplicados inter-expedientes
+ESTADOS_PRE_CUPO = [
+    "CREADO",
+    "PROCESADO",
+    "EN_ESPERA",
+    "CONFIRMACION_DE_ENVIO",
+    "RECEPCIONADO",
+    "ASIGNADO",
+    "PROCESO_DE_CRUCE",
+]
 
 
 class ImportacionService:
@@ -126,11 +138,79 @@ class ImportacionService:
         estado_id = _estado_doc_pendiente_id()
         validos = errores = 0
         detalles_errores = []
+        excluidos = []  # lista con todos los excluidos (mismo expediente, en cupo en otro, u otro expediente abierto)
         batch = []
 
         for offset, row in enumerate(df.to_dict(orient="records"), start=2):
             try:
-                ciudadano = CiudadanoService.get_or_create_ciudadano(row, usuario)
+                # Crear/obtener ciudadano (puede asignar programa si corresponde)
+                ciudadano = CiudadanoService.get_or_create_ciudadano(
+                    row, usuario=usuario, expediente=expediente
+                )
+
+                # 1) Ya existe en ESTE expediente -> excluir
+                if ExpedienteCiudadano.objects.filter(
+                    expediente=expediente, ciudadano=ciudadano
+                ).exists():
+                    excluidos.append({
+                        "fila": offset,
+                        "ciudadano_id": ciudadano.pk,
+                        "documento": getattr(ciudadano, "documento", ""),
+                        "nombre": getattr(ciudadano, "nombre", ""),
+                        "apellido": getattr(ciudadano, "apellido", ""),
+                        "motivo": "Ya existe en este expediente",
+                    })
+                    continue
+
+                # 2) Ya está dentro del programa (cupo DENTRO) en OTRO expediente -> excluir
+                ya_en_programa = (
+                    ExpedienteCiudadano.objects
+                    .select_related("expediente", "ciudadano")
+                    .filter(
+                        ciudadano=ciudadano,
+                        estado_cupo=EstadoCupo.DENTRO,
+                    )
+                    .exclude(expediente=expediente)
+                    .order_by("-creado_en")
+                    .first()
+                )
+                if ya_en_programa:
+                    estado_text = "ACEPTADO" if ya_en_programa.es_titular_activo else "SUSPENDIDO"
+                    excluidos.append({
+                        "fila": offset,
+                        "ciudadano_id": ciudadano.pk,
+                        "documento": getattr(ciudadano, "documento", ""),
+                        "nombre": getattr(ciudadano, "nombre", ""),
+                        "apellido": getattr(ciudadano, "apellido", ""),
+                        "expediente_origen_id": ya_en_programa.expediente_id,
+                        "estado_programa": estado_text,
+                        "motivo": "Ya está dentro del programa en otro expediente",
+                    })
+                    continue
+
+                # 3) Ya figura en OTRO expediente “abierto / pre-cupo” -> excluir
+                conflict = (
+                    ExpedienteCiudadano.objects
+                    .select_related("expediente", "expediente__estado")
+                    .filter(ciudadano=ciudadano)
+                    .exclude(expediente=expediente)
+                    .filter(expediente__estado__nombre__in=ESTADOS_PRE_CUPO)
+                    .first()
+                )
+                if conflict:
+                    excluidos.append({
+                        "fila": offset,
+                        "ciudadano_id": ciudadano.pk,
+                        "documento": getattr(ciudadano, "documento", ""),
+                        "nombre": getattr(ciudadano, "nombre", ""),
+                        "apellido": getattr(ciudadano, "apellido", ""),
+                        "expediente_origen_id": getattr(conflict.expediente, "id", None),
+                        "estado_expediente_origen": getattr(getattr(conflict, "expediente", None), "estado", None).nombre if getattr(getattr(conflict, "expediente", None), "estado", None) else "",
+                        "motivo": "Duplicado en otro expediente abierto",
+                    })
+                    continue
+
+                # 4) OK para crear en este expediente
                 batch.append(
                     ExpedienteCiudadano(
                         expediente=expediente,
@@ -139,6 +219,7 @@ class ImportacionService:
                     )
                 )
                 validos += 1
+
             except Exception as e:
                 errores += 1
                 detalles_errores.append({"fila": offset, "error": str(e)})
@@ -151,10 +232,15 @@ class ImportacionService:
         if batch:
             ExpedienteCiudadano.objects.bulk_create(batch, batch_size=batch_size)
 
-        logger.info("Import completo: %s válidos, %s errores", validos, errores)
+        logger.info(
+            "Import completo: %s válidos, %s errores, %s excluidos (duplicados o ya en programa).",
+            validos, errores, len(excluidos)
+        )
 
         return {
             "validos": validos,
             "errores": errores,
             "detalles_errores": detalles_errores,
+            "excluidos_count": len(excluidos),
+            "excluidos": excluidos,
         }

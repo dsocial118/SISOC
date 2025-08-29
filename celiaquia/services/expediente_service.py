@@ -58,10 +58,11 @@ class ExpedienteService:
         )
         _set_estado(expediente, "PROCESADO")
         logger.info(
-            "Expediente %s procesado: legajos_creados=%s errores=%s",
+            "Expediente %s procesado: legajos_creados=%s errores=%s excluidos=%s",
             expediente.pk,
             result.get("validos", 0),
             result.get("errores", 0),
+            result.get("excluidos_count", 0),
         )
 
         _set_estado(expediente, "EN_ESPERA")
@@ -70,6 +71,8 @@ class ExpedienteService:
         return {
             "creados": result.get("validos", 0),
             "errores": result.get("errores", 0),
+            "excluidos": result.get("excluidos_count", 0),       # <-- NUEVO
+            "excluidos_detalle": result.get("excluidos", []),    # <-- NUEVO
         }
 
     @staticmethod

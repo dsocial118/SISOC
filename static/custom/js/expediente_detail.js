@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-/* ===== MODAL SUBSANAR (técnico) ===== */
+  /* ===== MODAL SUBSANAR (técnico) ===== */
   const modalSubsanar = document.getElementById('modalSubsanar');
   if (modalSubsanar) {
     // Pre-cargar el id del legajo en el hidden cuando se abre el modal
@@ -304,10 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('btn-confirm-subsanar');
       const original = btn.innerHTML;
 
-      if (!window.SUBSANAR_URL_TEMPLATE) {
-        showAlert('danger', 'No se configuró la URL de subsanación.');
-        return;
-      }
       if (!legajoId) {
         showAlert('danger', 'No se pudo identificar el legajo.');
         return;
@@ -317,14 +313,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // URL destino: preferir legajo_subsanar, si no existe usar legajo_revisar con accion=SUBSANAR
+      const url = (window.SUBSANAR_URL_TEMPLATE
+        ? window.SUBSANAR_URL_TEMPLATE.replace('{id}', legajoId)
+        : (window.REVISAR_URL_TEMPLATE ? window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId) : null));
+
+      if (!url) {
+        showAlert('danger', 'No se configuró la URL de subsanación.');
+        return;
+      }
+
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
 
       try {
-        const url = window.SUBSANAR_URL_TEMPLATE.replace('{id}', legajoId);
-        const fd = new FormData();
-        // el backend acepta 'motivo' o 'comentario'
-        fd.append('motivo', motivo);
+        // Tomar TODOS los campos del form (incluye el hidden "accion" si lo tenés en el template)
+        const fd = new FormData(formSubsanar);
+
+        // Asegurar campos por compatibilidad con distintos endpoints
+        if (!fd.has('motivo')) fd.append('motivo', motivo);
+        fd.set('comentario', motivo); // algunos backends usan "comentario"
+        if (!fd.has('accion')) fd.append('accion', 'SUBSANAR');
 
         const resp = await fetch(url, {
           method: 'POST',
@@ -344,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           const text = await resp.text();
           if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
-          data = { success: true, message: text };
+          data = { success: true, message: text, estado: 'SUBSANAR' };
         }
 
         if (!resp.ok || data.success === false) {
@@ -368,7 +377,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-
 
   /* ===== CONFIRMAR ENVÍO ===== */
   const btnConfirm = document.getElementById('btn-confirm');
@@ -739,9 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-
-
-
 
   /* ===== Inicializar paginación para LEGAJOS ===== */
   (function initLegajosPagination(){

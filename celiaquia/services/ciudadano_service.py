@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, date
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django.db import transaction, IntegrityError  # ← agregado
 
 from ciudadanos.models import (
     Ciudadano,
@@ -55,11 +56,11 @@ class CiudadanoService:
         datos: dict, usuario=None, expediente=None, programa_id=3
     ) -> Ciudadano:
         """
-        - Busca o crea un Ciudadano con los datos provistos.
+        - Busca o crea un Ciudadano usando la clave real (tipo_documento + documento).
         - Inicializa dimensiones si es nuevo.
         - Si se pasa `expediente`, primero valida si existe el legajo (ExpedienteCiudadano);
           si existe, asegura el registro en CiudadanoPrograma (lo crea si no está).
-        - Si NO se pasa `expediente` (compatibilidad), mantiene la lógica previa: intenta asignar programa.
+        - Si NO se pasa `expediente`, mantiene la lógica previa: intenta asignar programa.
         """
         # 1) Resolver FK TipoDocumento
         raw_td = datos.get("tipo_documento")
@@ -78,24 +79,59 @@ class CiudadanoService:
         # 3) Normalizar fecha de nacimiento
         fecha_nac = CiudadanoService._to_date(datos.get("fecha_nacimiento"))
 
-        # 4) Filtro único
-        filtro = {
-            "tipo_documento": td,
-            "documento": datos.get("documento"),
-            "nombre": datos.get("nombre"),
-            "apellido": datos.get("apellido"),
-            "fecha_nacimiento": fecha_nac,
-        }
+        # 4) Datos básicos
+        doc = datos.get("documento")
+        nom = datos.get("nombre")
+        ape = datos.get("apellido")
 
-        # 5) Crear/obtener ciudadano
-        ciudadano, created = Ciudadano.objects.get_or_create(
-            **filtro, defaults={"sexo": sx}
-        )
+        if doc in (None, ""):
+            raise ValidationError("El número de documento es obligatorio.")
 
-        if created:
-            logger.info("Ciudadano creado: %s", ciudadano.pk)
-            CiudadanoService._inicializar_dimensiones(ciudadano)
+        # 5) Buscar por clave real (tipo_documento + documento)
+        ciudadano = Ciudadano.objects.filter(
+            tipo_documento=td, documento=doc
+        ).first()
+
+        created = False
+        if ciudadano is None:
+            # Crear con transacción y retry ante carrera
+            try:
+                with transaction.atomic():
+                    ciudadano = Ciudadano.objects.create(
+                        tipo_documento=td,
+                        documento=doc,
+                        nombre=nom,
+                        apellido=ape,
+                        fecha_nacimiento=fecha_nac,
+                        sexo=sx,
+                    )
+                created = True
+                logger.info("Ciudadano creado: %s", ciudadano.pk)
+                CiudadanoService._inicializar_dimensiones(ciudadano)
+            except IntegrityError as e:
+                # Si alguien lo creó entre el filter y el create, lo recuperamos
+                ciudadano = Ciudadano.objects.filter(
+                    tipo_documento=td, documento=doc
+                ).first()
+                if ciudadano is None:
+                    raise ValidationError(f"No se pudo crear el ciudadano: {e}")
         else:
+            # Completar sólo campos faltantes (no sobreescribir datos existentes)
+            updates = []
+            if not ciudadano.sexo_id and sx:
+                ciudadano.sexo = sx
+                updates.append("sexo")
+            if not ciudadano.nombre and nom:
+                ciudadano.nombre = nom
+                updates.append("nombre")
+            if not ciudadano.apellido and ape:
+                ciudadano.apellido = ape
+                updates.append("apellido")
+            if not ciudadano.fecha_nacimiento and fecha_nac:
+                ciudadano.fecha_nacimiento = fecha_nac
+                updates.append("fecha_nacimiento")
+            if updates:
+                ciudadano.save(update_fields=updates)
             logger.debug("Ciudadano existente: %s", ciudadano.pk)
 
         # 6) Asignación de programa condicionada a la existencia del legajo

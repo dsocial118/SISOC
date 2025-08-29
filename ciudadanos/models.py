@@ -1420,6 +1420,7 @@ class CiudadanoPrograma(models.Model):
         ordering = ["-fecha_creado"]
         verbose_name = "CiudadanoProgramas"
         verbose_name_plural = "CiudadanosProgramas"
+        unique_together = (("ciudadano", "programas"),)
 
 
 class HistorialCiudadanoProgramas(models.Model):
