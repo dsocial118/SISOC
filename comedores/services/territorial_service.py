@@ -127,29 +127,15 @@ class TerritorialService:
                     "provincia_id": provincia_id,
                 }
 
-            if not gestionar_disponible:
-                logger.info(
-                    f"GESTIONAR no disponible, usando datos de ejemplo para desarrollo provincia {provincia_id}"
-                )
-                cls._crear_datos_ejemplo_provincia(provincia_id)
-                territoriales_ejemplo = cls._obtener_desde_db_por_provincia(
-                    provincia_id
-                )
-                if territoriales_ejemplo["territoriales"]:
-                    return {
-                        "territoriales": territoriales_ejemplo["territoriales"],
-                        "desactualizados": True,
-                        "fuente": "datos_ejemplo",
-                        "provincia_id": provincia_id,
-                    }
 
+            # Sin datos disponibles y sin conexión a GESTIONAR
             logger.error(
-                f"No se pudieron obtener territoriales para provincia {provincia_id}"
+                f"No se pudieron obtener territoriales para provincia {provincia_id}. GESTIONAR no disponible y sin cache local."
             )
             return {
                 "territoriales": [],
                 "desactualizados": True,
-                "fuente": "vacio",
+                "fuente": "sin_datos",
                 "provincia_id": provincia_id,
             }
 
@@ -523,61 +509,3 @@ class TerritorialService:
         except Exception as e:
             logger.error(f"Error limpiando cache: {e}")
 
-    @classmethod
-    def _crear_datos_ejemplo(cls):
-        """Crea datos de ejemplo para desarrollo cuando GESTIONAR no está disponible (método legacy)."""
-        try:
-            # Método legacy - se mantiene para compatibilidad
-            logger.warning(
-                "Usando método legacy _crear_datos_ejemplo. Se recomienda usar _crear_datos_ejemplo_provincia"
-            )
-
-        except Exception as e:
-            logger.error(f"Error creando datos de ejemplo: {e}")
-
-    @classmethod
-    def _crear_datos_ejemplo_provincia(cls, provincia_id: int):
-        """Crea datos de ejemplo para desarrollo para una provincia específica."""
-        try:
-            # Datos de ejemplo para desarrollo
-            territoriales_ejemplo = [
-                {
-                    "gestionar_uid": f"DEV{provincia_id:03d}_001",
-                    "nombre": f"Territorial Norte - Provincia {provincia_id} (Dev)",
-                },
-                {
-                    "gestionar_uid": f"DEV{provincia_id:03d}_002",
-                    "nombre": f"Territorial Sur - Provincia {provincia_id} (Dev)",
-                },
-                {
-                    "gestionar_uid": f"DEV{provincia_id:03d}_003",
-                    "nombre": f"Territorial Este - Provincia {provincia_id} (Dev)",
-                },
-                {
-                    "gestionar_uid": f"DEV{provincia_id:03d}_004",
-                    "nombre": f"Territorial Oeste - Provincia {provincia_id} (Dev)",
-                },
-                {
-                    "gestionar_uid": f"DEV{provincia_id:03d}_005",
-                    "nombre": f"Territorial Centro - Provincia {provincia_id} (Dev)",
-                },
-            ]
-
-            # Solo crear si no existen datos para esta provincia
-            if TerritorialCache.objects.filter(provincia_id=provincia_id).count() == 0:
-                for territorial_data in territoriales_ejemplo:
-                    TerritorialCache.objects.create(
-                        gestionar_uid=territorial_data["gestionar_uid"],
-                        nombre=territorial_data["nombre"],
-                        provincia_id=provincia_id,
-                        activo=True,
-                        fecha_ultimo_sync=timezone.now(),
-                    )
-                logger.info(
-                    f"Creados {len(territoriales_ejemplo)} territoriales de ejemplo para provincia {provincia_id}"
-                )
-
-        except Exception as e:
-            logger.error(
-                f"Error creando datos de ejemplo para provincia {provincia_id}: {e}"
-            )
