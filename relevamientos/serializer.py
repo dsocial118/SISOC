@@ -169,8 +169,8 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 if self.initial_data["responsable_relevamiento"]["celular"] == "":
                     self.initial_data["responsable_relevamiento"]["celular"] = None
                 else:
-                    self.initial_data["referente_comedor"]["celular"] = (
-                        self.initial_data["referente_comedor"]["celular"]
+                    self.initial_data["responsable_relevamiento"]["celular"] = (
+                        self.initial_data["responsable_relevamiento"]["celular"]
                         .strip()
                         .replace(" ", "")
                         .replace("-", "")
@@ -209,6 +209,8 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                 self.initial_data["imagenes"] = [
                     img.strip() for img in imagenes.split(",") if img.strip()
                 ]
+            elif isinstance(imagenes, list):
+                self.initial_data["imagenes"] = imagenes
             else:
                 self.initial_data["imagenes"] = []
 
