@@ -1,0 +1,20 @@
+/* Fila de filtros en grid con inputs full width */
+#filters-rows .filters-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: .5rem;
+  margin-bottom: .5rem;
+}
+
+#filters-rows .filters-row select,
+#filters-rows .filters-row input {
+  width: 100%;
+}
+
+/* Botones en la barra de acciones con igual ancho */
+.search-actions .btn.btn-lg {
+  width: 150px;
+  min-width: 150px;
+  white-space: nowrap;
+}
+

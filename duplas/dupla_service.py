@@ -63,9 +63,6 @@ class DuplaService:
 
         Returns:
             Dupla: Instancia creada.
-
-        Raises:
-            Exception: Si ocurre un error de validación.
         """
         try:
             dupla = Dupla.objects.create(**data)

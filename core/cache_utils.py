@@ -38,7 +38,7 @@ def invalidate_cache_pattern(pattern):
     # Nota: Django cache no soporta wildcard deletion por defecto
     # Para implementación completa necesitaríamos usar Redis con scan
     # Por ahora, usaremos claves específicas
-    logger.warning(f"Pattern invalidation not implemented for pattern: {pattern}")
+    logger.warning(f"Invalidación por patrón no implementada para el patrón: {pattern}")
 
 
 # Funciones específicas para invalidar cache por modelo
