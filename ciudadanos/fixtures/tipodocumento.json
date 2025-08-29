@@ -26,5 +26,12 @@
         "fields": {
             "tipo": "SIN DOCUMENTO"
         }
+    },
+    {
+        "model": "ciudadanos.tipodocumento",
+        "pk": 5,
+        "fields": {
+            "tipo": "CUIT"
+        }
     }
 ]

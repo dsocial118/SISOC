@@ -12,6 +12,7 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseNotAllowed,
 )
+from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
@@ -142,20 +143,61 @@ class ProcesarExpedienteView(View):
 
         try:
             result = ExpedienteService.procesar_expediente(expediente, user)
-            return JsonResponse(
-                {
-                    "success": True,
-                    "creados": result["creados"],
-                    "errores": result["errores"],
-                }
-            )
-        except ValidationError as ve:
-            return JsonResponse({"success": False, "error": ve.message}, status=400)
-        except Exception:
-            tb = traceback.format_exc()
-            logger.error("Error al procesar expediente %s:\n%s", pk, tb)
-            return JsonResponse({"success": False, "error": tb}, status=500)
 
+            
+            if _is_ajax(request):
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "creados": result.get("creados", 0),
+                        "errores": result.get("errores", 0),
+                        "excluidos": result.get("excluidos", 0),                     
+                        "excluidos_detalle": result.get("excluidos_detalle", []),    
+                    }
+                )
+
+            
+            messages.success(
+                request,
+                f"Importación completada. Creados: {result.get('creados', 0)} — Errores: {result.get('errores', 0)}."
+            )
+
+            excluidos_count = result.get("excluidos", 0)
+            if excluidos_count:
+                det = result.get("excluidos_detalle", [])
+                preview = []
+                for d in det[:10]:
+                    doc = d.get("documento", "")
+                    ape = d.get("apellido", "")
+                    nom = d.get("nombre", "")
+                    estado = d.get("estado_programa") or d.get("motivo") or "-"
+                    expid = d.get("expediente_origen_id", "-")
+                    preview.append(f"• {doc} — {ape}, {nom} ({estado}) — Exp #{expid}")
+
+                extra = ""
+                if len(det) > 10:
+                    extra = f"<br>… y {len(det) - 10} más."
+
+                html = (
+                    f"Se excluyeron {excluidos_count} registros porque ya están en otro expediente:"
+                    f"<br>{'<br>'.join(preview)}{extra}"
+                )
+                messages.warning(request, mark_safe(html))
+
+            return redirect("expediente_detail", pk=pk)
+
+        except ValidationError as ve:
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": ve.message}, status=400)
+            messages.error(request, f"Error de validación: {ve.message}")
+            return redirect("expediente_detail", pk=pk)
+        except Exception as e:
+            tb = traceback.format_exc()
+            logging.error("Error al procesar expediente %s:\n%s", pk, tb)
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": str(e)}, status=500)
+            messages.error(request, "Error inesperado al procesar el expediente.")
+            return redirect("expediente_detail", pk=pk)
 
 class CrearLegajosView(View):
     def post(self, request, pk):
@@ -612,7 +654,7 @@ class RevisarLegajoView(View):
                 CupoService.liberar_slot(
                     legajo=leg,
                     usuario=user,
-                    motivo=f"Salida del cupo por {accion.lower()} técnico en expediente {expediente.codigo}",
+                    motivo=f"Salida del cupo por {accion.lower()} técnico en expediente",
                 )
                 leg.estado_cupo = "NO_EVAL"
                 leg.es_titular_activo = False

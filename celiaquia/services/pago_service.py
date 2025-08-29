@@ -95,7 +95,7 @@ class PagoService:
                 "cuit": _norm_digits(getattr(ciu, "cuil", "") or getattr(ciu, "cuit", "")),
                 "nombre": getattr(ciu, "nombre", "") or "",
                 "apellido": getattr(ciu, "apellido", "") or "",
-                "expediente": getattr(leg.expediente, "codigo", "") or str(leg.expediente_id),
+                "expediente": getattr(leg.expediente,  "") or str(leg.expediente_id),
             })
 
         pago.total_candidatos = len(df_rows)
@@ -214,7 +214,7 @@ class PagoService:
                 "cuit": _norm_digits(getattr(ciu, "cuil", "") or getattr(ciu, "cuit", "")),
                 "nombre": getattr(ciu, "nombre", "") or "",
                 "apellido": getattr(ciu, "apellido", "") or "",
-                "expediente": getattr(leg.expediente, "codigo", "") or str(leg.expediente_id),
+                "expediente": getattr(leg.expediente,  "") or str(leg.expediente_id),
             })
 
         import io as _io
