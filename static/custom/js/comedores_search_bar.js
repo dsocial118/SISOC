@@ -75,24 +75,20 @@
 
     function addRow(prefill) {
         const row = document.createElement('div');
-        row.className = 'd-flex align-items-center mb-2 gap-2';
+        row.className = 'filters-row';
 
-        const fieldSel = createSelect(fieldOptions(), 'form-select form-select-sm');
-        fieldSel.style.width = '220px';
-        const opSel = createSelect(TEXT_OPS, 'form-select form-select-sm');
-        opSel.style.width = '170px';
+        const fieldSel = createSelect(fieldOptions(), 'form-select');
+        const opSel = createSelect(TEXT_OPS, 'form-select');
         const valueInput = document.createElement('input');
         valueInput.type = 'text';
         valueInput.className = 'form-control form-control-sm';
         valueInput.placeholder = 'Valor';
-        valueInput.style.maxWidth = '260px';
 
         const emptyModeSel = createSelect([
             { value: 'both', label: 'Nulos o vacíos' },
             { value: 'null', label: 'Solo nulos' },
             { value: 'blank', label: 'Solo vacíos' }
-        ], 'form-select form-select-sm');
-        emptyModeSel.style.width = '160px';
+        ], 'form-select');
         emptyModeSel.style.display = 'none';
 
         const removeBtn = document.createElement('button');
