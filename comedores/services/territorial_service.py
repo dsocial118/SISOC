@@ -127,7 +127,6 @@ class TerritorialService:
                     "provincia_id": provincia_id,
                 }
 
-
             # Sin datos disponibles y sin conexión a GESTIONAR
             logger.error(
                 f"No se pudieron obtener territoriales para provincia {provincia_id}. GESTIONAR no disponible y sin cache local."
@@ -225,7 +224,9 @@ class TerritorialService:
 
             # Verificar último sync exitoso para esta provincia
             # Obtener IDs de comedores de la provincia para filtrar correctamente
-            comedores_provincia = Comedor.objects.filter(provincia_id=provincia_id).values_list('id', flat=True)
+            comedores_provincia = Comedor.objects.filter(
+                provincia_id=provincia_id
+            ).values_list("id", flat=True)
             ultimo_sync = (
                 TerritorialSyncLog.objects.filter(
                     exitoso=True, comedor_id__in=comedores_provincia
@@ -446,7 +447,9 @@ class TerritorialService:
 
         with transaction.atomic():
             TerritorialCache.objects.filter(provincia_id=provincia_id).delete()
-            logger.info(f"Limpiados territoriales existentes para provincia {provincia_id}")
+            logger.info(
+                f"Limpiados territoriales existentes para provincia {provincia_id}"
+            )
 
             contador = 0
             for territorial_data in territoriales_data:
@@ -459,7 +462,9 @@ class TerritorialService:
                 )
                 contador += 1
 
-            logger.info(f"Creados {contador} territoriales para provincia {provincia_id}")
+            logger.info(
+                f"Creados {contador} territoriales para provincia {provincia_id}"
+            )
             return contador
 
     @classmethod
@@ -504,8 +509,9 @@ class TerritorialService:
             # Limpiar DB cache (marcar como inactivo)
             TerritorialCache.objects.update(activo=False)
 
-            logger.info(f"Cache de territoriales limpiado completamente: {cache_keys_limpiadas} claves de cache eliminadas")
+            logger.info(
+                f"Cache de territoriales limpiado completamente: {cache_keys_limpiadas} claves de cache eliminadas"
+            )
 
         except Exception as e:
             logger.error(f"Error limpiando cache: {e}")
-

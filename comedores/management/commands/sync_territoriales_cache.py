@@ -121,13 +121,13 @@ class Command(BaseCommand):
             estado__in=["Activo", "Asignado a Dupla Técnica", "En proceso"]
         )
         total_comedores = comedores_qs.count()
-        
+
         if total_comedores <= 5:
             comedores_muestra = comedores_qs
         else:
             # Usar offset aleatorio para mejor performance que order_by("?")
             offset_aleatorio = random.randint(0, total_comedores - 5)
-            comedores_muestra = comedores_qs[offset_aleatorio:offset_aleatorio + 5]
+            comedores_muestra = comedores_qs[offset_aleatorio : offset_aleatorio + 5]
 
         if not comedores_muestra:
             self.stdout.write(
@@ -148,7 +148,7 @@ class Command(BaseCommand):
 
                 if resultado["fuente"] in [
                     "cache_provincia",
-                    "db_provincia", 
+                    "db_provincia",
                     "gestionar_provincia_sync",
                     "fallback_provincia",
                 ]:
