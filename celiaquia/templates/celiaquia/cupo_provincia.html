@@ -108,6 +108,7 @@
                                 <td data-text="{{ leg.ciudadano.documento|default_if_none:'' }}">{{ leg.ciudadano.documento }}</td>
                                 <td data-text="{{ leg.ciudadano.nombre|default_if_none:'' }}">{{ leg.ciudadano.nombre }}</td>
                                 <td data-text="{{ leg.ciudadano.apellido|default_if_none:'' }}">{{ leg.ciudadano.apellido }}</td>
+                                <td data-text="{{ leg.expediente.codigo }}">{{ leg.expediente.codigo }}</td>
                                 <td>
                                     <span class="badge bg-{% if leg.revision_tecnico == 'APROBADO' %}success{% elif leg.revision_tecnico == 'RECHAZADO' %}danger{% else %}secondary{% endif %}">
                                         {{ leg.revision_tecnico }}
@@ -173,7 +174,8 @@
                                 <td>{{ leg.ciudadano.documento }}</td>
                                 <td>{{ leg.ciudadano.nombre }}</td>
                                 <td>{{ leg.ciudadano.apellido }}</td>
-                                td>
+                                <td>{{ leg.expediente.codigo|default:leg.expediente.id }}</td>
+                                <td>
                                     <span class="badge bg-primary">DENTRO</span>
                                 </td>
                                 <td>
@@ -220,6 +222,7 @@
                                 <td>{{ leg.ciudadano.documento }}</td>
                                 <td>{{ leg.ciudadano.nombre }}</td>
                                 <td>{{ leg.ciudadano.apellido }}</td>
+                                <td>{{ leg.expediente.codigo|default:leg.expediente.id }}</td>
                                 <td>
                                     <span class="badge bg-warning text-dark">FUERA</span>
                                 </td>
@@ -325,6 +328,7 @@
                                             <td>{{ m.legajo.ciudadano.documento }}</td>
                                             <td>{{ m.legajo.ciudadano.nombre }}</td>
                                             <td>{{ m.legajo.ciudadano.apellido }}</td>
+                                            <td>{{ m.expediente.codigo }}</td>
                                             <td>
                                                 <span class="badge bg-{% if m.tipo == 'ALTA' %}success{% elif m.tipo == 'BAJA' %}danger{% elif m.tipo == 'SUSPENDIDO' %}warning text-dark{% else %}secondary{% endif %}">
                                                     {{ m.tipo }}
