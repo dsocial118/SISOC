@@ -2,6 +2,7 @@
 Management command para sincronizar cache de territoriales.
 """
 
+import random
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
@@ -115,12 +116,18 @@ class Command(BaseCommand):
         """Sincroniza territoriales usando una muestra de comedores activos."""
         self.stdout.write("Iniciando sincronización por lotes...")
 
-        # Obtener muestra de comedores activos
-        comedores_muestra = Comedor.objects.filter(
+        # Obtener muestra de comedores activos de forma eficiente
+        comedores_qs = Comedor.objects.filter(
             estado__in=["Activo", "Asignado a Dupla Técnica", "En proceso"]
-        ).order_by("?")[
-            :5
-        ]  # Muestra aleatoria de 5 comedores
+        )
+        total_comedores = comedores_qs.count()
+        
+        if total_comedores <= 5:
+            comedores_muestra = comedores_qs
+        else:
+            # Usar offset aleatorio para mejor performance que order_by("?")
+            offset_aleatorio = random.randint(0, total_comedores - 5)
+            comedores_muestra = comedores_qs[offset_aleatorio:offset_aleatorio + 5]
 
         if not comedores_muestra:
             self.stdout.write(
