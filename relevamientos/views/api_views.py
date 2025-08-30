@@ -20,7 +20,16 @@ class RelevamientoApiView(APIView):
             )
             relevamiento_serializer = RelevamientoSerializer(
                 relevamiento, data=request.data, partial=True
-            ).clean()
+            )
+            try:
+                relevamiento_serializer.clean()
+            except Exception as clean_error:
+                logger.exception(f"Error en clean(): {clean_error}")
+                return Response(
+                    f"Error procesando datos del relevamiento: {clean_error}",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             if relevamiento_serializer.is_valid():
                 relevamiento_serializer.save()
                 relevamiento = relevamiento_serializer.instance

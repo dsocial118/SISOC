@@ -18,6 +18,14 @@ from comedores.views import (
     nomina_editar_ajax,
 )
 
+from comedores.views_territorial import (
+    obtener_territoriales_api,
+    sincronizar_territoriales_api,
+    estadisticas_cache_territoriales,
+)
+
+# Views de prueba eliminadas
+
 from intervenciones.views import (
     sub_estados_intervenciones_ajax,
     IntervencionCreateView,
@@ -126,12 +134,12 @@ urlpatterns = [
     ),
     path(
         "intervencion/<int:intervencion_id>/documentacion/subir/",
-        subir_archivo_intervencion,
+        group_required(["Tecnico Comedor"])(subir_archivo_intervencion),
         name="subir_archivo_intervencion",
     ),
     path(
         "intervencion/<int:intervencion_id>/documentacion/eliminar/",
-        eliminar_archivo_intervencion,
+        group_required(["Tecnico Comedor"])(eliminar_archivo_intervencion),
         name="eliminar_archivo_intervencion",
     ),
     path(
@@ -173,5 +181,20 @@ urlpatterns = [
             ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")
         ),
         name="nuevo_comedor_detalle",
+    ),
+    path(
+        "comedores/<int:comedor_id>/territoriales/",
+        obtener_territoriales_api,
+        name="api_obtener_territoriales",
+    ),
+    path(
+        "comedores/<int:comedor_id>/territoriales/sincronizar/",
+        sincronizar_territoriales_api,
+        name="api_sincronizar_territoriales",
+    ),
+    path(
+        "comedores/territoriales/estadisticas/",
+        estadisticas_cache_territoriales,
+        name="api_estadisticas_territoriales",
     ),
 ]
