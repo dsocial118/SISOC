@@ -56,6 +56,7 @@ $.widget.bridge("uibutton", $.ui.button);
     }
 
     // Sidebar hover functionality for collapsed menu
+    
     $(document).ready(function() {
         const sidebarMenu = $('.app-sidebar');
         
@@ -95,4 +96,15 @@ $.widget.bridge("uibutton", $.ui.button);
         sidebarMenu.on('mouseleave', function() {
             hideMenuOpenULs();
         });
+
+        // TODO: Es un hack para escuchar el evento 'open.lte.push-menu', preferentemente
+        // encontrar el flow del adminlte que maneja el sidebar y poder hacer esta operación desde ahí.
+        const sidebarElement = document.querySelector('[data-lte-toggle="sidebar"]');     
+        if (sidebarElement) {
+            sidebarElement.addEventListener('open.lte.push-menu', function(event) {       
+                $('.sidebar-menu .nav-item.menu-open>ul').css('display', 'block');
+            });
+        }
+
     });
+    
