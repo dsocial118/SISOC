@@ -28,6 +28,7 @@
     };
     /* SLIDE UP */
     const slideUp = (target, duration = 500) => {
+        console.log("SLIDE UP")
         target.style.transitionProperty = 'height, margin, padding';
         target.style.transitionDuration = `${duration}ms`;
         target.style.boxSizing = 'border-box';
@@ -54,6 +55,7 @@
     };
     /* SLIDE DOWN */
     const slideDown = (target, duration = 500) => {
+        console.log("SLIDE DOWN")
         target.style.removeProperty('display');
         let { display } = window.getComputedStyle(target);
         if (display === 'none') {
@@ -169,6 +171,7 @@
         }
         // TODO
         menusClose() {
+            console.log("CERRANDO MENUS!!!!")
             const navTreeview = document.querySelectorAll(SELECTOR_NAV_TREEVIEW);
             navTreeview.forEach(navTree => {
                 navTree.style.removeProperty('display');
@@ -183,18 +186,21 @@
             }
         }
         expand() {
+            console.log("EXPANDEE!!!!")
             const event = new Event(EVENT_OPEN);
             document.body.classList.remove(CLASS_NAME_SIDEBAR_COLLAPSE);
             document.body.classList.add(CLASS_NAME_SIDEBAR_OPEN);
             this._element.dispatchEvent(event);
         }
         collapse() {
+            console.log("COLLAPSE!!!!")
             const event = new Event(EVENT_COLLAPSE);
             document.body.classList.remove(CLASS_NAME_SIDEBAR_OPEN);
             document.body.classList.add(CLASS_NAME_SIDEBAR_COLLAPSE);
             this._element.dispatchEvent(event);
         }
         addSidebarBreakPoint() {
+            console.log("AGREGANDO PUNTO DE RUPTURA")
             var _a, _b, _c;
             const sidebarExpandList = (_b = (_a = document.querySelector(SELECTOR_SIDEBAR_EXPAND)) === null || _a === void 0 ? void 0 : _a.classList) !== null && _b !== void 0 ? _b : [];
             const sidebarExpand = (_c = Array.from(sidebarExpandList).find(className => className.startsWith(CLASS_NAME_SIDEBAR_EXPAND))) !== null && _c !== void 0 ? _c : '';
@@ -214,10 +220,13 @@
             }
         }
         toggle() {
+            console.log("TOGGLE!!!!")
             if (document.body.classList.contains(CLASS_NAME_SIDEBAR_COLLAPSE)) {
+                console.log("ENTREEE!!!!")
                 this.expand();
             }
             else {
+                console.log("SALIOO!!!")
                 this.collapse();
             }
         }
@@ -244,12 +253,14 @@
         sidebarOverlay.className = CLASS_NAME_SIDEBAR_OVERLAY;
         (_a = document.querySelector(SELECTOR_APP_WRAPPER)) === null || _a === void 0 ? void 0 : _a.append(sidebarOverlay);
         sidebarOverlay.addEventListener('touchstart', event => {
+            console.log("TOUCH START")
             event.preventDefault();
             const target = event.currentTarget;
             const data = new PushMenu(target, Defaults);
             data.collapse();
         }, { passive: true });
         sidebarOverlay.addEventListener('click', event => {
+            console.log("CLICK!!!!")
             event.preventDefault();
             const target = event.currentTarget;
             const data = new PushMenu(target, Defaults);
@@ -309,6 +320,7 @@
             this._config = Object.assign(Object.assign({}, Default$1), config);
         }
         open() {
+            console.log("TREE VIEW OPEN")
             var _a, _b;
             const event = new Event(EVENT_EXPANDED$2);
             if (this._config.accordion) {
@@ -331,6 +343,7 @@
             this._element.dispatchEvent(event);
         }
         close() {
+            console.log("TREEVIEW CLOSE")
             var _a;
             const event = new Event(EVENT_COLLAPSED$2);
             this._element.classList.remove(CLASS_NAME_MENU_OPEN);
@@ -341,6 +354,7 @@
             this._element.dispatchEvent(event);
         }
         toggle() {
+            console.log("TREE VIEW TOGGLE")
             if (this._element.classList.contains(CLASS_NAME_MENU_OPEN)) {
                 this.close();
             }
