@@ -1,6 +1,5 @@
 from django.db import models
-
-
+from core.models import Municipio, Provincia, Localidad
 class TipoOrganizacion(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
 
@@ -118,6 +117,15 @@ class Organizacion(models.Model):
     cuit = models.BigIntegerField(blank=True, null=True, unique=True)
     telefono = models.BigIntegerField(blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
+    domicilio = models.CharField(max_length=255, blank=True, null=True)
+    localidad = models.ForeignKey(
+        to=Localidad, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    partido = models.CharField(max_length=255, null=True, blank=True)
+    provincia = models.ForeignKey(to=Provincia, on_delete=models.PROTECT, null=True)
+    municipio = models.ForeignKey(
+        to=Municipio, on_delete=models.SET_NULL, null=True, blank=True
+    )
     tipo_entidad = models.ForeignKey(
         TipoEntidad,
         on_delete=models.CASCADE,
