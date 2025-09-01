@@ -313,27 +313,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // URL destino: preferir legajo_subsanar, si no existe usar legajo_revisar con accion=SUBSANAR
-      const url = (window.SUBSANAR_URL_TEMPLATE
-        ? window.SUBSANAR_URL_TEMPLATE.replace('{id}', legajoId)
-        : (window.REVISAR_URL_TEMPLATE ? window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId) : null));
-
-      if (!url) {
+      // Opción 1: SIEMPRE usar RevisarLegajo (legajo_revisar)
+      if (!window.REVISAR_URL_TEMPLATE) {
         showAlert('danger', 'No se configuró la URL de subsanación.');
         return;
       }
+      const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
 
       try {
-        // Tomar TODOS los campos del form (incluye el hidden "accion" si lo tenés en el template)
-        const fd = new FormData(formSubsanar);
-
-        // Asegurar campos por compatibilidad con distintos endpoints
-        if (!fd.has('motivo')) fd.append('motivo', motivo);
-        fd.set('comentario', motivo); // algunos backends usan "comentario"
-        if (!fd.has('accion')) fd.append('accion', 'SUBSANAR');
+        // Enviar exactamente lo que espera RevisarLegajoView
+        const fd = new FormData();
+        fd.append('accion', 'SUBSANAR');
+        fd.append('motivo', motivo);
 
         const resp = await fetch(url, {
           method: 'POST',
@@ -378,71 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ===== CONFIRMAR ENVÍO ===== */
-  const btnConfirm = document.getElementById('btn-confirm');
-  if (btnConfirm) {
-    let alertZone = ensureAlertsZone();
-
-    btnConfirm.addEventListener('click', async () => {
-      if (!window.CONFIRM_URL) {
-        alertZone.innerHTML = `
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            No se configuró la URL de confirmación.
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>`;
-        return;
-      }
-
-      btnConfirm.disabled = true;
-      const original = btnConfirm.innerHTML;
-      btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando…';
-
-      try {
-        const resp = await fetch(window.CONFIRM_URL, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'X-CSRFToken': getCsrfToken(),
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-          }
-        });
-
-        let data = {};
-        const ct = resp.headers.get('Content-Type') || '';
-        if (ct.includes('application/json')) {
-          data = await resp.json();
-        } else {
-          const text = await resp.text();
-          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
-          data = { success: true, message: text };
-        }
-
-        if (!resp.ok || data.success === false) {
-          const msg = data.error || `HTTP ${resp.status}`;
-          throw new Error(msg);
-        }
-
-        alertZone.innerHTML = `
-          <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ${data.message || 'Expediente enviado a Subsecretaría.'}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>`;
-
-        setTimeout(() => window.location.reload(), 700);
-
-      } catch (err) {
-        console.error('Error al confirmar envío:', err);
-        alertZone.innerHTML = `
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            No se pudo confirmar el envío. ${err.message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>`;
-        btnConfirm.disabled = false;
-        btnConfirm.innerHTML = original;
-      }
-    });
-  }
 
   /* ===== CRUCE CUIT (Nuevo/Reprocesar) ===== */
   const modalCruce = document.getElementById('modalCruceCuit');
