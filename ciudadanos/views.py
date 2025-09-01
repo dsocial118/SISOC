@@ -905,7 +905,7 @@ class CiudadanosDeleteView(DeleteView):
             f"Ciudadano borrado - Nombre: {ciudadano.nombre}, Apellido: {ciudadano.apellido}, "
             f"Tipo de documento: {ciudadano.tipo_documento}, Documento: {ciudadano.documento}"
         )
-        logger.info(f"Username: {usuario_eliminacion} - {mensaje}")
+        logger.info(f"Usuario: {usuario_eliminacion} - {mensaje}")
         return super().form_valid(form)
 
 

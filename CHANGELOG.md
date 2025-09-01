@@ -1,7 +1,17 @@
 # CHANGELOG
 Todas las versiones desplegadas deberan estar aca con su descripcion de cambios. Ordenar de mas a menos reciente,
 
-## Tag: `freeze-2025.08.18-2` - Despliegue: 2025.08.20
+## Tag: `2025.09.03-rcX` - Despliegue: 2025.09.03
+### Added
+- Búsqueda avanzada y módulo de comedores con componentes reutilizables de interfaz
+    (permite localizar comedores con filtros específicos y agiliza la gestión)
+- Componentes de diseño compartidos y estilos base para todas las vistas
+    (unifica la apariencia y facilita el mantenimiento del frontend)
+### Changed
+- Reestructuración de layouts, navegación y tablas para vista unificada en todo el sistema
+    (simplifica el desarrollo de nuevas pantallas y mejora la experiencia de uso)
+
+## Tag: `2025.08.18-rc2` - Despliegue: 2025.08.20
 ### Added
 - Biblioteca de componentes reutilizables para formularios, tablas y flujos de usuario 
     (facilita armar pantallas de manera rápida y uniforme)
