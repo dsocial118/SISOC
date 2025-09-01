@@ -5,28 +5,11 @@ Todas las versiones desplegadas deberan estar aca con su descripcion de cambios.
 ### Added
 - Búsqueda avanzada y módulo de comedores con componentes reutilizables de interfaz
     (permite localizar comedores con filtros específicos y agiliza la gestión)
-- Apps de acompañamientos, admisiones, CDI, centro de familia y usuarios con modelos, formularios y vistas iniciales
-    (sientan la base funcional del sistema para registrar y administrar datos)
-- Migraciones iniciales y plantillas asociadas para cada área
-    (preparan la base de datos y la interfaz para operar con los nuevos módulos)
-- Pruebas unitarias y datos mock para relevamientos y clasificación de comedores
-    (aumenta la cobertura y confiabilidad de los servicios)
-- Workflows de CI, configuración de lint y plantillas de issues/PR
-    (automatiza revisiones de código y estandariza los procesos de contribución)
 - Componentes de diseño compartidos y estilos base para todas las vistas
     (unifica la apariencia y facilita el mantenimiento del frontend)
-- Documentación y guías iniciales en README y componentes
-    (ofrece referencias claras para desarrolladores y usuarios)
 ### Changed
 - Reestructuración de layouts, navegación y tablas para vista unificada en todo el sistema
     (simplifica el desarrollo de nuevas pantallas y mejora la experiencia de uso)
-- Ajustes en modelos y servicios de admisiones y centro de familia
-    (permiten gestionar expedientes y reportes con mayor precisión)
-- Configuración de proyecto y dependencias actualizada (.env, .pylintrc, settings)
-    (mejora la organización del repositorio y su despliegue)
-### Removed
-- Modelo de expediente legado en centro de familia y vistas asociadas
-    (elimina estructuras obsoletas y evita inconsistencias)
 
 ## Tag: `2025.08.18-rc2` - Despliegue: 2025.08.20
 ### Added
