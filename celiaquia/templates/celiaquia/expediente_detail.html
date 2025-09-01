@@ -1,526 +1,564 @@
 {% extends "includes/main.html" %}
 {% load static custom_filters %}
 {% block title %}Expediente{% endblock %}
+
 {% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item">
-            <a href="{% url 'expediente_list' %}">Expedientes</a>
-        </li>
-        <li class="breadcrumb-item active"></li>
-    </ol>
+  <ol class="breadcrumb float-sm-right">
+    <li class="breadcrumb-item">
+      <a href="{% url 'expediente_list' %}">Expedientes</a>
+    </li>
+    <li class="breadcrumb-item active"></li>
+  </ol>
 {% endblock %}
+
 {% block content %}
-    <div class="mb-3 d-flex justify-content-between align-items-center">
-        <div>
-            <a href="{% url 'expediente_list' %}"
-               class="btn btn-outline-secondary btn-sm">← Volver</a>
-            {% if expediente.estado.nombre == 'CREADO' %}
-                <a href="{% url 'expediente_update' expediente.pk %}"
-                   class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
-            {% endif %}
-        </div>
-        <div class="d-flex gap-2">
-            {% with is_tec=request.user|has_group:"TecnicoCeliaquia" %}
-                {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
-                    <button type="button"
-                            class="btn btn-success btn-sm me-2"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalCruceCuit"
-                            data-mode="new">Subir Excel de CUITs (Cruce)</button>
-                {% endif %}
-                {% if is_tec and expediente.cruce_excel %}
-                    <button type="button"
-                            class="btn btn-warning btn-sm"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalCruceCuit"
-                            data-mode="reprocess">Reprocesar cruce</button>
-                {% endif %}
-            {% endwith %}
-        </div>
+
+  {% with
+      is_tec=request.user|has_group:"TecnicoCeliaquia"
+      is_coord=request.user|has_group:"CoordinadorCeliaquia"
+      is_prov=request.user|has_group:"ProvinciaCeliaquia"
+  %}
+
+  <style>
+    /* Extras sutiles para legajos */
+    .card-dark { background-color:#1f2d3d; color:#e9eef5; border:1px solid #2a3a4f; }
+    .chip { display:inline-flex; align-items:center; gap:.4rem; padding:.2rem .6rem; border-radius:999px; font-size:.75rem; }
+    .chip-warning { background:#ffe08a; color:#3b2f00; }
+    .badge-soft { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); }
+    .file-row { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.35rem .6rem; border-radius:.5rem; }
+    .file-row + .file-row { margin-top:.35rem; }
+    .file-name { max-width: 32ch; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:bottom; }
+    .muted { color:#9fb3c8!important; }
+    .list-divider { border-top:1px dashed rgba(255,255,255,.12); margin:.6rem 0; }
+    .btn-toolbar.flex-wrap > .btn-group { margin-bottom:.4rem; }
+  </style>
+
+  <div class="mb-3 d-flex justify-content-between align-items-center">
+    <div>
+      <a href="{% url 'expediente_list' %}" class="btn btn-outline-secondary btn-sm">← Volver</a>
+      {% if expediente.estado.nombre == 'CREADO' %}
+        <a href="{% url 'expediente_update' expediente.pk %}"
+           class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
+      {% endif %}
     </div>
 
-    {% if cupo_metrics %}
-        <div class="p-3 rounded shadow mb-4" style="background-color:#11202e; color:#e0e0e0">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-3">Provincial de {{ expediente.usuario_provincia.profile.provincia|default:"-" }}</h5>
-            </div>
-            <div class="row g-3">
-                <div class="col-sm-6 col-lg-3">
-                    <div class="border rounded p-3 h-100" style="background:#1b2a3b;">
-                        <div class="small text-muted">Total asignado</div>
-                        <div class="h4 mb-0">{{ cupo_metrics.total_asignado }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="border rounded p-3 h-100" style="background:#1b2a3b;">
-                        <div class="small text-muted">Usados</div>
-                        <div class="h4 mb-0">{{ cupo_metrics.usados }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="border rounded p-3 h-100" style="background:#1b2a3b;">
-                        <div class="small text-muted">Disponibles</div>
-                        <div class="h4 mb-0">{{ cupo_metrics.disponibles }}</div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="border rounded p-3 h-100" style="background:#1b2a3b;">
-                        <div class="small text-muted">Fuera de cupo</div>
-                        <div class="h4 mb-0">{{ fuera_count }}</div>
-                    </div>
-                </div>
-            </div>
+    <div class="d-flex gap-2">
+      {# Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia #}
+      {% if is_tec or is_coord %}
+        {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
+          <button type="button"
+                  class="btn btn-success btn-sm me-2"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalCruceCuit"
+                  data-mode="new">
+            Subir Excel de CUITs (Cruce)
+          </button>
+        {% endif %}
+        {% if expediente.cruce_excel %}
+          {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
+            <button type="button"
+                    class="btn btn-warning btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalCruceCuit"
+                    data-mode="reprocess">
+              Reprocesar cruce
+            </button>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  {% if cupo_metrics %}
+    <div class="p-3 rounded shadow mb-4" style="background-color:#11202e; color:#e0e0e0">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-3">Provincial de {{ expediente.usuario_provincia.profile.provincia|default:"-" }}</h5>
+      </div>
+      <div class="row g-3">
+        <div class="col-sm-6 col-lg-3">
+          <div class="border rounded p-3 h-100" style="background:#1b2a3b;">
+            <div class="small text-muted">Total asignado</div>
+            <div class="h4 mb-0">{{ cupo_metrics.total_asignado }}</div>
+          </div>
         </div>
-    {% endif %}
+        <div class="col-sm-6 col-lg-3">
+          <div class="border rounded p-3 h-100" style="background:#1b2a3b;">
+            <div class="small text-muted">Usados</div>
+            <div class="h4 mb-0">{{ cupo_metrics.usados }}</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="border rounded p-3 h-100" style="background:#1b2a3b;">
+            <div class="small text-muted">Disponibles</div>
+            <div class="h4 mb-0">{{ cupo_metrics.disponibles }}</div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="border rounded p-3 h-100" style="background:#1b2a3b;">
+            <div class="small text-muted">Fuera de cupo</div>
+            <div class="h4 mb-0">{{ fuera_count }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 
-    <div id="expediente-alerts"></div>
+  <div id="expediente-alerts"></div>
 
+  <div class="p-3 rounded shadow mb-4" style="background-color: #1c2a3a; color: #e0e0e0">
+    <h5 class="mb-3">Detalle del Expediente</h5>
+    <div class="row">
+      <div class="col-md-6">
+        <p><strong>Estado:</strong> {{ expediente.estado.display_name }}</p>
+        <p><strong>Fecha de creación:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}</p>
+        {% if expediente.documento %}
+          <p class="mb-0">
+            <strong>PRD generado:</strong>
+            <a href="{{ expediente.documento.url }}" target="_blank" class="text-decoration-underline">ver documento</a>
+          </p>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <p><strong>Provincia:</strong> {{ expediente.usuario_provincia.profile.provincia|default:"-" }}</p>
+        <p>
+          <strong>Técnico asignado:</strong>
+          {% if expediente.asignacion_tecnico %}
+            {{ expediente.asignacion_tecnico.tecnico.get_full_name|default:expediente.asignacion_tecnico.tecnico.username }}
+          {% else %}
+            <span class="text-muted">No asignado</span>
+          {% endif %}
+        </p>
+        {% if expediente.estado.id == 4 and is_coord %}
+          <a href="{% url 'expediente_asignar_tecnico' expediente.pk %}" class="btn btn-outline-warning btn-sm">Cambiar Técnico</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if fuera_de_cupo %}
+    <div class="p-3 rounded shadow mb-4" style="background-color:#1c2a3a; color:#e0e0e0">
+      <h5 class="mb-3">Lista de espera (Fuera de cupo)</h5>
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered mb-0" style="color:#fff;">
+          <thead style="background:#13212f;">
+            <tr>
+              <th>DNI</th>
+              <th>Nombre</th>
+              <th>Apellido</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in fuera_de_cupo %}
+              <tr>
+                <td>{{ l.ciudadano.documento }}</td>
+                <td>{{ l.ciudadano.nombre }}</td>
+                <td>{{ l.ciudadano.apellido }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if preview %}
     <div class="p-3 rounded shadow mb-4" style="background-color: #1c2a3a; color: #e0e0e0">
-        <h5 class="mb-3">Detalle del Expediente</h5>
-        <div class="row">
-            <div class="col-md-6">
-                <p><strong>Estado:</strong> {{ expediente.estado.display_name }}</p>
-                <p><strong>Fecha de creación:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}</p>
-                {% if expediente.documento %}
-                    <p class="mb-0">
-                        <strong>PRD generado:</strong>
-                        <a href="{{ expediente.documento.url }}" target="_blank" class="text-decoration-underline">ver documento</a>
-                    </p>
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-3">Vista previa del Excel</h5>
+        <div class="d-flex align-items-center gap-2">
+          <label for="preview-page-size" class="me-2 mb-0 small">Registros por página:</label>
+          <select id="preview-page-size" class="form-select form-select-sm" style="width: auto">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+      <div id="preview-error-detail" class="text-danger mb-2"></div>
+      <div class="table-responsive">
+        <table id="preview-table" class="table table-bordered table-sm">
+          <thead style="background-color: #13212f; color: #fff;">
+            <tr>
+              {% for h in preview.headers %}<th>{{ h|capfirst }}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody id="preview-tbody">
+            {% for row in preview.rows %}
+              <tr class="preview-row">
+                {% for h in preview.headers %}<td>{{ row|get_item:h }}</td>{% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <nav>
+        <ul id="preview-pagination" class="pagination pagination-sm justify-content-center mb-0"></ul>
+      </nav>
+      {% if expediente.estado.nombre == 'CREADO' %}
+        <button id="btn-process-expediente" class="btn btn-primary mt-3">Procesar Expediente</button>
+      {% endif %}
+    </div>
+  {% elif preview_error %}
+    <div class="alert alert-danger">{{ preview_error }}</div>
+  {% endif %}
+
+  <div class="p-3 rounded shadow mb-4" style="background-color: #1c2a3a; color: #e0e0e0">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-3">Legajos</h5>
+      <div class="d-flex align-items-center gap-2">
+        <label for="legajos-page-size" class="me-2 mb-0 small">Registros por página:</label>
+        <select id="legajos-page-size" class="form-select form-select-sm" style="width: auto">
+          <option value="10" selected>10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+
+    {% if legajos %}
+      {% if faltan_archivos %}
+        <div class="alert alert-warning">
+          Para enviar el expediente, todos los legajos deben tener <strong>los 3 archivos</strong>.
+          <ul class="mt-2 mb-0">
+            {% for leg in legajos %}
+              {% with m1=leg.archivo1 m2=leg.archivo2 m3=leg.archivo3 %}
+                {% if not m1 or not m2 or not m3 %}
+                  <li>
+                    {{ leg.ciudadano.apellido }}, {{ leg.ciudadano.nombre }} (DNI {{ leg.ciudadano.documento }}):
+                    {% if not m1 %}<span class="text-danger">falta archivo 1</span>{% endif %}
+                    {% if not m2 %}{% if not m1 %}—{% endif %}<span class="text-danger">falta archivo 2</span>{% endif %}
+                    {% if not m3 %}{% if not m1 or not m2 %}—{% endif %}<span class="text-danger">falta archivo 3</span>{% endif %}
+                  </li>
                 {% endif %}
-            </div>
-            <div class="col-md-6">
-                <p><strong>Provincia:</strong> {{ expediente.usuario_provincia.profile.provincia|default:"-" }}</p>
-                <p>
-                    <strong>Técnico asignado:</strong>
-                    {% if expediente.asignacion_tecnico %}
-                        {{ expediente.asignacion_tecnico.tecnico.get_full_name|default:expediente.asignacion_tecnico.tecnico.username }}
+              {% endwith %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <div id="legajos-list" class="list-group">
+        {% for leg in legajos %}
+          <div class="list-group-item border-0 mb-3 rounded shadow-sm legajo-item card-dark"
+               data-legajo-id="{{ leg.pk }}"
+               data-revision="{{ leg.revision_tecnico }}">
+
+            {% if leg.revision_tecnico == 'SUBSANAR' %}
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="chip chip-warning">⚠ Requiere subsanar</span>
+                {% if leg.subsanacion_solicitada_en %}
+                  <small class="muted">Solicitado: {{ leg.subsanacion_solicitada_en|date:"d/m/Y H:i" }}</small>
+                {% endif %}
+              </div>
+            {% endif %}
+
+            <div class="row gy-3 gx-3">
+              <!-- Col 1: Datos + Revisión -->
+              <div class="col-lg-3 col-md-5">
+                <div class="fw-semibold h6 mb-1">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
+                <div class="muted small mb-2">DNI: {{ leg.ciudadano.documento }}</div>
+
+                <div class="small">
+                  <span class="muted">Revisión: </span>
+                  {% if leg.revision_tecnico == 'APROBADO' %}
+                    <span class="badge bg-success">Aprobado</span>
+                  {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                    <span class="badge bg-danger">Rechazado</span>
+                  {% elif leg.revision_tecnico == 'SUBSANAR' %}
+                    <span class="badge bg-warning text-dark">Subsanar</span>
+                  {% elif leg.revision_tecnico == 'SUBSANADO' %}
+                    <span class="badge bg-info text-dark">Subsanado</span>
+                  {% else %}
+                    <span class="badge badge-soft">Pendiente</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Col 2: Observación de Subsanación -->
+              <div class="col-lg-4 col-md-7">
+                <div class="small muted">Observación (subsanación):</div>
+                <div class="mt-1">
+                  {% if leg.subsanacion_motivo %}
+                    <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);">
+                      <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                    </div>
+                  {% else %}
+                    <span class="muted">—</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Col 3: Archivos -->
+              <div class="col-lg-5">
+                <div class="small muted mb-1">Archivos del legajo</div>
+
+                <!-- Archivo 1 -->
+                <div class="file-row" style="background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);">
+                  <div>
+                    <div class="muted small">DNI</div>
+                    {% if leg.archivo1 %}
+                      <a href="{{ leg.archivo1.url }}" target="_blank" class="text-success text-decoration-underline file-name">
+                        ✅ {{ leg.archivo1.name }}
+                      </a>
                     {% else %}
-                        <span class="text-muted">No asignado</span>
+                      <span class="text-warning">⚠ Pendiente</span>
                     {% endif %}
-                </p>
-                {% if expediente.estado.id == 4 and request.user|has_group:"CoordinadorCeliaquia" %}
-                    <a href="{% url 'expediente_asignar_tecnico' expediente.pk %}" class="btn btn-outline-warning btn-sm">Cambiar Técnico</a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    {% if fuera_de_cupo %}
-        <div class="p-3 rounded shadow mb-4" style="background-color:#1c2a3a; color:#e0e0e0">
-            <h5 class="mb-3">Lista de espera (Fuera de cupo)</h5>
-            <div class="table-responsive">
-                <table class="table table-sm table-bordered mb-0" style="color:#fff;">
-                    <thead style="background:#13212f;">
-                        <tr>
-                            <th>DNI</th>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for l in fuera_de_cupo %}
-                            <tr>
-                                <td>{{ l.ciudadano.documento }}</td>
-                                <td>{{ l.ciudadano.nombre }}</td>
-                                <td>{{ l.ciudadano.apellido }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    {% endif %}
-
-    {% if preview %}
-        <div class="p-3 rounded shadow mb-4" style="background-color: #1c2a3a; color: #e0e0e0">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-3">Vista previa del Excel</h5>
-                <div class="d-flex align-items-center gap-2">
-                    <label for="preview-page-size" class="me-2 mb-0 small">Registros por página:</label>
-                    <select id="preview-page-size" class="form-select form-select-sm" style="width: auto">
-                        <option value="10">10</option>
-                        <option value="25" selected>25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
+                  </div>
+                  {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
+                    <button type="button"
+                            class="btn btn-outline-info btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSubirArchivo"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-expediente-id="{{ expediente.pk }}"
+                            data-file-field="archivo1">
+                      {% if leg.archivo1 %}Editar{% else %}Subir{% endif %}
+                    </button>
+                  {% endif %}
                 </div>
+
+                <!-- Archivo 2 -->
+                <div class="file-row" style="background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);">
+                  <div>
+                    <div class="muted small">Biopsia positiva y/o constancia médica</div>
+                    {% if leg.archivo2 %}
+                      <a href="{{ leg.archivo2.url }}" target="_blank" class="text-success text-decoration-underline file-name">
+                        ✅ {{ leg.archivo2.name }}
+                      </a>
+                    {% else %}
+                      <span class="text-warning">⚠ Pendiente</span>
+                    {% endif %}
+                  </div>
+                  {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
+                    <button type="button"
+                            class="btn btn-outline-info btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSubirArchivo"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-expediente-id="{{ expediente.pk }}"
+                            data-file-field="archivo2">
+                      {% if leg.archivo2 %}Editar{% else %}Subir{% endif %}
+                    </button>
+                  {% endif %}
+                </div>
+
+                <!-- Archivo 3 -->
+                <div class="file-row" style="background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);">
+                  <div>
+                    <div class="muted small">Negativa de ANSES</div>
+                    {% if leg.archivo3 %}
+                      <a href="{{ leg.archivo3.url }}" target="_blank" class="text-success text-decoration-underline file-name">
+                        ✅ {{ leg.archivo3.name }}
+                      </a>
+                    {% else %}
+                      <span class="text-warning">⚠ Pendiente</span>
+                    {% endif %}
+                  </div>
+                  {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
+                    <button type="button"
+                            class="btn btn-outline-info btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSubirArchivo"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-expediente-id="{{ expediente.pk }}"
+                            data-file-field="archivo3">
+                      {% if leg.archivo3 %}Editar{% else %}Subir{% endif %}
+                    </button>
+                  {% endif %}
+                </div>
+              </div>
             </div>
-            <div id="preview-error-detail" class="text-danger mb-2"></div>
-            <div class="table-responsive">
-                <table id="preview-table" class="table table-bordered table-sm">
-                    <thead style="background-color: #13212f; color: #fff;">
-                        <tr>
-                            {% for h in preview.headers %}<th>{{ h|capfirst }}</th>{% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody id="preview-tbody">
-                        {% for row in preview.rows %}
-                            <tr class="preview-row">
-                                {% for h in preview.headers %}<td>{{ row|get_item:h }}</td>{% endfor %}
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <nav>
-                <ul id="preview-pagination" class="pagination pagination-sm justify-content-center mb-0"></ul>
-            </nav>
-            {% if expediente.estado.nombre == 'CREADO' %}
-                <button id="btn-process-expediente" class="btn btn-primary mt-3">Procesar Expediente</button>
+
+            <div class="list-divider"></div>
+
+            <!-- Acciones (línea separada para que no se solapen con nada) -->
+            {% if is_tec and expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
+              {% with estado=leg.revision_tecnico %}
+              <div class="d-flex justify-content-end">
+                <div class="btn-toolbar flex-wrap" role="toolbar" aria-label="Acciones del legajo">
+                  <div class="btn-group btn-group-sm me-2" role="group" aria-label="Revisión técnico">
+                    <button type="button"
+                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                            title="Aprobar"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-accion="APROBAR">✅ Aprobar</button>
+
+                    <button type="button"
+                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                            title="Pedir subsanación"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSubsanar">📝 Subsanar</button>
+
+                    <button type="button"
+                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                            title="Rechazar"
+                            data-legajo-id="{{ leg.pk }}"
+                            data-accion="RECHAZAR">❌ Rechazar</button>
+                  </div>
+                </div>
+              </div>
+              {% endwith %}
             {% endif %}
-        </div>
-    {% elif preview_error %}
-        <div class="alert alert-danger">{{ preview_error }}</div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <nav class="mt-3">
+        <ul id="legajos-pagination" class="pagination pagination-sm justify-content-center mb-0"></ul>
+      </nav>
+
+    {% else %}
+      <p class="text-muted">No hay legajos cargados.</p>
     {% endif %}
 
-    <div class="p-3 rounded shadow mb-4" style="background-color: #1c2a3a; color: #e0e0e0">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-3">Legajos</h5>
-            <div class="d-flex align-items-center gap-2">
-                <label for="legajos-page-size" class="me-2 mb-0 small">Registros por página:</label>
-                <select id="legajos-page-size" class="form-select form-select-sm" style="width: auto">
-                    <option value="10" selected>10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
+    {# Confirmar Envío: solo Provincia en EN_ESPERA #}
+    {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
+      <div class="text-end mt-3">
+        <button id="btn-confirm" class="btn btn-success" >
+          Confirmar Envío
+        </button>        
+      </div>
+    {% endif %}
+
+    {# Confirmar Subsanación: solo Provincia en ASIGNADO y si hay_subsanar #}
+    {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
+      <div class="text-end mt-3">
+        <button id="btn-confirm-subs" class="btn btn-warning">Confirmar Subsanación</button>
+      </div>
+    {% endif %}
+  </div>
+
+  {# Asignar Técnico: solo Coordinador (según tu condición actual por id) #}
+  {% if expediente.estado.id == 2 and is_coord %}
+    <div class="card mb-4">
+      <div class="card-header bg-light">
+        <h5 class="mb-0">Asignar Técnico</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'expediente_asignar_tecnico' expediente.pk %}">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="tecnico">Seleccionar Técnico:</label>
+            <select name="tecnico_id" id="tecnico" class="form-control">
+              {% for tecnico in tecnicos %}
+                <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary mt-2">Asignar</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Modal: subir/editar archivo de legajo (individual por campo) -->
+  <div class="modal fade" id="modalSubirArchivo" tabindex="-1" aria-labelledby="modalSubirArchivoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-subir-archivo" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalSubirArchivoLabel">Subir/Editar archivo del legajo</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div id="modal-alertas" class="mb-2"></div>
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label">Seleccionar archivo a actualizar</label>
+                <select name="campo" id="campo-archivo" class="form-select" required>
+                  <option value="archivo1">DNI</option>
+                  <option value="archivo2">Biopsia positiva y/o constancia médica</option>
+                  <option value="archivo3">Negativa de ANSES</option>
                 </select>
+              </div>
+              <div class="col-12">
+                <label for="id_archivo" class="form-label">PDF o imagen</label>
+                <input type="file" name="archivo" id="id_archivo" class="form-control" required accept=".pdf,.jpg,.jpeg,.png" />
+              </div>
             </div>
-        </div>
-
-        {% if legajos %}
-            {% if faltan_archivos %}
-                <div class="alert alert-warning">
-                    Para enviar el expediente, todos los legajos deben tener <strong>los 3 archivos</strong>.
-                    <ul class="mt-2 mb-0">
-                        {% for leg in legajos %}
-                            {% with m1=leg.archivo1 m2=leg.archivo2 m3=leg.archivo3 %}
-                                {% if not m1 or not m2 or not m3 %}
-                                    <li>
-                                        {{ leg.ciudadano.apellido }}, {{ leg.ciudadano.nombre }} (DNI {{ leg.ciudadano.documento }}):
-                                        {% if not m1 %}<span class="text-danger">falta archivo 1</span>{% endif %}
-                                        {% if not m2 %}{% if not m1 %}—{% endif %}<span class="text-danger">falta archivo 2</span>{% endif %}
-                                        {% if not m3 %}{% if not m1 or not m2 %}—{% endif %}<span class="text-danger">falta archivo 3</span>{% endif %}
-                                    </li>
-                                {% endif %}
-                            {% endwith %}
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-
-            <div id="legajos-list" class="list-group">
-                {% for leg in legajos %}
-                    <div class="list-group-item border-0 mb-2 rounded shadow-sm legajo-item"
-                         style="background-color: #1f2d3d; color: #fff"
-                         data-legajo-id="{{ leg.pk }}"
-                         data-revision="{{ leg.revision_tecnico }}">
-
-                        <div class="row g-3 align-items-start">
-                            <!-- Col 1: Datos + Revisión -->
-                            <div class="col-lg-3 col-md-4">
-                                <div class="fw-semibold">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
-                                <small class="text-muted d-block">DNI: {{ leg.ciudadano.documento }}</small>
-                                <small class="d-block mt-1">
-                                    Revisión:
-                                    {% if leg.revision_tecnico == 'APROBADO' %}
-                                        <span class="badge bg-success">Aprobado</span>
-                                    {% elif leg.revision_tecnico == 'RECHAZADO' %}
-                                        <span class="badge bg-danger">Rechazado</span>
-                                    {% elif leg.revision_tecnico == 'SUBSANAR' %}
-                                        <span class="badge bg-warning text-dark">Subsanar</span>
-                                    {% elif leg.revision_tecnico == 'SUBSANADO' %}
-                                        <span class="badge bg-info text-dark">Subsanado</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Pendiente</span>
-                                    {% endif %}
-                                </small>
-                            </div>
-
-                            <!-- Col 2: Observación de Subsanación (antes que archivos/acciones) -->
-                            <div class="col-lg-3 col-md-5">
-                                <div class="small">
-                                    <div class="text-muted">Observación (subsanación):</div>
-                                    {% if leg.revision_tecnico == 'SUBSANAR' and leg.subsanacion_motivo %}
-                                        <div class="mt-1">
-                                            <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
-                                            {% if leg.subsanacion_solicitada_en %}
-                                                <small class="text-muted">Solicitado: {{ leg.subsanacion_solicitada_en|date:"d/m/Y H:i" }}</small>
-                                            {% endif %}
-                                        </div>
-                                    {% elif leg.subsanacion_motivo %}
-                                        <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
-                                    {% else %}
-                                        <span class="text-muted">—</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <!-- Col 3: Archivos (con botones de subir/editar) -->
-                            <div class="col-lg-4 col-md-5">
-                                <div class="small">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <div>
-                                            <span class="text-muted">DNI :</span>
-                                            {% if leg.archivo1 %}
-                                                <a href="{{ leg.archivo1.url }}" target="_blank" class="text-success text-decoration-underline">
-                                                    ✅ {{ leg.archivo1.name|truncatechars:40 }}
-                                                </a>
-                                            {% else %}
-                                                <span class="text-warning">⚠ Pendiente</span>
-                                            {% endif %}
-                                        </div>
-                                        {% with is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
-                                            {% if expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
-                                                <button type="button"
-                                                        class="btn btn-outline-info btn-sm"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalSubirArchivo"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-expediente-id="{{ expediente.pk }}"
-                                                        data-file-field="archivo1">
-                                                    {% if leg.archivo1 %}✏️ Editar{% else %}⬆️ Subir{% endif %}
-                                                </button>
-                                            {% endif %}
-                                        {% endwith %}
-                                    </div>
-
-                                    <div class="d-flex align-items-center justify-content-between mt-2">
-                                        <div>
-                                            <span class="text-muted">Biopsia positiva y/o constancia médica:</span>
-                                            {% if leg.archivo2 %}
-                                                <a href="{{ leg.archivo2.url }}" target="_blank" class="text-success text-decoration-underline">
-                                                    ✅ {{ leg.archivo2.name|truncatechars:40 }}
-                                                </a>
-                                            {% else %}
-                                                <span class="text-warning">⚠ Pendiente</span>
-                                            {% endif %}
-                                        </div>
-                                        {% with is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
-                                            {% if expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
-                                                <button type="button"
-                                                        class="btn btn-outline-info btn-sm"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalSubirArchivo"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-expediente-id="{{ expediente.pk }}"
-                                                        data-file-field="archivo2">
-                                                    {% if leg.archivo2 %}✏️ Editar{% else %}⬆️ Subir{% endif %}
-                                                </button>
-                                            {% endif %}
-                                        {% endwith %}
-                                    </div>
-
-                                    <div class="d-flex align-items-center justify-content-between mt-2">
-                                        <div>
-                                            <span class="text-muted">Negativa de ANSES:</span>
-                                            {% if leg.archivo3 %}
-                                                <a href="{{ leg.archivo3.url }}" target="_blank" class="text-success text-decoration-underline">
-                                                    ✅ {{ leg.archivo3.name|truncatechars:40 }}
-                                                </a>
-                                            {% else %}
-                                                <span class="text-warning">⚠ Pendiente</span>
-                                            {% endif %}
-                                        </div>
-                                        {% with is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
-                                            {% if expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR'%}
-                                                <button type="button"
-                                                        class="btn btn-outline-info btn-sm"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalSubirArchivo"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-expediente-id="{{ expediente.pk }}"
-                                                        data-file-field="archivo3">
-                                                    {% if leg.archivo3 %}✏️ Editar{% else %}⬆️ Subir{% endif %}
-                                                </button>
-                                            {% endif %}
-                                        {% endwith %}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Col 4: Acciones -->
-                            <div class="col-lg-2 d-flex justify-content-lg-end">
-                                <div class="btn-toolbar" role="toolbar" aria-label="Acciones del legajo">
-                                    {% with is_tec=request.user|has_group:"TecnicoCeliaquia" %}
-                                        {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
-                                            {% with estado=leg.revision_tecnico %}
-                                                <div class="btn-group btn-group-sm me-2" role="group" aria-label="Revisión técnico">
-                                                    <!-- Aprobar -->
-                                                    <button type="button"
-                                                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                            title="Aprobar"
-                                                            data-legajo-id="{{ leg.pk }}"
-                                                            data-accion="APROBAR">✅ Aprobar</button>
-                                                    <!-- Subsanar -->
-                                                    <button type="button"
-                                                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                            title="Pedir subsanación"
-                                                            data-legajo-id="{{ leg.pk }}"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalSubsanar">📝 Subsanar</button>
-                                                    <!-- Rechazar -->
-                                                    <button type="button"
-                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                            title="Rechazar"
-                                                            data-legajo-id="{{ leg.pk }}"
-                                                            data-accion="RECHAZAR">❌ Rechazar</button>
-                                                </div>
-                                            {% endwith %}
-                                        {% endif %}
-                                    {% endwith %}
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                {% endfor %}
-            </div>
-
-            <nav class="mt-3">
-                <ul id="legajos-pagination" class="pagination pagination-sm justify-content-center mb-0"></ul>
-            </nav>
-        {% else %}
-            <p class="text-muted">No hay legajos cargados.</p>
-        {% endif %}
-
-        {% if legajos and expediente.estado.nombre == 'EN_ESPERA' %}
-            <div class="text-end mt-3">
-                <button id="btn-confirm" class="btn btn-success" {% if faltan_archivos %}disabled{% endif %}>Confirmar Envío</button>
-            </div>
-        {% endif %}
-        {% if hay_subsanar and request.user|has_group:"ProvinciaCeliaquia" and expediente.estado.nombre == 'ASIGNADO' %}
-            <div class="text-end mt-3">
-                <button id="btn-confirm-subs" class="btn btn-warning">Confirmar Subsanación</button>
-            </div>
-        {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 
-    {% if expediente.estado.id == 2 and request.user|has_group:"CoordinadorCeliaquia" %}
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">Asignar Técnico</h5>
-            </div>
-            <div class="card-body">
-                <form method="post" action="{% url 'expediente_asignar_tecnico' expediente.pk %}">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="tecnico">Seleccionar Técnico:</label>
-                        <select name="tecnico_id" id="tecnico" class="form-control">
-                            {% for tecnico in tecnicos %}
-                                <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-2">Asignar</button>
-                </form>
-            </div>
+  <!-- Modal: pedir SUBSANACIÓN -->
+  <div class="modal fade" id="modalSubsanar" tabindex="-1" aria-labelledby="modalSubsanarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="form-subsanar" method="post">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalSubsanarLabel">Solicitud de subsanación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
-    {% endif %}
-
-    <!-- Modal: subir/editar archivo de legajo (individual por campo) -->
-    <div class="modal fade" id="modalSubirArchivo" tabindex="-1" aria-labelledby="modalSubirArchivoLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form id="form-subir-archivo" method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalSubirArchivoLabel">Subir/Editar archivo del legajo</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="modal-alertas" class="mb-2"></div>
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <label class="form-label">Seleccionar archivo a actualizar</label>
-                                <select name="campo" id="campo-archivo" class="form-select" required>
-                                    <option value="archivo1">DNI</option>
-                                    <option value="archivo2">Biopsia positiva y/o constancia médica</option>
-                                    <option value="archivo3">Negativa de ANSES</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label for="id_archivo" class="form-label">PDF o imagen</label>
-                                <input type="file" name="archivo" id="id_archivo" class="form-control" required accept=".pdf,.jpg,.jpeg,.png" />
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
+        <div class="modal-body">
+          <input type="hidden" name="accion" value="SUBSANAR" />
+          <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
+          <div class="mb-2">
+            <label for="subsanar-motivo" class="form-label">Indicar el motivo</label>
+            <textarea id="subsanar-motivo" name="motivo" class="form-control" rows="3" required maxlength="500"></textarea>
+          </div>
+          <small class="text-muted d-block">
+            El legajo quedará en estado <strong>SUBSANAR</strong> y la provincia podrá actualizar los archivos.
+          </small>
         </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning" id="btn-confirm-subsanar">Confirmar</button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <!-- Modal: pedir SUBSANACIÓN -->
-    <div class="modal fade" id="modalSubsanar" tabindex="-1" aria-labelledby="modalSubsanarLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <form class="modal-content" id="form-subsanar" method="post">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalSubsanarLabel">Solicitud de subsanación</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Compatibilidad: algunas vistas esperan "accion=SUBSANAR" -->
-                    <input type="hidden" name="accion" value="SUBSANAR" />
-                    <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
-                    <div class="mb-2">
-                        <label for="subsanar-motivo" class="form-label">Indicar el motivo</label>
-                        <textarea id="subsanar-motivo" name="motivo" class="form-control" rows="3" required maxlength="500"></textarea>
-                    </div>
-                    <small class="text-muted d-block">El legajo quedará en estado <strong>SUBSANAR</strong> y la provincia podrá actualizar los archivos.</small>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-warning" id="btn-confirm-subsanar">Confirmar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal: cruce CUIT/DNI -->
-    <div class="modal fade" id="modalCruceCuit" tabindex="-1" aria-labelledby="modalCruceCuitLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form id="form-cruce-cuit" method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalCruceCuitLabel">Subir Excel de CUITs (con encabezado)</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="cruce-alertas" class="mb-2"></div>
-                        <div class="form-group">
-                            <label for="id_excel_cuit">
-                                Archivo Excel (.xlsx) con columna <code>cuit</code> o <code>dni</code>
-                            </label>
-                            <input type="file" name="excel_cuit" id="id_excel_cuit" class="form-control" required accept=".xlsx,.xls,.csv" />
-                            <small id="cruce-help" class="text-muted">
-                                Debe incluir encabezado; columnas válidas: <strong>cuit</strong> o <strong>dni</strong>.
-                            </small>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success" id="btn-cruce-submit">Ejecutar Cruce</button>
-                    </div>
-                </form>
+  <!-- Modal: cruce CUIT/DNI -->
+  <div class="modal fade" id="modalCruceCuit" tabindex="-1" aria-labelledby="modalCruceCuitLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form id="form-cruce-cuit" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalCruceCuitLabel">Subir Excel de CUITs (con encabezado)</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div id="cruce-alertas" class="mb-2"></div>
+            <div class="form-group">
+              <label for="id_excel_cuit">
+                Archivo Excel (.xlsx) con columna <code>cuit</code> o <code>dni</code>
+              </label>
+              <input type="file" name="excel_cuit" id="id_excel_cuit" class="form-control" required accept=".xlsx,.xls,.csv" />
+              <small id="cruce-help" class="text-muted">
+                Debe incluir encabezado; columnas válidas: <strong>cuit</strong> o <strong>dni</strong>.
+              </small>
             </div>
-        </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success" id="btn-cruce-submit">Ejecutar Cruce</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
+
+  {% endwith %}
 {% endblock %}
 
 {% block customJS %}
-    <script>
-      window.PROCESS_URL           = "{% url 'expediente_procesar' expediente.pk %}";
-      window.CONFIRM_URL           = "{% url 'expediente_confirm' expediente.pk %}";
-      window.CRUCE_URL             = "{% url 'expediente_cruce_cuit' expediente.pk %}";
-      window.CSRF_TOKEN            = "{{ csrf_token }}";
-      window.REVISAR_URL_TEMPLATE  = "{% url 'legajo_revisar' expediente.pk 0 %}".replace("/0/", "/{id}/");
-      window.CONFIRM_SUBS_URL      = "{% url 'expediente_confirm_subsanacion' expediente.pk %}";
-      window.SUBSANAR_URL_TEMPLATE = "{% url 'legajo_subsanar' expediente.pk 0 %}".replace("/0/", "/{id}/");
-    </script>
-    <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
+  <script>
+    window.PROCESS_URL           = "{% url 'expediente_procesar' expediente.pk %}";
+    window.CONFIRM_URL           = "{% url 'expediente_confirm' expediente.pk %}";
+    window.CRUCE_URL             = "{% url 'expediente_cruce_cuit' expediente.pk %}";
+    window.CSRF_TOKEN            = "{{ csrf_token }}";
+    window.REVISAR_URL_TEMPLATE  = "{% url 'legajo_revisar' expediente.pk 0 %}".replace("/0/", "/{id}/");
+    window.CONFIRM_SUBS_URL      = "{% url 'expediente_confirm_subsanacion' expediente.pk %}";
+  </script>
+  <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
 {% endblock %}
