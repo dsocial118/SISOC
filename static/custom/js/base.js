@@ -54,3 +54,45 @@ $.widget.bridge("uibutton", $.ui.button);
             respuestaDetalle.innerText = "";
         }
     }
+
+    // Sidebar hover functionality for collapsed menu
+    $(document).ready(function() {
+        const sidebarMenu = $('.app-sidebar');
+        
+        // Function to hide menu-open ULs when sidebar is collapsed
+        function hideMenuOpenULs() {
+            if ($('body').hasClass('sidebar-collapse')) {
+                $('.sidebar-menu .nav-item.menu-open>ul').css('display', 'none');
+            }
+        }
+        
+        // Function to show menu-open ULs on hover
+        function showMenuOpenULs() {
+            if ($('body').hasClass('sidebar-collapse')) {
+                $('.sidebar-menu .nav-item.menu-open>ul').css('display', 'block');
+            }
+        }
+        
+        // Initialize: hide menu-open ULs when sidebar is collapsed
+        hideMenuOpenULs();
+        
+        // Watch for body class changes to handle initial state
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    hideMenuOpenULs();
+                }
+            });
+        });
+        observer.observe(document.body, { attributes: true });
+        
+        // Mouseenter event: show menu-open ULs when hovering over sidebar-menu
+        sidebarMenu.on('mouseenter', function() {
+            showMenuOpenULs();
+        });
+        
+        // Mouseleave event: hide menu-open ULs when leaving sidebar-menu
+        sidebarMenu.on('mouseleave', function() {
+            hideMenuOpenULs();
+        });
+    });
