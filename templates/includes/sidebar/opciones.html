@@ -58,9 +58,8 @@
             {% if request.user|has_group:"Ciudadanos" %}
                 <li class="nav-item {% if 'ciudadanos' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
-                       class="nav-link {% if 'ciudadanos' in pagina_actual %}active{% endif %}"
+                       class="nav-link nav-dot {% if 'ciudadanos' in pagina_actual %}active{% endif %}"
                        style="padding-left: 1.5rem">
-                        <i class="nav-icon far fa-dot-circle"></i>
                         <p>
                             Ciudadanos
                             <i class="nav-arrow bi bi-chevron-right"></i>
@@ -82,9 +81,8 @@
             {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" %}
                 <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
-                       class="nav-link {% if 'comedores' in pagina_actual %}active{% endif %}"
+                       class="nav-link nav-dot {% if 'comedores' in pagina_actual %}active{% endif %}"
                        style="padding-left: 1.5rem">
-                        <i class="nav-icon far fa-dot-circle"></i>
                         <p>
                             Comedores
                             <i class="nav-arrow bi bi-chevron-right"></i>
@@ -112,9 +110,8 @@
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
                                     <a href="{% url 'admisiones_tecnicos_listar' %}"
-                                       class="nav-link {% if 'admisiones_tecnicos' in pagina_actual %}active{% endif %}"
+                                       class="nav-link nav-dot {% if 'admisiones_tecnicos' in pagina_actual %}active{% endif %}"
                                        style="padding-left: 4.5rem">
-                                        <i class="far fa-dot-circle nav-icon"></i>
                                         <p>Técnicos</p>
                                     </a>
                                 </li>
@@ -122,7 +119,6 @@
                                     <a href="{% url 'admisiones_legales_listar' %}"
                                        class="nav-link {% if 'admisiones_legales' in pagina_actual %}active{% endif %}"
                                        style="padding-left: 4.5rem">
-                                        <i class="far fa-dot-circle nav-icon"></i>
                                         <p>Legales</p>
                                     </a>
                                 </li>
@@ -157,9 +153,8 @@
             {% if request.user|has_group:"Organizaciones" %}
                 <li class="nav-item {% if 'organizaciones' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
-                       class="nav-link {% if 'organizaciones' in pagina_actual %}active{% endif %}"
+                       class="nav-link nav-dot {% if 'organizaciones' in pagina_actual %}active{% endif %}"
                        style="padding-left: 1.5rem">
-                        <i class="nav-icon far fa-dot-circle"></i>
                         <p>
                             Organizaciones
                             <i class="nav-arrow bi bi-chevron-right"></i>
@@ -181,9 +176,8 @@
             {% if request.user|has_group:"CDI" %}
                 <li class="nav-item {% if 'cdi' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
-                       class="nav-link {% if 'cdi' in pagina_actual %}active{% endif %}"
+                       class="nav-link nav-dot {% if 'cdi' in pagina_actual %}active{% endif %}"
                        style="padding-left: 1.5rem">
-                        <i class="nav-icon far fa-dot-circle"></i>
                         <p>
                             Centro Desarrollo Infantil
                             <i class="nav-arrow bi bi-chevron-right"></i>
@@ -205,9 +199,8 @@
             {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or user %}
                 <li class="nav-item {% if 'centros' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
-                       class="nav-link {% if 'centros' in pagina_actual %}active{% endif %}"
+                       class="nav-link nav-dot {% if 'centros' in pagina_actual %}active{% endif %}"
                        style="padding-left: 1.5rem">
-                        <i class="nav-icon far fa-dot-circle"></i>
                         <p>
                             Centro de Familia
                             <i class="nav-arrow bi bi-chevron-right"></i>
