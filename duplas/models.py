@@ -26,7 +26,8 @@ class Dupla(models.Model):
         """Devuelve los nombres de técnicos separados por coma para mostrar en tablas."""
         try:
             nombres = ", ".join(
-                getattr(u, "get_full_name", lambda: "")() or getattr(u, "username", str(u))
+                getattr(u, "get_full_name", lambda: "")()
+                or getattr(u, "username", str(u))
                 for u in self.tecnico.all()
             )
             return nombres or "—"
