@@ -31,6 +31,14 @@ class DuplaForm(forms.ModelForm):
         model = Dupla
         fields = "__all__"
         widgets = {
+            "tecnico": forms.SelectMultiple(
+                attrs={
+                    "class": "form-control js-tecnico",
+                    "data-role": "select2",
+                    "data-placeholder": "Selecciona hasta 2 técnicos",
+                    "aria-label": "Selecciona hasta 2 técnicos",
+                }
+            ),
             "abogado": forms.Select(attrs={"class": "form-control"}),
         }
         labels = {
@@ -39,3 +47,15 @@ class DuplaForm(forms.ModelForm):
             "abogado": "Abogado",
             "estado": "Estado",
         }
+
+    def clean_tecnico(self):
+        """Valida que se seleccionen como máximo 2 técnicos.
+
+        Select2 evita más de 2 en el UI, pero reforzamos la validación
+        del lado del servidor por seguridad y consistencia.
+        """
+        tecnicos = self.cleaned_data.get("tecnico")
+        # `tecnicos` es un QuerySet/iterable de usuarios seleccionados
+        if tecnicos is not None and len(tecnicos) > 2:
+            raise forms.ValidationError("Selecciona como máximo 2 técnicos.")
+        return tecnicos

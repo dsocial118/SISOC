@@ -45,7 +45,6 @@ class DuplaListView(ListView):
             {"name": "estado"},
         ]
         context["table_actions"] = [
-            {"label": "Ver", "url_name": "dupla_detalle", "type": "info"},
             {"label": "Editar", "url_name": "dupla_editar", "type": "primary"},
             {"label": "Eliminar", "url_name": "dupla_eliminar", "type": "danger"},
         ]
@@ -60,7 +59,10 @@ class DuplaCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["form"] = self.get_form()
+        if "form" in kwargs:
+            context["form"] = kwargs["form"]
+        else:
+            context["form"] = self.get_form()
         return context
 
     def post(self, request, *args, **kwargs):
@@ -94,7 +96,10 @@ class DuplaUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["form"] = self.get_form()
+        if "form" in kwargs:
+            context["form"] = kwargs["form"]
+        else:
+            context["form"] = self.get_form()
         return context
 
     def get_success_url(self):
