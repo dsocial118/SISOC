@@ -31,7 +31,25 @@ class DuplaListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # No necesitamos duplicar las duplas en el context ya que ListView las maneja automáticamente
+        # Data table config
+        context["table_headers"] = [
+            {"title": "Nombre"},
+            {"title": "Técnico/s"},
+            {"title": "Abogado"},
+            {"title": "Estado"},
+        ]
+        context["table_fields"] = [
+            {"name": "nombre", "link_field": True, "link_url": "dupla_detalle"},
+            {"name": "tecnicos_nombres"},
+            {"name": "abogado"},
+            {"name": "estado"},
+        ]
+        context["table_actions"] = [
+            {"label": "Ver", "url_name": "dupla_detalle", "type": "info"},
+            {"label": "Editar", "url_name": "dupla_editar", "type": "primary"},
+            {"label": "Eliminar", "url_name": "dupla_eliminar", "type": "danger"},
+        ]
+
         return context
 
 
