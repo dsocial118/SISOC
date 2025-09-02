@@ -45,7 +45,6 @@ class DuplaListView(ListView):
             {"name": "estado"},
         ]
         context["table_actions"] = [
-            {"label": "Ver", "url_name": "dupla_detalle", "type": "info"},
             {"label": "Editar", "url_name": "dupla_editar", "type": "primary"},
             {"label": "Eliminar", "url_name": "dupla_eliminar", "type": "danger"},
         ]
