@@ -654,6 +654,8 @@
     margin-bottom: 0;
     border: none;
     background: #F5F5F5 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .prestaciones-header {
@@ -668,7 +670,6 @@
     padding: 1.2rem 1rem;
     border: none;
     color: #FFFFFF !important;
-    background: #0072BB !important;
 }
 
 .prestaciones-table tbody tr {
@@ -697,17 +698,10 @@
     background: #D9EDF7 !important;
 }
 
-/* Totales semanales - solo para la tabla de resumen */
-.prestaciones-table tbody td:last-child:not(:first-child) {
-    background: #4CAF50 !important;
-    color: #FFFFFF !important;
-    font-weight: 700;
-}
-
 /* Títulos de sección */
 .card-header h3,
 .mt-4 h5 {
-    color: #0072BB !important;
+    color: #FFF !important;
     font-weight: 600;
 }
 
@@ -719,9 +713,9 @@
 }
 
 /* Totales semanales - columna de cantidad */
-.prestaciones-table tbody td:last-child {
-    background: #4CAF50 !important;
-    color: #FFFFFF !important;
+.prestaciones-table.table-green tbody td:last-child {
+    background: rgba(46, 125, 51, 0.2);
+    color: #4CAF50 !important;
     font-weight: 700;
 }
 
@@ -821,32 +815,28 @@
 }
 
 [data-bs-theme="dark"] .prestaciones-header {
-    background: #0072BB !important;
+    background: var(--bs-card-bg) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 [data-bs-theme="dark"] .prestaciones-table tbody tr {
-    background: rgba(250, 250, 250, 0.02) !important;
+   background: var(--bs-card-bg) !important;
 }
 
 [data-bs-theme="dark"] .prestaciones-table tbody tr:nth-child(even) {
-    background: rgba(245, 245, 245, 0.02) !important;
+    background: var(--bs-card-bg) !important;
 }
 
 [data-bs-theme="dark"] .prestaciones-table tbody tr:hover {
     background: rgba(227, 242, 253, 0.1) !important;
 }
 
-[data-bs-theme="dark"] .prestaciones-table tbody td {
-    color: #E0E0E0 !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
 [data-bs-theme="dark"] .prestaciones-table tbody td:first-child {
-    background: rgba(217, 237, 247, 0.1) !important;
+    background: rgba(217, 237, 247, 0.05) !important;
     color: #42A5F5 !important;
 }
 
-[data-bs-theme="dark"] .prestaciones-table tbody td:last-child:not(:first-child) {
-    background: #4CAF50 !important;
-    color: #FFFFFF !important;
+[data-bs-theme="dark"] .prestaciones-table tbody td {
+    color: #FFF !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
