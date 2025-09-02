@@ -1,75 +1,85 @@
-{% load custom_filters %} {# Componente Search Bar #} {# Uso: {% include
-'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...'
-help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query
-add_text='Agregar' %} #}
+{% load custom_filters static %}
+<link rel="stylesheet"
+      href="{% static 'custom/css/comedoresSearchBar.css' %}" />
+{# Componente Search Bar #}
+{# Uso clásico (texto):
+   {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %}
+   Modo filtros combinables:
+   {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url comedores_filters_mode=True %}
+#}
 <h2 class="text-center display-4 mb-4">{{ titulo|default:"Buscar" }}</h2>
-<form method="GET">
-  <div class="row">
-    <div class="col-md-8 offset-md-2">
-      <div class="form-group">
-        <div class="input-group">
-          <input
-            type="search"
-            class="form-control"
-            style="font-size: 1.1rem"
-            placeholder="{{ placeholder|default:'Buscar' }}"
-            title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
-            name="busqueda"
-            value="{{ query|default:'' }}"
-          />
-          {% if button_append %}
-          <div class="input-group-append">
-            <button type="submit" class="btn btn-primary">
-              <i class="fa fa-search"></i>
-            </button>
-          </div>
-          {% else %}
-          <button type="submit" class="btn btn-primary">
-            <i class="fa fa-search"></i>
-          </button>
-          {% endif %}
+{% if comedores_filters_mode %}
+    <form method="GET" id="filters-form">
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="form-group">
+                    <div class="d-flex align-items-center mb-2">
+                        <label class="me-2 mb-0">Combinar filtros con</label>
+                        <select id="filters-logic"
+                                class="form-select form-select-sm"
+                                style="width:auto">
+                            <option value="AND" selected>AND</option>
+                            <option value="OR">OR</option>
+                        </select>
+                        <button type="button"
+                                id="add-filter"
+                                class="btn btn-sm btn-outline-success ms-2">Agregar filtro</button>
+                    </div>
+                    <div id="filters-rows" class="mb-2"></div>
+                    <input type="hidden" name="filters" id="filters-input" />
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
-</form>
+    </form>
+{% else %}
+    <form method="GET" id="simple-search-form">
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="form-group">
+                    <div class="input-group input-group-lg">
+                        <input type="search"
+                               class="form-control form-control-lg"
+                               placeholder="{{ placeholder|default:'Buscar' }}"
+                               title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
+                               name="busqueda"
+                               value="{{ query|default:'' }}" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endif %}
 <div class="row mt-3">
-  <div class="col-12 text-center">
-    {% if reset_url_full %}
-    <a
-      href="{{ reset_url_full }}"
-      class="btn btn-secondary d-inline-block mt-2 me-3"
-      >Resetear</a
-    >
-    {% elif reset_url|is_url %}
-    <a href="{{ reset_url }}" class="btn btn-secondary d-inline-block mt-2 me-3"
-      >Resetear</a
-    >
-    {% else %}
-    <a
-      href="{% url reset_url %}"
-      class="btn btn-secondary d-inline-block mt-2 me-3"
-      >Resetear</a
-    >
-    {% endif %} {% if add_url and show_add_button|default:True %} {% if
-    add_url_full %}
-    <a
-      href="{{ add_url_full }}"
-      class="btn btn-primary d-inline-block mt-2{% if button_append %} mr-2{% endif %}"
-      >{{ add_text|default:"Agregar" }}</a
-    >
-    {% elif add_url|is_url %}
-    <a
-      href="{{ add_url }}"
-      class="btn btn-primary d-inline-block mt-2{% if button_append %} mr-2{% endif %}"
-      >{{ add_text|default:"Agregar" }}</a
-    >
-    {% else %}
-    <a
-      href="{% url add_url %}"
-      class="btn btn-primary d-inline-block mt-2{% if button_append %} mr-2{% endif %}"
-      >{{ add_text|default:"Agregar" }}</a
-    >
-    {% endif %} {% endif %}
-  </div>
+    <div class="col-12 text-center search-actions">
+        {% if reset_url_full %}
+            <a href="{{ reset_url_full }}"
+               class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+        {% elif reset_url|is_url %}
+            <a href="{{ reset_url }}"
+               class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+        {% else %}
+            <a href="{% url reset_url %}"
+               class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
+        {% endif %}
+        {% if add_url and show_add_button|default:True %}
+            {% if add_url_full %}
+                <a href="{{ add_url_full }}"
+                   class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+            {% elif add_url|is_url %}
+                <a href="{{ add_url }}"
+                   class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+            {% else %}
+                <a href="{% url add_url %}"
+                   class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
+            {% endif %}
+        {% endif %}
+        {% with form_id=comedores_filters_mode|yesno:"filters-form,simple-search-form" %}
+            <button type="submit"
+                    form="{{ form_id }}"
+                    class="btn btn-success btn-lg d-inline-block mt-2 ms-2">Filtrar</button>
+        {% endwith %}
+    </div>
 </div>
+{% if comedores_filters_mode %}
+    <script src="{% static 'custom/js/comedores_search_bar.js' %}"></script>
+{% endif %}

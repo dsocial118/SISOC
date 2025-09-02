@@ -43,10 +43,18 @@ def getattr(obj, attr_name):
 
     try:
         value = builtins.getattr(obj, attr_name, None)
-        # Si es None, devolvemos una cadena vacía
         if value is None:
             return ""
-        # Si es un objeto relacionado, devolvemos su representación string
+
+        # Manejar relaciones M2M haciendo join de sus elementos
+        try:
+            if hasattr(value, "all") and not isinstance(value, (str, bytes)):
+                iterable = value.all()
+                return ", ".join(str(v) for v in iterable)
+        except Exception:
+            # Si falla, caer al string por defecto
+            pass
+
         return str(value)
     except (AttributeError, TypeError):
         return ""

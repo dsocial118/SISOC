@@ -1,1 +1,1 @@
-# DEPRECATED: Models migrated to core.models
+# DEPRECADO: Modelos migrados a core.models

@@ -1,1 +1,1 @@
-# DEPRECATED: Views migrated to core.views
+# DEPRECADO: Vistas migradas a core.views
