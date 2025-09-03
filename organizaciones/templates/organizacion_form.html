@@ -113,6 +113,12 @@
 </div>
 {% endblock %}
 {% block customJS %}
+    <script>
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+
+
     <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
     <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -165,11 +171,5 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-    </script>
-{% endblock %}
-{% block customJS2 %}
-    <script>
-  var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
-  var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
 {% endblock %}
