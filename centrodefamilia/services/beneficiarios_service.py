@@ -13,7 +13,7 @@ from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 
 
-def obtener_o_crear_responsable(responsable_data):
+def obtener_o_crear_responsable(responsable_data, usuario):
     """Busca responsable existente por DNI o crea uno nuevo"""
     dni = responsable_data.get("dni")
     if not dni:
@@ -30,12 +30,14 @@ def obtener_o_crear_responsable(responsable_data):
     except Responsable.DoesNotExist:
         responsable_form = ResponsableForm(responsable_data)
         if responsable_form.is_valid():
-            responsable = responsable_form.save()
+            responsable = responsable_form.save(commit=False)
+            responsable.creado_por = usuario
+            responsable.save()
             return responsable, responsable_form, True
         return None, responsable_form, False
 
 
-def crear_beneficiario(beneficiario_data, responsable, vinculo_parental):
+def crear_beneficiario(beneficiario_data, responsable, vinculo_parental, usuario):
     """Crea beneficiario y maneja actividades"""
     form = BeneficiarioForm(beneficiario_data)
     if not form.is_valid():
@@ -43,6 +45,7 @@ def crear_beneficiario(beneficiario_data, responsable, vinculo_parental):
 
     beneficiario = form.save(commit=False)
     beneficiario.responsable = responsable
+    beneficiario.creado_por = usuario
 
     if "actividad_preferida" in beneficiario_data:
         actividades = beneficiario_data["actividad_preferida"]
@@ -135,13 +138,13 @@ def procesar_formularios(request, beneficiario_data, responsable_data):
         return None, None, None
 
     responsable, responsable_form, es_responsable_nuevo = obtener_o_crear_responsable(
-        responsable_data
+        responsable_data, request.user
     )
     if not responsable:
         return None, None, responsable_form
 
     beneficiario, beneficiario_form = crear_beneficiario(
-        beneficiario_data, responsable, vinculo_parental
+        beneficiario_data, responsable, vinculo_parental, request.user
     )
     if not beneficiario:
         return None, beneficiario_form, responsable_form
@@ -445,11 +448,10 @@ def get_responsables_list_context():
     """Configuración para la lista de responsables"""
     return {
         "table_headers": [
-            {"title": "CUIL", "width": "12%"},
-            {"title": "Apellido y Nombre", "width": "20%"},
+            {"title": "CUIL", "width": "15%"},
+            {"title": "Apellido y Nombre", "width": "25%"},
             {"title": "DNI", "width": "10%"},
-            {"title": "Género", "width": "8%"},
-            {"title": "Vínculo", "width": "15%"},
+            {"title": "Género", "width": "15%"},
             {"title": "Beneficiarios", "width": "10%"},
             {"title": "Provincia", "width": "15%"},
             {"title": "Municipio", "width": "10%"},
@@ -459,7 +461,6 @@ def get_responsables_list_context():
             {"name": "apellido_nombre"},
             {"name": "dni"},
             {"name": "genero_display"},
-            {"name": "vinculo_display"},
             {"name": "cantidad_beneficiarios"},
             {"name": "provincia"},
             {"name": "municipio"},
