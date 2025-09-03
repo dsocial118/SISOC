@@ -89,3 +89,51 @@ function actualizarEstado(selectElement) {
         alert("Ocurrió un error al actualizar el estado.");
     });
 }
+
+function actualizarNumeroGDE(documentoId, numeroGDE) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(window.URL_ACTUALIZAR_NUMERO_GDE, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            documento_id: documentoId,
+            numero_gde: numeroGDE
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert("Error: " + data.error);
+            // Restaurar valor anterior si hubo error
+            const input = document.getElementById(`gde-input-${documentoId}`);
+            if (input) {
+                input.value = data.valor_anterior || '';
+            }
+            return;
+        }
+
+        // Mostrar toast de éxito
+        const toastEl = document.getElementById("toastGDEExito");
+        if (toastEl) {
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+
+        // Actualizar visualmente el campo
+        const input = document.getElementById(`gde-input-${documentoId}`);
+        if (input) {
+            input.classList.add('border-success');
+            setTimeout(() => {
+                input.classList.remove('border-success');
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        console.error("Error al actualizar número GDE:", error);
+        alert("Ocurrió un error al actualizar el número GDE.");
+    });
+}
