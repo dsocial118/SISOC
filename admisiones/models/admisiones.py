@@ -131,6 +131,13 @@ class ArchivoAdmision(models.Model):
         blank=True, null=True, verbose_name="Observaciones"
     )
     num_if = models.CharField(max_length=100, blank=True, null=True)
+    numero_gde = models.CharField(
+        "Número de GDE", 
+        max_length=50, 
+        blank=True, 
+        null=True,
+        help_text="Número de expediente GDE asignado por el técnico después de la carga en sistema externo"
+    )
     creado = models.DateField(auto_now_add=True, null=True, blank=True)
     modificado = models.DateField(auto_now=True, null=True, blank=True)
 
