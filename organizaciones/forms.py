@@ -6,14 +6,15 @@ from organizaciones.models import (
     Aval1,
     Aval2,
 )
-from core.models import Municipio, Provincia ,Localidad
+from core.models import Municipio, Provincia, Localidad
+
 
 class OrganizacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.popular_campos_ubicacion()
-    
+
     def popular_campos_ubicacion(self):
 
         def pk_formatter(value):
@@ -50,6 +51,7 @@ class OrganizacionForm(forms.ModelForm):
 
         if localidad:
             self.fields["localidad"].initial = localidad
+
     class Meta:
         model = Organizacion
         fields = "__all__"

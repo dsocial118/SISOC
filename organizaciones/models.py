@@ -1,5 +1,7 @@
 from django.db import models
 from core.models import Municipio, Provincia, Localidad
+
+
 class TipoOrganizacion(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
 
