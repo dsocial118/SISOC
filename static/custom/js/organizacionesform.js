@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const provinciaSelect = document.getElementById("id_provincia");
     const municipioSelect = document.getElementById("id_municipio");
     const localidadSelect = document.getElementById("id_localidad");
-    alert("Hola");
+
     if (provinciaSelect) {
         provinciaSelect.addEventListener("change", async function () {
             await cargarOpciones(
