@@ -29,7 +29,7 @@
                                         {# Modo personalizado - permite definir las celdas manualmente #}
                                         {% for cell in item.cells %}
                                             <td {% if cell.class %}class="{{ cell.class }}"{% endif %}>
-                                                {% if cell.link_url %}
+                                                {% if cell.link_url and not disable_links %}
                                                     <a href="{{ cell.link_url }}"
                                                        {% if cell.link_class %}class="{{ cell.link_class }}"{% endif %}
                                                        {% if cell.link_title %}title="{{ cell.link_title }}"{% endif %}>
@@ -44,7 +44,7 @@
                                         {# Modo automático - definir campos en la vista #}
                                         {% for field in fields %}
                                             <td>
-                                                {% if field.link_field %}
+                                                {% if field.link_field and not disable_links %}
                                                     <a href="{% url field.link_url item.pk %}"
                                                        {% if field.link_class %}class="{{ field.link_class }}"{% endif %}
                                                        {% if field.link_title %}title="{{ field.link_title }}"{% endif %}>

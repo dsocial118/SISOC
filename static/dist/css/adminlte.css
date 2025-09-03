@@ -15160,4 +15160,10 @@ html.maximized-card {
   width: 32px;
 }
 
+
+.sidebar-menu .nav-link.nav-dot::before {
+    content: "●";
+    font-size: 0.8rem;
+    margin-top:0.1rem;
+}
 /*# sourceMappingURL=adminlte.css.map */
