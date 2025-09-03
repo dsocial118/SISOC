@@ -89,9 +89,15 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     self.fields["cuit_organizacion"].initial = organizacion.cuit
                     self.fields["mail_organizacion"].initial = organizacion.email
                     self.fields["telefono_organizacion"].initial = organizacion.telefono
-                    self.fields["domicilio_organizacion"].initial = organizacion.domicilio
-                    self.fields["localidad_organizacion"].initial = organizacion.localidad
-                    self.fields["provincia_organizacion"].initial = organizacion.provincia
+                    self.fields["domicilio_organizacion"].initial = (
+                        organizacion.domicilio
+                    )
+                    self.fields["localidad_organizacion"].initial = (
+                        organizacion.localidad
+                    )
+                    self.fields["provincia_organizacion"].initial = (
+                        organizacion.provincia
+                    )
                     self.fields["partido_organizacion"].initial = organizacion.partido
 
             except Anexo.DoesNotExist:
@@ -163,9 +169,15 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     self.fields["cuit_organizacion"].initial = organizacion.cuit
                     self.fields["mail_organizacion"].initial = organizacion.email
                     self.fields["telefono_organizacion"].initial = organizacion.telefono
-                    self.fields["domicilio_organizacion"].initial = organizacion.domicilio
-                    self.fields["localidad_organizacion"].initial = organizacion.localidad
-                    self.fields["provincia_organizacion"].initial = organizacion.provincia
+                    self.fields["domicilio_organizacion"].initial = (
+                        organizacion.domicilio
+                    )
+                    self.fields["localidad_organizacion"].initial = (
+                        organizacion.localidad
+                    )
+                    self.fields["provincia_organizacion"].initial = (
+                        organizacion.provincia
+                    )
                     self.fields["partido_organizacion"].initial = organizacion.partido
 
             except Anexo.DoesNotExist:
