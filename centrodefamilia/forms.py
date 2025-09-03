@@ -10,12 +10,18 @@ from centrodefamilia.models import (
     ParticipanteActividad,
     Categoria,
     Actividad,
+    Beneficiario,
+    Responsable,
 )
 from centrodefamilia.services.participante import (
     ParticipanteService,
     AlreadyRegistered,
     CupoExcedido,
     SexoNoPermitido,
+)
+from centrodefamilia.services.form_service import (
+    setup_location_fields,
+    set_readonly_fields,
 )
 
 HORAS_DEL_DIA = [(f"{h:02d}:00", f"{h:02d}:00") for h in range(0, 24)] + [
@@ -271,3 +277,65 @@ class ActividadForm(forms.ModelForm):
     class Meta:
         model = Actividad
         fields = ["categoria", "nombre"]
+
+
+class ResponsableForm(forms.ModelForm):
+    class Meta:
+        model = Responsable
+        exclude = ["fecha_creado", "fecha_modificado"]
+        widgets = {
+            "genero": forms.Select(
+                choices=Responsable.GENERO_CHOICES, attrs={"disabled": True}
+            ),
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        setup_location_fields(self)
+        set_readonly_fields(
+            self, ["nombre", "apellido", "cuil", "dni", "genero", "fecha_nacimiento"]
+        )
+
+
+class BeneficiarioForm(forms.ModelForm):
+    actividad_preferida = forms.MultipleChoiceField(
+        choices=Beneficiario.ACTIVIDAD_PREFERIDA_CHOICES,
+        widget=forms.SelectMultiple(
+            attrs={
+                "class": "select2",
+                "data-placeholder": "Seleccione actividades preferidas",
+            }
+        ),
+        required=True,
+    )
+    actividades_detalle = forms.ModelMultipleChoiceField(
+        queryset=Actividad.objects.all(),
+        widget=forms.CheckboxSelectMultiple(),
+        label="",
+        required=False,
+    )
+
+    class Meta:
+        model = Beneficiario
+        exclude = ["fecha_creado", "fecha_modificado", "responsable"]
+        widgets = {
+            "genero": forms.Select(
+                choices=Beneficiario.GENERO_CHOICES, attrs={"disabled": True}
+            ),
+            "nivel_educativo_actual": forms.Select(
+                choices=Beneficiario.NIVEL_EDUCATIVO_ACTUAL_CHOICES
+            ),
+            "maximo_nivel_educativo": forms.Select(
+                choices=Beneficiario.MAXIMO_NIVEL_EDUCATIVO_CHOICES
+            ),
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        setup_location_fields(self)
+        self.fields["actividades_detalle"].required = False
+        set_readonly_fields(
+            self, ["nombre", "apellido", "fecha_nacimiento", "cuil", "dni", "genero"]
+        )

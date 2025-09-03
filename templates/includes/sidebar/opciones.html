@@ -125,11 +125,43 @@
             {% endif %}
             {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or user %}
                 <li class="nav-item">
-                    <a href="{% url 'centro_list' %}"
-                       class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon fas fa-sitemap"></i>
-                        <p>Centro de Familia</p>
+                    <a href="#" class="nav-link">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>
+                            Centro de Familia
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
                     </a>
+                    <ul class="nav nav-treeview" style="display: none;">
+                        <li class="nav-item">
+                            <a href="{% url 'centro_list' %}"
+                               class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %} ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Centros</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'beneficiarios_crear' %}"
+                               class="nav-link {% if 'beneficiarios/nuevo' in pagina_actual %}active{% endif %} ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Nuevo Beneficiario</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'beneficiarios_list' %}"
+                               class="nav-link {% if 'beneficiarios/beneficiarios' in pagina_actual %}active{% endif %} ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Lista Beneficiarios</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'responsables_list' %}"
+                               class="nav-link {% if 'beneficiarios/responsables' in pagina_actual %}active{% endif %} ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Lista Responsables</p>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             {% endif %}
         </ul>
