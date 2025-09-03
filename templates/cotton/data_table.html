@@ -16,7 +16,7 @@
                             <tr>
                                 {% for cell in item.cells %}
                                     <td {% if cell.class %}class="{{ cell.class }}"{% endif %}>
-                                        {% if cell.link_url %}
+                                        {% if cell.link_url and not disable_links %}
                                             <a href="{{ cell.link_url }}"
                                                {% if cell.link_class %}class="{{ cell.link_class }}"{% endif %}
                                                {% if cell.link_title %}title="{{ cell.link_title }}"{% endif %}>

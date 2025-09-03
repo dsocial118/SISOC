@@ -1,5 +1,5 @@
-# DEPRECATED: All utilities migrated to core.utils
-# This file is kept for Django compatibility only
+# DEPRECADO: Todas las utilidades fueron migradas a core.utils
+# Este archivo se mantiene solo por compatibilidad con Django
 
 import warnings
 
@@ -12,7 +12,7 @@ from core.utils import (  # noqa
 )
 
 warnings.warn(
-    "config.utils is deprecated. Use core.utils instead",
+    "config.utils está deprecado. Usá core.utils en su lugar",
     DeprecationWarning,
     stacklevel=2,
 )

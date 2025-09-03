@@ -131,7 +131,7 @@ class NominaDetailView(TemplateView):
         comedor_pk = self.kwargs["pk"]
         page = self.request.GET.get("page", 1)
 
-        page_obj, nomina_m, nomina_f, espera, total = ComedorService.detalle_de_nomina(
+        page_obj, nomina_m, nomina_f, espera, total = ComedorService.get_nomina_detail(
             comedor_pk, page
         )
 
@@ -270,17 +270,14 @@ class ComedorListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        query = self.request.GET.get("busqueda")
-        return ComedorService.get_comedores_filtrados(query)
+        return ComedorService.get_filtered_comedores(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        query = self.request.GET.get("busqueda")
 
         # Datos para componentes Cotton
         context.update(
             {
-                "query": query,
                 # Breadcrumb
                 "breadcrumb_items": [
                     {"text": "Comedores", "url": reverse("comedores")},
@@ -289,6 +286,7 @@ class ComedorListView(ListView):
                 # Search bar
                 "reset_url": reverse("comedores"),
                 "add_url": reverse("comedor_crear"),
+                "comedores_filters_mode": True,
             }
         )
 
@@ -517,8 +515,8 @@ class ComedorUpdateView(UpdateView):
             self.object.referente = referente_form.save()
             self.object.save()
 
-            ComedorService.borrar_imagenes(self.request.POST)
-            ComedorService.borrar_foto_legajo(self.request.POST, self.object)
+            ComedorService.delete_images(self.request.POST)
+            ComedorService.delete_legajo_photo(self.request.POST, self.object)
 
             for imagen in imagenes:
                 try:

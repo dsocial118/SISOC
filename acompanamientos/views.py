@@ -14,7 +14,7 @@ def restaurar_hito(request, comedor_id):
     hito = get_object_or_404(Hitos, comedor_id=comedor_id)
 
     # Verifica si el campo existe en el modelo
-    if hasattr(hito, campo):
+    if hasattr(hito, campo) and campo not in ["id", "comedor", "fecha"]:
         setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
         hito.save()
         messages.success(
@@ -43,6 +43,78 @@ class AcompanamientoDetailView(DetailView):
         )
 
         context["hitos"] = AcompanamientoService.obtener_hitos(comedor)
+        context["fechas_hitos"] = AcompanamientoService.obtener_fechas_hitos(comedor)
+
+        # Configuración de todos los hitos para evitar repetición en el template
+        context["hitos_config"] = [
+            {"campo": "retiro_tarjeta", "descripcion": "Retiro de Tarjeta"},
+            {"campo": "habilitacion_tarjeta", "descripcion": "Habilitación de Tarjeta"},
+            {
+                "campo": "alta_usuario_plataforma",
+                "descripcion": "Alta de Usuario en Plataforma",
+            },
+            {
+                "campo": "capacitacion_realizada",
+                "descripcion": "Capacitación realizada",
+            },
+            {
+                "campo": "notificacion_acreditacion_1",
+                "descripcion": "Notificación de primera acreditación",
+            },
+            {
+                "campo": "notificacion_acreditacion_2",
+                "descripcion": "Notificación de acreditación mes 2",
+            },
+            {
+                "campo": "notificacion_acreditacion_3",
+                "descripcion": "Notificación de acreditación mes 3",
+            },
+            {
+                "campo": "notificacion_acreditacion_4",
+                "descripcion": "Notificación de acreditación mes 4",
+            },
+            {
+                "campo": "notificacion_acreditacion_5",
+                "descripcion": "Notificación de acreditación mes 5",
+            },
+            {
+                "campo": "notificacion_acreditacion_6",
+                "descripcion": "Notificación de acreditación mes 6",
+            },
+            {
+                "campo": "nomina_entregada_inicial",
+                "descripcion": "Nómina entregada inicial",
+            },
+            {"campo": "nomina_alta_baja_2", "descripcion": "Nómina Alta/baja mes 2"},
+            {"campo": "nomina_alta_baja_3", "descripcion": "Nómina Alta/baja mes 3"},
+            {"campo": "nomina_alta_baja_4", "descripcion": "Nómina Alta/baja mes 4"},
+            {"campo": "nomina_alta_baja_5", "descripcion": "Nómina Alta/baja mes 5"},
+            {"campo": "nomina_alta_baja_6", "descripcion": "Nómina Alta/baja mes 6"},
+            {
+                "campo": "certificado_prestaciones_1",
+                "descripcion": "Certificado mensual de prestaciones mes: 1",
+            },
+            {
+                "campo": "certificado_prestaciones_2",
+                "descripcion": "Certificado mensual de prestaciones mes: 2",
+            },
+            {
+                "campo": "certificado_prestaciones_3",
+                "descripcion": "Certificado mensual de prestaciones mes: 3",
+            },
+            {
+                "campo": "certificado_prestaciones_4",
+                "descripcion": "Certificado mensual de prestaciones mes: 4",
+            },
+            {
+                "campo": "certificado_prestaciones_5",
+                "descripcion": "Certificado mensual de prestaciones mes: 5",
+            },
+            {
+                "campo": "certificado_prestaciones_6",
+                "descripcion": "Certificado mensual de prestaciones mes: 6",
+            },
+        ]
 
         datos_admision = AcompanamientoService.obtener_datos_admision(comedor)
 
