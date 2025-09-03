@@ -90,6 +90,48 @@ function actualizarEstado(selectElement) {
     });
 }
 
+// Función para activar el modo edición
+function activarEdicionGDE(documentoId) {
+    const displayDiv = document.getElementById(`gde-display-${documentoId}`);
+    const editDiv = document.getElementById(`gde-edit-${documentoId}`);
+    const input = document.getElementById(`gde-input-${documentoId}`);
+    
+    if (displayDiv && editDiv && input) {
+        displayDiv.classList.add('d-none');
+        editDiv.classList.remove('d-none');
+        input.focus();
+    }
+}
+
+// Función para cancelar edición y volver a modo vista
+function cancelarEdicionGDE(documentoId) {
+    const displayDiv = document.getElementById(`gde-display-${documentoId}`);
+    const editDiv = document.getElementById(`gde-edit-${documentoId}`);
+    const input = document.getElementById(`gde-input-${documentoId}`);
+    
+    if (displayDiv && editDiv && input) {
+        // Restaurar valor original desde el atributo data o desde la vista
+        const valorOriginal = displayDiv.querySelector('span').textContent;
+        if (valorOriginal !== 'Sin número GDE') {
+            input.value = valorOriginal;
+        } else {
+            input.value = '';
+        }
+        
+        editDiv.classList.add('d-none');
+        displayDiv.classList.remove('d-none');
+    }
+}
+
+// Función para guardar el número GDE
+function guardarNumeroGDE(documentoId) {
+    const input = document.getElementById(`gde-input-${documentoId}`);
+    const numeroGDE = input ? input.value.trim() : '';
+    
+    actualizarNumeroGDE(documentoId, numeroGDE);
+}
+
+// Función principal de actualización (modificada)
 function actualizarNumeroGDE(documentoId, numeroGDE) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     
@@ -123,17 +165,54 @@ function actualizarNumeroGDE(documentoId, numeroGDE) {
             toast.show();
         }
 
-        // Actualizar visualmente el campo
-        const input = document.getElementById(`gde-input-${documentoId}`);
-        if (input) {
-            input.classList.add('border-success');
-            setTimeout(() => {
-                input.classList.remove('border-success');
-            }, 2000);
-        }
+        // Actualizar la vista con el nuevo valor
+        actualizarVistaGDE(documentoId, data.numero_gde);
+        
+        // Volver a modo vista
+        volverAModoVista(documentoId);
     })
     .catch(error => {
         console.error("Error al actualizar número GDE:", error);
         alert("Ocurrió un error al actualizar el número GDE.");
     });
+}
+
+// Función para actualizar la vista después de guardar
+function actualizarVistaGDE(documentoId, numeroGDE) {
+    const displayDiv = document.getElementById(`gde-display-${documentoId}`);
+    const input = document.getElementById(`gde-input-${documentoId}`);
+    
+    if (displayDiv && input) {
+        // Actualizar el input con el valor confirmado
+        input.value = numeroGDE || '';
+        
+        // Actualizar el contenido de la vista
+        if (numeroGDE) {
+            displayDiv.innerHTML = `
+                <span class="text-success fw-bold">${numeroGDE}</span>
+                <i class="bi bi-pencil-square ms-2 text-muted" style="cursor: pointer;" title="Editar número GDE"></i>
+            `;
+        } else {
+            displayDiv.innerHTML = `
+                <span class="text-muted">Sin número GDE</span>
+                <i class="bi bi-plus-circle ms-2 text-primary" style="cursor: pointer;" title="Agregar número GDE"></i>
+            `;
+        }
+    }
+}
+
+// Función para volver a modo vista
+function volverAModoVista(documentoId) {
+    const displayDiv = document.getElementById(`gde-display-${documentoId}`);
+    const editDiv = document.getElementById(`gde-edit-${documentoId}`);
+    
+    if (displayDiv && editDiv) {
+        editDiv.classList.add('d-none');
+        displayDiv.classList.remove('d-none');
+    }
+}
+
+// Función legacy mantenida para compatibilidad
+function actualizarNumeroGDELegacy(documentoId, numeroGDE) {
+    actualizarNumeroGDE(documentoId, numeroGDE);
 }
