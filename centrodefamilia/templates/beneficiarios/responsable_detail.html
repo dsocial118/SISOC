@@ -1,0 +1,210 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Detalle del Responsable{% endblock %}
+{% block titulo-pagina %}Detalle del Responsable{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>{{ responsable.apellido }}, {{ responsable.nombre }}</h2>
+                    <div>
+                        <a href="{% url 'responsables_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al listado
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <!-- Información Personal -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user"></i> Información Personal
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">CUIL:</dt>
+                            <dd class="col-sm-8">
+                                {{ responsable.cuil }}
+                            </dd>
+                            <dt class="col-sm-4">DNI:</dt>
+                            <dd class="col-sm-8">
+                                {{ responsable.dni }}
+                            </dd>
+                            <dt class="col-sm-4">Género:</dt>
+                            <dd class="col-sm-8">
+                                {{ responsable.get_genero_display }}
+                            </dd>
+                            <dt class="col-sm-4">Fecha de Nacimiento:</dt>
+                            <dd class="col-sm-8">
+                                {{ responsable.fecha_nacimiento|date:"d/m/Y" }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <!-- Información de Contacto -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-phone"></i> Información de Contacto
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Celular:</dt>
+                            <dd class="col-sm-8">
+                                {% if responsable.prefijo_celular and responsable.numero_celular %}
+                                    {{ responsable.prefijo_celular }}-{{ responsable.numero_celular }}
+                                {% else %}
+                                    No especificado
+                                {% endif %}
+                            </dd>
+                            <dt class="col-sm-4">Teléfono Fijo:</dt>
+                            <dd class="col-sm-8">
+                                {% if responsable.prefijo_telefono_fijo and responsable.numero_telefono_fijo %}
+                                    {{ responsable.prefijo_telefono_fijo }}-{{ responsable.numero_telefono_fijo }}
+                                {% else %}
+                                    No especificado
+                                {% endif %}
+                            </dd>
+                            <dt class="col-sm-4">Email:</dt>
+                            <dd class="col-sm-8">
+                                {{ responsable.correo_electronico|default:"No especificado" }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <!-- Domicilio -->
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-map-marker-alt"></i> Domicilio
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-4">Calle:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ responsable.calle }} {{ responsable.altura|default:"" }}
+                                    </dd>
+                                    <dt class="col-sm-4">Piso:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ responsable.piso_vivienda|default:"No especificado" }}
+                                    </dd>
+                                    <dt class="col-sm-4">Departamento:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ responsable.departamento_vivienda|default:"No especificado" }}
+                                    </dd>
+                                    <dt class="col-sm-4">Barrio:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ responsable.barrio|default:"No especificado" }}
+                                    </dd>
+                                </dl>
+                            </div>
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-4">Provincia:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ responsable.provincia }}
+                                    </dd>
+                                    <dt class="col-sm-4">Municipio:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ responsable.municipio }}
+                                    </dd>
+                                    <dt class="col-sm-4">Localidad:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ responsable.localidad }}
+                                    </dd>
+                                    <dt class="col-sm-4">Código Postal:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ responsable.codigo_postal|default:"No especificado" }}
+                                    </dd>
+                                    <dt class="col-sm-4">Monoblock:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ responsable.monoblock|default:"No especificado" }}
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <!-- Beneficiarios a Cargo -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-users"></i> Beneficiarios a Cargo
+                            <span class="badge bg-primary ms-2">{{ vinculos_beneficiarios.count }}</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if vinculos_beneficiarios %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>CUIL</th>
+                                            <th>Apellido y Nombre</th>
+                                            <th>DNI</th>
+                                            <th>Género</th>
+                                            <th>Fecha de Nacimiento</th>
+                                            <th>Vínculo Parental</th>
+                                            <th>Fecha Agregado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for vinculo in vinculos_beneficiarios %}
+                                            <tr>
+                                                <td>{{ vinculo.beneficiario.cuil }}</td>
+                                                <td>{{ vinculo.beneficiario.apellido }}, {{ vinculo.beneficiario.nombre }}</td>
+                                                <td>{{ vinculo.beneficiario.dni }}</td>
+                                                <td>{{ vinculo.beneficiario.get_genero_display }}</td>
+                                                <td>{{ vinculo.beneficiario.fecha_nacimiento|date:"d/m/Y" }}</td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ vinculo.get_vinculo_parental_display }}</span>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">{{ vinculo.fecha_creado|date:"d/m/Y H:i" }}</small>
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'beneficiarios_detail' vinculo.beneficiario.pk %}"
+                                                       class="btn btn-sm btn-info">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-users fa-3x mb-3"></i>
+                                <p>Este responsable no tiene beneficiarios asignados.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

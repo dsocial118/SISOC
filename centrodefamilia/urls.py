@@ -36,6 +36,16 @@ from centrodefamilia.views.participante import (
     ParticipanteActividadPromoverView,
 )
 
+from .views.beneficiarios import (
+    BeneficiariosListView,
+    BeneficiariosDetailView,
+    ResponsableListView,
+    ResponsableDetailView,
+    BeneficiariosCreateView,
+    BuscarCUILView,
+    BuscarResponsableView,
+)
+
 urlpatterns = [
     path(
         "centros/<int:centro_id>/informecabal/<int:pk>/",
@@ -167,5 +177,41 @@ urlpatterns = [
         "informecabal/reprocess/",
         group_required(["CDF SSE"])(InformeCabalReprocessCenterAjaxView.as_view()),
         name="informecabal_reprocess_center",
+    ),
+    # URLs de Beneficiarios
+    path(
+        "beneficiarios/beneficiarios/",
+        group_required(["CDF SSE"])(BeneficiariosListView.as_view()),
+        name="beneficiarios_list",
+    ),
+    path(
+        "beneficiarios/beneficiarios/<int:pk>/",
+        group_required(["CDF SSE"])(BeneficiariosDetailView.as_view()),
+        name="beneficiarios_detail",
+    ),
+    path(
+        "beneficiarios/nuevo/",
+        group_required(["CDF SSE"])(BeneficiariosCreateView.as_view()),
+        name="beneficiarios_crear",
+    ),
+    path(
+        "beneficiarios/responsables/",
+        group_required(["CDF SSE"])(ResponsableListView.as_view()),
+        name="responsables_list",
+    ),
+    path(
+        "beneficiarios/responsables/<int:pk>/",
+        group_required(["CDF SSE"])(ResponsableDetailView.as_view()),
+        name="responsables_detail",
+    ),
+    path(
+        "beneficiarios/buscar-cuil/",
+        group_required(["CDF SSE"])(BuscarCUILView.as_view()),
+        name="buscar_cuil",
+    ),
+    path(
+        "beneficiarios/buscar-responsable/",
+        group_required(["CDF SSE"])(BuscarResponsableView.as_view()),
+        name="buscar_responsable",
     ),
 ]

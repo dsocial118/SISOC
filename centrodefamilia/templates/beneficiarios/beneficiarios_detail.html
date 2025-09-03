@@ -1,0 +1,235 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Detalle del Beneficiario{% endblock %}
+{% block titulo-pagina %}Detalle del Beneficiario{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>{{ beneficiario.apellido }}, {{ beneficiario.nombre }}</h2>
+                    <div>
+                        <a href="{% url 'beneficiarios_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver al listado
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <!-- Información Personal -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user"></i> Información Personal
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">CUIL:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.cuil }}
+                            </dd>
+                            <dt class="col-sm-4">DNI:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.dni }}
+                            </dd>
+                            <dt class="col-sm-4">Género:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.get_genero_display }}
+                            </dd>
+                            <dt class="col-sm-4">Fecha de Nacimiento:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.fecha_nacimiento|date:"d/m/Y" }}
+                            </dd>
+                            <dt class="col-sm-4">Email:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.correo_electronico|default:"No especificado" }}
+                            </dd>
+                            <dt class="col-sm-4">Fecha Agregado:</dt>
+                            <dd class="col-sm-8">
+                                <small class="text-muted">{{ beneficiario.fecha_creado|date:"d/m/Y H:i" }}</small>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <!-- Información del Responsable -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user-friends"></i> Responsable
+                        </h5>
+                        <div class="ms-auto">
+                            <a href="{% url 'responsables_detail' beneficiario.responsable.pk %}"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye"></i> Ver detalle
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Nombre:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.responsable.apellido }}, {{ beneficiario.responsable.nombre }}
+                            </dd>
+                            <dt class="col-sm-4">DNI:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.responsable.dni }}
+                            </dd>
+                            <dt class="col-sm-4">CUIL:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.responsable.cuil }}
+                            </dd>
+                            <dt class="col-sm-4">Vínculo:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.responsable.get_vinculo_parental_display }}
+                            </dd>
+                            <dt class="col-sm-4">Celular:</dt>
+                            <dd class="col-sm-8">
+                                {% if beneficiario.responsable.prefijo_celular and beneficiario.responsable.numero_celular %}
+                                    {{ beneficiario.responsable.prefijo_celular }}-{{ beneficiario.responsable.numero_celular }}
+                                {% else %}
+                                    No especificado
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <!-- Domicilio -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-map-marker-alt"></i> Domicilio
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-4">Dirección:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.domicilio }}
+                            </dd>
+                            <dt class="col-sm-4">Calle:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.calle }} {{ beneficiario.altura|default:"" }}
+                            </dd>
+                            <dt class="col-sm-4">Provincia:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.provincia }}
+                            </dd>
+                            <dt class="col-sm-4">Municipio:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.municipio }}
+                            </dd>
+                            <dt class="col-sm-4">Localidad:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.localidad }}
+                            </dd>
+                            <dt class="col-sm-4">Código Postal:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.codigo_postal|default:"No especificado" }}
+                            </dd>
+                            <dt class="col-sm-4">Barrio:</dt>
+                            <dd class="col-sm-8">
+                                {{ beneficiario.barrio|default:"No especificado" }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <!-- Información Académica -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-graduation-cap"></i> Información Académica
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row">
+                            <dt class="col-sm-5">Estado Académico:</dt>
+                            <dd class="col-sm-7">
+                                {% if beneficiario.estado_academico %}
+                                    <span class="badge bg-success">Estudiando</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No estudiando</span>
+                                {% endif %}
+                            </dd>
+                            {% if beneficiario.nivel_educativo_actual %}
+                                <dt class="col-sm-5">Nivel Actual:</dt>
+                                <dd class="col-sm-7">
+                                    {{ beneficiario.get_nivel_educativo_actual_display }}
+                                </dd>
+                            {% endif %}
+                            <dt class="col-sm-5">Máximo Nivel:</dt>
+                            <dd class="col-sm-7">
+                                {{ beneficiario.get_maximo_nivel_educativo_display }}
+                            </dd>
+                            <dt class="col-sm-5">Institución:</dt>
+                            <dd class="col-sm-7">
+                                {{ beneficiario.institucion_academica|default:"No especificada" }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <!-- Actividades -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-running"></i> Actividades e Intereses
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Actividades Preferidas:</h6>
+                                {% if beneficiario.actividad_preferida %}
+                                    <ul class="list-unstyled">
+                                        {% for actividad in beneficiario.actividad_preferida %}
+                                            <li>
+                                                <span class="badge bg-primary">{{ actividad }}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted">No especificadas</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Actividades Extracurriculares:</h6>
+                                {% if beneficiario.actividades_extracurriculares %}
+                                    {% if beneficiario.actividades_detalle.all %}
+                                        <ul class="list-unstyled">
+                                            {% for actividad in beneficiario.actividades_detalle.all %}
+                                                <li>
+                                                    <span class="badge bg-info">{{ actividad.nombre }}</span>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <p class="text-muted">Sí, pero sin detalles especificados</p>
+                                    {% endif %}
+                                {% else %}
+                                    <p class="text-muted">No participa</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
