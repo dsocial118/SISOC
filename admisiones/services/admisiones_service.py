@@ -480,3 +480,65 @@ class AdmisionService:
                 extra={"admision_id": admision_id},
             )
             return None
+
+    @staticmethod
+    def actualizar_numero_gde_ajax(request):
+        try:
+            documento_id = request.POST.get("documento_id")
+            numero_gde = request.POST.get("numero_gde", "").strip()
+
+            if not documento_id:
+                return {"success": False, "error": "ID de documento requerido."}
+
+            archivo = get_object_or_404(ArchivoAdmision, documentacion_id=documento_id)
+
+            # Verificar que el documento esté en estado "Aceptado"
+            if archivo.estado != "Aceptado":
+                return {"success": False, "error": "Solo se puede actualizar el número GDE en documentos aceptados."}
+
+            # Verificar permisos: superadmin o técnico de la dupla asignada al comedor
+            if not (request.user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(request.user, archivo.admision.comedor)):
+                return {"success": False, "error": "No tiene permisos para editar este documento."}
+
+            # Actualizar el campo
+            valor_anterior = archivo.numero_gde
+            archivo.numero_gde = numero_gde if numero_gde else None
+            archivo.save()
+
+            logger.info(
+                f"Número GDE actualizado: documento_id={documento_id}, "
+                f"valor_anterior='{valor_anterior}', valor_nuevo='{numero_gde}'"
+            )
+
+            return {
+                "success": True,
+                "numero_gde": archivo.numero_gde,
+                "valor_anterior": valor_anterior,
+            }
+
+        except Exception as e:
+            logger.exception(
+                "Error en actualizar_numero_gde_ajax",
+                extra={"documento_id": documento_id, "numero_gde": numero_gde},
+            )
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    def _verificar_permiso_tecnico_dupla(user, comedor):
+        """Verifica que el usuario sea técnico de la dupla asignada al comedor"""
+        try:
+            return (
+                user.groups.filter(name="Tecnico Comedor").exists() and
+                comedor.dupla and
+                comedor.dupla.tecnico == user and
+                comedor.dupla.estado == "Activo"
+            )
+        except Exception:
+            logger.exception(
+                "Error en _verificar_permiso_tecnico_dupla",
+                extra={
+                    "user_id": getattr(user, "id", None),
+                    "comedor_id": getattr(comedor, "id", None)
+                },
+            )
+            return False
