@@ -42,6 +42,11 @@
                         <div class="form-group">{{ form.email|as_crispy_field }}</div>
                         <div class="form-group">{{ form.tipo_entidad|as_crispy_field }}</div>
                         <div class="form-group">{{ form.subtipo_entidad|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.domicilio|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.provincia|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.municipio|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.localidad|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.partido|as_crispy_field }}</div>
                     </div>
                 </div>
                 <div class="card mt-3" id="card-avales">
@@ -108,6 +113,10 @@
 </div>
 {% endblock %}
 {% block customJS %}
+    <script>
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
     <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
     <script>
 document.addEventListener("DOMContentLoaded", function () {
