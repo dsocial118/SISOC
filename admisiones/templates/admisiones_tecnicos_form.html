@@ -303,6 +303,7 @@
                                                                 <th>Documento</th>
                                                                 <th>Estado</th>
                                                                 <th>Archivo</th>
+                                                                <th>Número de GDE</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -388,6 +389,24 @@
                                                                                          id="progress-bar-{{ doc.id }}"
                                                                                          style="width: 0%">0%</div>
                                                                                 </div>
+                                                                            {% endif %}
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td id="gde-{{ doc.id }}">
+                                                                        {% if doc.estado == "Aceptado" and request.user.is_superuser or doc.estado == "Aceptado" and request.user|has_group:"Tecnico Comedor" %}
+                                                                            <input type="text" 
+                                                                                   class="form-control form-control-sm" 
+                                                                                   id="gde-input-{{ doc.id }}"
+                                                                                   value="{{ doc.numero_gde|default_if_none:'' }}"
+                                                                                   placeholder="Ingrese número GDE"
+                                                                                   maxlength="50"
+                                                                                   onchange="actualizarNumeroGDE({{ doc.id }}, this.value)"
+                                                                                   style="max-width: 200px;">
+                                                                        {% else %}
+                                                                            {% if doc.numero_gde %}
+                                                                                <span class="text-success fw-bold">{{ doc.numero_gde }}</span>
+                                                                            {% else %}
+                                                                                <span class="text-muted">-</span>
                                                                             {% endif %}
                                                                         {% endif %}
                                                                     </td>
@@ -573,6 +592,21 @@
                                                     aria-label="Cerrar"></button>
                                         </div>
                                     </div>
+                                    <div id="toastGDEExito"
+                                         class="toast align-items-center text-bg-success border-0"
+                                         role="alert"
+                                         aria-live="assertive"
+                                         aria-atomic="true">
+                                        <div class="d-flex">
+                                            <div class="toast-body">
+                                                <h6>Número GDE actualizado con éxito.</h6>
+                                            </div>
+                                            <button type="button"
+                                                    class="btn-close btn-close-white me-2 m-auto"
+                                                    data-bs-dismiss="toast"
+                                                    aria-label="Cerrar"></button>
+                                        </div>
+                                    </div>
                                 </div>
                                 {% if not es_crear %}
                                     <!-- MODAL CARATULACION -->
@@ -618,4 +652,5 @@
                                 <script src="{% static 'custom/js/admisionestecnico.js' %}"></script>
                                 <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
                                 <script>window.URL_ACTUALIZAR_ESTADO = "{% url 'actualizar_estado_archivo' %}";</script>
+                                <script>window.URL_ACTUALIZAR_NUMERO_GDE = "{% url 'actualizar_numero_gde_archivo' %}";</script>
                             {% endblock %}
