@@ -294,11 +294,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 if (data.status === "exists") {
                     showAlert(resultado, "alert alert-warning text-center", data.message);
-                    showElement(formContainer);
-                    for (const key in data.data) {
-                        const input = document.getElementById("id_" + key);
-                        if (input) input.value = data.data[key] || '';
-                    }
+                    hideElement(formContainer);
                 } else if (data.status === "not_found") {
                     showAlert(resultado, "alert alert-danger text-center", data.message);
                     hideElement(formContainer);
