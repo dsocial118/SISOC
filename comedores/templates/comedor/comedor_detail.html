@@ -195,7 +195,7 @@
                                         <div class="nav-item d-flex col-6">
                                             <div class="comment-text comment-text d-flex flex-column">
                                                 Tipo de Comedor
-                                                <span class="username">{{ comedor.tipo_comedor.nombre | default_if_none:"-" }}</span>
+                                                <span class="username">{{ comedor.tipocomedor.nombre | default_if_none:"-" }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -765,5 +765,6 @@
         const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
         </script>
         <script src="{% static 'custom/js/galeria-imagenes.js' %}"></script>
+        <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
         <script src="{% static 'custom/js/comedordetail.js' %}"></script>
     {% endblock %}

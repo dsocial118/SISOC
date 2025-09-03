@@ -28,11 +28,35 @@ def get_recursos(nombre: str, recursos_data: Dict[str, str], model: Type[models.
     return model.objects.none()
 
 
-def convert_to_boolean(value: str) -> bool:
+def convert_to_boolean(value) -> bool:
+    """
+    Convierte varios tipos de valores a booleanos.
+    Acepta strings ("Y", "N", "True", "False", "") y booleanos (True, False).
+    """
     try:
-        return {"Y": True, "N": False, "": False}[value]
-    except KeyError as exc:
-        raise ValueError(f"Valor inesperado para booleano: {value}") from exc
+        # Si ya es un booleano, devolverlo directamente
+        if isinstance(value, bool):
+            return value
+
+        # Si es string, convertir según los mapeos conocidos
+        if isinstance(value, str):
+            # Mapeo para strings Y/N (formato GESTIONAR)
+            if value in {"Y", "N", ""}:
+                return {"Y": True, "N": False, "": False}[value]
+
+            # Mapeo para strings True/False (formato JSON estándar)
+            if value.lower() in ["true", "false"]:
+                return value.lower() == "true"
+
+        # Si llegamos aquí, el valor no es reconocido
+        raise ValueError(
+            f"Valor inesperado para booleano: {value} (tipo: {type(value)})"
+        )
+
+    except (KeyError, AttributeError) as exc:
+        raise ValueError(
+            f"Valor inesperado para booleano: {value} (tipo: {type(value)})"
+        ) from exc
 
 
 def get_object_or_none(
