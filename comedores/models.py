@@ -287,3 +287,72 @@ class CategoriaComedor(models.Model):
     class Meta:
         verbose_name = "Categoria de Comedor"
         verbose_name_plural = "Categorias de Comedor"
+
+
+class TerritorialCache(models.Model):
+    """
+    Modelo para cachear información de territoriales de GESTIONAR por provincia.
+    """
+
+    gestionar_uid = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=200)
+    provincia = models.ForeignKey(to=Provincia, on_delete=models.CASCADE)
+    activo = models.BooleanField(default=True)
+
+    # Metadatos de cache
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    fecha_ultimo_sync = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "comedores_territorial_cache"
+        ordering = ["provincia__nombre", "nombre"]
+        verbose_name = "Cache Territorial"
+        verbose_name_plural = "Cache Territoriales"
+        unique_together = [["gestionar_uid", "provincia"]]
+        indexes = [
+            models.Index(fields=["provincia", "activo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.nombre} - {self.provincia.nombre} ({self.gestionar_uid})"
+
+    @property
+    def esta_desactualizado(self):
+        """
+        Verifica si el territorial está desactualizado (más de 1 hora).
+        """
+        tiempo_limite = timezone.now() - timezone.timedelta(hours=1)
+        return self.fecha_ultimo_sync < tiempo_limite
+
+    def to_dict(self):
+        """Convierte el objeto a diccionario para uso en frontend."""
+        return {
+            "gestionar_uid": self.gestionar_uid,
+            "nombre": self.nombre,
+            "desactualizado": self.esta_desactualizado,
+        }
+
+
+class TerritorialSyncLog(models.Model):
+    """
+    Log de sincronización con GESTIONAR para auditoría.
+    """
+
+    fecha = models.DateTimeField(auto_now_add=True)
+    exitoso = models.BooleanField()
+    territoriales_sincronizados = models.IntegerField(default=0)
+    error_mensaje = models.TextField(blank=True)
+    comedor_id = models.IntegerField(
+        null=True, blank=True
+    )  # Si sync fue para comedor específico
+
+    class Meta:
+        db_table = "comedores_territorial_sync_log"
+        ordering = ["-fecha"]
+        verbose_name = "Log Sync Territorial"
+        verbose_name_plural = "Logs Sync Territoriales"
+
+    def __str__(self):
+        status = "Exitoso" if self.exitoso else "Error"
+        return f"{self.fecha.strftime('%Y-%m-%d %H:%M')} - {status}"
