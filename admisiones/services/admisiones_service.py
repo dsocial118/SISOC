@@ -141,6 +141,11 @@ class AdmisionService:
                         if doc.id in archivos_dict
                         else None
                     ),
+                    "numero_gde": (
+                        archivos_dict.get(doc.id).numero_gde
+                        if doc.id in archivos_dict
+                        else None
+                    ),
                 }
                 for doc in documentaciones
             ]
