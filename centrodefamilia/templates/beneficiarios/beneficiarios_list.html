@@ -1,14 +1,14 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title %}Listado de beneficiarios{% endblock %}
-{% block titulo-pagina %}Beneficiarios{% endblock %}
+{% block title %}Listado de Preinscriptos{% endblock %}
+{% block titulo-pagina %}Preinscriptos{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
     <div class="container mt-4">
-        <h2>Listado de Beneficiarios</h2>
-        <a href="{% url 'beneficiarios_crear' %}" class="btn btn-primary mb-1">Crear Nuevo Beneficiario</a>
+        <h2>Listado de Preinscriptos</h2>
+        <a href="{% url 'beneficiarios_crear' %}" class="btn btn-primary mb-1">Crear un nuevo Preinscripto</a>
         {% load custom_filters %}
         {% include 'components/data_table.html' with headers=table_headers items=beneficiarios show_actions=True actions=table_actions empty_message='No hay beneficiarios disponibles.' fields=table_fields %}
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Anterior' next_text='Siguiente' %}

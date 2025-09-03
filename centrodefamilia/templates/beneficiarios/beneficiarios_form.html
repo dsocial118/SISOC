@@ -1,7 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title %}Beneficiarios{{ comedor.nombre }}{% endblock %}
-{% block titulo-pagina %}Formulario de Beneficiario{% endblock %}
+{% block title %}Preinscripto{{ comedor.nombre }}{% endblock %}
+{% block titulo-pagina %}Formulario de Preinscripto{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
@@ -18,7 +18,7 @@
                         <div id="resultado" style="display:none;"></div>
                         <div class="row align-items-center justify-content-center">
                             <div class="col-auto mt-2 mb-2">
-                                <h5 class="mb-0">Buscar Beneficiario por CUIL</h5>
+                                <h5 class="mb-0">Buscar Preinscripto por CUIL</h5>
                             </div>
                             <div class="col-auto mt-2 mb-2">
                                 <div class="input-group">

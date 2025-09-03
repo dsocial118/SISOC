@@ -384,8 +384,11 @@ class Responsable(models.Model):
     correo_electronico = models.EmailField(max_length=150, null=True, blank=True)
 
     # Auditoría
+    creado_por = models.ForeignKey(User, on_delete=models.PROTECT, related_name="responsables_creados", null=True, blank=True)
     fecha_creado = models.DateTimeField(default=timezone.now)
     fecha_modificado = models.DateTimeField(auto_now=True)
+
+
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre} ({self.cuil})"
@@ -483,8 +486,11 @@ class Beneficiario(models.Model):
     )
 
     # Auditoría
+    creado_por = models.ForeignKey(User, on_delete=models.PROTECT, related_name="beneficiarios_creados", null=True, blank=True)
     fecha_creado = models.DateTimeField(default=timezone.now)
     fecha_modificado = models.DateTimeField(auto_now=True)
+
+
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre} ({self.cuil})"
