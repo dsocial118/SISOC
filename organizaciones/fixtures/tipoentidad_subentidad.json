@@ -83,5 +83,13 @@
             "tipo_entidad": 3,
             "nombre": "Asociación de hecho"
         }
+    },
+    {
+        "model": "organizaciones.subtipoentidad",
+        "pk": 9,
+        "fields": {
+            "tipo_entidad": 2,
+            "nombre": "Obispado"
+        }
     }
 ]
