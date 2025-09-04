@@ -89,6 +89,8 @@ class CiudadanoService:
         - Si se pasa `expediente`, primero valida si existe el legajo (ExpedienteCiudadano);
           si existe, asegura el registro en CiudadanoPrograma (lo crea si no está).
         - Si NO se pasa `expediente`, mantiene la lógica previa: intenta asignar programa.
+        - `sexo` se identifica por nombre, mientras que `provincia`, `municipio` y
+          `localidad` se reciben por ID y se verifica su correspondencia jerárquica.
         """
         # 1) Resolver FK TipoDocumento
         raw_td = datos.get("tipo_documento")
@@ -110,15 +112,14 @@ class CiudadanoService:
             if td is None:
                 raise ValidationError(f"Tipo de documento inválido: {raw_td}")
 
-        # 2) Resolver FK Sexo
+        # 2) Resolver FK Sexo (por nombre)
         raw_sex = datos.get("sexo")
         sx = None
         if raw_sex not in (None, ""):
             raw_sex_str = str(raw_sex).strip()
-            try:
-                sx = Sexo.objects.get(pk=int(raw_sex_str))
-            except (Sexo.DoesNotExist, ValueError):
-                sx = Sexo.objects.filter(sexo__iexact=raw_sex_str).first()
+            sx = Sexo.objects.filter(sexo__iexact=raw_sex_str).first()
+            if sx is None:
+                raise ValidationError(f"Sexo inválido: {raw_sex}")
 
         # 3) Resolver FK Nacionalidad
         raw_nat = datos.get("nacionalidad")
@@ -132,41 +133,46 @@ class CiudadanoService:
                     nacionalidad__iexact=raw_nat_str
                 ).first()
 
-        # 4) Resolver FK Provincia
+        # 4) Resolver FK Provincia (por ID)
         raw_prov = datos.get("provincia")
         prov = None
         if raw_prov not in (None, ""):
-            raw_prov_str = str(raw_prov).strip()
             try:
-                prov = Provincia.objects.get(pk=int(raw_prov_str))
-            except (Provincia.DoesNotExist, ValueError):
-                prov = Provincia.objects.filter(nombre__iexact=raw_prov_str).first()
+                prov = Provincia.objects.get(pk=int(str(raw_prov).strip()))
+            except (Provincia.DoesNotExist, ValueError) as exc:
+                raise ValidationError(f"Provincia inválida: {raw_prov}") from exc
 
-        # 5) Resolver FK Municipio restringido por provincia
+        # 5) Resolver FK Municipio restringido por provincia (ID obligatorio)
         raw_mun = datos.get("municipio")
         mun = None
         if raw_mun not in (None, ""):
-            raw_mun_str = str(raw_mun).strip()
-            qs_mun = Municipio.objects.all()
-            if prov:
-                qs_mun = qs_mun.filter(provincia=prov)
+            if prov is None:
+                raise ValidationError(
+                    "Se debe especificar provincia para validar municipio."
+                )
             try:
-                mun = qs_mun.get(pk=int(raw_mun_str))
-            except (Municipio.DoesNotExist, ValueError):
-                mun = qs_mun.filter(nombre__iexact=raw_mun_str).first()
+                mun = Municipio.objects.get(
+                    pk=int(str(raw_mun).strip()), provincia=prov
+                )
+            except (Municipio.DoesNotExist, ValueError) as exc:
+                raise ValidationError(
+                    f"Municipio inválido para la provincia {prov}"
+                ) from exc
 
-        # 6) Resolver FK Localidad restringido por municipio
+        # 6) Resolver FK Localidad restringido por municipio (ID obligatorio)
         raw_loc = datos.get("localidad")
         loc = None
         if raw_loc not in (None, ""):
-            raw_loc_str = str(raw_loc).strip()
-            qs_loc = Localidad.objects.all()
-            if mun:
-                qs_loc = qs_loc.filter(municipio=mun)
+            if mun is None:
+                raise ValidationError(
+                    "Se debe especificar municipio para validar localidad."
+                )
             try:
-                loc = qs_loc.get(pk=int(raw_loc_str))
-            except (Localidad.DoesNotExist, ValueError):
-                loc = qs_loc.filter(nombre__iexact=raw_loc_str).first()
+                loc = Localidad.objects.get(pk=int(str(raw_loc).strip()), municipio=mun)
+            except (Localidad.DoesNotExist, ValueError) as exc:
+                raise ValidationError(
+                    f"Localidad inválida para el municipio {mun}"
+                ) from exc
 
         # 7) Normalizar fecha de nacimiento
         fecha_nac = CiudadanoService._to_date(datos.get("fecha_nacimiento"))
