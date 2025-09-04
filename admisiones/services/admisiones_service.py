@@ -130,9 +130,7 @@ class AdmisionService:
             documentos_info = [
                 {
                     "id": (
-                        archivos_dict[doc.id].id
-                        if doc.id in archivos_dict
-                        else doc.id
+                        archivos_dict[doc.id].id if doc.id in archivos_dict else doc.id
                     ),
                     "documentacion_id": doc.id,
                     "nombre": doc.nombre,
@@ -504,11 +502,22 @@ class AdmisionService:
 
             # Verificar que el documento esté en estado "Aceptado"
             if archivo.estado != "Aceptado":
-                return {"success": False, "error": "Solo se puede actualizar el número GDE en documentos aceptados."}
+                return {
+                    "success": False,
+                    "error": "Solo se puede actualizar el número GDE en documentos aceptados.",
+                }
 
             # Verificar permisos: superadmin o técnico de la dupla asignada al comedor
-            if not (request.user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(request.user, archivo.admision.comedor)):
-                return {"success": False, "error": "No tiene permisos para editar este documento."}
+            if not (
+                request.user.is_superuser
+                or AdmisionService._verificar_permiso_tecnico_dupla(
+                    request.user, archivo.admision.comedor
+                )
+            ):
+                return {
+                    "success": False,
+                    "error": "No tiene permisos para editar este documento.",
+                }
 
             # Actualizar el campo
             valor_anterior = archivo.numero_gde
@@ -538,17 +547,17 @@ class AdmisionService:
         """Verifica que el usuario sea técnico de la dupla asignada al comedor"""
         try:
             return (
-                user.groups.filter(name="Tecnico Comedor").exists() and
-                comedor.dupla and
-                comedor.dupla.tecnico.filter(id=user.id).exists() and
-                comedor.dupla.estado == "Activo"
+                user.groups.filter(name="Tecnico Comedor").exists()
+                and comedor.dupla
+                and comedor.dupla.tecnico.filter(id=user.id).exists()
+                and comedor.dupla.estado == "Activo"
             )
         except Exception:
             logger.exception(
                 "Error en _verificar_permiso_tecnico_dupla",
                 extra={
                     "user_id": getattr(user, "id", None),
-                    "comedor_id": getattr(comedor, "id", None)
+                    "comedor_id": getattr(comedor, "id", None),
                 },
             )
             return False
