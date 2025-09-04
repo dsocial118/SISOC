@@ -1,5 +1,7 @@
 import logging
 from datetime import datetime, date
+from functools import lru_cache
+
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError  # ← agregado
@@ -21,6 +23,20 @@ from ciudadanos.models import (
 from celiaquia.models import ExpedienteCiudadano
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def _tipo_doc_por_defecto():
+    """Retorna el TipoDocumento por defecto (DNI).
+
+    Se cachea para evitar consultas repetidas. Si el registro no existe
+    se lanza un ValidationError.
+    """
+
+    try:
+        return TipoDocumento.objects.get(nombre__iexact="DNI")
+    except TipoDocumento.DoesNotExist as exc:
+        raise ValidationError("Falta TipoDocumento por defecto (DNI)") from exc
 
 
 class CiudadanoService:
@@ -88,9 +104,7 @@ class CiudadanoService:
             raise ValidationError("El número de documento es obligatorio.")
 
         # 5) Buscar por clave real (tipo_documento + documento)
-        ciudadano = Ciudadano.objects.filter(
-            tipo_documento=td, documento=doc
-        ).first()
+        ciudadano = Ciudadano.objects.filter(tipo_documento=td, documento=doc).first()
 
         created = False
         if ciudadano is None:
