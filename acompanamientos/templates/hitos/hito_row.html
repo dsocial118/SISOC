@@ -1,0 +1,39 @@
+<div class="hito-row {{ hito_completado|yesno:'completado,pendiente' }}">
+    <div class="hito-cell" data-label="Descripción">
+        <span class="hito-descripcion">{{ descripcion }}</span>
+    </div>
+    <div class="hito-cell" data-label="Estado">
+        <span class="estado-badge {{ hito_completado|yesno:'estado-completado,estado-pendiente' }}">
+            <i class="fas {{ hito_completado|yesno:'fa-check-circle,fa-clock' }}"></i>
+            {{ hito_completado|yesno:"Completado,Pendiente" }}
+        </span>
+    </div>
+    <div class="hito-cell" data-label="Fecha Completado">
+        <span class="fecha-completado {% if not hito_completado %}vacia{% endif %}">
+            {% if hito_completado and fecha_hito %}
+                {{ fecha_hito|date:'d/m/Y' }}
+            {% else %}
+                —
+            {% endif %}
+        </span>
+    </div>
+    <div class="hito-cell" data-label="Acciones">
+        <div class="hito-acciones">
+            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="campo" value="{{ campo }}" />
+                {% if hito_completado and es_tecnico_comedor %}
+                    <button type="submit" class="btn-restaurar">
+                        <i class="fas fa-undo"></i>
+                        Restaurar
+                    </button>
+                {% else %}
+                    <button type="button" class="btn-restaurar disabled" disabled>
+                        <i class="fas fa-undo"></i>
+                        Restaurar
+                    </button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>

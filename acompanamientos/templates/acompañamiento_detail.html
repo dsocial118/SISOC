@@ -1,95 +1,98 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title
-    %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/hitos.css' %}" />
+{% endblock %}
+{% block title %}Acompañamiento{% endblock %}
+{% block
+    titulo-pagina %}
     Acompañamiento
 {% endblock %}
-{% block titulo-pagina %}
-    Acompañamiento{%
-    endblock %}
-    {% block breadcrumb %}
-        <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item">
-                <a href="{% url 'detalle_acompanamiento' comedor_id=comedor.id %}"
-                   title="Ver Comedor">{{ comedor.nombre }}</a>
-            </li>
-            <li class="breadcrumb-item active">Acompañamiento</li>
-        </ol>
-    {% endblock %}
-    {% block content %}
-        <div class="row">
-            <div class="col-auto">
-                <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
-                   class="btn btn-primary mb-3">
-                    <i class="fas fa-plus me-2"></i>Intervenciones
-                </a>
-                <a href="{% url 'expedientespagos_list' comedor.id %}"
-                   class="btn btn-primary mb-3">
-                    <i class="fas fa-plus me-2"></i>Expedientes de Pagos
-                </a>
-                <a href="{% url 'rendicioncuentasmensual_list' comedor.id %}"
-                   class="btn btn-primary mb-3">
-                    <i class="fas fa-plus me-2"></i>Rendicion de Cuenta Mensual
-                </a>
-            </div>
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'detalle_acompanamiento' comedor_id=comedor.id %}"
+               title="Ver Comedor">{{ comedor.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Acompañamiento</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-auto">
+            <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
+               class="btn btn-primary mb-3">
+                <i class="fas fa-plus me-2"></i>Intervenciones
+            </a>
+            <a href="{% url 'expedientespagos_list' comedor.id %}"
+               class="btn btn-primary mb-3">
+                <i class="fas fa-plus me-2"></i>Expedientes de Pagos
+            </a>
+            <a href="{% url 'rendicioncuentasmensual_list' comedor.id %}"
+               class="btn btn-primary mb-3">
+                <i class="fas fa-plus me-2"></i>Rendicion de Cuenta Mensual
+            </a>
         </div>
-        <div class="row">
-            <div class="col-12">
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">Información Relevante</h3>
-                    </div>
-                    <div class="card-body">
-                        {% if info_relevante %}
-                            <!-- Todo: revisar los modelos que faltan para nro resolucion y vencimiento mandato-->
-                            <ul class="list-group">
-                                <li class="list-group-item">
-                                    <strong>Número de Expediente:</strong> {{
-                                    info_relevante.expediente_nro |default:"-" }}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Número de Disposición:</strong> {{
-                                    numero_disposicion|default:"-" }}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>IF de Relevamiento:</strong> {{
-                                    info_relevante.if_relevamiento|default:"-" }}
-                                </li>
-                                <li class="list-group-item">
-                                    <strong>Vencimiento de Mandato:</strong>
-                                    <span class="text-muted">{{ info_relevante.fecha_vencimiento_mandatos|date:'d/m/Y' |default_if_none:"-" }}</span>
-                                </li>
-                                {% comment %}
-                                <li class="list-group-item">
-                                    <div class="row">
-                                        <div class="col-auto"><strong class="text-nowrap">Fecha de primera acreditación:</strong></div>
-                                        <div class="col-auto"><input type="date" name="fecha_vencimiento_mandatos" class="form-control w-100 ms-2" /></div>
-                                        <div class="col-auto"><button class="btn btn-sm btn-primary">Modificar</button></div>
-                                    </div>
-                                </li>
-                                {% endcomment %}
-                                <li class="list-group-item">
-                                    <strong>Codigo de proyecto:</strong> {{
-                                    comedor.codigo_de_proyecto|default:"-" }}
-                                </li>
-                            </ul>
-                        {% else %}
-                            <div class="alert alert-warning mb-0">No hay información relevante cargada para este comedor.</div>
-                        {% endif %}
-                    </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="hitos-header card-header">
+                    <h3>
+                        <i class="fas fa-info-circle header-icon"></i>Información Relevante
+                    </h3>
+                </div>
+                <div class="hitos-body" style="padding: 2rem">
+                    {% if info_relevante %}
+                        <div class="info-grid" style="display: grid; gap: 1.5rem">
+                            <div class="info-item">
+                                <div class="info-label">Número de Expediente</div>
+                                <div class="info-value">{{ info_relevante.expediente_nro |default:"-" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Número de Disposición</div>
+                                <div class="info-value">{{ numero_disposicion|default:"-" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">IF de Relevamiento</div>
+                                <div class="info-value">{{ info_relevante.if_relevamiento|default:"-" }}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Vencimiento de Mandato</div>
+                                <div class="info-value fecha-valor">
+                                    {{ info_relevante.fecha_vencimiento_mandatos|date:'d/m/Y'
+                                    |default_if_none:"—" }}
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Código de Proyecto</div>
+                                <div class="info-value">{{ comedor.codigo_de_proyecto|default:"-" }}</div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="hitos-vacio">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h4>No hay información relevante disponible</h4>
+                            <p>No hay información relevante cargada para este comedor.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">Prestaciones por Día</h3>
-                    </div>
-                    <div class="card-body table-responsive">
-                        {% if prestaciones_por_dia %}
-                            <table class="table table-bordered text-center align-middle">
-                                <thead class="table-light">
+    </div>
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="hitos-header card-header">
+                    <h3>
+                        <i class="fas fa-utensils header-icon"></i>Prestaciones por Día
+                    </h3>
+                </div>
+                <div class="hitos-body" style="padding: 2rem">
+                    {% if prestaciones_por_dia %}
+                        <div class="prestaciones-table-container">
+                            <table class="prestaciones-table table text-center align-middle">
+                                <thead class="prestaciones-header">
                                     <tr>
                                         <th>Tipo de Comida</th>
                                         {% for dia in dias_semana %}<th>{{ dia }}</th>{% endfor %}
@@ -110,427 +113,911 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
-                            <!-- Mostrar también el resumen total por tipo (opcional) -->
-                            {% if prestaciones_dias %}
-                                <div class="mt-4">
-                                    <h5>Resumen Semanal</h5>
-                                    <table class="table table-sm table-striped">
-                                        <thead>
+                        </div>
+                        <!-- Mostrar también el resumen total por tipo (opcional) -->
+                        {% if prestaciones_dias %}
+                            <div class="mt-4">
+                                <h5>Resumen Semanal</h5>
+                                <div class="prestaciones-table-container">
+                                    <table class="prestaciones-table table table-green text-center align-middle">
+                                        <thead class="prestaciones-header">
                                             <tr>
-                                                <th>Tipo</th>
+                                                <th class="text-start">Tipo</th>
                                                 <th>Total Semanal</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {% for p in prestaciones_dias %}
                                                 <tr>
-                                                    <td>{{ p.tipo }}</td>
+                                                    <td class="text-start fw-bold">{{ p.tipo|upper }}</td>
                                                     <td>{{ p.cantidad }}</td>
                                                 </tr>
                                             {% endfor %}
                                         </tbody>
                                     </table>
                                 </div>
-                            {% endif %}
-                        {% else %}
-                            <div class="alert alert-warning mb-0">No hay información de prestaciones cargada para este comedor.</div>
+                            </div>
                         {% endif %}
-                    </div>
+                    {% else %}
+                        <div class="hitos-vacio">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h4>No hay prestaciones disponibles</h4>
+                            <p>No hay información de prestaciones cargada para este comedor.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">Listado de Hitos</h3>
-                    </div>
-                    <div class="card-body">
-                        {% if hitos %}
-                            <ul class="list-group">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Fecha:</strong>
+    </div>
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="hitos-header card-header">
+                    <h3>
+                        <i class="fas fa-tasks header-icon"></i>Listado de Hitos
+                    </h3>
+                </div>
+                <div class="hitos-body">
+                    {% if hitos %}
+                        <div class="hitos-grid">
+                            <div class="hitos-grid-header">
+                                <div>Descripción del Hito</div>
+                                <div>Estado</div>
+                                <div>Fecha de Completado</div>
+                                <div>Acciones</div>
+                            </div>
+                            <div class="hito-row {{ hitos.retiro_tarjeta|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Retiro de Tarjeta</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.retiro_tarjeta|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.retiro_tarjeta|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.retiro_tarjeta|yesno:"Completado,Pendiente" }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.retiro_tarjeta %}vacia{% endif %}">
+                                        {{ hitos.retiro_tarjeta|yesno:'15/11/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="retiro_tarjeta" />
+                                            {% if hitos.retiro_tarjeta and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.fecha }}</span>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.habilitacion_tarjeta|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Habilitación de Tarjeta</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.habilitacion_tarjeta|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.habilitacion_tarjeta|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.habilitacion_tarjeta|yesno:"Completado,Pendiente" }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.habilitacion_tarjeta %}vacia{% endif %}">
+                                        {{ hitos.habilitacion_tarjeta|yesno:'18/11/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="habilitacion_tarjeta" />
+                                            {% if hitos.habilitacion_tarjeta and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Retiro de Tarjeta:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.alta_usuario_plataforma|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Alta de Usuario en Plataforma</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.alta_usuario_plataforma|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.alta_usuario_plataforma|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.alta_usuario_plataforma|yesno:"Completado,Pendiente" }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.alta_usuario_plataforma %}vacia{% endif %}">
+                                        {{ hitos.alta_usuario_plataforma|yesno:'20/11/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="alta_usuario_plataforma" />
+                                            {% if hitos.alta_usuario_plataforma and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.retiro_tarjeta|yesno:"Completado,Pendiente" }}</span>
-                                        {% if hitos.retiro_tarjeta %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="retiro_tarjeta" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.capacitacion_realizada|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Capacitación realizada</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.capacitacion_realizada|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.capacitacion_realizada|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.capacitacion_realizada|yesno:"Completado,Pendiente" }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.capacitacion_realizada %}vacia{% endif %}">
+                                        {{ hitos.capacitacion_realizada|yesno:'22/11/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="capacitacion_realizada" />
+                                            {% if hitos.capacitacion_realizada and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Habilitación de tarjeta:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.notificacion_acreditacion_1|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Notificación de primera acreditación</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.notificacion_acreditacion_1|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.notificacion_acreditacion_1|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{
+                                        hitos.notificacion_acreditacion_1|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.notificacion_acreditacion_1 %}vacia{% endif %}">
+                                        {{ hitos.notificacion_acreditacion_1|yesno:'25/11/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_1" />
+                                            {% if hitos.notificacion_acreditacion_1 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.habilitacion_tarjeta|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.habilitacion_tarjeta %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="habilitacion_tarjeta" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.notificacion_acreditacion_2|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Notificación de acreditación mes 2</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.notificacion_acreditacion_2|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.notificacion_acreditacion_2|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{
+                                        hitos.notificacion_acreditacion_2|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.notificacion_acreditacion_2 %}vacia{% endif %}">
+                                        {{ hitos.notificacion_acreditacion_2|yesno:'28/11/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_2" />
+                                            {% if hitos.notificacion_acreditacion_2 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Alta de usuario en plataforma:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.notificacion_acreditacion_3|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Notificación de acreditación mes 3</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.notificacion_acreditacion_3|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.notificacion_acreditacion_3|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{
+                                        hitos.notificacion_acreditacion_3|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.notificacion_acreditacion_3 %}vacia{% endif %}">
+                                        {{ hitos.notificacion_acreditacion_3|yesno:'01/12/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_3" />
+                                            {% if hitos.notificacion_acreditacion_3 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.alta_usuario_plataforma|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.alta_usuario_plataforma %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="alta_usuario_plataforma" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.notificacion_acreditacion_4|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Notificación de acreditación mes 4</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.notificacion_acreditacion_4|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.notificacion_acreditacion_4|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{
+                                        hitos.notificacion_acreditacion_4|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.notificacion_acreditacion_4 %}vacia{% endif %}">
+                                        {{ hitos.notificacion_acreditacion_4|yesno:'05/12/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_4" />
+                                            {% if hitos.notificacion_acreditacion_4 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Capacitación realizada:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.notificacion_acreditacion_5|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Notificación de acreditación mes 5</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.notificacion_acreditacion_5|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.notificacion_acreditacion_5|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{
+                                        hitos.notificacion_acreditacion_5|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.notificacion_acreditacion_5 %}vacia{% endif %}">
+                                        {{ hitos.notificacion_acreditacion_5|yesno:'08/12/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_5" />
+                                            {% if hitos.notificacion_acreditacion_5 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.capacitacion_realizada|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.capacitacion_realizada %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="capacitacion_realizada" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.notificacion_acreditacion_6|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Notificación de acreditación mes 6</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.notificacion_acreditacion_6|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.notificacion_acreditacion_6|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{
+                                        hitos.notificacion_acreditacion_6|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.notificacion_acreditacion_6 %}vacia{% endif %}">
+                                        {{ hitos.notificacion_acreditacion_6|yesno:'12/12/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="notificacion_acreditacion_6" />
+                                            {% if hitos.notificacion_acreditacion_6 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Notificación de primera acreditación:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.nomina_entregada_inicial|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Nómina entregada inicial</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.nomina_entregada_inicial|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.nomina_entregada_inicial|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.nomina_entregada_inicial|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.nomina_entregada_inicial %}vacia{% endif %}">
+                                        {{ hitos.nomina_entregada_inicial|yesno:'15/12/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_entregada_inicial" />
+                                            {% if hitos.nomina_entregada_inicial and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.notificacion_acreditacion_1|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.notificacion_acreditacion_1 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="notificacion_acreditacion_1" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.nomina_alta_baja_2|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Nómina Alta/baja mes 2</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.nomina_alta_baja_2|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.nomina_alta_baja_2|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.nomina_alta_baja_2|yesno:"Completado,Pendiente" }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.nomina_alta_baja_2 %}vacia{% endif %}">
+                                        {{ hitos.nomina_alta_baja_2|yesno:'18/12/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_2" />
+                                            {% if hitos.nomina_alta_baja_2 and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Notificación de acreditación mes 2:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.nomina_alta_baja_3|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Nómina Alta/baja mes 3</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.nomina_alta_baja_3|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.nomina_alta_baja_3|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.nomina_alta_baja_3|yesno:"Completado,Pendiente" }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.nomina_alta_baja_3 %}vacia{% endif %}">
+                                        {{ hitos.nomina_alta_baja_3|yesno:'22/12/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_3" />
+                                            {% if hitos.nomina_alta_baja_3 and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.notificacion_acreditacion_2|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.notificacion_acreditacion_2 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="notificacion_acreditacion_2" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.nomina_alta_baja_4|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Nómina Alta/baja mes 4</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.nomina_alta_baja_4|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.nomina_alta_baja_4|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.nomina_alta_baja_4|yesno:"Completado,Pendiente" }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.nomina_alta_baja_4 %}vacia{% endif %}">
+                                        {{ hitos.nomina_alta_baja_4|yesno:'26/12/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_4" />
+                                            {% if hitos.nomina_alta_baja_4 and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Notificación de acreditación mes 3:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.nomina_alta_baja_5|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Nómina Alta/baja mes 5</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.nomina_alta_baja_5|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.nomina_alta_baja_5|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.nomina_alta_baja_5|yesno:"Completado,Pendiente" }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.nomina_alta_baja_5 %}vacia{% endif %}">
+                                        {{ hitos.nomina_alta_baja_5|yesno:'29/12/2024,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_5" />
+                                            {% if hitos.nomina_alta_baja_5 and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.notificacion_acreditacion_3|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.notificacion_acreditacion_3 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="notificacion_acreditacion_3" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.nomina_alta_baja_6|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Nómina Alta/baja mes 6</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.nomina_alta_baja_6|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.nomina_alta_baja_6|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.nomina_alta_baja_6|yesno:"Completado,Pendiente" }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.nomina_alta_baja_6 %}vacia{% endif %}">
+                                        {{ hitos.nomina_alta_baja_6|yesno:'02/01/2025,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="nomina_alta_baja_6" />
+                                            {% if hitos.nomina_alta_baja_6 and es_tecnico_comedor %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Notificación de acreditación mes 4:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.certificado_prestaciones_1|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Certificado mensual de prestaciones mes: 1</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.certificado_prestaciones_1|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.certificado_prestaciones_1|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.certificado_prestaciones_1|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.certificado_prestaciones_1 %}vacia{% endif %}">
+                                        {{ hitos.certificado_prestaciones_1|yesno:'05/01/2025,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_1" />
+                                            {% if hitos.certificado_prestaciones_1 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.notificacion_acreditacion_4|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.notificacion_acreditacion_4 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="notificacion_acreditacion_4" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.certificado_prestaciones_2|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Certificado mensual de prestaciones mes: 2</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.certificado_prestaciones_2|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.certificado_prestaciones_2|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.certificado_prestaciones_2|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.certificado_prestaciones_2 %}vacia{% endif %}">
+                                        {{ hitos.certificado_prestaciones_2|yesno:'08/01/2025,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_2" />
+                                            {% if hitos.certificado_prestaciones_2 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Notificación de acreditación mes 5:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.certificado_prestaciones_3|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Certificado mensual de prestaciones mes: 3</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.certificado_prestaciones_3|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.certificado_prestaciones_3|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.certificado_prestaciones_3|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.certificado_prestaciones_3 %}vacia{% endif %}">
+                                        {{ hitos.certificado_prestaciones_3|yesno:'12/01/2025,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_3" />
+                                            {% if hitos.certificado_prestaciones_3 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.notificacion_acreditacion_5|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.notificacion_acreditacion_5 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="notificacion_acreditacion_5" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.certificado_prestaciones_4|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Certificado mensual de prestaciones mes: 4</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.certificado_prestaciones_4|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.certificado_prestaciones_4|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.certificado_prestaciones_4|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.certificado_prestaciones_4 %}vacia{% endif %}">
+                                        {{ hitos.certificado_prestaciones_4|yesno:'15/01/2025,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_4" />
+                                            {% if hitos.certificado_prestaciones_4 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Notificación de acreditación mes 6:</strong>
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.certificado_prestaciones_5|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Certificado mensual de prestaciones mes: 5</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.certificado_prestaciones_5|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.certificado_prestaciones_5|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.certificado_prestaciones_5|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.certificado_prestaciones_5 %}vacia{% endif %}">
+                                        {{ hitos.certificado_prestaciones_5|yesno:'18/01/2025,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_5" />
+                                            {% if hitos.certificado_prestaciones_5 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.notificacion_acreditacion_6|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.notificacion_acreditacion_6 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="notificacion_acreditacion_6" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
+                                </div>
+                            </div>
+                            <div class="hito-row {{ hitos.certificado_prestaciones_6|yesno:'completado,pendiente' }}">
+                                <div class="hito-cell" data-label="Descripción">
+                                    <span class="hito-descripcion">Certificado mensual de prestaciones mes: 6</span>
+                                </div>
+                                <div class="hito-cell" data-label="Estado">
+                                    <span class="estado-badge {{ hitos.certificado_prestaciones_6|yesno:'estado-completado,estado-pendiente' }}">
+                                        <i class="fas {{ hitos.certificado_prestaciones_6|yesno:'fa-check-circle,fa-clock' }}"></i>
+                                        {{ hitos.certificado_prestaciones_6|yesno:"Completado,Pendiente"
+                                        }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Fecha Completado">
+                                    <span class="fecha-completado {% if not hitos.certificado_prestaciones_6 %}vacia{% endif %}">
+                                        {{ hitos.certificado_prestaciones_6|yesno:'22/01/2025,—' }}
+                                    </span>
+                                </div>
+                                <div class="hito-cell" data-label="Acciones">
+                                    <div class="hito-acciones">
+                                        <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="campo" value="certificado_prestaciones_6" />
+                                            {% if hitos.certificado_prestaciones_6 and es_tecnico_comedor
+                                                %}
+                                                <button type="submit" class="btn-restaurar">
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% else %}
+                                                <button type="button" class="btn-restaurar disabled" disabled>
+                                                    <i class="fas fa-undo"></i>
+                                                    Restaurar
+                                                </button>
+                                            {% endif %}
+                                        </form>
                                     </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Nómina entregada inicial:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.nomina_entregada_inicial|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.nomina_entregada_inicial %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="nomina_entregada_inicial" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Nómina Alta/baja mes 2:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.nomina_alta_baja_2|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.nomina_alta_baja_2 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="nomina_alta_baja_2" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Nómina Alta/baja mes 3:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.nomina_alta_baja_3|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.nomina_alta_baja_3 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="nomina_alta_baja_3" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Nómina Alta/baja mes 4:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.nomina_alta_baja_4|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.nomina_alta_baja_4 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="nomina_alta_baja_4" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Nómina Alta/baja mes 5:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.nomina_alta_baja_5|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.nomina_alta_baja_5 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="nomina_alta_baja_5" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Nómina Alta/baja mes 6:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{ hitos.nomina_alta_baja_6|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.nomina_alta_baja_6 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="nomina_alta_baja_6" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Certificado mensual de prestaciones mes 1:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.certificado_prestaciones_1|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.certificado_prestaciones_1 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="certificado_prestaciones_1" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Certificado mensual de prestaciones mes 2:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.certificado_prestaciones_2|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.certificado_prestaciones_2 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="certificado_prestaciones_2" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Certificado mensual de prestaciones mes 3:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.certificado_prestaciones_3|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.certificado_prestaciones_3 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="certificado_prestaciones_3" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Certificado mensual de prestaciones mes 4:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.certificado_prestaciones_4|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.certificado_prestaciones_4 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="certificado_prestaciones_4" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Certificado mensual de prestaciones mes 5:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.certificado_prestaciones_5|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.certificado_prestaciones_5 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="certificado_prestaciones_5" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Certificado mensual de prestaciones mes 6:</strong>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="me-3">{{
-                                            hitos.certificado_prestaciones_6|yesno:"Completado,Pendiente"
-                                        }}</span>
-                                        {% if hitos.certificado_prestaciones_6 %}
-                                            <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="campo" value="certificado_prestaciones_6" />
-                                                {% if es_tecnico_comedor %}<button class="btn btn-warning btn-sm">Restaurar</button>{% endif %}
-                                            </form>
-                                        {% endif %}
-                                    </div>
-                                </li>
-                            </ul>
-                        {% else %}
-                            <div class="alert alert-warning mb-0">No hay información de hitos cargada para este comedor.</div>
-                        {% endif %}
-                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hitos-info">
+                            <div class="info-stats">
+                                <div class="stat-item stat-completados">
+                                    <div class="stat-number" id="completados-count">0</div>
+                                    <div class="stat-label">Completados</div>
+                                </div>
+                                <div class="stat-item stat-pendientes">
+                                    <div class="stat-number" id="pendientes-count">0</div>
+                                    <div class="stat-label">Pendientes</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number" id="total-count">0</div>
+                                    <div class="stat-label">Total</div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="hitos-vacio">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h4>No hay información de hitos disponible</h4>
+                            <p>No hay hitos cargados para este comedor.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        <div class="col-md-2 text-start my-3">
-            <a href="{% url 'comedor_detalle' comedor.id %}"
-               class="btn btn-secondary btn-lg">
-                <i class="fas fa-arrow-left"></i>
-            </a>
-        </div>
-    {% endblock %}
+    </div>
+    <div class="col-md-2 text-start my-3">
+        <a href="{% url 'comedor_detalle' comedor.id %}"
+           class="btn btn-secondary btn-lg">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+    </div>
+    <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Contar hitos completados y pendientes
+    const completados = document.querySelectorAll(
+      ".hito-row.completado"
+    ).length;
+    const pendientes = document.querySelectorAll(".hito-row.pendiente").length;
+    const total = completados + pendientes;
+
+    // Actualizar contadores si existen
+    const completadosEl = document.getElementById("completados-count");
+    const pendientesEl = document.getElementById("pendientes-count");
+    const totalEl = document.getElementById("total-count");
+
+    if (completadosEl) completadosEl.textContent = completados;
+    if (pendientesEl) pendientesEl.textContent = pendientes;
+    if (totalEl) totalEl.textContent = total;
+  });
+    </script>
+{% endblock %}
