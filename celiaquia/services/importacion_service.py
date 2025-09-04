@@ -198,6 +198,11 @@ class ImportacionService:
                             "motivo": "Ya existe en este expediente",
                         }
                     )
+                    logger.warning(
+                        "Fila %s excluida: ya existe en este expediente (ciudadano_id=%s)",
+                        offset,
+                        cid,
+                    )
                     continue
 
                 # 2) Ya está dentro del programa (cupo DENTRO) en OTRO expediente -> excluir
@@ -215,6 +220,11 @@ class ImportacionService:
                             "estado_programa": estado_text,
                             "motivo": "Ya está dentro del programa en otro expediente",
                         }
+                    )
+                    logger.warning(
+                        "Fila %s excluida: ya está dentro del programa en otro expediente (ciudadano_id=%s)",
+                        offset,
+                        cid,
                     )
                     continue
 
@@ -245,6 +255,11 @@ class ImportacionService:
                             "motivo": "Duplicado en otro expediente abierto",
                         }
                     )
+                    logger.warning(
+                        "Fila %s excluida: duplicado en otro expediente abierto (ciudadano_id=%s)",
+                        offset,
+                        cid,
+                    )
                     continue
 
                 # 4) OK para crear en este expediente
@@ -271,7 +286,7 @@ class ImportacionService:
             ExpedienteCiudadano.objects.bulk_create(batch, batch_size=batch_size)
 
         logger.info(
-            "Import completo: %s válidos, %s errores, %s excluidos (duplicados o ya en programa).",
+            "Import completo: %s válidos, %s errores, %s advertencias (excluidos: duplicados o ya en programa).",
             validos,
             errores,
             len(excluidos),
