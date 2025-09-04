@@ -74,17 +74,17 @@
                                 <div class="col-12">{{ form.correo_electronico|as_crispy_field }}</div>
                                 <!-- Académico -->
                                 <div class="col-md-2">{{ form.estado_academico|as_crispy_field }}</div>
-                                <div class="col-md-5"
-                                     id="nivel-educativo-container"
-                                     style="display:none">{{ form.nivel_educativo_actual|as_crispy_field }}</div>
+                                <div class="col-md-5" id="nivel-educativo-container" style="display:none">
+                                    {{ form.nivel_educativo_actual|as_crispy_field }}
+                                </div>
                                 <div class="col-md-5">{{ form.maximo_nivel_educativo|as_crispy_field }}</div>
                                 <div class="col-md-12">{{ form.institucion_academica|as_crispy_field }}</div>
                                 <!-- Actividades -->
                                 <div class="col-6">{{ form.actividad_preferida|as_crispy_field }}</div>
                                 <div class="col-3">{{ form.actividades_extracurriculares|as_crispy_field }}</div>
-                                <div class="col-3"
-                                     id="actividades-detalle-container"
-                                     style="display:none">{{ form.actividades_detalle|as_crispy_field }}</div>
+                                <div class="col-3" id="actividades-detalle-container" style="display:none">
+                                    {{ form.actividades_detalle|as_crispy_field }}
+                                </div>
                                 <!-- Campos ocultos -->
                                 <input type="hidden" name="responsable" id="id_responsable" value="" />
                                 <input type="hidden" name="provincia_tabla" id="id_provincia_tabla" value="" />
@@ -105,13 +105,13 @@
                                     </div>
                                     <div class="col-auto mt-2 mb-2">
                                         <div class="input-group">
-                                          <input type="text"
-                                                 id="dni-input"
-                                                 class="form-control"
-                                                 maxlength="8"
-                                                 pattern="\d{8}"
-                                                 inputmode="numeric"
-                                                 size="10" />
+                                            <input type="text"
+                                                   id="dni-input"
+                                                   class="form-control"
+                                                   maxlength="8"
+                                                   pattern="\d{8}"
+                                                   inputmode="numeric"
+                                                   size="10" />
                                         </div>
                                     </div>
                                     <div class="col-auto mt-2 mb-2">
@@ -209,5 +209,5 @@ document.getElementById("dni-input").addEventListener("input", function (e) {
     this.value = this.value.slice(0, 8);
   }
 });
-</script>
+        </script>
     {% endblock %}

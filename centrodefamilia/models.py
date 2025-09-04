@@ -379,11 +379,15 @@ class Responsable(models.Model):
     correo_electronico = models.EmailField(max_length=150, null=True, blank=True)
 
     # Auditoría
-    creado_por = models.ForeignKey(User, on_delete=models.PROTECT, related_name="responsables_creados", null=True, blank=True)
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="responsables_creados",
+        null=True,
+        blank=True,
+    )
     fecha_creado = models.DateTimeField(default=timezone.now)
     fecha_modificado = models.DateTimeField(auto_now=True)
-
-
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre} ({self.cuil})"
@@ -481,11 +485,15 @@ class Beneficiario(models.Model):
     )
 
     # Auditoría
-    creado_por = models.ForeignKey(User, on_delete=models.PROTECT, related_name="beneficiarios_creados", null=True, blank=True)
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="beneficiarios_creados",
+        null=True,
+        blank=True,
+    )
     fecha_creado = models.DateTimeField(default=timezone.now)
     fecha_modificado = models.DateTimeField(auto_now=True)
-
-
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre} ({self.cuil})"
@@ -522,8 +530,12 @@ class PadronBeneficiarios(models.Model):
     cuil = models.CharField(max_length=20, db_column="CUITBenef")
     dni = models.CharField(max_length=20, db_column="DNIBenef", primary_key=True)
     genero = models.CharField(max_length=1, db_column="Sexo")
-    provincia_tabla = models.CharField(max_length=100, db_column="Provincia", blank=True, null=True)
-    municipio_tabla = models.CharField(max_length=100, db_column="Municipio", blank=True, null=True)
+    provincia_tabla = models.CharField(
+        max_length=100, db_column="Provincia", blank=True, null=True
+    )
+    municipio_tabla = models.CharField(
+        max_length=100, db_column="Municipio", blank=True, null=True
+    )
 
     class Meta:
         managed = False
