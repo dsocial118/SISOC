@@ -294,7 +294,7 @@ class ResponsableForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         setup_location_fields(self)
         set_readonly_fields(
-            self, ["nombre", "apellido", "cuil", "dni", "genero", "fecha_nacimiento"]
+            self, ["nombre", "apellido", "dni", "genero", "fecha_nacimiento"]
         )
 
 
@@ -337,5 +337,5 @@ class BeneficiarioForm(forms.ModelForm):
         setup_location_fields(self)
         self.fields["actividades_detalle"].required = False
         set_readonly_fields(
-            self, ["nombre", "apellido", "fecha_nacimiento", "cuil", "dni", "genero"]
+            self, ["nombre", "apellido", "fecha_nacimiento", "dni", "genero"]
         )
