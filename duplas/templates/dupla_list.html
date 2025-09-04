@@ -10,7 +10,7 @@
         <h2>Listado de Duplas</h2>
         <a href="{% url 'dupla_crear' %}" class="btn btn-primary mb-3">Crear Nueva Dupla</a>
         {% load custom_filters %}
-        {% include 'components/data_table.html' with headers=table_headers items=duplas show_actions=True actions=table_actions empty_message='No hay duplas disponibles.' fields=table_fields %}
+        {% include 'components/data_table.html' with headers=table_headers items=duplas show_actions=True actions=table_actions empty_message='No hay duplas disponibles.' fields=table_fields disable_links=True %}
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Anterior' next_text='Siguiente' %}
     </div>
 {% endblock %}

@@ -16,7 +16,7 @@ def test_borrar_foto_legajo_elimina_archivo_y_nullea_campo(settings, tmp_path):
 
     assert default_storage.exists(file_name)
 
-    ComedorService.borrar_foto_legajo({"foto_legajo_borrar": "1"}, comedor)
+    ComedorService.delete_legajo_photo({"foto_legajo_borrar": "1"}, comedor)
 
     assert not default_storage.exists(file_name)
     comedor.refresh_from_db()
