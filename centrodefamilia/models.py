@@ -341,11 +341,6 @@ class Responsable(models.Model):
 
     VINCULO_PARENTAL_CHOICES = [
         ("Padre/Madre", "Padre/Madre"),
-        ("Abuelo/Abuela", "Abuelo/Abuela"),
-        ("Tío/Tía", "Tío/Tía"),
-        ("Hermano/Hermana", "Hermano/Hermana"),
-        ("Primo/Prima", "Primo/Prima"),
-        ("Padrino/Madrina", "Padrino/Madrina"),
         ("Tutor/Tutora", "Tutor/Tutora"),
     ]
 
@@ -504,11 +499,6 @@ class BeneficiarioResponsable(models.Model):
 
     VINCULO_PARENTAL_CHOICES = [
         ("Padre/Madre", "Padre/Madre"),
-        ("Abuelo/Abuela", "Abuelo/Abuela"),
-        ("Tío/Tía", "Tío/Tía"),
-        ("Hermano/Hermana", "Hermano/Hermana"),
-        ("Primo/Prima", "Primo/Prima"),
-        ("Padrino/Madrina", "Padrino/Madrina"),
         ("Tutor/Tutora", "Tutor/Tutora"),
     ]
 
@@ -528,24 +518,19 @@ class BeneficiarioResponsable(models.Model):
         verbose_name_plural = "Vínculos Beneficiario-Responsable"
 
 
-class PosiblesBeneficiarios(models.Model):
-    cuil = models.CharField(max_length=20)
-    apellido = models.CharField(max_length=100)
-    nombre = models.CharField(max_length=100)
-    genero = models.CharField(max_length=20)
-    fecha_nacimiento = models.DateField()
-    domicilio = models.CharField(max_length=255)
-    provincia = models.CharField(max_length=100)
-    municipio = models.CharField(max_length=100)
-    provincia_tabla = models.CharField(max_length=100)
-    municipio_tabla = models.CharField(max_length=100)
-    localidad_tabla = models.CharField(max_length=150)
+class PadronBeneficiarios(models.Model):
+    cuil = models.CharField(max_length=20, db_column="CUITBenef")
+    dni = models.CharField(max_length=20, db_column="DNIBenef", primary_key=True)
+    genero = models.CharField(max_length=1, db_column="Sexo")
+    provincia_tabla = models.CharField(max_length=100, db_column="Provincia", blank=True, null=True)
+    municipio_tabla = models.CharField(max_length=100, db_column="Municipio", blank=True, null=True)
 
-    def __str__(self):
-        return f"{self.apellido}, {self.nombre}"
+    class Meta:
+        managed = False
+        db_table = "padron_beneficiarios"
 
 
-class BeneficiariosResposablesRenaper(models.Model):
+class BeneficiariosResponsablesRenaper(models.Model):
     iD_TRAMITE_PRINCIPAL = models.CharField(max_length=50, blank=True, null=True)
     iD_TRAMITE_TARJETA_REIMPRESA = models.CharField(
         max_length=50, blank=True, null=True

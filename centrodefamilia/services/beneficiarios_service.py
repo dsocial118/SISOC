@@ -4,13 +4,14 @@ from django.http import JsonResponse
 from django.db.models import Count
 from centrodefamilia.models import (
     Responsable,
-    BeneficiariosResposablesRenaper,
     Beneficiario,
-    PosiblesBeneficiarios,
+    PadronBeneficiarios,
     BeneficiarioResponsable,
+    BeneficiariosResponsablesRenaper
 )
 from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from django.db import transaction
 
 
 def obtener_o_crear_responsable(responsable_data, usuario):
@@ -21,12 +22,12 @@ def obtener_o_crear_responsable(responsable_data, usuario):
 
     try:
         responsable_existente = Responsable.objects.get(dni=dni)
-        responsable_form = ResponsableForm(
-            responsable_data, instance=responsable_existente
-        )
+        responsable_form = ResponsableForm(responsable_data, instance=responsable_existente)
         if responsable_form.is_valid():
             responsable_form.save()
-        return responsable_existente, responsable_form, False
+            return responsable_existente, responsable_form, False
+        else:
+            return None, responsable_form, False
     except Responsable.DoesNotExist:
         responsable_form = ResponsableForm(responsable_data)
         if responsable_form.is_valid():
@@ -35,6 +36,7 @@ def obtener_o_crear_responsable(responsable_data, usuario):
             responsable.save()
             return responsable, responsable_form, True
         return None, responsable_form, False
+
 
 
 def crear_beneficiario(beneficiario_data, responsable, vinculo_parental, usuario):
@@ -96,7 +98,7 @@ def guardar_datos_renaper(request, persona, tipo, es_nuevo=True):
             datos_api = renaper_resp["datos_api"]
 
     if datos_api:
-        BeneficiariosResposablesRenaper.objects.create(
+        BeneficiariosResponsablesRenaper.objects.create(
             iD_TRAMITE_PRINCIPAL=datos_api.get("iD_TRAMITE_PRINCIPAL"),
             iD_TRAMITE_TARJETA_REIMPRESA=datos_api.get("iD_TRAMITE_TARJETA_REIMPRESA"),
             dni=datos_api.get("dni", dni),
@@ -137,20 +139,21 @@ def procesar_formularios(request, beneficiario_data, responsable_data):
     if not vinculo_parental:
         return None, None, None
 
-    responsable, responsable_form, es_responsable_nuevo = obtener_o_crear_responsable(
-        responsable_data, request.user
-    )
-    if not responsable:
-        return None, None, responsable_form
+    with transaction.atomic():
+        responsable, responsable_form, es_responsable_nuevo = obtener_o_crear_responsable(
+            responsable_data, request.user
+        )
+        if not responsable:
+            return None, None, responsable_form
 
-    beneficiario, beneficiario_form = crear_beneficiario(
-        beneficiario_data, responsable, vinculo_parental, request.user
-    )
-    if not beneficiario:
-        return None, beneficiario_form, responsable_form
+        beneficiario, beneficiario_form = crear_beneficiario(
+            beneficiario_data, responsable, vinculo_parental, request.user
+        )
+        if not beneficiario:
+            return None, beneficiario_form, responsable_form
 
-    guardar_datos_renaper(request, responsable, "Responsable", es_responsable_nuevo)
-    guardar_datos_renaper(request, beneficiario, "Beneficiario")
+        guardar_datos_renaper(request, responsable, "Responsable", es_responsable_nuevo)
+        guardar_datos_renaper(request, beneficiario, "Beneficiario")
 
     return beneficiario, beneficiario_form, responsable_form
 
@@ -195,7 +198,7 @@ def generar_respuesta(
                     "message": "Preinscripción confirmada exitosamente",
                 }
             )
-        return redirect("beneficiarios:create")
+        return redirect("beneficiarios_crear")
 
     errors = {}
     if beneficiario_form and not beneficiario_form.is_valid():
@@ -332,84 +335,85 @@ def buscar_responsable_renaper(request, dni, sexo):
 
 
 def buscar_cuil_beneficiario(request, cuil):
-    """Busca CUIL en beneficiarios y posibles beneficiarios, consulta RENAPER y cachea"""
-    if not cuil:
-        return JsonResponse(
-            {"status": "error", "message": "Debe ingresar un CUIL"}, status=400
-        )
+    """
+    Busca CUIL en beneficiarios y padrón, consulta RENAPER y cachea.
+    Siempre devuelve JSON.
+    """
+    try:
+        if not cuil:
+            return JsonResponse({"status": "error", "message": "Debe ingresar un CUIL"}, status=400)
 
-    if Beneficiario.objects.filter(cuil=cuil).exists():
-        return JsonResponse(
-            {
+        if Beneficiario.objects.filter(cuil=cuil).exists():
+            return JsonResponse({
                 "status": "exists",
                 "message": "El CUIL ingresado ya se encuentra en el programa.",
-            }
-        )
+            })
 
-    posible = PosiblesBeneficiarios.objects.filter(cuil=cuil).first()
-    if not posible:
-        return JsonResponse(
-            {
+        posible = PadronBeneficiarios.objects.filter(cuil=cuil).first()
+
+        if not posible:
+            return JsonResponse({
                 "status": "not_found",
-                "message": "El cuil ingresado no se encuentra en la base de datos",
-            }
-        )
+                "message": "El CUIL ingresado no se encuentra en la base de datos",
+            })
 
-    dni = posible.cuil[2:-1]
-    genero = posible.genero
+        dni = posible.dni
+        genero = posible.genero
 
-    resultado = consultar_datos_renaper(dni, genero)
-    if not resultado["success"]:
-        return JsonResponse(
-            {
+        resultado = consultar_datos_renaper(dni, genero)
+
+        if not resultado.get("success"):
+            return JsonResponse({
                 "status": "not_found",
                 "message": resultado.get("error", "No se encontraron datos en RENAPER"),
-            }
-        )
+            })
 
-    datos_api = resultado["datos_api"]
+        datos_api = resultado.get("datos_api", {})
 
-    if "renaper_cache" not in request.session:
-        request.session["renaper_cache"] = {}
+        if "renaper_cache" not in request.session:
+            request.session["renaper_cache"] = {}
 
-    cache_key = f"beneficiario_{dni}_{genero}"
-    request.session["renaper_cache"][cache_key] = datos_api
-    request.session.modified = True
+        cache_key = f"beneficiario_{dni}_{genero}"
+        request.session["renaper_cache"][cache_key] = datos_api
+        request.session.modified = True
 
-    domicilio_parts = []
-    if datos_api.get("calle"):
-        domicilio_parts.append(datos_api.get("calle"))
-    if datos_api.get("numero"):
-        domicilio_parts.append(datos_api.get("numero"))
-    if datos_api.get("piso"):
-        domicilio_parts.append(f"Piso {datos_api.get('piso')}")
-    if datos_api.get("departamento"):
-        domicilio_parts.append(f"Depto {datos_api.get('departamento')}")
+        domicilio_parts = []
+        if datos_api.get("calle"):
+            domicilio_parts.append(datos_api.get("calle"))
+        if datos_api.get("numero"):
+            domicilio_parts.append(datos_api.get("numero"))
+        if datos_api.get("piso"):
+            domicilio_parts.append(f"Piso {datos_api.get('piso')}")
+        if datos_api.get("departamento"):
+            domicilio_parts.append(f"Depto {datos_api.get('departamento')}")
 
-    data = {
-        "nombre": datos_api.get("nombres"),
-        "apellido": datos_api.get("apellido"),
-        "genero": genero,
-        "fecha_nacimiento": datos_api.get("fechaNacimiento"),
-        "domicilio": " ".join(domicilio_parts),
-        "cuil": datos_api.get("cuil"),
-        "dni": dni,
-        "calle": datos_api.get("calle"),
-        "altura": datos_api.get("numero"),
-        "piso_vivienda": datos_api.get("piso"),
-        "departamento_vivienda": datos_api.get("departamento"),
-        "codigo_postal": datos_api.get("cpostal"),
-        "barrio": datos_api.get("barrio"),
-        "monoblock": datos_api.get("monoblock"),
-        "provincia_tabla": posible.provincia_tabla,
-        "municipio_tabla": posible.municipio_tabla,
-        "localidad_tabla": posible.localidad_tabla,
-        "provincia_api": datos_api.get("provincia"),
-        "municipio_api": datos_api.get("municipio"),
-        "localidad_api": datos_api.get("ciudad"),
-    }
+        data = {
+            "nombre": datos_api.get("nombres", ""),
+            "apellido": datos_api.get("apellido", ""),
+            "genero": genero,
+            "fecha_nacimiento": datos_api.get("fechaNacimiento", ""),
+            "domicilio": " ".join(domicilio_parts),
+            "cuil": datos_api.get("cuil", cuil),
+            "dni": dni,
+            "calle": datos_api.get("calle", ""),
+            "altura": datos_api.get("numero"),
+            "piso_vivienda": datos_api.get("piso") or None,
+            "departamento_vivienda": datos_api.get("departamento") or None,
+            "codigo_postal": datos_api.get("cpostal"),
+            "barrio": datos_api.get("barrio") or None,
+            "monoblock": datos_api.get("monoblock") or None,
+            "provincia_tabla": posible.provincia_tabla or "",
+            "municipio_tabla": posible.municipio_tabla or "",
+            "provincia_api": datos_api.get("provincia") or "",
+            "municipio_api": datos_api.get("municipio") or "",
+            "localidad_api": datos_api.get("ciudad") or "",
+        }
 
-    return JsonResponse({"status": "possible", "data": data})
+        return JsonResponse({"status": "possible", "data": data})
+
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": f"Error al buscar CUIL: {str(e)}"}, status=500)
+
 
 
 def get_beneficiarios_list_context():
