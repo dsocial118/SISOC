@@ -7,7 +7,7 @@ from centrodefamilia.models import (
     Beneficiario,
     PadronBeneficiarios,
     BeneficiarioResponsable,
-    BeneficiariosResponsablesRenaper
+    BeneficiariosResponsablesRenaper,
 )
 from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
@@ -22,7 +22,9 @@ def obtener_o_crear_responsable(responsable_data, usuario):
 
     try:
         responsable_existente = Responsable.objects.get(dni=dni)
-        responsable_form = ResponsableForm(responsable_data, instance=responsable_existente)
+        responsable_form = ResponsableForm(
+            responsable_data, instance=responsable_existente
+        )
         if responsable_form.is_valid():
             responsable_form.save()
             return responsable_existente, responsable_form, False
@@ -36,7 +38,6 @@ def obtener_o_crear_responsable(responsable_data, usuario):
             responsable.save()
             return responsable, responsable_form, True
         return None, responsable_form, False
-
 
 
 def crear_beneficiario(beneficiario_data, responsable, vinculo_parental, usuario):
@@ -140,8 +141,8 @@ def procesar_formularios(request, beneficiario_data, responsable_data):
         return None, None, None
 
     with transaction.atomic():
-        responsable, responsable_form, es_responsable_nuevo = obtener_o_crear_responsable(
-            responsable_data, request.user
+        responsable, responsable_form, es_responsable_nuevo = (
+            obtener_o_crear_responsable(responsable_data, request.user)
         )
         if not responsable:
             return None, None, responsable_form
@@ -341,21 +342,27 @@ def buscar_cuil_beneficiario(request, cuil):
     """
     try:
         if not cuil:
-            return JsonResponse({"status": "error", "message": "Debe ingresar un CUIL"}, status=400)
+            return JsonResponse(
+                {"status": "error", "message": "Debe ingresar un CUIL"}, status=400
+            )
 
         if Beneficiario.objects.filter(cuil=cuil).exists():
-            return JsonResponse({
-                "status": "exists",
-                "message": "El CUIL ingresado ya se encuentra en el programa.",
-            })
+            return JsonResponse(
+                {
+                    "status": "exists",
+                    "message": "El CUIL ingresado ya se encuentra en el programa.",
+                }
+            )
 
         posible = PadronBeneficiarios.objects.filter(cuil=cuil).first()
 
         if not posible:
-            return JsonResponse({
-                "status": "not_found",
-                "message": "El CUIL ingresado no se encuentra en la base de datos",
-            })
+            return JsonResponse(
+                {
+                    "status": "not_found",
+                    "message": "El CUIL ingresado no se encuentra en la base de datos",
+                }
+            )
 
         dni = posible.dni
         genero = posible.genero
@@ -363,10 +370,14 @@ def buscar_cuil_beneficiario(request, cuil):
         resultado = consultar_datos_renaper(dni, genero)
 
         if not resultado.get("success"):
-            return JsonResponse({
-                "status": "not_found",
-                "message": resultado.get("error", "No se encontraron datos en RENAPER"),
-            })
+            return JsonResponse(
+                {
+                    "status": "not_found",
+                    "message": resultado.get(
+                        "error", "No se encontraron datos en RENAPER"
+                    ),
+                }
+            )
 
         datos_api = resultado.get("datos_api", {})
 
@@ -412,8 +423,10 @@ def buscar_cuil_beneficiario(request, cuil):
         return JsonResponse({"status": "possible", "data": data})
 
     except Exception as e:
-        return JsonResponse({"status": "error", "message": f"Error al buscar CUIL: {str(e)}"}, status=500)
-
+        return JsonResponse(
+            {"status": "error", "message": f"Error al buscar CUIL: {str(e)}"},
+            status=500,
+        )
 
 
 def get_beneficiarios_list_context():
