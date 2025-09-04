@@ -39,7 +39,7 @@ def _tipo_doc_por_defecto():
     """
 
     try:
-        return TipoDocumento.objects.get(nombre__iexact="DNI")
+        return TipoDocumento.objects.get(tipo__iexact="DNI")
     except TipoDocumento.DoesNotExist as exc:
         raise ValidationError("Falta TipoDocumento por defecto (DNI)") from exc
 
