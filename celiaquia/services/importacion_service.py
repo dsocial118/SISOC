@@ -1,13 +1,16 @@
 import logging
+from functools import lru_cache
 from io import BytesIO
 import re
 
 import pandas as pd
 from django.core.exceptions import ValidationError
+from django.core.validators import EmailValidator
 from django.db import transaction
 from django.db.models import Q
-from functools import lru_cache
 
+from ciudadanos.models import Ciudadano, TipoDocumento, Sexo, Nacionalidad
+from core.models import Provincia, Municipio, Localidad
 from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
 
 logger = logging.getLogger(__name__)
@@ -27,6 +30,14 @@ def _estado_doc_pendiente_id():
         return EstadoLegajo.objects.only("id").get(nombre="DOCUMENTO_PENDIENTE").id
     except EstadoLegajo.DoesNotExist:
         raise ValidationError("Falta el estado DOCUMENTO_PENDIENTE")
+
+
+@lru_cache(maxsize=1)
+def _tipo_doc_por_defecto():
+    try:
+        return TipoDocumento.objects.only("id").get(tipo__iexact="DNI").id
+    except TipoDocumento.DoesNotExist:
+        raise ValidationError("Falta el TipoDocumento por defecto (DNI)")
 
 
 # Estados de expediente considerados “abiertos / pre-cupo” para evitar duplicados inter-expedientes
@@ -126,27 +137,36 @@ class ImportacionService:
         except Exception as e:
             raise ValidationError(f"No se pudo leer Excel: {e}")
 
-        df.columns = [str(col).strip().lower().replace(" ", "_") for col in df.columns]
-        expected = [
-            "nombre",
-            "apellido",
-            "documento",
-            "fecha_nacimiento",
-            "tipo_documento",
-            "sexo",
-        ]
-        if set(df.columns) != set(expected):
-            raise ValidationError(
-                f"Encabezados inválidos: {list(df.columns)} — esperados: {expected}"
-            )
+        df.columns = [_norm_col(col) for col in df.columns]
 
-        df = df[expected].fillna("")
+        column_map = {
+            "apellido": "apellido",
+            "apellidos": "apellido",
+            "nombre": "nombre",
+            "nombres": "nombre",
+            "documento": "documento",
+            "numerodoc": "documento",
+            "numero_documento": "documento",
+            "dni": "documento",
+            "fecha_nacimiento": "fecha_nacimiento",
+            "fecha_de_nacimiento": "fecha_nacimiento",
+            "tipo_documento": "tipo_documento",
+            "tipo_doc": "tipo_documento",
+            "sexo": "sexo",
+            "nacionalidad": "nacionalidad",
+            "provincia": "provincia",
+            "municipio": "municipio",
+            "localidad": "localidad",
+            "email": "email",
+        }
+
+        present = [c for c in df.columns if c in column_map]
+        df = df[present].rename(columns={c: column_map[c] for c in present}).fillna("")
         if "fecha_nacimiento" in df.columns:
             df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(
                 lambda x: x.date() if hasattr(x, "date") else x
             )
 
-        # Validar la existencia del TipoDocumento por defecto antes de procesar filas
         _tipo_doc_por_defecto()
 
         estado_id = _estado_doc_pendiente_id()
@@ -183,11 +203,112 @@ class ImportacionService:
             else:
                 abiertos.setdefault(ec.ciudadano_id, ec)
 
+        warnings = []
+
+        fk_models = {
+            "tipo_documento": (TipoDocumento, "tipo"),
+            "sexo": (Sexo, "sexo"),
+            "nacionalidad": (Nacionalidad, "nacionalidad"),
+            "provincia": (Provincia, "nombre"),
+            "municipio": (Municipio, "nombre"),
+            "localidad": (Localidad, "nombre"),
+        }
+
+        numeric_fields = {
+            "documento",
+            "altura",
+            "telefono",
+            "telefono_alternativo",
+            "codigo_postal",
+        }
+
+        def add_warning(fila, campo, detalle):
+            warnings.append({"fila": fila, "campo": campo, "detalle": detalle})
+            logger.warning("Fila %s: %s (%s)", fila, detalle, campo)
+
+        def resolve_fk(field, value):
+            model, lookup = fk_models[field]
+            if str(value).isdigit():
+                try:
+                    return model.objects.only("id").get(pk=int(value)).id
+                except model.DoesNotExist:
+                    return None
+            try:
+                return (
+                    model.objects.only("id")
+                    .get(**{f"{lookup}__iexact": str(value).strip()})
+                    .id
+                )
+            except model.DoesNotExist:
+                return None
+
         for offset, row in enumerate(df.to_dict(orient="records"), start=2):
             try:
-                # Crear/obtener ciudadano (puede asignar programa si corresponde)
+                payload = {}
+                for field, value in row.items():
+                    v = str(value).strip()
+                    if field in numeric_fields:
+                        cleaned = re.sub(r"\D", "", v)
+                        if cleaned:
+                            payload[field] = cleaned
+                        else:
+                            payload[field] = None
+                            if v:
+                                add_warning(offset, field, "valor numérico vacío")
+                    else:
+                        payload[field] = v or None
+
+                if not payload.get("tipo_documento"):
+                    payload["tipo_documento"] = _tipo_doc_por_defecto()
+
+                required = ["apellido", "nombre", "documento", "fecha_nacimiento"]
+                for req in required:
+                    if not payload.get(req):
+                        raise ValidationError(f"Campo obligatorio faltante: {req}")
+
+                doc = payload.get("documento")
+                if not str(doc).isdigit():
+                    raise ValidationError("Documento debe contener sólo dígitos")
+                try:
+                    Ciudadano._meta.get_field("documento").run_validators(int(doc))
+                except ValidationError as e:
+                    raise ValidationError(f"Documento inválido: {e.messages[0]}")
+
+                try:
+                    payload["fecha_nacimiento"] = CiudadanoService._to_date(
+                        payload.get("fecha_nacimiento")
+                    )
+                except ValidationError as e:
+                    raise ValidationError(str(e))
+
+                for fk in fk_models:
+                    val = payload.get(fk)
+                    if val in (None, ""):
+                        if fk != "tipo_documento":
+                            payload[fk] = None
+                        continue
+                    resolved = resolve_fk(fk, val)
+                    if resolved is None:
+                        if fk == "tipo_documento":
+                            raise ValidationError(f"Tipo de documento inválido: {val}")
+                        add_warning(offset, fk, f"{val} no encontrado")
+                        payload[fk] = None
+                    else:
+                        payload[fk] = resolved
+
+                email = payload.get("email")
+                if email:
+                    try:
+                        EmailValidator()(email)
+                    except ValidationError:
+                        add_warning(offset, "email", f"Email inválido: {email}")
+                        payload.pop("email", None)
+
                 ciudadano = CiudadanoService.get_or_create_ciudadano(
-                    row, usuario=usuario, expediente=expediente
+                    datos=payload,
+                    usuario=usuario,
+                    expediente=expediente,
+                    programa_id=3,
                 )
 
                 cid = ciudadano.pk
@@ -203,6 +324,11 @@ class ImportacionService:
                             "apellido": getattr(ciudadano, "apellido", ""),
                             "motivo": "Ya existe en este expediente",
                         }
+                    )
+                    logger.warning(
+                        "Fila %s excluida: ya existe en este expediente (ciudadano_id=%s)",
+                        offset,
+                        cid,
                     )
                     continue
 
@@ -221,6 +347,11 @@ class ImportacionService:
                             "estado_programa": estado_text,
                             "motivo": "Ya está dentro del programa en otro expediente",
                         }
+                    )
+                    logger.warning(
+                        "Fila %s excluida: ya está dentro del programa en otro expediente (ciudadano_id=%s)",
+                        offset,
+                        cid,
                     )
                     continue
 
@@ -251,6 +382,11 @@ class ImportacionService:
                             "motivo": "Duplicado en otro expediente abierto",
                         }
                     )
+                    logger.warning(
+                        "Fila %s excluida: duplicado en otro expediente abierto (ciudadano_id=%s)",
+                        offset,
+                        cid,
+                    )
                     continue
 
                 # 4) OK para crear en este expediente
@@ -277,7 +413,7 @@ class ImportacionService:
             ExpedienteCiudadano.objects.bulk_create(batch, batch_size=batch_size)
 
         logger.info(
-            "Import completo: %s válidos, %s errores, %s excluidos (duplicados o ya en programa).",
+            "Import completo: %s válidos, %s errores, %s advertencias (excluidos: duplicados o ya en programa).",
             validos,
             errores,
             len(excluidos),
@@ -289,4 +425,5 @@ class ImportacionService:
             "detalles_errores": detalles_errores,
             "excluidos_count": len(excluidos),
             "excluidos": excluidos,
+            "warnings": warnings,
         }

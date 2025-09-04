@@ -4,7 +4,8 @@ from functools import lru_cache
 
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from django.db import transaction, IntegrityError  # ← agregado
+from django.db import transaction, IntegrityError
+from django.db.models import Q
 
 from ciudadanos.models import (
     Ciudadano,
@@ -12,6 +13,10 @@ from ciudadanos.models import (
     HistorialCiudadanoProgramas,
     TipoDocumento,
     Sexo,
+    Nacionalidad,
+    Provincia,
+    Municipio,
+    Localidad,
     DimensionEconomia,
     DimensionEducacion,
     DimensionFamilia,
@@ -68,6 +73,13 @@ class CiudadanoService:
             raise ValidationError(f"Fecha de nacimiento inválida: {value}")
 
     @staticmethod
+    def _tipo_doc_por_defecto() -> TipoDocumento:
+        td = TipoDocumento.objects.filter(tipo__iexact="DNI").first()
+        if td is None:
+            raise ValidationError("No se encontró tipo de documento por defecto.")
+        return td
+
+    @staticmethod
     def get_or_create_ciudadano(
         datos: dict, usuario=None, expediente=None, programa_id=3
     ) -> Ciudadano:
@@ -80,30 +92,98 @@ class CiudadanoService:
         """
         # 1) Resolver FK TipoDocumento
         raw_td = datos.get("tipo_documento")
-        try:
-            td = TipoDocumento.objects.get(pk=int(raw_td))
-        except Exception:
-            raise ValidationError(f"Tipo de documento inválido: {raw_td}")
+        if raw_td in (None, ""):
+            td = CiudadanoService._tipo_doc_por_defecto()
+        else:
+            td = None
+            raw_td_str = str(raw_td).strip()
+            try:
+                td = TipoDocumento.objects.get(pk=int(raw_td_str))
+            except (TipoDocumento.DoesNotExist, ValueError):
+                filtro = {"tipo__iexact": raw_td_str}
+                if hasattr(TipoDocumento, "codigo"):
+                    td = TipoDocumento.objects.filter(
+                        Q(**filtro) | Q(codigo__iexact=raw_td_str)
+                    ).first()
+                else:
+                    td = TipoDocumento.objects.filter(**filtro).first()
+            if td is None:
+                raise ValidationError(f"Tipo de documento inválido: {raw_td}")
 
         # 2) Resolver FK Sexo
         raw_sex = datos.get("sexo")
-        try:
-            sx = Sexo.objects.get(pk=int(raw_sex))
-        except Exception:
-            raise ValidationError(f"Sexo inválido: {raw_sex}")
+        sx = None
+        if raw_sex not in (None, ""):
+            raw_sex_str = str(raw_sex).strip()
+            try:
+                sx = Sexo.objects.get(pk=int(raw_sex_str))
+            except (Sexo.DoesNotExist, ValueError):
+                sx = Sexo.objects.filter(sexo__iexact=raw_sex_str).first()
 
-        # 3) Normalizar fecha de nacimiento
+        # 3) Resolver FK Nacionalidad
+        raw_nat = datos.get("nacionalidad")
+        nac = None
+        if raw_nat not in (None, ""):
+            raw_nat_str = str(raw_nat).strip()
+            try:
+                nac = Nacionalidad.objects.get(pk=int(raw_nat_str))
+            except (Nacionalidad.DoesNotExist, ValueError):
+                nac = Nacionalidad.objects.filter(
+                    nacionalidad__iexact=raw_nat_str
+                ).first()
+
+        # 4) Resolver FK Provincia
+        raw_prov = datos.get("provincia")
+        prov = None
+        if raw_prov not in (None, ""):
+            raw_prov_str = str(raw_prov).strip()
+            try:
+                prov = Provincia.objects.get(pk=int(raw_prov_str))
+            except (Provincia.DoesNotExist, ValueError):
+                prov = Provincia.objects.filter(nombre__iexact=raw_prov_str).first()
+
+        # 5) Resolver FK Municipio restringido por provincia
+        raw_mun = datos.get("municipio")
+        mun = None
+        if raw_mun not in (None, ""):
+            raw_mun_str = str(raw_mun).strip()
+            qs_mun = Municipio.objects.all()
+            if prov:
+                qs_mun = qs_mun.filter(provincia=prov)
+            try:
+                mun = qs_mun.get(pk=int(raw_mun_str))
+            except (Municipio.DoesNotExist, ValueError):
+                mun = qs_mun.filter(nombre__iexact=raw_mun_str).first()
+
+        # 6) Resolver FK Localidad restringido por municipio
+        raw_loc = datos.get("localidad")
+        loc = None
+        if raw_loc not in (None, ""):
+            raw_loc_str = str(raw_loc).strip()
+            qs_loc = Localidad.objects.all()
+            if mun:
+                qs_loc = qs_loc.filter(municipio=mun)
+            try:
+                loc = qs_loc.get(pk=int(raw_loc_str))
+            except (Localidad.DoesNotExist, ValueError):
+                loc = qs_loc.filter(nombre__iexact=raw_loc_str).first()
+
+        # 7) Normalizar fecha de nacimiento
         fecha_nac = CiudadanoService._to_date(datos.get("fecha_nacimiento"))
 
-        # 4) Datos básicos
+        # 8) Datos básicos
         doc = datos.get("documento")
         nom = datos.get("nombre")
         ape = datos.get("apellido")
+        calle = datos.get("calle")
+        altura = datos.get("altura")
+        codigo_postal = datos.get("codigo_postal")
+        telefono = datos.get("telefono")
+        email = datos.get("email")
 
         if doc in (None, ""):
             raise ValidationError("El número de documento es obligatorio.")
 
-        # 5) Buscar por clave real (tipo_documento + documento)
         ciudadano = Ciudadano.objects.filter(tipo_documento=td, documento=doc).first()
 
         created = False
@@ -118,6 +198,15 @@ class CiudadanoService:
                         apellido=ape,
                         fecha_nacimiento=fecha_nac,
                         sexo=sx,
+                        nacionalidad=nac,
+                        provincia=prov,
+                        municipio=mun,
+                        localidad=loc,
+                        calle=calle,
+                        altura=altura,
+                        codigo_postal=codigo_postal,
+                        telefono=telefono,
+                        email=email,
                     )
                 created = True
                 logger.info("Ciudadano creado: %s", ciudadano.pk)
@@ -144,11 +233,38 @@ class CiudadanoService:
             if not ciudadano.fecha_nacimiento and fecha_nac:
                 ciudadano.fecha_nacimiento = fecha_nac
                 updates.append("fecha_nacimiento")
+            if not ciudadano.nacionalidad_id and nac:
+                ciudadano.nacionalidad = nac
+                updates.append("nacionalidad")
+            if not ciudadano.provincia_id and prov:
+                ciudadano.provincia = prov
+                updates.append("provincia")
+            if not ciudadano.municipio_id and mun:
+                ciudadano.municipio = mun
+                updates.append("municipio")
+            if not ciudadano.localidad_id and loc:
+                ciudadano.localidad = loc
+                updates.append("localidad")
+            if not ciudadano.calle and calle:
+                ciudadano.calle = calle
+                updates.append("calle")
+            if ciudadano.altura is None and altura not in (None, ""):
+                ciudadano.altura = altura
+                updates.append("altura")
+            if ciudadano.codigo_postal is None and codigo_postal not in (None, ""):
+                ciudadano.codigo_postal = codigo_postal
+                updates.append("codigo_postal")
+            if not ciudadano.telefono and telefono:
+                ciudadano.telefono = telefono
+                updates.append("telefono")
+            if not ciudadano.email and email:
+                ciudadano.email = email
+                updates.append("email")
             if updates:
                 ciudadano.save(update_fields=updates)
             logger.debug("Ciudadano existente: %s", ciudadano.pk)
 
-        # 6) Asignación de programa condicionada a la existencia del legajo
+        # 10) Asignación de programa condicionada a la existencia del legajo
         User = get_user_model()
         if isinstance(usuario, User):
             if expediente is not None:
