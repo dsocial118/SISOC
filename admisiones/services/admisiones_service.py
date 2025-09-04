@@ -129,7 +129,12 @@ class AdmisionService:
 
             documentos_info = [
                 {
-                    "id": doc.id,
+                    "id": (
+                        archivos_dict[doc.id].id
+                        if doc.id in archivos_dict
+                        else doc.id
+                    ),
+                    "documentacion_id": doc.id,
                     "nombre": doc.nombre,
                     "estado": (
                         archivos_dict.get(doc.id).estado
@@ -502,16 +507,7 @@ class AdmisionService:
                 return {"success": False, "error": "Solo se puede actualizar el número GDE en documentos aceptados."}
 
             # Verificar permisos: superadmin o técnico de la dupla asignada al comedor
-            es_superuser = request.user.is_superuser
-            tiene_permiso_tecnico = AdmisionService._verificar_permiso_tecnico_dupla(request.user, archivo.admision.comedor)
-            
-            logger.info(
-                f"Verificación permisos GDE: user={request.user.username}, "
-                f"es_superuser={es_superuser}, tiene_permiso_tecnico={tiene_permiso_tecnico}, "
-                f"archivo_id={archivo.id}, admision_id={archivo.admision.id}"
-            )
-            
-            if not (es_superuser or tiene_permiso_tecnico):
+            if not (request.user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(request.user, archivo.admision.comedor)):
                 return {"success": False, "error": "No tiene permisos para editar este documento."}
 
             # Actualizar el campo
@@ -541,19 +537,12 @@ class AdmisionService:
     def _verificar_permiso_tecnico_dupla(user, comedor):
         """Verifica que el usuario sea técnico de la dupla asignada al comedor"""
         try:
-            es_tecnico_comedor = user.groups.filter(name="Tecnico Comedor").exists()
-            tiene_dupla = comedor.dupla is not None
-            es_tecnico_asignado = tiene_dupla and comedor.dupla.tecnico.filter(id=user.id).exists()
-            dupla_activa = tiene_dupla and comedor.dupla.estado == "Activo"
-            
-            logger.info(
-                f"Verificación permisos técnico GDE: user={user.username}, "
-                f"es_tecnico_comedor={es_tecnico_comedor}, tiene_dupla={tiene_dupla}, "
-                f"es_tecnico_asignado={es_tecnico_asignado}, dupla_activa={dupla_activa}, "
-                f"comedor_id={comedor.id}"
+            return (
+                user.groups.filter(name="Tecnico Comedor").exists() and
+                comedor.dupla and
+                comedor.dupla.tecnico.filter(id=user.id).exists() and
+                comedor.dupla.estado == "Activo"
             )
-            
-            return es_tecnico_comedor and tiene_dupla and es_tecnico_asignado and dupla_activa
         except Exception:
             logger.exception(
                 "Error en _verificar_permiso_tecnico_dupla",
