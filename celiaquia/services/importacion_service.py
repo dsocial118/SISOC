@@ -120,7 +120,10 @@ class ImportacionService:
         expedientes abiertos para evitar consultas repetidas dentro del bucle.
         """
 
-        from celiaquia.services.ciudadano_service import CiudadanoService
+        from celiaquia.services.ciudadano_service import (
+            CiudadanoService,
+            _tipo_doc_por_defecto,
+        )
 
         try:
             archivo_excel.open()
@@ -164,7 +167,6 @@ class ImportacionService:
                 lambda x: x.date() if hasattr(x, "date") else x
             )
 
-        # Prevalidar TipoDocumento por defecto
         _tipo_doc_por_defecto()
 
         estado_id = _estado_doc_pendiente_id()
