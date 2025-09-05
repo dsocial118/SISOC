@@ -238,38 +238,37 @@
                     </ul>
                 </li>
             {% endif %}
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="far fa-circle nav-icon"></i>
-                        <p>
-                            Celiaquía
-                            <i class="nav-arrow bi bi-chevron-right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview" style="display: none;">
-                        <li class="nav-item">
-                            <a href="{% url 'expediente_list' %}" class="nav-link ms-3">
-                                <i class="far fa-dot-circle nav-icon"></i>
-                                <p>Expediente</p>
-                            </a>
-                        </li>
-                        {% if request.user|has_group:"CoordinadorCeliaquia" %}
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>
+                        Celiaquía
+                        <i class="nav-arrow bi bi-chevron-right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview" style="display: none;">
+                    <li class="nav-item">
+                        <a href="{% url 'expediente_list' %}" class="nav-link ms-3">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Expediente</p>
+                        </a>
+                    </li>
+                    {% if request.user|has_group:"CoordinadorCeliaquia" %}
                         <li class="nav-item">
                             <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-3">
                                 <i class="far fa-dot-circle nav-icon"></i>
                                 <p>Cupos</p>
                             </a>
                         </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <a href="{% url 'admisiones_legales_listar' %}" class="nav-link ms-3">
-                                <i class="far fa-dot-circle nav-icon"></i>
-                                <p>Reclamos</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-            
+                    {% endif %}
+                    <li class="nav-item">
+                        <a href="{% url 'admisiones_legales_listar' %}" class="nav-link ms-3">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Reclamos</p>
+                        </a>
+                    </li>
+                </ul>
+            </li>
         </ul>
     </li>
 {% endwith %}

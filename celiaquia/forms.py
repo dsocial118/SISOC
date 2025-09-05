@@ -147,9 +147,11 @@ class SubsanacionSolicitudForm(StyledForm):
         widget=forms.Textarea(attrs={"rows": 3}),
         required=True,
     )
-    
+
+
 class PagoRespuestaUploadForm(forms.Form):
     archivo = forms.FileField(required=True, label="Respuesta de Sintys (XLSX/CSV)")
+
 
 class CupoBajaLegajoForm(StyledForm):
     motivo = forms.CharField(

@@ -1,6 +1,11 @@
 from django.urls import path
 from celiaquia.views.expediente_subsanacion import ExpedienteConfirmSubsanacionView
-from celiaquia.views.pago import PagoExpedienteCreateView, PagoExpedienteDetailView, PagoExpedienteExportView, PagoNominaExportActualView
+from celiaquia.views.pago import (
+    PagoExpedienteCreateView,
+    PagoExpedienteDetailView,
+    PagoExpedienteExportView,
+    PagoNominaExportActualView,
+)
 from core.decorators import group_required
 
 from celiaquia.views.expediente import (

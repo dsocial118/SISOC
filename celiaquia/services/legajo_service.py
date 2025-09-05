@@ -164,7 +164,9 @@ class LegajoService:
         )
 
     @staticmethod
-    def faltantes_archivos(expediente, limit: int | None = None, friendly_names: dict | None = None):
+    def faltantes_archivos(
+        expediente, limit: int | None = None, friendly_names: dict | None = None
+    ):
         """
         Devuelve una lista de dicts con legajos que NO tienen los 3 archivos.
         - limit: corta la lista al llegar a N (útil para previsualización).
@@ -176,14 +178,18 @@ class LegajoService:
             "archivo3": "Negativa ANSES",
         }
 
-        qs = (
-            expediente.expediente_ciudadanos
-            .select_related("ciudadano", "estado")
-            .only(
-                "id", "archivo1", "archivo2", "archivo3",
-                "revision_tecnico", "estado_id",
-                "ciudadano__documento", "ciudadano__nombre", "ciudadano__apellido",
-            )
+        qs = expediente.expediente_ciudadanos.select_related(
+            "ciudadano", "estado"
+        ).only(
+            "id",
+            "archivo1",
+            "archivo2",
+            "archivo3",
+            "revision_tecnico",
+            "estado_id",
+            "ciudadano__documento",
+            "ciudadano__nombre",
+            "ciudadano__apellido",
         )
         if hasattr(ExpedienteCiudadano, "archivos_ok"):
             qs = qs.filter(archivos_ok=False)
@@ -199,17 +205,19 @@ class LegajoService:
                 miss.append("archivo3")
 
             if miss:
-                faltantes.append({
-                    "legajo_id": leg.id,
-                    "documento": getattr(leg.ciudadano, "documento", ""),
-                    "nombre": getattr(leg.ciudadano, "nombre", ""),
-                    "apellido": getattr(leg.ciudadano, "apellido", ""),
-                    "estado": getattr(getattr(leg, "estado", None), "nombre", None),
-                    "revision_tecnico": getattr(leg, "revision_tecnico", None),
-                    "archivos_ok": getattr(leg, "archivos_ok", None),
-                    "faltan": miss,
-                    "faltan_nombres": [friendly_names.get(m, m) for m in miss],
-                })
+                faltantes.append(
+                    {
+                        "legajo_id": leg.id,
+                        "documento": getattr(leg.ciudadano, "documento", ""),
+                        "nombre": getattr(leg.ciudadano, "nombre", ""),
+                        "apellido": getattr(leg.ciudadano, "apellido", ""),
+                        "estado": getattr(getattr(leg, "estado", None), "nombre", None),
+                        "revision_tecnico": getattr(leg, "revision_tecnico", None),
+                        "archivos_ok": getattr(leg, "archivos_ok", None),
+                        "faltan": miss,
+                        "faltan_nombres": [friendly_names.get(m, m) for m in miss],
+                    }
+                )
                 if limit and len(faltantes) >= limit:
                     break
 

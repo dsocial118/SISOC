@@ -71,8 +71,8 @@ class ExpedienteService:
         return {
             "creados": result.get("validos", 0),
             "errores": result.get("errores", 0),
-            "excluidos": result.get("excluidos_count", 0),       # <-- NUEVO
-            "excluidos_detalle": result.get("excluidos", []),    # <-- NUEVO
+            "excluidos": result.get("excluidos_count", 0),  # <-- NUEVO
+            "excluidos_detalle": result.get("excluidos", []),  # <-- NUEVO
         }
 
     @staticmethod

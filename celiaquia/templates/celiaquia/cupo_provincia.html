@@ -26,10 +26,12 @@
             <button class="btn btn-outline-primary btn-sm"
                     data-bs-toggle="modal"
                     data-bs-target="#modalHistorico">Historico</button>
-            <form action="{% url 'pago_expediente_create' provincia.id %}" method="post" class="d-inline">
-            {% csrf_token %}
-            <button class="btn btn-success btn-sm">Generar expediente de pago</button>
-</form>
+            <form action="{% url 'pago_expediente_create' provincia.id %}"
+                  method="post"
+                  class="d-inline">
+                {% csrf_token %}
+                <button class="btn btn-success btn-sm">Generar expediente de pago</button>
+            </form>
         </div>
     </div>
     {% if metrics %}
