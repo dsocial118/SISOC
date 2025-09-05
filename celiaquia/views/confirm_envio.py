@@ -1,4 +1,6 @@
 # celiaquia/views/confirm_envio.py
+"""Views for confirming expediente submission."""
+
 import logging
 
 from django.contrib import messages  # ✅ import correcto
@@ -110,8 +112,9 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
                 }
             )
         except ValidationError as e:
-            logger.warning("Validación en confirmar envío falló: %s", e)
-            return JsonResponse({"success": False, "error": str(e)}, status=400)
+            logger.warning("Validación en confirmar envío falló: %s", e, exc_info=True)
+            msg = "No se pudo confirmar el envío: revise los datos e intente de nuevo."
+            return JsonResponse({"success": False, "error": msg}, status=400)
         except Exception as e:
             logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
             return JsonResponse(

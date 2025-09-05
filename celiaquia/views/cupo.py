@@ -1,3 +1,6 @@
+# celiaquia/views/cupo.py
+"""Views for cupo management."""
+
 import logging
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404
@@ -156,7 +159,12 @@ class CupoProvinciaDetailView(View):
                 }
             )
         except ValidationError as ve:
-            return JsonResponse({"success": False, "message": str(ve)}, status=400)
+            logger.warning(
+                "Error de validación al configurar cupo: %s", ve, exc_info=True
+            )
+            return JsonResponse(
+                {"success": False, "message": "Error de validación."}, status=400
+            )
         except Exception as e:
             logger.error("Error al configurar cupo: %s", e, exc_info=True)
             return JsonResponse(
@@ -207,7 +215,11 @@ class CupoBajaLegajoView(_BaseAccionLegajo):
         try:
             legajo = self._get_legajo_validado(provincia_id, legajo_id)
         except ValidationError as ve:
-            return JsonResponse({"success": False, "message": str(ve)}, status=400)
+            logger.warning("Error al validar legajo para baja: %s", ve, exc_info=True)
+            return JsonResponse(
+                {"success": False, "message": "No se pudo validar el legajo."},
+                status=400,
+            )
 
         try:
             CupoService.liberar_slot(
@@ -260,7 +272,13 @@ class CupoSuspenderLegajoView(_BaseAccionLegajo):
         try:
             legajo = self._get_legajo_validado(provincia_id, legajo_id)
         except ValidationError as ve:
-            return JsonResponse({"success": False, "message": str(ve)}, status=400)
+            logger.warning(
+                "Error al validar legajo para suspensión: %s", ve, exc_info=True
+            )
+            return JsonResponse(
+                {"success": False, "message": "El legajo no es válido."},
+                status=400,
+            )
 
         try:
             # IMPORTANTE: suspender (no liberar)
