@@ -47,3 +47,10 @@ class ExpedienteCiudadanoAdmin(admin.ModelAdmin):
     list_display = ("ciudadano", "expediente", "estado", "creado_en")
     list_filter = ("estado",)
     search_fields = ("ciudadano__documento", "ciudadano__nombre", "ciudadano__apellido")
+
+
+@admin.register(AsignacionTecnico)
+class AsignacionTecnicoAdmin(admin.ModelAdmin):
+    list_display = ("expediente", "tecnico", "fecha_asignacion")
+    list_filter = ("fecha_asignacion",)
+    search_fields = ("expediente__id", "tecnico__username")
