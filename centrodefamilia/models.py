@@ -583,3 +583,11 @@ class BeneficiariosResponsablesRenaper(models.Model):
 
     def __str__(self):
         return f"{self.apellido or ''}, {self.nombres or ''} ({self.cuil or ''})"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["dni", "genero", "tipo"],
+                name="unique_dni_genero_tipo",
+            )
+        ]
