@@ -158,6 +158,10 @@ class ImportacionService:
             "municipio": "municipio",
             "localidad": "localidad",
             "email": "email",
+            "telefono": "telefono",
+            "codigo_postal": "codigo_postal",
+            "calle": "calle",
+            "altura": "altura",
         }
 
         present = [c for c in df.columns if c in column_map]
