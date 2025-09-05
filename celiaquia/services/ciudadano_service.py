@@ -112,12 +112,15 @@ class CiudadanoService:
             if td is None:
                 raise ValidationError(f"Tipo de documento inválido: {raw_td}")
 
-        # 2) Resolver FK Sexo (por nombre)
+        # 2) Resolver FK Sexo (por nombre o ID)
         raw_sex = datos.get("sexo")
         sx = None
         if raw_sex not in (None, ""):
             raw_sex_str = str(raw_sex).strip()
-            sx = Sexo.objects.filter(sexo__iexact=raw_sex_str).first()
+            if raw_sex_str.isdigit():
+                sx = Sexo.objects.filter(pk=int(raw_sex_str)).first()
+            else:
+                sx = Sexo.objects.filter(sexo__iexact=raw_sex_str).first()
             if sx is None:
                 raise ValidationError(f"Sexo inválido: {raw_sex}")
 
