@@ -38,6 +38,7 @@
 {% endblock content %}
 {% block customJS %}
     <script>
+  id_imagen.setAttribute('accept', 'image/png,image/jpeg');
   id_imagen.onchange = (evt) => {
     const [file] = id_imagen.files;
     if (file) {

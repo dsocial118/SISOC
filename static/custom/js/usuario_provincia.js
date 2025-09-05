@@ -1,3 +1,4 @@
+// Validates image type (PNG or JPEG) before previewing and toggles provincial field.
 document.addEventListener("DOMContentLoaded", function () {
   const checkbox = document.getElementById("id_es_usuario_provincial");
   const provinciaContainer = document.getElementById("provincia-container");
@@ -23,11 +24,17 @@ document.addEventListener("DOMContentLoaded", function () {
   const label = document.getElementById("label_id_imagen");
 
   if (imagenInput && imagenPreview && label) {
-    imagenInput.onchange = (evt) => {
+    imagenInput.onchange = () => {
       const [file] = imagenInput.files;
       if (file) {
-        imagenPreview.src = URL.createObjectURL(file);
-        label.innerText = "Cambiar imagen";
+        if (["image/png", "image/jpeg"].includes(file.type)) {
+          imagenPreview.src = URL.createObjectURL(file);
+          label.innerText = "Cambiar imagen";
+        } else {
+          imagenInput.value = "";
+          imagenPreview.src = "";
+          alert("Solo se permiten imágenes PNG y JPEG.");
+        }
       }
     };
   }
