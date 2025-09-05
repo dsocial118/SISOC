@@ -285,6 +285,10 @@ class AnexoForm(forms.ModelForm):
                 "max_value": "El CUIT/CUIL debe tener como máximo 11 dígitos.",
                 "invalid": "Ingresá solo números sin puntos ni guiones.",
                 "required": "El campo CUIT/CUIL es obligatorio.",
+            },
+            "barrio": {
+                "required": "El campo Barrio es obligatorio.",
+                "max_length": "El Barrio no puede tener más de 50 caracteres.",
             }
         }
         widgets = {
@@ -384,3 +388,7 @@ class AnexoForm(forms.ModelForm):
             self.fields["efector"].initial = comedor.nombre
             self.fields["domicilio"].initial = f"{calle} {numero}".strip()
             self.fields["expediente"].initial = admision.num_expediente
+            
+        # Valores por defecto para todos los casos
+        self.fields["total_acreditaciones"].initial = "6"
+        self.fields["plazo_ejecucion"].initial = "6 meses"
