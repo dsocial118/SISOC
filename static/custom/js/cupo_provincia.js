@@ -1,4 +1,5 @@
 // static/custom/js/cupo_provincia.js
+// Added escapeHtml utility to sanitize alert messages and avoid XSS.
 (function () {
   // --- Config tomada del HTML (data-*) ---
   const root = document.getElementById("cupo-root");
@@ -17,12 +18,20 @@
   }
   const csrftoken = getCookie("csrftoken");
 
+  // --- Utilidades ---
+  const escapeHtml = (str) =>
+    String(str).replace(
+      /[&<>"']/g,
+      (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+    );
+
   // --- Alertas ---
   const alerta = (msg, kind = "success") => {
     const el = document.getElementById("alerts");
     if (!el) return;
     el.innerHTML = `<div class="alert alert-${kind} alert-dismissible fade show" role="alert">
-      ${msg}
+      ${escapeHtml(msg)}
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
     </div>`;
   };
