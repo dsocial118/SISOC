@@ -1,9 +1,8 @@
 from django.conf import settings
 from django.core.cache import cache
 import requests
-import datetime
 import unicodedata
-from ciudadanos.models import Sexo, TipoDocumento, Provincia
+from ciudadanos.models import Sexo, TipoDocumento
 from requests.exceptions import RequestException, ConnectionError
 import logging
 
