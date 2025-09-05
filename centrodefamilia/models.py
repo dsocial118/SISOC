@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
+from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo
 from organizaciones.models import Organizacion
@@ -214,6 +215,7 @@ class ParticipanteActividad(models.Model):
                 opclasses=["gin_trgm_ops"],
             ),
         ]
+        unique_together = ("actividad_centro", "ciudadano")
 
 
 class ParticipanteActividadHistorial(models.Model):
@@ -325,4 +327,268 @@ class InformeCabalRegistro(models.Model):
             models.Index(fields=["centro"]),
             models.Index(fields=["nro_comercio"]),
             models.Index(fields=["fecha_trx"]),
+        ]
+
+
+# ——— MODELOS DE BENEFICIARIOS ———
+
+
+class Responsable(models.Model):
+    GENERO_CHOICES = [
+        ("F", "Femenino"),
+        ("M", "Masculino"),
+        ("X", "Otro/No binario"),
+    ]
+
+    VINCULO_PARENTAL_CHOICES = [
+        ("Padre/Madre", "Padre/Madre"),
+        ("Tutor/Tutora", "Tutor/Tutora"),
+    ]
+
+    vinculo_parental = models.CharField(max_length=50, choices=VINCULO_PARENTAL_CHOICES)
+
+    cuil = models.BigIntegerField(unique=True)
+    dni = models.PositiveIntegerField(unique=True)
+    apellido = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100)
+    genero = models.CharField(max_length=20, choices=GENERO_CHOICES)
+    fecha_nacimiento = models.DateField()
+
+    provincia = models.ForeignKey(
+        Provincia, on_delete=models.PROTECT, null=True, blank=True
+    )
+    municipio = models.ForeignKey(
+        Municipio, on_delete=models.PROTECT, null=True, blank=True
+    )
+    localidad = models.ForeignKey(
+        Localidad, on_delete=models.PROTECT, null=True, blank=True
+    )
+    codigo_postal = models.IntegerField(null=True, blank=True)
+
+    calle = models.CharField(max_length=150)
+    altura = models.IntegerField(null=True, blank=True)
+    piso_vivienda = models.CharField(max_length=10, null=True, blank=True)
+    departamento_vivienda = models.CharField(max_length=10, null=True, blank=True)
+    barrio = models.CharField(max_length=100, null=True, blank=True)
+    monoblock = models.CharField(max_length=100, null=True, blank=True)
+
+    prefijo_celular = models.IntegerField(null=True, blank=True)
+    numero_celular = models.IntegerField(null=True, blank=True)
+    prefijo_telefono_fijo = models.IntegerField(null=True, blank=True)
+    numero_telefono_fijo = models.IntegerField(null=True, blank=True)
+
+    correo_electronico = models.EmailField(max_length=150, null=True, blank=True)
+
+    # Auditoría
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="responsables_creados",
+        null=True,
+        blank=True,
+    )
+    fecha_creado = models.DateTimeField(default=timezone.now)
+    fecha_modificado = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.apellido}, {self.nombre} ({self.cuil})"
+
+    class Meta:
+        ordering = ["apellido", "nombre"]
+
+
+class Beneficiario(models.Model):
+    GENERO_CHOICES = [
+        ("F", "Femenino"),
+        ("M", "Masculino"),
+        ("X", "Otro/No binario"),
+    ]
+
+    NIVEL_EDUCATIVO_ACTUAL_CHOICES = [
+        ("Jardín", "Jardín"),
+        ("Primario", "Primario"),
+        ("Secundario", "Secundario"),
+    ]
+
+    MAXIMO_NIVEL_EDUCATIVO_CHOICES = [
+        ("Sin instrucción", "Sin instrucción"),
+        ("Jardín incompleto", "Jardín incompleto"),
+        ("Jardín completo", "Jardín completo"),
+        ("Primario incompleto", "Primario incompleto"),
+        ("Primario completo", "Primario completo"),
+        ("Secundario incompleto", "Secundario incompleto"),
+        ("Secundario completo", "Secundario completo"),
+    ]
+
+    ACTIVIDAD_PREFERIDA_CHOICES = [
+        ("Deportiva", "Deportiva"),
+        ("Cultural/Artística", "Cultural/Artística"),
+        ("Educativa", "Educativa"),
+    ]
+
+    # Identificación
+    cuil = models.BigIntegerField(unique=True)
+    dni = models.PositiveIntegerField(unique=True)
+    apellido = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100)
+    genero = models.CharField(max_length=20, choices=GENERO_CHOICES)
+    fecha_nacimiento = models.DateField()
+
+    # De que tabla de beneficiarios provienen los datos
+    provincia_tabla = models.CharField(max_length=100, blank=True, null=True)
+    municipio_tabla = models.CharField(max_length=100, blank=True, null=True)
+    localidad_tabla = models.CharField(max_length=150, blank=True, null=True)
+
+    # Domicilio
+    domicilio = models.CharField(max_length=255)
+    provincia = models.ForeignKey(
+        Provincia, on_delete=models.PROTECT, null=True, blank=True
+    )
+    municipio = models.ForeignKey(
+        Municipio, on_delete=models.PROTECT, null=True, blank=True
+    )
+    localidad = models.ForeignKey(
+        Localidad, on_delete=models.PROTECT, null=True, blank=True
+    )
+    codigo_postal = models.IntegerField(null=True, blank=True)
+    calle = models.CharField(max_length=150)
+    altura = models.IntegerField(null=True, blank=True)
+    piso_vivienda = models.CharField(max_length=10, null=True, blank=True)
+    departamento_vivienda = models.CharField(max_length=10, null=True, blank=True)
+    barrio = models.CharField(max_length=100, null=True, blank=True)
+    monoblock = models.CharField(max_length=100, null=True, blank=True)
+
+    # Contacto
+    prefijo_celular = models.IntegerField(null=True, blank=True)
+    numero_celular = models.IntegerField(null=True, blank=True)
+    prefijo_telefono_fijo = models.IntegerField(null=True, blank=True)
+    numero_telefono_fijo = models.IntegerField(null=True, blank=True)
+    correo_electronico = models.EmailField(max_length=150, null=True, blank=True)
+
+    # Académico
+    estado_academico = models.BooleanField(default=False)
+    nivel_educativo_actual = models.CharField(
+        max_length=20, choices=NIVEL_EDUCATIVO_ACTUAL_CHOICES, null=True, blank=True
+    )
+    maximo_nivel_educativo = models.CharField(
+        max_length=50, choices=MAXIMO_NIVEL_EDUCATIVO_CHOICES
+    )
+    institucion_academica = models.CharField(max_length=150, null=True, blank=True)
+
+    # Actividades
+    actividad_preferida = models.JSONField(default=list, blank=True)
+    actividades_extracurriculares = models.BooleanField(default=False)
+    actividades_detalle = models.ManyToManyField("Actividad", blank=True)
+
+    # Relación con Responsable
+    responsable = models.ForeignKey(
+        "Responsable", on_delete=models.PROTECT, related_name="beneficiarios"
+    )
+
+    # Auditoría
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="beneficiarios_creados",
+        null=True,
+        blank=True,
+    )
+    fecha_creado = models.DateTimeField(default=timezone.now)
+    fecha_modificado = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.apellido}, {self.nombre} ({self.cuil})"
+
+    class Meta:
+        ordering = ["apellido", "nombre"]
+
+
+class BeneficiarioResponsable(models.Model):
+    """Tabla para manejar vínculos específicos entre beneficiario y responsable"""
+
+    VINCULO_PARENTAL_CHOICES = [
+        ("Padre/Madre", "Padre/Madre"),
+        ("Tutor/Tutora", "Tutor/Tutora"),
+    ]
+
+    beneficiario = models.ForeignKey(Beneficiario, on_delete=models.CASCADE)
+    responsable = models.ForeignKey(Responsable, on_delete=models.CASCADE)
+    vinculo_parental = models.CharField(max_length=50, choices=VINCULO_PARENTAL_CHOICES)
+
+    fecha_creado = models.DateTimeField(default=timezone.now)
+    fecha_modificado = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.beneficiario} - {self.responsable} ({self.vinculo_parental})"
+
+    class Meta:
+        unique_together = ["beneficiario", "responsable"]
+        verbose_name = "Vínculo Beneficiario-Responsable"
+        verbose_name_plural = "Vínculos Beneficiario-Responsable"
+
+
+class PadronBeneficiarios(models.Model):
+    cuil = models.CharField(max_length=20, db_column="CUITBenef")
+    dni = models.CharField(max_length=20, db_column="DNIBenef", primary_key=True)
+    genero = models.CharField(max_length=1, db_column="Sexo")
+    provincia_tabla = models.CharField(
+        max_length=100, db_column="Provincia", blank=True, null=True
+    )
+    municipio_tabla = models.CharField(
+        max_length=100, db_column="Municipio", blank=True, null=True
+    )
+
+    class Meta:
+        managed = False
+        db_table = "padron_beneficiarios"
+
+
+class BeneficiariosResponsablesRenaper(models.Model):
+    iD_TRAMITE_PRINCIPAL = models.CharField(max_length=50, blank=True, null=True)
+    iD_TRAMITE_TARJETA_REIMPRESA = models.CharField(
+        max_length=50, blank=True, null=True
+    )
+    dni = models.CharField(max_length=20, blank=True, null=True)
+    genero = models.CharField(max_length=20, blank=True, null=True)
+    ejemplar = models.CharField(max_length=5, blank=True, null=True)
+    vencimiento = models.CharField(max_length=20, blank=True, null=True)
+    emision = models.CharField(max_length=20, blank=True, null=True)
+    apellido = models.CharField(max_length=100, blank=True, null=True)
+    nombres = models.CharField(max_length=100, blank=True, null=True)
+    fechaNacimiento = models.CharField(max_length=20, blank=True, null=True)
+    cuil = models.CharField(max_length=20, blank=True, null=True)
+    calle = models.CharField(max_length=150, blank=True, null=True)
+    numero = models.CharField(max_length=20, blank=True, null=True)
+    piso = models.CharField(max_length=10, blank=True, null=True)
+    departamento = models.CharField(max_length=10, blank=True, null=True)
+    cpostal = models.CharField(max_length=20, blank=True, null=True)
+    barrio = models.CharField(max_length=100, blank=True, null=True)
+    monoblock = models.CharField(max_length=100, blank=True, null=True)
+    ciudad = models.CharField(max_length=100, blank=True, null=True)
+    municipio = models.CharField(max_length=100, blank=True, null=True)
+    provincia = models.CharField(max_length=100, blank=True, null=True)
+    pais = models.CharField(max_length=100, blank=True, null=True)
+    codigoError = models.CharField(max_length=20, blank=True, null=True)
+    codigof = models.CharField(max_length=20, blank=True, null=True)
+    mensaf = models.CharField(max_length=255, blank=True, null=True)
+    origenf = models.CharField(max_length=100, blank=True, null=True)
+    fechaf = models.CharField(max_length=20, blank=True, null=True)
+    idciudadano = models.CharField(max_length=50, blank=True, null=True)
+    nroError = models.CharField(max_length=20, blank=True, null=True)
+    descripcionError = models.CharField(max_length=255, blank=True, null=True)
+
+    tipo = models.CharField(
+        max_length=50, blank=True, null=True
+    )  # Beneficiario o Responsable
+    fecha_creado = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.apellido or ''}, {self.nombres or ''} ({self.cuil or ''})"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["dni", "genero", "tipo"],
+                name="unique_dni_genero_tipo",
+            )
         ]
