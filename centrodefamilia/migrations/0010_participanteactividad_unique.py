@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
     dependencies = [
         (
             "centrodefamilia",
-            "0008_padronbeneficiarios_beneficiariosresponsablesrenaper_and_more",
+            "0009_beneficiariosresponsablesrenaper_unique_constraint",
         ),
     ]
 
