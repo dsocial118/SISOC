@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 
 from ciudadanos.models import Sexo, TipoDocumento
 from core.models import Dia
@@ -249,6 +250,10 @@ class ParticipanteActividadForm(forms.ModelForm):
                 datos=datos,
                 ciudadano_id=None,
             )
+        except IntegrityError as e:
+            raise ValidationError(
+                "El ciudadano ya está inscrito o en lista de espera."
+            ) from e
         except (AlreadyRegistered, SexoNoPermitido) as e:
             raise ValidationError(str(e)) from e
         except CupoExcedido as e:
