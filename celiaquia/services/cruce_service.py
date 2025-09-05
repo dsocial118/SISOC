@@ -1,9 +1,24 @@
+"""
+Servicio de cruce de datos.
+
+Cambios:
+- `_read_file_bytes` ahora valida el tipo de entrada y rechaza rutas de
+  archivos locales para evitar accesos no deseados en el servidor.
+
+Flujos impactados:
+- Carga y lectura de archivos de excel o csv para realizar cruces de datos.
+
+Dependencias:
+- `django.core.exceptions.ValidationError`
+"""
+
 import csv
 import io
 import logging
 import re
 from datetime import datetime
 from io import BytesIO
+from pathlib import Path
 
 import pandas as pd
 from django.core.exceptions import ValidationError
@@ -87,17 +102,19 @@ class CruceService:
 
     @staticmethod
     def _read_file_bytes(archivo_fileobj) -> bytes:
+        """Obtiene el contenido binario de un archivo en memoria."""
         if isinstance(archivo_fileobj, (bytes, bytearray, memoryview)):
             return bytes(archivo_fileobj)
-        if isinstance(archivo_fileobj, str):
-            with open(archivo_fileobj, "rb") as f:
-                return f.read()
+        if isinstance(archivo_fileobj, (str, Path)):
+            raise ValidationError("No se permiten rutas de archivo en este contexto.")
         try:
             archivo_fileobj.open()
         except Exception:
             pass
         try:
             raw = archivo_fileobj.read()
+        except Exception as exc:
+            raise ValidationError("Tipo de archivo no soportado.") from exc
         finally:
             try:
                 archivo_fileobj.seek(0)
@@ -105,7 +122,9 @@ class CruceService:
                 pass
         if isinstance(raw, str):
             raw = raw.encode("utf-8")
-        return raw
+        if not isinstance(raw, (bytes, bytearray, memoryview)):
+            raise ValidationError("Tipo de archivo no soportado.")
+        return bytes(raw)
 
     @staticmethod
     def _leer_tabla(archivo_fileobj) -> pd.DataFrame:
