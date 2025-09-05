@@ -431,12 +431,32 @@ document.addEventListener("DOMContentLoaded", function() {
                 
                 if (data.status === "exists") {
                     if (alertContainer) {
-                        alertContainer.innerHTML = `
-                            <div class="alert alert-warning alert-dismissible fade show mt-3 mb-3 text-center" role="alert">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Responsable encontrado:</strong> ${data.message}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>`;
+                        alertContainer.textContent = '';
+
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3 mb-3 text-center';
+                        alertDiv.setAttribute('role', 'alert');
+
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-exclamation-triangle me-2';
+
+                        const strong = document.createElement('strong');
+                        strong.textContent = 'Responsable encontrado:';
+
+                        const messageText = document.createTextNode(' ' + data.message);
+
+                        const closeBtn = document.createElement('button');
+                        closeBtn.type = 'button';
+                        closeBtn.className = 'btn-close';
+                        closeBtn.setAttribute('data-bs-dismiss', 'alert');
+                        closeBtn.setAttribute('aria-label', 'Close');
+
+                        alertDiv.appendChild(icon);
+                        alertDiv.appendChild(strong);
+                        alertDiv.appendChild(messageText);
+                        alertDiv.appendChild(closeBtn);
+
+                        alertContainer.appendChild(alertDiv);
                     }
                     showElement(respFormContainer);
                     fillResponsableForm(data.data);
