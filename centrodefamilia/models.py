@@ -215,6 +215,7 @@ class ParticipanteActividad(models.Model):
                 opclasses=["gin_trgm_ops"],
             ),
         ]
+        unique_together = ("actividad_centro", "ciudadano")
 
 
 class ParticipanteActividadHistorial(models.Model):
