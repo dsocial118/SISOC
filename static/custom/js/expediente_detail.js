@@ -4,36 +4,44 @@
  * - Confirmar Envío
  * - Subir/Reprocesar Excel de CUITs y ejecutar cruce (técnico)
  * - Revisión de legajos (Aprobar / Rechazar / Subsanar)
+ *
+ * Updated: showAlert now escapes user provided content via a shared
+ * escapeHtml helper to avoid HTML injection.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  /* ===== Helpers básicos ===== */
-  function getCookie(name) {
-    const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return m ? m[2] : null;
+/* ===== Helpers básicos ===== */
+function getCookie(name) {
+  const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return m ? m[2] : null;
+}
+function getCsrfToken() {
+  return (typeof window !== 'undefined' && window.CSRF_TOKEN) || getCookie('csrftoken');
+}
+function ensureAlertsZone() {
+  let zone = document.getElementById('expediente-alerts');
+  if (!zone) {
+    zone = document.createElement('div');
+    zone.id = 'expediente-alerts';
+    const headerBlock = document.querySelector('.p-3.rounded.shadow.mb-4');
+    (headerBlock || document.body).prepend(zone);
   }
-  function getCsrfToken() {
-    return (typeof window !== 'undefined' && window.CSRF_TOKEN) || getCookie('csrftoken');
-  }
-  function ensureAlertsZone() {
-    let zone = document.getElementById('expediente-alerts');
-    if (!zone) {
-      zone = document.createElement('div');
-      zone.id = 'expediente-alerts';
-      const headerBlock = document.querySelector('.p-3.rounded.shadow.mb-4');
-      (headerBlock || document.body).prepend(zone);
-    }
-    return zone;
-  }
-  function showAlert(kind, html) {
-    const zone = ensureAlertsZone();
-    zone.innerHTML = `
-      <div class="alert alert-${kind} alert-dismissible fade show" role="alert">
-        ${html}
+  return zone;
+}
+function showAlert(kind, ...parts) {
+  const zone = ensureAlertsZone();
+  const msg = parts.map((p) => escapeHtml(String(p))).join('');
+  zone.innerHTML = `
+      <div class="alert alert-${escapeHtml(kind)} alert-dismissible fade show" role="alert">
+        ${msg}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>`;
-  }
+}
 
+if (typeof module !== 'undefined') {
+  module.exports = { showAlert };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
   /* ====== Paginación genérica client-side ====== */
   function paginate({
     items,
@@ -169,17 +177,17 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(msg);
         }
 
-        showAlert(
-          'success',
-          `<strong>¡Listo!</strong> ${data.message || `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a <b>EN ESPERA</b>.`}`
-          + (data.errores ? `<br><small class="text-danger">${data.errores} errores.</small>` : '')
-        );
+        const baseMsg =
+          data.message ||
+          `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a EN ESPERA.`;
+        const errorExtra = data.errores ? ` ${data.errores} errores.` : '';
+        showAlert('success', '¡Listo! ', baseMsg, errorExtra);
 
         setTimeout(() => window.location.reload(), 1000);
 
       } catch (err) {
         console.error('Error procesar expediente:', err);
-        showAlert('danger', `Error al procesar el expediente: ${err.message}`);
+        showAlert('danger', 'Error al procesar el expediente: ', err.message);
         btnProcess.disabled = false;
         btnProcess.innerHTML = origHTML;
       }
@@ -355,7 +363,11 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(msg);
         }
 
-        showAlert('success', data.message || `Legajo ${legajoId}: quedó en SUBSANAR.`);
+        if (data.message) {
+          showAlert('success', data.message);
+        } else {
+          showAlert('success', 'Legajo ', legajoId, ': quedó en SUBSANAR.');
+        }
         setTimeout(() => {
           const modal = bootstrap.Modal.getInstance(modalSubsanar);
           modal.hide();
@@ -364,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       } catch (err) {
         console.error('Subsanar legajo:', err);
-        showAlert('danger', `No se pudo solicitar la subsanación. ${err.message}`);
+        showAlert('danger', 'No se pudo solicitar la subsanación. ', err.message);
       } finally {
         btn.disabled = false;
         btn.innerHTML = original;
@@ -600,12 +612,22 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error(msg);
           }
 
-          toggleActive(btnAprobar, btnRechazar, data.estado || (accion === 'APROBAR' ? 'APROBADO' : 'RECHAZADO'));
-          showAlert('success', `Legajo ${legajoId}: estado actualizado a <b>${data.estado}</b>.`);
+          toggleActive(
+            btnAprobar,
+            btnRechazar,
+            data.estado || (accion === 'APROBAR' ? 'APROBADO' : 'RECHAZADO'),
+          );
+          showAlert('success', 'Legajo ', legajoId, ': estado actualizado a ', data.estado, '.');
 
         } catch (err) {
           console.error('Revisión de legajo:', err);
-          showAlert('danger', `No se pudo actualizar el estado del legajo ${legajoId}. ${err.message}`);
+          showAlert(
+            'danger',
+            'No se pudo actualizar el estado del legajo ',
+            legajoId,
+            '. ',
+            err.message,
+          );
         } finally {
           setLoading(btn, false);
         }
@@ -670,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => window.location.reload(), 800);
 
       } catch (err) {
-        showAlert('danger', `No se pudo confirmar la subsanación. ${err.message}`);
+        showAlert('danger', 'No se pudo confirmar la subsanación. ', err.message);
         btnConfirmSubs.disabled = false;
         btnConfirmSubs.innerHTML = original;
       }
