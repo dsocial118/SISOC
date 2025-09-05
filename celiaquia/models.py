@@ -1,8 +1,8 @@
-from django.db import models
 from django.contrib.auth import get_user_model
-from ciudadanos.models import Ciudadano, Provincia
-from django.contrib.postgres.indexes import GinIndex
+from django.db import models
 from django.db.models import Q
+
+from ciudadanos.models import Ciudadano, Provincia
 
 User = get_user_model()
 
