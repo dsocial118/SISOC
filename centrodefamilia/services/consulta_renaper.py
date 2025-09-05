@@ -19,7 +19,6 @@ class APIClient:
         self.username = settings.RENAPER_API_USERNAME
         self.password = settings.RENAPER_API_PASSWORD
         self.session = requests.Session()  # Reutilizar conexiones
-        self.session.timeout = 10
 
     def get_token(self):
         # Cache del token por 50 minutos (tokens duran 1 hora)
@@ -32,7 +31,9 @@ class APIClient:
     def _login_and_cache_token(self):
         try:
             response = self.session.post(
-                LOGIN_URL, json={"username": self.username, "password": self.password}
+                LOGIN_URL,
+                json={"username": self.username, "password": self.password},
+                timeout=10,
             )
             response.raise_for_status()
         except ConnectionError:
@@ -59,7 +60,9 @@ class APIClient:
         params = {"dni": dni, "sexo": sexo.upper()}
 
         try:
-            response = self.session.get(CONSULTA_URL, headers=headers, params=params)
+            response = self.session.get(
+                CONSULTA_URL, headers=headers, params=params, timeout=10
+            )
             response.raise_for_status()
         except ConnectionError:
             logger.error(f"Error de conexión RENAPER para DNI {dni}")
