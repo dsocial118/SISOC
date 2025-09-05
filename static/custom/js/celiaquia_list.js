@@ -31,8 +31,25 @@
  * -------------------------------------------------------------------------
  */
 
+// Added escapeHtml helper and sanitized alert messages to prevent HTML injection.
+
 (function () {
   // ---------- Utils ----------
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/`/g, '&#96;');
+  }
+  if (typeof window !== 'undefined') {
+    window.escapeHtml = escapeHtml;
+  }
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports.escapeHtml = escapeHtml;
+  }
   function getCookie(name) {
     const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
     return m ? m[2] : null;
@@ -52,9 +69,10 @@
   }
   function showAlert(type, message) {
     const zone = alertsZone();
+    const safeMessage = escapeHtml(message);
     zone.innerHTML = `
       <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-        ${message}
+        ${safeMessage}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>`;
   }
