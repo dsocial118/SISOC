@@ -1,8 +1,15 @@
 from django.urls import path
-from celiaquia.views.expediente_subsanacion import ExpedienteConfirmSubsanacionView
-from celiaquia.views.pago import PagoExpedienteCreateView, PagoExpedienteDetailView, PagoExpedienteExportView, PagoNominaExportActualView
 from core.decorators import group_required
 
+from celiaquia.views.expediente_subsanacion import (
+    ExpedienteConfirmSubsanacionView,
+)
+from celiaquia.views.pago import (
+    PagoExpedienteCreateView,
+    PagoExpedienteDetailView,
+    PagoExpedienteExportView,
+    PagoNominaExportActualView,
+)
 from celiaquia.views.expediente import (
     ExpedienteListView,
     ExpedienteCreateView,
@@ -17,10 +24,11 @@ from celiaquia.views.expediente import (
     RevisarLegajoView,
     SubirCruceExcelView,
 )
-
 from celiaquia.views.confirm_envio import ExpedienteConfirmView
-from celiaquia.views.legajo import LegajoArchivoUploadView, LegajoSubsanarView
-
+from celiaquia.views.legajo import (
+    LegajoArchivoUploadView,
+    LegajoSubsanarView,
+)
 from celiaquia.views.cupo import (
     CupoDashboardView,
     CupoProvinciaDetailView,
