@@ -1,0 +1,15 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Listado de responsables{% endblock %}
+{% block titulo-pagina %}Responsables{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <h2>Listado de Responsables</h2>
+        {% load custom_filters %}
+        {% include 'components/data_table.html' with headers=table_headers items=responsables show_actions=True actions=table_actions empty_message='No hay responsables disponibles.' fields=table_fields %}
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Anterior' next_text='Siguiente' %}
+    </div>
+{% endblock %}
