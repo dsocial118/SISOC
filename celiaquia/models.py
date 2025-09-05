@@ -312,7 +312,6 @@ class CupoMovimiento(models.Model):
 
     def __str__(self):
         return f"{self.provincia} {self.tipo} {self.delta} ({self.creado_en:%Y-%m-%d %H:%M})"
-    
 
 
 class PagoEstado(models.TextChoices):
@@ -323,19 +322,33 @@ class PagoEstado(models.TextChoices):
 
 
 class PagoExpediente(models.Model):
-    provincia = models.ForeignKey(Provincia, on_delete=models.PROTECT, related_name="pagos_expedientes")
+    provincia = models.ForeignKey(
+        Provincia, on_delete=models.PROTECT, related_name="pagos_expedientes"
+    )
     periodo = models.CharField(max_length=7, help_text="YYYY-MM", db_index=True)
-    estado = models.CharField(max_length=12, choices=PagoEstado.choices, default=PagoEstado.BORRADOR)
+    estado = models.CharField(
+        max_length=12, choices=PagoEstado.choices, default=PagoEstado.BORRADOR
+    )
 
     archivo_envio = models.FileField(upload_to="pagos/envios/", null=True, blank=True)
-    archivo_respuesta = models.FileField(upload_to="pagos/respuestas/", null=True, blank=True)
+    archivo_respuesta = models.FileField(
+        upload_to="pagos/respuestas/", null=True, blank=True
+    )
 
     total_candidatos = models.PositiveIntegerField(default=0)
     total_validados = models.PositiveIntegerField(default=0)
     total_excluidos = models.PositiveIntegerField(default=0)
 
-    creado_por = models.ForeignKey(User, on_delete=models.PROTECT, related_name="pagos_creados")
-    modificado_por = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True, related_name="pagos_modificados")
+    creado_por = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="pagos_creados"
+    )
+    modificado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="pagos_modificados",
+    )
 
     creado_en = models.DateTimeField(auto_now_add=True)
     modificado_en = models.DateTimeField(auto_now=True)
@@ -345,7 +358,10 @@ class PagoExpediente(models.Model):
         verbose_name_plural = "Expedientes de Pago"
         ordering = ("-creado_en", "pk")
         indexes = [
-            models.Index(fields=["provincia", "periodo", "estado"], name="pago_prov_per_estado_idx"),
+            models.Index(
+                fields=["provincia", "periodo", "estado"],
+                name="pago_prov_per_estado_idx",
+            ),
         ]
 
     def __str__(self):
@@ -358,12 +374,20 @@ class PagoNominaEstado(models.TextChoices):
 
 
 class PagoNomina(models.Model):
-    pago = models.ForeignKey(PagoExpediente, on_delete=models.CASCADE, related_name="nomina")
-    legajo = models.ForeignKey(ExpedienteCiudadano, on_delete=models.PROTECT, related_name="pagos")
+    pago = models.ForeignKey(
+        PagoExpediente, on_delete=models.CASCADE, related_name="nomina"
+    )
+    legajo = models.ForeignKey(
+        ExpedienteCiudadano, on_delete=models.PROTECT, related_name="pagos"
+    )
     documento = models.CharField(max_length=16, db_index=True)
     nombre = models.CharField(max_length=80, blank=True)
     apellido = models.CharField(max_length=80, blank=True)
-    estado = models.CharField(max_length=12, choices=PagoNominaEstado.choices, default=PagoNominaEstado.VALIDADO)
+    estado = models.CharField(
+        max_length=12,
+        choices=PagoNominaEstado.choices,
+        default=PagoNominaEstado.VALIDADO,
+    )
     observacion = models.CharField(max_length=255, blank=True)
 
     creado_en = models.DateTimeField(auto_now_add=True)

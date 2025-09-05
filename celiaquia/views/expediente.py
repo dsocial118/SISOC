@@ -36,7 +36,7 @@ from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from celiaquia.views.legajo import _in_group
-from django.utils import timezone  
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -146,22 +146,20 @@ class ProcesarExpedienteView(View):
         try:
             result = ExpedienteService.procesar_expediente(expediente, user)
 
-            
             if _is_ajax(request):
                 return JsonResponse(
                     {
                         "success": True,
                         "creados": result.get("creados", 0),
                         "errores": result.get("errores", 0),
-                        "excluidos": result.get("excluidos", 0),                     
-                        "excluidos_detalle": result.get("excluidos_detalle", []),    
+                        "excluidos": result.get("excluidos", 0),
+                        "excluidos_detalle": result.get("excluidos_detalle", []),
                     }
                 )
 
-            
             messages.success(
                 request,
-                f"Importación completada. Creados: {result.get('creados', 0)} — Errores: {result.get('errores', 0)}."
+                f"Importación completada. Creados: {result.get('creados', 0)} — Errores: {result.get('errores', 0)}.",
             )
 
             excluidos_count = result.get("excluidos", 0)
@@ -200,6 +198,7 @@ class ProcesarExpedienteView(View):
                 return JsonResponse({"success": False, "error": str(e)}, status=500)
             messages.error(request, "Error inesperado al procesar el expediente.")
             return redirect("expediente_detail", pk=pk)
+
 
 class CrearLegajosView(View):
     def post(self, request, pk):
@@ -631,19 +630,28 @@ class RevisarLegajoView(View):
 
         # Permisos: admin o técnico
         if not (_is_admin(user) or _user_in_group(user, "TecnicoCeliaquia")):
-            return JsonResponse({"success": False, "error": "Permiso denegado."}, status=403)
+            return JsonResponse(
+                {"success": False, "error": "Permiso denegado."}, status=403
+            )
 
         # Si no es admin, debe ser el técnico asignado a este expediente
         if not _is_admin(user):
             asig = getattr(expediente, "asignacion_tecnico", None)
             if not asig or asig.tecnico_id != user.id:
-                return JsonResponse({"success": False, "error": "No sos el técnico asignado."}, status=403)
+                return JsonResponse(
+                    {"success": False, "error": "No sos el técnico asignado."},
+                    status=403,
+                )
 
-        leg = get_object_or_404(ExpedienteCiudadano, pk=legajo_id, expediente=expediente)
+        leg = get_object_or_404(
+            ExpedienteCiudadano, pk=legajo_id, expediente=expediente
+        )
 
         accion = (request.POST.get("accion") or "").upper()
         if accion not in ("APROBAR", "RECHAZAR", "SUBSANAR"):
-            return JsonResponse({"success": False, "error": "Acción inválida."}, status=400)
+            return JsonResponse(
+                {"success": False, "error": "Acción inválida."}, status=400
+            )
 
         # Si RECHAZAR / SUBSANAR y estaba dentro de cupo -> liberar
         if accion in ("RECHAZAR", "SUBSANAR") and leg.estado_cupo == "DENTRO":
@@ -656,45 +664,70 @@ class RevisarLegajoView(View):
                 leg.estado_cupo = "NO_EVAL"
                 leg.es_titular_activo = False
             except Exception as e:
-                logger.error("Error al liberar cupo para legajo %s: %s", leg.pk, e, exc_info=True)
+                logger.error(
+                    "Error al liberar cupo para legajo %s: %s", leg.pk, e, exc_info=True
+                )
 
         if accion == "APROBAR":
             leg.revision_tecnico = "APROBADO"
-            leg.save(update_fields=[
-                "revision_tecnico",
-                "modificado_en",
-                "estado_cupo",
-                "es_titular_activo",
-            ])
-            return JsonResponse({"success": True, "estado": leg.revision_tecnico, "cupo_liberado": False})
+            leg.save(
+                update_fields=[
+                    "revision_tecnico",
+                    "modificado_en",
+                    "estado_cupo",
+                    "es_titular_activo",
+                ]
+            )
+            return JsonResponse(
+                {
+                    "success": True,
+                    "estado": leg.revision_tecnico,
+                    "cupo_liberado": False,
+                }
+            )
 
         if accion == "RECHAZAR":
             leg.revision_tecnico = "RECHAZADO"
-            leg.save(update_fields=[
-                "revision_tecnico",
-                "modificado_en",
-                "estado_cupo",
-                "es_titular_activo",
-            ])
-            return JsonResponse({"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True})
+            leg.save(
+                update_fields=[
+                    "revision_tecnico",
+                    "modificado_en",
+                    "estado_cupo",
+                    "es_titular_activo",
+                ]
+            )
+            return JsonResponse(
+                {"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True}
+            )
 
         # SUBSANAR
         motivo = (request.POST.get("motivo") or "").strip()
         if not motivo:
-            return JsonResponse({"success": False, "error": "Debe indicar un motivo de subsanación."}, status=400)
+            return JsonResponse(
+                {"success": False, "error": "Debe indicar un motivo de subsanación."},
+                status=400,
+            )
 
         leg.revision_tecnico = RevisionTecnico.SUBSANAR
         leg.subsanacion_motivo = motivo[:500]
         leg.subsanacion_solicitada_en = timezone.now()
         leg.subsanacion_usuario = user
-        leg.save(update_fields=[
-            "revision_tecnico",
-            "subsanacion_motivo",
-            "subsanacion_solicitada_en",
-            "subsanacion_usuario",
-            "modificado_en",
-            "estado_cupo",
-            "es_titular_activo",
-        ])
+        leg.save(
+            update_fields=[
+                "revision_tecnico",
+                "subsanacion_motivo",
+                "subsanacion_solicitada_en",
+                "subsanacion_usuario",
+                "modificado_en",
+                "estado_cupo",
+                "es_titular_activo",
+            ]
+        )
 
-        return JsonResponse({"success": True, "estado": str(RevisionTecnico.SUBSANAR), "cupo_liberado": True})
+        return JsonResponse(
+            {
+                "success": True,
+                "estado": str(RevisionTecnico.SUBSANAR),
+                "cupo_liberado": True,
+            }
+        )

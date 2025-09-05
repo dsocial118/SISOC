@@ -26,7 +26,9 @@ class PagoExpedienteCreateView(View):
     def post(self, request, provincia_id: int):
         provincia = get_object_or_404(Provincia, pk=provincia_id)
         try:
-            pago = PagoService.crear_expediente_pago(provincia=provincia, usuario=request.user)
+            pago = PagoService.crear_expediente_pago(
+                provincia=provincia, usuario=request.user
+            )
         except ValidationError as ve:
             messages.error(request, str(ve))
             return redirect("cupo_provincia_detail", provincia_id=provincia.id)
@@ -46,7 +48,11 @@ class PagoExpedienteDetailView(View):
     def get(self, request, pago_id: int):
         pago = get_object_or_404(PagoExpediente, pk=pago_id)
         form = PagoRespuestaUploadForm()
-        return render(request, "celiaquia/pago_expediente_detail.html", {"pago": pago, "form": form})
+        return render(
+            request,
+            "celiaquia/pago_expediente_detail.html",
+            {"pago": pago, "form": form},
+        )
 
     @method_decorator(csrf_protect)
     def post(self, request, pago_id: int):
@@ -64,7 +70,7 @@ class PagoExpedienteDetailView(View):
             )
             messages.success(
                 request,
-                f"Respuesta procesada. Validados: {stats['validados']} — Excluidos: {stats['excluidos']}."
+                f"Respuesta procesada. Validados: {stats['validados']} — Excluidos: {stats['excluidos']}.",
             )
         except ValidationError as ve:
             messages.error(request, str(ve))
@@ -73,7 +79,7 @@ class PagoExpedienteDetailView(View):
             messages.error(request, "No se pudo procesar la respuesta.")
 
         return redirect("pago_expediente_detail", pago_id=pago.id)
-    
+
 
 class PagoExpedienteExportView(View):
     """
@@ -85,8 +91,11 @@ class PagoExpedienteExportView(View):
         if not pago.archivo_envio:
             messages.error(request, "El expediente no tiene archivo de envío.")
             return redirect("pago_expediente_detail", pago_id=pago.id)
-        return FileResponse(pago.archivo_envio.open("rb"), as_attachment=True, filename=pago.archivo_envio.name.split("/")[-1])
-    
+        return FileResponse(
+            pago.archivo_envio.open("rb"),
+            as_attachment=True,
+            filename=pago.archivo_envio.name.split("/")[-1],
+        )
 
 
 class PagoNominaExportActualView(View):
@@ -94,6 +103,7 @@ class PagoNominaExportActualView(View):
     Exporta la nómina ACTUAL (aceptados activos) de la provincia del expediente de pago.
     No incluye suspendidos.
     """
+
     def get(self, request, pago_id: int):
         pago = get_object_or_404(PagoExpediente, pk=pago_id)
         content = PagoService.exportar_nomina_actual_excel(provincia=pago.provincia)
