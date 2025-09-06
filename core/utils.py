@@ -60,8 +60,10 @@ def convert_string_to_int(value: str | int | None) -> int | None:
     Returns:
         Entero convertido o ``None`` cuando no hay valor.
     """
-
-    return int(value) if value != "" else None
+    try:
+        return int(value) if value != "" else None
+    except (ValueError, TypeError):
+        return None
 
 
 def format_fecha_gestionar(fecha_visita: datetime) -> str:
