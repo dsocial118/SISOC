@@ -1,0 +1,213 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Preinscripto{{ comedor.nombre }}{% endblock %}
+{% block titulo-pagina %}Formulario de Preinscripto{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+    <div class="container mt-4">
+        <!-- Input para buscar CUIL -->
+        <div class="row mt-4">
+            <div class="col-md-7 mx-auto">
+                <div class="card card-primary card-outline">
+                    <div class="card-body">
+                        <div id="resultado" style="display:none;"></div>
+                        <div class="row align-items-center justify-content-center">
+                            <div class="col-auto mt-2 mb-2">
+                                <h5 class="mb-0">Buscar Preinscripto por CUIL</h5>
+                            </div>
+                            <div class="col-auto mt-2 mb-2">
+                                <div class="input-group">
+                                    <input type="text"
+                                           id="cuil-input"
+                                           class="form-control"
+                                           placeholder="__-________-_"
+                                           maxlength="13"
+                                           size="13" />
+                                    <button type="button" id="buscar-btn" class="btn btn-primary">Buscar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Formulario Beneficiario -->
+        <div id="form-container" style="display:none;">
+            <div class="row mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="my-1">Completar el formulario de Beneficiario</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" id="beneficiario-form">
+                            {% csrf_token %}
+                            <div class="row g-3">
+                                <!-- Identificación -->
+                                <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.apellido|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.dni|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.cuil|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.genero|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.fecha_nacimiento|as_crispy_field }}</div>
+                                <!-- Domicilio -->
+                                <div class="col-md-12">{{ form.domicilio|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.municipio|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.localidad|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.calle|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ form.altura|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ form.piso_vivienda|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ form.departamento_vivienda|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ form.codigo_postal|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.barrio|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.monoblock|as_crispy_field }}</div>
+                                <!-- Contacto -->
+                                <div class="col-md-2">{{ form.prefijo_celular|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.numero_celular|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ form.prefijo_telefono_fijo|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.numero_telefono_fijo|as_crispy_field }}</div>
+                                <div class="col-12">{{ form.correo_electronico|as_crispy_field }}</div>
+                                <!-- Académico -->
+                                <div class="col-md-2">{{ form.estado_academico|as_crispy_field }}</div>
+                                <div class="col-md-5" id="nivel-educativo-container" style="display:none">
+                                    {{ form.nivel_educativo_actual|as_crispy_field }}
+                                </div>
+                                <div class="col-md-5">{{ form.maximo_nivel_educativo|as_crispy_field }}</div>
+                                <div class="col-md-12">{{ form.institucion_academica|as_crispy_field }}</div>
+                                <!-- Actividades -->
+                                <div class="col-6">{{ form.actividad_preferida|as_crispy_field }}</div>
+                                <div class="col-3">{{ form.actividades_extracurriculares|as_crispy_field }}</div>
+                                <div class="col-3" id="actividades-detalle-container" style="display:none">
+                                    {{ form.actividades_detalle|as_crispy_field }}
+                                </div>
+                                <!-- Campos ocultos -->
+                                <input type="hidden" name="responsable" id="id_responsable" value="" />
+                                <input type="hidden" name="provincia_tabla" id="id_provincia_tabla" value="" />
+                                <input type="hidden" name="municipio_tabla" id="id_municipio_tabla" value="" />
+                                <input type="hidden" name="localidad_tabla" id="id_localidad_tabla" value="" />
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-10 mx-auto">
+                        <div class="card card-primary card-outline">
+                            <div class="card-body">
+                                <div id="resultado_responsable" style="display:none;"></div>
+                                <div class="row align-items-center justify-content-center">
+                                    <div class="col-auto mt-2 mb-2">
+                                        <h5 class="mb-0">Buscar Responsable por DNI</h5>
+                                    </div>
+                                    <div class="col-auto mt-2 mb-2">
+                                        <div class="input-group">
+                                            <input type="text"
+                                                   id="dni-input"
+                                                   class="form-control"
+                                                   maxlength="8"
+                                                   pattern="\d{8}"
+                                                   inputmode="numeric"
+                                                   size="10" />
+                                        </div>
+                                    </div>
+                                    <div class="col-auto mt-2 mb-2">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input"
+                                                   type="radio"
+                                                   name="sexo_resposable"
+                                                   id="femenino"
+                                                   value="femenino" />
+                                            <label class="form-check-label" for="femenino">Femenino</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input"
+                                                   type="radio"
+                                                   name="sexo_resposable"
+                                                   id="masculino"
+                                                   value="masculino" />
+                                            <label class="form-check-label" for="masculino">Masculino</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto mt-2 mb-2">
+                                        <button type="button" id="buscar-responsable-btn" class="btn btn-primary">Buscar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Formulario responsable -->
+        <div id="responsable-form-container" style="display:none;">
+            <div class="row mt-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="my-1">Completar el formulario de Responsable</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" id="responsable-form">
+                            {% csrf_token %}
+                            <div id="responsable-alert-container"></div>
+                            <div class="row g-3">
+                                <div class="col-md-6">{{ responsable_form.nombre|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ responsable_form.apellido|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ responsable_form.dni|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ responsable_form.cuil|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ responsable_form.genero|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ responsable_form.fecha_nacimiento|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ responsable_form.vinculo_parental|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ responsable_form.calle|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ responsable_form.altura|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ responsable_form.piso_vivienda|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ responsable_form.departamento_vivienda|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ responsable_form.codigo_postal|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ responsable_form.barrio|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ responsable_form.monoblock|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ responsable_form.provincia|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ responsable_form.municipio|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ responsable_form.localidad|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ responsable_form.prefijo_celular|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ responsable_form.numero_celular|as_crispy_field }}</div>
+                                <div class="col-md-2">{{ responsable_form.prefijo_telefono_fijo|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ responsable_form.numero_telefono_fijo|as_crispy_field }}</div>
+                                <div class="col-md-12">{{ responsable_form.correo_electronico|as_crispy_field }}</div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <!-- Botones de acción -->
+            <div class="row mt-4 mb-3">
+                <div class="d-flex justify-content-center">
+                    <button id="submit-todos-btn" class="btn btn-primary me-3">Confirmar Preinscripción</button>
+                    <button type="button"
+                            class="btn btn-secondary"
+                            onclick="window.location.reload();">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    {% endblock %}
+    {% block customJS %}
+        <script>
+// Variables globales para las URLs
+window.buscarCuilUrl = "{% url 'buscar_cuil' %}";
+window.buscarResponsableUrl = "{% url 'buscar_responsable' %}";
+        </script>
+        <script src="{% static 'custom/js/centro_familia_beneficiarios.js' %}"></script>
+        <script>
+document.getElementById("dni-input").addEventListener("input", function (e) {
+  // Quita todo lo que no sea dígito
+  this.value = this.value.replace(/\D/g, "");
+
+  // Limita a 8 caracteres
+  if (this.value.length > 8) {
+    this.value = this.value.slice(0, 8);
+  }
+});
+        </script>
+    {% endblock %}
