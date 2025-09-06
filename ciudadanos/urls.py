@@ -311,12 +311,12 @@ urlpatterns = [
         name="intervencion_crear",
     ),
     path(
-        "ciudadanos/intervencion/editar/<int:pk>/<pk2>",
+        "ciudadanos/intervencion/editar/<int:pk>/<int:pk2>",
         login_required(IntervencionUpdateView.as_view()),
         name="intervencion_editar",
     ),
     path(
-        "ciudadanos/intervencion/borrar/<int:pk>/<pk2>",
+        "ciudadanos/intervencion/borrar/<int:pk>/<int:pk2>",
         login_required(IntervencionDeleteView.as_view()),
         name="intervencion_borrar",
     ),
@@ -326,7 +326,7 @@ urlpatterns = [
         name="llamados_ver",
     ),
     path(
-        "ciudadanos/llamados/editar/<int:pk>/<pk2>",
+        "ciudadanos/llamados/editar/<int:pk>/<int:pk2>",
         login_required(LlamadoUpdateView.as_view()),
         name="llamados_editar",
     ),
@@ -336,7 +336,7 @@ urlpatterns = [
         name="llamados_crear",
     ),
     path(
-        "ciudadanos/llamados/borrar/<int:pk>/<pk2>",
+        "ciudadanos/llamados/borrar/<int:pk>/<int:pk2>",
         login_required(LlamadoDeleteView.as_view()),
         name="llamados_borrar",
     ),
