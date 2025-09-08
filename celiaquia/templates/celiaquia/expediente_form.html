@@ -1,4 +1,4 @@
-{# templates/celiaquia/expediente_form.html - incluye botón para descargar plantilla #}
+{# templates/celiaquia/expediente_form.html - incluye botón para descargar plantilla y buscador de IDs #}
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
 {% block title %}
@@ -26,7 +26,15 @@
                         {# Contenedor de error para la previsualización #}
                         <div id="preview-error" class="text-danger mt-2"></div>
                         <div class="d-flex justify-content-between mt-3">
-                            <button type="button" id="btn-preview" class="btn btn-outline-secondary">Previsualizar Excel</button>
+                            <div>
+                                <button type="button"
+                                        class="btn btn-outline-info me-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#localidadesModal">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                                <button type="button" id="btn-preview" class="btn btn-outline-secondary">Previsualizar Excel</button>
+                            </div>
                             <div>
                                 <a class="btn btn-outline-primary me-2"
                                    href="{% url 'expediente_plantilla_excel' %}">Descargar plantilla</a>
@@ -52,9 +60,64 @@
             </div>
         </div>
     </div>
+    <!-- Modal con buscador de localidades e IDs -->
+    <div class="modal fade"
+         id="localidadesModal"
+         tabindex="-1"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Buscar Localidades</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col">
+                            <select id="filtro-provincia" class="form-select"></select>
+                        </div>
+                        <div class="col">
+                            <select id="filtro-municipio" class="form-select"></select>
+                        </div>
+                        <div class="col">
+                            <select id="filtro-localidad" class="form-select"></select>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Municipio</th>
+                                    <th>Provincia</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-localidades">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 {% block customJS %}
-    {# Inyectamos la URL de preview antes del script #}
-    <script type="text/javascript">window.PREVIEW_URL = "{% url 'expediente_preview_excel' %}";</script>
+    {# Datos de provincias para el buscador #}
+    <script id="provincias-data" type="application/json">[
+        {% for p in provincias %}{"id": {{ p.id }}, "nombre": "{{ p.nombre }}"}{% if not forloop.last %},{% endif %}{% endfor %}
+    ]
+    </script>
+    <script type="text/javascript">
+        window.PREVIEW_URL = "{% url 'expediente_preview_excel' %}";
+        window.EXPEDIENTE_LOCALIDADES_URL = "{% url 'expediente_localidades_lookup' %}";
+    </script>
+    <script src="{% static 'custom/js/localidades_modal.js' %}"></script>
     <script src="{% static 'custom/js/celiaquia.js' %}"></script>
 {% endblock %}
