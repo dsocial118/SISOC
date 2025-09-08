@@ -208,10 +208,11 @@
           }
           const message = (data && data.message) || 'Expediente enviado a Subsecretaría.';
           showAlert('success', message);
-          setTimeout(() => window.location.reload(), 800);
         } catch (err) {
           console.error('Confirmar envío:', err);
           showAlert('danger', 'No se pudo confirmar el envío. ' + err.message);
+        } finally {
+          window.location.reload();
         }
       })();
     });
@@ -238,16 +239,14 @@
           }
 
           // Intento actualizar la fila inline (si el template dejó los elementos ocultos)
-          const didReveal = markRowRecepcionado(row);
+          markRowRecepcionado(row);
 
           showAlert('success', 'Expediente recepcionado (estado: RECEPCIONADO). Ahora podés asignar un técnico.');
-          if (!didReveal) {
-            // Si no había elementos ocultos que revelar, recargamos para que el template los pinte
-            setTimeout(() => window.location.reload(), 600);
-          }
         } catch (err) {
           console.error('Recepcionar expediente:', err);
           showAlert('danger', 'No se pudo recepcionar el expediente. ' + err.message);
+        } finally {
+          window.location.reload();
         }
       })();
     });
