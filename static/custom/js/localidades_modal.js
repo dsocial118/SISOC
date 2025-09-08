@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     provincias.forEach((p) => {
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = p.nombre;
+      opt.textContent = `${p.id} - ${p.nombre}`;
       provinciaSelect.appendChild(opt);
     });
   }
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     data.forEach((item) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${item.localidad_id}</td><td>${item.localidad_nombre}</td><td>${item.municipio_nombre}</td><td>${item.provincia_nombre}</td>`;
+      tr.innerHTML = `<td>${item.localidad_id} - ${item.localidad_nombre}</td><td>${item.municipio_id} - ${item.municipio_nombre}</td><td>${item.provincia_id} - ${item.provincia_nombre}</td>`;
       tablaLocalidades.appendChild(tr);
 
       if (!municipiosUnicos.has(item.municipio_id)) {
@@ -55,14 +55,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const locOpt = document.createElement('option');
       locOpt.value = item.localidad_id;
-      locOpt.textContent = item.localidad_nombre;
+      locOpt.textContent = `${item.localidad_id} - ${item.localidad_nombre}`;
       localidadSelect.appendChild(locOpt);
     });
 
     municipiosUnicos.forEach((nombre, id) => {
       const opt = document.createElement('option');
       opt.value = id;
-      opt.textContent = nombre;
+      opt.textContent = `${id} - ${nombre}`;
       municipioSelect.appendChild(opt);
     });
   }
