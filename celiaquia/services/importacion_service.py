@@ -54,6 +54,39 @@ ESTADOS_PRE_CUPO = [
 
 class ImportacionService:
     @staticmethod
+    def generar_plantilla_excel() -> bytes:
+        """Genera y devuelve un archivo de Excel vacío para importar expedientes.
+
+        Returns
+        -------
+        bytes
+            Contenido binario del archivo XLSX con las columnas necesarias
+            para la importación de legajos en un expediente.
+        """
+
+        columnas = [
+            "apellido",
+            "nombre",
+            "documento",
+            "fecha_nacimiento",
+            "tipo_documento",
+            "sexo",
+            "nacionalidad",
+            "provincia",
+            "municipio",
+            "localidad",
+            "calle",
+            "altura",
+            "codigo_postal",
+            "telefono",
+            "email",
+        ]
+        df = pd.DataFrame(columns=columnas)
+        output = BytesIO()
+        df.to_excel(output, index=False, engine="openpyxl")
+        return output.getvalue()
+
+    @staticmethod
     def preview_excel(archivo_excel, max_rows=5):
         try:
             archivo_excel.open()
