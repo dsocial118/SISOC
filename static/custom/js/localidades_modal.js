@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     data.forEach((item) => {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${item.localidad_id} - ${item.localidad_nombre}</td><td>${item.municipio_id} - ${item.municipio_nombre}</td><td>${item.provincia_id} - ${item.provincia_nombre}</td>`;
+      tr.innerHTML = `<td>${item.provincia_id} - ${item.provincia_nombre}</td><td>${item.localidad_id} - ${item.localidad_nombre}</td><td>${item.municipio_id} - ${item.municipio_nombre}</td>`;
       tablaLocalidades.appendChild(tr);
 
       if (!municipiosUnicos.has(item.municipio_id)) {
