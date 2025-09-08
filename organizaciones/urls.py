@@ -7,6 +7,12 @@ from organizaciones.views import (
     OrganizacionUpdateView,
     OrganizacionDetailView,
     OrganizacionDeleteView,
+    FirmanteCreateView,
+    Aval1CreateView,
+    Aval2CreateView,
+    Aval1UpdateView,
+    Aval2UpdateView,
+    FirmanteUpdateView,
     sub_tipo_entidad_ajax,
 )
 
@@ -35,6 +41,36 @@ urlpatterns = [
         "organizaciones/eliminar/<int:pk>",
         group_required(["Organizaciones"])(OrganizacionDeleteView.as_view()),
         name="organizacion_eliminar",
+    ),
+    path(
+        "organizaciones/firmante/crear/<int:organizacion_pk>",
+        group_required(["Organizaciones"])(FirmanteCreateView.as_view()),
+        name="firmante_crear",
+    ),
+    path(
+        "organizaciones/firmante/editar/<int:pk>",
+        group_required(["Organizaciones"])(FirmanteUpdateView.as_view()),
+        name="firmante_editar",
+    ),
+    path(
+        "organizaciones/aval1/crear/<int:organizacion_pk>",
+        group_required(["Organizaciones"])(Aval1CreateView.as_view()),
+        name="aval1_crear",
+    ),
+    path(
+        "organizaciones/aval1/editar/<int:pk>",
+        group_required(["Organizaciones"])(Aval1UpdateView.as_view()),
+        name="aval1_editar",
+    ),
+    path(
+        "organizaciones/aval2/crear/<int:organizacion_pk>",
+        group_required(["Organizaciones"])(Aval2CreateView.as_view()),
+        name="aval2_crear",
+    ),
+    path(
+        "organizaciones/aval2/editar/<int:pk>",
+        group_required(["Organizaciones"])(Aval2UpdateView.as_view()),
+        name="aval2_editar",
     ),
     path(
         "organizaciones/subtipos-entidad/ajax/",
