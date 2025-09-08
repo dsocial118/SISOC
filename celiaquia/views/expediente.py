@@ -38,6 +38,7 @@ from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from celiaquia.views.legajo import _in_group
 from django.utils import timezone
+from core.models import Provincia, Municipio, Localidad
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,40 @@ def _user_provincia(user):
 def _parse_limit(value, default=5, max_cap=5000):
     if value is None:
         return default
+
+
+class LocalidadesLookupView(View):
+    """Provide a JSON list of localidades filtered by provincia and municipio."""
+
+    def get(self, request):
+        provincia_id = request.GET.get("provincia")
+        municipio_id = request.GET.get("municipio")
+
+        localidades = Localidad.objects.select_related("municipio__provincia")
+        if provincia_id:
+            localidades = localidades.filter(municipio__provincia_id=provincia_id)
+        if municipio_id:
+            localidades = localidades.filter(municipio_id=municipio_id)
+
+        data = [
+            {
+                "provincia_id": loc.municipio.provincia_id if loc.municipio else None,
+                "provincia_nombre": (
+                    loc.municipio.provincia.nombre
+                    if loc.municipio and loc.municipio.provincia
+                    else None
+                ),
+                "municipio_id": loc.municipio_id,
+                "municipio_nombre": loc.municipio.nombre if loc.municipio else None,
+                "localidad_id": loc.id,
+                "localidad_nombre": loc.nombre,
+            }
+            for loc in localidades.order_by(
+                "municipio__provincia__nombre", "municipio__nombre", "nombre"
+            )
+        ]
+        return JsonResponse(data, safe=False)
+
     txt = str(value).strip().lower()
     if txt in ("all", "todos", "0", "none"):
         return None
@@ -282,9 +317,16 @@ class ExpedientePreviewExcelView(View):
 
 
 class ExpedienteCreateView(CreateView):
+    """Formulario para la creación de expedientes provinciales."""
+
     model = Expediente
     form_class = ExpedienteForm
     template_name = "celiaquia/expediente_form.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["provincias"] = Provincia.objects.order_by("nombre")
+        return ctx
 
     def form_valid(self, form):
         expediente = ExpedienteService.create_expediente(

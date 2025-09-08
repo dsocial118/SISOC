@@ -24,6 +24,7 @@ from celiaquia.views.expediente import (
     RecepcionarExpedienteView,
     RevisarLegajoView,
     SubirCruceExcelView,
+    LocalidadesLookupView,
 )
 from celiaquia.views.confirm_envio import ExpedienteConfirmView
 from celiaquia.views.legajo import (
@@ -72,6 +73,11 @@ urlpatterns = [
         "expedientes/plantilla_excel/",
         group_required(["ProvinciaCeliaquia"])(ExpedientePlantillaExcelView.as_view()),
         name="expediente_plantilla_excel",
+    ),
+    path(
+        "expedientes/localidades_lookup/",
+        group_required(["ProvinciaCeliaquia"])(LocalidadesLookupView.as_view()),
+        name="expediente_localidades_lookup",
     ),
     path(
         "expedientes/<int:pk>/",
