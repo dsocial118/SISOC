@@ -141,10 +141,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnProcess) {
     btnProcess.addEventListener('click', async () => {
       btnProcess.disabled = true;
-      const origHTML = btnProcess.innerHTML;
-      btnProcess.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
-
+      let origHTML;
       try {
+        origHTML = btnProcess.innerHTML;
+        btnProcess.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
+
         if (!window.PROCESS_URL) throw new Error('No se configuró PROCESS_URL.');
 
         const resp = await fetch(window.PROCESS_URL, {
@@ -184,12 +185,16 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('success', '¡Listo! ', baseMsg, errorExtra);
 
         setTimeout(() => window.location.reload(), 1000);
-
       } catch (err) {
         console.error('Error procesar expediente:', err);
         showAlert('danger', 'Error al procesar el expediente: ', err.message);
-        btnProcess.disabled = false;
         btnProcess.innerHTML = origHTML;
+        btnProcess.disabled = false;
+      } finally {
+        setTimeout(() => {
+          btnProcess.innerHTML = origHTML;
+          btnProcess.disabled = false;
+        }, 1500);
       }
     });
   }
