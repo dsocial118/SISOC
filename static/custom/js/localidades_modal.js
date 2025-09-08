@@ -2,22 +2,22 @@
  * Funcionalidades para el modal de búsqueda de localidades.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  const provinciasDataEl = document.getElementById('provincias-data');
+document.addEventListener("DOMContentLoaded", () => {
+  const provinciasDataEl = document.getElementById("provincias-data");
   let provincias = [];
   if (provinciasDataEl) {
     try {
       provincias = JSON.parse(provinciasDataEl.textContent);
     } catch (e) {
-      console.error('Error al parsear provincias', e);
+      console.error("Error al parsear provincias", e);
     }
   }
 
-  const provinciaSelect = document.getElementById('filtro-provincia');
-  const municipioSelect = document.getElementById('filtro-municipio');
-  const localidadSelect = document.getElementById('filtro-localidad');
-  const tablaLocalidades = document.getElementById('tabla-localidades');
-  const textoBusqueda = document.getElementById('filtro-texto');
+  const provinciaSelect = document.getElementById("filtro-provincia");
+  const municipioSelect = document.getElementById("filtro-municipio");
+  const localidadSelect = document.getElementById("filtro-localidad");
+  const tablaLocalidades = document.getElementById("tabla-localidades");
+  const textoBusqueda = document.getElementById("filtro-texto");
 
   let localidadesData = [];
 
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!provinciaSelect) return;
     provinciaSelect.innerHTML = '<option value="">Todas</option>';
     provincias.forEach((p) => {
-      const opt = document.createElement('option');
+      const opt = document.createElement("option");
       opt.value = p.id;
       opt.textContent = `${p.id} - ${p.nombre}`;
       provinciaSelect.appendChild(opt);
@@ -48,25 +48,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const municipiosUnicos = new Map();
 
     data.forEach((item) => {
-
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${item.provincia_id} - ${item.provincia_nombre}</td><td>${item.localidad_id} - ${item.localidad_nombre}</td><td>${item.municipio_id} - ${item.municipio_nombre}</td>`;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${item.provincia_id} - ${item.provincia_nombre}</td><td>${item.municipio_id} - ${item.municipio_nombre}</td><td>${item.localidad_id} - ${item.localidad_nombre}</td>`;
       tablaLocalidades.appendChild(tr);
-
 
       if (!municipiosUnicos.has(item.municipio_id)) {
         municipiosUnicos.set(item.municipio_id, item.municipio_nombre);
       }
 
-      const locOpt = document.createElement('option');
+      const locOpt = document.createElement("option");
       locOpt.value = item.localidad_id;
       locOpt.textContent = `${item.localidad_id} - ${item.localidad_nombre}`;
       localidadSelect.appendChild(locOpt);
     });
 
     municipiosUnicos.forEach((nombre, id) => {
-      const opt = document.createElement('option');
+      const opt = document.createElement("option");
       opt.value = id;
       opt.textContent = `${id} - ${nombre}`;
       municipioSelect.appendChild(opt);
@@ -76,25 +73,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function pintarTabla(data) {
-    tablaLocalidades.innerHTML = '';
+    tablaLocalidades.innerHTML = "";
     data.forEach((item) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${item.provincia_id} - ${item.provincia_nombre}</td><td>${item.localidad_id} - ${item.localidad_nombre}</td><td>${item.municipio_id} - ${item.municipio_nombre}</td>`;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${item.provincia_id} - ${item.provincia_nombre}</td><td>${item.municipio_id} - ${item.municipio_nombre}</td><td>${item.localidad_id} - ${item.localidad_nombre}</td>`;
       tablaLocalidades.appendChild(tr);
     });
   }
 
   function filtrarTabla() {
-    const query = textoBusqueda ? textoBusqueda.value.toLowerCase() : '';
+    const query = textoBusqueda ? textoBusqueda.value.toLowerCase() : "";
     const filtradas = localidadesData.filter((item) => {
       return (
         `${item.provincia_id} - ${item.provincia_nombre}`
           .toLowerCase()
           .includes(query) ||
-        `${item.localidad_id} - ${item.localidad_nombre}`
+        `${item.municipio_id} - ${item.municipio_nombre}`
           .toLowerCase()
           .includes(query) ||
-        `${item.municipio_id} - ${item.municipio_nombre}`
+        `${item.localidad_id} - ${item.localidad_nombre}`
           .toLowerCase()
           .includes(query)
       );
@@ -107,8 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function actualizarLocalidades() {
     const params = new URLSearchParams();
-    if (provinciaSelect.value) params.append('provincia', provinciaSelect.value);
-    if (municipioSelect.value) params.append('municipio', municipioSelect.value);
+    if (provinciaSelect.value)
+      params.append("provincia", provinciaSelect.value);
+    if (municipioSelect.value)
+      params.append("municipio", municipioSelect.value);
 
     fetch(`${window.EXPEDIENTE_LOCALIDADES_URL}?${params.toString()}`)
       .then((resp) => resp.json())
@@ -116,14 +115,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   poblarProvincias();
-  provinciaSelect.addEventListener('change', () => {
+  provinciaSelect.addEventListener("change", () => {
     municipioSelect.innerHTML = '<option value="">Todos</option>';
     localidadSelect.innerHTML = '<option value="">Todas</option>';
     actualizarLocalidades();
   });
-  municipioSelect.addEventListener('change', actualizarLocalidades);
+  municipioSelect.addEventListener("change", actualizarLocalidades);
   if (textoBusqueda) {
-    textoBusqueda.addEventListener('input', filtrarTabla);
+    textoBusqueda.addEventListener("input", filtrarTabla);
   }
 });
 
@@ -134,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * @returns {string|null} Valor de la cookie o null si no existe.
  */
 function getCookie(name) {
-  const match = document.cookie.match(new RegExp('(^|; )' + name + '=([^;]*)'));
+  const match = document.cookie.match(new RegExp("(^|; )" + name + "=([^;]*)"));
   return match ? decodeURIComponent(match[2]) : null;
 }
 
