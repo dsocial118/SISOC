@@ -111,7 +111,7 @@ urlpatterns = [
         name="comedor_intervencion_crear",
     ),
     path(
-        "comedores/intervencion/editar/<int:pk>/<pk2>",
+        "comedores/intervencion/editar/<int:pk>/<int:pk2>",
         group_required(["Comedores Intervencion Editar"])(
             IntervencionUpdateView.as_view()
         ),
