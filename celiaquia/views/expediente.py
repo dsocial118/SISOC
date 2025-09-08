@@ -93,12 +93,18 @@ class ExpedienteListView(ListView):
     def get_queryset(self):
         user = self.request.user
         qs = Expediente.objects.select_related(
-            "estado", "asignacion_tecnico__tecnico", "usuario_provincia"
+            "estado",
+            "asignacion_tecnico__tecnico",
+            "usuario_provincia__profile__provincia",
         ).only(
             "id",
             "fecha_creacion",
             "estado__nombre",
             "usuario_provincia_id",
+            "usuario_provincia__profile__id",
+            "usuario_provincia__profile__provincia_id",
+            "usuario_provincia__profile__provincia__id",
+            "usuario_provincia__profile__provincia__nombre",
             "asignacion_tecnico__tecnico_id",
         )
         if _is_admin(user):
