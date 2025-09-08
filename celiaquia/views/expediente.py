@@ -10,6 +10,7 @@ from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.http import (
     JsonResponse,
+    HttpResponse,
     HttpResponseBadRequest,
     HttpResponseNotAllowed,
 )
@@ -241,6 +242,21 @@ class CrearLegajosView(View):
             else:
                 existentes += 1
         return JsonResponse({"creados": creados, "existentes": existentes})
+
+
+class ExpedientePlantillaExcelView(View):
+    """Genera un archivo de Excel vacío con los campos requeridos para un expediente."""
+
+    def get(self, request, *args, **kwargs):
+        content = ImportacionService.generar_plantilla_excel()
+        response = HttpResponse(
+            content,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = (
+            'attachment; filename="plantilla_expediente.xlsx"'
+        )
+        return response
 
 
 @method_decorator(csrf_protect, name="dispatch")

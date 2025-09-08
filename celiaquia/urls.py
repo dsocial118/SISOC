@@ -16,6 +16,7 @@ from celiaquia.views.expediente import (
     ExpedienteDetailView,
     ExpedienteUpdateView,
     ExpedientePreviewExcelView,
+    ExpedientePlantillaExcelView,
     ExpedienteImportView,
     AsignarTecnicoView,
     CrearLegajosView,
@@ -66,6 +67,11 @@ urlpatterns = [
         "expedientes/preview_excel/",
         group_required(["ProvinciaCeliaquia"])(ExpedientePreviewExcelView.as_view()),
         name="expediente_preview_excel",
+    ),
+    path(
+        "expedientes/plantilla_excel/",
+        group_required(["ProvinciaCeliaquia"])(ExpedientePlantillaExcelView.as_view()),
+        name="expediente_plantilla_excel",
     ),
     path(
         "expedientes/<int:pk>/",

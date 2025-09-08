@@ -1,4 +1,4 @@
-{# templates/celiaquia/expediente_form.html #}
+{# templates/celiaquia/expediente_form.html - incluye botón para descargar plantilla #}
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
 {% block title %}
@@ -28,6 +28,8 @@
                         <div class="d-flex justify-content-between mt-3">
                             <button type="button" id="btn-preview" class="btn btn-outline-secondary">Previsualizar Excel</button>
                             <div>
+                                <a class="btn btn-outline-primary me-2"
+                                   href="{% url 'expediente_plantilla_excel' %}">Descargar plantilla</a>
                                 <button type="submit" class="btn btn-success me-2">Guardar</button>
                                 <a href="{% url 'expediente_list' %}" class="btn btn-secondary">Cancelar</a>
                             </div>
