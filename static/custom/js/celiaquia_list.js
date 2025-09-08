@@ -175,11 +175,15 @@
           }
           const created = (data && data.creados) ?? 'los';
           const errs = (data && data.errores) ? ` (${data.errores} errores)` : '';
-          showAlert('success', `Expediente procesado. Se crearon ${created} legajos.${errs} Pasó a <strong>EN ESPERA</strong>.`);
-          setTimeout(() => window.location.reload(), 900);
+          showAlert(
+            'success',
+            `Expediente procesado. Se crearon ${created} legajos.${errs} Pasó a <strong>EN ESPERA</strong>.`
+          );
         } catch (err) {
           console.error('Procesar expediente:', err);
           showAlert('danger', 'No se pudo procesar el expediente. ' + err.message);
+        } finally {
+          window.location.reload();
         }
       })();
     });
