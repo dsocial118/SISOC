@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const municipioSelect = document.getElementById('filtro-municipio');
   const localidadSelect = document.getElementById('filtro-localidad');
   const tablaLocalidades = document.getElementById('tabla-localidades');
+  const textoBusqueda = document.getElementById('filtro-texto');
+
+  let localidadesData = [];
 
   /**
    * Llena el select de provincias con los datos del contexto.
@@ -38,17 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {Array} data - Datos recibidos del servidor.
    */
   function renderLocalidades(data) {
-    tablaLocalidades.innerHTML = '';
+    localidadesData = data;
     municipioSelect.innerHTML = '<option value="">Todos</option>';
     localidadSelect.innerHTML = '<option value="">Todas</option>';
 
     const municipiosUnicos = new Map();
 
     data.forEach((item) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${item.localidad_id} - ${item.localidad_nombre}</td><td>${item.municipio_id} - ${item.municipio_nombre}</td><td>${item.provincia_id} - ${item.provincia_nombre}</td>`;
-      tablaLocalidades.appendChild(tr);
-
       if (!municipiosUnicos.has(item.municipio_id)) {
         municipiosUnicos.set(item.municipio_id, item.municipio_nombre);
       }
@@ -65,6 +64,35 @@ document.addEventListener('DOMContentLoaded', () => {
       opt.textContent = `${id} - ${nombre}`;
       municipioSelect.appendChild(opt);
     });
+
+    filtrarTabla();
+  }
+
+  function pintarTabla(data) {
+    tablaLocalidades.innerHTML = '';
+    data.forEach((item) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${item.provincia_id} - ${item.provincia_nombre}</td><td>${item.localidad_id} - ${item.localidad_nombre}</td><td>${item.municipio_id} - ${item.municipio_nombre}</td>`;
+      tablaLocalidades.appendChild(tr);
+    });
+  }
+
+  function filtrarTabla() {
+    const query = textoBusqueda ? textoBusqueda.value.toLowerCase() : '';
+    const filtradas = localidadesData.filter((item) => {
+      return (
+        `${item.provincia_id} - ${item.provincia_nombre}`
+          .toLowerCase()
+          .includes(query) ||
+        `${item.localidad_id} - ${item.localidad_nombre}`
+          .toLowerCase()
+          .includes(query) ||
+        `${item.municipio_id} - ${item.municipio_nombre}`
+          .toLowerCase()
+          .includes(query)
+      );
+    });
+    pintarTabla(filtradas);
   }
 
   /**
@@ -87,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
     actualizarLocalidades();
   });
   municipioSelect.addEventListener('change', actualizarLocalidades);
+  if (textoBusqueda) {
+    textoBusqueda.addEventListener('input', filtrarTabla);
+  }
 });
 
 /**
