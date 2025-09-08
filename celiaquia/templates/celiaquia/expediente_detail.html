@@ -619,5 +619,6 @@
     window.REVISAR_URL_TEMPLATE  = "{% url 'legajo_revisar' expediente.pk 0 %}".replace("/0/", "/{id}/");
     window.CONFIRM_SUBS_URL      = "{% url 'expediente_confirm_subsanacion' expediente.pk %}";
     </script>
+    <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
 {% endblock %}
