@@ -130,8 +130,8 @@
 
   // ---------- Helpers de UI ----------
   function markRowRecepcionado(row) {
-    // 1) Actualizar badge de estado (3ra columna)
-    const estadoCell = row.querySelector('td:nth-child(3) .badge');
+    // 1) Actualizar badge de estado (4ta columna)
+    const estadoCell = row.querySelector('td:nth-child(4) .badge');
     if (estadoCell) {
       estadoCell.textContent = 'Recepcionado';
       estadoCell.className = estadoCell.className
@@ -279,7 +279,7 @@
           }
           showAlert('success', 'Técnico asignado correctamente. El expediente está en ASIGNADO.');
           // Actualizamos badge a ASIGNADO sin recargar
-          const estadoCell = row.querySelector('td:nth-child(3) .badge');
+          const estadoCell = row.querySelector('td:nth-child(4) .badge');
           if (estadoCell) {
             estadoCell.textContent = 'Asignado';
             estadoCell.className = estadoCell.className.replace(/\bbg-\w+\b/g, '').trim() + ' bg-primary';
