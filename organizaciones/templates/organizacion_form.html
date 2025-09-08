@@ -6,13 +6,13 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    {% if request.resolver_match.url_name == "organizacion_crear" %}
-        <style>
-        .form-check {
-            display: none;
-        }
-        </style>
-    {% endif %}
+    <style>
+    /* Oculta el checkbox "Eliminar" del formset de firmantes; usamos el botón rojo */
+    #firmantes-container .form-check,
+    #empty-form .form-check {
+        display: none;
+    }
+    </style>
     <div class="d-flex justify-content-between">
         <div>
             {% if organizacion.id %}
