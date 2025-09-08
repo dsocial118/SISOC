@@ -74,6 +74,16 @@ def _user_provincia(user):
 def _parse_limit(value, default=5, max_cap=5000):
     if value is None:
         return default
+    txt = str(value).strip().lower()
+    if txt in ("all", "todos", "0", "none"):
+        return None
+    try:
+        n = int(txt)
+        if n <= 0:
+            return None
+        return min(n, max_cap)
+    except Exception:
+        return default
 
 
 class LocalidadesLookupView(View):
@@ -107,17 +117,6 @@ class LocalidadesLookupView(View):
             )
         ]
         return JsonResponse(data, safe=False)
-
-    txt = str(value).strip().lower()
-    if txt in ("all", "todos", "0", "none"):
-        return None
-    try:
-        n = int(txt)
-        if n <= 0:
-            return None
-        return min(n, max_cap)
-    except Exception:
-        return default
 
 
 class ExpedienteListView(ListView):
