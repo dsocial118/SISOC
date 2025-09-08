@@ -650,6 +650,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   })();
 
+  // ===== CONFIRMAR ENVÍO =====
+  const btnConfirm = document.getElementById('btn-confirm');
+  if (btnConfirm) {
+    btnConfirm.addEventListener('click', async () => {
+      const original = btnConfirm.innerHTML;
+      btnConfirm.disabled = true;
+      btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando…';
+
+      try {
+        if (!window.CONFIRM_URL) throw new Error('No se configuró CONFIRM_URL.');
+
+        const resp = await fetch(window.CONFIRM_URL, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || data.message || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        showAlert('success', data.message || 'Envío confirmado.');
+      } catch (err) {
+        console.error('Confirmar envío:', err);
+        showAlert('danger', 'No se pudo confirmar el envío. ', err.message);
+      } finally {
+        btnConfirm.disabled = false;
+        btnConfirm.innerHTML = original;
+        window.location.reload();
+      }
+    });
+  }
+
   // ===== CONFIRMAR SUBSANACIÓN =====
   const btnConfirmSubs = document.getElementById('btn-confirm-subs');
   if (btnConfirmSubs) {
