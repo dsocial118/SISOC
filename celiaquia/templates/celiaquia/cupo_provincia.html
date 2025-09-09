@@ -86,6 +86,7 @@
                     <span class="fw-semibold">Cupos ocupados (titulares activos)</span>
                 </div>
                 <div class="col-md-auto">
+                    <label for="filtro-ocupados" class="visually-hidden">Filtrar cupos ocupados</label>
                     <input type="search"
                            id="filtro-ocupados"
                            class="form-control form-control-sm w-100 w-md-auto ms-md-auto"
@@ -160,6 +161,9 @@
     title='Suspendidos (cupo ocupado, no activos)'
     table_id='tabla-suspendidos'
     filter_id='filtro-suspendidos'
+
+    filter_label='Filtrar suspendidos'
+
     rows=suspendidos
     empty_message='No hay suspendidos.'
     estado_badge_class='bg-primary'
@@ -171,6 +175,9 @@
     title='Lista de espera (Fuera de cupo)'
     table_id='tabla-lista-espera'
     filter_id='filtro-lista-espera'
+
+    filter_label='Filtrar lista de espera'
+
     rows=lista_espera
     empty_message='Sin lista de espera.'
     estado_badge_class='bg-warning text-dark'
@@ -234,6 +241,7 @@
                 <div class="modal-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <small class="text-muted">Se listan altas/bajas/ajustes y estado actual de cada legajo.</small>
+                        <label for="filtro-historico" class="visually-hidden">Filtrar histórico</label>
                         <input type="search"
                                id="filtro-historico"
                                class="form-control form-control-sm"

@@ -1,3 +1,9 @@
+
+<div class="card mt-3">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">{{ title }}</span>
+        <label for="{{ filter_id }}" class="visually-hidden">{{ filter_label }}</label>
+
 {#
   Fragmento reutilizable para tablas de cupo.
 
@@ -16,6 +22,7 @@
 <div class="card mt-3">
     <div class="card-header bg-light d-flex justify-content-between align-items-center">
         <span class="fw-semibold">{{ title }}</span>
+
         <input type="search"
                id="{{ filter_id }}"
                class="form-control form-control-sm"
@@ -32,7 +39,11 @@
                         <th>Nombre</th>
                         <th>Apellido</th>
                         <th>Expediente</th>
+
+                        {% if estado_badge_class %}<th class="d-none d-md-table-cell">Estado cupo</th>{% endif %}
+
                         <th class="d-none d-md-table-cell">Estado cupo</th>
+
                         {% if show_activo %}<th class="d-none d-md-table-cell">Activo</th>{% endif %}
                         {% if show_actions %}<th class="text-end" style="width: 120px;">Acciones</th>{% endif %}
                     </tr>
@@ -46,6 +57,21 @@
                             <td data-text="{{ leg.expediente.codigo|default:leg.expediente.id }}">
                                 {{ leg.expediente.codigo|default:leg.expediente.id }}
                             </td>
+
+                            {% if estado_badge_class %}
+                                <td data-text="{{ leg.estado_cupo }}" class="d-none d-md-table-cell">
+                                    <span class="badge {{ estado_badge_class }}">{{ estado_badge_text }}</span>
+                                </td>
+                            {% endif %}
+                            {% if show_activo %}
+                                <td data-text="{% if leg.es_titular_activo %}Sí{% else %}No{% endif %}"
+                                    class="d-none d-md-table-cell">
+                                    {% if leg.es_titular_activo %}
+                                        <span class="badge bg-success">Sí</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+
                             <td data-text="{{ leg.estado_cupo }}" class="d-none d-md-table-cell">
                                 <span class="badge {{ estado_badge_class }}">{{ estado_badge_text }}</span>
                             </td>
@@ -53,6 +79,7 @@
                                 <td data-text="{% if leg.es_titular_activo %}Sí{% else %}No{% endif %}"
                                     class="d-none d-md-table-cell">
                                     <span class="badge bg-secondary">No</span>
+
                                 </td>
                             {% endif %}
                             {% if show_actions %}
