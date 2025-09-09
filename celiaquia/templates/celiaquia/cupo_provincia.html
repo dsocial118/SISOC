@@ -98,7 +98,7 @@
                 <table class="table table-hover align-middle mb-0" id="tabla-ocupados">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 80px;">DNI</th>
+                            <th class="col-dni">DNI</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>Expediente</th>
@@ -106,7 +106,7 @@
                             <th>Resultado</th>
                             <th>Estado cupo</th>
                             <th>Activo</th>
-                            <th class="text-end" style="width: 180px;">Acciones</th>
+                            <th class="text-end col-acciones">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -168,16 +168,17 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-striped table-sm table-hover align-middle mb-0" id="tabla-suspendidos">
+                <table class="table table-striped table-sm table-hover align-middle mb-0"
+                       id="tabla-suspendidos">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 80px;">DNI</th>
+                            <th class="col-dni">DNI</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>Expediente</th>
                             <th class="d-none d-md-table-cell">Estado cupo</th>
                             <th class="d-none d-md-table-cell">Activo</th>
-                            <th class="text-end" style="width: 120px;">Acciones</th>
+                            <th class="text-end col-acciones-sm">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -192,7 +193,8 @@
                                 <td data-text="{{ leg.estado_cupo }}" class="d-none d-md-table-cell">
                                     <span class="badge bg-primary">DENTRO</span>
                                 </td>
-                                <td data-text="{% if leg.es_titular_activo %}Sí{% else %}No{% endif %}" class="d-none d-md-table-cell">
+                                <td data-text="{% if leg.es_titular_activo %}Sí{% else %}No{% endif %}"
+                                    class="d-none d-md-table-cell">
                                     <span class="badge bg-secondary">No</span>
                                 </td>
                                 <td class="text-end">
@@ -225,10 +227,11 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-striped table-sm table-hover align-middle mb-0" id="tabla-lista-espera">
+                <table class="table table-striped table-sm table-hover align-middle mb-0"
+                       id="tabla-lista-espera">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 80px;">DNI</th>
+                            <th class="col-dni">DNI</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>Expediente</th>
@@ -327,8 +330,8 @@
                                id="tabla-historico">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 120px;">Fecha</th>
-                                    <th style="width: 90px;">DNI</th>
+                                    <th class="col-fecha">Fecha</th>
+                                    <th class="col-dni-sm">DNI</th>
                                     <th>Nombre</th>
                                     <th>Apellido</th>
                                     <th>Expediente</th>
@@ -356,7 +359,7 @@
                                                 </span>
                                                 {% if m.delta %}<small class="text-muted">({{ m.delta }})</small>{% endif %}
                                             </td>
-                                            <td class="text-break" style="max-width: 280px;">{{ m.motivo|default_if_none:'-' }}</td>
+                                            <td class="text-break col-motivo">{{ m.motivo|default_if_none:'-' }}</td>
                                             <td>{{ m.usuario.get_full_name|default:m.usuario.username }}</td>
                                             <td>
                                                 <span class="badge bg-{% if m.legajo.revision_tecnico == 'APROBADO' %}success{% elif m.legajo.revision_tecnico == 'RECHAZADO' %}danger{% else %}secondary{% endif %}">
