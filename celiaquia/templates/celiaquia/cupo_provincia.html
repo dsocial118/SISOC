@@ -26,6 +26,8 @@
             <button class="btn btn-outline-primary btn-sm"
                     data-bs-toggle="modal"
                     data-bs-target="#modalHistorico">Historico</button>
+            <a href="{% url 'pago_expediente_list' provincia.id %}"
+               class="btn btn-outline-success btn-sm">Ver expedientes de pago</a>
             <form action="{% url 'pago_expediente_create' provincia.id %}"
                   method="post"
                   class="d-inline">
