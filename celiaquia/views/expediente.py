@@ -365,8 +365,6 @@ class ExpedienteDetailView(DetailView):
 
         preview = preview_error = None
         preview_limit_actual = None
-        ctx = super().get_context_data(**kwargs)
-        exp = self.object
 
         q = expediente.expediente_ciudadanos.select_related("ciudadano")
         ctx["hay_subsanar"] = q.filter(
