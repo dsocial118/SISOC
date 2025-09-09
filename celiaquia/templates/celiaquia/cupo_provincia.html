@@ -153,12 +153,17 @@
     </div>
     <!-- NUEVO: Suspendidos -->
     <div class="card mt-3">
-        <div class="card-header bg-light">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <span class="fw-semibold">Suspendidos (cupo ocupado, no activos)</span>
+            <input type="search"
+                   id="filtro-suspendidos"
+                   class="form-control form-control-sm"
+                   placeholder="Filtrar por DNI, nombre o expediente"
+                   style="max-width: 280px" />
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="tabla-suspendidos">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 80px;">DNI</th>
@@ -172,11 +177,13 @@
                     </thead>
                     <tbody>
                         {% for leg in suspendidos %}
-                            <tr>
-                                <td>{{ leg.ciudadano.documento }}</td>
-                                <td>{{ leg.ciudadano.nombre }}</td>
-                                <td>{{ leg.ciudadano.apellido }}</td>
-                                <td>{{ leg.expediente.codigo|default:leg.expediente.id }}</td>
+                            <tr data-row>
+                                <td data-text="{{ leg.ciudadano.documento }}">{{ leg.ciudadano.documento }}</td>
+                                <td data-text="{{ leg.ciudadano.nombre }}">{{ leg.ciudadano.nombre }}</td>
+                                <td data-text="{{ leg.ciudadano.apellido }}">{{ leg.ciudadano.apellido }}</td>
+                                <td data-text="{{ leg.expediente.codigo|default:leg.expediente.id }}">
+                                    {{ leg.expediente.codigo|default:leg.expediente.id }}
+                                </td>
                                 <td>
                                     <span class="badge bg-primary">DENTRO</span>
                                 </td>
@@ -203,12 +210,17 @@
     </div>
     <!-- NUEVO: Lista de espera (Fuera de cupo) -->
     <div class="card mt-3">
-        <div class="card-header bg-light">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
             <span class="fw-semibold">Lista de espera (Fuera de cupo)</span>
+            <input type="search"
+                   id="filtro-lista-espera"
+                   class="form-control form-control-sm"
+                   placeholder="Filtrar por DNI, nombre o expediente"
+                   style="max-width: 280px" />
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="tabla-lista-espera">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 80px;">DNI</th>
@@ -220,11 +232,13 @@
                     </thead>
                     <tbody>
                         {% for leg in lista_espera %}
-                            <tr>
-                                <td>{{ leg.ciudadano.documento }}</td>
-                                <td>{{ leg.ciudadano.nombre }}</td>
-                                <td>{{ leg.ciudadano.apellido }}</td>
-                                <td>{{ leg.expediente.codigo|default:leg.expediente.id }}</td>
+                            <tr data-row>
+                                <td data-text="{{ leg.ciudadano.documento }}">{{ leg.ciudadano.documento }}</td>
+                                <td data-text="{{ leg.ciudadano.nombre }}">{{ leg.ciudadano.nombre }}</td>
+                                <td data-text="{{ leg.ciudadano.apellido }}">{{ leg.ciudadano.apellido }}</td>
+                                <td data-text="{{ leg.expediente.codigo|default:leg.expediente.id }}">
+                                    {{ leg.expediente.codigo|default:leg.expediente.id }}
+                                </td>
                                 <td>
                                     <span class="badge bg-warning text-dark">FUERA</span>
                                 </td>
