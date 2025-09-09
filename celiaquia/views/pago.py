@@ -1,5 +1,6 @@
 import io
 import logging
+
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import FileResponse, HttpResponseRedirect
@@ -7,14 +8,36 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.decorators.csrf import csrf_protect
+from django.views.generic import ListView
 from django.utils.decorators import method_decorator
 
 from ciudadanos.models import Provincia
-from celiaquia.models import PagoExpediente, PagoEstado
+from celiaquia.models import PagoExpediente
 from celiaquia.forms import PagoRespuestaUploadForm
 from celiaquia.services.pago_service import PagoService
 
 logger = logging.getLogger(__name__)
+
+
+class PagoExpedienteListView(ListView):
+    """Lista los expedientes de pago de una provincia."""
+
+    model = PagoExpediente
+    template_name = "celiaquia/pago_expediente_list.html"
+    context_object_name = "pagos"
+
+    def get_queryset(self):
+        provincia_id = self.kwargs.get("provincia_id")
+        return PagoExpediente.objects.filter(provincia_id=provincia_id).order_by(
+            "-creado_en"
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["provincia"] = get_object_or_404(
+            Provincia, pk=self.kwargs.get("provincia_id")
+        )
+        return context
 
 
 class PagoExpedienteCreateView(View):
