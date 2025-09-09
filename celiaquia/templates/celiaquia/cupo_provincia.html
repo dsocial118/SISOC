@@ -157,113 +157,28 @@
             </div>
         </div>
     </div>
-    <!-- NUEVO: Suspendidos -->
-    <div class="card mt-3">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <span class="fw-semibold">Suspendidos (cupo ocupado, no activos)</span>
-            <label for="filtro-suspendidos" class="visually-hidden">Filtrar suspendidos</label>
-            <input type="search"
-                   id="filtro-suspendidos"
-                   class="form-control form-control-sm"
-                   placeholder="Filtrar por DNI, nombre o expediente"
-                   style="max-width: 280px" />
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped table-sm table-hover align-middle mb-0"
-                       id="tabla-suspendidos">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 80px;">DNI</th>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>Expediente</th>
-                            <th class="d-none d-md-table-cell">Estado cupo</th>
-                            <th class="d-none d-md-table-cell">Activo</th>
-                            <th class="text-end" style="width: 120px;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for leg in suspendidos %}
-                            <tr data-row>
-                                <td data-text="{{ leg.ciudadano.documento }}">{{ leg.ciudadano.documento }}</td>
-                                <td data-text="{{ leg.ciudadano.nombre }}">{{ leg.ciudadano.nombre }}</td>
-                                <td data-text="{{ leg.ciudadano.apellido }}">{{ leg.ciudadano.apellido }}</td>
-                                <td data-text="{{ leg.expediente.codigo|default:leg.expediente.id }}">
-                                    {{ leg.expediente.codigo|default:leg.expediente.id }}
-                                </td>
-                                <td data-text="{{ leg.estado_cupo }}" class="d-none d-md-table-cell">
-                                    <span class="badge bg-primary">DENTRO</span>
-                                </td>
-                                <td data-text="{% if leg.es_titular_activo %}Sí{% else %}No{% endif %}"
-                                    class="d-none d-md-table-cell">
-                                    <span class="badge bg-secondary">No</span>
-                                </td>
-                                <td class="text-end">
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-success btn-reactivar"
-                                                data-legajo-id="{{ leg.id }}">Reactivar</button>
-                                        <button class="btn btn-outline-danger btn-baja" data-legajo-id="{{ leg.id }}">Baja</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-3">No hay suspendidos.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <!-- NUEVO: Lista de espera (Fuera de cupo) -->
-    <div class="card mt-3">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <span class="fw-semibold">Lista de espera (Fuera de cupo)</span>
-            <label for="filtro-lista-espera" class="visually-hidden">Filtrar lista de espera</label>
-            <input type="search"
-                   id="filtro-lista-espera"
-                   class="form-control form-control-sm"
-                   placeholder="Filtrar por DNI, nombre o expediente"
-                   style="max-width: 280px" />
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped table-sm table-hover align-middle mb-0"
-                       id="tabla-lista-espera">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 80px;">DNI</th>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>Expediente</th>
-                            <th class="d-none d-md-table-cell">Estado cupo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for leg in lista_espera %}
-                            <tr data-row>
-                                <td data-text="{{ leg.ciudadano.documento }}">{{ leg.ciudadano.documento }}</td>
-                                <td data-text="{{ leg.ciudadano.nombre }}">{{ leg.ciudadano.nombre }}</td>
-                                <td data-text="{{ leg.ciudadano.apellido }}">{{ leg.ciudadano.apellido }}</td>
-                                <td data-text="{{ leg.expediente.codigo|default:leg.expediente.id }}">
-                                    {{ leg.expediente.codigo|default:leg.expediente.id }}
-                                </td>
-                                <td data-text="{{ leg.estado_cupo }}" class="d-none d-md-table-cell">
-                                    <span class="badge bg-warning text-dark">FUERA</span>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-3">Sin lista de espera.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    {% include 'celiaquia/partials/cupo_table.html' with
+    title='Suspendidos (cupo ocupado, no activos)'
+    table_id='tabla-suspendidos'
+    filter_id='filtro-suspendidos'
+    filter_label='Filtrar suspendidos'
+    rows=suspendidos
+    empty_message='No hay suspendidos.'
+    estado_badge_class='bg-primary'
+    estado_badge_text='DENTRO'
+    show_activo=True
+    show_actions=True
+    colspan=7 %}
+    {% include 'celiaquia/partials/cupo_table.html' with
+    title='Lista de espera (Fuera de cupo)'
+    table_id='tabla-lista-espera'
+    filter_id='filtro-lista-espera'
+    filter_label='Filtrar lista de espera'
+    rows=lista_espera
+    empty_message='Sin lista de espera.'
+    estado_badge_class='bg-warning text-dark'
+    estado_badge_text='FUERA'
+    colspan=5 %}
     <!-- Modal Configurar Cupo -->
     <div class="modal fade"
          id="modalConfigCupo"
