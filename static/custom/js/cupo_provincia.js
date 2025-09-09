@@ -93,6 +93,38 @@
     });
   }
 
+  // --- Filtro tabla suspendidos ---
+  const filtroSusp = document.getElementById("filtro-suspendidos");
+  if (filtroSusp) {
+    filtroSusp.addEventListener("input", (e) => {
+      const q = (e.target.value || "").toLowerCase();
+      document
+        .querySelectorAll("#tabla-suspendidos tbody tr[data-row]")
+        .forEach((tr) => {
+          const hay = Array.from(tr.querySelectorAll("td[data-text]")).some((td) =>
+            (td.getAttribute("data-text") || "").toLowerCase().includes(q)
+          );
+          tr.style.display = hay ? "" : "none";
+        });
+    });
+  }
+
+  // --- Filtro tabla lista de espera ---
+  const filtroLista = document.getElementById("filtro-lista-espera");
+  if (filtroLista) {
+    filtroLista.addEventListener("input", (e) => {
+      const q = (e.target.value || "").toLowerCase();
+      document
+        .querySelectorAll("#tabla-lista-espera tbody tr[data-row]")
+        .forEach((tr) => {
+          const hay = Array.from(tr.querySelectorAll("td[data-text]")).some((td) =>
+            (td.getAttribute("data-text") || "").toLowerCase().includes(q)
+          );
+          tr.style.display = hay ? "" : "none";
+        });
+    });
+  }
+
   // --- Modales Suspender/Baja ---
   const modalSuspEl = document.getElementById("modalSuspender");
   const modalBajaEl = document.getElementById("modalBaja");
