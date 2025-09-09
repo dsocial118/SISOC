@@ -236,7 +236,7 @@ class LegajoSuspenderView(View):
             ExpedienteCiudadano, pk=pk, expediente__pk=expediente_id
         )
         try:
-            CupoService.liberar_slot(
+            CupoService.suspender_slot(
                 legajo=legajo, usuario=request.user, motivo="Suspensión administrativa"
             )
             legajo.es_titular_activo = False
@@ -244,7 +244,7 @@ class LegajoSuspenderView(View):
             return JsonResponse(
                 {
                     "success": True,
-                    "message": "Legajo suspendido y cupo liberado (si correspondía).",
+                    "message": "Legajo suspendido; el cupo permanece ocupado (si correspondía).",
                 }
             )
         except CupoNoConfigurado as e:
