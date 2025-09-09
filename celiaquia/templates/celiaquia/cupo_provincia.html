@@ -78,96 +78,27 @@
         </div>
     {% endif %}
     <div id="alerts"></div>
-    <!-- Titulares activos -->
-    <div class="card">
-        <div class="card-header bg-light">
-            <div class="row align-items-center">
-                <div class="col">
-                    <span class="fw-semibold">Cupos ocupados (titulares activos)</span>
-                </div>
-                <div class="col-md-auto">
-                    <label for="filtro-ocupados" class="visually-hidden">Filtrar cupos ocupados</label>
-                    <input type="search"
-                           id="filtro-ocupados"
-                           class="form-control form-control-sm w-100 w-md-auto ms-md-auto"
-                           placeholder="Filtrar por DNI, nombre o expediente" />
-                </div>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="tabla-ocupados">
-                    <thead class="table-light">
-                        <tr>
-                            <th style="width: 80px;">DNI</th>
-                            <th>Nombre</th>
-                            <th>Apellido</th>
-                            <th>Expediente</th>
-                            <th>Revisión</th>
-                            <th>Resultado</th>
-                            <th>Estado cupo</th>
-                            <th>Activo</th>
-                            <th class="text-end" style="width: 180px;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for leg in ocupados %}
-                            <tr data-row>
-                                <td data-text="{{ leg.ciudadano.documento|default_if_none:'' }}">{{ leg.ciudadano.documento }}</td>
-                                <td data-text="{{ leg.ciudadano.nombre|default_if_none:'' }}">{{ leg.ciudadano.nombre }}</td>
-                                <td data-text="{{ leg.ciudadano.apellido|default_if_none:'' }}">{{ leg.ciudadano.apellido }}</td>
-                                <td data-text="{{ leg.expediente.codigo }}">{{ leg.expediente.codigo }}</td>
-                                <td>
-                                    <span class="badge bg-{% if leg.revision_tecnico == 'APROBADO' %}success{% elif leg.revision_tecnico == 'RECHAZADO' %}danger{% else %}secondary{% endif %}">
-                                        {{ leg.revision_tecnico }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{% if leg.resultado_sintys == 'MATCH' %}success{% elif leg.resultado_sintys == 'NO_MATCH' %}danger{% else %}secondary{% endif %}">
-                                        {{ leg.resultado_sintys }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{% if leg.estado_cupo == 'DENTRO' %}primary{% else %}secondary{% endif %}">
-                                        {{ leg.estado_cupo }}
-                                    </span>
-                                </td>
-                                <td>
-                                    {% if leg.es_titular_activo %}
-                                        <span class="badge bg-success">Sí</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">No</span>
-                                    {% endif %}
-                                </td>
-                                <td class="text-end">
-                                    <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-warning btn-suspender"
-                                                data-legajo-id="{{ leg.id }}">Suspender</button>
-                                        <button class="btn btn-outline-danger btn-baja" data-legajo-id="{{ leg.id }}">Baja</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="9" class="text-center text-muted py-4">No hay titulares ocupando cupo.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    {% include 'celiaquia/partials/cupo_table.html' with
+    title='Cupos ocupados (titulares activos)'
+    table_id='tabla-ocupados'
+    filter_id='filtro-ocupados'
+    filter_label='Filtrar cupos ocupados'
+    filter_placeholder='Filtrar por DNI, nombre o expediente'
+    rows=ocupados
+    empty_message='No hay titulares ocupando cupo.'
+    show_revision=True
+    show_resultado=True
+    show_activo=True
+    show_actions=True
+    colspan=9 %}
     {% include 'celiaquia/partials/cupo_table.html' with
     title='Suspendidos (cupo ocupado, no activos)'
     table_id='tabla-suspendidos'
     filter_id='filtro-suspendidos'
-
     filter_label='Filtrar suspendidos'
-
+    filter_placeholder='Filtrar por DNI, nombre o expediente'
     rows=suspendidos
     empty_message='No hay suspendidos.'
-    estado_badge_class='bg-primary'
-    estado_badge_text='DENTRO'
     show_activo=True
     show_actions=True
     colspan=7 %}
@@ -175,13 +106,10 @@
     title='Lista de espera (Fuera de cupo)'
     table_id='tabla-lista-espera'
     filter_id='filtro-lista-espera'
-
     filter_label='Filtrar lista de espera'
-
+    filter_placeholder='Filtrar por DNI, nombre o expediente'
     rows=lista_espera
     empty_message='Sin lista de espera.'
-    estado_badge_class='bg-warning text-dark'
-    estado_badge_text='FUERA'
     colspan=5 %}
     <!-- Modal Configurar Cupo -->
     <div class="modal fade"
@@ -244,17 +172,16 @@
                         <label for="filtro-historico" class="visually-hidden">Filtrar histórico</label>
                         <input type="search"
                                id="filtro-historico"
-                               class="form-control form-control-sm"
-                               placeholder="Filtrar por DNI"
-                               style="max-width: 220px" />
+                               class="form-control form-control-sm filter-input-sm"
+                               placeholder="Filtrar por DNI" />
                     </div>
                     <div class="table-responsive">
                         <table class="table table-sm table-striped align-middle"
                                id="tabla-historico">
-                            <thead class="table-light">
+                            <thead class="table-dark">
                                 <tr>
-                                    <th style="width: 120px;">Fecha</th>
-                                    <th style="width: 90px;">DNI</th>
+                                    <th class="col-fecha">Fecha</th>
+                                    <th class="col-dni-sm">DNI</th>
                                     <th>Nombre</th>
                                     <th>Apellido</th>
                                     <th>Expediente</th>
@@ -282,7 +209,7 @@
                                                 </span>
                                                 {% if m.delta %}<small class="text-muted">({{ m.delta }})</small>{% endif %}
                                             </td>
-                                            <td class="text-break" style="max-width: 280px;">{{ m.motivo|default_if_none:'-' }}</td>
+                                            <td class="text-break col-motivo">{{ m.motivo|default_if_none:'-' }}</td>
                                             <td>{{ m.usuario.get_full_name|default:m.usuario.username }}</td>
                                             <td>
                                                 <span class="badge bg-{% if m.legajo.revision_tecnico == 'APROBADO' %}success{% elif m.legajo.revision_tecnico == 'RECHAZADO' %}danger{% else %}secondary{% endif %}">

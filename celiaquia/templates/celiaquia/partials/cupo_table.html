@@ -1,92 +1,94 @@
-
-<div class="card mt-3">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-        <span class="fw-semibold">{{ title }}</span>
-        <label for="{{ filter_id }}" class="visually-hidden">{{ filter_label }}</label>
-
 {#
-  Fragmento reutilizable para tablas de cupo.
+  Reusable table card for cupo lists.
 
-  Parámetros esperados:
-  - title: título a mostrar en el encabezado de la tarjeta.
-  - table_id: id del elemento <table>.
-  - filter_id: id del campo de filtro.
-  - rows: iterable con los legajos a mostrar.
-  - empty_message: texto a mostrar cuando no hay filas.
-  - estado_badge_class: clases CSS para la etiqueta de estado de cupo.
-  - estado_badge_text: texto de la etiqueta de estado de cupo.
-  - show_activo (opcional): mostrar la columna "Activo".
-  - show_actions (opcional): mostrar columna de acciones (Reactivar/Baja).
-  - colspan: cantidad de columnas para la fila vacía.
+  Parameters expected:
+  - title: text for the card header.
+  - table_id: id attribute for the table element.
+  - filter_id: id attribute for the search input.
+  - filter_label: label text for accessibility.
+  - filter_placeholder: placeholder for the search input.
+  - rows: iterable of legajos to render.
+  - empty_message: text when there are no rows.
+  - show_revision (optional): include "Revisión" column.
+  - show_resultado (optional): include "Resultado" column.
+  - show_activo (optional): include "Activo" column.
+  - show_actions (optional): include actions column.
+  - colspan: number of columns for the empty message row.
 #}
 <div class="card mt-3">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center">
-        <span class="fw-semibold">{{ title }}</span>
-
-        <input type="search"
-               id="{{ filter_id }}"
-               class="form-control form-control-sm"
-               placeholder="Filtrar por DNI, nombre o expediente"
-               style="max-width: 280px" />
+    <div class="card-header bg-dark">
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-semibold">{{ title }}</span>
+            <div class="flex-grow-1 d-flex justify-content-end ms-3">
+                <label for="{{ filter_id }}" class="visually-hidden">{{ filter_label }}</label>
+                <input type="search"
+                       id="{{ filter_id }}"
+                       class="form-control form-control-sm filter-input"
+                       placeholder="{{ filter_placeholder }}" />
+            </div>
+        </div>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-striped table-sm table-hover align-middle mb-0"
-                   id="{{ table_id }}">
-                <thead class="table-light">
+            <table class="table table-hover align-middle mb-0" id="{{ table_id }}">
+                <thead class="table-dark">
                     <tr>
-                        <th style="width: 80px;">DNI</th>
+                        <th class="col-dni">DNI</th>
                         <th>Nombre</th>
                         <th>Apellido</th>
                         <th>Expediente</th>
-
-                        {% if estado_badge_class %}<th class="d-none d-md-table-cell">Estado cupo</th>{% endif %}
-
-                        <th class="d-none d-md-table-cell">Estado cupo</th>
-
-                        {% if show_activo %}<th class="d-none d-md-table-cell">Activo</th>{% endif %}
-                        {% if show_actions %}<th class="text-end" style="width: 120px;">Acciones</th>{% endif %}
+                        {% if show_revision %}<th>Revisión</th>{% endif %}
+                        {% if show_resultado %}<th>Resultado</th>{% endif %}
+                        <th>Estado cupo</th>
+                        {% if show_activo %}<th>Activo</th>{% endif %}
+                        {% if show_actions %}<th class="text-end col-actions">Acciones</th>{% endif %}
                     </tr>
                 </thead>
                 <tbody>
                     {% for leg in rows %}
                         <tr data-row>
-                            <td data-text="{{ leg.ciudadano.documento }}">{{ leg.ciudadano.documento }}</td>
-                            <td data-text="{{ leg.ciudadano.nombre }}">{{ leg.ciudadano.nombre }}</td>
-                            <td data-text="{{ leg.ciudadano.apellido }}">{{ leg.ciudadano.apellido }}</td>
-                            <td data-text="{{ leg.expediente.codigo|default:leg.expediente.id }}">
-                                {{ leg.expediente.codigo|default:leg.expediente.id }}
-                            </td>
-
-                            {% if estado_badge_class %}
-                                <td data-text="{{ leg.estado_cupo }}" class="d-none d-md-table-cell">
-                                    <span class="badge {{ estado_badge_class }}">{{ estado_badge_text }}</span>
+                            <td data-text="{{ leg.ciudadano.documento|default_if_none:'' }}">{{ leg.ciudadano.documento }}</td>
+                            <td data-text="{{ leg.ciudadano.nombre|default_if_none:'' }}">{{ leg.ciudadano.nombre }}</td>
+                            <td data-text="{{ leg.ciudadano.apellido|default_if_none:'' }}">{{ leg.ciudadano.apellido }}</td>
+                            <td data-text="{{ leg.expediente.codigo }}">{{ leg.expediente.codigo }}</td>
+                            {% if show_revision %}
+                                <td>
+                                    <span class="badge bg-{% if leg.revision_tecnico == 'APROBADO' %}success{% elif leg.revision_tecnico == 'RECHAZADO' %}danger{% else %}secondary{% endif %}">
+                                        {{ leg.revision_tecnico }}
+                                    </span>
                                 </td>
                             {% endif %}
+                            {% if show_resultado %}
+                                <td>
+                                    <span class="badge bg-{% if leg.resultado_sintys == 'MATCH' %}success{% elif leg.resultado_sintys == 'NO_MATCH' %}danger{% else %}secondary{% endif %}">
+                                        {{ leg.resultado_sintys }}
+                                    </span>
+                                </td>
+                            {% endif %}
+                            <td>
+                                <span class="badge bg-{% if leg.estado_cupo == 'DENTRO' %}primary{% elif leg.estado_cupo == 'FUERA' %}warning text-dark{% else %}secondary{% endif %}">
+                                    {{ leg.estado_cupo }}
+                                </span>
+                            </td>
                             {% if show_activo %}
-                                <td data-text="{% if leg.es_titular_activo %}Sí{% else %}No{% endif %}"
-                                    class="d-none d-md-table-cell">
+                                <td>
                                     {% if leg.es_titular_activo %}
                                         <span class="badge bg-success">Sí</span>
                                     {% else %}
                                         <span class="badge bg-secondary">No</span>
                                     {% endif %}
-
-                            <td data-text="{{ leg.estado_cupo }}" class="d-none d-md-table-cell">
-                                <span class="badge {{ estado_badge_class }}">{{ estado_badge_text }}</span>
-                            </td>
-                            {% if show_activo %}
-                                <td data-text="{% if leg.es_titular_activo %}Sí{% else %}No{% endif %}"
-                                    class="d-none d-md-table-cell">
-                                    <span class="badge bg-secondary">No</span>
-
                                 </td>
                             {% endif %}
                             {% if show_actions %}
                                 <td class="text-end">
                                     <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-success btn-reactivar"
-                                                data-legajo-id="{{ leg.id }}">Reactivar</button>
+                                        {% if leg.es_titular_activo %}
+                                            <button class="btn btn-outline-warning btn-suspender"
+                                                    data-legajo-id="{{ leg.id }}">Suspender</button>
+                                        {% else %}
+                                            <button class="btn btn-outline-success btn-reactivar"
+                                                    data-legajo-id="{{ leg.id }}">Reactivar</button>
+                                        {% endif %}
                                         <button class="btn btn-outline-danger btn-baja" data-legajo-id="{{ leg.id }}">Baja</button>
                                     </div>
                                 </td>
