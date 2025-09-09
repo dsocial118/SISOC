@@ -168,15 +168,15 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="tabla-suspendidos">
+                <table class="table table-striped table-sm table-hover align-middle mb-0" id="tabla-suspendidos">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 80px;">DNI</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>Expediente</th>
-                            <th>Estado cupo</th>
-                            <th>Activo</th>
+                            <th class="d-none d-md-table-cell">Estado cupo</th>
+                            <th class="d-none d-md-table-cell">Activo</th>
                             <th class="text-end" style="width: 120px;">Acciones</th>
                         </tr>
                     </thead>
@@ -189,10 +189,10 @@
                                 <td data-text="{{ leg.expediente.codigo|default:leg.expediente.id }}">
                                     {{ leg.expediente.codigo|default:leg.expediente.id }}
                                 </td>
-                                <td>
+                                <td data-text="{{ leg.estado_cupo }}" class="d-none d-md-table-cell">
                                     <span class="badge bg-primary">DENTRO</span>
                                 </td>
-                                <td>
+                                <td data-text="{% if leg.es_titular_activo %}Sí{% else %}No{% endif %}" class="d-none d-md-table-cell">
                                     <span class="badge bg-secondary">No</span>
                                 </td>
                                 <td class="text-end">
@@ -225,14 +225,14 @@
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="tabla-lista-espera">
+                <table class="table table-striped table-sm table-hover align-middle mb-0" id="tabla-lista-espera">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 80px;">DNI</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>Expediente</th>
-                            <th>Estado cupo</th>
+                            <th class="d-none d-md-table-cell">Estado cupo</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -244,7 +244,7 @@
                                 <td data-text="{{ leg.expediente.codigo|default:leg.expediente.id }}">
                                     {{ leg.expediente.codigo|default:leg.expediente.id }}
                                 </td>
-                                <td>
+                                <td data-text="{{ leg.estado_cupo }}" class="d-none d-md-table-cell">
                                     <span class="badge bg-warning text-dark">FUERA</span>
                                 </td>
                             </tr>
