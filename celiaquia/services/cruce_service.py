@@ -511,8 +511,8 @@ class CruceService:
             .filter(expediente_id=expediente.id)
         )
 
-        legajos_aprobados = list(legajos_all.filter(revision_tecnico="APROBADO"))
-        total_legajos_aprobados = len(legajos_aprobados)
+        legajos_aprobados_qs = legajos_all.filter(revision_tecnico="APROBADO")
+        total_legajos_aprobados = legajos_aprobados_qs.count()
         if total_legajos_aprobados == 0:
             raise ValidationError(
                 "No hay legajos APROBADOS por el técnico para cruzar con Syntys."
@@ -523,7 +523,7 @@ class CruceService:
         detalle_match = []
         detalle_no_match = []
 
-        for leg in legajos_aprobados:
+        for leg in legajos_aprobados_qs.iterator():
             ciu = leg.ciudadano
             cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
             dni_ciud = CruceService._normalize_dni_str(getattr(ciu, "documento", ""))
@@ -572,12 +572,11 @@ class CruceService:
 
         # Reserva de cupo para los matcheados. Si el ciudadano ya ocupa (activo o suspendido),
         # reservar_slot devolverá False y el legajo quedará FUERA (lista de espera) sin alterar usados.
-        for leg in legajos_aprobados:
-            if leg.pk in matched_ids:
-                try:
-                    CupoService.reservar_slot(legajo=leg, usuario=usuario)
-                except CupoNoConfigurado as e:
-                    raise ValidationError(f"Error de cupo: {e}")
+        for leg in legajos_aprobados_qs.filter(pk__in=matched_ids).iterator():
+            try:
+                CupoService.reservar_slot(legajo=leg, usuario=usuario)
+            except CupoNoConfigurado as e:
+                raise ValidationError(f"Error de cupo: {e}")
 
         legajos_rechazados = legajos_all.filter(
             revision_tecnico="RECHAZADO"
