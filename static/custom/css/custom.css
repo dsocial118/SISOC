@@ -130,4 +130,29 @@ border-left-color: #fb4733 !important;
   max-width: 120px !important;
 }
 
+/* Utilities for cupo tables */
+.col-dni {
+  width: 80px;
+}
+
+.col-dni-sm {
+  width: 90px;
+}
+
+.col-fecha {
+  width: 120px;
+}
+
+.col-acciones {
+  width: 180px;
+}
+
+.col-acciones-sm {
+  width: 120px;
+}
+
+.col-motivo {
+  max-width: 280px;
+}
+
 
