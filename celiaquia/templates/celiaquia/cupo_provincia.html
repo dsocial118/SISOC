@@ -80,13 +80,18 @@
     <div id="alerts"></div>
     <!-- Titulares activos -->
     <div class="card">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <span class="fw-semibold">Cupos ocupados (titulares activos)</span>
-            <input type="search"
-                   id="filtro"
-                   class="form-control form-control-sm"
-                   placeholder="Filtrar por DNI, nombre o expediente"
-                   style="max-width: 280px" />
+        <div class="card-header bg-light">
+            <div class="row align-items-center">
+                <div class="col">
+                    <span class="fw-semibold">Cupos ocupados (titulares activos)</span>
+                </div>
+                <div class="col-md-auto">
+                    <input type="search"
+                           id="filtro-ocupados"
+                           class="form-control form-control-sm w-100 w-md-auto ms-md-auto"
+                           placeholder="Filtrar por DNI, nombre o expediente" />
+                </div>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">

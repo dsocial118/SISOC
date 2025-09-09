@@ -77,14 +77,14 @@
         if (btn && spin) { btn.disabled = false; spin.classList.add("d-none"); }
       }
     });
-  }
-
-  // --- Filtro tabla ocupados ---
-  const filtro = document.getElementById("filtro");
-  if (filtro) {
-    filtro.addEventListener("input", (e) => {
-      const q = (e.target.value || "").toLowerCase();
-      document.querySelectorAll("#tabla-ocupados tbody tr[data-row]").forEach((tr) => {
+    }
+    
+    // --- Filtro tabla ocupados ---
+    const filtro = document.getElementById("filtro-ocupados");
+    if (filtro) {
+        filtro.addEventListener("input", (e) => {
+            const q = (e.target.value || "").toLowerCase();
+            document.querySelectorAll("#tabla-ocupados tbody tr[data-row]").forEach((tr) => {
         const hay = Array.from(tr.querySelectorAll("td[data-text]")).some((td) =>
           (td.getAttribute("data-text") || "").toLowerCase().includes(q)
         );
