@@ -8,9 +8,6 @@ from django.views.decorators.csrf import csrf_protect
 from celiaquia.models import EstadoLegajo, ExpedienteCiudadano, RevisionTecnico
 from celiaquia.services.legajo_service import LegajoService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
-from django.core.exceptions import PermissionDenied
-from core.decorators import group_required
-from django.contrib.auth.models import Group
 
 
 logger = logging.getLogger(__name__)
