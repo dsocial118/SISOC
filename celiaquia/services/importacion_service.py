@@ -251,6 +251,9 @@ class ImportacionService:
             "localidad": (Localidad, "nombre"),
         }
 
+        # Cache para evitar consultas repetidas de FKs
+        fk_cache = {field: {} for field in fk_models}
+
         numeric_fields = {
             "documento",
             "altura",
@@ -265,19 +268,26 @@ class ImportacionService:
 
         def resolve_fk(field, value):
             model, lookup = fk_models[field]
-            if str(value).isdigit():
+            cache = fk_cache[field]
+            key = str(value).strip().lower()
+            if key in cache:
+                return cache[key]
+
+            if key.isdigit():
                 try:
-                    return model.objects.only("id").get(pk=int(value)).id
+                    result = model.objects.only("id").get(pk=int(key)).id
                 except model.DoesNotExist:
-                    return None
-            try:
-                return (
-                    model.objects.only("id")
-                    .get(**{f"{lookup}__iexact": str(value).strip()})
-                    .id
-                )
-            except model.DoesNotExist:
-                return None
+                    result = None
+            else:
+                try:
+                    result = (
+                        model.objects.only("id").get(**{f"{lookup}__iexact": key}).id
+                    )
+                except model.DoesNotExist:
+                    result = None
+
+            cache[key] = result
+            return result
 
         for offset, row in enumerate(df.to_dict(orient="records"), start=2):
             try:
