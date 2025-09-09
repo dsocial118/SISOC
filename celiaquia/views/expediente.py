@@ -20,7 +20,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Q, Count
 
 from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
 from celiaquia.models import (
@@ -367,9 +367,19 @@ class ExpedienteDetailView(DetailView):
         preview_limit_actual = None
 
         q = expediente.expediente_ciudadanos.select_related("ciudadano")
-        ctx["hay_subsanar"] = q.filter(
-            revision_tecnico=RevisionTecnico.SUBSANAR
-        ).exists()
+        counts = q.aggregate(
+            c_aceptados=Count(
+                "id",
+                filter=Q(revision_tecnico="APROBADO", resultado_sintys="MATCH"),
+            ),
+            c_rech_tecnico=Count("id", filter=Q(revision_tecnico="RECHAZADO")),
+            c_rech_sintys=Count(
+                "id",
+                filter=Q(revision_tecnico="APROBADO", resultado_sintys="NO_MATCH"),
+            ),
+            c_subsanar=Count("id", filter=Q(revision_tecnico=RevisionTecnico.SUBSANAR)),
+        )
+        ctx["hay_subsanar"] = counts["c_subsanar"] > 0
         ctx["legajos_aceptados"] = q.filter(
             revision_tecnico="APROBADO", resultado_sintys="MATCH"
         )
@@ -379,10 +389,10 @@ class ExpedienteDetailView(DetailView):
         )
         ctx["legajos_subsanar"] = q.filter(revision_tecnico=RevisionTecnico.SUBSANAR)
 
-        ctx["c_aceptados"] = ctx["legajos_aceptados"].count()
-        ctx["c_rech_tecnico"] = ctx["legajos_rech_tecnico"].count()
-        ctx["c_rech_sintys"] = ctx["legajos_rech_sintys"].count()
-        ctx["c_subsanar"] = ctx["legajos_subsanar"].count()
+        ctx["c_aceptados"] = counts["c_aceptados"]
+        ctx["c_rech_tecnico"] = counts["c_rech_tecnico"]
+        ctx["c_rech_sintys"] = counts["c_rech_sintys"]
+        ctx["c_subsanar"] = counts["c_subsanar"]
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
             raw_limit = self.request.GET.get("preview_limit")
