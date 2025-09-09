@@ -8,6 +8,7 @@ from celiaquia.views.pago import (
     PagoExpedienteCreateView,
     PagoExpedienteDetailView,
     PagoExpedienteExportView,
+    PagoExpedienteListView,
     PagoNominaExportActualView,
 )
 from celiaquia.views.expediente import (
@@ -165,6 +166,11 @@ urlpatterns = [
         "cupo/<int:provincia_id>/legajo/<int:legajo_id>/reactivar/",
         CupoReactivarLegajoView.as_view(),
         name="cupo_legajo_reactivar",
+    ),
+    path(
+        "pagos/provincia/<int:provincia_id>/",
+        PagoExpedienteListView.as_view(),
+        name="pago_expediente_list",
     ),
     path(
         "pagos/provincia/<int:provincia_id>/crear/",
