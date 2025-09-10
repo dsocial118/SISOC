@@ -135,6 +135,37 @@ class Expediente(models.Model):
             return None
 
 
+class ExpedienteEstadoHistorial(models.Model):
+    """Historial de cambios de estado para un expediente."""
+
+    expediente = models.ForeignKey(
+        "Expediente", on_delete=models.CASCADE, related_name="historial"
+    )
+    estado_anterior = models.ForeignKey(
+        EstadoExpediente, on_delete=models.PROTECT, related_name="+"
+    )
+    estado_nuevo = models.ForeignKey(
+        EstadoExpediente, on_delete=models.PROTECT, related_name="+"
+    )
+    usuario = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="cambios_estado",
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    observaciones = models.TextField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Historial de estado"
+        verbose_name_plural = "Historial de estados"
+        ordering = ("-fecha",)
+
+    def __str__(self):
+        return f"{self.expediente_id} {self.estado_anterior} -> {self.estado_nuevo}"
+
+
 class ExpedienteCiudadano(models.Model):
     expediente = models.ForeignKey(
         Expediente, on_delete=models.CASCADE, related_name="expediente_ciudadanos"
