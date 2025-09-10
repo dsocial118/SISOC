@@ -23,6 +23,7 @@ from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoes
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.db.models import Q, Count
+from django.core.paginator import Paginator
 
 from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
 from celiaquia.models import (
@@ -341,6 +342,8 @@ class ExpedienteCreateView(CreateView):
 
 
 class ExpedienteDetailView(DetailView):
+    """Detalle del expediente con información relacionada."""
+
     model = Expediente
     template_name = "celiaquia/expediente_detail.html"
     context_object_name = "expediente"
@@ -362,6 +365,8 @@ class ExpedienteDetailView(DetailView):
         return base.filter(usuario_provincia=user)
 
     def get_context_data(self, **kwargs):
+        """Arma el contexto con métricas y paginación del historial."""
+
         ctx = super().get_context_data(**kwargs)
         expediente = self.object
         user = self.request.user
@@ -440,6 +445,13 @@ class ExpedienteDetailView(DetailView):
             estado_cupo="FUERA"
         ).count()
         ctx["fuera_de_cupo"] = q.filter(estado_cupo="FUERA")
+
+        historial = expediente.historial.select_related(
+            "estado_anterior", "estado_nuevo", "usuario"
+        )
+        ctx["historial_page_obj"] = Paginator(historial, 3).get_page(
+            self.request.GET.get("historial_page")
+        )
 
         ctx.update(
             {
