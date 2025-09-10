@@ -54,12 +54,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!nodes.length || !pageSizeSelect || !paginationUl) return;
 
     let page = 1;
-    const readPageSize = () => parseInt(pageSizeSelect.value || '10', 10) || 10;
+    const readPageSize = () => {
+      const val = pageSizeSelect.value;
+      return val === 'all' ? Infinity : parseInt(val, 10) || 10;
+    };
 
     function render() {
       const pageSize = readPageSize();
       const total = nodes.length;
-      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+      const totalPages = pageSize === Infinity ? 1 : Math.max(1, Math.ceil(total / pageSize));
       if (page > totalPages) page = totalPages;
 
       const start = (page - 1) * pageSize;
