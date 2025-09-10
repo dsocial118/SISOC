@@ -227,11 +227,6 @@ class ExpedienteCiudadano(models.Model):
                 fields=["expediente", "es_titular_activo"], name="leg_exp_tit_idx"
             ),
             models.Index(fields=["creado_en"], name="leg_creado_idx"),
-            models.Index(
-                fields=["expediente"],
-                name="leg_subsanar_partial_idx",
-                condition=Q(revision_tecnico="SUBSANAR"),
-            ),
             models.Index(fields=["ciudadano"], name="leg_ciud_idx"),
         ]
 
