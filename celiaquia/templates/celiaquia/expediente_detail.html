@@ -41,6 +41,8 @@
                 {# Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia #}
                 {% if is_tec or is_coord %}
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
+                        <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
+                           class="btn btn-outline-success btn-sm me-2">Descargar nómina Sintys</a>
                         <button type="button"
                                 class="btn btn-success btn-sm me-2"
                                 data-bs-toggle="modal"
