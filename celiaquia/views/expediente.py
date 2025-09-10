@@ -449,7 +449,7 @@ class ExpedienteDetailView(DetailView):
         historial = expediente.historial.select_related(
             "estado_anterior", "estado_nuevo", "usuario"
         )
-        ctx["historial_page_obj"] = Paginator(historial, 3).get_page(
+        ctx["historial_page_obj"] = Paginator(historial, 5).get_page(
             self.request.GET.get("historial_page")
         )
 
