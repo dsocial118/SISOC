@@ -175,7 +175,9 @@ def separar_datos_post(request):
             else key.replace("responsable_", "")
         )
 
-        if clean_key == "actividad_preferida":
+        if clean_key == "actividades_detalle":
+            value = value_list
+        elif clean_key == "actividad_preferida":
             value = value_list
         else:
             value = value_list[0] if len(value_list) == 1 else value_list
