@@ -101,6 +101,35 @@ class CruceService:
         return ""
 
     @staticmethod
+    def generar_nomina_sintys_excel(expediente: Expediente) -> bytes:
+        """Genera un archivo Excel con la nómina del expediente.
+
+        El formato es compatible con la carga de datos en Sintys e incluye
+        las columnas: dni, cuit, nombre y apellido.
+        """
+        rows = []
+        qs = expediente.expediente_ciudadanos.select_related("ciudadano")
+        for legajo in qs:
+            ciudadano = legajo.ciudadano
+            rows.append(
+                {
+                    "dni": CruceService._normalize_dni_str(
+                        getattr(ciudadano, "documento", "")
+                    ),
+                    "cuit": CruceService._resolver_cuit_ciudadano(ciudadano),
+                    "nombre": getattr(ciudadano, "nombre", "") or "",
+                    "apellido": getattr(ciudadano, "apellido", "") or "",
+                }
+            )
+
+        out = io.BytesIO()
+        df = pd.DataFrame(rows, columns=["dni", "cuit", "nombre", "apellido"])
+        with pd.ExcelWriter(out, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="nomina")
+        out.seek(0)
+        return out.getvalue()
+
+    @staticmethod
     def _read_file_bytes(archivo_fileobj) -> bytes:
         """Obtiene el contenido binario de un archivo en memoria."""
         if isinstance(archivo_fileobj, (bytes, bytearray, memoryview)):
