@@ -135,23 +135,31 @@
                 </div>
             </div>
         </div>
-        <div class="p-3 rounded shadow mb-4"
-             style="background-color:#1c2a3a;
-                    color:#e0e0e0">
-            <h5 class="mb-3">Historial de estados</h5>
-            <ul class="list-unstyled mb-0">
-                {% for h in expediente.historial.all|dictsortreversed:"fecha" %}
-                    <li>
-                        <strong>{{ h.fecha|date:"d/m/Y H:i" }}</strong>:
-                        {{ h.estado_anterior.display_name }} → {{ h.estado_nuevo.display_name }}
-                        {% if h.usuario %}- {{ h.usuario.get_full_name|default:h.usuario.username }}{% endif %}
-                        {% if h.observaciones %}({{ h.observaciones }}){% endif %}
-                    </li>
-                {% empty %}
-                    <li class="text-muted">Sin cambios de estado.</li>
-                {% endfor %}
-            </ul>
-        </div>
+        {% if is_coord %}
+            <div class="p-3 rounded shadow mb-4"
+                 style="background-color:#1c2a3a;
+                        color:#e0e0e0">
+                <h5 class="mb-3">Historial de estados</h5>
+                <div class="list-group">
+                    {% for h in expediente.historial.all|dictsortreversed:"fecha" %}
+                        <div class="list-group-item border-0 mb-3 rounded shadow-sm card-dark">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="fw-semibold">{{ h.fecha|date:"d/m/Y H:i" }}</div>
+                                    <div class="small">{{ h.estado_anterior.display_name }} → {{ h.estado_nuevo.display_name }}</div>
+                                </div>
+                                <div class="text-end small">
+                                    {% if h.usuario %}{{ h.usuario.get_full_name|default:h.usuario.username }}{% endif %}
+                                    {% if h.observaciones %}<div class="text-muted mt-1">{{ h.observaciones }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted mb-0">Sin cambios de estado.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
         {% if fuera_de_cupo %}
             <div class="p-3 rounded shadow mb-4"
                  style="background-color:#1c2a3a;
