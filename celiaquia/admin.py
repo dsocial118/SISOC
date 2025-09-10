@@ -7,6 +7,7 @@ from .models import (
     Expediente,
     ExpedienteCiudadano,
     AsignacionTecnico,
+    ExpedienteEstadoHistorial,
 )
 
 
@@ -54,3 +55,15 @@ class AsignacionTecnicoAdmin(admin.ModelAdmin):
     list_display = ("expediente", "tecnico", "fecha_asignacion")
     list_filter = ("fecha_asignacion",)
     search_fields = ("expediente__id", "tecnico__username")
+
+
+@admin.register(ExpedienteEstadoHistorial)
+class ExpedienteEstadoHistorialAdmin(admin.ModelAdmin):
+    list_display = (
+        "expediente",
+        "estado_anterior",
+        "estado_nuevo",
+        "usuario",
+        "fecha",
+    )
+    list_filter = ("expediente", "estado_nuevo")
