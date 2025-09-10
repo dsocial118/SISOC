@@ -6,7 +6,7 @@
         // Estado del cache
         isLoading: false,
         lastSync: null,
-        
+
         // Elementos DOM
         elements: {
             newSelect: null,
@@ -15,7 +15,7 @@
             statusIndicator: null,
             syncButton: null
         },
-        
+
         // Configuración
         config: {
             maxRetries: 3,
@@ -23,24 +23,24 @@
             staleDataClass: 'territorial-stale',
             loadingClass: 'territorial-loading'
         },
-        
+
         init() {
             this.initElements();
             this.loadTerritoriales();
             this.setupEventListeners();
         },
-        
+
         initElements() {
             // Selectores principales
             this.elements.newSelect = document.getElementById('new_territorial_select');
             this.elements.updateSelects = Array.from(
                 document.querySelectorAll('select[id*="update_territorial_select"]')
             );
-            
+
             // Crear indicadores de estado si no existen
             this.createStatusIndicators();
         },
-        
+
         createStatusIndicators() {
             // Crear indicador de estado
             if (!this.elements.statusIndicator) {
@@ -53,18 +53,18 @@
                         <i class="fas fa-sync-alt"></i>
                     </button>
                 `;
-                
+
                 // Insertar antes del primer select
                 const firstSelect = this.elements.newSelect || this.elements.updateSelects[0];
                 if (firstSelect) {
                     firstSelect.parentNode.insertBefore(indicator, firstSelect);
                 }
-                
+
                 this.elements.statusIndicator = indicator.querySelector('.status-text');
                 this.elements.syncButton = indicator.querySelector('.sync-btn');
             }
         },
-        
+
         setupEventListeners() {
             // Botón de sincronización manual
             if (this.elements.syncButton) {
@@ -73,7 +73,7 @@
                     this.forceSync();
                 });
             }
-            
+
             // Recargar al hacer focus en los selects si los datos están muy desactualizados
             [...this.getAllSelects()].forEach(select => {
                 select.addEventListener('focus', () => {
@@ -83,23 +83,23 @@
                 });
             });
         },
-        
+
         getAllSelects() {
             return [
                 this.elements.newSelect,
                 ...this.elements.updateSelects
             ].filter(Boolean);
         },
-        
+
         async loadTerritoriales(forceSync = false) {
             if (this.isLoading) return;
-            
+
             this.isLoading = true;
             this.setLoadingState(true);
-            
+
             try {
                 const url = `/comedores/${comedorId}/territoriales/${forceSync ? '?force_sync=true' : ''}`;
-                
+
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
@@ -107,13 +107,13 @@
                         'Cache-Control': forceSync ? 'no-cache' : 'max-age=600'
                     }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     this.updateSelects(data.territoriales, data.meta);
                     this.updateStatus(data.meta);
@@ -121,7 +121,7 @@
                 } else {
                     throw new Error(data.error || 'Error desconocido');
                 }
-                
+
             } catch (error) {
                 console.error('Error cargando territoriales:', error);
                 this.handleError(error);
@@ -130,13 +130,13 @@
                 this.setLoadingState(false);
             }
         },
-        
+
         async forceSync() {
             if (this.isLoading) return;
-            
+
             try {
                 this.setLoadingState(true, 'Sincronizando con GESTIONAR...');
-                
+
                 const response = await fetch(`/comedores/${comedorId}/territoriales/sincronizar/`, {
                     method: 'POST',
                     headers: {
@@ -145,9 +145,9 @@
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     this.updateSelects(data.territoriales, data.meta);
                     this.updateStatus(data.meta);
@@ -155,7 +155,7 @@
                 } else {
                     throw new Error(data.error || 'Error en sincronización');
                 }
-                
+
             } catch (error) {
                 console.error('Error en sincronización forzada:', error);
                 this.handleError(error);
@@ -163,23 +163,23 @@
                 this.setLoadingState(false);
             }
         },
-        
+
         updateSelects(territoriales, meta) {
             const selects = this.getAllSelects();
-            
+
             selects.forEach(select => {
                 if (!select) return;
-                
+
                 // Preservar selección actual
                 const currentValue = select.value;
-                
+
                 // Limpiar opciones excepto la primera (vacía)
                 const firstOption = select.options[0];
                 select.innerHTML = '';
                 if (firstOption) {
                     select.appendChild(firstOption);
                 }
-                
+
                 // Agregar territoriales
                 territoriales.forEach(territorial => {
                     const option = document.createElement('option');
@@ -188,86 +188,96 @@
                         nombre: territorial.nombre
                     });
                     option.textContent = territorial.nombre;
-                    
+
                     // Marcar como desactualizado si es necesario
                     if (territorial.desactualizado || meta.desactualizados) {
                         option.className = this.config.staleDataClass;
                         option.title = 'Datos posiblemente desactualizados';
                     }
-                    
+
                     select.appendChild(option);
                 });
-                
+
                 // Restaurar selección si aún existe
                 if (currentValue) {
                     select.value = currentValue;
                 }
-                
+
                 // Marcar el select con clase de estado
                 select.classList.toggle(this.config.staleDataClass, meta.desactualizados);
             });
         },
-        
+
         updateStatus(meta) {
             if (!this.elements.statusIndicator) return;
-            
+
             let statusText = '';
             let statusClass = '';
-            
+
             switch (meta.fuente) {
-                case 'cache_django':
+                case 'cache_provincia':
                     statusText = `${meta.total} territoriales (desde cache rápido)`;
                     statusClass = 'status-success';
                     break;
-                    
-                case 'db_local':
+
+                case 'db_provincia':
                     statusText = `${meta.total} territoriales (desde cache local)`;
                     statusClass = meta.desactualizados ? 'status-warning' : 'status-success';
                     break;
-                    
-                case 'gestionar_sync':
+
+                case 'gestionar_provincia_sync':
                     statusText = `${meta.total} territoriales (sincronizado)`;
                     statusClass = 'status-success';
                     break;
-                    
-                case 'fallback_desactualizado':
+
+                case 'fallback_provincia':
                     statusText = `${meta.total} territoriales (datos antiguos)`;
                     statusClass = 'status-warning';
                     break;
-                
+
+                case 'sin_datos':
+                    statusText = `${meta.total} territoriales (sin datos)`;
+                    statusClass = 'status-warning';
+                    break;
+
+                case 'comedor_no_encontrado':
+                    statusText = 'Comedor no encontrado';
+                    statusClass = 'status-error';
+                    break;
+
                 case 'datos_ejemplo':
                     statusText = `${meta.total} territoriales (datos de desarrollo)`;
                     statusClass = 'status-info';
                     break;
-                    
+
                 case 'error':
-                case 'vacio':
+                case 'vacio': // compat: antiguo nombre para sin_datos
                 default:
                     statusText = 'Error cargando territoriales';
                     statusClass = 'status-error';
                     break;
             }
-            
-            if (meta.desactualizados && meta.fuente !== 'fallback_desactualizado') {
+
+            if (meta.desactualizados && meta.fuente !== 'fallback_provincia') {
                 statusText += ' (algunos desactualizados)';
                 statusClass = 'status-warning';
             }
-            
+
             this.elements.statusIndicator.textContent = statusText;
             this.elements.statusIndicator.className = `status-text ${statusClass}`;
         },
-        
+
         setLoadingState(isLoading, customMessage = null) {
             const selects = this.getAllSelects();
             const message = customMessage || (isLoading ? 'Cargando...' : 'Territoriales cargados');
-            
+
             selects.forEach(select => {
                 if (select) {
                     select.disabled = isLoading;
                     select.classList.toggle(this.config.loadingClass, isLoading);
                 }
             });
-            
+
             if (this.elements.syncButton) {
                 this.elements.syncButton.disabled = isLoading;
                 const icon = this.elements.syncButton.querySelector('i');
@@ -275,32 +285,32 @@
                     icon.classList.toggle('fa-spin', isLoading);
                 }
             }
-            
+
             if (this.elements.statusIndicator && isLoading) {
                 this.elements.statusIndicator.textContent = message;
                 this.elements.statusIndicator.className = 'status-text status-loading';
             }
         },
-        
+
         handleError(error) {
             console.error('Error en TerritorialCache:', error);
-            
+
             if (this.elements.statusIndicator) {
                 this.elements.statusIndicator.textContent = 'Error: ' + error.message;
                 this.elements.statusIndicator.className = 'status-text status-error';
             }
-            
+
             this.showErrorMessage('Error cargando territoriales: ' + error.message);
         },
-        
+
         showSuccessMessage(message) {
             this.showToast(message, 'success');
         },
-        
+
         showErrorMessage(message) {
             this.showToast(message, 'error');
         },
-        
+
         showToast(message, type = 'info') {
             // Implementación básica de toast
             const toast = document.createElement('div');
@@ -317,7 +327,7 @@
                 opacity: 0;
                 transition: opacity 0.3s;
             `;
-            
+
             // Colores según tipo
             switch (type) {
                 case 'success':
@@ -333,27 +343,27 @@
                 default:
                     toast.style.backgroundColor = '#17a2b8';
             }
-            
+
             document.body.appendChild(toast);
-            
+
             // Animar entrada
             setTimeout(() => toast.style.opacity = '1', 100);
-            
+
             // Auto-remover
             setTimeout(() => {
                 toast.style.opacity = '0';
                 setTimeout(() => document.body.removeChild(toast), 300);
             }, 5000);
         },
-        
+
         isDataTooOld() {
             if (!this.lastSync) return true;
-            
+
             const maxAge = 10 * 60 * 1000; // 10 minutos
             return (new Date() - this.lastSync) > maxAge;
         }
     };
-    
+
     // CSS para los estilos
     const styles = `
         <style>
@@ -414,18 +424,18 @@
         }
         </style>
     `;
-    
+
     // Inyectar estilos
     document.head.insertAdjacentHTML('beforeend', styles);
-    
+
     // Inicializar cuando el DOM esté listo
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => TerritorialCache.init());
     } else {
         TerritorialCache.init();
     }
-    
+
     // Exponer globalmente para debugging
     window.TerritorialCache = TerritorialCache;
-    
+
 })();
