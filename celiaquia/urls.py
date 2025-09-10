@@ -24,6 +24,7 @@ from celiaquia.views.expediente import (
     ProcesarExpedienteView,
     RecepcionarExpedienteView,
     RevisarLegajoView,
+    ExpedienteNominaSintysExportView,
     SubirCruceExcelView,
     LocalidadesLookupView,
 )
@@ -126,6 +127,13 @@ urlpatterns = [
         "expedientes/<int:pk>/asignar-tecnico/",
         group_required(["CoordinadorCeliaquia"])(AsignarTecnicoView.as_view()),
         name="expediente_asignar_tecnico",
+    ),
+    path(
+        "expedientes/<int:pk>/exportar-nomina-sintys/",
+        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(
+            ExpedienteNominaSintysExportView.as_view()
+        ),
+        name="expediente_nomina_sintys_export",
     ),
     path(
         "expedientes/<int:pk>/cruce-cuit/",
