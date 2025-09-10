@@ -38,7 +38,6 @@ from celiaquia.models import (
     EstadoExpediente,
     Expediente,
     ExpedienteCiudadano,
-    EstadoCupo,
 )
 from celiaquia.services.cupo_service import (
     CupoService,
@@ -105,25 +104,31 @@ class CruceService:
         """Genera un archivo Excel con la nómina del expediente.
 
         El formato es compatible con la carga de datos en Sintys e incluye
-        las columnas: dni, cuit, nombre y apellido.
+        las columnas: Numero_documento, TipoDocumento, nombre y apellido.
         """
         rows = []
-        qs = expediente.expediente_ciudadanos.select_related("ciudadano")
+        qs = expediente.expediente_ciudadanos.select_related(
+            "ciudadano", "ciudadano__tipo_documento"
+        )
         for legajo in qs:
             ciudadano = legajo.ciudadano
             rows.append(
                 {
-                    "dni": CruceService._normalize_dni_str(
+                    "Numero_documento": CruceService._normalize_dni_str(
                         getattr(ciudadano, "documento", "")
                     ),
-                    "cuit": CruceService._resolver_cuit_ciudadano(ciudadano),
+                    "TipoDocumento": getattr(
+                        getattr(ciudadano, "tipo_documento", None), "tipo", ""
+                    ),
                     "nombre": getattr(ciudadano, "nombre", "") or "",
                     "apellido": getattr(ciudadano, "apellido", "") or "",
                 }
             )
 
         out = io.BytesIO()
-        df = pd.DataFrame(rows, columns=["dni", "cuit", "nombre", "apellido"])
+        df = pd.DataFrame(
+            rows, columns=["Numero_documento", "TipoDocumento", "nombre", "apellido"]
+        )
         with pd.ExcelWriter(out, engine="openpyxl") as writer:
             df.to_excel(writer, index=False, sheet_name="nomina")
         out.seek(0)
@@ -714,7 +719,11 @@ class CruceService:
         expediente.save(update_fields=["documento", "estado", "usuario_modificador"])
 
         logger.info(
-            "Cruce finalizado para expediente: %s  %s match / %s no-match (sobre %s aprobados). Rechazados en detalle_no_match: %s. Fuera de cupo: %s.",
+            (
+                "Cruce finalizado para expediente: %s  %s match / %s no-match "
+                "(sobre %s aprobados). Rechazados en detalle_no_match: %s. "
+                "Fuera de cupo: %s."
+            ),
             expediente.id,
             aceptados,
             rechazados_sintys,
