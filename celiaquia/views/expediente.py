@@ -15,7 +15,7 @@ from django.http import (
     HttpResponseNotAllowed,
 )
 from django.utils.safestring import mark_safe
-from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
+from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
 from django.utils.decorators import method_decorator
@@ -26,19 +26,20 @@ from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
 from celiaquia.models import (
     AsignacionTecnico,
     EstadoLegajo,
-    EstadoExpediente,
     Expediente,
     ExpedienteCiudadano,
     RevisionTecnico,
 )
 from celiaquia.services.ciudadano_service import CiudadanoService
-from celiaquia.services.expediente_service import ExpedienteService
+from celiaquia.services.expediente_service import (
+    ExpedienteService,
+    _set_estado,
+)
 from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
-from celiaquia.views.legajo import _in_group
 from django.utils import timezone
-from core.models import Provincia, Municipio, Localidad
+from core.models import Provincia, Localidad
 
 logger = logging.getLogger(__name__)
 
@@ -513,7 +514,7 @@ class ExpedienteConfirmView(View):
             return redirect("expediente_detail", pk=pk)
 
         try:
-            result = ExpedienteService.confirmar_envio(expediente)
+            result = ExpedienteService.confirmar_envio(expediente, user)
             if _is_ajax(request):
                 return JsonResponse(
                     {
@@ -568,10 +569,7 @@ class RecepcionarExpedienteView(View):
             messages.warning(request, msg)
             return redirect("expediente_detail", pk=pk)
 
-        estado_recep, _ = EstadoExpediente.objects.get_or_create(nombre="RECEPCIONADO")
-        expediente.estado = estado_recep
-        expediente.usuario_modificador = user
-        expediente.save(update_fields=["estado", "usuario_modificador"])
+        _set_estado(expediente, "RECEPCIONADO", user)
 
         if _is_ajax(request):
             return JsonResponse(
@@ -623,10 +621,7 @@ class AsignarTecnicoView(View):
             defaults={"tecnico": tecnico},
         )
 
-        estado_asignado, _ = EstadoExpediente.objects.get_or_create(nombre="ASIGNADO")
-        expediente.estado = estado_asignado
-        expediente.usuario_modificador = user
-        expediente.save(update_fields=["estado", "usuario_modificador"])
+        _set_estado(expediente, "ASIGNADO", user)
 
         if _is_ajax(request):
             return JsonResponse(

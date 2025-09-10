@@ -97,7 +97,7 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
 
         # 4) Transición de estado / lógica de confirmación
         try:
-            result = ExpedienteService.confirmar_envio(expediente)
+            result = ExpedienteService.confirmar_envio(expediente, request.user)
             logger.info(
                 "Confirmación de envío OK. Expediente %s por %s",
                 expediente.pk,
