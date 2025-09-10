@@ -2,6 +2,7 @@ import json
 import logging
 import time
 import traceback
+import io
 
 
 from django.views import View
@@ -13,6 +14,7 @@ from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseNotAllowed,
+    FileResponse,
 )
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_protect
@@ -647,6 +649,16 @@ class AsignarTecnicoView(View):
             f"Técnico {tecnico.get_full_name() or tecnico.username} asignado correctamente. Estado: ASIGNADO.",
         )
         return redirect("expediente_detail", pk=pk)
+
+
+class ExpedienteNominaSintysExportView(View):
+    """Descarga la nómina del expediente en formato compatible con Sintys."""
+
+    def get(self, request, pk):
+        expediente = get_object_or_404(Expediente, pk=pk)
+        content = CruceService.generar_nomina_sintys_excel(expediente)
+        filename = f"nomina_sintys_{expediente.pk}.xlsx"
+        return FileResponse(io.BytesIO(content), as_attachment=True, filename=filename)
 
 
 class SubirCruceExcelView(View):
