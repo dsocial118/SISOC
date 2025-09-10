@@ -79,7 +79,7 @@ pylint==3.2.6
 pylint-django==2.5.5
 pylint-plugin-utils==0.8.2
 PyMySQL==1.1.1
-pypdf==5.6.0
+pypdf==6.0.0
 pyphen==0.17.2
 pytest==8.3.5
 pytest-cov==6.1.1
@@ -108,7 +108,7 @@ typing_extensions==4.12.2
 tzdata==2024.1
 tzlocal==5.3.1
 uritools==5.0.0
-urllib3==1.26.19
+urllib3==2.5.0
 uvicorn==0.34.0
 weasyprint==65.1
 webencodings==0.5.1
