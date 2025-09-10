@@ -250,8 +250,14 @@
                     statusClass = 'status-info';
                     break;
 
-                case 'error':
                 case 'vacio': // compat: antiguo nombre para sin_datos
+                    const total = Number(meta.total) || 0;
+                    statusText = `${total} territoriales (sin datos)`;
+                    statusClass = 'status-warning';
+                    break;
+
+                case 'error':
+
                 default:
                     statusText = 'Error cargando territoriales';
                     statusClass = 'status-error';
