@@ -231,6 +231,8 @@ class CruceService:
 
     @staticmethod
     def _generar_prd_pdf_html(expediente: Expediente, resumen: dict) -> bytes:
+        if not _WEASY_OK:
+            raise RuntimeError("WeasyPrint no disponible")
         total_legajos = int(resumen.get("total_legajos", 0) or 0)
         matcheados = int(resumen.get("matcheados", 0) or 0)
         no_matcheados = int(resumen.get("no_matcheados", 0) or 0)
