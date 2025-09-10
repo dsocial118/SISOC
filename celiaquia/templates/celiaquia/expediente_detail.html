@@ -140,7 +140,7 @@
                     color:#e0e0e0">
             <h5 class="mb-3">Historial de estados</h5>
             <ul class="list-unstyled mb-0">
-                {% for h in expediente.historial.order_by('-fecha') %}
+                {% for h in expediente.historial.all|dictsortreversed:"fecha" %}
                     <li>
                         <strong>{{ h.fecha|date:"d/m/Y H:i" }}</strong>:
                         {{ h.estado_anterior.display_name }} → {{ h.estado_nuevo.display_name }}
