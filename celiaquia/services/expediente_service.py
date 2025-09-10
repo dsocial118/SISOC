@@ -16,9 +16,15 @@ def _estado_id(nombre: str) -> int:
     return EstadoExpediente.objects.get_or_create(nombre=nombre)[0].pk
 
 
-def _set_estado(expediente: Expediente, nombre: str) -> None:
+def _set_estado(expediente: Expediente, nombre: str, usuario=None) -> None:
+    """Actualiza el estado del expediente y el usuario modificador."""
+
     expediente.estado_id = _estado_id(nombre)
-    expediente.save(update_fields=["estado"])
+    update_fields = ["estado"]
+    if usuario is not None:
+        expediente.usuario_modificador = usuario
+        update_fields.append("usuario_modificador")
+    expediente.save(update_fields=update_fields)
 
 
 class ExpedienteService:
@@ -56,7 +62,7 @@ class ExpedienteService:
         result = ImportacionService.importar_legajos_desde_excel(
             expediente, expediente.excel_masivo, usuario
         )
-        _set_estado(expediente, "PROCESADO")
+        _set_estado(expediente, "PROCESADO", usuario)
         logger.info(
             "Expediente %s procesado: legajos_creados=%s errores=%s excluidos=%s",
             expediente.pk,
@@ -65,7 +71,7 @@ class ExpedienteService:
             result.get("excluidos_count", 0),
         )
 
-        _set_estado(expediente, "EN_ESPERA")
+        _set_estado(expediente, "EN_ESPERA", usuario)
         logger.info("Expediente %s pasó a estado EN_ESPERA", expediente.pk)
 
         return {
@@ -77,7 +83,7 @@ class ExpedienteService:
 
     @staticmethod
     @transaction.atomic
-    def confirmar_envio(expediente: Expediente):
+    def confirmar_envio(expediente: Expediente, usuario):
         try:
             if expediente.estado.nombre != "EN_ESPERA":
                 raise ValidationError("El expediente no está en EN_ESPERA.")
@@ -100,7 +106,7 @@ class ExpedienteService:
                 "Debes subir un archivo para cada legajo antes de confirmar."
             )
 
-        _set_estado(expediente, "CONFIRMACION_DE_ENVIO")
+        _set_estado(expediente, "CONFIRMACION_DE_ENVIO", usuario)
         total = expediente.expediente_ciudadanos.count()
         logger.info(
             "Expediente %s confirmado (ENVÍO). Legajos=%s", expediente.pk, total
@@ -109,13 +115,15 @@ class ExpedienteService:
 
     @staticmethod
     @transaction.atomic
-    def asignar_tecnico(expediente: Expediente, tecnico):
+    def asignar_tecnico(expediente: Expediente, tecnico, usuario):
         if isinstance(tecnico, int):
             tecnico = User.objects.get(pk=tecnico)
 
         asignacion, _ = getattr(expediente, "asignacion_tecnico", None), None
         if asignacion is None:
-            from celiaquia.models import AsignacionTecnico
+            from celiaquia.models import (
+                AsignacionTecnico,
+            )  # pylint: disable=import-outside-toplevel
 
             asignacion, _ = AsignacionTecnico.objects.get_or_create(
                 expediente=expediente
@@ -124,7 +132,7 @@ class ExpedienteService:
         asignacion.tecnico = tecnico
         asignacion.save(update_fields=["tecnico"])
 
-        _set_estado(expediente, "ASIGNADO")
+        _set_estado(expediente, "ASIGNADO", usuario)
         logger.info(
             "Técnico %s asignado al expediente %s", tecnico.username, expediente.pk
         )
