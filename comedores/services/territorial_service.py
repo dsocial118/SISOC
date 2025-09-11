@@ -139,14 +139,14 @@ class TerritorialService:
             }
 
         except Comedor.DoesNotExist:
-            logger.error(f"Comedor {comedor_id} no encontrado")
+            logger.exception(f"Comedor {comedor_id} no encontrado")
             return {
                 "territoriales": [],
                 "desactualizados": True,
                 "fuente": "comedor_no_encontrado",
             }
         except Exception as e:
-            logger.error(
+            logger.exception(
                 f"Error en obtener_territoriales_para_comedor: {e}", exc_info=True
             )
             return {"territoriales": [], "desactualizados": True, "fuente": "error"}
@@ -163,7 +163,7 @@ class TerritorialService:
                 "desactualizados": hay_desactualizados,
             }
         except Exception as e:
-            logger.error(f"Error obteniendo territoriales desde DB: {e}")
+            logger.exception(f"Error obteniendo territoriales desde DB: {e}")
             return {"territoriales": [], "desactualizados": True}
 
     @classmethod
@@ -180,7 +180,7 @@ class TerritorialService:
                 "desactualizados": hay_desactualizados,
             }
         except Exception as e:
-            logger.error(
+            logger.exception(
                 f"Error obteniendo territoriales provincia {provincia_id}: {e}"
             )
             return {"territoriales": [], "desactualizados": True}
@@ -209,7 +209,7 @@ class TerritorialService:
             return territoriales_viejos > 0 or not ultimo_sync
 
         except Exception as e:
-            logger.error(f"Error verificando necesidad de sincronización: {e}")
+            logger.exception(f"Error verificando necesidad de sincronización: {e}")
             return False
 
     @classmethod
@@ -243,7 +243,7 @@ class TerritorialService:
             return territoriales_viejos > 0 or not ultimo_sync
 
         except Exception as e:
-            logger.error(
+            logger.exception(
                 f"Error verificando necesidad de sincronización provincia {provincia_id}: {e}"
             )
             return False
@@ -303,7 +303,7 @@ class TerritorialService:
 
         except Exception as e:
             error_msg = f"Error en sincronización con GESTIONAR: {e}"
-            logger.error(error_msg, exc_info=True)
+            logger.exception(error_msg)
 
             sync_log.exitoso = False
             sync_log.error_mensaje = error_msg[:500]  # Truncar si es muy largo
@@ -382,7 +382,7 @@ class TerritorialService:
             error_msg = (
                 f"Error en sincronización con GESTIONAR provincia {provincia_id}: {e}"
             )
-            logger.error(error_msg, exc_info=True)
+            logger.exception(error_msg)
 
             sync_log.exitoso = False
             sync_log.error_mensaje = error_msg[:500]  # Truncar si es muy largo
@@ -491,7 +491,7 @@ class TerritorialService:
             }
 
         except Exception as e:
-            logger.error(f"Error obteniendo estadísticas: {e}")
+            logger.exception(f"Error obteniendo estadísticas: {e}")
             return {}
 
     @classmethod
@@ -514,4 +514,4 @@ class TerritorialService:
             )
 
         except Exception as e:
-            logger.error(f"Error limpiando cache: {e}")
+            logger.exception(f"Error limpiando cache: {e}")

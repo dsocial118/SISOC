@@ -196,7 +196,7 @@
                 </li>
             {% endif %}
             <!-- CENTRO DE FAMILIA - Con puntito y flecha -->
-            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or user %}
+            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" %}
                 <li class="nav-item {% if 'centros' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot {% if 'centros' in pagina_actual %}active{% endif %}"
@@ -206,18 +206,69 @@
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </p>
                     </a>
-                    <ul class="nav nav-treeview">
+                    <ul class="nav nav-treeview" style="display: none;">
                         <li class="nav-item">
                             <a href="{% url 'centro_list' %}"
-                               class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %}"
-                               style="padding-left: 3rem">
-                                <i class="nav-icon bi bi-arrow-return-right"></i>
-                                <p>Ver Centros</p>
+                               class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %} ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Centros</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'beneficiarios_crear' %}"
+                               class="nav-link {% if 'beneficiarios/nuevo' in pagina_actual %}active{% endif %} ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Nuevo Preinscripto</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'beneficiarios_list' %}"
+                               class="nav-link {% if 'beneficiarios/beneficiarios' in pagina_actual %}active{% endif %} ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Lista de Preinscriptos</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'responsables_list' %}"
+                               class="nav-link {% if 'beneficiarios/responsables' in pagina_actual %}active{% endif %} ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Lista Responsables</p>
                             </a>
                         </li>
                     </ul>
                 </li>
             {% endif %}
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>
+                        Celiaquía
+                        <i class="nav-arrow bi bi-chevron-right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview" style="display: none;">
+                    <li class="nav-item">
+                        <a href="{% url 'expediente_list' %}" class="nav-link ms-3">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Expediente</p>
+                        </a>
+                    </li>
+                    {% if request.user|has_group:"CoordinadorCeliaquia" %}
+                        <li class="nav-item">
+                            <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-3">
+                                <i class="far fa-dot-circle nav-icon"></i>
+                                <p>Cupos</p>
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a href="{% url 'admisiones_legales_listar' %}" class="nav-link ms-3">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Reclamos</p>
+                        </a>
+                    </li>
+                </ul>
+            </li>
         </ul>
     </li>
 {% endwith %}
