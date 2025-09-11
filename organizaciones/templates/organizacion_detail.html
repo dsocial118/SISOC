@@ -24,22 +24,49 @@
         </div>
         <div class="col-auto">
             <a href="{% url 'organizacion_editar' organizacion.id %}"
-               class="btn btn-primary mr-1">Agregar Firmante</a>
-            <a href="{% url 'organizacion_editar' organizacion.id %}"
-               class="btn btn-primary mr-1">Agregar Aval</a>
-            <a href="{% url 'organizacion_editar' organizacion.id %}"
                class="btn btn-primary mr-1">Editar</a>
             <a href="{% url 'organizacion_eliminar' organizacion.id %}"
                class="btn btn-danger">Eliminar</a>
         </div>
     </div>
     {% include 'components/info_card.html' with title='Información de la organizacion' items=data_items list_style=True col_class="col-md-6" card_class="card-outline card-primary h-100" %}
+    <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
+        <div class="col-auto">
+            <h4 style="display: inline;">Firmantes</h4>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'firmante_crear' organizacion.id %}"
+           class="btn btn-primary mr-1">Agregar Firmante</a>
+        </div>
+    </div>
     {% include 'components/data_table.html' with headers=table_headers items=firmantes fields=table_fields actions=actions show_actions=show_actions empty_message='No hay firmantes registrados.' %}
     {% if is_paginated %}
         {% include 'components/pagination.html' %}
     {% endif %}
+    <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
+        <div class="col-auto">
+            <h4 style="display: inline;">Aval 1</h4>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'aval1_crear' organizacion.id %}"
+           class="btn btn-primary mr-1">Agregar Aval</a>
+        </div>
+    </div>
+    {% include 'components/data_table.html' with headers=table_headers_avales items=avales1 fields=table_fields_avales actions=actions_avales1 show_actions=show_actions empty_message='No hay avales registrados.' %}
+    {% if is_paginated %}
+        {% include 'components/pagination.html' %}
+    {% endif %}
+    <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
+        <div class="col-auto">
+            <h4 style="display: inline;">Aval 2</h4>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'aval2_crear' organizacion.id %}"
+           class="btn btn-primary mr-1">Agregar Aval</a>
+        </div>
+    </div>
 
-    {% include 'components/data_table.html' with headers=table_headers_avales items=avales1 fields=table_fields_avales actions=actions show_actions=show_actions empty_message='No hay avales registrados.' %}
+    {% include 'components/data_table.html' with headers=table_headers_avales items=avales2 fields=table_fields_avales actions=actions_avales2 show_actions=show_actions empty_message='No hay avales registrados.' %}
     {% if is_paginated %}
         {% include 'components/pagination.html' %}
     {% endif %}
