@@ -349,7 +349,7 @@ class Anexo(models.Model):
     )
     domicilio = models.CharField("Domicilio", max_length=150, null=True, blank=True)
     barrio = models.CharField(
-        "Barrio", max_length=50, null=False, blank=False, default=""
+        "Barrio", max_length=50, null=True, blank=True
     )
     mail = models.EmailField("Correo Electrónico", null=True, blank=True)
     responsable_apellido = models.CharField(
