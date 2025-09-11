@@ -51,7 +51,7 @@ def obtener_territoriales_api(request, comedor_id):
         return response
 
     except Exception as e:
-        logger.error(
+        logger.exception(
             f"Error en obtener_territoriales_api para comedor {comedor_id}: {e}",
             exc_info=True,
         )
@@ -92,7 +92,7 @@ def sincronizar_territoriales_api(request, comedor_id):
         )
 
     except Exception as e:
-        logger.error(f"Error en sincronizar_territoriales_api: {e}", exc_info=True)
+        logger.exception(f"Error en sincronizar_territoriales_api: {e}", exc_info=True)
 
         return JsonResponse(
             {
@@ -120,7 +120,7 @@ def estadisticas_cache_territoriales(request):
         return JsonResponse({"success": True, "estadisticas": stats})
 
     except Exception as e:
-        logger.error(f"Error obteniendo estadísticas de cache: {e}", exc_info=True)
+        logger.exception(f"Error obteniendo estadísticas de cache: {e}", exc_info=True)
 
         return JsonResponse(
             {"success": False, "error": "Error obteniendo estadísticas"}, status=500
