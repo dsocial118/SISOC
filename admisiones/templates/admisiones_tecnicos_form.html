@@ -393,7 +393,8 @@
                                                                         {% endif %}
                                                                     </td>
                                                                     <td id="gde-{{ doc.id }}">
-                                                                        {% if doc.estado == "Aceptado" and (request.user.is_superuser or request.user|has_group:"Tecnico Comedor") %}
+                                                                        {% if doc.estado == "Aceptado" %}
+                                                                            {% if request.user.is_superuser or request.user|has_group:"Tecnico Comedor" %}
                                                                             <!-- Modo vista (por defecto) -->
                                                                             <div id="gde-display-{{ doc.id }}"
                                                                                  class="gde-display"
@@ -432,6 +433,13 @@
                                                                                     </button>
                                                                                 </div>
                                                                             </div>
+                                                                            {% else %}
+                                                                                {% if doc.numero_gde %}
+                                                                                    <span class="text-success fw-bold">{{ doc.numero_gde }}</span>
+                                                                                {% else %}
+                                                                                    <span class="text-muted">-</span>
+                                                                                {% endif %}
+                                                                            {% endif %}
                                                                         {% else %}
                                                                             {% if doc.numero_gde %}
                                                                                 <span class="text-success fw-bold">{{ doc.numero_gde }}</span>
