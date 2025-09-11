@@ -1,0 +1,321 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Cupo — {{ provincia }}{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'cupo_dashboard' %}">Cupos</a>
+        </li>
+        <li class="breadcrumb-item active">{{ provincia }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div id="cupo-root"
+         data-url-config="{% url 'cupo_provincia_detail' provincia.id %}"
+         data-url-baja-tpl="{% url 'cupo_legajo_baja' provincia.id 0 %}"
+         data-url-susp-tpl="{% url 'cupo_legajo_suspender' provincia.id 0 %}"
+         data-url-reactivar-tpl="{% url 'cupo_legajo_reactivar' provincia.id 0 %}"></div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">{{ provincia }}</h4>
+        <div class="d-flex gap-2">
+            <a href="{% url 'cupo_dashboard' %}"
+               class="btn btn-outline-secondary btn-sm">← Volver</a>
+            <button class="btn btn-primary btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalConfigCupo">Configurar cupo</button>
+            <button class="btn btn-outline-primary btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalHistorico">Historico</button>
+            <a href="{% url 'pago_expediente_list' provincia.id %}"
+               class="btn btn-outline-success btn-sm">Ver expedientes de pago</a>
+            <form action="{% url 'pago_expediente_create' provincia.id %}"
+                  method="post"
+                  class="d-inline">
+                {% csrf_token %}
+                <button class="btn btn-success btn-sm">Generar expediente de pago</button>
+            </form>
+        </div>
+    </div>
+    {% if metrics %}
+        <div class="row g-3 mb-3">
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Total asignado</div>
+                        <div class="h4 mb-0">{{ metrics.total_asignado }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Usados</div>
+                        <div class="h4 mb-0">{{ metrics.usados }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Disponibles</div>
+                        <div class="h4 mb-0">{{ metrics.disponibles }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="text-muted small">Fuera de cupo</div>
+                        <div class="h4 mb-0">{{ metrics.fuera }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+            <span>La provincia no tiene cupo configurado.</span>
+            <button class="btn btn-sm btn-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalConfigCupo">Configurar ahora</button>
+        </div>
+    {% endif %}
+    <div id="alerts"></div>
+    {% include 'celiaquia/partials/cupo_table.html' with
+    title='Cupos ocupados (titulares activos)'
+    table_id='tabla-ocupados'
+    filter_id='filtro-ocupados'
+    filter_label='Filtrar cupos ocupados'
+    filter_placeholder='Filtrar por DNI, nombre o expediente'
+    rows=ocupados
+    empty_message='No hay titulares ocupando cupo.'
+    show_revision=True
+    show_resultado=True
+    show_activo=True
+    show_actions=True
+    colspan=9 %}
+    {% include 'celiaquia/partials/cupo_table.html' with
+    title='Suspendidos (cupo ocupado, no activos)'
+    table_id='tabla-suspendidos'
+    filter_id='filtro-suspendidos'
+    filter_label='Filtrar suspendidos'
+    filter_placeholder='Filtrar por DNI, nombre o expediente'
+    rows=suspendidos
+    empty_message='No hay suspendidos.'
+    show_activo=True
+    show_actions=True
+    colspan=7 %}
+    {% include 'celiaquia/partials/cupo_table.html' with
+    title='Lista de espera (Fuera de cupo)'
+    table_id='tabla-lista-espera'
+    filter_id='filtro-lista-espera'
+    filter_label='Filtrar lista de espera'
+    filter_placeholder='Filtrar por DNI, nombre o expediente'
+    rows=lista_espera
+    empty_message='Sin lista de espera.'
+    colspan=5 %}
+    <!-- Modal Configurar Cupo -->
+    <div class="modal fade"
+         id="modalConfigCupo"
+         tabindex="-1"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" id="form-config" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Configurar cupo para {{ provincia }}</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="total-asignado" class="form-label">Total asignado</label>
+                    <input type="number"
+                           min="0"
+                           step="1"
+                           class="form-control"
+                           id="total-asignado"
+                           name="total_asignado"
+                           value="{{ metrics.total_asignado|default_if_none:'' }}"
+                           placeholder="Ej.: 500"
+                           required />
+                    <input type="hidden" name="accion" value="config" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-config-guardar">
+                        <span class="spinner-border spinner-border-sm d-none"
+                              id="spin-config"
+                              role="status"
+                              aria-hidden="true"></span>
+                        Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal Histórico -->
+    <div class="modal fade"
+         id="modalHistorico"
+         tabindex="-1"
+         aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Histórico de movimientos — {{ provincia }}</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Se listan altas/bajas/ajustes y estado actual de cada legajo.</small>
+                        <label for="filtro-historico" class="visually-hidden">Filtrar histórico</label>
+                        <input type="search"
+                               id="filtro-historico"
+                               class="form-control form-control-sm filter-input-sm"
+                               placeholder="Filtrar por DNI" />
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle"
+                               id="tabla-historico">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="col-fecha">Fecha</th>
+                                    <th class="col-dni-sm">DNI</th>
+                                    <th>Nombre</th>
+                                    <th>Apellido</th>
+                                    <th>Expediente</th>
+                                    <th>Movimiento</th>
+                                    <th>Motivo</th>
+                                    <th>Usuario</th>
+                                    <th>Revisión</th>
+                                    <th>Resultado</th>
+                                    <th>Estado cupo</th>
+                                    <th>Activo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if movimientos %}
+                                    {% for m in movimientos %}
+                                        <tr data-row>
+                                            <td data-doc="{{ m.legajo.ciudadano.documento|default_if_none:'' }}">{{ m.creado_en|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ m.legajo.ciudadano.documento }}</td>
+                                            <td>{{ m.legajo.ciudadano.nombre }}</td>
+                                            <td>{{ m.legajo.ciudadano.apellido }}</td>
+                                            <td>{{ m.expediente.codigo }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if m.tipo == 'ALTA' %}success{% elif m.tipo == 'BAJA' %}danger{% elif m.tipo == 'SUSPENDIDO' %}warning text-dark{% else %}secondary{% endif %}">
+                                                    {{ m.tipo }}
+                                                </span>
+                                                {% if m.delta %}<small class="text-muted">({{ m.delta }})</small>{% endif %}
+                                            </td>
+                                            <td class="text-break col-motivo">{{ m.motivo|default_if_none:'-' }}</td>
+                                            <td>{{ m.usuario.get_full_name|default:m.usuario.username }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if m.legajo.revision_tecnico == 'APROBADO' %}success{% elif m.legajo.revision_tecnico == 'RECHAZADO' %}danger{% else %}secondary{% endif %}">
+                                                    {{ m.legajo.revision_tecnico }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if m.legajo.resultado_sintys == 'MATCH' %}success{% elif m.legajo.resultado_sintys == 'NO_MATCH' %}danger{% else %}secondary{% endif %}">
+                                                    {{ m.legajo.resultado_sintys }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if m.legajo.estado_cupo == 'DENTRO' %}primary{% elif m.legajo.estado_cupo == 'FUERA' %}warning text-dark{% else %}secondary{% endif %}">
+                                                    {{ m.legajo.estado_cupo }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if m.legajo.es_titular_activo %}
+                                                    <span class="badge bg-success">Sí</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">No</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="12" class="text-center text-muted py-3">No hay movimientos registrados.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Suspender -->
+    <div class="modal fade"
+         id="modalSuspender"
+         tabindex="-1"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" id="form-suspender" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Suspender titular</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    {{ form_suspender.motivo.label_tag }}
+                    {{ form_suspender.motivo }}
+                    <input type="hidden" name="legajo_id" id="suspender-legajo-id" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning" id="btn-confirm-suspender">
+                        <span class="spinner-border spinner-border-sm d-none"
+                              id="spin-suspender"
+                              role="status"
+                              aria-hidden="true"></span>
+                        Confirmar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal Baja -->
+    <div class="modal fade" id="modalBaja" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" id="form-baja" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Dar de baja titular</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    {{ form_baja.motivo.label_tag }}
+                    {{ form_baja.motivo }}
+                    <input type="hidden" name="legajo_id" id="baja-legajo-id" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger" id="btn-confirm-baja">
+                        <span class="spinner-border spinner-border-sm d-none"
+                              id="spin-baja"
+                              role="status"
+                              aria-hidden="true"></span>
+                        Confirmar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/cupo_provincia.js' %}"></script>
+{% endblock %}

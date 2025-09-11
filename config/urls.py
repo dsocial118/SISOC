@@ -26,6 +26,7 @@ urlpatterns = [
     path("", include("rendicioncuentasfinal.urls")),
     path("", include("relevamientos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
+    path("", include("celiaquia.urls")),
 ]
 
 if settings.DEBUG:
