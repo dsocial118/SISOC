@@ -409,6 +409,7 @@ class AnexoForm(forms.ModelForm):
             self.fields["domicilio"].initial = f"{calle} {numero}".strip()
             self.fields["expediente"].initial = admision.num_expediente
 
-        # Valores por defecto para todos los casos
-        self.fields["total_acreditaciones"].initial = "6"
-        self.fields["plazo_ejecucion"].initial = "6 meses"
+        # Valores por defecto solo para casos nuevos (no edición)
+        if not self.instance.pk:
+            self.fields["total_acreditaciones"].initial = "6"
+            self.fields["plazo_ejecucion"].initial = "6 meses"
