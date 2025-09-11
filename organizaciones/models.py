@@ -142,13 +142,6 @@ class Organizacion(models.Model):
         blank=True,
         null=True,
     )
-    tipo_organizacion = models.ForeignKey(
-        TipoOrganizacion,
-        on_delete=models.CASCADE,
-        related_name="organizaciones",
-        blank=True,
-        null=True,
-    )
 
     def __str__(self):
         return str(self.nombre)
