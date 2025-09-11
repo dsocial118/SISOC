@@ -694,8 +694,8 @@ class Ciudadano(models.Model):
     codigo_postal = models.IntegerField(
         null=True, blank=True, verbose_name="Código Postal"
     )
-    telefono = models.IntegerField(null=True, blank=True)
-    telefono_alternativo = models.IntegerField(
+    telefono = models.BigIntegerField(null=True, blank=True)
+    telefono_alternativo = models.BigIntegerField(
         null=True, blank=True, verbose_name="Telefono Alternativo"
     )
     email = models.EmailField(null=True, blank=True)
@@ -1420,6 +1420,7 @@ class CiudadanoPrograma(models.Model):
         ordering = ["-fecha_creado"]
         verbose_name = "CiudadanoProgramas"
         verbose_name_plural = "CiudadanosProgramas"
+        unique_together = (("ciudadano", "programas"),)
 
 
 class HistorialCiudadanoProgramas(models.Model):

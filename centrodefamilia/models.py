@@ -372,10 +372,26 @@ class Responsable(models.Model):
     barrio = models.CharField(max_length=100, null=True, blank=True)
     monoblock = models.CharField(max_length=100, null=True, blank=True)
 
-    prefijo_celular = models.IntegerField(null=True, blank=True)
-    numero_celular = models.IntegerField(null=True, blank=True)
-    prefijo_telefono_fijo = models.IntegerField(null=True, blank=True)
-    numero_telefono_fijo = models.IntegerField(null=True, blank=True)
+    prefijo_celular = models.CharField(
+        null=True,
+        blank=True,
+        max_length=4,
+    )
+    numero_celular = models.CharField(
+        null=True,
+        blank=True,
+        max_length=12,
+    )
+    prefijo_telefono_fijo = models.CharField(
+        null=True,
+        blank=True,
+        max_length=4,
+    )
+    numero_telefono_fijo = models.CharField(
+        null=True,
+        blank=True,
+        max_length=12,
+    )
 
     correo_electronico = models.EmailField(max_length=150, null=True, blank=True)
 
@@ -459,10 +475,22 @@ class Beneficiario(models.Model):
     monoblock = models.CharField(max_length=100, null=True, blank=True)
 
     # Contacto
-    prefijo_celular = models.IntegerField(null=True, blank=True)
-    numero_celular = models.IntegerField(null=True, blank=True)
-    prefijo_telefono_fijo = models.IntegerField(null=True, blank=True)
-    numero_telefono_fijo = models.IntegerField(null=True, blank=True)
+    prefijo_celular = models.CharField(
+        null=True,
+        blank=True,
+        max_length=4,
+    )
+    numero_celular = models.CharField(
+        null=True,
+        blank=True,
+        max_length=12,
+    )
+    prefijo_telefono_fijo = models.CharField(
+        null=True,
+        blank=True,
+        max_length=4,
+    )
+    numero_telefono_fijo = models.CharField(null=True, blank=True, max_length=12)
     correo_electronico = models.EmailField(max_length=150, null=True, blank=True)
 
     # Académico
