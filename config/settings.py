@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     "rendicioncuentasfinal",
     "rendicioncuentasmensual",
     "centrodefamilia",
+    "celiaquia",
 ]
 
 # Middleware (orden CORS correcto)

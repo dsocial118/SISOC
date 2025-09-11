@@ -222,12 +222,11 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             logger.info(f"Validando relevamiento con datos: {list(attrs.keys())}")
             return super().validate(attrs)
         except Exception as e:
-            logger.error(f"Error en validación de relevamiento: {str(e)}")
-            logger.error(f"Datos que causaron el error: {attrs}")
+            logger.exception(f"Error en validación de relevamiento: {str(e)}")
             # Intentar identificar el campo problemático
             for field_name, field_value in attrs.items():
                 if isinstance(field_value, bool):
-                    logger.error(
+                    logger.exception(
                         f"Campo booleano encontrado: {field_name} = {field_value}"
                     )
             raise

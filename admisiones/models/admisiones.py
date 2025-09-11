@@ -307,7 +307,7 @@ class InformeTecnico(models.Model):
     IF_relevamiento_territorial = models.CharField(
         "IF de relevamiento territorial", max_length=255
     )
-    conclusiones = models.TextField("Conclusion informe técnico", null=True, blank=True)
+    conclusiones = models.TextField("Aplicación de Criterios", null=True, blank=True)
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
