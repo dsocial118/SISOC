@@ -123,6 +123,7 @@ class ArchivoAdmision(models.Model):
             ("validar", "A Validar"),
             ("A Validar Abogado", "A Validar Abogado"),
             ("Rectificar", "Rectificar"),
+            ("Aceptado", "Aceptado"),
         ],
         default="pendiente",
     )
