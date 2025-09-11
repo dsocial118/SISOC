@@ -393,7 +393,7 @@
                                                                         {% endif %}
                                                                     </td>
                                                                     <td id="gde-{{ doc.id }}">
-                                                                        {% if doc.estado == "Aceptado" and request.user.is_superuser or doc.estado == "Aceptado" and request.user|has_group:"Tecnico Comedor" %}
+                                                                        {% if doc.estado == "Aceptado" and (request.user.is_superuser or request.user|has_group:"Tecnico Comedor") %}
                                                                             <!-- Modo vista (por defecto) -->
                                                                             <div id="gde-display-{{ doc.id }}"
                                                                                  class="gde-display"
