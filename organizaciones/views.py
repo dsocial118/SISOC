@@ -41,7 +41,7 @@ class OrganizacionListView(ListView):
                     | Q(email__icontains=query)
                 )
                 .select_related()
-                .select_related("tipo_entidad", "subtipo_entidad", "tipo_organizacion")
+                .select_related("tipo_entidad", "subtipo_entidad")
                 .only(
                     "id",
                     "nombre",
@@ -50,14 +50,13 @@ class OrganizacionListView(ListView):
                     "email",
                     "tipo_entidad__nombre",
                     "subtipo_entidad__nombre",
-                    "tipo_organizacion__nombre",
                 )
             )
         else:
             # Para la vista inicial sin búsqueda, usar paginación eficiente
             queryset = (
                 Organizacion.objects.select_related(
-                    "tipo_entidad", "subtipo_entidad", "tipo_organizacion"
+                    "tipo_entidad", "subtipo_entidad"
                 )
                 .only(
                     "id",
@@ -67,7 +66,6 @@ class OrganizacionListView(ListView):
                     "email",
                     "tipo_entidad__nombre",
                     "subtipo_entidad__nombre",
-                    "tipo_organizacion__nombre",
                 )
                 .order_by("-id")
             )
@@ -85,19 +83,44 @@ class FirmanteCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        organizacion_pk = (
+            self.kwargs.get("organizacion_pk")
+            or self.kwargs.get("pk")
+            or self.request.GET.get("organizacion")
+            or self.request.POST.get("organizacion")
+        )
+
+        context["organizacion_pk"] = organizacion_pk
+        context["hidden_fields_send"] = [{"name": "organizacion_id", "value": organizacion_pk}]
+        # botones/breadcrumbs que usan las plantillas
+        context["back_button"] = {"url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}), "label": "Volver"}
+        context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
+        context["breadcrumb_items"] = []
         return context
 
     def form_valid(self, form):
-        if (
-            form.is_valid()
-        ):
-            self.object = form.save()
-            return HttpResponseRedirect(self.get_success_url())
-        else:
+        organizacion_pk = (
+            self.kwargs.get("organizacion_id")
+            or self.request.POST.get("organizacion_id")
+            or self.request.GET.get("organizacion_id")
+        )
+        if not organizacion_pk:
+            messages.error(self.request, "Falta el id de la organización.")
             return self.form_invalid(form)
+
+        # asignar FK y guardar
+        form.instance.organizacion_id = organizacion_pk
+        self.object = form.save()
+        if "guardar_otro" in self.request.POST:
+            return HttpResponseRedirect(self.get_success_url_add_new())
+        else:
+            return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+    
+    def get_success_url_add_new(self):
+        return reverse("firmante_crear", kwargs={"organizacion_pk": self.object.organizacion.pk})
     
 class Aval1CreateView(CreateView):
     model = Aval1
@@ -151,6 +174,7 @@ class OrganizacionCreateView(CreateView):
         return context
 
     def form_valid(self, form):
+        subtipo_entidad = form.cleaned_data.get("subtipo_entidad")
         if (
             form.is_valid()
         ):
@@ -161,12 +185,6 @@ class OrganizacionCreateView(CreateView):
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
-    def get_success_url_firmates(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
-    def get_success_url_avales1(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
-    def get_success_url_avales2(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
     
 class FirmanteUpdateView(UpdateView):
     model = Firmante
@@ -175,16 +193,34 @@ class FirmanteUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        organizacion_pk = (
+            self.kwargs.get("organizacion_pk")
+            or self.kwargs.get("pk")
+            or self.request.GET.get("organizacion")
+            or self.request.POST.get("organizacion")
+        )
+        context["organizacion_pk"] = organizacion_pk
+        context["hidden_fields_send"] = [{"name": "organizacion_id", "value": organizacion_pk}]
+        # botones/breadcrumbs que usan las plantillas
+        context["back_button"] = {"url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}), "label": "Volver"}
+        context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
+        context["breadcrumb_items"] = []
         return context
 
     def form_valid(self, form):
-        if (
-            form.is_valid()
-        ):
-            self.object = form.save()
-            return HttpResponseRedirect(self.get_success_url())
-        else:
+        organizacion_pk = (
+            self.kwargs.get("organizacion_id")
+            or self.request.POST.get("organizacion_id")
+            or self.request.GET.get("organizacion_id")
+        )
+        if not organizacion_pk:
+            messages.error(self.request, "Falta el id de la organización.")
             return self.form_invalid(form)
+
+        # asignar FK y guardar
+        form.instance.organizacion_id = organizacion_pk
+        self.object = form.save()
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
@@ -231,7 +267,7 @@ class Aval2UpdateView(UpdateView):
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
     
-    
+
 class OrganizacionUpdateView(UpdateView):
     model = Organizacion
     form_class = OrganizacionForm
@@ -254,15 +290,6 @@ class OrganizacionUpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
-    def get_success_url(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
-    def get_success_url_firmates(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
-    def get_success_url_avales1(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
-    def get_success_url_avales2(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
-
 
 class OrganizacionDetailView(DetailView):
     model = Organizacion
@@ -274,6 +301,47 @@ class OrganizacionDetailView(DetailView):
         context["firmantes"] = self.object.firmantes.select_related("rol")
         context["avales1"] = self.object.avales1.all()
         context["avales2"] = self.object.avales2.all()
+        context["table_headers"] = [
+            {"title": "Nombre"},
+            {"title": "Rol"},
+            {"title": "CUIT"},
+        ]
+
+        context["table_fields"] = [
+            {"name": "nombre"},
+            {"name": "rol"},
+            {"name": "cuit"},
+        ]
+
+        context["actions"] = [
+            {"url_name": "cdi_detalle", "label": "Ver", "type": "info"},
+            {"url_name": "cdi_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "cdi_eliminar", "label": "Eliminar", "type": "danger"},
+        ]
+
+        context["show_actions"] = True
+
+        context["data_items"] = [
+            {"label": "Nombre", "value": self.object.nombre},
+            {"label": "CUIT", "value": self.object.cuit},
+            {"label": "Teléfono", "value": self.object.telefono},
+            {"label": "Email", "value": self.object.email},
+            {"label": "Tipo de Entidad", "value": self.object.tipo_entidad.nombre if self.object.tipo_entidad else ""},
+            {"label": "Subtipo de Entidad", "value": self.object.subtipo_entidad.nombre if self.object.subtipo_entidad else ""},
+            {"label": "Domicilio", "value": self.object.domicilio},
+            {"label": "Localidad", "value": self.object.localidad},
+            {"label": "Provincia", "value": self.object.provincia},
+            {"label": "Partido", "value": self.object.partido},
+        ]
+
+        context["table_headers_avales"] = [
+            {"title": "Nombre"},
+            {"title": "CUIT"},
+        ]
+        context["table_fields_avales"] = [
+            {"name": "nombre"},
+            {"name": "cuit"},
+        ]
         return context
 
 
