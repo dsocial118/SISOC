@@ -37,51 +37,96 @@ function actualizarEstado(selectElement) {
 
         // Si el estado es Aceptado → solo texto verde
         if (nuevoEstado === "Aceptado") {
-            td.innerHTML = `<span class="ps-3 text-success">${nuevoEstado}</span>`;
+            td.innerHTML = '';
+            const span = document.createElement('span');
+            span.className = 'ps-3 text-success';
+            span.textContent = nuevoEstado;
+            td.appendChild(span);
             return;
         }
 
         // Si es Pendiente → solo texto plano
         if (nuevoEstado === "Pendiente") {
-            td.innerHTML = `<span class="ps-3">${nuevoEstado}</span>`;
+            td.innerHTML = '';
+            const span = document.createElement('span');
+            span.className = 'ps-3';
+            span.textContent = nuevoEstado;
+            td.appendChild(span);
             return;
         }
 
         // Si es "A Validar Abogado"
         if (nuevoEstado === "A Validar Abogado") {
             if (grupo === "Tecnico Comedor") {
-                td.innerHTML = `<span class="ps-3">${nuevoEstado}</span>`;
+                td.innerHTML = '';
+                const span = document.createElement('span');
+                span.className = 'ps-3';
+                span.textContent = nuevoEstado;
+                td.appendChild(span);
             } else if (grupo === "Abogado Dupla") {
-                td.innerHTML = `
-                    <select class="form-control"
-                            onchange="actualizarEstado(this)"
-                            data-admision-id="${admisionId}"
-                            data-documento-id="${documentoId}"
-                            data-url="${url}">
-                        <option selected>Elegir opcion</option>
-                        <option value="Aceptado">Aceptado</option>
-                        <option value="Rectificar">Rectificar</option>
-                    </select>
-                `;
+                td.innerHTML = '';
+                const select = document.createElement('select');
+                select.className = 'form-control';
+                select.addEventListener('change', function() { actualizarEstado(this); });
+                select.setAttribute('data-admision-id', admisionId);
+                select.setAttribute('data-documento-id', documentoId);
+                select.setAttribute('data-url', url);
+                
+                const option1 = document.createElement('option');
+                option1.textContent = 'Elegir opcion';
+                option1.selected = true;
+                select.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = 'Aceptado';
+                option2.textContent = 'Aceptado';
+                select.appendChild(option2);
+                
+                const option3 = document.createElement('option');
+                option3.value = 'Rectificar';
+                option3.textContent = 'Rectificar';
+                select.appendChild(option3);
+                
+                td.appendChild(select);
             }
             return;
         }
 
         // En cualquier otro caso: solo Tecnico Comedor ve el select
         if (grupo === "Tecnico Comedor") {
-            td.innerHTML = `
-                <select class="form-control"
-                        onchange="actualizarEstado(this)"
-                        data-admision-id="${admisionId}"
-                        data-documento-id="${documentoId}"
-                        data-url="${url}">
-                    <option value="validar" ${nuevoEstado === "validar" ? "selected" : ""}>A Validar</option>
-                    <option value="A Validar Abogado" ${nuevoEstado === "A Validar Abogado" ? "selected" : ""}>A Validar Abogado</option>
-                    <option value="Rectificar" ${nuevoEstado === "Rectificar" ? "selected" : ""}>Rectificar</option>
-                </select>
-            `;
+            td.innerHTML = '';
+            const select = document.createElement('select');
+            select.className = 'form-control';
+            select.addEventListener('change', function() { actualizarEstado(this); });
+            select.setAttribute('data-admision-id', admisionId);
+            select.setAttribute('data-documento-id', documentoId);
+            select.setAttribute('data-url', url);
+            
+            const option1 = document.createElement('option');
+            option1.value = 'validar';
+            option1.textContent = 'A Validar';
+            option1.selected = (nuevoEstado === "validar");
+            select.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = 'A Validar Abogado';
+            option2.textContent = 'A Validar Abogado';
+            option2.selected = (nuevoEstado === "A Validar Abogado");
+            select.appendChild(option2);
+            
+            const option3 = document.createElement('option');
+            option3.value = 'Rectificar';
+            option3.textContent = 'Rectificar';
+            option3.selected = (nuevoEstado === "Rectificar");
+            select.appendChild(option3);
+            
+            td.appendChild(select);
         } else {
-            td.innerHTML = `<span class="ps-3">${nuevoEstado}</span>`;
+            td.innerHTML = '';
+            const span = document.createElement('span');
+            span.className = 'ps-3';
+            span.textContent = nuevoEstado;
+            td.appendChild(span);
         }
     })
     .catch(error => {
@@ -187,16 +232,29 @@ function actualizarVistaGDE(documentoId, numeroGDE) {
         input.value = numeroGDE || '';
         
         // Actualizar el contenido de la vista
+        displayDiv.innerHTML = '';
         if (numeroGDE) {
-            displayDiv.innerHTML = `
-                <span class="text-success fw-bold">${numeroGDE}</span>
-                <i class="bi bi-pencil-square ms-2 text-muted" style="cursor: pointer;" title="Editar número GDE"></i>
-            `;
+            const span = document.createElement('span');
+            span.className = 'text-success fw-bold';
+            span.textContent = numeroGDE;
+            displayDiv.appendChild(span);
+            
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-pencil-square ms-2 text-muted';
+            icon.style.cursor = 'pointer';
+            icon.title = 'Editar número GDE';
+            displayDiv.appendChild(icon);
         } else {
-            displayDiv.innerHTML = `
-                <span class="text-muted">Sin número GDE</span>
-                <i class="bi bi-plus-circle ms-2 text-primary" style="cursor: pointer;" title="Agregar número GDE"></i>
-            `;
+            const span = document.createElement('span');
+            span.className = 'text-muted';
+            span.textContent = 'Sin número GDE';
+            displayDiv.appendChild(span);
+            
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-plus-circle ms-2 text-primary';
+            icon.style.cursor = 'pointer';
+            icon.title = 'Agregar número GDE';
+            displayDiv.appendChild(icon);
         }
     }
 }
