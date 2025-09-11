@@ -266,7 +266,29 @@ class Aval2UpdateView(UpdateView):
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+
+class FirmanteDeleteView(DeleteView):
+    model = Firmante
+    template_name = "firmante_confirm_delete.html"
+    context_object_name = "firmante"
     
+    def get_success_url(self):
+        return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+class Aval1DeleteView(DeleteView):
+    model = Aval1
+    template_name = "aval1_confirm_delete.html"
+    context_object_name = "aval1"
+    
+    def get_success_url(self):
+        return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+    
+class Aval2DeleteView(DeleteView):
+    model = Aval2
+    template_name = "aval2_confirm_delete.html"
+    context_object_name = "aval2"
+    
+    def get_success_url(self):
+        return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
 
 class OrganizacionUpdateView(UpdateView):
     model = Organizacion
@@ -314,9 +336,8 @@ class OrganizacionDetailView(DetailView):
         ]
 
         context["actions"] = [
-            {"url_name": "cdi_detalle", "label": "Ver", "type": "info"},
-            {"url_name": "cdi_editar", "label": "Editar", "type": "primary"},
-            {"url_name": "cdi_eliminar", "label": "Eliminar", "type": "danger"},
+            {"url_name": "firmante_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "firmante_eliminar", "label": "Eliminar", "type": "danger"},
         ]
 
         context["show_actions"] = True
@@ -338,9 +359,21 @@ class OrganizacionDetailView(DetailView):
             {"title": "Nombre"},
             {"title": "CUIT"},
         ]
+        context["actions_firmantes"] = [
+            {"url_name": "firmante_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "firmante_eliminar", "label": "Eliminar", "type": "danger"},
+        ]
         context["table_fields_avales"] = [
             {"name": "nombre"},
             {"name": "cuit"},
+        ]
+        context["actions_avales1"] = [
+            {"url_name": "aval1_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "aval1_eliminar", "label": "Eliminar", "type": "danger"},
+        ]
+        context["actions_avales2"] = [
+            {"url_name": "aval2_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "aval2_eliminar", "label": "Eliminar", "type": "danger"},
         ]
         return context
 
