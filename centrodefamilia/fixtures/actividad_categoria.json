@@ -345,5 +345,15 @@
       "estado": 1,
       "observaciones": ""
     }
+  },
+  {
+    "model": "ciudadanos.programa",
+    "pk": 3,
+    "fields": {
+      "subsecretaria": 1,
+      "nombre": "Celiaquia",
+      "estado": 1,
+      "observaciones": ""
+    }
   }
 ]
