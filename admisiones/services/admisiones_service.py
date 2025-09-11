@@ -491,6 +491,30 @@ class AdmisionService:
 
     @staticmethod
     def actualizar_numero_gde_ajax(request):
+        """
+        Actualiza el número GDE de un documento de admisión vía AJAX.
+        
+        Esta función maneja las peticiones AJAX para actualizar el campo numero_gde 
+        de un documento (ArchivoAdmision). Incluye validaciones de:
+        - Estado del documento (debe estar "Aceptado")
+        - Permisos del usuario (superuser o técnico de la dupla asignada)
+        
+        Args:
+            request: HttpRequest con datos POST que debe contener:
+                - documento_id: ID del ArchivoAdmision a actualizar
+                - numero_gde: Nuevo valor para el número GDE (opcional)
+        
+        Returns:
+            dict: Respuesta JSON con:
+                - success (bool): True si la operación fue exitosa
+                - numero_gde (str|None): Valor actualizado (si success=True)
+                - valor_anterior (str|None): Valor previo (si success=True)
+                - error (str): Mensaje de error (si success=False)
+        
+        Raises:
+            Http404: Si el documento no existe
+            Exception: Errores inesperados loggeados automáticamente
+        """
         try:
             documento_id = request.POST.get("documento_id")
             numero_gde = request.POST.get("numero_gde", "").strip()
