@@ -358,6 +358,19 @@
                     </tr>
                 </tbody>
             </table>
+            {% if informe.conclusiones %}
+                <br />
+                <table>
+                    <tbody>
+                        <tr>
+                            <th colspan="2" style="width: 100%;">Aplicación de Criterios</th>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="padding: 10px;">{{ informe.conclusiones|linebreaks }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            {% endif %}
             <p>
                 Los criterios técnicos y programáticos establecidos para evaluar la solicitud de cada comedor implican una definición de la cantidad de prestaciones a partir de la comparación entre la información relevada en la visita en territorio y la cantidad solicitada para cada día y para cada tipo de prestación. Se considera como cantidad de prestaciones relevada en territorio a la suma de las prestaciones brindadas en la actualidad más las personas en lista de espera. En esa línea, los criterios se enmarcan en los siguientes parámetros:
             </p>
