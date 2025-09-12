@@ -131,3 +131,37 @@ border-left-color: #fb4733 !important;
 }
 
 
+/* Celiaquia cupo tables */
+.card-header.bg-dark {
+  color: #fff;
+}
+
+.filter-input {
+  max-width: 280px;
+}
+
+.filter-input-sm {
+  max-width: 220px;
+}
+
+.col-dni {
+  width: 80px;
+}
+
+.col-dni-sm {
+  width: 90px;
+}
+
+.col-actions {
+  width: 180px;
+}
+
+.col-fecha {
+  width: 120px;
+}
+
+.col-motivo {
+  max-width: 280px;
+}
+
+

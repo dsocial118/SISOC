@@ -123,6 +123,7 @@ class ArchivoAdmision(models.Model):
             ("validar", "A Validar"),
             ("A Validar Abogado", "A Validar Abogado"),
             ("Rectificar", "Rectificar"),
+            ("Aceptado", "Aceptado"),
         ],
         default="pendiente",
     )
@@ -131,6 +132,13 @@ class ArchivoAdmision(models.Model):
         blank=True, null=True, verbose_name="Observaciones"
     )
     num_if = models.CharField(max_length=100, blank=True, null=True)
+    numero_gde = models.CharField(
+        "Número de GDE",
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Número de expediente GDE asignado por el técnico después de la carga en sistema externo",
+    )
     creado = models.DateField(auto_now_add=True, null=True, blank=True)
     modificado = models.DateField(auto_now=True, null=True, blank=True)
 
@@ -307,7 +315,7 @@ class InformeTecnico(models.Model):
     IF_relevamiento_territorial = models.CharField(
         "IF de relevamiento territorial", max_length=255
     )
-    conclusiones = models.TextField("Conclusion informe técnico", null=True, blank=True)
+    conclusiones = models.TextField("Aplicación de Criterios", null=True, blank=True)
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
@@ -348,6 +356,7 @@ class Anexo(models.Model):
         blank=True,
     )
     domicilio = models.CharField("Domicilio", max_length=150, null=True, blank=True)
+    barrio = models.CharField("Barrio", max_length=50, null=True, blank=True)
     mail = models.EmailField("Correo Electrónico", null=True, blank=True)
     responsable_apellido = models.CharField(
         "Apellido", max_length=150, null=True, blank=True

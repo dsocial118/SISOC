@@ -67,6 +67,29 @@ def actualizar_estado_archivo(request):
         )
 
 
+@require_POST
+def actualizar_numero_gde_archivo(request):
+    resultado = AdmisionService.actualizar_numero_gde_ajax(request)
+
+    if resultado.get("success"):
+        return JsonResponse(
+            {
+                "success": True,
+                "numero_gde": resultado.get("numero_gde"),
+                "valor_anterior": resultado.get("valor_anterior"),
+            }
+        )
+    else:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": resultado.get("error", "Error desconocido"),
+                "valor_anterior": resultado.get("valor_anterior"),
+            },
+            status=400,
+        )
+
+
 class AdmisionesTecnicosListView(ListView):
     model = Admision
     template_name = "admisiones_tecnicos_list.html"
