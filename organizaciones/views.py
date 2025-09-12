@@ -96,6 +96,7 @@ class FirmanteCreateView(CreateView):
         context["back_button"] = {"url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}), "label": "Volver"}
         context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
         context["breadcrumb_items"] = []
+        context["guardar_otro_send"] = True
         return context
 
     def form_valid(self, form):
@@ -129,19 +130,49 @@ class Aval1CreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        return context
+        organizacion_pk = (
+            self.kwargs.get("organizacion_pk")
+            or self.kwargs.get("pk")
+            or self.request.GET.get("organizacion")
+            or self.request.POST.get("organizacion")
+        )
 
+        context["organizacion_pk"] = organizacion_pk
+        context["hidden_fields_send"] = [{"name": "organizacion_id", "value": organizacion_pk}]
+        # botones/breadcrumbs que usan las plantillas
+        context["back_button"] = {"url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}), "label": "Volver"}
+        context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
+        context["breadcrumb_items"] = []
+        context["guardar_otro_send"] = True
+        return context
+    
     def form_valid(self, form):
         if (
             form.is_valid()
         ):
+            organizacion_pk = (
+                self.kwargs.get("organizacion_id")
+                or self.request.POST.get("organizacion_id")
+                or self.request.GET.get("organizacion_id")
+            )
+            if not organizacion_pk:
+                messages.error(self.request, "Falta el id de la organización.")
+                return self.form_invalid(form)
+            
+            form.instance.organizacion_id = organizacion_pk
             self.object = form.save()
-            return HttpResponseRedirect(self.get_success_url())
+            if "guardar_otro" in self.request.POST:
+                return HttpResponseRedirect(self.get_success_url_add_new())
+            else:
+                return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(form)
 
     def get_success_url(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+        return reverse("organizacion_detalle", kwargs={"organizacion_pk": self.object.organizacion.pk})
+    
+    def get_success_url_add_new(self):
+        return reverse("firmante_crear", kwargs={"organizacion_pk": self.object.organizacion.pk})
     
 class Aval2CreateView(CreateView):
     model = Aval2
@@ -150,19 +181,49 @@ class Aval2CreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        return context
+        organizacion_pk = (
+            self.kwargs.get("organizacion_pk")
+            or self.kwargs.get("pk")
+            or self.request.GET.get("organizacion")
+            or self.request.POST.get("organizacion")
+        )
 
+        context["organizacion_pk"] = organizacion_pk
+        context["hidden_fields_send"] = [{"name": "organizacion_id", "value": organizacion_pk}]
+        # botones/breadcrumbs que usan las plantillas
+        context["back_button"] = {"url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}), "label": "Volver"}
+        context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
+        context["breadcrumb_items"] = []
+        context["guardar_otro_send"] = True
+        return context
+    
     def form_valid(self, form):
         if (
             form.is_valid()
         ):
+            organizacion_pk = (
+                self.kwargs.get("organizacion_id")
+                or self.request.POST.get("organizacion_id")
+                or self.request.GET.get("organizacion_id")
+            )
+            if not organizacion_pk:
+                messages.error(self.request, "Falta el id de la organización.")
+                return self.form_invalid(form)
+            
+            form.instance.organizacion_id = organizacion_pk
             self.object = form.save()
-            return HttpResponseRedirect(self.get_success_url())
+            if "guardar_otro" in self.request.POST:
+                return HttpResponseRedirect(self.get_success_url_add_new())
+            else:
+                return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(form)
 
     def get_success_url(self):
-        return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+        return reverse("organizacion_detalle", kwargs={"organizacion_pk": self.object.organizacion.pk})
+    
+    def get_success_url_add_new(self):
+        return reverse("firmante_crear", kwargs={"organizacion_pk": self.object.organizacion.pk})
     
 class OrganizacionCreateView(CreateView):
     model = Organizacion
@@ -193,34 +254,18 @@ class FirmanteUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        organizacion_pk = (
-            self.kwargs.get("organizacion_pk")
-            or self.kwargs.get("pk")
-            or self.request.GET.get("organizacion")
-            or self.request.POST.get("organizacion")
-        )
-        context["organizacion_pk"] = organizacion_pk
-        context["hidden_fields_send"] = [{"name": "organizacion_id", "value": organizacion_pk}]
-        # botones/breadcrumbs que usan las plantillas
-        context["back_button"] = {"url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}), "label": "Volver"}
-        context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
-        context["breadcrumb_items"] = []
+        context["guardar_otro_send"] = False
         return context
 
     def form_valid(self, form):
-        organizacion_pk = (
-            self.kwargs.get("organizacion_id")
-            or self.request.POST.get("organizacion_id")
-            or self.request.GET.get("organizacion_id")
-        )
-        if not organizacion_pk:
-            messages.error(self.request, "Falta el id de la organización.")
+        if (
+            form.is_valid()
+        ):
+            self.object = form.save()
+            return HttpResponseRedirect(self.get_success_url())
+        else:
             return self.form_invalid(form)
-
-        # asignar FK y guardar
-        form.instance.organizacion_id = organizacion_pk
-        self.object = form.save()
-        return HttpResponseRedirect(self.get_success_url())
+        
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
@@ -232,6 +277,7 @@ class Aval1UpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["guardar_otro_send"] = False
         return context
 
     def form_valid(self, form):
@@ -253,6 +299,7 @@ class Aval2UpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["guardar_otro_send"] = False
         return context
 
     def form_valid(self, form):
