@@ -20,10 +20,6 @@ from organizaciones.models import (
     Aval2,
     RolFirmante,
 )
-import logging
-
-logger = logging.getLogger("django")
-
 
 class OrganizacionListView(ListView):
     model = Organizacion
@@ -316,7 +312,6 @@ class OrganizacionCreateView(CreateView):
         return context
 
     def form_valid(self, form):
-        subtipo_entidad = form.cleaned_data.get("subtipo_entidad")
         if form.is_valid():
             self.object = form.save()
             return HttpResponseRedirect(self.get_success_url())
@@ -496,8 +491,6 @@ class OrganizacionUpdateView(UpdateView):
         return context
 
     def form_valid(self, form):
-        context = self.get_context_data()
-
         if form.is_valid():
             self.object = form.save()
             return HttpResponseRedirect(self.get_success_url())
