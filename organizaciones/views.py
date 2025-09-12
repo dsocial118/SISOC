@@ -17,7 +17,7 @@ from organizaciones.forms import (
     Aval1Form, 
     Aval2Form
 )
-from organizaciones.models import Organizacion, SubtipoEntidad, Firmante, Aval1, Aval2
+from organizaciones.models import Organizacion, SubtipoEntidad, Firmante, Aval1, Aval2, RolFirmante
 import logging
 
 logger = logging.getLogger("django")
@@ -98,7 +98,53 @@ class FirmanteCreateView(CreateView):
         context["breadcrumb_items"] = []
         context["guardar_otro_send"] = True
         return context
+    
+    def get_allowed_roles_queryset(self, organizacion):
+        """
+        Devuelve queryset de RolFirmante filtrado según el tipo de entidad de la organización.
+        """
+        if not organizacion or not organizacion.tipo_entidad:
+            return RolFirmante.objects.none()
 
+        tipo = organizacion.tipo_entidad.nombre.strip().lower()
+        mapping = {
+            "personería jurídica": ["Presidente", "Tesorero", "Secretario"],
+            "personería jurídica eclesiástica": ["Obispo", "Apoderado 1", "Apoderado 2"],
+            "asociación de hecho": ["Firmante 1", "Firmante 2", "Firmante 3"],
+        }
+
+        # buscar nombres permitidos según el tipo (case-insensitive)
+        allowed = []
+        for key, names in mapping.items():
+            if key == tipo:
+                allowed = names
+                break
+
+        if not allowed:
+            # fallback: mostrar todos o ninguno según se prefiera; aquí mostramos todos por compatibilidad
+            return RolFirmante.objects.all()
+        return RolFirmante.objects.filter(nombre__in=allowed)
+    
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # obtener la organización (puede venir por kwargs o GET/POST)
+        organizacion_pk = (
+            self.kwargs.get("organizacion_pk")
+            or self.kwargs.get("pk")
+            or self.request.GET.get("organizacion")
+            or self.request.POST.get("organizacion")
+        )
+        organizacion = None
+        if organizacion_pk:
+            try:
+                organizacion = Organizacion.objects.select_related("tipo_entidad").get(pk=organizacion_pk)
+            except Organizacion.DoesNotExist:
+                organizacion = None
+
+        form.fields["rol"].queryset = self.get_allowed_roles_queryset(organizacion)
+        return form
+    
     def form_valid(self, form):
         organizacion_pk = (
             self.kwargs.get("organizacion_id")
@@ -448,6 +494,11 @@ class OrganizacionDetailView(DetailView):
             {"url_name": "aval2_editar", "label": "Editar", "type": "primary"},
             {"url_name": "aval2_eliminar", "label": "Eliminar", "type": "danger"},
         ]
+        if self.object.tipo_entidad.nombre == "Asociación de hecho":
+            context["avales"] = True
+        else:
+            context["avales"] = False
+        
         return context
 
 
