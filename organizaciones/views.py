@@ -318,14 +318,32 @@ class FirmanteDeleteView(DeleteView):
     model = Firmante
     template_name = "firmante_confirm_delete.html"
     context_object_name = "firmante"
-    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {"url": reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}), "label": "Detalle de Organización"},
+            {"url": "", "label": "Confirmar Eliminación"},
+        ]
+        context["delete_message"] = f"¿Está seguro que desea eliminar al firmante {self.object.nombre}"
+        context["cancel_url"] = reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+        return context
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+    
 class Aval1DeleteView(DeleteView):
     model = Aval1
     template_name = "aval1_confirm_delete.html"
     context_object_name = "aval1"
-    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {"url": reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}), "label": "Detalle de Organización"},
+            {"url": "", "label": "Confirmar Eliminación"},
+        ]
+        context["delete_message"] = f"¿Está seguro que desea eliminar el aval {self.object.nombre}"
+        context["cancel_url"] = reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+        return context
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
     
@@ -333,7 +351,15 @@ class Aval2DeleteView(DeleteView):
     model = Aval2
     template_name = "aval2_confirm_delete.html"
     context_object_name = "aval2"
-    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {"url": reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}), "label": "Detalle de Organización"},
+            {"url": "", "label": "Confirmar Eliminación"},
+        ]
+        context["delete_message"] = f"¿Está seguro que desea eliminar el aval {self.object.nombre}"
+        context["cancel_url"] = reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
+        return context
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.organizacion.pk})
 
