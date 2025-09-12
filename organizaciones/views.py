@@ -21,6 +21,7 @@ from organizaciones.models import (
     RolFirmante,
 )
 
+
 class OrganizacionListView(ListView):
     model = Organizacion
     template_name = "organizacion_list.html"
