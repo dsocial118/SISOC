@@ -1,52 +1,136 @@
 import csv
+import sys
 from django.core.management.base import BaseCommand
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError as CoreValidationError
+from django.forms import ValidationError as FormsValidationError
 from django.utils import timezone
 from relevamientos.models import Relevamiento, Comedor
 
 
 class Command(BaseCommand):
-    help = "Importa Relevamiento desde CSV, respetando signals y validaciones."
+    help = (
+        "Importa relevamientos desde CSV con columnas: 'Nombre y apellido', "
+        "'id destino' y 'id externo'. Respeta signals y validaciones."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument("csv_path", type=str, help="Ruta al archivo CSV")
 
     def handle(self, *args, **options):
         path = options["csv_path"]
-        with open(path, newline="", encoding="utf-8") as f:
+        # Permite campos extremadamente grandes en CSV (archivos "de cualquier tamaño")
+        try:
+            csv.field_size_limit(sys.maxsize)
+        except (OverflowError, ValueError):
+            # Fallback conservador si sys.maxsize no es aceptado en la plataforma
+            csv.field_size_limit(10 * 1024 * 1024)
+
+        with open(path, newline="", encoding="utf-8-sig") as f:
             sample = f.read(2048)
             f.seek(0)
-            # Detecta coma o punto y coma
-            dialect = csv.Sniffer().sniff(sample, delimiters=",;")
-            reader = csv.DictReader(f, dialect=dialect)
+            # Detecta coma o punto y coma con fallback robusto
+            try:
+                dialect = csv.Sniffer().sniff(sample, delimiters=",;")
+                reader = csv.DictReader(f, dialect=dialect)
+            except csv.Error:
+                reader = csv.DictReader(f, delimiter=",")
 
-            created = errors = 0
+            created_ok = 0
+            skipped_active = 0
+            other_errors = 0
+
             for row in reader:
-                uid = row.get("ID Gestionar")
-                nombre = row.get("Nombre Gestionar")
-                comedor_id = row.get("ID Comedor")
-                try:
-                    comedor = Comedor.objects.get(pk=comedor_id)
-                    rv = Relevamiento(
-                        territorial_uid=uid,
-                        territorial_nombre=nombre,
-                        comedor=comedor,
-                        fecha_visita=timezone.now(),
-                        estado="Visita pendiente",
+                # Normaliza headers para ser tolerante con mayúsculas/minúsculas
+                row_norm = {
+                    (k or "").strip().lower(): (v or "").strip() for k, v in row.items()
+                }
+
+                nombre = row_norm.get("nombre y apellido")
+                uid = row_norm.get("id destino")
+                comedor_str = row_norm.get("id externo")
+
+                if not nombre or not uid or not comedor_str:
+                    self.stderr.write(
+                        f"[Fila {reader.line_num}] Faltan columnas requeridas (Nombre y apellido, id destino, id externo)."
                     )
-                    rv.save()  # dispara signals y tu lógica de save()
-                    created += 1
+                    other_errors += 1
+                    continue
+
+                try:
+                    id_externo = int(comedor_str) + 100000  # Ajuste al ID externo
+                except ValueError:
+                    self.stderr.write(
+                        f"[Fila {reader.line_num}] id externo inválido: '{comedor_str}'. Debe ser un entero (campo id_externo de Comedor)."
+                    )
+                    other_errors += 1
+                    continue
+
+                try:
+                    comedor = Comedor.objects.get(id_externo=id_externo)
                 except Comedor.DoesNotExist:
                     self.stderr.write(
-                        f"[Fila {reader.line_num}] Comedor {comedor_id} no existe."
+                        f"[Fila {reader.line_num}] Comedor con id_externo={id_externo} no existe."
                     )
-                    errors += 1
-                except ValidationError as e:
-                    self.stderr.write(f"[Fila {reader.line_num}] Error: {e}")
-                    errors += 1
+                    other_errors += 1
+                    continue
+                except Comedor.MultipleObjectsReturned:
+                    self.stderr.write(
+                        f"[Fila {reader.line_num}] Existen múltiples comedores con id_externo={id_externo}."
+                    )
+                    other_errors += 1
+                    continue
+
+                # Construye el relevamiento en estado activo y valida duplicados activos
+                rv = Relevamiento(
+                    territorial_uid=uid,
+                    territorial_nombre=nombre,
+                    comedor=comedor,
+                    fecha_visita=timezone.now(),
+                    estado="Visita pendiente",
+                )
+
+                try:
+                    # Validación explícita para clasificar correctamente los saltos por activo
+                    rv.validate_relevamientos_activos()
+                except (CoreValidationError, FormsValidationError) as e:
+                    msg = str(e)
+                    if "Ya existe un relevamiento activo" in msg:
+                        self.stderr.write(
+                            f"[Fila {reader.line_num}] Omitido: ya existe relevamiento activo para el comedor con id_externo {id_externo}."
+                        )
+                        skipped_active += 1
+                        continue
+                    # Cualquier otra validación se trata como otro error
+                    self.stderr.write(
+                        f"[Fila {reader.line_num}] Error de validación: {e}"
+                    )
+                    other_errors += 1
+                    continue
+
+                try:
+                    rv.save()  # dispara signals y validaciones del modelo
+                    created_ok += 1
+                except (CoreValidationError, FormsValidationError) as e:
+                    msg = str(e)
+                    if "Ya existe un relevamiento activo" in msg:
+                        self.stderr.write(
+                            f"[Fila {reader.line_num}] Omitido: ya existe relevamiento activo para el comedor con id_externo {id_externo}."
+                        )
+                        skipped_active += 1
+                    else:
+                        self.stderr.write(
+                            f"[Fila {reader.line_num}] Error al crear relevamiento: {e}"
+                        )
+                        other_errors += 1
+                except Exception as e:  # pylint: disable=broad-except
+                    self.stderr.write(f"[Fila {reader.line_num}] Error inesperado: {e}")
+                    other_errors += 1
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Relevamientos creados: {created}. Errores: {errors}"
+                    "Importación finalizada. "
+                    f"Creados: {created_ok}. "
+                    f"Omitidos por activo: {skipped_active}. "
+                    f"Errores: {other_errors}."
                 )
             )
