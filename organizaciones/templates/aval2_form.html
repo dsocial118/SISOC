@@ -7,7 +7,7 @@
 {% endblock %}
 {% block content %}
     {% include 'components/action_buttons.html' with back_button=back_button buttons=action_buttons button_group=True %}
-    {% include 'components/form_card.html' with title="Datos de Avales" hidden_fields=hidden_fields_send gguardar_otro=guardar_otro_send %}
+    {% include 'components/form_card.html' with title="Datos de Avales" hidden_fields=hidden_fields_send guardar_otro=guardar_otro_send %}
 {% endblock %}
 {% block customJS %}
     <script>
