@@ -309,9 +309,7 @@ class AdmisionService:
                         "error": "Sin permisos para modificar esta admisión.",
                     }
 
-            archivo = get_object_or_404(
-                ArchivoAdmision, admision_id=admision_id, id=documento_id
-            )
+            archivo = get_object_or_404(ArchivoAdmision, id=documento_id)
 
             exito = AdmisionService.update_estado_archivo(archivo, estado)
 
