@@ -147,6 +147,41 @@ class Command(BaseCommand):
                     "is_superuser": False,
                     "grupos": ["ReferenteCentro", "Ciudadanos"],
                 },
+                {
+                    "username": "TecnicoCeliaquia",
+                    "email": "natashabraga@example.com",
+                    "password": "1",
+                    "is_superuser": False,
+                    "grupos": ["TecnicoCeliaquia", "Ciudadanos"],
+                },
+                {
+                    "username": "TecnicoCeliaquia2",
+                    "email": "natashabraga@example.com",
+                    "password": "1",
+                    "is_superuser": False,
+                    "grupos": ["TecnicoCeliaquia", "Ciudadanos"],
+                },
+                {
+                    "username": "TecnicoCeliaquia3",
+                    "email": "natashabraga@example.com",
+                    "password": "1",
+                    "is_superuser": False,
+                    "grupos": ["TecnicoCeliaquia", "Ciudadanos"],
+                },
+                {
+                    "username": "CoordinadorCeliaquia",
+                    "email": "natashabraga@example.com",
+                    "password": "1",
+                    "is_superuser": False,
+                    "grupos": ["CoordinadorCeliaquia", "Ciudadanos"],
+                },
+                {
+                    "username": "ProvinciaCeliaquia",
+                    "email": "natashabraga@example.com",
+                    "password": "1",
+                    "is_superuser": False,
+                    "grupos": ["ProvinciaCeliaquia", "Ciudadanos"],
+                },
             ]
 
             for conf in usuarios:
