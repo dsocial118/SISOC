@@ -39,6 +39,75 @@ class Command(BaseCommand):
             skipped_active = 0
             other_errors = 0
 
+            batch_size = int(options.get("batch_size") or 200)
+            buffer: list[dict] = []
+
+            def process_batch(rows: list[dict]):
+                nonlocal created_ok, skipped_active, other_errors
+                if not rows:
+                    return
+
+                # Fetch comedores in one query
+                ids = [r["comedor_id"] for r in rows]
+                comedores = Comedor.objects.filter(id__in=ids)
+                comedores_map = {c.id: c for c in comedores}
+
+                # Precompute active relevamientos per comedor
+                active_ids = set(
+                    Relevamiento.objects.filter(
+                        comedor_id__in=list(comedores_map.keys()),
+                        estado__in=["Pendiente", "Visita pendiente"],
+                    ).values_list("comedor_id", flat=True)
+                )
+
+                for r in rows:
+                    line = r["line"]
+                    nombre = r["nombre"]
+                    uid = r["uid"]
+                    comedor_id = r["comedor_id"]
+
+                    comedor = comedores_map.get(comedor_id)
+                    if not comedor:
+                        self.stderr.write(
+                            f"[Fila {line}] Comedor con comedor_id={comedor_id} no existe."
+                        )
+                        other_errors += 1
+                        continue
+
+                    if comedor_id in active_ids:
+                        self.stderr.write(
+                            f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con comedor_id {comedor_id}."
+                        )
+                        skipped_active += 1
+                        continue
+
+                    rv = Relevamiento(
+                        territorial_uid=uid,
+                        territorial_nombre=nombre,
+                        comedor=comedor,
+                        fecha_visita=timezone.now(),
+                        estado="Visita pendiente",
+                    )
+
+                    try:
+                        rv.save()  # Dispara signals y validaciones del modelo
+                        created_ok += 1
+                    except (CoreValidationError, FormsValidationError) as e:
+                        msg = str(e)
+                        if "Ya existe un relevamiento activo" in msg:
+                            self.stderr.write(
+                                f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con comedor_id {comedor_id}."
+                            )
+                            skipped_active += 1
+                        else:
+                            self.stderr.write(
+                                f"[Fila {line}] Error al crear relevamiento: {e}"
+                            )
+                            other_errors += 1
+                    except Exception as e:  # pylint: disable=broad-except
+                        self.stderr.write(f"[Fila {line}] Error inesperado: {e}")
+                        other_errors += 1
+
             for row in reader:
                 # Normaliza headers para ser tolerante con mayúsculas/minúsculas
                 row_norm = {
@@ -65,66 +134,23 @@ class Command(BaseCommand):
                     other_errors += 1
                     continue
 
-                try:
-                    comedor = Comedor.objects.get(id=comedor_id)
-                except Comedor.DoesNotExist:
-                    self.stderr.write(
-                        f"[Fila {reader.line_num}] Comedor con comedor_id={comedor_id} no existe."
-                    )
-                    other_errors += 1
-                    continue
-                except Comedor.MultipleObjectsReturned:
-                    self.stderr.write(
-                        f"[Fila {reader.line_num}] Existen múltiples comedores con comedor_id={comedor_id}."
-                    )
-                    other_errors += 1
-                    continue
-
-                # Construye el relevamiento en estado activo y valida duplicados activos
-                rv = Relevamiento(
-                    territorial_uid=uid,
-                    territorial_nombre=nombre,
-                    comedor=comedor,
-                    fecha_visita=timezone.now(),
-                    estado="Visita pendiente",
+                buffer.append(
+                    {
+                        "line": reader.line_num,
+                        "nombre": nombre,
+                        "uid": uid,
+                        "comedor_id": comedor_id,
+                    }
                 )
 
-                try:
-                    # Validación explícita para clasificar correctamente los saltos por activo
-                    rv.validate_relevamientos_activos()
-                except (CoreValidationError, FormsValidationError) as e:
-                    msg = str(e)
-                    if "Ya existe un relevamiento activo" in msg:
-                        self.stderr.write(
-                            f"[Fila {reader.line_num}] Omitido: ya existe relevamiento activo para el comedor con comedor_id {comedor_id}."
-                        )
-                        skipped_active += 1
-                        continue
-                    # Cualquier otra validación se trata como otro error
-                    self.stderr.write(
-                        f"[Fila {reader.line_num}] Error de validación: {e}"
-                    )
-                    other_errors += 1
-                    continue
+                if len(buffer) >= batch_size:
+                    process_batch(buffer)
+                    buffer.clear()
 
-                try:
-                    rv.save()  # dispara signals y validaciones del modelo
-                    created_ok += 1
-                except (CoreValidationError, FormsValidationError) as e:
-                    msg = str(e)
-                    if "Ya existe un relevamiento activo" in msg:
-                        self.stderr.write(
-                            f"[Fila {reader.line_num}] Omitido: ya existe relevamiento activo para el comedor con comedor_id {comedor_id}."
-                        )
-                        skipped_active += 1
-                    else:
-                        self.stderr.write(
-                            f"[Fila {reader.line_num}] Error al crear relevamiento: {e}"
-                        )
-                        other_errors += 1
-                except Exception as e:  # pylint: disable=broad-except
-                    self.stderr.write(f"[Fila {reader.line_num}] Error inesperado: {e}")
-                    other_errors += 1
+            # Procesar remanente
+            if buffer:
+                process_batch(buffer)
+                buffer.clear()
 
             self.stdout.write(
                 self.style.SUCCESS(
