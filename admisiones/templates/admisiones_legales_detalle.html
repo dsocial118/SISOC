@@ -87,14 +87,14 @@ crispy_forms_tags %}
                         data-bs-target="#modalDocumentoExpediente">Disposición</button>
             {% elif admision.estado_legales == "Disposición Generada" %}
                 {% comment
-                    %}<button type="button"
+                                    %}<button type="button"
         class="btn btn-primary mr-1"
         data-bs-toggle="modal"
         data-bs-tipo="Firma Convenio"
         data-bs-label="Cargue el IF del Convenio"
         data-bs-target="#modalDocumentoExpediente">
-                      Firma Convenio
-                </button>
+                                      Firma Convenio
+                            </button>
         {% elif admision.estado_legales == "Convenio Firmado" %}{% endcomment %}
             <button type="button"
                     class="btn btn-primary mr-1"
