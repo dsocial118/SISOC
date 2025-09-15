@@ -1,0 +1,88 @@
+{% extends "includes/main.html" %}
+{% block title %}Expediente de Pago #{{ pago.id }} — {{ pago.provincia }}{% endblock %}
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">Pago — {{ pago.provincia }} — {{ pago.periodo }}</h4>
+        <a href="{% url 'cupo_provincia_detail' pago.provincia.id %}"
+           class="btn btn-outline-secondary btn-sm">← Volver</a>
+    </div>
+    <div class="card mb-3">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Estado</dt>
+                <dd class="col-sm-9">
+                    {{ pago.estado }}
+                </dd>
+                <dt class="col-sm-3">Candidatos</dt>
+                <dd class="col-sm-9">
+                    {{ pago.total_candidatos }}
+                </dd>
+                <dt class="col-sm-3">Validados</dt>
+                <dd class="col-sm-9">
+                    {{ pago.total_validados }}
+                </dd>
+                <dt class="col-sm-3">Excluidos</dt>
+                <dd class="col-sm-9">
+                    {{ pago.total_excluidos }}
+                </dd>
+                <dt class="col-sm-3">Archivo de envío</dt>
+                <dd class="col-sm-9">
+                    {% if pago.archivo_envio %}
+                        <a class="btn btn-sm btn-outline-primary"
+                           href="{% url 'pago_expediente_export' pago.id %}">Descargar Excel</a>
+                    {% else %}
+                        <span class="text-muted">No generado</span>
+                    {% endif %}
+                    <a class="btn btn-sm btn-success"
+                       href="{% url 'pago_nomina_export_actual' pago.id %}">Exportar nómina</a>
+                </dd>
+            </dl>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">Subir respuesta de Sintys</div>
+        <div class="card-body">
+            <form action="{% url 'pago_expediente_detail' pago.id %}"
+                  method="post"
+                  enctype="multipart/form-data"
+                  class="row g-2">
+                {% csrf_token %}
+                <div class="col-md-8">{{ form.archivo }}</div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-primary">Procesar respuesta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% if pago.nomina.all %}
+        <div class="card mt-3">
+            <div class="card-header">Nómina validada</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>DNI</th>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
+                                <th>Estado</th>
+                                <th>Obs.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in pago.nomina.all %}
+                                <tr>
+                                    <td>{{ r.documento }}</td>
+                                    <td>{{ r.nombre }}</td>
+                                    <td>{{ r.apellido }}</td>
+                                    <td>{{ r.estado }}</td>
+                                    <td>{{ r.observacion }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
