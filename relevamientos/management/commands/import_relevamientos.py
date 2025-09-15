@@ -57,25 +57,25 @@ class Command(BaseCommand):
                     continue
 
                 try:
-                    id_externo = int(comedor_str) + 100000  # Ajuste al ID externo
+                    comedor_id = int(comedor_str) + 100000  # Ajuste al ID externo
                 except ValueError:
                     self.stderr.write(
-                        f"[Fila {reader.line_num}] id externo inválido: '{comedor_str}'. Debe ser un entero (campo id_externo de Comedor)."
+                        f"[Fila {reader.line_num}] id externo inválido: '{comedor_str}'. Debe ser un entero (campo comedor_id de Comedor)."
                     )
                     other_errors += 1
                     continue
 
                 try:
-                    comedor = Comedor.objects.get(id_externo=id_externo)
+                    comedor = Comedor.objects.get(comedor_id=comedor_id)
                 except Comedor.DoesNotExist:
                     self.stderr.write(
-                        f"[Fila {reader.line_num}] Comedor con id_externo={id_externo} no existe."
+                        f"[Fila {reader.line_num}] Comedor con comedor_id={comedor_id} no existe."
                     )
                     other_errors += 1
                     continue
                 except Comedor.MultipleObjectsReturned:
                     self.stderr.write(
-                        f"[Fila {reader.line_num}] Existen múltiples comedores con id_externo={id_externo}."
+                        f"[Fila {reader.line_num}] Existen múltiples comedores con comedor_id={comedor_id}."
                     )
                     other_errors += 1
                     continue
@@ -96,7 +96,7 @@ class Command(BaseCommand):
                     msg = str(e)
                     if "Ya existe un relevamiento activo" in msg:
                         self.stderr.write(
-                            f"[Fila {reader.line_num}] Omitido: ya existe relevamiento activo para el comedor con id_externo {id_externo}."
+                            f"[Fila {reader.line_num}] Omitido: ya existe relevamiento activo para el comedor con comedor_id {comedor_id}."
                         )
                         skipped_active += 1
                         continue
@@ -114,7 +114,7 @@ class Command(BaseCommand):
                     msg = str(e)
                     if "Ya existe un relevamiento activo" in msg:
                         self.stderr.write(
-                            f"[Fila {reader.line_num}] Omitido: ya existe relevamiento activo para el comedor con id_externo {id_externo}."
+                            f"[Fila {reader.line_num}] Omitido: ya existe relevamiento activo para el comedor con comedor_id {comedor_id}."
                         )
                         skipped_active += 1
                     else:
