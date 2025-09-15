@@ -19,18 +19,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("csv_path", type=str, help="Ruta al archivo CSV")
-        parser.add_argument(
-            "--batch-size",
-            type=int,
-            default=200,
-            help="Cantidad de filas a procesar por lote (default: 200)",
-        )
-        parser.add_argument(
-            "--signal-workers",
-            type=int,
-            default=5,
-            help="Concurrentes para sincronizar con GESTIONAR (default: 5)",
-        )
 
     def handle(self, *args, **options):
         path = options["csv_path"]
@@ -83,9 +71,9 @@ class Command(BaseCommand):
                 if not rows:
                     return
 
-                # Buscar comedores por id_externo en una sola query
+                # Buscar comedores por id en una sola query
                 externos = [r["id_externo"] for r in rows]
-                comedores_qs = Comedor.objects.filter(id_externo__in=externos)
+                comedores_qs = Comedor.objects.filter(id__in=externos)
 
                 # Manejar posibles duplicados de id_externo
                 comedores_by_externo = {}
@@ -98,7 +86,9 @@ class Command(BaseCommand):
                         comedores_by_externo[key] = c
 
                 # Precompute activos por pk de comedor
-                pk_unicos = [c.id for k, c in comedores_by_externo.items() if k not in duplicates]
+                pk_unicos = [
+                    c.id for k, c in comedores_by_externo.items() if k not in duplicates
+                ]
                 activos = set(
                     Relevamiento.objects.filter(
                         comedor_id__in=pk_unicos,
