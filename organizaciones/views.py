@@ -40,7 +40,6 @@ class OrganizacionListView(ListView):
                     | Q(telefono__icontains=query)
                     | Q(email__icontains=query)
                 )
-                .select_related()
                 .select_related("tipo_entidad", "subtipo_entidad")
                 .only(
                     "id",
@@ -212,34 +211,31 @@ class Aval1CreateView(CreateView):
         return context
 
     def form_valid(self, form):
-        if form.is_valid():
-            organizacion_pk = (
-                self.kwargs.get("organizacion_id")
-                or self.request.POST.get("organizacion_id")
-                or self.request.GET.get("organizacion_id")
-            )
-            if not organizacion_pk:
-                messages.error(self.request, "Falta el id de la organización.")
-                return self.form_invalid(form)
-
-            form.instance.organizacion_id = organizacion_pk
-            self.object = form.save()
-            if "guardar_otro" in self.request.POST:
-                return HttpResponseRedirect(self.get_success_url_add_new())
-            else:
-                return HttpResponseRedirect(self.get_success_url())
-        else:
+        organizacion_pk = (
+            self.kwargs.get("organizacion_id")
+            or self.request.POST.get("organizacion_id")
+            or self.request.GET.get("organizacion_id")
+        )
+        if not organizacion_pk:
+            messages.error(self.request, "Falta el id de la organización.")
             return self.form_invalid(form)
+
+        form.instance.organizacion_id = organizacion_pk
+        self.object = form.save()
+        if "guardar_otro" in self.request.POST:
+            return HttpResponseRedirect(self.get_success_url_add_new())
+        else:
+            return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse(
             "organizacion_detalle",
-            kwargs={"organizacion_pk": self.object.organizacion.pk},
+            kwargs={"pk": self.object.organizacion.pk},
         )
 
     def get_success_url_add_new(self):
         return reverse(
-            "firmante_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
+            "aval1_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
         )
 
 
@@ -294,12 +290,12 @@ class Aval2CreateView(CreateView):
     def get_success_url(self):
         return reverse(
             "organizacion_detalle",
-            kwargs={"organizacion_pk": self.object.organizacion.pk},
+            kwargs={"pk": self.object.organizacion.pk},
         )
 
     def get_success_url_add_new(self):
         return reverse(
-            "firmante_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
+            "aval2_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
         )
 
 
@@ -576,9 +572,13 @@ class OrganizacionDetailView(DetailView):
             {"url_name": "aval2_editar", "label": "Editar", "type": "primary"},
             {"url_name": "aval2_eliminar", "label": "Eliminar", "type": "danger"},
         ]
-        if self.object.tipo_entidad.nombre == "Asociación de hecho":
-            context["avales"] = True
-        else:
+        try:
+            if self.object.tipo_entidad.nombre == "Asociación de hecho":
+                context["avales"] = True
+            else:
+                context["avales"] = False
+        except Exception:
+            context["tipo_entidad"] = None
             context["avales"] = False
 
         return context
