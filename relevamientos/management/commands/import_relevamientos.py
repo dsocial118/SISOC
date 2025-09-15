@@ -66,7 +66,7 @@ class Command(BaseCommand):
                     continue
 
                 try:
-                    comedor = Comedor.objects.get(comedor_id=comedor_id)
+                    comedor = Comedor.objects.get(comedor=comedor_id)
                 except Comedor.DoesNotExist:
                     self.stderr.write(
                         f"[Fila {reader.line_num}] Comedor con comedor_id={comedor_id} no existe."
