@@ -1,14 +1,10 @@
 import csv
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from django.core.management.base import BaseCommand
 from django.core.exceptions import ValidationError as CoreValidationError
 from django.forms import ValidationError as FormsValidationError
-from django.db.models.signals import post_save
 from django.utils import timezone
 from relevamientos.models import Relevamiento, Comedor
-from relevamientos.tasks import AsyncSendRelevamientoToGestionar
-import relevamientos.signals as relev_signals
 
 
 class Command(BaseCommand):
@@ -19,6 +15,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("csv_path", type=str, help="Ruta al archivo CSV")
+        parser.add_argument(
+            "--batch-size",
+            type=int,
+            default=200,
+            help="Cantidad de filas a procesar por lote (default: 200)",
+        )
 
     def handle(self, *args, **options):
         path = options["csv_path"]
@@ -44,84 +46,43 @@ class Command(BaseCommand):
             other_errors = 0
 
             batch_size = int(options.get("batch_size") or 200)
-            max_workers = int(options.get("signal_workers") or 5)
             buffer: list[dict] = []
-
-            def drain_created(created_ids: list[int]):
-                if not created_ids:
-                    return
-                # Ejecuta el efecto del signal con concurrencia limitada para no saturar conexiones
-                with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    futures = [
-                        executor.submit(
-                            lambda rid: AsyncSendRelevamientoToGestionar(rid).run(), rid
-                        )
-                        for rid in created_ids
-                    ]
-                    for fut in as_completed(futures):
-                        try:
-                            fut.result()
-                        except Exception as exc:  # noqa: BLE001
-                            self.stderr.write(
-                                f"[Post-save] Error al enviar relevamiento a GESTIONAR: {exc}"
-                            )
 
             def process_batch(rows: list[dict]):
                 nonlocal created_ok, skipped_active, other_errors
                 if not rows:
                     return
 
-                # Buscar comedores por id en una sola query
-                externos = [r["id_externo"] for r in rows]
-                comedores_qs = Comedor.objects.filter(id__in=externos)
+                # Buscar comedores por pk en una sola query
+                ids = [r["comedor_id"] for r in rows]
+                comedores_qs = Comedor.objects.filter(id__in=ids)
+                comedores_map = {c.id: c for c in comedores_qs}
 
-                # Manejar posibles duplicados de id_externo
-                comedores_by_externo = {}
-                duplicates = set()
-                for c in comedores_qs:
-                    key = c.id_externo
-                    if key in comedores_by_externo:
-                        duplicates.add(key)
-                    else:
-                        comedores_by_externo[key] = c
-
-                # Precompute activos por pk de comedor
-                pk_unicos = [
-                    c.id for k, c in comedores_by_externo.items() if k not in duplicates
-                ]
+                # Precomputar activos por pk de comedor
                 activos = set(
                     Relevamiento.objects.filter(
-                        comedor_id__in=pk_unicos,
+                        comedor_id__in=list(comedores_map.keys()),
                         estado__in=["Pendiente", "Visita pendiente"],
                     ).values_list("comedor_id", flat=True)
                 )
-
-                created_ids: list[int] = []
 
                 for r in rows:
                     line = r["line"]
                     nombre = r["nombre"]
                     uid = r["uid"]
-                    id_externo = r["id_externo"]
+                    comedor_id = r["comedor_id"]
 
-                    if id_externo in duplicates:
-                        self.stderr.write(
-                            f"[Fila {line}] Existen múltiples comedores con id_externo={id_externo}."
-                        )
-                        other_errors += 1
-                        continue
-
-                    comedor = comedores_by_externo.get(id_externo)
+                    comedor = comedores_map.get(comedor_id)
                     if not comedor:
                         self.stderr.write(
-                            f"[Fila {line}] Comedor con id_externo={id_externo} no existe."
+                            f"[Fila {line}] Comedor con id={comedor_id} no existe."
                         )
                         other_errors += 1
                         continue
 
-                    if comedor.id in activos:
+                    if comedor_id in activos:
                         self.stderr.write(
-                            f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con id_externo {id_externo}."
+                            f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con id {comedor_id}."
                         )
                         skipped_active += 1
                         continue
@@ -135,14 +96,13 @@ class Command(BaseCommand):
                     )
 
                     try:
-                        rv.save()  # Dispara validaciones del modelo (signal desconectado)
+                        rv.save()  # Dispara validaciones del modelo y signals
                         created_ok += 1
-                        created_ids.append(rv.id)
                     except (CoreValidationError, FormsValidationError) as e:
                         msg = str(e)
                         if "Ya existe un relevamiento activo" in msg:
                             self.stderr.write(
-                                f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con id_externo {id_externo}."
+                                f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con id {comedor_id}."
                             )
                             skipped_active += 1
                         else:
@@ -153,18 +113,6 @@ class Command(BaseCommand):
                     except Exception as e:  # pylint: disable=broad-except
                         self.stderr.write(f"[Fila {line}] Error inesperado: {e}")
                         other_errors += 1
-
-                # Ejecutar el efecto del signal con control de concurrencia
-                drain_created(created_ids)
-
-            # Desconectar temporalmente el signal para limitar concurrencia externa
-            try:
-                post_save.disconnect(
-                    receiver=relev_signals.send_relevamiento_to_gestionar,
-                    sender=Relevamiento,
-                )
-            except Exception:
-                pass
 
             for row in reader:
                 # Normaliza headers para ser tolerante con mayúsculas/minúsculas
@@ -184,10 +132,10 @@ class Command(BaseCommand):
                     continue
 
                 try:
-                    id_externo = int(comedor_str)
+                    comedor_id = int(comedor_str) + 100000
                 except ValueError:
                     self.stderr.write(
-                        f"[Fila {reader.line_num}] id externo inválido: '{comedor_str}'. Debe ser un entero (campo id_externo de Comedor)."
+                        f"[Fila {reader.line_num}] id externo inválido: '{comedor_str}'. Debe ser un entero."
                     )
                     other_errors += 1
                     continue
@@ -197,7 +145,7 @@ class Command(BaseCommand):
                         "line": reader.line_num,
                         "nombre": nombre,
                         "uid": uid,
-                        "id_externo": id_externo,
+                        "comedor_id": comedor_id,
                     }
                 )
 
@@ -210,14 +158,7 @@ class Command(BaseCommand):
                 process_batch(buffer)
                 buffer.clear()
 
-            # Reconectar signal al finalizar
-            try:
-                post_save.connect(
-                    receiver=relev_signals.send_relevamiento_to_gestionar,
-                    sender=Relevamiento,
-                )
-            except Exception:
-                pass
+            # Signals se ejecutaron normalmente durante la creación
 
             self.stdout.write(
                 self.style.SUCCESS(
