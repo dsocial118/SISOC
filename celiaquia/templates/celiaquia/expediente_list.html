@@ -70,26 +70,41 @@
                                     {% if request.user|has_group:"CoordinadorCeliaquia" %}
                                         {# SOLO mostrar selector cuando el estado ya es RECEPCIONADO o ASIGNADO #}
                                         {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
-                                            <div class="d-flex gap-2 align-items-center">
+                                            <div>
                                                 <select class="form-select form-select-sm js-tecnico"
                                                         style="min-width: 200px">
-                                                    <option value="">— Seleccionar técnico —</option>
+                                                    <option value="">— Agregar técnico —</option>
                                                     {% for t in tecnicos %}
-                                                        <option value="{{ t.id }}"
-                                                                {% if exp.asignacion_tecnico and exp.asignacion_tecnico.tecnico_id == t.id %}selected{% endif %}>
+                                                        <option value="{{ t.id }}">
                                                             {{ t.get_full_name|default:t.username }}
                                                         </option>
-                                                    {% empty %}
-                                                        {# Si no hay técnicos en el grupo #}
                                                     {% endfor %}
                                                 </select>
+                                                {# Badges de técnicos asignados #}
+                                                {% if exp.asignaciones_tecnicos.all %}
+                                                    <div class="mt-2">
+                                                        {% for asignacion in exp.asignaciones_tecnicos.all %}
+                                                            <span class="badge bg-primary me-1 mb-1">
+                                                                {{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}
+                                                                <button type="button" class="btn-close btn-close-white ms-1 js-remove-tecnico" 
+                                                                        data-tecnico-id="{{ asignacion.tecnico.id }}" 
+                                                                        data-exp-id="{{ exp.pk }}"
+                                                                        style="font-size: 0.7em;"></button>
+                                                            </span>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
                                             </div>
                                         {% else %}
                                             <span class="text-muted">—</span>
                                         {% endif %}
                                     {% else %}
-                                        {% if exp.asignacion_tecnico %}
-                                            {{ exp.asignacion_tecnico.tecnico.get_full_name|default:exp.asignacion_tecnico.tecnico.username }}
+                                        {% if exp.asignaciones_tecnicos.all %}
+                                            {% for asignacion in exp.asignaciones_tecnicos.all %}
+                                                <span class="badge bg-primary me-1">
+                                                    {{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}
+                                                </span>
+                                            {% endfor %}
                                         {% else %}
                                             <span class="text-muted">—</span>
                                         {% endif %}
