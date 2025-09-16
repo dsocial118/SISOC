@@ -69,10 +69,8 @@ class ImportacionService:
             "nombre",
             "documento",
             "fecha_nacimiento",
-            "tipo_documento",
             "sexo",
             "nacionalidad",
-            "provincia",
             "municipio",
             "localidad",
             "calle",
@@ -183,11 +181,8 @@ class ImportacionService:
             "dni": "documento",
             "fecha_nacimiento": "fecha_nacimiento",
             "fecha_de_nacimiento": "fecha_nacimiento",
-            "tipo_documento": "tipo_documento",
-            "tipo_doc": "tipo_documento",
             "sexo": "sexo",
             "nacionalidad": "nacionalidad",
-            "provincia": "provincia",
             "municipio": "municipio",
             "localidad": "localidad",
             "email": "email",
@@ -305,8 +300,15 @@ class ImportacionService:
                     else:
                         payload[field] = v or None
 
-                if not payload.get("tipo_documento"):
-                    payload["tipo_documento"] = _tipo_doc_por_defecto()
+                # Siempre asignar tipo de documento ID 5 (CUIT)
+                payload["tipo_documento"] = 5
+                
+                # Asignar provincia del usuario automáticamente
+                try:
+                    if hasattr(usuario, 'profile') and usuario.profile.provincia_id:
+                        payload["provincia"] = usuario.profile.provincia_id
+                except Exception:
+                    pass
 
                 required = ["apellido", "nombre", "documento", "fecha_nacimiento"]
                 for req in required:
@@ -331,13 +333,10 @@ class ImportacionService:
                 for fk in fk_models:
                     val = payload.get(fk)
                     if val in (None, ""):
-                        if fk != "tipo_documento":
-                            payload[fk] = None
+                        payload[fk] = None
                         continue
                     resolved = resolve_fk(fk, val)
                     if resolved is None:
-                        if fk == "tipo_documento":
-                            raise ValidationError(f"Tipo de documento inválido: {val}")
                         add_warning(offset, fk, f"{val} no encontrado")
                         payload[fk] = None
                     else:

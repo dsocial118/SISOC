@@ -1,128 +1,136 @@
-{# templates/celiaquia/expediente_form.html - incluye botón para descargar plantilla y buscador de IDs #}
+{# templates/celiaquia/expediente_form.html - versión corregida con header separado #}
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
+
 {% block title %}
-    {% if view.object %}
-        Editar Expediente
-    {% else %}
-        Crear Expediente
-    {% endif %}
+  {% if view.object %}Editar Expediente{% else %}Crear Expediente{% endif %}
 {% endblock %}
+
 {% block content %}
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h3 class="card-title mb-4 text-center">
-                        {% if view.object %}
-                            Editar Expediente
-                        {% else %}
-                            Crear Expediente
-                        {% endif %}
-                    </h3>
-                    <form id="expediente-form" method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        {# Contenedor de error para la previsualización #}
-                        <div id="preview-error" class="text-danger mt-2"></div>
-                        <div class="d-flex justify-content-between mt-3">
-                            <div>
-                                <button type="button"
-                                        class="btn btn-outline-info me-2"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#localidadesModal">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                                <button type="button" id="btn-preview" class="btn btn-outline-secondary">Previsualizar Excel</button>
-                            </div>
-                            <div>
-                                <a class="btn btn-outline-primary me-2"
-                                   href="{% url 'expediente_plantilla_excel' %}">Descargar plantilla</a>
-                                <button type="submit" class="btn btn-success me-2">Guardar</button>
-                                <a href="{% url 'expediente_list' %}" class="btn btn-secondary">Cancelar</a>
-                            </div>
-                        </div>
-                    </form>
-                    {# Contenedor para la tabla de preview, oculto por defecto #}
-                    <div id="preview-container" class="mt-4 d-none">
-                        <h5>Vista previa del Excel</h5>
-                        <div class="table-responsive">
-                            <table id="preview-table" class="table table-bordered mb-0">
-                                <thead>
-                                    <tr id="preview-headers"></tr>
-                                </thead>
-                                <tbody id="preview-rows">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+
+        {# Header separado evita que el label del primer campo se “pegue” al título #}
+        <div class="card-header">
+          <h3 class="mb-0 text-center">
+            {% if view.object %}Editar Expediente{% else %}Crear Expediente{% endif %}
+          </h3>
         </div>
-    </div>
-    <!-- Modal con buscador de localidades e IDs -->
-    <div class="modal fade"
-         id="localidadesModal"
-         tabindex="-1"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Buscar Localidades</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col">
-                            <select id="filtro-provincia" class="form-select"></select>
-                        </div>
-                        <div class="col">
-                            <select id="filtro-municipio" class="form-select"></select>
-                        </div>
-                        <div class="col">
-                            <select id="filtro-localidad" class="form-select"></select>
-                        </div>
-                        <div class="col">
-                            <input id="filtro-texto"
-                                   type="text"
-                                   class="form-control"
-                                   placeholder="Buscar..." />
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Provincia</th>
-                                    <th>Municipio</th>
-                                    <th>Localidad</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-localidades">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
+
+        <div class="card-body">
+          <form id="expediente-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              {{ form.numero_expediente|as_crispy_field }}
             </div>
+            <div class="mb-3">
+              {{ form.observaciones|as_crispy_field }}
+            </div>
+            <div class="mb-3">
+              {{ form.excel_masivo|as_crispy_field }}
+            </div>
+
+            {# Contenedor de error para la previsualización #}
+            <div id="preview-error" class="text-danger mt-2"></div>
+
+            <div class="d-flex justify-content-between mt-3">
+              <div class="d-flex gap-2">
+                <button
+                  type="button"
+                  class="btn btn-outline-info"
+                  data-bs-toggle="modal"
+                  data-bs-target="#localidadesModal">
+                  <i class="bi bi-search"></i>
+                </button>
+                <button type="button" id="btn-preview" class="btn btn-outline-secondary">
+                  Previsualizar Excel
+                </button>
+              </div>
+              <div class="d-flex gap-2">
+                <a class="btn btn-outline-primary" href="{% url 'expediente_plantilla_excel' %}">
+                  Descargar plantilla
+                </a>
+                <button type="submit" class="btn btn-success">Guardar</button>
+                <a href="{% url 'expediente_list' %}" class="btn btn-secondary">Cancelar</a>
+              </div>
+            </div>
+          </form>
+
+          {# Contenedor para la tabla de preview, oculto por defecto #}
+          <div id="preview-container" class="mt-4 d-none">
+            <h5>Vista previa del Excel</h5>
+            <div class="table-responsive">
+              <table id="preview-table" class="table table-bordered mb-0">
+                <thead>
+                  <tr id="preview-headers"></tr>
+                </thead>
+                <tbody id="preview-rows"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
+
+      </div>
     </div>
+  </div>
+
+  <!-- Modal con buscador de localidades e IDs -->
+  <div class="modal fade" id="localidadesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Buscar Localidades</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col">
+              <select id="filtro-provincia" class="form-select"></select>
+            </div>
+            <div class="col">
+              <select id="filtro-municipio" class="form-select"></select>
+            </div>
+            <div class="col">
+              <select id="filtro-localidad" class="form-select"></select>
+            </div>
+            <div class="col">
+              <input id="filtro-texto" type="text" class="form-control" placeholder="Buscar..." />
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Provincia</th>
+                  <th>Municipio</th>
+                  <th>Localidad</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-localidades"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
+
 {% block customJS %}
-    {# Datos de provincias para el buscador #}
-    <script id="provincias-data" type="application/json">[
-        {% for p in provincias %}{"id": {{ p.id }}, "nombre": "{{ p.nombre }}"}{% if not forloop.last %},{% endif %}{% endfor %}
-    ]
-    </script>
-    <script type="text/javascript">
-        window.PREVIEW_URL = "{% url 'expediente_preview_excel' %}";
-        window.EXPEDIENTE_LOCALIDADES_URL = "{% url 'expediente_localidades_lookup' %}";
-    </script>
-    <script src="{% static 'custom/js/localidades_modal.js' %}"></script>
-    <script src="{% static 'custom/js/celiaquia.js' %}"></script>
+  {# Datos de provincias para el buscador #}
+  <script id="provincias-data" type="application/json">[
+    {% for p in provincias %}
+      {"id": {{ p.id }}, "nombre": "{{ p.nombre }}"}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]</script>
+  <script type="text/javascript">
+    window.PREVIEW_URL = "{% url 'expediente_preview_excel' %}";
+    window.EXPEDIENTE_LOCALIDADES_URL = "{% url 'expediente_localidades_lookup' %}";
+  </script>
+  <script src="{% static 'custom/js/localidades_modal.js' %}"></script>
+  <script src="{% static 'custom/js/celiaquia.js' %}"></script>
 {% endblock %}
