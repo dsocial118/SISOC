@@ -2,6 +2,8 @@ import os
 import threading
 import logging
 import requests
+from concurrent.futures import ThreadPoolExecutor
+from django.db import close_old_connections
 from django.utils import timezone
 
 from relevamientos.models import Relevamiento
@@ -11,6 +13,10 @@ logger = logging.getLogger("django")
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
 
 
+# Pool global para limitar la concurrencia de tareas asincrónicas
+MAX_WORKERS = int(os.getenv("GESTIONAR_WORKERS", "5"))
+_EXECUTOR = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+
 # FIXME: Evitar que se ejecute el hilo al correr los tests
 class AsyncSendRelevamientoToGestionar(threading.Thread):
     """Hilo para enviar relevamiento a GESTIONAR asincronamente"""
@@ -19,7 +25,13 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
         super().__init__()
         self.relevamiento_id = relevamiento_id
 
+    def start(self):  # type: ignore[override]
+        # Encola la ejecución en un pool limitado para evitar demasiadas conexiones
+        _EXECUTOR.submit(self.run)
+
     def run(self):
+        # Asegura estado sano de conexiones en hilos de pool reutilizables
+        close_old_connections()
         relevamiento = Relevamiento.objects.get(id=self.relevamiento_id)
 
         data = {
@@ -73,6 +85,9 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
                 "Error al sincronizar RELEVAMIENTO con GESTIONAR",
                 extra={"relevamiento_pk": relevamiento.id, "body": data},
             )
+        finally:
+            # Cierra conexiones viejas tras finalizar el trabajo del hilo
+            close_old_connections()
 
 
 class AsyncRemoveRelevamientoToGestionar(threading.Thread):
@@ -82,7 +97,11 @@ class AsyncRemoveRelevamientoToGestionar(threading.Thread):
         super().__init__()
         self.relevamiento_id = relevamiento_id
 
+    def start(self):  # type: ignore[override]
+        _EXECUTOR.submit(self.run)
+
     def run(self):
+        close_old_connections()
         relevamiento = Relevamiento.objects.get(id=self.relevamiento_id)
 
         data = {
@@ -111,3 +130,5 @@ class AsyncRemoveRelevamientoToGestionar(threading.Thread):
                 "Error al sincronizar RELEVAMIENTO con GESTIONAR",
                 extra={"relevamiento_pk": relevamiento.id, "body": data},
             )
+        finally:
+            close_old_connections()
