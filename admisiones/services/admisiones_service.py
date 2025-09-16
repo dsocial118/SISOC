@@ -293,9 +293,23 @@ class AdmisionService:
             if not all([estado, documento_id, admision_id]):
                 return {"success": False, "error": "Datos incompletos."}
 
-            archivo = get_object_or_404(
-                ArchivoAdmision, admision_id=admision_id, documentacion_id=documento_id
-            )
+            # Verificar permisos del usuario antes de buscar el archivo
+            admision = get_object_or_404(Admision, pk=admision_id)
+
+            # Si no es superuser, verificar que pertenezca a la dupla del comedor
+            if not request.user.is_superuser:
+                comedor = admision.comedor
+                if not comedor:
+                    return {"success": False, "error": "Admisión sin comedor asociado."}
+
+                # Verificar que el usuario pertenezca a la dupla del comedor usando el método auxiliar
+                if not AdmisionService._verificar_permiso_dupla(request.user, comedor):
+                    return {
+                        "success": False,
+                        "error": "Sin permisos para modificar esta admisión.",
+                    }
+
+            archivo = get_object_or_404(ArchivoAdmision, id=documento_id)
 
             exito = AdmisionService.update_estado_archivo(archivo, estado)
 
@@ -531,10 +545,10 @@ class AdmisionService:
                     "error": "Solo se puede actualizar el número GDE en documentos aceptados.",
                 }
 
-            # Verificar permisos: superadmin o técnico de la dupla asignada al comedor
+            # Verificar permisos: superadmin o técnico/abogado de la dupla asignada al comedor
             if not (
                 request.user.is_superuser
-                or AdmisionService._verificar_permiso_tecnico_dupla(
+                or AdmisionService._verificar_permiso_dupla(
                     request.user, archivo.admision.comedor
                 )
             ):
@@ -579,6 +593,36 @@ class AdmisionService:
         except Exception:
             logger.exception(
                 "Error en _verificar_permiso_tecnico_dupla",
+                extra={
+                    "user_id": getattr(user, "id", None),
+                    "comedor_id": getattr(comedor, "id", None),
+                },
+            )
+            return False
+
+    @staticmethod
+    def _verificar_permiso_dupla(user, comedor):
+        """Verifica que el usuario sea técnico o abogado de la dupla asignada al comedor"""
+        try:
+            if not comedor or not hasattr(comedor, "dupla") or not comedor.dupla:
+                return False
+
+            dupla = comedor.dupla
+            if dupla.estado != "Activo":
+                return False
+
+            # Verificar si es abogado de la dupla
+            if user == dupla.abogado:
+                return True
+
+            # Verificar si es uno de los técnicos de la dupla (ManyToManyField)
+            if dupla.tecnico.filter(id=user.id).exists():
+                return True
+
+            return False
+        except Exception:
+            logger.exception(
+                "Error en _verificar_permiso_dupla",
                 extra={
                     "user_id": getattr(user, "id", None),
                     "comedor_id": getattr(comedor, "id", None),

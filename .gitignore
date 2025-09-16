@@ -272,3 +272,6 @@ db.sqlite
 todo.txt
 
 logs/
+
+#Archivos de MAC
+.DS_Store
