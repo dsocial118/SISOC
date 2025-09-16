@@ -1,14 +1,17 @@
 {% extends "includes/main.html" %};
 {% load static %}
 ;
-{% load crispy_forms_tags %}
+{% load
+crispy_forms_tags %}
 ;
 {% load static custom_filters %}
 ;
 {% block title %}Expediente: {{ admision.num_expediente }}{% endblock %}
 ;
-{% block titulo-pagina %}
-    {{ admision.num_expediente }} - {{ admision.estado_legales| default_if_none:"Estado a definir" }}
+{% block
+    titulo-pagina %}
+    {{ admision.num_expediente }} - {{ admision.estado_legales|
+    default_if_none:"Estado a definir" }}
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -27,8 +30,10 @@
                class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            {% if admision.estado_legales == "Rectificado" or admision.estado_legales == None %}
-                {% if formulario_proyecto_completo and formulario_reso_completo and admision.legales_num_if %}
+            {% if admision.estado_legales == "Rectificado" or admision.estado_legales ==
+                None %}
+                {% if formulario_proyecto_completo and formulario_reso_completo and
+                    admision.legales_num_if %}
                     <button type="button"
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
@@ -38,28 +43,32 @@
                     <button type="button"
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
-                            data-bs-target="#modalLegalesNumIF">Agregar Número IF</button>
+                            data-bs-target="#modalLegalesNumIF">Agregar Número de expediente</button>
                 {% endif %}
-                {% if not formulario_reso_completo and admision.legales_num_if %}
+                {% if not formulario_reso_completo and admision.legales_num_if
+                    %}
                     <button type="button"
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
                             data-bs-target="#modalFormReso">Formulario Proyecto Disposición</button>
                 {% endif %}
-                {% if not formulario_proyecto_completo and formulario_reso_completo and admision.legales_num_if %}
+                {% if not formulario_proyecto_completo and
+                    formulario_reso_completo and admision.legales_num_if %}
                     <button type="button"
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
                             data-bs-target="#modalFormConvenio">Formulario Proyecto de Convenio</button>
                 {% endif %}
-                {% if not formulario_proyecto_completo and not formulario_reso_completo and not admision.legales_num_if %}
+                {% if not formulario_proyecto_completo and not
+                    formulario_reso_completo and not admision.legales_num_if %}
                     <button type="button"
                             class="btn btn-warning mr-1"
                             data-bs-toggle="modal"
                             data-bs-target="#modalRectificar">Rectificar</button>
                 {% endif %}
             {% endif %}
-            {% if admision.estado_legales == "Pendiente de Validacion" %}
+            {% if admision.estado_legales == "Pendiente de
+                Validacion" %}
                 <button type="button"
                         class="btn btn-primary mr-1"
                         data-bs-toggle="modal"
@@ -74,8 +83,11 @@
                         data-bs-label="Cargue el Número de Disposición"
                         data-bs-target="#modalDocumentoExpediente">Disposición</button>
             {% elif admision.estado_legales == "Disposición Generada" %}
-                {% comment %}<button type="button" class="btn btn-primary mr-1" data-bs-toggle="modal" data-bs-tipo="Firma Convenio" data-bs-label="Cargue el IF del Convenio" data-bs-target="#modalDocumentoExpediente">Firma Convenio</button>
-            {% elif admision.estado_legales == "Convenio Firmado" %}{% endcomment %}
+                {% comment %}
+    <button type="button" class="btn btn-primary mr-1" data-bs-toggle="modal" data-bs-tipo="Firma Convenio" data-bs-label="Cargue el IF del Convenio" data-bs-target="#modalDocumentoExpediente">
+      Firma Convenio
+    </button>
+            {% elif admision.estado_legales == "Convenio Firmado" %} {% endcomment %}
                 <button type="button"
                         class="btn btn-primary mr-1"
                         data-bs-toggle="modal"
@@ -101,7 +113,7 @@
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
-                                Número de IF:
+                                Número de expediente:
                                 <span class="fw-bold">{{ admision.legales_num_if |default_if_none:"-" }}</span>
                             </div>
                         </li>
@@ -118,7 +130,8 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Formulario Proyecto de Convenio:
-                                {% if formulario_proyecto_completo %}
+                                {% if
+                                    formulario_proyecto_completo %}
                                     <a href="{{ formulario_proyecto.archivo.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i></a><i class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
                                     <i class="bi bi-x-circle-fill text-danger"></i>
@@ -129,7 +142,8 @@
                             <div class="comment-text">
                                 Informe SGA:
                                 {% if value_informe_sga %}
-                                    <span class="fw-bold">{{ value_informe_sga }}</span> <i class="bi bi-check-circle-fill text-success"></i>
+                                    <span class="fw-bold">{{ value_informe_sga }}</span>
+                                    <i class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
                                     <i class="bi bi-x-circle-fill text-danger"></i>
                                 {% endif %}
@@ -139,29 +153,31 @@
                             <div class="comment-text">
                                 Disposición:
                                 {% if value_disposicion %}
-                                    <span class="fw-bold">{{ value_disposicion }}</span> <i class="bi bi-check-circle-fill text-success"></i>
+                                    <span class="fw-bold">{{ value_disposicion }}</span>
+                                    <i class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
                                     <i class="bi bi-x-circle-fill text-danger"></i>
                                 {% endif %}
                             </div>
                         </li>
                         {% comment %}
-                        <li class="nav-item">
-                            <div class="comment-text">
-                                Firma Convenio:
-                                {% if value_firma_convenio %}
-                                    <span class="fw-bold">{{ value_firma_convenio }}</span> <i class="bi bi-check-circle-fill text-success"></i>
-                                {% else %}
-                                    <i class="bi bi-x-circle-fill text-danger"></i>
-                                {% endif %}
-                            </div>
-                        </li>
+          <li class="nav-item">
+            <div class="comment-text">
+              Firma Convenio: {% if value_firma_convenio %}
+              <span class="fw-bold">{{ value_firma_convenio }}</span>
+              <i class="bi bi-check-circle-fill text-success"></i>
+              {% else %}
+              <i class="bi bi-x-circle-fill text-danger"></i>
+              {% endif %}
+            </div>
+          </li>
                         {% endcomment %}
                         <li class="nav-item">
                             <div class="comment-text">
                                 Numero CONV:
                                 {% if value_numero_conv %}
-                                    <span class="fw-bold">{{ value_numero_conv }}</span> <i class="bi bi-check-circle-fill text-success"></i>
+                                    <span class="fw-bold">{{ value_numero_conv }}</span>
+                                    <i class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
                                     <i class="bi bi-x-circle-fill text-danger"></i>
                                 {% endif %}
@@ -233,7 +249,7 @@
                 <div class="card-body card-comments p-3">
                     <ul class="nav nav-pills flex-column">
                         <li class="nav-item">
-                            <div class="comment-text ">
+                            <div class="comment-text">
                                 Nombre:
                                 <a href="{% url 'comedor_detalle' admision.comedor.id %}"><span class="fw-bold">{{ admision.comedor.nombre }}</span></a>
                             </div>
@@ -259,13 +275,18 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Provincia:
-                                <span class="fw-bold">{{ admision.comedor.provincia | default_if_none:"-" }} - {{ admision.comedor.municipio | default_if_none:"-" }} - {{ admision.comedor.localidad | default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.provincia | default_if_none:"-" }} - {{
+                                    admision.comedor.municipio | default_if_none:"-" }} - {{
+                                admision.comedor.localidad | default_if_none:"-" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Calle:
-                                <span class="fw-bold">{{ admision.comedor.calle | default_if_none:"-" }} {{ admision.comedor.numero | default_if_none:"-" }} - Piso: {{ admision.comedor.piso | default_if_none:"-" }} {{ admision.comedor.departamento | default_if_none:"" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.calle | default_if_none:"-" }} {{
+                                    admision.comedor.numero | default_if_none:"-" }} - Piso: {{
+                                    admision.comedor.piso | default_if_none:"-" }} {{
+                                admision.comedor.departamento | default_if_none:"" }}</span>
                             </div>
                         </li>
                     </ul>
@@ -332,10 +353,12 @@
                                         <td class="ps-3">
                                             {% if cambio.valor_nuevo == "True" %}
                                                 Si
-                                            {% elif cambio.valor_nuevo == "False" %}
+                                            {% elif
+                                                cambio.valor_nuevo == "False" %}
                                                 No
                                             {% else %}
-                                                {{ cambio.valor_nuevo| default_if_none:"-" }}
+                                                {{
+                                                cambio.valor_nuevo| default_if_none:"-" }}
                                             {% endif %}
                                         </td>
                                         <td class="ps-3">{{ cambio.usuario.username }}</td>
@@ -396,9 +419,11 @@
                     </div>
                     <div class="modal-body">
                         <div class="mb-3">
-                            {{ form.observaciones.label_tag }}
-                            {{ form.observaciones }}
-                            {% if form.observaciones.errors %}<div class="text-danger">{{ form.observaciones.errors }}</div>{% endif %}
+                            {{ form.observaciones.label_tag }} {{ form.observaciones }}
+                            {% if
+                                form.observaciones.errors %}
+                                <div class="text-danger">{{ form.observaciones.errors }}</div>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -480,7 +505,7 @@
                 <form method="POST" action="">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title">Agrege el numero de IF</h5>
+                        <h5 class="modal-title">Agrege el número de expediente</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -534,17 +559,17 @@
 {% endblock %}
 {% block customJS %}
     <script>
-  const modal = document.getElementById('modalDocumentoExpediente');
-  modal.addEventListener('show.bs.modal', function (event) {
+  const modal = document.getElementById("modalDocumentoExpediente");
+  modal.addEventListener("show.bs.modal", function (event) {
     const button = event.relatedTarget;
-    const tipo = button.getAttribute('data-bs-tipo');
-    const label = button.getAttribute('data-bs-label');
-    const tipoInput = modal.querySelector('#tipo_id');
+    const tipo = button.getAttribute("data-bs-tipo");
+    const label = button.getAttribute("data-bs-label");
+    const tipoInput = modal.querySelector("#tipo_id");
     tipoInput.value = tipo;
 
-    const modalTitle = modal.querySelector('#modalDocumentoExpedienteLabel');
+    const modalTitle = modal.querySelector("#modalDocumentoExpedienteLabel");
     modalTitle.textContent = tipo;
-    const modalLabel = modal.querySelector('#valueLabel');
+    const modalLabel = modal.querySelector("#valueLabel");
     modalLabel.textContent = label;
   });
     </script>

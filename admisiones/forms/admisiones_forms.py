@@ -273,7 +273,7 @@ class LegalesNumIFForm(forms.ModelForm):
         model = Admision
         fields = ["legales_num_if"]
         labels = {
-            "legales_num_if": "Numero IF",
+            "legales_num_if": "Número de expediente",
         }
 
     def __init__(self, *args, **kwargs):
