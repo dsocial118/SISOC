@@ -119,18 +119,13 @@ class ExpedienteService:
         if isinstance(tecnico, int):
             tecnico = User.objects.get(pk=tecnico)
 
-        asignacion, _ = getattr(expediente, "asignacion_tecnico", None), None
-        if asignacion is None:
-            from celiaquia.models import (
-                AsignacionTecnico,
-            )  # pylint: disable=import-outside-toplevel
+        from celiaquia.models import (
+            AsignacionTecnico,
+        )  # pylint: disable=import-outside-toplevel
 
-            asignacion, _ = AsignacionTecnico.objects.get_or_create(
-                expediente=expediente
-            )
-
-        asignacion.tecnico = tecnico
-        asignacion.save(update_fields=["tecnico"])
+        asignacion, _ = AsignacionTecnico.objects.get_or_create(
+            expediente=expediente, tecnico=tecnico
+        )
 
         _set_estado(expediente, "ASIGNADO", usuario)
         logger.info(
