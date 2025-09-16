@@ -14,9 +14,7 @@ def test_read_file_bytes_disallows_paths():
 def test_read_file_bytes_accepts_uploaded_file():
     contenido = b"col1,col2\n1,2"
     archivo = SimpleUploadedFile("test.csv", contenido)
-    resultado = CruceService._read_file_bytes(
-        archivo
-    )  # pylint: disable=protected-access
+    resultado = CruceService._read_file_bytes(archivo)  # pylint: disable=protected-access
     assert resultado == contenido
 
 
