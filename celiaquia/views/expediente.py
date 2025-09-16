@@ -240,14 +240,18 @@ class ProcesarExpedienteView(View):
 
         except ValidationError as ve:
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": escape(str(ve))}, status=400)
+                return JsonResponse(
+                    {"success": False, "error": escape(str(ve))}, status=400
+                )
             messages.error(request, f"Error de validación: {escape(str(ve))}")
             return redirect("expediente_detail", pk=pk)
         except Exception as e:
             tb = traceback.format_exc()
             logging.error("Error al procesar expediente %s:\n%s", pk, tb)
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": escape(str(e))}, status=500)
+                return JsonResponse(
+                    {"success": False, "error": escape(str(e))}, status=500
+                )
             messages.error(request, "Error inesperado al procesar el expediente.")
             return redirect("expediente_detail", pk=pk)
 
@@ -553,12 +557,16 @@ class ExpedienteConfirmView(View):
             )
         except ValidationError as ve:
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": escape(str(ve))}, status=400)
+                return JsonResponse(
+                    {"success": False, "error": escape(str(ve))}, status=400
+                )
             messages.error(request, f"Error al confirmar: {escape(str(ve))}")
         except Exception as e:
             logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": escape(str(e))}, status=500)
+                return JsonResponse(
+                    {"success": False, "error": escape(str(e))}, status=500
+                )
             messages.error(request, f"Error inesperado: {escape(str(e))}")
         return redirect("expediente_detail", pk=pk)
 
@@ -743,7 +751,9 @@ class SubirCruceExcelView(View):
                 }
             )
         except ValidationError as ve:
-            return JsonResponse({"success": False, "error": escape(str(ve))}, status=400)
+            return JsonResponse(
+                {"success": False, "error": escape(str(ve))}, status=400
+            )
         except Exception as e:
             logger.error("Error en cruce por CUIT: %s", e, exc_info=True)
             return JsonResponse({"success": False, "error": escape(str(e))}, status=500)

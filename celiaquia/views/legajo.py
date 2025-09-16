@@ -65,7 +65,9 @@ class LegajoArchivoUploadView(View):
 
         # Técnico: si querés permitirlo, que sea el asignado
         if is_tec and not (is_admin or is_coord):
-            asignaciones = self.exp_ciud.expediente.asignaciones_tecnicos.filter(tecnico=user)
+            asignaciones = self.exp_ciud.expediente.asignaciones_tecnicos.filter(
+                tecnico=user
+            )
             if not asignaciones.exists():
                 raise PermissionDenied("No sos el técnico asignado a este expediente.")
 
@@ -186,20 +188,20 @@ class LegajoRechazarView(View):
         user = request.user
         if not user.is_authenticated:
             raise PermissionDenied("Autenticación requerida.")
-        
+
         is_admin = user.is_superuser
         is_coord = _in_group(user, "CoordinadorCeliaquia")
         is_tec = _in_group(user, "TecnicoCeliaquia")
-        
+
         if not (is_admin or is_coord or is_tec):
             raise PermissionDenied("Permiso denegado.")
-        
+
         expediente_id = kwargs.get("expediente_id")
         pk = kwargs.get("pk")
         legajo = get_object_or_404(
             ExpedienteCiudadano, pk=pk, expediente__pk=expediente_id
         )
-        
+
         # Validar que el técnico esté asignado al expediente
         if is_tec and not (is_admin or is_coord):
             asignaciones = legajo.expediente.asignaciones_tecnicos.filter(tecnico=user)
@@ -249,20 +251,20 @@ class LegajoSuspenderView(View):
         user = request.user
         if not user.is_authenticated:
             raise PermissionDenied("Autenticación requerida.")
-        
+
         is_admin = user.is_superuser
         is_coord = _in_group(user, "CoordinadorCeliaquia")
         is_tec = _in_group(user, "TecnicoCeliaquia")
-        
+
         if not (is_admin or is_coord or is_tec):
             raise PermissionDenied("Permiso denegado.")
-        
+
         expediente_id = kwargs.get("expediente_id")
         pk = kwargs.get("pk")
         legajo = get_object_or_404(
             ExpedienteCiudadano, pk=pk, expediente__pk=expediente_id
         )
-        
+
         # Validar que el técnico esté asignado al expediente
         if is_tec and not (is_admin or is_coord):
             asignaciones = legajo.expediente.asignaciones_tecnicos.filter(tecnico=user)
@@ -314,13 +316,13 @@ class LegajoBajaView(View):
         user = request.user
         if not user.is_authenticated:
             raise PermissionDenied("Autenticación requerida.")
-        
+
         is_admin = user.is_superuser
         is_coord = _in_group(user, "CoordinadorCeliaquia")
-        
+
         if not (is_admin or is_coord):
             raise PermissionDenied("Solo coordinadores pueden dar de baja legajos.")
-        
+
         expediente_id = kwargs.get("expediente_id")
         pk = kwargs.get("pk")
         legajo = get_object_or_404(
