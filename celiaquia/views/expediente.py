@@ -16,7 +16,7 @@ from django.http import (
     HttpResponseNotAllowed,
     FileResponse,
 )
-from django.utils.safestring import mark_safe
+from django.utils.html import escape
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
@@ -227,24 +227,27 @@ class ProcesarExpedienteView(View):
                 if len(det) > 10:
                     extra = f"<br>… y {len(det) - 10} más."
 
+                # Escapar contenido para prevenir XSS
+                preview_escaped = [escape(p) for p in preview]
+                extra_escaped = escape(extra) if extra else ""
                 html = (
                     f"Se excluyeron {excluidos_count} registros porque ya están en otro expediente:"
-                    f"<br>{'<br>'.join(preview)}{extra}"
+                    f"<br>{'<br>'.join(preview_escaped)}{extra_escaped}"
                 )
-                messages.warning(request, mark_safe(html))
+                messages.warning(request, html)
 
             return redirect("expediente_detail", pk=pk)
 
         except ValidationError as ve:
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": ve.message}, status=400)
-            messages.error(request, f"Error de validación: {ve.message}")
+                return JsonResponse({"success": False, "error": escape(str(ve))}, status=400)
+            messages.error(request, f"Error de validación: {escape(str(ve))}")
             return redirect("expediente_detail", pk=pk)
         except Exception as e:
             tb = traceback.format_exc()
             logging.error("Error al procesar expediente %s:\n%s", pk, tb)
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": str(e)}, status=500)
+                return JsonResponse({"success": False, "error": escape(str(e))}, status=500)
             messages.error(request, "Error inesperado al procesar el expediente.")
             return redirect("expediente_detail", pk=pk)
 
@@ -550,13 +553,13 @@ class ExpedienteConfirmView(View):
             )
         except ValidationError as ve:
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": ve.message}, status=400)
-            messages.error(request, f"Error al confirmar: {ve.message}")
+                return JsonResponse({"success": False, "error": escape(str(ve))}, status=400)
+            messages.error(request, f"Error al confirmar: {escape(str(ve))}")
         except Exception as e:
             logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": str(e)}, status=500)
-            messages.error(request, f"Error inesperado: {e}")
+                return JsonResponse({"success": False, "error": escape(str(e))}, status=500)
+            messages.error(request, f"Error inesperado: {escape(str(e))}")
         return redirect("expediente_detail", pk=pk)
 
 
@@ -740,10 +743,10 @@ class SubirCruceExcelView(View):
                 }
             )
         except ValidationError as ve:
-            return JsonResponse({"success": False, "error": ve.message}, status=400)
+            return JsonResponse({"success": False, "error": escape(str(ve))}, status=400)
         except Exception as e:
             logger.error("Error en cruce por CUIT: %s", e, exc_info=True)
-            return JsonResponse({"success": False, "error": str(e)}, status=500)
+            return JsonResponse({"success": False, "error": escape(str(e))}, status=500)
 
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
