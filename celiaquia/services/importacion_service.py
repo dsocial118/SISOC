@@ -302,10 +302,10 @@ class ImportacionService:
 
                 # Siempre asignar tipo de documento ID 5 (CUIT)
                 payload["tipo_documento"] = 5
-                
+
                 # Asignar provincia del usuario automáticamente
                 try:
-                    if hasattr(usuario, 'profile') and usuario.profile.provincia_id:
+                    if hasattr(usuario, "profile") and usuario.profile.provincia_id:
                         payload["provincia"] = usuario.profile.provincia_id
                 except Exception:
                     pass
