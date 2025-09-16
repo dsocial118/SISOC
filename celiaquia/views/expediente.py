@@ -651,6 +651,34 @@ class AsignarTecnicoView(View):
         )
         return redirect("expediente_detail", pk=pk)
 
+    def delete(self, request, pk):
+        user = self.request.user
+        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+            return JsonResponse(
+                {"success": False, "error": "Permiso denegado."}, status=403
+            )
+
+        expediente = get_object_or_404(Expediente, pk=pk)
+        tecnico_id = request.GET.get("tecnico_id")
+        
+        if not tecnico_id:
+            return JsonResponse(
+                {"success": False, "error": "ID de técnico requerido."}, status=400
+            )
+
+        try:
+            asignacion = AsignacionTecnico.objects.get(
+                expediente=expediente, tecnico_id=tecnico_id
+            )
+            asignacion.delete()
+            return JsonResponse(
+                {"success": True, "message": "Técnico removido correctamente."}
+            )
+        except AsignacionTecnico.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": "Asignación no encontrada."}, status=404
+            )
+
 
 class ExpedienteNominaSintysExportView(View):
     """Descarga la nómina del expediente en formato compatible con Sintys."""
