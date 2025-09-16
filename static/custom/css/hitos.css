@@ -701,15 +701,24 @@
 /* Títulos de sección */
 .card-header h3,
 .mt-4 h5 {
-    color: #FFF !important;
+    color: var(--poncho-negro) !important;
     font-weight: 600;
+}
+
+[data-bs-theme="dark"] .card-header h3,
+[data-bs-theme="dark"] .mt-4 h5 {
+    color: #FFF !important;
 }
 
 /* Resumen semanal - estilos específicos */
 .mt-4 h5 {
-    color: #0072BB;
+    color: var(--poncho-azul-cobalto) !important;
     font-weight: 600;
     margin-bottom: 1rem;
+}
+
+[data-bs-theme="dark"] .mt-4 h5 {
+    color: #FFF !important;
 }
 
 /* Totales semanales - columna de cantidad */
