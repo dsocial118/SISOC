@@ -131,20 +131,22 @@ class ExpedienteListView(ListView):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Expediente.objects.select_related(
-            "estado",
-            "usuario_provincia__profile__provincia",
-        ).prefetch_related(
-            "asignaciones_tecnicos__tecnico"
-        ).only(
-            "id",
-            "fecha_creacion",
-            "estado__nombre",
-            "usuario_provincia_id",
-            "usuario_provincia__profile__id",
-            "usuario_provincia__profile__provincia_id",
-            "usuario_provincia__profile__provincia__id",
-            "usuario_provincia__profile__provincia__nombre",
+        qs = (
+            Expediente.objects.select_related(
+                "estado",
+                "usuario_provincia__profile__provincia",
+            )
+            .prefetch_related("asignaciones_tecnicos__tecnico")
+            .only(
+                "id",
+                "fecha_creacion",
+                "estado__nombre",
+                "usuario_provincia_id",
+                "usuario_provincia__profile__id",
+                "usuario_provincia__profile__provincia_id",
+                "usuario_provincia__profile__provincia__id",
+                "usuario_provincia__profile__provincia__nombre",
+            )
         )
         if _is_admin(user):
             return qs.order_by("-fecha_creacion")
@@ -153,8 +155,10 @@ class ExpedienteListView(ListView):
                 estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
             ).order_by("-fecha_creacion")
         if _user_in_group(user, "TecnicoCeliaquia"):
-            return qs.filter(asignaciones_tecnicos__tecnico=user).distinct().order_by(
-                "-fecha_creacion"
+            return (
+                qs.filter(asignaciones_tecnicos__tecnico=user)
+                .distinct()
+                .order_by("-fecha_creacion")
             )
         if _is_provincial(user):
             prov = _user_provincia(user)
@@ -353,8 +357,9 @@ class ExpedienteDetailView(DetailView):
         base = Expediente.objects.select_related(
             "estado", "usuario_modificador", "usuario_provincia"
         ).prefetch_related(
-            "expediente_ciudadanos__ciudadano", "expediente_ciudadanos__estado",
-            "asignaciones_tecnicos__tecnico"
+            "expediente_ciudadanos__ciudadano",
+            "expediente_ciudadanos__estado",
+            "asignaciones_tecnicos__tecnico",
         )
         if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             return base
@@ -660,7 +665,7 @@ class AsignarTecnicoView(View):
 
         expediente = get_object_or_404(Expediente, pk=pk)
         tecnico_id = request.GET.get("tecnico_id")
-        
+
         if not tecnico_id:
             return JsonResponse(
                 {"success": False, "error": "ID de técnico requerido."}, status=400
@@ -703,7 +708,9 @@ class SubirCruceExcelView(View):
 
         if not _is_admin(user):
             # Usar prefetch para evitar query adicional
-            tecnicos_ids = [t.tecnico_id for t in expediente.asignaciones_tecnicos.all()]
+            tecnicos_ids = [
+                t.tecnico_id for t in expediente.asignaciones_tecnicos.all()
+            ]
             if user.id not in tecnicos_ids:
                 return JsonResponse(
                     {
@@ -757,7 +764,9 @@ class RevisarLegajoView(View):
         # Si no es admin, debe ser el técnico asignado a este expediente
         if not _is_admin(user):
             # Usar prefetch para evitar query adicional
-            tecnicos_ids = [t.tecnico_id for t in expediente.asignaciones_tecnicos.all()]
+            tecnicos_ids = [
+                t.tecnico_id for t in expediente.asignaciones_tecnicos.all()
+            ]
             if user.id not in tecnicos_ids:
                 return JsonResponse(
                     {"success": False, "error": "No sos un técnico asignado."},

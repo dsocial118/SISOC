@@ -228,8 +228,13 @@ class ExpedienteCiudadano(models.Model):
             ),
             models.Index(fields=["creado_en"], name="leg_creado_idx"),
             models.Index(fields=["ciudadano"], name="leg_ciud_idx"),
-            models.Index(fields=["estado_cupo", "es_titular_activo"], name="leg_cupo_activo_idx"),
-            models.Index(fields=["revision_tecnico", "resultado_sintys"], name="leg_rev_sintys_idx"),
+            models.Index(
+                fields=["estado_cupo", "es_titular_activo"], name="leg_cupo_activo_idx"
+            ),
+            models.Index(
+                fields=["revision_tecnico", "resultado_sintys"],
+                name="leg_rev_sintys_idx",
+            ),
         ]
 
     def _recompute_archivos_ok(self):

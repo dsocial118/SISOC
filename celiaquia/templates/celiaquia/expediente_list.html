@@ -74,11 +74,7 @@
                                                 <select class="form-select form-select-sm js-tecnico"
                                                         style="min-width: 200px">
                                                     <option value="">— Agregar técnico —</option>
-                                                    {% for t in tecnicos %}
-                                                        <option value="{{ t.id }}">
-                                                            {{ t.get_full_name|default:t.username }}
-                                                        </option>
-                                                    {% endfor %}
+                                                    {% for t in tecnicos %}<option value="{{ t.id }}">{{ t.get_full_name|default:t.username }}</option>{% endfor %}
                                                 </select>
                                                 {# Badges de técnicos asignados #}
                                                 {% if exp.asignaciones_tecnicos.all %}
@@ -86,10 +82,11 @@
                                                         {% for asignacion in exp.asignaciones_tecnicos.all %}
                                                             <span class="badge bg-primary me-1 mb-1">
                                                                 {{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}
-                                                                <button type="button" class="btn-close btn-close-white ms-1 js-remove-tecnico" 
-                                                                        data-tecnico-id="{{ asignacion.tecnico.id }}" 
+                                                                <button type="button"
+                                                                        class="btn-close btn-close-white ms-1 js-remove-tecnico"
+                                                                        data-tecnico-id="{{ asignacion.tecnico.id }}"
                                                                         data-exp-id="{{ exp.pk }}"
-                                                                        style="font-size: 0.7em;"></button>
+                                                                        style="font-size: 0.7em"></button>
                                                             </span>
                                                         {% endfor %}
                                                     </div>
@@ -101,9 +98,7 @@
                                     {% else %}
                                         {% if exp.asignaciones_tecnicos.all %}
                                             {% for asignacion in exp.asignaciones_tecnicos.all %}
-                                                <span class="badge bg-primary me-1">
-                                                    {{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}
-                                                </span>
+                                                <span class="badge bg-primary me-1">{{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}</span>
                                             {% endfor %}
                                         {% else %}
                                             <span class="text-muted">—</span>

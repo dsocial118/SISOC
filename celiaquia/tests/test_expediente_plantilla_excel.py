@@ -1,7 +1,8 @@
+from io import BytesIO
+
 import pytest
 from django.urls import reverse
 from django.contrib.auth.models import User, Group
-from io import BytesIO
 from openpyxl import load_workbook
 
 from users.models import Profile
