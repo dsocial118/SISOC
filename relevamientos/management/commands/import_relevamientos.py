@@ -15,6 +15,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("csv_path", type=str, help="Ruta al archivo CSV")
+        parser.add_argument(
+            "--batch-size",
+            type=int,
+            default=200,
+            help="Cantidad de filas a procesar por lote (default: 200)",
+        )
 
     def handle(self, *args, **options):
         path = options["csv_path"]
@@ -47,13 +53,13 @@ class Command(BaseCommand):
                 if not rows:
                     return
 
-                # Fetch comedores in one query
+                # Buscar comedores por pk en una sola query
                 ids = [r["comedor_id"] for r in rows]
-                comedores = Comedor.objects.filter(id__in=ids)
-                comedores_map = {c.id: c for c in comedores}
+                comedores_qs = Comedor.objects.filter(id__in=ids)
+                comedores_map = {c.id: c for c in comedores_qs}
 
-                # Precompute active relevamientos per comedor
-                active_ids = set(
+                # Precomputar activos por pk de comedor
+                activos = set(
                     Relevamiento.objects.filter(
                         comedor_id__in=list(comedores_map.keys()),
                         estado__in=["Pendiente", "Visita pendiente"],
@@ -69,14 +75,14 @@ class Command(BaseCommand):
                     comedor = comedores_map.get(comedor_id)
                     if not comedor:
                         self.stderr.write(
-                            f"[Fila {line}] Comedor con comedor_id={comedor_id} no existe."
+                            f"[Fila {line}] Comedor con id={comedor_id} no existe."
                         )
                         other_errors += 1
                         continue
 
-                    if comedor_id in active_ids:
+                    if comedor_id in activos:
                         self.stderr.write(
-                            f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con comedor_id {comedor_id}."
+                            f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con id {comedor_id}."
                         )
                         skipped_active += 1
                         continue
@@ -90,13 +96,13 @@ class Command(BaseCommand):
                     )
 
                     try:
-                        rv.save()  # Dispara signals y validaciones del modelo
+                        rv.save()  # Dispara validaciones del modelo y signals
                         created_ok += 1
                     except (CoreValidationError, FormsValidationError) as e:
                         msg = str(e)
                         if "Ya existe un relevamiento activo" in msg:
                             self.stderr.write(
-                                f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con comedor_id {comedor_id}."
+                                f"[Fila {line}] Omitido: ya existe relevamiento activo para el comedor con id {comedor_id}."
                             )
                             skipped_active += 1
                         else:
@@ -126,10 +132,10 @@ class Command(BaseCommand):
                     continue
 
                 try:
-                    comedor_id = int(comedor_str) + 100000  # Ajuste al ID externo
+                    comedor_id = int(comedor_str) + 100000
                 except ValueError:
                     self.stderr.write(
-                        f"[Fila {reader.line_num}] id externo inválido: '{comedor_str}'. Debe ser un entero (campo comedor_id de Comedor)."
+                        f"[Fila {reader.line_num}] id externo inválido: '{comedor_str}'. Debe ser un entero."
                     )
                     other_errors += 1
                     continue
@@ -151,6 +157,8 @@ class Command(BaseCommand):
             if buffer:
                 process_batch(buffer)
                 buffer.clear()
+
+            # Signals se ejecutaron normalmente durante la creación
 
             self.stdout.write(
                 self.style.SUCCESS(
