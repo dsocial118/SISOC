@@ -1,8 +1,8 @@
 import os
 import threading
 import logging
-import requests
 from concurrent.futures import ThreadPoolExecutor
+import requests
 from django.db import close_old_connections
 from django.utils import timezone
 
