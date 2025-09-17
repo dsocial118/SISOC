@@ -34,6 +34,7 @@ class ExpedienteService:
         create_kwargs = dict(
             usuario_provincia=usuario_provincia,
             estado_id=_estado_id("CREADO"),
+            numero_expediente=datos_metadatos.get("numero_expediente") or None,
             observaciones=datos_metadatos.get("observaciones", ""),
             excel_masivo=excel_masivo,
         )
