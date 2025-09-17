@@ -63,8 +63,25 @@
     background-color: #67C672 !important;
   }
 
-  iframe
-  {
+  .powerbi-container {
+    position: relative;
     width: 100%;
-    height: 382px;
+  }
+
+  .powerbi-iframe {
+    width: 100%;
+    min-height: 80vh;
+    border: 0;
+  }
+
+  @media (max-width: 992px) {
+    .powerbi-iframe {
+      min-height: 70vh;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .powerbi-iframe {
+      min-height: 60vh;
+    }
   }
