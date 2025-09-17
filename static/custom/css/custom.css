@@ -164,4 +164,38 @@ border-left-color: #fb4733 !important;
   max-width: 280px;
 }
 
+/* Mejoras para títulos de tarjetas en ambos modos */
+.card-header .card-title {
+  color: #1a1a1a !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
+}
+
+[data-bs-theme="dark"] .card-header .card-title {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Mejorar contraste de headers en modo claro */
+.card-header {
+  background-color: #f8f9fa !important;
+  border-bottom: 2px solid #007bff;
+}
+
+[data-bs-theme="dark"] .card-header {
+  background-color: #3a4148 !important;
+  border-bottom: 2px solid #0d6efd;
+}
+
+/* Mejoras adicionales para el contenido de las tarjetas */
+.comment-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+[data-bs-theme="dark"] .comment-text {
+  color: #e9ecef !important;
+}
+
 

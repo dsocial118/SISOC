@@ -36,6 +36,31 @@ def subir_archivo_admision(request, admision_id, documentacion_id):
 
 def eliminar_archivo_admision(request, admision_id, documentacion_id):
     if request.method == "DELETE":
+        # Verificar permisos del usuario antes de buscar el archivo
+        admision = get_object_or_404(Admision, pk=admision_id)
+
+        # Si no es superuser, verificar que pertenezca a la dupla del comedor
+        if not request.user.is_superuser:
+            # Importar el servicio para usar el método de verificación
+            from admisiones.services.admisiones_service import AdmisionService
+
+            comedor = admision.comedor
+            if not comedor:
+                return JsonResponse(
+                    {"success": False, "error": "Admisión sin comedor asociado."},
+                    status=403,
+                )
+
+            # Usar el método de verificación del servicio
+            if not AdmisionService._verificar_permiso_dupla(request.user, comedor):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Sin permisos para modificar esta admisión.",
+                    },
+                    status=403,
+                )
+
         archivo = get_object_or_404(
             ArchivoAdmision, admision_id=admision_id, documentacion_id=documentacion_id
         )

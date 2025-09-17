@@ -73,7 +73,8 @@ class Firmante(models.Model):
     cuit = models.BigIntegerField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.nombre} ({self.get_rol_display()})"
+        rol = self.rol.nombre if self.rol else "-"
+        return f"{self.nombre} ({rol})"
 
 
 class Aval1(models.Model):
@@ -137,13 +138,6 @@ class Organizacion(models.Model):
     )
     subtipo_entidad = models.ForeignKey(
         SubtipoEntidad,
-        on_delete=models.CASCADE,
-        related_name="organizaciones",
-        blank=True,
-        null=True,
-    )
-    tipo_organizacion = models.ForeignKey(
-        TipoOrganizacion,
         on_delete=models.CASCADE,
         related_name="organizaciones",
         blank=True,
