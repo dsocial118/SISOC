@@ -40,6 +40,14 @@ def _tipo_doc_por_defecto():
         raise ValidationError("Falta el TipoDocumento por defecto (DNI)")
 
 
+@lru_cache(maxsize=1)
+def _tipo_doc_cuit():
+    try:
+        return TipoDocumento.objects.only("id").get(tipo__iexact="CUIT").id
+    except TipoDocumento.DoesNotExist as exc:
+        raise ValidationError("Falta configurar el TipoDocumento CUIT") from exc
+
+
 # Estados de expediente considerados “abiertos / pre-cupo” para evitar duplicados inter-expedientes
 ESTADOS_PRE_CUPO = [
     "CREADO",
@@ -300,8 +308,8 @@ class ImportacionService:
                     else:
                         payload[field] = v or None
 
-                # Siempre asignar tipo de documento ID 5 (CUIT)
-                payload["tipo_documento"] = 5
+                # Asignar tipo de documento CUIT resolviendo el ID en runtime
+                payload["tipo_documento"] = _tipo_doc_cuit()
 
                 # Asignar provincia del usuario automáticamente
                 try:
