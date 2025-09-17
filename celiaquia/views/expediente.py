@@ -16,7 +16,7 @@ from django.http import (
     HttpResponseNotAllowed,
     FileResponse,
 )
-from django.utils.safestring import mark_safe
+from django.utils.html import escape
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
@@ -131,20 +131,22 @@ class ExpedienteListView(ListView):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Expediente.objects.select_related(
-            "estado",
-            "asignacion_tecnico__tecnico",
-            "usuario_provincia__profile__provincia",
-        ).only(
-            "id",
-            "fecha_creacion",
-            "estado__nombre",
-            "usuario_provincia_id",
-            "usuario_provincia__profile__id",
-            "usuario_provincia__profile__provincia_id",
-            "usuario_provincia__profile__provincia__id",
-            "usuario_provincia__profile__provincia__nombre",
-            "asignacion_tecnico__tecnico_id",
+        qs = (
+            Expediente.objects.select_related(
+                "estado",
+                "usuario_provincia__profile__provincia",
+            )
+            .prefetch_related("asignaciones_tecnicos__tecnico")
+            .only(
+                "id",
+                "fecha_creacion",
+                "estado__nombre",
+                "usuario_provincia_id",
+                "usuario_provincia__profile__id",
+                "usuario_provincia__profile__provincia_id",
+                "usuario_provincia__profile__provincia__id",
+                "usuario_provincia__profile__provincia__nombre",
+            )
         )
         if _is_admin(user):
             return qs.order_by("-fecha_creacion")
@@ -153,8 +155,10 @@ class ExpedienteListView(ListView):
                 estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
             ).order_by("-fecha_creacion")
         if _user_in_group(user, "TecnicoCeliaquia"):
-            return qs.filter(asignacion_tecnico__tecnico=user).order_by(
-                "-fecha_creacion"
+            return (
+                qs.filter(asignaciones_tecnicos__tecnico=user)
+                .distinct()
+                .order_by("-fecha_creacion")
             )
         if _is_provincial(user):
             prov = _user_provincia(user)
@@ -223,24 +227,31 @@ class ProcesarExpedienteView(View):
                 if len(det) > 10:
                     extra = f"<br>… y {len(det) - 10} más."
 
+                # Escapar contenido para prevenir XSS
+                preview_escaped = [escape(p) for p in preview]
+                extra_escaped = escape(extra) if extra else ""
                 html = (
                     f"Se excluyeron {excluidos_count} registros porque ya están en otro expediente:"
-                    f"<br>{'<br>'.join(preview)}{extra}"
+                    f"<br>{'<br>'.join(preview_escaped)}{extra_escaped}"
                 )
-                messages.warning(request, mark_safe(html))
+                messages.warning(request, html)
 
             return redirect("expediente_detail", pk=pk)
 
         except ValidationError as ve:
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": ve.message}, status=400)
-            messages.error(request, f"Error de validación: {ve.message}")
+                return JsonResponse(
+                    {"success": False, "error": escape(str(ve))}, status=400
+                )
+            messages.error(request, f"Error de validación: {escape(str(ve))}")
             return redirect("expediente_detail", pk=pk)
         except Exception as e:
             tb = traceback.format_exc()
             logging.error("Error al procesar expediente %s:\n%s", pk, tb)
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": str(e)}, status=500)
+                return JsonResponse(
+                    {"success": False, "error": escape(str(e))}, status=500
+                )
             messages.error(request, "Error inesperado al procesar el expediente.")
             return redirect("expediente_detail", pk=pk)
 
@@ -351,14 +362,16 @@ class ExpedienteDetailView(DetailView):
     def get_queryset(self):
         user = self.request.user
         base = Expediente.objects.select_related(
-            "estado", "usuario_modificador", "asignacion_tecnico", "usuario_provincia"
+            "estado", "usuario_modificador", "usuario_provincia"
         ).prefetch_related(
-            "expediente_ciudadanos__ciudadano", "expediente_ciudadanos__estado"
+            "expediente_ciudadanos__ciudadano",
+            "expediente_ciudadanos__estado",
+            "asignaciones_tecnicos__tecnico",
         )
         if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             return base
         if _user_in_group(user, "TecnicoCeliaquia"):
-            return base.filter(asignacion_tecnico__tecnico=user)
+            return base.filter(asignaciones_tecnicos__tecnico=user)
         if _is_provincial(user):
             prov = _user_provincia(user)
             return base.filter(usuario_provincia__profile__provincia=prov)
@@ -374,7 +387,7 @@ class ExpedienteDetailView(DetailView):
         preview = preview_error = None
         preview_limit_actual = None
 
-        q = expediente.expediente_ciudadanos.select_related("ciudadano")
+        q = expediente.expediente_ciudadanos.select_related("ciudadano", "estado")
         counts = q.aggregate(
             c_aceptados=Count(
                 "id",
@@ -544,13 +557,17 @@ class ExpedienteConfirmView(View):
             )
         except ValidationError as ve:
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": ve.message}, status=400)
-            messages.error(request, f"Error al confirmar: {ve.message}")
+                return JsonResponse(
+                    {"success": False, "error": escape(str(ve))}, status=400
+                )
+            messages.error(request, f"Error al confirmar: {escape(str(ve))}")
         except Exception as e:
             logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": str(e)}, status=500)
-            messages.error(request, f"Error inesperado: {e}")
+                return JsonResponse(
+                    {"success": False, "error": escape(str(e))}, status=500
+                )
+            messages.error(request, f"Error inesperado: {escape(str(e))}")
         return redirect("expediente_detail", pk=pk)
 
 
@@ -630,9 +647,9 @@ class AsignarTecnicoView(View):
             messages.error(request, msg)
             return redirect("expediente_detail", pk=pk)
 
-        AsignacionTecnico.objects.update_or_create(
+        AsignacionTecnico.objects.get_or_create(
             expediente=expediente,
-            defaults={"tecnico": tecnico},
+            tecnico=tecnico,
         )
 
         _set_estado(expediente, "ASIGNADO", user)
@@ -649,6 +666,34 @@ class AsignarTecnicoView(View):
             f"Técnico {tecnico.get_full_name() or tecnico.username} asignado correctamente. Estado: ASIGNADO.",
         )
         return redirect("expediente_detail", pk=pk)
+
+    def delete(self, request, pk):
+        user = self.request.user
+        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+            return JsonResponse(
+                {"success": False, "error": "Permiso denegado."}, status=403
+            )
+
+        expediente = get_object_or_404(Expediente, pk=pk)
+        tecnico_id = request.GET.get("tecnico_id")
+
+        if not tecnico_id:
+            return JsonResponse(
+                {"success": False, "error": "ID de técnico requerido."}, status=400
+            )
+
+        try:
+            asignacion = AsignacionTecnico.objects.get(
+                expediente=expediente, tecnico_id=tecnico_id
+            )
+            asignacion.delete()
+            return JsonResponse(
+                {"success": True, "message": "Técnico removido correctamente."}
+            )
+        except AsignacionTecnico.DoesNotExist:
+            return JsonResponse(
+                {"success": False, "error": "Asignación no encontrada."}, status=404
+            )
 
 
 class ExpedienteNominaSintysExportView(View):
@@ -673,12 +718,15 @@ class SubirCruceExcelView(View):
         expediente = get_object_or_404(Expediente, pk=pk)
 
         if not _is_admin(user):
-            asignacion = getattr(expediente, "asignacion_tecnico", None)
-            if not asignacion or asignacion.tecnico_id != user.id:
+            # Usar prefetch para evitar query adicional
+            tecnicos_ids = [
+                t.tecnico_id for t in expediente.asignaciones_tecnicos.all()
+            ]
+            if user.id not in tecnicos_ids:
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": "No sos el técnico asignado a este expediente.",
+                        "error": "No sos un técnico asignado a este expediente.",
                     },
                     status=403,
                 )
@@ -703,10 +751,12 @@ class SubirCruceExcelView(View):
                 }
             )
         except ValidationError as ve:
-            return JsonResponse({"success": False, "error": ve.message}, status=400)
+            return JsonResponse(
+                {"success": False, "error": escape(str(ve))}, status=400
+            )
         except Exception as e:
             logger.error("Error en cruce por CUIT: %s", e, exc_info=True)
-            return JsonResponse({"success": False, "error": str(e)}, status=500)
+            return JsonResponse({"success": False, "error": escape(str(e))}, status=500)
 
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
@@ -726,10 +776,13 @@ class RevisarLegajoView(View):
 
         # Si no es admin, debe ser el técnico asignado a este expediente
         if not _is_admin(user):
-            asig = getattr(expediente, "asignacion_tecnico", None)
-            if not asig or asig.tecnico_id != user.id:
+            # Usar prefetch para evitar query adicional
+            tecnicos_ids = [
+                t.tecnico_id for t in expediente.asignaciones_tecnicos.all()
+            ]
+            if user.id not in tecnicos_ids:
                 return JsonResponse(
-                    {"success": False, "error": "No sos el técnico asignado."},
+                    {"success": False, "error": "No sos un técnico asignado."},
                     status=403,
                 )
 

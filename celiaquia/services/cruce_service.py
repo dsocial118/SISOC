@@ -243,8 +243,9 @@ class CruceService:
         resumen_html["pct_no_matcheados"] = pct_no_match
         tecnico_txt = None
         try:
-            asig = getattr(expediente, "asignacion_tecnico", None)
-            if asig and asig.tecnico:
+            asignaciones = expediente.asignaciones_tecnicos.all()
+            if asignaciones.exists():
+                asig = asignaciones.first()
                 tecnico_txt = asig.tecnico.get_full_name() or asig.tecnico.username
         except Exception:
             tecnico_txt = None
@@ -284,8 +285,9 @@ class CruceService:
 
         tecnico_txt = None
         try:
-            asig = getattr(expediente, "asignacion_tecnico", None)
-            if asig and asig.tecnico:
+            asignaciones = expediente.asignaciones_tecnicos.all()
+            if asignaciones.exists():
+                asig = asignaciones.first()
                 tecnico_txt = asig.tecnico.get_full_name() or asig.tecnico.username
         except Exception:
             tecnico_txt = None

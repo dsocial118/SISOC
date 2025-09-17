@@ -65,8 +65,10 @@ class LegajoArchivoUploadView(View):
 
         # Técnico: si querés permitirlo, que sea el asignado
         if is_tec and not (is_admin or is_coord):
-            asig = getattr(self.exp_ciud.expediente, "asignacion_tecnico", None)
-            if not asig or asig.tecnico_id != user.id:
+            asignaciones = self.exp_ciud.expediente.asignaciones_tecnicos.filter(
+                tecnico=user
+            )
+            if not asignaciones.exists():
                 raise PermissionDenied("No sos el técnico asignado a este expediente.")
 
         return super().dispatch(request, *args, **kwargs)
@@ -89,7 +91,7 @@ class LegajoArchivoUploadView(View):
         if archivo_unico:
             try:
                 slot_int = int(slot) if slot is not None else None
-            except Exception:
+            except (ValueError, TypeError):
                 return JsonResponse(
                     {"success": False, "message": "Slot inválido."}, status=400
                 )
@@ -182,11 +184,29 @@ class LegajoArchivoUploadView(View):
 class LegajoRechazarView(View):
     @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
+        # Validación de permisos
+        user = request.user
+        if not user.is_authenticated:
+            raise PermissionDenied("Autenticación requerida.")
+
+        is_admin = user.is_superuser
+        is_coord = _in_group(user, "CoordinadorCeliaquia")
+        is_tec = _in_group(user, "TecnicoCeliaquia")
+
+        if not (is_admin or is_coord or is_tec):
+            raise PermissionDenied("Permiso denegado.")
+
         expediente_id = kwargs.get("expediente_id")
         pk = kwargs.get("pk")
         legajo = get_object_or_404(
             ExpedienteCiudadano, pk=pk, expediente__pk=expediente_id
         )
+
+        # Validar que el técnico esté asignado al expediente
+        if is_tec and not (is_admin or is_coord):
+            asignaciones = legajo.expediente.asignaciones_tecnicos.filter(tecnico=user)
+            if not asignaciones.exists():
+                raise PermissionDenied("No sos el técnico asignado a este expediente.")
         try:
             CupoService.liberar_slot(
                 legajo=legajo,
@@ -227,11 +247,29 @@ class LegajoRechazarView(View):
 class LegajoSuspenderView(View):
     @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
+        # Validación de permisos
+        user = request.user
+        if not user.is_authenticated:
+            raise PermissionDenied("Autenticación requerida.")
+
+        is_admin = user.is_superuser
+        is_coord = _in_group(user, "CoordinadorCeliaquia")
+        is_tec = _in_group(user, "TecnicoCeliaquia")
+
+        if not (is_admin or is_coord or is_tec):
+            raise PermissionDenied("Permiso denegado.")
+
         expediente_id = kwargs.get("expediente_id")
         pk = kwargs.get("pk")
         legajo = get_object_or_404(
             ExpedienteCiudadano, pk=pk, expediente__pk=expediente_id
         )
+
+        # Validar que el técnico esté asignado al expediente
+        if is_tec and not (is_admin or is_coord):
+            asignaciones = legajo.expediente.asignaciones_tecnicos.filter(tecnico=user)
+            if not asignaciones.exists():
+                raise PermissionDenied("No sos el técnico asignado a este expediente.")
         try:
             CupoService.suspender_slot(
                 legajo=legajo, usuario=request.user, motivo="Suspensión administrativa"
@@ -274,6 +312,17 @@ class LegajoSuspenderView(View):
 class LegajoBajaView(View):
     @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
+        # Validación de permisos - solo coordinadores y admins pueden dar de baja
+        user = request.user
+        if not user.is_authenticated:
+            raise PermissionDenied("Autenticación requerida.")
+
+        is_admin = user.is_superuser
+        is_coord = _in_group(user, "CoordinadorCeliaquia")
+
+        if not (is_admin or is_coord):
+            raise PermissionDenied("Solo coordinadores pueden dar de baja legajos.")
+
         expediente_id = kwargs.get("expediente_id")
         pk = kwargs.get("pk")
         legajo = get_object_or_404(
@@ -338,8 +387,8 @@ class LegajoSubsanarView(View):
         legajo = get_object_or_404(ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk)
 
         if is_tec and not (is_admin or is_coord):
-            asig = getattr(legajo.expediente, "asignacion_tecnico", None)
-            if not asig or asig.tecnico_id != user.id:
+            asignaciones = legajo.expediente.asignaciones_tecnicos.filter(tecnico=user)
+            if not asignaciones.exists():
                 return JsonResponse(
                     {
                         "success": False,
