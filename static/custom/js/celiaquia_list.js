@@ -270,14 +270,20 @@
         return;
       }
 
-      withSpinner(btn, 'Asignando…', async () => {
+      withSpinner(btn, 'Actualizando…', async () => {
         try {
           const { ok, data, text, status } = await postJson(url, { tecnico_id: tecnicoId });
           if (!ok) {
             const msg = (data && data.error) || text || `HTTP ${status}`;
             throw new Error(msg);
           }
-          showAlert('success', 'Técnico asignado correctamente. El expediente está en ASIGNADO.');
+          showAlert('success', 'Técnico agregado correctamente.');
+          
+          // Resetear selector
+          select.value = '';
+          
+          // Recargar para mostrar el nuevo badge
+          setTimeout(() => window.location.reload(), 1000);
           // Actualizamos badge a ASIGNADO sin recargar
           const estadoCell = row.querySelector('td:nth-child(4) .badge');
           if (estadoCell) {
@@ -292,11 +298,71 @@
     });
   }
 
+  function attachRemoveTecnicoHandlers() {
+    const table = document.querySelector('table');
+    if (!table) return;
+
+    delegate(table, '.js-remove-tecnico', 'click', (e, btn) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const tecnicoId = btn.getAttribute('data-tecnico-id');
+      const expId = btn.getAttribute('data-exp-id');
+      
+      if (!tecnicoId || !expId) {
+        showAlert('danger', 'Datos faltantes para remover técnico.');
+        return;
+      }
+
+      const url = `/expedientes/${expId}/asignar-tecnico/?tecnico_id=${tecnicoId}`;
+      
+      withSpinner(btn, '...', async () => {
+        try {
+          const { ok, data, text, status } = await fetch(url, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: {
+              'X-CSRFToken': csrfToken(),
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json'
+            }
+          }).then(async resp => {
+            const ct = resp.headers.get('Content-Type') || '';
+            if (ct.includes('application/json')) {
+              const data = await resp.json();
+              return { ok: resp.ok, data, text: null, status: resp.status };
+            }
+            const text = await resp.text();
+            return { ok: resp.ok, data: null, text, status: resp.status };
+          });
+          
+          if (!ok) {
+            const msg = (data && data.error) || text || `HTTP ${status}`;
+            throw new Error(msg);
+          }
+          
+          showAlert('success', 'Técnico removido correctamente.');
+          
+          // Remover el badge del DOM
+          const badge = btn.closest('.badge');
+          if (badge) {
+            badge.remove();
+          }
+          
+        } catch (err) {
+          console.error('Remover técnico:', err);
+          showAlert('danger', 'No se pudo remover el técnico. ' + err.message);
+        }
+      })();
+    });
+  }
+
   // ---------- Init ----------
   document.addEventListener('DOMContentLoaded', () => {
     attachProcessHandlers();
     attachConfirmHandlers();
     attachRecepcionarHandlers();
     attachAssignHandlers();
+    attachRemoveTecnicoHandlers();
   });
 })();
