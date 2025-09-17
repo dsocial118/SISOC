@@ -40,6 +40,14 @@ def _tipo_doc_por_defecto():
         raise ValidationError("Falta el TipoDocumento por defecto (DNI)")
 
 
+@lru_cache(maxsize=1)
+def _tipo_doc_cuit():
+    try:
+        return TipoDocumento.objects.only("id").get(tipo__iexact="CUIT").id
+    except TipoDocumento.DoesNotExist as exc:
+        raise ValidationError("Falta configurar el TipoDocumento CUIT") from exc
+
+
 # Estados de expediente considerados “abiertos / pre-cupo” para evitar duplicados inter-expedientes
 ESTADOS_PRE_CUPO = [
     "CREADO",
@@ -69,10 +77,8 @@ class ImportacionService:
             "nombre",
             "documento",
             "fecha_nacimiento",
-            "tipo_documento",
             "sexo",
             "nacionalidad",
-            "provincia",
             "municipio",
             "localidad",
             "calle",
@@ -183,11 +189,8 @@ class ImportacionService:
             "dni": "documento",
             "fecha_nacimiento": "fecha_nacimiento",
             "fecha_de_nacimiento": "fecha_nacimiento",
-            "tipo_documento": "tipo_documento",
-            "tipo_doc": "tipo_documento",
             "sexo": "sexo",
             "nacionalidad": "nacionalidad",
-            "provincia": "provincia",
             "municipio": "municipio",
             "localidad": "localidad",
             "email": "email",
@@ -305,8 +308,15 @@ class ImportacionService:
                     else:
                         payload[field] = v or None
 
-                if not payload.get("tipo_documento"):
-                    payload["tipo_documento"] = _tipo_doc_por_defecto()
+                # Asignar tipo de documento CUIT resolviendo el ID en runtime
+                payload["tipo_documento"] = _tipo_doc_cuit()
+
+                # Asignar provincia del usuario automáticamente
+                try:
+                    if hasattr(usuario, "profile") and usuario.profile.provincia_id:
+                        payload["provincia"] = usuario.profile.provincia_id
+                except Exception:
+                    pass
 
                 required = ["apellido", "nombre", "documento", "fecha_nacimiento"]
                 for req in required:
@@ -331,13 +341,10 @@ class ImportacionService:
                 for fk in fk_models:
                     val = payload.get(fk)
                     if val in (None, ""):
-                        if fk != "tipo_documento":
-                            payload[fk] = None
+                        payload[fk] = None
                         continue
                     resolved = resolve_fk(fk, val)
                     if resolved is None:
-                        if fk == "tipo_documento":
-                            raise ValidationError(f"Tipo de documento inválido: {val}")
                         add_warning(offset, fk, f"{val} no encontrado")
                         payload[fk] = None
                     else:
