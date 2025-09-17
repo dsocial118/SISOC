@@ -39,6 +39,11 @@ class StyledForm(forms.Form):
 
 
 class ExpedienteForm(BaseStyledForm):
+    numero_expediente = forms.CharField(
+        label=_("Número Expediente"),
+        max_length=100,
+        required=False,
+    )
     excel_masivo = forms.FileField(
         label=_("Archivo Excel"),
         validators=[FileExtensionValidator(["xlsx"]), validate_file_size],
@@ -53,7 +58,7 @@ class ExpedienteForm(BaseStyledForm):
 
     class Meta:
         model = Expediente
-        fields = ["observaciones", "excel_masivo"]
+        fields = ["numero_expediente", "observaciones", "excel_masivo"]
 
 
 class ConfirmarEnvioForm(forms.Form):

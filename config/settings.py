@@ -166,7 +166,7 @@ DATABASES = {
     }
 }
 
-if "pytest" in sys.argv:  # DB para testing
+if "pytest" in sys.argv or os.environ.get("PYTEST_RUNNING") == "1":  # DB para testing
     DATABASES = {
         "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
     }

@@ -1,7 +1,8 @@
+from io import BytesIO
+
 import pytest
 from django.urls import reverse
 from django.contrib.auth.models import User, Group
-from io import BytesIO
 from openpyxl import load_workbook
 
 from users.models import Profile
@@ -28,10 +29,8 @@ def test_descargar_plantilla_excel(client):
         "nombre",
         "documento",
         "fecha_nacimiento",
-        "tipo_documento",
         "sexo",
         "nacionalidad",
-        "provincia",
         "municipio",
         "localidad",
         "calle",
