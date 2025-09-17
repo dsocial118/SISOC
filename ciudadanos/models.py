@@ -734,8 +734,7 @@ class Ciudadano(models.Model):
         Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
     demo_centro_familia = models.BooleanField(
-        default=False, 
-        verbose_name="Demo Centro de Familia"
+        default=False, verbose_name="Demo Centro de Familia"
     )
 
     def __str__(self):
