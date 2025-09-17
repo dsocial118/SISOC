@@ -11,13 +11,15 @@ from django.views.generic import (
     UpdateView,
 )
 
-from organizaciones.forms import (
-    OrganizacionForm,
-    FirmanteFormset,
-    Aval1Formset,
-    Aval2Formset,
+from organizaciones.forms import OrganizacionForm, FirmanteForm, Aval1Form, Aval2Form
+from organizaciones.models import (
+    Organizacion,
+    SubtipoEntidad,
+    Firmante,
+    Aval1,
+    Aval2,
+    RolFirmante,
 )
-from organizaciones.models import Organizacion, SubtipoEntidad
 
 
 class OrganizacionListView(ListView):
@@ -38,8 +40,7 @@ class OrganizacionListView(ListView):
                     | Q(telefono__icontains=query)
                     | Q(email__icontains=query)
                 )
-                .select_related()
-                .select_related("tipo_entidad", "subtipo_entidad", "tipo_organizacion")
+                .select_related("tipo_entidad", "subtipo_entidad")
                 .only(
                     "id",
                     "nombre",
@@ -48,15 +49,12 @@ class OrganizacionListView(ListView):
                     "email",
                     "tipo_entidad__nombre",
                     "subtipo_entidad__nombre",
-                    "tipo_organizacion__nombre",
                 )
             )
         else:
             # Para la vista inicial sin búsqueda, usar paginación eficiente
             queryset = (
-                Organizacion.objects.select_related(
-                    "tipo_entidad", "subtipo_entidad", "tipo_organizacion"
-                )
+                Organizacion.objects.select_related("tipo_entidad", "subtipo_entidad")
                 .only(
                     "id",
                     "nombre",
@@ -65,7 +63,6 @@ class OrganizacionListView(ListView):
                     "email",
                     "tipo_entidad__nombre",
                     "subtipo_entidad__nombre",
-                    "tipo_organizacion__nombre",
                 )
                 .order_by("-id")
             )
@@ -77,6 +74,231 @@ class OrganizacionListView(ListView):
         return context
 
 
+class FirmanteCreateView(CreateView):
+    model = Firmante
+    form_class = FirmanteForm
+    template_name = "firmante_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        organizacion_pk = (
+            self.kwargs.get("organizacion_pk")
+            or self.kwargs.get("pk")
+            or self.request.GET.get("organizacion")
+            or self.request.POST.get("organizacion")
+        )
+
+        context["organizacion_pk"] = organizacion_pk
+        context["hidden_fields_send"] = [
+            {"name": "organizacion_id", "value": organizacion_pk}
+        ]
+        # botones/breadcrumbs que usan las plantillas
+        context["back_button"] = {
+            "url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}),
+            "label": "Volver",
+        }
+        context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
+        context["breadcrumb_items"] = []
+        context["guardar_otro_send"] = True
+        return context
+
+    def get_allowed_roles_queryset(self, organizacion):
+        """
+        Devuelve queryset de RolFirmante filtrado según el tipo de entidad de la organización.
+        """
+        if not organizacion or not organizacion.tipo_entidad:
+            return RolFirmante.objects.none()
+
+        tipo = organizacion.tipo_entidad.nombre.strip().lower()
+        mapping = {
+            "personería jurídica": ["Presidente", "Tesorero", "Secretario"],
+            "personería jurídica eclesiástica": [
+                "Obispo",
+                "Apoderado 1",
+                "Apoderado 2",
+            ],
+            "asociación de hecho": ["Firmante 1", "Firmante 2", "Firmante 3"],
+        }
+
+        # buscar nombres permitidos según el tipo (case-insensitive)
+        allowed = []
+        for key, names in mapping.items():
+            if key == tipo:
+                allowed = names
+                break
+
+        if not allowed:
+            # fallback: mostrar todos o ninguno según se prefiera; aquí mostramos todos por compatibilidad
+            return RolFirmante.objects.all()
+        return RolFirmante.objects.filter(nombre__in=allowed)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # obtener la organización (puede venir por kwargs o GET/POST)
+        organizacion_pk = (
+            self.kwargs.get("organizacion_pk")
+            or self.kwargs.get("pk")
+            or self.request.GET.get("organizacion")
+            or self.request.POST.get("organizacion")
+        )
+        organizacion = None
+        if organizacion_pk:
+            try:
+                organizacion = Organizacion.objects.select_related("tipo_entidad").get(
+                    pk=organizacion_pk
+                )
+            except Organizacion.DoesNotExist:
+                organizacion = None
+
+        form.fields["rol"].queryset = self.get_allowed_roles_queryset(organizacion)
+        return form
+
+    def form_valid(self, form):
+        organizacion_pk = (
+            self.kwargs.get("organizacion_id")
+            or self.request.POST.get("organizacion_id")
+            or self.request.GET.get("organizacion_id")
+        )
+        if not organizacion_pk:
+            messages.error(self.request, "Falta el id de la organización.")
+            return self.form_invalid(form)
+
+        # asignar FK y guardar
+        form.instance.organizacion_id = organizacion_pk
+        self.object = form.save()
+        if "guardar_otro" in self.request.POST:
+            return HttpResponseRedirect(self.get_success_url_add_new())
+        else:
+            return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
+
+    def get_success_url_add_new(self):
+        return reverse(
+            "firmante_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
+        )
+
+
+class Aval1CreateView(CreateView):
+    model = Aval1
+    form_class = Aval1Form
+    template_name = "aval1_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        organizacion_pk = (
+            self.kwargs.get("organizacion_pk")
+            or self.kwargs.get("pk")
+            or self.request.GET.get("organizacion")
+            or self.request.POST.get("organizacion")
+        )
+
+        context["organizacion_pk"] = organizacion_pk
+        context["hidden_fields_send"] = [
+            {"name": "organizacion_id", "value": organizacion_pk}
+        ]
+        # botones/breadcrumbs que usan las plantillas
+        context["back_button"] = {
+            "url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}),
+            "label": "Volver",
+        }
+        context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
+        context["breadcrumb_items"] = []
+        context["guardar_otro_send"] = True
+        return context
+
+    def form_valid(self, form):
+        organizacion_pk = (
+            self.kwargs.get("organizacion_id")
+            or self.request.POST.get("organizacion_id")
+            or self.request.GET.get("organizacion_id")
+        )
+        if not organizacion_pk:
+            messages.error(self.request, "Falta el id de la organización.")
+            return self.form_invalid(form)
+
+        form.instance.organizacion_id = organizacion_pk
+        self.object = form.save()
+        if "guardar_otro" in self.request.POST:
+            return HttpResponseRedirect(self.get_success_url_add_new())
+        else:
+            return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_detalle",
+            kwargs={"pk": self.object.organizacion.pk},
+        )
+
+    def get_success_url_add_new(self):
+        return reverse(
+            "aval1_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
+        )
+
+
+class Aval2CreateView(CreateView):
+    model = Aval2
+    form_class = Aval2Form
+    template_name = "aval2_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        organizacion_pk = (
+            self.kwargs.get("organizacion_pk")
+            or self.kwargs.get("pk")
+            or self.request.GET.get("organizacion")
+            or self.request.POST.get("organizacion")
+        )
+
+        context["organizacion_pk"] = organizacion_pk
+        context["hidden_fields_send"] = [
+            {"name": "organizacion_id", "value": organizacion_pk}
+        ]
+        # botones/breadcrumbs que usan las plantillas
+        context["back_button"] = {
+            "url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}),
+            "label": "Volver",
+        }
+        context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
+        context["breadcrumb_items"] = []
+        context["guardar_otro_send"] = True
+        return context
+
+    def form_valid(self, form):
+        if form.is_valid():
+            organizacion_pk = (
+                self.kwargs.get("organizacion_id")
+                or self.request.POST.get("organizacion_id")
+                or self.request.GET.get("organizacion_id")
+            )
+            if not organizacion_pk:
+                messages.error(self.request, "Falta el id de la organización.")
+                return self.form_invalid(form)
+
+            form.instance.organizacion_id = organizacion_pk
+            self.object = form.save()
+            if "guardar_otro" in self.request.POST:
+                return HttpResponseRedirect(self.get_success_url_add_new())
+            else:
+                return HttpResponseRedirect(self.get_success_url())
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_detalle",
+            kwargs={"pk": self.object.organizacion.pk},
+        )
+
+    def get_success_url_add_new(self):
+        return reverse(
+            "aval2_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
+        )
+
+
 class OrganizacionCreateView(CreateView):
     model = Organizacion
     form_class = OrganizacionForm
@@ -84,39 +306,176 @@ class OrganizacionCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.POST:
-            context["firmante_formset"] = FirmanteFormset(self.request.POST)
-            context["aval1_formset"] = Aval1Formset(self.request.POST)
-            context["aval2_formset"] = Aval2Formset(self.request.POST)
-        else:
-            context["firmante_formset"] = FirmanteFormset()
-            context["aval1_formset"] = Aval1Formset()
-            context["aval2_formset"] = Aval2Formset()
         return context
 
     def form_valid(self, form):
-        context = self.get_context_data()
-        firmante_formset = context["firmante_formset"]
-        aval1_formset = context["aval1_formset"]
-        aval2_formset = context["aval2_formset"]
-        if (
-            firmante_formset.is_valid()
-            and aval1_formset.is_valid()
-            and aval2_formset.is_valid()
-        ):
+        if form.is_valid():
             self.object = form.save()
-            firmante_formset.instance = self.object
-            aval1_formset.instance = self.object
-            aval2_formset.instance = self.object
-            firmante_formset.save()
-            aval1_formset.save()
-            aval2_formset.save()
             return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(form)
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
+
+
+class FirmanteUpdateView(UpdateView):
+    model = Firmante
+    form_class = FirmanteForm
+    template_name = "firmante_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["guardar_otro_send"] = False
+        return context
+
+    def form_valid(self, form):
+        if form.is_valid():
+            self.object = form.save()
+            return HttpResponseRedirect(self.get_success_url())
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
+
+
+class Aval1UpdateView(UpdateView):
+    model = Aval1
+    form_class = Aval1Form
+    template_name = "aval1_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["guardar_otro_send"] = False
+        return context
+
+    def form_valid(self, form):
+        if form.is_valid():
+            self.object = form.save()
+            return HttpResponseRedirect(self.get_success_url())
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
+
+
+class Aval2UpdateView(UpdateView):
+    model = Aval2
+    form_class = Aval2Form
+    template_name = "aval2_form.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["guardar_otro_send"] = False
+        return context
+
+    def form_valid(self, form):
+        if form.is_valid():
+            self.object = form.save()
+            return HttpResponseRedirect(self.get_success_url())
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
+
+
+class FirmanteDeleteView(DeleteView):
+    model = Firmante
+    template_name = "firmante_confirm_delete.html"
+    context_object_name = "firmante"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {
+                "url": reverse(
+                    "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+                ),
+                "label": "Detalle de Organización",
+            },
+            {"url": "", "label": "Confirmar Eliminación"},
+        ]
+        context["delete_message"] = (
+            f"¿Está seguro que desea eliminar al firmante {self.object.nombre}"
+        )
+        context["cancel_url"] = reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
+
+
+class Aval1DeleteView(DeleteView):
+    model = Aval1
+    template_name = "aval1_confirm_delete.html"
+    context_object_name = "aval1"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {
+                "url": reverse(
+                    "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+                ),
+                "label": "Detalle de Organización",
+            },
+            {"url": "", "label": "Confirmar Eliminación"},
+        ]
+        context["delete_message"] = (
+            f"¿Está seguro que desea eliminar el aval {self.object.nombre}"
+        )
+        context["cancel_url"] = reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
+
+
+class Aval2DeleteView(DeleteView):
+    model = Aval2
+    template_name = "aval2_confirm_delete.html"
+    context_object_name = "aval2"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {
+                "url": reverse(
+                    "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+                ),
+                "label": "Detalle de Organización",
+            },
+            {"url": "", "label": "Confirmar Eliminación"},
+        ]
+        context["delete_message"] = (
+            f"¿Está seguro que desea eliminar el aval {self.object.nombre}"
+        )
+        context["cancel_url"] = reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
+        )
 
 
 class OrganizacionUpdateView(UpdateView):
@@ -126,39 +485,11 @@ class OrganizacionUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.POST:
-            context["firmante_formset"] = FirmanteFormset(
-                self.request.POST, instance=self.object
-            )
-            context["aval1_formset"] = Aval1Formset(
-                self.request.POST, instance=self.object
-            )
-            context["aval2_formset"] = Aval2Formset(
-                self.request.POST, instance=self.object
-            )
-        else:
-            context["firmante_formset"] = FirmanteFormset(instance=self.object)
-            context["aval1_formset"] = Aval1Formset(instance=self.object)
-            context["aval2_formset"] = Aval2Formset(instance=self.object)
         return context
 
     def form_valid(self, form):
-        context = self.get_context_data()
-        firmante_formset = context["firmante_formset"]
-        aval1_formset = context["aval1_formset"]
-        aval2_formset = context["aval2_formset"]
-        if (
-            firmante_formset.is_valid()
-            and aval1_formset.is_valid()
-            and aval2_formset.is_valid()
-        ):
+        if form.is_valid():
             self.object = form.save()
-            firmante_formset.instance = self.object
-            aval1_formset.instance = self.object
-            aval2_formset.instance = self.object
-            firmante_formset.save()
-            aval1_formset.save()
-            aval2_formset.save()
             return HttpResponseRedirect(self.get_success_url())
         else:
             return self.form_invalid(form)
@@ -177,6 +508,79 @@ class OrganizacionDetailView(DetailView):
         context["firmantes"] = self.object.firmantes.select_related("rol")
         context["avales1"] = self.object.avales1.all()
         context["avales2"] = self.object.avales2.all()
+        context["table_headers"] = [
+            {"title": "Nombre"},
+            {"title": "Rol"},
+            {"title": "CUIT"},
+        ]
+
+        context["table_fields"] = [
+            {"name": "nombre"},
+            {"name": "rol"},
+            {"name": "cuit"},
+        ]
+
+        context["actions"] = [
+            {"url_name": "firmante_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "firmante_eliminar", "label": "Eliminar", "type": "danger"},
+        ]
+
+        context["show_actions"] = True
+
+        context["data_items"] = [
+            {"label": "Nombre", "value": self.object.nombre},
+            {"label": "CUIT", "value": self.object.cuit},
+            {"label": "Teléfono", "value": self.object.telefono},
+            {"label": "Email", "value": self.object.email},
+            {
+                "label": "Tipo de Entidad",
+                "value": (
+                    self.object.tipo_entidad.nombre if self.object.tipo_entidad else ""
+                ),
+            },
+            {
+                "label": "Subtipo de Entidad",
+                "value": (
+                    self.object.subtipo_entidad.nombre
+                    if self.object.subtipo_entidad
+                    else ""
+                ),
+            },
+            {"label": "Domicilio", "value": self.object.domicilio},
+            {"label": "Localidad", "value": self.object.localidad},
+            {"label": "Provincia", "value": self.object.provincia},
+            {"label": "Partido", "value": self.object.partido},
+        ]
+
+        context["table_headers_avales"] = [
+            {"title": "Nombre"},
+            {"title": "CUIT"},
+        ]
+        context["actions_firmantes"] = [
+            {"url_name": "firmante_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "firmante_eliminar", "label": "Eliminar", "type": "danger"},
+        ]
+        context["table_fields_avales"] = [
+            {"name": "nombre"},
+            {"name": "cuit"},
+        ]
+        context["actions_avales1"] = [
+            {"url_name": "aval1_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "aval1_eliminar", "label": "Eliminar", "type": "danger"},
+        ]
+        context["actions_avales2"] = [
+            {"url_name": "aval2_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "aval2_eliminar", "label": "Eliminar", "type": "danger"},
+        ]
+        try:
+            if self.object.tipo_entidad.nombre == "Asociación de hecho":
+                context["avales"] = True
+            else:
+                context["avales"] = False
+        except Exception:
+            context["tipo_entidad"] = None
+            context["avales"] = False
+
         return context
 
 
