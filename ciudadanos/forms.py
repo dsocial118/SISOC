@@ -246,7 +246,13 @@ class CiudadanoUpdateForm(forms.ModelForm):
 
     class Meta:
         model = Ciudadano
-        exclude = ("creado", "modificado", "familiares", "alertas", "demo_centro_familia")
+        exclude = (
+            "creado",
+            "modificado",
+            "familiares",
+            "alertas",
+            "demo_centro_familia",
+        )
         widgets = {
             "estado": forms.Select(choices=[(True, "Activo"), (False, "Inactivo")]),
             "fecha_nacimiento": forms.DateInput(
