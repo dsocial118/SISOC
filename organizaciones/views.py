@@ -162,7 +162,13 @@ class FirmanteCreateView(CreateView):
         if not organizacion_pk:
             messages.error(self.request, "Falta el id de la organización.")
             return self.form_invalid(form)
-
+        
+        rol = form.cleaned_data.get("rol")
+        if rol:
+            exists = Firmante.objects.filter(organizacion_id=organizacion_pk, rol=rol).exists()
+            if exists:
+                form.add_error("rol", "Ya existe un firmante con ese rol para esta organización.")
+                return self.form_invalid(form)
         # asignar FK y guardar
         form.instance.organizacion_id = organizacion_pk
         self.object = form.save()
@@ -330,11 +336,29 @@ class FirmanteUpdateView(UpdateView):
         return context
 
     def form_valid(self, form):
+        organizacion = getattr(self.object, "organizacion", None)
+        organizacion_pk = (
+            organizacion.pk
+            if organizacion
+            else (self.request.POST.get("organizacion_id") or self.request.GET.get("organizacion_id"))
+        )
+
+        # validar que no exista otro firmante con el mismo rol en la misma organización
+        rol = form.cleaned_data.get("rol")
+        if rol:
+            exists = (
+                Firmante.objects.filter(organizacion_id=organizacion_pk, rol=rol)
+                .exclude(pk=self.object.pk)
+                .exists()
+            )
+            if exists:
+                form.add_error("rol", "Ya existe un firmante con ese rol para esta organización.")
+                return self.form_invalid(form)
+
         if form.is_valid():
             self.object = form.save()
             return HttpResponseRedirect(self.get_success_url())
-        else:
-            return self.form_invalid(form)
+        return self.form_invalid(form)
 
     def get_success_url(self):
         return reverse(
