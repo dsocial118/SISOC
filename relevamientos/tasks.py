@@ -17,6 +17,7 @@ TIMEOUT = 360  # Segundos máximos de espera por respuesta
 MAX_WORKERS = int(os.getenv("GESTIONAR_WORKERS", "5"))
 _EXECUTOR = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
+
 # FIXME: Evitar que se ejecute el hilo al correr los tests
 class AsyncSendRelevamientoToGestionar(threading.Thread):
     """Hilo para enviar relevamiento a GESTIONAR asincronamente"""

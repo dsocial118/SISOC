@@ -733,6 +733,9 @@ class Ciudadano(models.Model):
     localidad = models.ForeignKey(
         Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
+    demo_centro_familia = models.BooleanField(
+        default=False, verbose_name="Demo Centro de Familia"
+    )
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
