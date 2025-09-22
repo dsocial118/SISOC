@@ -55,6 +55,7 @@ from ciudadanos.views import (
     busqueda_hogar,
     actualizar_programas,
     eliminar_programa,
+    ciudadanos_ajax,
 )
 
 urlpatterns = [
@@ -93,6 +94,11 @@ urlpatterns = [
         "ciudadanos/eliminar/<int:pk>",
         login_required(CiudadanosDeleteView.as_view()),
         name="ciudadanos_eliminar",
+    ),
+    path(
+        "ciudadanos/ajax/",
+        login_required(ciudadanos_ajax),
+        name="ciudadanos_ajax",
     ),
     # Grupo Familiar
     path(
