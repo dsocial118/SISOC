@@ -50,13 +50,16 @@ class OrganizacionForm(forms.ModelForm):
 
         if localidad:
             self.fields["localidad"].initial = localidad
-    
+
     class Meta:
         model = Organizacion
         fields = "__all__"
         widgets = {
-            "fecha_vencimiento": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "fecha_vencimiento": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
         }
+
 
 class FirmanteForm(forms.ModelForm):
     class Meta:
@@ -81,6 +84,7 @@ class AvalForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["nombre"].required = False
         self.fields["cuit"].required = False
+
 
 AvalFormset = inlineformset_factory(
     Organizacion, Aval, form=AvalForm, extra=1, max_num=1, can_delete=True

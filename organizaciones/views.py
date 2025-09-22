@@ -161,12 +161,16 @@ class FirmanteCreateView(CreateView):
         if not organizacion_pk:
             messages.error(self.request, "Falta el id de la organización.")
             return self.form_invalid(form)
-        
+
         rol = form.cleaned_data.get("rol")
         if rol:
-            exists = Firmante.objects.filter(organizacion_id=organizacion_pk, rol=rol).exists()
+            exists = Firmante.objects.filter(
+                organizacion_id=organizacion_pk, rol=rol
+            ).exists()
             if exists:
-                form.add_error("rol", "Ya existe un firmante con ese rol para esta organización.")
+                form.add_error(
+                    "rol", "Ya existe un firmante con ese rol para esta organización."
+                )
                 return self.form_invalid(form)
         # asignar FK y guardar
         form.instance.organizacion_id = organizacion_pk
@@ -279,7 +283,10 @@ class FirmanteUpdateView(UpdateView):
         organizacion_pk = (
             organizacion.pk
             if organizacion
-            else (self.request.POST.get("organizacion_id") or self.request.GET.get("organizacion_id"))
+            else (
+                self.request.POST.get("organizacion_id")
+                or self.request.GET.get("organizacion_id")
+            )
         )
 
         # validar que no exista otro firmante con el mismo rol en la misma organización
@@ -291,7 +298,9 @@ class FirmanteUpdateView(UpdateView):
                 .exists()
             )
             if exists:
-                form.add_error("rol", "Ya existe un firmante con ese rol para esta organización.")
+                form.add_error(
+                    "rol", "Ya existe un firmante con ese rol para esta organización."
+                )
                 return self.form_invalid(form)
 
         if form.is_valid():
@@ -326,6 +335,7 @@ class AvalUpdateView(UpdateView):
         return reverse(
             "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
         )
+
 
 class FirmanteDeleteView(DeleteView):
     model = Firmante
@@ -385,6 +395,7 @@ class AvalDeleteView(DeleteView):
         return reverse(
             "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
         )
+
 
 class OrganizacionUpdateView(UpdateView):
     model = Organizacion

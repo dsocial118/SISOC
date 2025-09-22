@@ -3,6 +3,7 @@ from core.models import Municipio, Provincia, Localidad
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 
+
 class TipoOrganizacion(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
 
@@ -71,7 +72,12 @@ class Firmante(models.Model):
         blank=True,
         null=True,
     )
-    cuit = models.BigIntegerField(blank=True, null=True, unique=True,validators=[MinValueValidator(0), MaxValueValidator(99999999999)])
+    cuit = models.BigIntegerField(
+        blank=True,
+        null=True,
+        unique=True,
+        validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
+    )
 
     def __str__(self):
         rol = self.rol.nombre if self.rol else "-"
@@ -87,7 +93,11 @@ class Aval(models.Model):
         null=True,
     )
     nombre = models.CharField(max_length=255, blank=True, null=True)
-    cuit = models.BigIntegerField(blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(99999999999)])
+    cuit = models.BigIntegerField(
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
+    )
 
     def __str__(self):
         return f"{self.nombre} ({self.cuit})"
@@ -99,7 +109,12 @@ class Aval(models.Model):
 
 class Organizacion(models.Model):
     nombre = models.CharField(max_length=255)
-    cuit = models.BigIntegerField(blank=True, null=True, unique=True,validators=[MinValueValidator(0), MaxValueValidator(99999999999)])
+    cuit = models.BigIntegerField(
+        blank=True,
+        null=True,
+        unique=True,
+        validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
+    )
     telefono = models.BigIntegerField(blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     domicilio = models.CharField(max_length=255, blank=True, null=True)
@@ -128,7 +143,7 @@ class Organizacion(models.Model):
     fecha_vencimiento = models.DateTimeField(
         default=timezone.now, verbose_name="Fecha de vencimiento"
     )
-    
+
     def __str__(self):
         return str(self.nombre)
 
