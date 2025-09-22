@@ -1,6 +1,7 @@
 from django.db import models
 from core.models import Municipio, Provincia, Localidad
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.utils import timezone
 
 class TipoOrganizacion(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
@@ -143,7 +144,9 @@ class Organizacion(models.Model):
         blank=True,
         null=True,
     )
-    fecha_vencimiento = models.DateField(blank=True, null=True)
+    fecha_vencimiento = models.DateTimeField(
+        default=timezone.now, verbose_name="Fecha de vencimiento"
+    )
     
     def __str__(self):
         return str(self.nombre)

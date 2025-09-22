@@ -51,7 +51,9 @@ class OrganizacionForm(forms.ModelForm):
 
         if localidad:
             self.fields["localidad"].initial = localidad
-
+    widgets = {
+            "fecha_vencimiento": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        }
     class Meta:
         model = Organizacion
         fields = "__all__"
