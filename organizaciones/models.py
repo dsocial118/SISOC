@@ -78,42 +78,23 @@ class Firmante(models.Model):
         return f"{self.nombre} ({rol})"
 
 
-class Aval1(models.Model):
+class Aval(models.Model):
     organizacion = models.ForeignKey(
         "Organizacion",
         on_delete=models.CASCADE,
-        related_name="avales1",
+        related_name="avales",
         blank=True,
         null=True,
     )
     nombre = models.CharField(max_length=255, blank=True, null=True)
-    cuit = models.BigIntegerField(blank=True, null=True, unique=True,validators=[MinValueValidator(0), MaxValueValidator(99999999999)])
+    cuit = models.BigIntegerField(blank=True, null=True, validators=[MinValueValidator(0), MaxValueValidator(99999999999)])
 
     def __str__(self):
         return f"{self.nombre} ({self.cuit})"
 
     class Meta:
-        verbose_name = "Aval 1"
-        verbose_name_plural = "Avales 1"
-
-
-class Aval2(models.Model):
-    organizacion = models.ForeignKey(
-        "Organizacion",
-        on_delete=models.CASCADE,
-        related_name="avales2",
-        blank=True,
-        null=True,
-    )
-    nombre = models.CharField(max_length=255, blank=True, null=True)
-    cuit = models.BigIntegerField(unique=True, blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.nombre} ({self.cuit})"
-
-    class Meta:
-        verbose_name = "Aval 2"
-        verbose_name_plural = "Avales 2"
+        verbose_name = "Aval"
+        verbose_name_plural = "Avales"
 
 
 class Organizacion(models.Model):
