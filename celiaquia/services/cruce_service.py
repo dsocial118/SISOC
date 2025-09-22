@@ -228,7 +228,10 @@ class CruceService:
         dnis = set()
 
         if not col_documento:
-            raise ValidationError("El archivo debe tener columna 'documento'.")
+            raise ValidationError(
+                "El archivo debe tener una columna válida de documento. "
+                "Columnas aceptadas: documento, nro_documento, dni, doc, etc."
+            )
 
         for raw in df[col_documento].fillna(""):
             norm = CruceService._normalize_dni_str(raw)
@@ -239,7 +242,10 @@ class CruceService:
                 cuits.add(norm)
                 dni = CruceService._extraer_dni_de_cuit(norm)
                 if dni:
-                    dnis.add(dni)
+                    # Normalizar DNI extraído para evitar problemas con ceros iniciales
+                    dni_normalizado = CruceService._normalize_dni_str(dni)
+                    if dni_normalizado:
+                        dnis.add(dni_normalizado)
             else:
                 # Tratarlo como DNI
                 dnis.add(norm)
