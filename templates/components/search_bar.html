@@ -160,12 +160,16 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
     );
     const loadingIndicator = document.getElementById("ajax-loading-indicator");
     const resultsCount = document.getElementById("ajax-results-count");
+    const paginationContainer = document.getElementById("pagination-container");
 
     let searchTimeout;
     let currentRequest;
+    let currentQuery = "";
 
     // Función para realizar la búsqueda
-    function performSearch(query) {
+    function performSearch(query, page = 1) {
+      currentQuery = query;
+
       // Cancelar request anterior si existe
       if (currentRequest) {
         currentRequest.abort();
@@ -179,16 +183,19 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
         tbody.style.opacity = "0.5";
       }
 
+      // Construir URL con parámetros
+      let url = `{{ ajax_url }}?busqueda=${encodeURIComponent(query)}`;
+      if (page > 1) {
+        url += `&page=${page}`;
+      }
+
       // Realizar petición AJAX
-      currentRequest = fetch(
-        `{{ ajax_url }}?busqueda=${encodeURIComponent(query)}`,
-        {
-          method: "GET",
-          headers: {
-            "X-Requested-With": "XMLHttpRequest",
-          },
-        }
-      )
+      currentRequest = fetch(url, {
+        method: "GET",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      })
         .then((response) => {
           if (!response.ok) {
             throw new Error("Error en la respuesta del servidor");
@@ -199,6 +206,12 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
           // Actualizar tabla
           if (tbody) {
             tbody.innerHTML = data.html;
+          }
+
+          // Actualizar paginación
+          if (paginationContainer && data.pagination_html) {
+            paginationContainer.innerHTML = data.pagination_html;
+            setupPaginationHandlers();
           }
 
           // Actualizar contador
@@ -248,6 +261,26 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
         });
     }
 
+    // Función para configurar los manejadores de eventos de paginación
+    function setupPaginationHandlers() {
+      const paginationLinks = document.querySelectorAll(
+        '#pagination-container a[href*="page="]'
+      );
+
+      paginationLinks.forEach((link) => {
+        link.addEventListener("click", function (e) {
+          e.preventDefault();
+
+          // Extraer número de página del href
+          const url = new URL(this.href);
+          const page = url.searchParams.get("page") || 1;
+
+          // Realizar búsqueda con la página específica
+          performSearch(currentQuery, page);
+        });
+      });
+    }
+
     // Event listener para el input de búsqueda
     if (searchInput) {
       searchInput.addEventListener("input", function () {
@@ -266,6 +299,7 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
       searchInput.addEventListener("keydown", function (e) {
         if (e.key === "Escape") {
           this.value = "";
+          currentQuery = "";
           performSearch("");
         }
       });
@@ -273,8 +307,12 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
       // Realizar búsqueda inicial si hay valor en el input
       const initialValue = searchInput.value.trim();
       if (initialValue) {
+        currentQuery = initialValue;
         performSearch(initialValue);
       }
+
+      // Configurar manejadores de paginación inicial
+      setupPaginationHandlers();
     }
   });
 </script>
