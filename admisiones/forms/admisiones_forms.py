@@ -99,6 +99,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                         organizacion.provincia
                     )
                     self.fields["partido_organizacion"].initial = organizacion.partido
+                    self.fields["fecha_vencimiento_mandatos"].initial = organizacion.fecha_vencimiento
 
             except Anexo.DoesNotExist:
                 pass
@@ -179,6 +180,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                         organizacion.provincia
                     )
                     self.fields["partido_organizacion"].initial = organizacion.partido
+                    self.fields["fecha_vencimiento_mandatos"].initial = organizacion.fecha_vencimiento
 
             except Anexo.DoesNotExist:
                 pass
