@@ -9,10 +9,13 @@ from comedores.models import Comedor, ValorComida
 
 
 def table_exists(table_name):
+    vendor = connection.vendor
+    if vendor == "mysql":
+        with connection.cursor() as cursor:
+            cursor.execute("SHOW TABLES LIKE %s", [table_name])
+            return cursor.fetchone() is not None
 
-    with connection.cursor() as cursor:
-        cursor.execute("SHOW TABLES LIKE %s", [table_name])
-        return cursor.fetchone() is not None
+    return table_name in connection.introspection.table_names()
 
 
 # Usar el timeout de settings en lugar de hardcodeado

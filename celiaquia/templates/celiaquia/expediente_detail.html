@@ -123,9 +123,11 @@
                         <strong>Provincia:</strong> {{ expediente.usuario_provincia.profile.provincia|default:"-" }}
                     </p>
                     <p>
-                        <strong>Técnico asignado:</strong>
-                        {% if expediente.asignacion_tecnico %}
-                            {{ expediente.asignacion_tecnico.tecnico.get_full_name|default:expediente.asignacion_tecnico.tecnico.username }}
+                        <strong>Técnicos asignados:</strong>
+                        {% if expediente.asignaciones_tecnicos.exists %}
+                            {% for asignacion in expediente.asignaciones_tecnicos.all %}
+                                <span class="badge bg-info me-1">{{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}</span>
+                            {% endfor %}
                         {% else %}
                             <span class="text-muted">No asignado</span>
                         {% endif %}
