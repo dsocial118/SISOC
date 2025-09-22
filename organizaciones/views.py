@@ -574,6 +574,7 @@ class OrganizacionDetailView(DetailView):
             {"label": "Localidad", "value": self.object.localidad},
             {"label": "Provincia", "value": self.object.provincia},
             {"label": "Partido", "value": self.object.partido},
+            {"label": "Fecha de vencimiento", "value": self.object.fecha_vencimiento},
         ]
 
         context["table_headers_avales"] = [
