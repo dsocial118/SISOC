@@ -58,19 +58,19 @@ urlpatterns = [
         name="firmante_eliminar",
     ),
     path(
-        "organizaciones/aval1/crear/<int:organizacion_pk>",
+        "organizaciones/aval/crear/<int:organizacion_pk>",
         group_required(["Organizaciones"])(AvalCreateView.as_view()),
-        name="aval1_crear",
+        name="aval_crear",
     ),
     path(
-        "organizaciones/aval1/editar/<int:pk>",
+        "organizaciones/aval/editar/<int:pk>",
         group_required(["Organizaciones"])(AvalUpdateView.as_view()),
-        name="aval1_editar",
+        name="aval_editar",
     ),
     path(
-        "organizaciones/aval1/eliminar/<int:pk>",
+        "organizaciones/aval/eliminar/<int:pk>",
         group_required(["Organizaciones"])(AvalDeleteView.as_view()),
-        name="aval1_eliminar",
+        name="aval_eliminar",
     ),
     path(
         "organizaciones/subtipos-entidad/ajax/",
