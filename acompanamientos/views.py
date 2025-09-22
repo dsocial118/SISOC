@@ -2,6 +2,9 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.template.loader import render_to_string
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
@@ -144,7 +147,7 @@ class ComedoresAcompanamientoListView(ListView):
     model = Comedor
     template_name = "lista_comedores.html"
     context_object_name = "comedores"
-    paginate_by = 10  # Cantidad de resultados por página
+    paginate_by = 10
 
     def get_queryset(self):
         user = self.request.user
@@ -156,3 +159,53 @@ class ComedoresAcompanamientoListView(ListView):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
         return context
+
+
+def comedores_acompanamiento_ajax(request):
+    """
+    Vista AJAX para búsqueda dinámica de comedores en acompañamiento
+    """
+    busqueda = request.GET.get("busqueda", "").strip()
+    page = request.GET.get("page", 1)
+
+    user = request.user
+    comedores = AcompanamientoService.obtener_comedores_acompanamiento(
+        user, busqueda.lower()
+    )
+
+    paginator = Paginator(
+        comedores, 10
+    )  # mismo paginate_by que ComedoresAcompanamientoListView
+
+    try:
+        page_obj = paginator.get_page(page)
+    except (ValueError, TypeError):
+        page_obj = paginator.get_page(1)
+
+    table_html = render_to_string(
+        "acompanamientos/partials/comedor_rows.html",
+        {"comedores": page_obj.object_list},
+    )
+
+    pagination_html = render_to_string(
+        "components/pagination.html",
+        {
+            "is_paginated": page_obj.has_other_pages(),
+            "page_obj": page_obj,
+            "query": busqueda,
+            "prev_text": "Volver",
+            "next_text": "Continuar",
+        },
+    )
+
+    return JsonResponse(
+        {
+            "html": table_html,
+            "pagination_html": pagination_html,
+            "count": paginator.count,
+            "current_page": page_obj.number,
+            "total_pages": paginator.num_pages,
+            "has_previous": page_obj.has_previous(),
+            "has_next": page_obj.has_next(),
+        }
+    )
