@@ -29,11 +29,7 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
           autocomplete="off"
           value="{{ query|default:'' }}"
         />
-        <div class="input-group-append">
-          <span class="input-group-text">
-            <i class="fas fa-search"></i>
-          </span>
-        </div>
+        
       </div>
       <small class="form-text text-muted">
         <span id="ajax-results-count"></span>
