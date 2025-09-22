@@ -91,14 +91,14 @@ class CruceService:
                 val = CruceService._normalize_cuit_str(val)
                 if len(val) == 11:
                     return val
-        
+
         # Si no hay campos específicos, usar el campo documento si tiene 11 dígitos
         documento = getattr(ciudadano, "documento", "")
         if documento:
             documento_str = CruceService._normalize_cuit_str(str(documento))
             if len(documento_str) == 11:
                 return documento_str
-        
+
         return ""
 
     @staticmethod
@@ -191,19 +191,26 @@ class CruceService:
         df: pd.DataFrame, candidatas: set, palabra_clave: str
     ) -> str | None:
         cols = set(df.columns)
-        
+
         # Orden de prioridad: documento tiene prioridad sobre dni
         prioridad = [
-            "documento", "nro_documento", "numero_documento", "número_documento",
-            "doc", "nro_doc", "num_doc",
-            "dni", "nro_dni", "numero_dni"
+            "documento",
+            "nro_documento",
+            "numero_documento",
+            "número_documento",
+            "doc",
+            "nro_doc",
+            "num_doc",
+            "dni",
+            "nro_dni",
+            "numero_dni",
         ]
-        
+
         # Buscar en orden de prioridad
         for cand in prioridad:
             if cand in candidatas and cand in cols:
                 return cand
-                
+
         # Fallback: buscar por palabra clave
         for c in df.columns:
             if palabra_clave in c:
@@ -213,14 +220,16 @@ class CruceService:
     @staticmethod
     def _leer_identificadores(archivo_excel) -> dict:
         df = CruceService._leer_tabla(archivo_excel)
-        col_documento = CruceService._col_por_preferencias(df, DOCUMENTO_COL_CANDIDATAS, "documento")
-        
+        col_documento = CruceService._col_por_preferencias(
+            df, DOCUMENTO_COL_CANDIDATAS, "documento"
+        )
+
         cuits = set()
         dnis = set()
-        
+
         if not col_documento:
             raise ValidationError("El archivo debe tener columna 'documento'.")
-            
+
         for raw in df[col_documento].fillna(""):
             norm = CruceService._normalize_dni_str(raw)
             if not norm:
@@ -234,7 +243,7 @@ class CruceService:
             else:
                 # Tratarlo como DNI
                 dnis.add(norm)
-                
+
         if not cuits and not dnis:
             raise ValidationError(
                 "El archivo no contiene documentos válidos en la columna 'documento'."
