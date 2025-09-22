@@ -1,43 +1,42 @@
-{% extends "includes/main.html" %} {% load static %} {% block title
-%}Organizaciones{% endblock %} {% block breadcrumb %}
-<ol class="breadcrumb float-sm-right">
-  <li class="breadcrumb-item">
-    <a href="{% url 'organizaciones' %}">Organizaciones</a>
-  </li>
-  <li class="breadcrumb-item active">Listar</li>
-</ol>
-{% endblock %} {% block content %} {% url 'organizaciones_ajax' as ajax_url %}
-{% include 'components/search_bar.html' with titulo='Buscar Organizacion'
-placeholder='Buscar por nombre, CUIT, telefono o email' help_text='Ingresar
-nombre, CUIT, telefono o email.' reset_url='organizaciones'
-add_url='organizacion_crear' add_text='Agregar' ajax_search_mode=True
-ajax_url=ajax_url target_tbody_id='organizaciones-tbody' query=query %}
-
-<div class="row mt-5">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-body">
-        <table class="table table-bordered table-striped projects">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>CUIT</th>
-              <th>Telefono</th>
-              <th>Email</th>
-              <th style="width: 15%" class="notexport">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="organizaciones-tbody">
-            {% include 'organizaciones/partials/organizacion_rows.html' with
-            organizaciones=organizaciones %}
-          </tbody>
-        </table>
-      </div>
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Organizaciones{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'organizaciones' %}">Organizaciones</a>
+        </li>
+        <li class="breadcrumb-item active">Listar</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    {% url 'organizaciones_ajax' as ajax_url %}
+    {% include 'components/search_bar.html' with titulo='Buscar Organizacion' placeholder='Buscar por nombre, CUIT, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='organizaciones' add_url='organizacion_crear' add_text='Agregar' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='organizaciones-tbody' query=query %}
+    
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>CUIT</th>
+                                <th>Telefono</th>
+                                <th>Email</th>
+                                <th style="width: 15%" class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="organizaciones-tbody">
+                            {% include 'organizaciones/partials/organizacion_rows.html' with organizaciones=organizaciones %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-<div id="pagination-container">
-  {% include 'components/pagination.html' with is_paginated=is_paginated
-  page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
-</div>
-{% endblock %} {% block customJS %}{% endblock %}
+    <div id="pagination-container">
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}
+{% block customJS %}{% endblock %}
