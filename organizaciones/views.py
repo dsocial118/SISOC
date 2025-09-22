@@ -240,7 +240,7 @@ class AvalCreateView(CreateView):
 
     def get_success_url_add_new(self):
         return reverse(
-            "aval1_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
+            "aval_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
         )
 
 
@@ -414,8 +414,7 @@ class OrganizacionDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["firmantes"] = self.object.firmantes.select_related("rol")
-        context["avales1"] = self.object.avales1.all()
-        context["avales2"] = self.object.avales2.all()
+        context["avales_data"] = self.object.avales.all()
         context["table_headers"] = [
             {"title": "Nombre"},
             {"title": "Rol"},
@@ -473,13 +472,9 @@ class OrganizacionDetailView(DetailView):
             {"name": "nombre"},
             {"name": "cuit"},
         ]
-        context["actions_avales1"] = [
-            {"url_name": "aval1_editar", "label": "Editar", "type": "primary"},
-            {"url_name": "aval1_eliminar", "label": "Eliminar", "type": "danger"},
-        ]
-        context["actions_avales2"] = [
-            {"url_name": "aval2_editar", "label": "Editar", "type": "primary"},
-            {"url_name": "aval2_eliminar", "label": "Eliminar", "type": "danger"},
+        context["actions_avales"] = [
+            {"url_name": "aval_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "aval_eliminar", "label": "Eliminar", "type": "danger"},
         ]
         try:
             if self.object.tipo_entidad.nombre == "Asociación de hecho":
