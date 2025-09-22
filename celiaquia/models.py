@@ -98,6 +98,7 @@ class Expediente(models.Model):
     estado = models.ForeignKey(
         EstadoExpediente, on_delete=models.PROTECT, related_name="expedientes"
     )
+    numero_expediente = models.CharField(max_length=100, blank=True, null=True)
     observaciones = models.TextField(blank=True, null=True)
     excel_masivo = models.FileField(
         upload_to="expedientes/masivos/", null=True, blank=True
@@ -227,6 +228,13 @@ class ExpedienteCiudadano(models.Model):
             ),
             models.Index(fields=["creado_en"], name="leg_creado_idx"),
             models.Index(fields=["ciudadano"], name="leg_ciud_idx"),
+            models.Index(
+                fields=["estado_cupo", "es_titular_activo"], name="leg_cupo_activo_idx"
+            ),
+            models.Index(
+                fields=["revision_tecnico", "resultado_sintys"],
+                name="leg_rev_sintys_idx",
+            ),
         ]
 
     def _recompute_archivos_ok(self):
@@ -254,8 +262,8 @@ class ExpedienteCiudadano(models.Model):
 
 
 class AsignacionTecnico(models.Model):
-    expediente = models.OneToOneField(
-        Expediente, on_delete=models.CASCADE, related_name="asignacion_tecnico"
+    expediente = models.ForeignKey(
+        Expediente, on_delete=models.CASCADE, related_name="asignaciones_tecnicos"
     )
     tecnico = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name="expedientes_asignados"
@@ -265,12 +273,14 @@ class AsignacionTecnico(models.Model):
     class Meta:
         verbose_name = "Asignación de Técnico"
         verbose_name_plural = "Asignaciones de Técnico"
+        unique_together = ("expediente", "tecnico")
         indexes = [
             models.Index(fields=["tecnico"], name="asig_tecnico_idx"),
+            models.Index(fields=["expediente"], name="asig_expediente_idx"),
         ]
 
     def __str__(self):
-        return f"{self.tecnico.username}"
+        return f"{self.tecnico.username} - {self.expediente.id}"
 
 
 class ProvinciaCupo(models.Model):

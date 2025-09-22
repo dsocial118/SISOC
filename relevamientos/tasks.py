@@ -1,8 +1,8 @@
 import os
 import threading
 import logging
-import requests
 from concurrent.futures import ThreadPoolExecutor
+import requests
 from django.db import close_old_connections
 from django.utils import timezone
 
@@ -16,6 +16,7 @@ TIMEOUT = 360  # Segundos máximos de espera por respuesta
 # Pool global para limitar la concurrencia de tareas asincrónicas
 MAX_WORKERS = int(os.getenv("GESTIONAR_WORKERS", "5"))
 _EXECUTOR = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+
 
 # FIXME: Evitar que se ejecute el hilo al correr los tests
 class AsyncSendRelevamientoToGestionar(threading.Thread):
