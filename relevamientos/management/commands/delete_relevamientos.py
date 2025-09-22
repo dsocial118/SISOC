@@ -76,7 +76,9 @@ class Command(BaseCommand):
         missing: List[int] = []
 
         for batch_index, batch_ids in enumerate(self._chunk(ids, batch_size), start=1):
-            self.stdout.write(f"Procesando lote {batch_index}/{total_batches}: {batch_ids}")
+            self.stdout.write(
+                f"Procesando lote {batch_index}/{total_batches}: {batch_ids}"
+            )
 
             qs = Relevamiento.objects.filter(id__in=batch_ids)
             found = {obj.id: obj for obj in qs}
@@ -128,7 +130,9 @@ class Command(BaseCommand):
                     try:
                         pk = int(token)
                     except ValueError as exc:  # pragma: no cover - error path
-                        raise CommandError(f"ID inválido: '{token}'. Debe ser entero.") from exc
+                        raise CommandError(
+                            f"ID inválido: '{token}'. Debe ser entero."
+                        ) from exc
                     if pk not in ids:
                         ids.append(pk)
 
@@ -140,7 +144,9 @@ class Command(BaseCommand):
                 with open(path, encoding="utf-8") as handler:
                     file_content = handler.read()
             except OSError as exc:  # pragma: no cover - dependiente de FS
-                raise CommandError(f"No se pudo leer el archivo '{path}': {exc}") from exc
+                raise CommandError(
+                    f"No se pudo leer el archivo '{path}': {exc}"
+                ) from exc
 
             extend_from_iterable([file_content])
 
@@ -150,4 +156,3 @@ class Command(BaseCommand):
     def _chunk(values: List[int], size: int) -> Iterable[List[int]]:
         for start in range(0, len(values), size):
             yield values[start : start + size]
-
