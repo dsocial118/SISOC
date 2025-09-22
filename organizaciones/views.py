@@ -615,3 +615,58 @@ def sub_tipo_entidad_ajax(request):
 
     data = [{"id": subtipo.id, "text": subtipo.nombre} for subtipo in subtipo_entidades]
     return JsonResponse(data, safe=False)
+
+
+def organizaciones_ajax(request):
+    """
+    Vista AJAX para filtrar organizaciones en tiempo real.
+    Retorna HTML renderizado de las filas de la tabla.
+    """
+    from django.template.loader import render_to_string
+
+    busqueda = request.GET.get("busqueda", "").strip()
+
+    # Aplicar el mismo filtro que en la vista principal
+    organizaciones = Organizacion.objects.all()
+
+    if busqueda:
+        organizaciones = (
+            organizaciones.filter(
+                Q(nombre__icontains=busqueda)
+                | Q(cuit__icontains=busqueda)
+                | Q(telefono__icontains=busqueda)
+                | Q(email__icontains=busqueda)
+            )
+            .select_related("tipo_entidad", "subtipo_entidad")
+            .only(
+                "id",
+                "nombre",
+                "cuit",
+                "telefono",
+                "email",
+                "tipo_entidad__nombre",
+                "subtipo_entidad__nombre",
+            )
+        )
+    else:
+        organizaciones = (
+            organizaciones.select_related("tipo_entidad", "subtipo_entidad")
+            .only(
+                "id",
+                "nombre",
+                "cuit",
+                "telefono",
+                "email",
+                "tipo_entidad__nombre",
+                "subtipo_entidad__nombre",
+            )
+            .order_by("-id")
+        )
+
+    # Renderizar solo las filas de la tabla
+    html = render_to_string(
+        "organizaciones/partials/organizacion_rows.html",
+        {"organizaciones": organizaciones},
+    )
+
+    return JsonResponse({"html": html, "count": organizaciones.count()})
