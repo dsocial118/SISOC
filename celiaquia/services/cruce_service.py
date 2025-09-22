@@ -46,24 +46,17 @@ from celiaquia.services.cupo_service import (
 
 logger = logging.getLogger(__name__)
 
-CUIT_COL_CANDIDATAS = {
-    "cuit",
-    "c.u.i.t",
-    "nro_cuit",
-    "numero_cuit",
-    "número_cuit",
-    "cuit_nro",
-    "cuit número",
-}
-DNI_COL_CANDIDATAS = {
-    "dni",
+DOCUMENTO_COL_CANDIDATAS = {
     "documento",
-    "nro_dni",
-    "numero_dni",
-    "número_dni",
+    "nro_documento",
+    "numero_documento",
+    "número_documento",
     "doc",
     "nro_doc",
     "num_doc",
+    "dni",
+    "nro_dni",
+    "numero_dni",
 }
 
 
@@ -91,12 +84,21 @@ class CruceService:
 
     @staticmethod
     def _resolver_cuit_ciudadano(ciudadano) -> str:
+        # Primero intentar campos específicos de CUIT/CUIL si existen
         for attr in ("cuit", "cuil", "cuil_cuit"):
             if hasattr(ciudadano, attr):
                 val = getattr(ciudadano, attr) or ""
                 val = CruceService._normalize_cuit_str(val)
                 if len(val) == 11:
                     return val
+        
+        # Si no hay campos específicos, usar el campo documento si tiene 11 dígitos
+        documento = getattr(ciudadano, "documento", "")
+        if documento:
+            documento_str = CruceService._normalize_cuit_str(str(documento))
+            if len(documento_str) == 11:
+                return documento_str
+        
         return ""
 
     @staticmethod
@@ -189,9 +191,20 @@ class CruceService:
         df: pd.DataFrame, candidatas: set, palabra_clave: str
     ) -> str | None:
         cols = set(df.columns)
-        for cand in candidatas:
-            if cand in cols:
+        
+        # Orden de prioridad: documento tiene prioridad sobre dni
+        prioridad = [
+            "documento", "nro_documento", "numero_documento", "número_documento",
+            "doc", "nro_doc", "num_doc",
+            "dni", "nro_dni", "numero_dni"
+        ]
+        
+        # Buscar en orden de prioridad
+        for cand in prioridad:
+            if cand in candidatas and cand in cols:
                 return cand
+                
+        # Fallback: buscar por palabra clave
         for c in df.columns:
             if palabra_clave in c:
                 return c
@@ -200,32 +213,31 @@ class CruceService:
     @staticmethod
     def _leer_identificadores(archivo_excel) -> dict:
         df = CruceService._leer_tabla(archivo_excel)
-        col_cuit = CruceService._col_por_preferencias(df, CUIT_COL_CANDIDATAS, "cuit")
-        col_dni = CruceService._col_por_preferencias(df, DNI_COL_CANDIDATAS, "dni")
+        col_documento = CruceService._col_por_preferencias(df, DOCUMENTO_COL_CANDIDATAS, "documento")
+        
         cuits = set()
         dnis = set()
-        if col_cuit:
-            for raw in df[col_cuit].fillna(""):
-                norm = CruceService._normalize_cuit_str(raw)
-                if not norm:
-                    continue
-                if len(norm) == 11:
-                    cuits.add(norm)
-                    dni = CruceService._extraer_dni_de_cuit(norm)
-                    if dni:
-                        dnis.add(CruceService._normalize_dni_str(dni))
-                else:
-                    dnis.add(CruceService._normalize_dni_str(norm))
-        if col_dni:
-            for raw in df[col_dni].fillna(""):
-                dni = CruceService._normalize_dni_str(raw)
+        
+        if not col_documento:
+            raise ValidationError("El archivo debe tener columna 'documento'.")
+            
+        for raw in df[col_documento].fillna(""):
+            norm = CruceService._normalize_dni_str(raw)
+            if not norm:
+                continue
+            # Si tiene 11 dígitos, tratarlo como CUIT
+            if len(norm) == 11:
+                cuits.add(norm)
+                dni = CruceService._extraer_dni_de_cuit(norm)
                 if dni:
                     dnis.add(dni)
+            else:
+                # Tratarlo como DNI
+                dnis.add(norm)
+                
         if not cuits and not dnis:
-            if not col_cuit and not col_dni:
-                raise ValidationError("El archivo debe tener columna 'cuit' o 'dni'.")
             raise ValidationError(
-                "El archivo no contiene identificadores (CUIT/DNI) válidos."
+                "El archivo no contiene documentos válidos en la columna 'documento'."
             )
         return {"cuits": cuits, "dnis": dnis}
 
