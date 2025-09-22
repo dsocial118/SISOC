@@ -6,8 +6,8 @@ import os
 import sys
 import django
 
-# Configurar Django
-sys.path.append('c:/Users/DELL/Proyectos/BACKOFFICE')
+# Configurar Django - usar path relativo
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
@@ -25,9 +25,11 @@ def debug_cruce():
     # Normalizar como CUIT y extraer DNI
     cuit_normalizado = CruceService._normalize_cuit_str(documento_excel)
     dni_extraido = CruceService._extraer_dni_de_cuit(cuit_normalizado)
+    dni_extraido_normalizado = CruceService._normalize_dni_str(dni_extraido)
     
     print(f"CUIT normalizado: {cuit_normalizado}")
     print(f"DNI extraído del CUIT: {dni_extraido}")
+    print(f"DNI extraído normalizado: {dni_extraido_normalizado}")
     
     # Buscar ciudadanos con ese CUIT
     print("\n=== BÚSQUEDA POR CUIT ===")
@@ -46,7 +48,7 @@ def debug_cruce():
     ciudadanos_dni = []
     for ciudadano in Ciudadano.objects.all():
         dni_ciudadano = CruceService._normalize_dni_str(getattr(ciudadano, 'documento', ''))
-        if dni_ciudadano == dni_extraido:
+        if dni_ciudadano == dni_extraido_normalizado:
             ciudadanos_dni.append(ciudadano)
             print(f"MATCH por DNI: {ciudadano.id} - {ciudadano.nombre} {ciudadano.apellido} - DNI: {dni_ciudadano}")
     
@@ -66,24 +68,6 @@ def debug_cruce():
         cuit_ciud = CruceService._resolver_cuit_ciudadano(ciudadano)
         dni_ciud = CruceService._normalize_dni_str(getattr(ciudadano, 'documento', ''))
         print(f"Legajo {legajo.id}: {ciudadano.nombre} {ciudadano.apellido} - DNI: {dni_ciud} - CUIT: {cuit_ciud}")
-    
-    # Verificar campos CUIT en el modelo Ciudadano
-    print("\n=== CAMPOS CUIT EN CIUDADANO ===")
-    ciudadano_ejemplo = Ciudadano.objects.first()
-    if ciudadano_ejemplo:
-        print(f"Campos disponibles en Ciudadano:")
-        for field in ciudadano_ejemplo._meta.fields:
-            field_name = field.name
-            if 'cuit' in field_name.lower() or 'cuil' in field_name.lower():
-                print(f"  - {field_name}")
-        
-        # Verificar si tiene atributos cuit/cuil
-        for attr in ('cuit', 'cuil', 'cuil_cuit'):
-            if hasattr(ciudadano_ejemplo, attr):
-                val = getattr(ciudadano_ejemplo, attr)
-                print(f"  - {attr}: {val}")
-            else:
-                print(f"  - {attr}: NO EXISTE")
 
 if __name__ == "__main__":
     debug_cruce()
