@@ -620,11 +620,14 @@ def sub_tipo_entidad_ajax(request):
 def organizaciones_ajax(request):
     """
     Vista AJAX para filtrar organizaciones en tiempo real.
-    Retorna HTML renderizado de las filas de la tabla.
+    Retorna HTML renderizado de las filas de la tabla y paginación.
     """
     from django.template.loader import render_to_string
+    from django.core.paginator import Paginator
+    from django.http import Http404
 
     busqueda = request.GET.get("busqueda", "").strip()
+    page_number = request.GET.get("page", 1)
 
     # Aplicar el mismo filtro que en la vista principal
     organizaciones = Organizacion.objects.all()
@@ -663,10 +666,39 @@ def organizaciones_ajax(request):
             .order_by("-id")
         )
 
+    # Aplicar paginación
+    paginator = Paginator(organizaciones, 10)  # 10 elementos por página
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (ValueError, TypeError):
+        page_obj = paginator.get_page(1)
+
     # Renderizar solo las filas de la tabla
-    html = render_to_string(
+    table_html = render_to_string(
         "organizaciones/partials/organizacion_rows.html",
-        {"organizaciones": organizaciones},
+        {"organizaciones": page_obj.object_list},
     )
 
-    return JsonResponse({"html": html, "count": organizaciones.count()})
+    # Renderizar paginación
+    pagination_html = render_to_string(
+        "components/pagination.html",
+        {
+            "is_paginated": page_obj.has_other_pages(),
+            "page_obj": page_obj,
+            "query": busqueda,
+            "prev_text": "Volver",
+            "next_text": "Continuar",
+        },
+    )
+
+    return JsonResponse(
+        {
+            "html": table_html,
+            "pagination_html": pagination_html,
+            "count": paginator.count,
+            "current_page": page_obj.number,
+            "total_pages": paginator.num_pages,
+            "has_previous": page_obj.has_previous(),
+            "has_next": page_obj.has_next(),
+        }
+    )

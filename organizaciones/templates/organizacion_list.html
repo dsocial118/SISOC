@@ -36,6 +36,8 @@ ajax_url=ajax_url target_tbody_id='organizaciones-tbody' query=query %}
     </div>
   </div>
 </div>
-{% include 'components/pagination.html' with is_paginated=is_paginated
-page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %} {%
-endblock %} {% block customJS %}{% endblock %}
+<div id="pagination-container">
+  {% include 'components/pagination.html' with is_paginated=is_paginated
+  page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
+</div>
+{% endblock %} {% block customJS %}{% endblock %}
