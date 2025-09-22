@@ -1,85 +1,281 @@
 {% load custom_filters static %}
-<link rel="stylesheet"
-      href="{% static 'custom/css/comedoresSearchBar.css' %}" />
-{# Componente Search Bar #}
-{# Uso clásico (texto):
-   {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %}
-   Modo filtros combinables:
-   {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url comedores_filters_mode=True %}
-#}
+<link
+  rel="stylesheet"
+  href="{% static 'custom/css/comedoresSearchBar.css' %}"
+/>
+{# Componente Search Bar #} {# Uso clásico (texto): {% include
+'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...'
+help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query
+add_text='Agregar' %} Modo filtros combinables: {% include
+'components/search_bar.html' with titulo='Buscar' reset_url=reset_url
+add_url=add_url comedores_filters_mode=True %} Modo búsqueda AJAX dinámica: {%
+include 'components/search_bar.html' with titulo='Buscar'
+placeholder='Buscar...' reset_url=reset_url add_url=add_url
+ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
 <h2 class="text-center display-4 mb-4">{{ titulo|default:"Buscar" }}</h2>
-{% if comedores_filters_mode %}
-    <form method="GET" id="filters-form">
-        <div class="row">
-            <div class="col-md-10 offset-md-1">
-                <div class="form-group">
-                    <div class="d-flex align-items-center mb-2">
-                        <label class="me-2 mb-0">Combinar filtros con</label>
-                        <select id="filters-logic"
-                                class="form-select form-select-sm"
-                                style="width:auto">
-                            <option value="AND" selected>AND</option>
-                            <option value="OR">OR</option>
-                        </select>
-                        <button type="button"
-                                id="add-filter"
-                                class="btn btn-sm btn-outline-success ms-2">Agregar filtro</button>
-                    </div>
-                    <div id="filters-rows" class="mb-2"></div>
-                    <input type="hidden" name="filters" id="filters-input" />
-                </div>
-            </div>
+
+{% if ajax_search_mode %}
+<!-- Modo búsqueda AJAX dinámica -->
+<div class="row">
+  <div class="col-md-10 offset-md-1">
+    <div class="form-group">
+      <div class="input-group input-group-lg">
+        <input
+          type="search"
+          id="ajax-search-input"
+          class="form-control form-control-lg"
+          placeholder="{{ placeholder|default:'Buscar' }}"
+          title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
+          autocomplete="off"
+          value="{{ query|default:'' }}"
+        />
+        <div class="input-group-append">
+          <span class="input-group-text">
+            <i class="fas fa-search"></i>
+          </span>
         </div>
-    </form>
+      </div>
+      <small class="form-text text-muted">
+        <span id="ajax-results-count"></span>
+      </small>
+    </div>
+  </div>
+</div>
+
+<!-- Indicador de carga para AJAX -->
+<div id="ajax-loading-indicator" class="text-center py-3" style="display: none">
+  <div class="spinner-border" role="status">
+    <span class="sr-only">Cargando...</span>
+  </div>
+</div>
+
+{% elif comedores_filters_mode %}
+<form method="GET" id="filters-form">
+  <div class="row">
+    <div class="col-md-10 offset-md-1">
+      <div class="form-group">
+        <div class="d-flex align-items-center mb-2">
+          <label class="me-2 mb-0">Combinar filtros con</label>
+          <select
+            id="filters-logic"
+            class="form-select form-select-sm"
+            style="width: auto"
+          >
+            <option value="AND" selected>AND</option>
+            <option value="OR">OR</option>
+          </select>
+          <button
+            type="button"
+            id="add-filter"
+            class="btn btn-sm btn-outline-success ms-2"
+          >
+            Agregar filtro
+          </button>
+        </div>
+        <div id="filters-rows" class="mb-2"></div>
+        <input type="hidden" name="filters" id="filters-input" />
+      </div>
+    </div>
+  </div>
+</form>
 {% else %}
-    <form method="GET" id="simple-search-form">
-        <div class="row">
-            <div class="col-md-10 offset-md-1">
-                <div class="form-group">
-                    <div class="input-group input-group-lg">
-                        <input type="search"
-                               class="form-control form-control-lg"
-                               placeholder="{{ placeholder|default:'Buscar' }}"
-                               title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
-                               name="busqueda"
-                               value="{{ query|default:'' }}" />
-                    </div>
-                </div>
-            </div>
+<form method="GET" id="simple-search-form">
+  <div class="row">
+    <div class="col-md-10 offset-md-1">
+      <div class="form-group">
+        <div class="input-group input-group-lg">
+          <input
+            type="search"
+            class="form-control form-control-lg"
+            placeholder="{{ placeholder|default:'Buscar' }}"
+            title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
+            name="busqueda"
+            value="{{ query|default:'' }}"
+          />
         </div>
-    </form>
+      </div>
+    </div>
+  </div>
+</form>
 {% endif %}
 <div class="row mt-3">
-    <div class="col-12 text-center search-actions">
-        {% if reset_url_full %}
-            <a href="{{ reset_url_full }}"
-               class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
-        {% elif reset_url|is_url %}
-            <a href="{{ reset_url }}"
-               class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
-        {% else %}
-            <a href="{% url reset_url %}"
-               class="btn btn-secondary btn-lg d-inline-block mt-2 me-3">Resetear</a>
-        {% endif %}
-        {% if add_url and show_add_button|default:True %}
-            {% if add_url_full %}
-                <a href="{{ add_url_full }}"
-                   class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
-            {% elif add_url|is_url %}
-                <a href="{{ add_url }}"
-                   class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
-            {% else %}
-                <a href="{% url add_url %}"
-                   class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}">{{ add_text|default:"Agregar" }}</a>
-            {% endif %}
-        {% endif %}
-        {% with form_id=comedores_filters_mode|yesno:"filters-form,simple-search-form" %}
-            <button type="submit"
-                    form="{{ form_id }}"
-                    class="btn btn-success btn-lg d-inline-block mt-2 ms-2">Filtrar</button>
-        {% endwith %}
-    </div>
+  <div class="col-12 text-center search-actions">
+    {% if reset_url_full %}
+    <a
+      href="{{ reset_url_full }}"
+      class="btn btn-secondary btn-lg d-inline-block mt-2 me-3"
+      >Resetear</a
+    >
+    {% elif reset_url|is_url %}
+    <a
+      href="{{ reset_url }}"
+      class="btn btn-secondary btn-lg d-inline-block mt-2 me-3"
+      >Resetear</a
+    >
+    {% else %}
+    <a
+      href="{% url reset_url %}"
+      class="btn btn-secondary btn-lg d-inline-block mt-2 me-3"
+      >Resetear</a
+    >
+    {% endif %} {% if add_url and show_add_button|default:True %} {% if
+    add_url_full %}
+    <a
+      href="{{ add_url_full }}"
+      class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}"
+      >{{ add_text|default:"Agregar" }}</a
+    >
+    {% elif add_url|is_url %}
+    <a
+      href="{{ add_url }}"
+      class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}"
+      >{{ add_text|default:"Agregar" }}</a
+    >
+    {% else %}
+    <a
+      href="{% url add_url %}"
+      class="btn btn-primary btn-lg d-inline-block mt-2{% if button_append %} mr-2{% endif %}"
+      >{{ add_text|default:"Agregar" }}</a
+    >
+    {% endif %} {% endif %} {% with
+    form_id=comedores_filters_mode|yesno:"filters-form,simple-search-form" %}
+    <button
+      type="submit"
+      form="{{ form_id }}"
+      class="btn btn-success btn-lg d-inline-block mt-2 ms-2"
+    >
+      Filtrar
+    </button>
+    {% endwith %}
+  </div>
 </div>
 {% if comedores_filters_mode %}
-    <script src="{% static 'custom/js/comedores_search_bar.js' %}"></script>
+<script src="{% static 'custom/js/comedores_search_bar.js' %}"></script>
+{% elif ajax_search_mode %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("ajax-search-input");
+    const tbody = document.getElementById(
+      '{{ target_tbody_id|default:"ajax-table-tbody" }}'
+    );
+    const loadingIndicator = document.getElementById("ajax-loading-indicator");
+    const resultsCount = document.getElementById("ajax-results-count");
+
+    let searchTimeout;
+    let currentRequest;
+
+    // Función para realizar la búsqueda
+    function performSearch(query) {
+      // Cancelar request anterior si existe
+      if (currentRequest) {
+        currentRequest.abort();
+      }
+
+      // Mostrar indicador de carga
+      if (loadingIndicator) {
+        loadingIndicator.style.display = "block";
+      }
+      if (tbody) {
+        tbody.style.opacity = "0.5";
+      }
+
+      // Realizar petición AJAX
+      currentRequest = fetch(
+        `{{ ajax_url }}?busqueda=${encodeURIComponent(query)}`,
+        {
+          method: "GET",
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        }
+      )
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Error en la respuesta del servidor");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          // Actualizar tabla
+          if (tbody) {
+            tbody.innerHTML = data.html;
+          }
+
+          // Actualizar contador
+          if (resultsCount) {
+            if (query.trim()) {
+              resultsCount.textContent = `${data.count} resultado(s) encontrado(s)`;
+            } else {
+              resultsCount.textContent = "";
+            }
+          }
+
+          // Ocultar indicador de carga
+          if (loadingIndicator) {
+            loadingIndicator.style.display = "none";
+          }
+          if (tbody) {
+            tbody.style.opacity = "1";
+          }
+
+          currentRequest = null;
+        })
+        .catch((error) => {
+          if (error.name !== "AbortError") {
+            console.error("Error en la búsqueda:", error);
+
+            // Mostrar mensaje de error
+            if (tbody) {
+              tbody.innerHTML = `
+                            <tr>
+                                <td colspan="100%" class="text-center text-danger py-4">
+                                    Error al cargar los datos. Intente nuevamente.
+                                </td>
+                            </tr>
+                        `;
+            }
+          }
+
+          // Ocultar indicador de carga
+          if (loadingIndicator) {
+            loadingIndicator.style.display = "none";
+          }
+          if (tbody) {
+            tbody.style.opacity = "1";
+          }
+
+          currentRequest = null;
+        });
+    }
+
+    // Event listener para el input de búsqueda
+    if (searchInput) {
+      searchInput.addEventListener("input", function () {
+        const query = this.value.trim();
+
+        // Limpiar timeout anterior
+        clearTimeout(searchTimeout);
+
+        // Establecer nuevo timeout para evitar demasiadas peticiones
+        searchTimeout = setTimeout(() => {
+          performSearch(query);
+        }, 300); // Esperar 300ms después de que el usuario deje de escribir
+      });
+
+      // Limpiar búsqueda al presionar Escape
+      searchInput.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          this.value = "";
+          performSearch("");
+        }
+      });
+
+      // Realizar búsqueda inicial si hay valor en el input
+      const initialValue = searchInput.value.trim();
+      if (initialValue) {
+        performSearch(initialValue);
+      }
+    }
+  });
+</script>
 {% endif %}
