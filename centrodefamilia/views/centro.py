@@ -57,6 +57,31 @@ class CentroListView(LoginRequiredMixin, ListView):
         ctx["can_add"] = (
             user.is_superuser or user.groups.filter(name="CDF SSE").exists()
         )
+
+        ctx["table_headers"] = [
+            {"title": "Nombre"},
+            {"title": "Tipo"},
+            {"title": "Dirección"},
+            {"title": "Teléfono"},
+            {"title": "Estado"},
+            {"title": "Acciones"},
+        ]
+
+        if ctx["can_add"]:
+            ctx["centro_additional_buttons"] = [
+                {
+                    "url": reverse("actividad_create_sola"),
+                    "label": "Agregar Actividad",
+                    "class": "btn btn-primary btn-lg text-white text-nowrap",
+                },
+                {
+                    "url": reverse("informecabal_list"),
+                    "label": "Procesar Informe Cabal",
+                    "class": "btn btn-info btn-lg text-white text-nowrap",
+                    "id": "btn-cabal",
+                },
+            ]
+
         return ctx
 
 
@@ -306,3 +331,79 @@ class InformeCabalArchivoPorCentroDetailView(LoginRequiredMixin, DetailView):
         context["registros"] = page_obj
         context["centro"] = centro
         return context
+
+
+def centros_ajax(request):
+    """Endpoint AJAX para búsqueda filtrada de Centros de Familia"""
+    from django.template.loader import render_to_string
+    from django.core.paginator import Paginator
+    from django.http import JsonResponse
+    from core.decorators import group_required
+
+    def _centros_ajax(request):
+        query = request.GET.get("busqueda", "")
+        page = request.GET.get("page", 1)
+        user = request.user
+
+        qs = Centro.objects.select_related("faro_asociado", "referente")
+
+        if user.is_superuser:
+            pass
+        elif user.groups.filter(name="CDF SSE").exists():
+            pass
+        elif user.groups.filter(name="ReferenteCentro").exists():
+            qs = qs.filter(referente=user)
+        else:
+            qs = Centro.objects.none()
+
+        busq = query.strip()
+        if busq:
+            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
+
+        qs = qs.order_by("nombre")
+
+        paginator = Paginator(qs, 10)
+        page_obj = paginator.get_page(page)
+
+        can_add = user.is_superuser or user.groups.filter(name="CDF SSE").exists()
+
+        context = {
+            "centros": page_obj,
+            "request": request,
+            "can_add": can_add,
+            "table_headers": [
+                {"title": "Nombre"},
+                {"title": "Tipo"},
+                {"title": "Dirección"},
+                {"title": "Teléfono"},
+                {"title": "Estado"},
+                {"title": "Acciones"},
+            ],
+        }
+
+        html = render_to_string("partials/centros_rows.html", context)
+
+        pagination_html = render_to_string(
+            "components/pagination.html",
+            {
+                "page_obj": page_obj,
+                "is_paginated": page_obj.has_other_pages(),
+                "query": query,
+                "prev_text": "Volver",
+                "next_text": "Continuar",
+            },
+        )
+
+        return JsonResponse(
+            {
+                "html": html,
+                "pagination_html": pagination_html,
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "has_previous": page_obj.has_previous(),
+                "has_next": page_obj.has_next(),
+                "current_page": page_obj.number,
+            }
+        )
+
+    return _centros_ajax(request)
