@@ -54,9 +54,17 @@ DOCUMENTO_COL_CANDIDATAS = {
     "doc",
     "nro_doc",
     "num_doc",
+    "cuit",
+    "c.u.i.t",
+    "nro_cuit",
+    "numero_cuit",
+    "número_cuit",
+    "cuit_nro",
+    "cuit_número",
     "dni",
     "nro_dni",
     "numero_dni",
+    "número_dni",
 }
 
 
@@ -192,7 +200,7 @@ class CruceService:
     ) -> str | None:
         cols = set(df.columns)
 
-        # Orden de prioridad: documento tiene prioridad sobre dni
+        # Orden de prioridad: documento tiene prioridad sobre cuit y dni
         prioridad = [
             "documento",
             "nro_documento",
@@ -201,9 +209,17 @@ class CruceService:
             "doc",
             "nro_doc",
             "num_doc",
+            "cuit",
+            "c.u.i.t",
+            "nro_cuit",
+            "numero_cuit",
+            "número_cuit",
+            "cuit_nro",
+            "cuit_número",
             "dni",
             "nro_dni",
             "numero_dni",
+            "número_dni",
         ]
 
         # Buscar en orden de prioridad
@@ -230,7 +246,11 @@ class CruceService:
         if not col_documento:
             raise ValidationError(
                 "El archivo debe tener una columna válida de documento. "
-                "Columnas aceptadas: documento, nro_documento, dni, doc, etc."
+                "Columnas aceptadas: documento, nro_documento, numero_documento, "
+                "número_documento, doc, nro_doc, num_doc, cuit, c.u.i.t, "
+                "nro_cuit, numero_cuit, número_cuit, cuit_nro, cuit_número (cuit "
+                "número), dni, "
+                "nro_dni, numero_dni, número_dni."
             )
 
         for raw in df[col_documento].fillna(""):
