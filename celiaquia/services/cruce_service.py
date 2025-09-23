@@ -70,7 +70,7 @@ DOCUMENTO_COL_CANDIDATAS = {
 
 class CruceService:
     @staticmethod
-    def _normalize_cuit_str(val) -> str:
+    def normalize_cuit_str(val) -> str:
         if val is None:
             return ""
         s = str(val).strip()
@@ -78,32 +78,32 @@ class CruceService:
         return digits
 
     @staticmethod
-    def _normalize_dni_str(val) -> str:
+    def normalize_dni_str(val) -> str:
         if val is None:
             return ""
         s = re.sub(r"\D", "", str(val).strip())
         return s.lstrip("0")
 
     @staticmethod
-    def _extraer_dni_de_cuit(cuit: str) -> str:
+    def extraer_dni_de_cuit(cuit: str) -> str:
         if len(cuit) == 11:
             return cuit[2:10]
         return ""
 
     @staticmethod
-    def _resolver_cuit_ciudadano(ciudadano) -> str:
+    def resolver_cuit_ciudadano(ciudadano) -> str:
         # Primero intentar campos específicos de CUIT/CUIL si existen
         for attr in ("cuit", "cuil", "cuil_cuit"):
             if hasattr(ciudadano, attr):
                 val = getattr(ciudadano, attr) or ""
-                val = CruceService._normalize_cuit_str(val)
+                val = CruceService.normalize_cuit_str(val)
                 if len(val) == 11:
                     return val
 
         # Si no hay campos específicos, usar el campo documento si tiene 11 dígitos
         documento = getattr(ciudadano, "documento", "")
         if documento:
-            documento_str = CruceService._normalize_cuit_str(str(documento))
+            documento_str = CruceService.normalize_cuit_str(str(documento))
             if len(documento_str) == 11:
                 return documento_str
 
@@ -124,7 +124,7 @@ class CruceService:
             ciudadano = legajo.ciudadano
             rows.append(
                 {
-                    "Numero_documento": CruceService._normalize_dni_str(
+                    "Numero_documento": CruceService.normalize_dni_str(
                         getattr(ciudadano, "documento", "")
                     ),
                     "TipoDocumento": getattr(
@@ -254,16 +254,16 @@ class CruceService:
             )
 
         for raw in df[col_documento].fillna(""):
-            norm = CruceService._normalize_dni_str(raw)
+            norm = CruceService.normalize_dni_str(raw)
             if not norm:
                 continue
             # Si tiene 11 dígitos, tratarlo como CUIT
             if len(norm) == 11:
                 cuits.add(norm)
-                dni = CruceService._extraer_dni_de_cuit(norm)
+                dni = CruceService.extraer_dni_de_cuit(norm)
                 if dni:
                     # Normalizar DNI extraído para evitar problemas con ceros iniciales
-                    dni_normalizado = CruceService._normalize_dni_str(dni)
+                    dni_normalizado = CruceService.normalize_dni_str(dni)
                     if dni_normalizado:
                         dnis.add(dni_normalizado)
             else:
@@ -610,8 +610,8 @@ class CruceService:
 
         for leg in legajos_aprobados_qs.iterator():
             ciu = leg.ciudadano
-            cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
-            dni_ciud = CruceService._normalize_dni_str(getattr(ciu, "documento", ""))
+            cuit_ciud = CruceService.resolver_cuit_ciudadano(ciu)
+            dni_ciud = CruceService.normalize_dni_str(getattr(ciu, "documento", ""))
 
             by = None
             if cuit_ciud and cuit_ciud in set_cuits:
@@ -668,8 +668,8 @@ class CruceService:
         ).select_related("ciudadano")
         for leg in legajos_rechazados:
             ciu = leg.ciudadano
-            cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
-            dni_ciud = CruceService._normalize_dni_str(getattr(ciu, "documento", ""))
+            cuit_ciud = CruceService.resolver_cuit_ciudadano(ciu)
+            dni_ciud = CruceService.normalize_dni_str(getattr(ciu, "documento", ""))
 
             presente_en_archivo = (cuit_ciud and cuit_ciud in set_cuits) or (
                 dni_ciud and dni_ciud in set_dnis_norm
@@ -694,7 +694,7 @@ class CruceService:
         ).select_related("ciudadano")
         for leg in legajos_subsanar:
             ciu = leg.ciudadano
-            cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
+            cuit_ciud = CruceService.resolver_cuit_ciudadano(ciu)
             motivo = getattr(leg, "subsanacion_motivo", "") or "Subsanar solicitado"
             detalle_no_match.append(
                 {
@@ -715,7 +715,7 @@ class CruceService:
         detalle_fuera = [
             {
                 "dni": getattr(l.ciudadano, "documento", "") or "",
-                "cuit": CruceService._resolver_cuit_ciudadano(l.ciudadano) or "",
+                "cuit": CruceService.resolver_cuit_ciudadano(l.ciudadano) or "",
                 "nombre": getattr(l.ciudadano, "nombre", "") or "",
                 "apellido": getattr(l.ciudadano, "apellido", "") or "",
             }
