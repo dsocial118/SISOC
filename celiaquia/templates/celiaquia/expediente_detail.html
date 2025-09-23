@@ -47,7 +47,7 @@
                                 class="btn btn-success btn-sm me-2"
                                 data-bs-toggle="modal"
                                 data-bs-target="#modalCruceCuit"
-                                data-mode="new">Subir Excel de CUITs (Cruce)</button>
+                                data-mode="new">Subir Excel de Documentos (Cruce)</button>
                     {% endif %}
                     {% if expediente.cruce_excel %}
                         {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
@@ -650,7 +650,7 @@
                     <form id="form-cruce-cuit" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="modal-header">
-                            <h5 class="modal-title" id="modalCruceCuitLabel">Subir Excel de CUITs (con encabezado)</h5>
+                            <h5 class="modal-title" id="modalCruceCuitLabel">Subir Excel de Documentos (con encabezado)</h5>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"
@@ -660,7 +660,7 @@
                             <div id="cruce-alertas" class="mb-2"></div>
                             <div class="form-group">
                                 <label for="id_excel_cuit">
-                                    Archivo Excel (.xlsx) con columna <code>cuit</code> o <code>dni</code>
+                                    Archivo Excel (.xlsx) con columna <code>documento</code>
                                 </label>
                                 <input type="file"
                                        name="excel_cuit"
@@ -669,7 +669,7 @@
                                        required
                                        accept=".xlsx,.xls,.csv" />
                                 <small id="cruce-help" class="text-muted">
-                                    Debe incluir encabezado; columnas válidas: <strong>cuit</strong> o <strong>dni</strong>.
+                                    Debe incluir encabezado; columna válida: <strong>documento</strong>.
                                 </small>
                             </div>
                         </div>
