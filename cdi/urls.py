@@ -6,6 +6,7 @@ from cdi.views import (
     CDIDetailView,
     CDIUpdateView,
     CDIDeleteView,
+    cdi_ajax,
 )
 from core.decorators import group_required
 
@@ -34,5 +35,10 @@ urlpatterns = [
         "cdi/eliminar/<int:pk>",
         group_required(["CDI"])(CDIDeleteView.as_view()),
         name="cdi_eliminar",
+    ),
+    path(
+        "cdi/ajax/",
+        cdi_ajax,
+        name="cdi_ajax",
     ),
 ]
