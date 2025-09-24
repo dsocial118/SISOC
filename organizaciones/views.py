@@ -629,7 +629,6 @@ def organizaciones_ajax(request):
     busqueda = request.GET.get("busqueda", "").strip()
     page_number = request.GET.get("page", 1)
 
-    # Aplicar el mismo filtro que en la vista principal
     organizaciones = Organizacion.objects.all()
 
     if busqueda:
@@ -666,20 +665,17 @@ def organizaciones_ajax(request):
             .order_by("-id")
         )
 
-    # Aplicar paginación
     paginator = Paginator(organizaciones, 10)  # 10 elementos por página
     try:
         page_obj = paginator.get_page(page_number)
     except (ValueError, TypeError):
         page_obj = paginator.get_page(1)
 
-    # Renderizar solo las filas de la tabla
     table_html = render_to_string(
         "organizaciones/partials/organizacion_rows.html",
         {"organizaciones": page_obj.object_list},
     )
 
-    # Renderizar paginación
     pagination_html = render_to_string(
         "components/pagination.html",
         {
