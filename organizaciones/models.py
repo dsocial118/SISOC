@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+from django.core.validators import MaxValueValidator, MinValueValidator
 from core.models import Municipio, Provincia, Localidad
 
 
@@ -70,54 +72,49 @@ class Firmante(models.Model):
         blank=True,
         null=True,
     )
-    cuit = models.BigIntegerField(null=True, blank=True)
+    cuit = models.BigIntegerField(
+        blank=True,
+        null=True,
+        unique=True,
+        validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
+    )
 
     def __str__(self):
         rol = self.rol.nombre if self.rol else "-"
         return f"{self.nombre} ({rol})"
 
 
-class Aval1(models.Model):
+class Aval(models.Model):
     organizacion = models.ForeignKey(
         "Organizacion",
         on_delete=models.CASCADE,
-        related_name="avales1",
+        related_name="avales",
         blank=True,
         null=True,
     )
     nombre = models.CharField(max_length=255, blank=True, null=True)
-    cuit = models.BigIntegerField(blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.nombre} ({self.cuit})"
-
-    class Meta:
-        verbose_name = "Aval 1"
-        verbose_name_plural = "Avales 1"
-
-
-class Aval2(models.Model):
-    organizacion = models.ForeignKey(
-        "Organizacion",
-        on_delete=models.CASCADE,
-        related_name="avales2",
+    cuit = models.BigIntegerField(
         blank=True,
         null=True,
+        validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
     )
-    nombre = models.CharField(max_length=255, blank=True, null=True)
-    cuit = models.BigIntegerField(blank=True, null=True)
 
-    def __str__(self):
+    def str(self):
         return f"{self.nombre} ({self.cuit})"
 
     class Meta:
-        verbose_name = "Aval 2"
-        verbose_name_plural = "Avales 2"
+        verbose_name = "Aval"
+        verbose_name_plural = "Avales"
 
 
 class Organizacion(models.Model):
     nombre = models.CharField(max_length=255)
-    cuit = models.BigIntegerField(blank=True, null=True, unique=True)
+    cuit = models.BigIntegerField(
+        blank=True,
+        null=True,
+        unique=True,
+        validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
+    )
     telefono = models.BigIntegerField(blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     domicilio = models.CharField(max_length=255, blank=True, null=True)
@@ -142,6 +139,9 @@ class Organizacion(models.Model):
         related_name="organizaciones",
         blank=True,
         null=True,
+    )
+    fecha_vencimiento = models.DateTimeField(
+        default=timezone.now, verbose_name="Fecha de vencimiento"
     )
 
     def __str__(self):
