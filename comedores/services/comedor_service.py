@@ -341,7 +341,7 @@ class ComedorService:
     @staticmethod
     def get_ubicaciones_ids(data):
         """Convierte nombres de ubicaciones a sus IDs correspondientes dentro de ``data``."""
-        from configuraciones.models import (  # pylint: disable=import-outside-toplevel,no-name-in-module
+        from core.models import (  # pylint: disable=import-outside-toplevel
             Provincia,
             Municipio,
             Localidad,
