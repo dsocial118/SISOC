@@ -1,9 +1,14 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models.base import Model
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.generic import DetailView, ListView
 from django.views.decorators.http import require_POST
+
+from core.decorators import group_required
 
 from comedores.models import Comedor
 from historial.services.historial_service import HistorialService
@@ -201,3 +206,49 @@ def switch_rendicion_final_fisicamente_presentada(request, rendicion_id):
     messages.success(request, "Estado de revisión actualizado.")
 
     return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+def documentos_rendicion_cuentas_final_ajax(request):
+    """Endpoint AJAX para búsqueda filtrada de documentos de rendición de cuentas final"""
+
+    # Aplicar el decorador manualmente para mantener permisos
+    @group_required(["Area Contable", "Area Legales", "Tecnico Comedor"])
+    def _documentos_rendicion_ajax(request):
+        query = request.GET.get("busqueda", "")
+        page = request.GET.get("page", 1)
+
+        # Obtener documentos filtrados usando el mismo servicio que la vista principal
+        documentos = RendicionCuentasFinalService.filter_documentos_por_area(
+            request.user, query
+        )
+
+        # Paginación - usar la misma paginación que la vista principal
+        paginator = Paginator(documentos, 25)  # Usar paginación por defecto de ListView
+        page_obj = paginator.get_page(page)
+
+        # Renderizar las filas de la tabla
+        html = render_to_string(
+            "partials/rendicion_cuentas_final_rows.html",
+            {"documentos": page_obj, "request": request},
+        )
+
+        # Renderizar paginación
+        pagination_html = render_to_string(
+            "components/pagination.html",
+            {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+            request=request,
+        )
+
+        return JsonResponse(
+            {
+                "html": html,
+                "pagination_html": pagination_html,
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "has_previous": page_obj.has_previous(),
+                "has_next": page_obj.has_next(),
+                "current_page": page_obj.number,
+            }
+        )
+
+    return _documentos_rendicion_ajax(request)
