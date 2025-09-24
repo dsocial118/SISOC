@@ -1,6 +1,6 @@
 # centrodefamilia/urls.py
 from django.urls import path
-from configuraciones.decorators import group_required
+from core.decorators import group_required
 
 from centrodefamilia.views.informecabal import (
     InformeCabalArchivoDetailView,
