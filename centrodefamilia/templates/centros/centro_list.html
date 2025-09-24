@@ -1,8 +1,6 @@
 {% extends "includes/main.html" %}
 {% load static %}
-
 {% block title %}Centros de Familia{% endblock %}
-
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -11,96 +9,90 @@
         <li class="breadcrumb-item active">Listar</li>
     </ol>
 {% endblock %}
-
 {% block content %}
-{% url 'centros_ajax' as ajax_url %}
-
-<!-- Variables para evitar problemas de formateo -->
-{% with titulo_search='Buscar Centro' %}
-{% with placeholder_text='Buscar por nombre, dirección o tipo' %}
-{% with help_text='Buscar por nombre, dirección o tipo' %}
-{% with reset_url_name='centro_list' %}
-{% with add_url_name='centro_create' %}
-{% with tbody_id='centros-table-body' %}
-
-{% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name add_url=add_url_name add_text='Agregar' additional_buttons=centro_additional_buttons query=request.GET.busqueda ajax_search_mode=True ajax_url=ajax_url target_tbody_id=tbody_id %}
-
-{% endwith %}
-{% endwith %}
-{% endwith %}
-{% endwith %}
-{% endwith %}
-{% endwith %}
-<!-- Centros Table with AJAX -->
-<div class="row mt-5">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <table class="table table-bordered table-striped projects">
-                    <thead>
-                        <tr>
-                            {% for header in table_headers %}
-                                <th {% if header.class %}class="{{ header.class }}"{% endif %}
-                                    {% if header.style %}style="{{ header.style }}"{% endif %}>
-                                    {{ header.title }}
-                                </th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody id="centros-table-body">
-                        {% for centro in centros %}
+    {% url 'centros_ajax' as ajax_url %}
+    <!-- Variables para evitar problemas de formateo -->
+    {% with titulo_search='Buscar Centro' %}
+        {% with placeholder_text='Buscar por nombre, dirección o tipo' %}
+            {% with help_text='Buscar por nombre, dirección o tipo' %}
+                {% with reset_url_name='centro_list' %}
+                    {% with add_url_name='centro_create' %}
+                        {% with tbody_id='centros-table-body' %}
+                            {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name add_url=add_url_name add_text='Agregar' additional_buttons=centro_additional_buttons query=request.GET.busqueda ajax_search_mode=True ajax_url=ajax_url target_tbody_id=tbody_id %}
+                        {% endwith %}
+                    {% endwith %}
+                {% endwith %}
+            {% endwith %}
+        {% endwith %}
+    {% endwith %}
+    <!-- Centros Table with AJAX -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
                             <tr>
-                                <td>
-                                    <a href="{% url 'centro_detail' centro.id %}"
-                                       class="font-weight-bold link-handler"
-                                       title="Ver detalles">{{ centro.nombre }}</a>
-                                </td>
-                                <td>{{ centro.get_tipo_display }}</td>
-                                <td>{{ centro.calle }}</td>
-                                <td>{{ centro.telefono }} / {{ centro.celular }}</td>
-                                <td>
-                                    {% if centro.activo %}
-                                        <span class="badge badge-success">Activo</span>
-                                    {% else %}
-                                        <span class="badge badge-danger">Inactivo</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
+                                {% for header in table_headers %}
+                                    <th {% if header.class %}class="{{ header.class }}"{% endif %}
+                                        {% if header.style %}style="{{ header.style }}"{% endif %}>
+                                        {{ header.title }}
+                                    </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody id="centros-table-body">
+                            {% for centro in centros %}
+                                <tr>
+                                    <td>
                                         <a href="{% url 'centro_detail' centro.id %}"
-                                           class="btn btn-primary btn-sm">Ver</a>
-                                        <a href="{% url 'centro_update' centro.id %}"
-                                           class="btn btn-primary btn-sm">Editar</a>
-                                        {% if request.user.is_superuser or request.user.groups.all.0.name == 'CDF SSE' %}
-                                            <form method="post"
-                                                  action="{% url 'centro_delete' centro.id %}"
-                                                  style="display:inline">
-                                                {% csrf_token %}
-                                                <button type="submit"
-                                                        class="btn btn-danger btn-sm"
-                                                        onclick="return confirm('¿Estás seguro de que deseas eliminar este centro? Esta acción no se puede deshacer.');">
-                                                    Eliminar
-                                                </button>
-                                            </form>
+                                           class="font-weight-bold link-handler"
+                                           title="Ver detalles">{{ centro.nombre }}</a>
+                                    </td>
+                                    <td>{{ centro.get_tipo_display }}</td>
+                                    <td>{{ centro.calle }}</td>
+                                    <td>{{ centro.telefono }} / {{ centro.celular }}</td>
+                                    <td>
+                                        {% if centro.activo %}
+                                            <span class="badge badge-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">Inactivo</span>
                                         {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center">No se encontraron centros.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <div id="pagination-container">
-                    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=request.GET.busqueda prev_text='Volver' next_text='Continuar' %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'centro_detail' centro.id %}"
+                                               class="btn btn-primary btn-sm">Ver</a>
+                                            <a href="{% url 'centro_update' centro.id %}"
+                                               class="btn btn-primary btn-sm">Editar</a>
+                                            {% if request.user.is_superuser or request.user.groups.all.0.name == 'CDF SSE' %}
+                                                <form method="post"
+                                                      action="{% url 'centro_delete' centro.id %}"
+                                                      style="display:inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit"
+                                                            class="btn btn-danger btn-sm"
+                                                            onclick="return confirm('¿Estás seguro de que deseas eliminar este centro? Esta acción no se puede deshacer.');">
+                                                        Eliminar
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No se encontraron centros.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div id="pagination-container">
+                        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=request.GET.busqueda prev_text='Volver' next_text='Continuar' %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
 {% endblock %}
-
 {% block customJS %}{% endblock %}
