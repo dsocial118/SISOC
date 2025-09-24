@@ -14,6 +14,7 @@ from organizaciones.views import (
     FirmanteDeleteView,
     AvalDeleteView,
     sub_tipo_entidad_ajax,
+    organizaciones_ajax,
 )
 
 urlpatterns = [
@@ -76,5 +77,10 @@ urlpatterns = [
         "organizaciones/subtipos-entidad/ajax/",
         group_required(["Organizaciones"])(sub_tipo_entidad_ajax),
         name="organizacion_subtipos_entidad_ajax",
+    ),
+    path(
+        "organizaciones/ajax/",
+        group_required(["Organizaciones"])(organizaciones_ajax),
+        name="organizaciones_ajax",
     ),
 ]

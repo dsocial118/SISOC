@@ -10,6 +10,7 @@ from rendicioncuentasfinal.views import (
     subsanar_documento_rendicion_cuentas_final,
     validar_documento_rendicion_cuentas_final,
     switch_rendicion_final_fisicamente_presentada,
+    documentos_rendicion_cuentas_final_ajax,
 )
 
 urlpatterns = [
@@ -54,5 +55,11 @@ urlpatterns = [
             DocumentosRendicionCuentasFinalListView.as_view()
         ),
         name="rendicion_cuentas_final_listar",
+    ),
+    # AJAX endpoint
+    path(
+        "rendicion_cuentas_final/ajax/",
+        documentos_rendicion_cuentas_final_ajax,
+        name="documentos_rendicion_cuentas_final_ajax",
     ),
 ]
