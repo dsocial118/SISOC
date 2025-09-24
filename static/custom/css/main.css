@@ -5,6 +5,36 @@ footer.app-footer {
     border-top: 5px solid #e7ba61 !important;
     color: #ffffff !important;
 }
+
+.main-header {
+    padding: 0.5rem 1rem; /* Ajusta el padding según sea necesario */
+}
+
+.main-header .nav-links {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+}
+
 .main-header .brand-image {
     max-height: 32px;/* Espacio entre la imagen y el texto */
+}
+.main-header{
+    background-color: #232d4f !important;
+    border-bottom: 5px solid #e7ba61 !important;
+    color: #ffffff !important;
+}
+
+.main-header .nav-link.nav-link-rounded {
+    background-color: #EDEDED;
+    border-radius: 20px;
+    width: 40px;
+    height: 40px;
+}
+
+.main-header .nav-link.nav-link-rounded img {
+    height: 24px;
+    width: 24px;
+    margin: 8px;
 }
