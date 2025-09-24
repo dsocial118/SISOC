@@ -21,7 +21,8 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast
 from django.http import HttpResponseRedirect, JsonResponse, Http404
-from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
 from django.views.decorators.http import require_POST
 from django.conf import settings
@@ -406,8 +407,6 @@ def ciudadanos_ajax(request):
     """
     Vista AJAX para búsqueda dinámica de ciudadanos
     """
-    from django.template.loader import render_to_string
-
     query = request.GET.get("busqueda", "").strip()
     page = request.GET.get("page", 1)
 

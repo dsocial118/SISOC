@@ -1,7 +1,9 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect, JsonResponse
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -622,10 +624,6 @@ def organizaciones_ajax(request):
     Vista AJAX para filtrar organizaciones en tiempo real.
     Retorna HTML renderizado de las filas de la tabla y paginación.
     """
-    from django.template.loader import render_to_string
-    from django.core.paginator import Paginator
-    from django.http import Http404
-
     busqueda = request.GET.get("busqueda", "").strip()
     page_number = request.GET.get("page", 1)
 

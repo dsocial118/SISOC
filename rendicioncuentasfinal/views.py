@@ -1,9 +1,14 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models.base import Model
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.generic import DetailView, ListView
 from django.views.decorators.http import require_POST
+
+from core.decorators import group_required
 
 from comedores.models import Comedor
 from historial.services.historial_service import HistorialService
@@ -205,10 +210,6 @@ def switch_rendicion_final_fisicamente_presentada(request, rendicion_id):
 
 def documentos_rendicion_cuentas_final_ajax(request):
     """Endpoint AJAX para búsqueda filtrada de documentos de rendición de cuentas final"""
-    from django.template.loader import render_to_string
-    from django.core.paginator import Paginator
-    from django.http import JsonResponse
-    from core.decorators import group_required
 
     # Aplicar el decorador manualmente para mantener permisos
     @group_required(["Area Contable", "Area Legales", "Tecnico Comedor"])
