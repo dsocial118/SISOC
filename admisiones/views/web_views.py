@@ -459,17 +459,14 @@ def admisiones_tecnicos_ajax(request):
 
         comedores = AdmisionService.get_comedores_filtrados(request.user, query)
 
-        
         paginator = Paginator(comedores, 10)  # Mismo paginate_by que la vista principal
         page_obj = paginator.get_page(page)
 
-        
         html = render_to_string(
             "partials/admisiones_tecnicos_rows.html",
             {"comedores": page_obj, "request": request},
         )
 
-       
         pagination_html = render_to_string(
             "components/pagination.html",
             {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
