@@ -174,6 +174,7 @@ def cdi_ajax(request):
         pagination_html = render_to_string(
             "components/pagination.html",
             {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+            request=request,
         )
 
         return JsonResponse(

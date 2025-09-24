@@ -185,6 +185,7 @@ def comedores_acompanamiento_ajax(request):
     table_html = render_to_string(
         "acompanamientos/partials/comedor_rows.html",
         {"comedores": page_obj.object_list},
+        request=request,
     )
 
     pagination_html = render_to_string(
@@ -196,6 +197,7 @@ def comedores_acompanamiento_ajax(request):
             "prev_text": "Volver",
             "next_text": "Continuar",
         },
+        request=request,
     )
 
     return JsonResponse(

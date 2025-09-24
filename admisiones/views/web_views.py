@@ -422,12 +422,14 @@ def admisiones_legales_ajax(request):
         html = render_to_string(
             "partials/admisiones_legales_rows.html",
             {"admisiones": page_obj, "request": request},
+            request=request,
         )
 
         # Renderizar paginación
         pagination_html = render_to_string(
             "components/pagination.html",
             {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+            request=request,
         )
 
         return JsonResponse(
@@ -465,11 +467,13 @@ def admisiones_tecnicos_ajax(request):
         html = render_to_string(
             "partials/admisiones_tecnicos_rows.html",
             {"comedores": page_obj, "request": request},
+            request=request,
         )
 
         pagination_html = render_to_string(
             "components/pagination.html",
             {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+            request=request,
         )
 
         return JsonResponse(

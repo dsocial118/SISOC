@@ -445,6 +445,7 @@ def ciudadanos_ajax(request):
     table_html = render_to_string(
         "ciudadanos/partials/ciudadano_rows.html",
         {"ciudadanos": page_obj.object_list},
+        request=request,
     )
 
     # Renderizar paginación
@@ -457,6 +458,7 @@ def ciudadanos_ajax(request):
             "prev_text": "Volver",
             "next_text": "Continuar",
         },
+        request=request,
     )
 
     return JsonResponse(

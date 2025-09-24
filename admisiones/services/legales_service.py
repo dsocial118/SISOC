@@ -179,7 +179,7 @@ class LegalesService:
                     "informe": informe,
                 }
 
-                html_string = render_to_string(template_name, context)
+                html_string = render_to_string(template_name, context, request=request)
 
                 pdf_filename = f"disposicion_{admision.id}_{nuevo_formulario.id}.pdf"
                 pdf_path = os.path.join(
@@ -224,7 +224,9 @@ class LegalesService:
                 nuevo_formulario.save()
 
                 context = {"admision": admision, "formulario": nuevo_formulario}
-                html_string = render_to_string("pdf_convenio.html", context)
+                html_string = render_to_string(
+                    "pdf_convenio.html", context, request=request
+                )
 
                 pdf_filename = f"convenio_{admision.id}_{nuevo_formulario.id}.pdf"
                 pdf_path = os.path.join(

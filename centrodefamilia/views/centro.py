@@ -381,7 +381,11 @@ def centros_ajax(request):
             ],
         }
 
-        html = render_to_string("partials/centros_rows.html", context)
+        html = render_to_string(
+            "partials/centros_rows.html",
+            context,
+            request=request,
+        )
 
         pagination_html = render_to_string(
             "components/pagination.html",
@@ -392,6 +396,7 @@ def centros_ajax(request):
                 "prev_text": "Volver",
                 "next_text": "Continuar",
             },
+            request=request,
         )
 
         return JsonResponse(

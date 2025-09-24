@@ -672,6 +672,7 @@ def organizaciones_ajax(request):
     table_html = render_to_string(
         "organizaciones/partials/organizacion_rows.html",
         {"organizaciones": page_obj.object_list},
+        request=request,
     )
 
     pagination_html = render_to_string(
@@ -683,6 +684,7 @@ def organizaciones_ajax(request):
             "prev_text": "Volver",
             "next_text": "Continuar",
         },
+        request=request,
     )
 
     return JsonResponse(
