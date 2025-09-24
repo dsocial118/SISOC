@@ -1,7 +1,6 @@
 # pylint: disable=too-many-lines
 import calendar
 import json
-import locale
 import logging
 from datetime import date, datetime, timedelta
 
