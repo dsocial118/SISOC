@@ -736,7 +736,7 @@ class SubirCruceExcelView(View):
             return JsonResponse(
                 {
                     "success": False,
-                    "error": "Debe adjuntar un Excel con columna 'cuit'.",
+                    "error": "Debe adjuntar un Excel con columna 'documento'.",
                 },
                 status=400,
             )

@@ -99,7 +99,7 @@ class Aval(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
     )
 
-    def __str__(self):
+    def str(self):
         return f"{self.nombre} ({self.cuit})"
 
     class Meta:
