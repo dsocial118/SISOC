@@ -1,7 +1,6 @@
 # pylint: disable=too-many-lines
 import calendar
 import json
-import locale
 import logging
 from datetime import date, datetime, timedelta
 
@@ -125,8 +124,6 @@ from ciudadanos.models import (
 )
 from ciudadanos.utils import recortar_imagen
 from .services.consulta_renaper import consultar_datos_renaper
-
-locale.setlocale(locale.LC_ALL, "es_AR.UTF-8")
 
 logger = logging.getLogger("django")
 
