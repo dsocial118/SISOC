@@ -1,4 +1,7 @@
+from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import JsonResponse
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     ListView,
@@ -8,9 +11,9 @@ from django.views.generic import (
     DeleteView,
 )
 
-
 from cdi.forms import CentroDesarrolloInfantilForm
 from cdi.models import CentroDesarrolloInfantil
+from core.decorators import group_required
 
 
 class CDIListView(ListView):
@@ -115,10 +118,6 @@ class CDIDeleteView(DeleteView):
 
 def cdi_ajax(request):
     """Endpoint AJAX para búsqueda filtrada de Centros de Desarrollo Infantil"""
-    from django.template.loader import render_to_string
-    from django.core.paginator import Paginator
-    from django.http import JsonResponse
-    from core.decorators import group_required
 
     # Aplicar el decorador manualmente para mantener permisos
     @group_required(["CDI"])
