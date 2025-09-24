@@ -1,0 +1,10 @@
+/* Footer personalizado */
+.app-wrapper .app-footer,
+footer.app-footer {
+    background-color: #232d4f !important;
+    border-top: 5px solid #e7ba61 !important;
+    color: #ffffff !important;
+}
+.main-header .brand-image {
+    max-height: 32px;/* Espacio entre la imagen y el texto */
+}

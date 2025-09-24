@@ -1,0 +1,24 @@
+{% load static %}
+<header class="main-header">
+  <nav class="navbar">
+    <a href="{% url 'dashboard' %}" class="brand-link">
+      <img
+        src="{% static 'custom/img/sisoc_logo.png' %}"
+        alt="SISOC"
+        class="brand-image opacity-75 shadow"
+      />
+      <span class="brand-text fw-light"
+        ><img
+          src="{% static 'custom/img/logoBlanco.png' %}"
+          alt="SISOC"
+          class="brand-image"
+      /></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/dashboard/">Dashboard</a></li>
+      <li><a href="/agents/">Agentes</a></li>
+      <li><a href="/settings/">Configuración</a></li>
+      <li><a href="/logout/">Salir</a></li>
+    </ul>
+  </nav>
+</header>
