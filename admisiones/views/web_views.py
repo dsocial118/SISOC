@@ -395,3 +395,97 @@ class InformeTecnicoComplementarioDetailView(DetailView):
         tipo = self.kwargs.get("tipo", "base")
         context.update(InformeService.get_context_informe_detail(self.object, tipo))
         return context
+
+
+def admisiones_legales_ajax(request):
+    """Endpoint AJAX para búsqueda filtrada de admisiones legales"""
+    from django.template.loader import render_to_string
+    from django.core.paginator import Paginator
+    from core.decorators import group_required
+
+    # Aplicar el decorador manualmente para mantener permisos
+    @group_required(["Abogado Dupla"])
+    def _admisiones_legales_ajax(request):
+        query = request.GET.get("busqueda", "")
+        page = request.GET.get("page", 1)
+
+        # Obtener admisiones filtradas usando el mismo servicio que la vista principal
+        admisiones = LegalesService.get_admisiones_legales_filtradas(query)
+
+        # Paginación
+        paginator = Paginator(
+            admisiones, 10
+        )  # Mismo paginate_by que la vista principal
+        page_obj = paginator.get_page(page)
+
+        # Renderizar las filas de la tabla
+        html = render_to_string(
+            "partials/admisiones_legales_rows.html",
+            {"admisiones": page_obj, "request": request},
+            request=request,
+        )
+
+        # Renderizar paginación
+        pagination_html = render_to_string(
+            "components/pagination.html",
+            {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+            request=request,
+        )
+
+        return JsonResponse(
+            {
+                "html": html,
+                "pagination_html": pagination_html,
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "has_previous": page_obj.has_previous(),
+                "has_next": page_obj.has_next(),
+                "current_page": page_obj.number,
+            }
+        )
+
+    return _admisiones_legales_ajax(request)
+
+
+def admisiones_tecnicos_ajax(request):
+    """Endpoint AJAX para búsqueda filtrada de admisiones técnicos"""
+    from django.template.loader import render_to_string
+    from django.core.paginator import Paginator
+    from core.decorators import group_required
+
+    # Aplicar el decorador manualmente para mantener permisos
+    @group_required(["Tecnico Comedor", "Abogado Dupla"])
+    def _admisiones_tecnicos_ajax(request):
+        query = request.GET.get("busqueda", "")
+        page = request.GET.get("page", 1)
+
+        comedores = AdmisionService.get_comedores_filtrados(request.user, query)
+
+        paginator = Paginator(comedores, 10)  # Mismo paginate_by que la vista principal
+        page_obj = paginator.get_page(page)
+
+        html = render_to_string(
+            "partials/admisiones_tecnicos_rows.html",
+            {"comedores": page_obj, "request": request},
+            request=request,
+        )
+
+        pagination_html = render_to_string(
+            "components/pagination.html",
+            {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+            request=request,
+        )
+
+        return JsonResponse(
+            {
+                "html": html,
+                "pagination_html": pagination_html,
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "has_previous": page_obj.has_previous(),
+                "has_next": page_obj.has_next(),
+                "current_page": page_obj.number,
+            }
+        )
+
+    return _admisiones_tecnicos_ajax(request)

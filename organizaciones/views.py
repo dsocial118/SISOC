@@ -1,7 +1,9 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect, JsonResponse
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -615,3 +617,84 @@ def sub_tipo_entidad_ajax(request):
 
     data = [{"id": subtipo.id, "text": subtipo.nombre} for subtipo in subtipo_entidades]
     return JsonResponse(data, safe=False)
+
+
+def organizaciones_ajax(request):
+    """
+    Vista AJAX para filtrar organizaciones en tiempo real.
+    Retorna HTML renderizado de las filas de la tabla y paginación.
+    """
+    busqueda = request.GET.get("busqueda", "").strip()
+    page_number = request.GET.get("page", 1)
+
+    organizaciones = Organizacion.objects.all()
+
+    if busqueda:
+        organizaciones = (
+            organizaciones.filter(
+                Q(nombre__icontains=busqueda)
+                | Q(cuit__icontains=busqueda)
+                | Q(telefono__icontains=busqueda)
+                | Q(email__icontains=busqueda)
+            )
+            .select_related("tipo_entidad", "subtipo_entidad")
+            .only(
+                "id",
+                "nombre",
+                "cuit",
+                "telefono",
+                "email",
+                "tipo_entidad__nombre",
+                "subtipo_entidad__nombre",
+            )
+        )
+    else:
+        organizaciones = (
+            organizaciones.select_related("tipo_entidad", "subtipo_entidad")
+            .only(
+                "id",
+                "nombre",
+                "cuit",
+                "telefono",
+                "email",
+                "tipo_entidad__nombre",
+                "subtipo_entidad__nombre",
+            )
+            .order_by("-id")
+        )
+
+    paginator = Paginator(organizaciones, 10)  # 10 elementos por página
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (ValueError, TypeError):
+        page_obj = paginator.get_page(1)
+
+    table_html = render_to_string(
+        "organizaciones/partials/organizacion_rows.html",
+        {"organizaciones": page_obj.object_list},
+        request=request,
+    )
+
+    pagination_html = render_to_string(
+        "components/pagination.html",
+        {
+            "is_paginated": page_obj.has_other_pages(),
+            "page_obj": page_obj,
+            "query": busqueda,
+            "prev_text": "Volver",
+            "next_text": "Continuar",
+        },
+        request=request,
+    )
+
+    return JsonResponse(
+        {
+            "html": table_html,
+            "pagination_html": pagination_html,
+            "count": paginator.count,
+            "current_page": page_obj.number,
+            "total_pages": paginator.num_pages,
+            "has_previous": page_obj.has_previous(),
+            "has_next": page_obj.has_next(),
+        }
+    )
