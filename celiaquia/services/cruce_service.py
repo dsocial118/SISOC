@@ -46,30 +46,31 @@ from celiaquia.services.cupo_service import (
 
 logger = logging.getLogger(__name__)
 
-CUIT_COL_CANDIDATAS = {
+DOCUMENTO_COL_CANDIDATAS = {
+    "documento",
+    "nro_documento",
+    "numero_documento",
+    "número_documento",
+    "doc",
+    "nro_doc",
+    "num_doc",
     "cuit",
     "c.u.i.t",
     "nro_cuit",
     "numero_cuit",
     "número_cuit",
     "cuit_nro",
-    "cuit número",
-}
-DNI_COL_CANDIDATAS = {
+    "cuit_número",
     "dni",
-    "documento",
     "nro_dni",
     "numero_dni",
     "número_dni",
-    "doc",
-    "nro_doc",
-    "num_doc",
 }
 
 
 class CruceService:
     @staticmethod
-    def _normalize_cuit_str(val) -> str:
+    def normalize_cuit_str(val) -> str:
         if val is None:
             return ""
         s = str(val).strip()
@@ -77,26 +78,35 @@ class CruceService:
         return digits
 
     @staticmethod
-    def _normalize_dni_str(val) -> str:
+    def normalize_dni_str(val) -> str:
         if val is None:
             return ""
         s = re.sub(r"\D", "", str(val).strip())
         return s.lstrip("0")
 
     @staticmethod
-    def _extraer_dni_de_cuit(cuit: str) -> str:
+    def extraer_dni_de_cuit(cuit: str) -> str:
         if len(cuit) == 11:
             return cuit[2:10]
         return ""
 
     @staticmethod
-    def _resolver_cuit_ciudadano(ciudadano) -> str:
+    def resolver_cuit_ciudadano(ciudadano) -> str:
+        # Primero intentar campos específicos de CUIT/CUIL si existen
         for attr in ("cuit", "cuil", "cuil_cuit"):
             if hasattr(ciudadano, attr):
                 val = getattr(ciudadano, attr) or ""
-                val = CruceService._normalize_cuit_str(val)
+                val = CruceService.normalize_cuit_str(val)
                 if len(val) == 11:
                     return val
+
+        # Si no hay campos específicos, usar el campo documento si tiene 11 dígitos
+        documento = getattr(ciudadano, "documento", "")
+        if documento:
+            documento_str = CruceService.normalize_cuit_str(str(documento))
+            if len(documento_str) == 11:
+                return documento_str
+
         return ""
 
     @staticmethod
@@ -114,7 +124,7 @@ class CruceService:
             ciudadano = legajo.ciudadano
             rows.append(
                 {
-                    "Numero_documento": CruceService._normalize_dni_str(
+                    "Numero_documento": CruceService.normalize_dni_str(
                         getattr(ciudadano, "documento", "")
                     ),
                     "TipoDocumento": getattr(
@@ -189,9 +199,35 @@ class CruceService:
         df: pd.DataFrame, candidatas: set, palabra_clave: str
     ) -> str | None:
         cols = set(df.columns)
-        for cand in candidatas:
-            if cand in cols:
+
+        # Orden de prioridad: documento tiene prioridad sobre cuit y dni
+        prioridad = [
+            "documento",
+            "nro_documento",
+            "numero_documento",
+            "número_documento",
+            "doc",
+            "nro_doc",
+            "num_doc",
+            "cuit",
+            "c.u.i.t",
+            "nro_cuit",
+            "numero_cuit",
+            "número_cuit",
+            "cuit_nro",
+            "cuit_número",
+            "dni",
+            "nro_dni",
+            "numero_dni",
+            "número_dni",
+        ]
+
+        # Buscar en orden de prioridad
+        for cand in prioridad:
+            if cand in candidatas and cand in cols:
                 return cand
+
+        # Fallback: buscar por palabra clave
         for c in df.columns:
             if palabra_clave in c:
                 return c
@@ -200,32 +236,43 @@ class CruceService:
     @staticmethod
     def _leer_identificadores(archivo_excel) -> dict:
         df = CruceService._leer_tabla(archivo_excel)
-        col_cuit = CruceService._col_por_preferencias(df, CUIT_COL_CANDIDATAS, "cuit")
-        col_dni = CruceService._col_por_preferencias(df, DNI_COL_CANDIDATAS, "dni")
+        col_documento = CruceService._col_por_preferencias(
+            df, DOCUMENTO_COL_CANDIDATAS, "documento"
+        )
+
         cuits = set()
         dnis = set()
-        if col_cuit:
-            for raw in df[col_cuit].fillna(""):
-                norm = CruceService._normalize_cuit_str(raw)
-                if not norm:
-                    continue
-                if len(norm) == 11:
-                    cuits.add(norm)
-                    dni = CruceService._extraer_dni_de_cuit(norm)
-                    if dni:
-                        dnis.add(CruceService._normalize_dni_str(dni))
-                else:
-                    dnis.add(CruceService._normalize_dni_str(norm))
-        if col_dni:
-            for raw in df[col_dni].fillna(""):
-                dni = CruceService._normalize_dni_str(raw)
-                if dni:
-                    dnis.add(dni)
-        if not cuits and not dnis:
-            if not col_cuit and not col_dni:
-                raise ValidationError("El archivo debe tener columna 'cuit' o 'dni'.")
+
+        if not col_documento:
             raise ValidationError(
-                "El archivo no contiene identificadores (CUIT/DNI) válidos."
+                "El archivo debe tener una columna válida de documento. "
+                "Columnas aceptadas: documento, nro_documento, numero_documento, "
+                "número_documento, doc, nro_doc, num_doc, cuit, c.u.i.t, "
+                "nro_cuit, numero_cuit, número_cuit, cuit_nro, cuit_número (cuit "
+                "número), dni, "
+                "nro_dni, numero_dni, número_dni."
+            )
+
+        for raw in df[col_documento].fillna(""):
+            norm = CruceService.normalize_dni_str(raw)
+            if not norm:
+                continue
+            # Si tiene 11 dígitos, tratarlo como CUIT
+            if len(norm) == 11:
+                cuits.add(norm)
+                dni = CruceService.extraer_dni_de_cuit(norm)
+                if dni:
+                    # Normalizar DNI extraído para evitar problemas con ceros iniciales
+                    dni_normalizado = CruceService.normalize_dni_str(dni)
+                    if dni_normalizado:
+                        dnis.add(dni_normalizado)
+            else:
+                # Tratarlo como DNI
+                dnis.add(norm)
+
+        if not cuits and not dnis:
+            raise ValidationError(
+                "El archivo no contiene documentos válidos en la columna 'documento'."
             )
         return {"cuits": cuits, "dnis": dnis}
 
@@ -563,8 +610,8 @@ class CruceService:
 
         for leg in legajos_aprobados_qs.iterator():
             ciu = leg.ciudadano
-            cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
-            dni_ciud = CruceService._normalize_dni_str(getattr(ciu, "documento", ""))
+            cuit_ciud = CruceService.resolver_cuit_ciudadano(ciu)
+            dni_ciud = CruceService.normalize_dni_str(getattr(ciu, "documento", ""))
 
             by = None
             if cuit_ciud and cuit_ciud in set_cuits:
@@ -621,8 +668,8 @@ class CruceService:
         ).select_related("ciudadano")
         for leg in legajos_rechazados:
             ciu = leg.ciudadano
-            cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
-            dni_ciud = CruceService._normalize_dni_str(getattr(ciu, "documento", ""))
+            cuit_ciud = CruceService.resolver_cuit_ciudadano(ciu)
+            dni_ciud = CruceService.normalize_dni_str(getattr(ciu, "documento", ""))
 
             presente_en_archivo = (cuit_ciud and cuit_ciud in set_cuits) or (
                 dni_ciud and dni_ciud in set_dnis_norm
@@ -647,7 +694,7 @@ class CruceService:
         ).select_related("ciudadano")
         for leg in legajos_subsanar:
             ciu = leg.ciudadano
-            cuit_ciud = CruceService._resolver_cuit_ciudadano(ciu)
+            cuit_ciud = CruceService.resolver_cuit_ciudadano(ciu)
             motivo = getattr(leg, "subsanacion_motivo", "") or "Subsanar solicitado"
             detalle_no_match.append(
                 {
@@ -668,7 +715,7 @@ class CruceService:
         detalle_fuera = [
             {
                 "dni": getattr(l.ciudadano, "documento", "") or "",
-                "cuit": CruceService._resolver_cuit_ciudadano(l.ciudadano) or "",
+                "cuit": CruceService.resolver_cuit_ciudadano(l.ciudadano) or "",
                 "nombre": getattr(l.ciudadano, "nombre", "") or "",
                 "apellido": getattr(l.ciudadano, "apellido", "") or "",
             }
