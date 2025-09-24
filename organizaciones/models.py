@@ -75,7 +75,6 @@ class Firmante(models.Model):
     cuit = models.BigIntegerField(
         blank=True,
         null=True,
-        unique=True,
         validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
     )
 
