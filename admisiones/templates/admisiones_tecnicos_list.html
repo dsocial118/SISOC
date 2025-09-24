@@ -1,29 +1,23 @@
 {% extends "includes/main.html" %}
 {% load static custom_filters %}
-
 {% block title %}Comedores - Admisiones{% endblock %}
-
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
-
 {% block content %}
-{% url 'admisiones_tecnicos_ajax' as ajax_url %}
-
-<!-- Variables para evitar problemas de formateo -->
-{% with titulo_search='Admisiones' %}
-{% with placeholder_text='Buscar por nombre, ubicación, referente, etc.' %}
-{% with help_text='Buscar por nombre, ubicación, referente, etc.' %}
-{% with reset_url_name='admisiones_tecnicos_listar' %}
-{% with tbody_id='admisiones-tecnicos-table-body' %}
-
-{% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name query=query show_add_button=False ajax_search_mode=True ajax_url=ajax_url target_tbody_id=tbody_id %}
-
-{% endwith %}
-{% endwith %}
-{% endwith %}
-{% endwith %}
-{% endwith %}
+    {% url 'admisiones_tecnicos_ajax' as ajax_url %}
+    <!-- Variables para evitar problemas de formateo -->
+    {% with titulo_search='Admisiones' %}
+        {% with placeholder_text='Buscar por nombre, ubicación, referente, etc.' %}
+            {% with help_text='Buscar por nombre, ubicación, referente, etc.' %}
+                {% with reset_url_name='admisiones_tecnicos_listar' %}
+                    {% with tbody_id='admisiones-tecnicos-table-body' %}
+                        {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name query=query show_add_button=False ajax_search_mode=True ajax_url=ajax_url target_tbody_id=tbody_id %}
+                    {% endwith %}
+                {% endwith %}
+            {% endwith %}
+        {% endwith %}
+    {% endwith %}
     <div class="row mt-5">
         <div class="col-12">
             <div class="card">

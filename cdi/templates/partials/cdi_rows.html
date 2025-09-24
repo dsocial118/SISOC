@@ -32,8 +32,6 @@
 {% empty %}
     <tr>
         <td colspan="{% if show_actions %}{{ table_headers|length|add:1 }}{% else %}{{ table_headers|length }}{% endif %}"
-            class="text-center text-muted py-4">
-            No hay centros de desarrollo infantil registrados.
-        </td>
+            class="text-center text-muted py-4">No hay centros de desarrollo infantil registrados.</td>
     </tr>
 {% endfor %}
