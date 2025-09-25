@@ -41,7 +41,6 @@
             </ul>
         </li>
     {% endif %}
-
     <!-- CIUDADANOS - Menú independiente -->
     {% if request.user|has_group:"Ciudadanos" %}
         <li class="nav-item {% if 'ciudadanos' in pagina_actual %}menu-open{% endif %}">
@@ -63,7 +62,6 @@
             </ul>
         </li>
     {% endif %}
-
     <!-- COMEDORES - Menú independiente -->
     {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" %}
         <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual %}menu-open{% endif %}">
@@ -128,7 +126,6 @@
             </ul>
         </li>
     {% endif %}
-
     <!-- ORGANIZACIONES - Menú independiente -->
     {% if request.user|has_group:"Organizaciones" %}
         <li class="nav-item {% if 'organizaciones' in pagina_actual %}menu-open{% endif %}">
@@ -150,7 +147,6 @@
             </ul>
         </li>
     {% endif %}
-
     <!-- CENTRO DESARROLLO INFANTIL - Menú independiente -->
     {% if request.user|has_group:"CDI" %}
         <li class="nav-item {% if 'cdi' in pagina_actual %}menu-open{% endif %}">
@@ -172,7 +168,6 @@
             </ul>
         </li>
     {% endif %}
-
     <!-- CENTRO DE FAMILIA - Menú independiente -->
     {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or request.user|has_group:"CDF SSE" %}
         <li class="nav-item {% if 'centros' in pagina_actual %}menu-open{% endif %}">
@@ -215,7 +210,6 @@
             </ul>
         </li>
     {% endif %}
-
     <!-- CELIAQUÍA - Menú independiente -->
     {% if request.user|has_group:"superadmin" or request.user|has_group:"TecnicoCeliaquia" or request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"ProvinciaCeliaquia" %}
         <li class="nav-item {% if 'celiaquia' in pagina_actual %}menu-open{% endif %}">
@@ -244,5 +238,4 @@
             </ul>
         </li>
     {% endif %}
-
 {% endwith %}
