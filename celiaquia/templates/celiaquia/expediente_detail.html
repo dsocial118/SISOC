@@ -104,6 +104,9 @@
             <div class="row">
                 <div class="col-md-6">
                     <p>
+                        <strong>Número de expediente:</strong> {{ expediente.numero_expediente|default:"-" }}
+                    </p>
+                    <p>
                         <strong>Estado:</strong> {{ expediente.estado.display_name }}
                     </p>
                     <p>
@@ -132,10 +135,7 @@
                             <span class="text-muted">No asignado</span>
                         {% endif %}
                     </p>
-                    {% if expediente.estado.id == 4 and is_coord %}
-                        <a href="{% url 'expediente_asignar_tecnico' expediente.pk %}"
-                           class="btn btn-outline-warning btn-sm">Cambiar Técnico</a>
-                    {% endif %}
+
                 </div>
             </div>
         </div>
@@ -323,10 +323,11 @@
                 {% endif %}
                 <div id="legajos-list" class="list-group">
                     {% for leg in legajos %}
-                        <div class="list-group-item border-0 mb-3 rounded shadow-sm legajo-item card-dark {% if leg.revision_tecnico == 'SUBSANAR' %}border-warning{% endif %}"
+                        <div class="list-group-item border-0 mb-3 rounded shadow-sm legajo-item card-dark {% if leg.revision_tecnico == 'SUBSANAR' %}border-warning{% elif leg.revision_tecnico == 'SUBSANADO' %}border-info{% endif %}"
                              data-legajo-id="{{ leg.pk }}"
                              data-revision="{{ leg.revision_tecnico }}"
-                             {% if leg.revision_tecnico == 'SUBSANAR' %}style="border: 2px solid #ffc107 !important;"{% endif %}>
+                             {% if leg.revision_tecnico == 'SUBSANAR' %}style="border: 2px solid #ffc107 !important;"
+                             {% elif leg.revision_tecnico == 'SUBSANADO' %}style="border: 2px solid #17a2b8 !important;"{% endif %}>
                             <div class="row gy-3 gx-3">
                                 <!-- Col 1: Datos + Revisión -->
                                 <div class="col-lg-3 col-md-5">
@@ -501,6 +502,32 @@
                                                     Responder
                                                 {% endif %}
                                             </button>
+                                        </div>
+                                    {% elif leg.revision_tecnico == 'SUBSANAR' and leg.estado_validacion_renaper != 3 and leg.subsanacion_renaper_archivo %}
+                                        <div class="file-row mt-2"
+                                             style="background:rgba(255,193,7,.1);
+                                                    border:1px solid rgba(255,193,7,.3)">
+                                            <div>
+                                                <div class="muted small">Documento subsanación</div>
+                                                <a href="{{ leg.subsanacion_renaper_archivo.url }}"
+                                                   target="_blank"
+                                                   class="text-success text-decoration-underline file-name">
+                                                    ✅ {{ leg.subsanacion_renaper_archivo.name }}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    {% elif leg.revision_tecnico == 'SUBSANADO' and leg.subsanacion_renaper_archivo %}
+                                        <div class="file-row mt-2"
+                                             style="background:rgba(40,167,69,.1);
+                                                    border:1px solid rgba(40,167,69,.3)">
+                                            <div>
+                                                <div class="muted small">Documento subsanación</div>
+                                                <a href="{{ leg.subsanacion_renaper_archivo.url }}"
+                                                   target="_blank"
+                                                   class="text-success text-decoration-underline file-name">
+                                                    ✅ {{ leg.subsanacion_renaper_archivo.name }}
+                                                </a>
+                                            </div>
                                         </div>
                                     {% endif %}
                                     </div>

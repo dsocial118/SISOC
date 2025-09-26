@@ -51,12 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
     hideIfSinglePage = true,
   }) {
     const nodes = Array.from(items);
-    if (!nodes.length || !pageSizeSelect || !paginationUl) return;
+    console.log('Paginate called with:', { itemsCount: nodes.length, pageSizeSelect, paginationUl });
+    
+    if (!nodes.length || !pageSizeSelect || !paginationUl) {
+      console.log('Paginate: missing required elements');
+      return;
+    }
 
     let page = 1;
     const readPageSize = () => {
       const val = pageSizeSelect.value;
-      return val === 'all' ? Infinity : parseInt(val, 10) || 10;
+      const size = val === 'all' ? Infinity : parseInt(val, 10) || 10;
+      console.log('Page size:', val, '->', size);
+      return size;
     };
 
     function render() {
@@ -1005,6 +1012,12 @@ document.addEventListener('DOMContentLoaded', () => {
             datosRenaperTable.appendChild(rowRenaper);
           });
           
+          // Limpiar botones anteriores si existen
+          const botonesExistentes = comparacionDiv.querySelector('.mt-3.text-center');
+          if (botonesExistentes) {
+            botonesExistentes.remove();
+          }
+          
           // Mostrar botones para validación de Renaper
           const botonesDiv = document.createElement('div');
           botonesDiv.className = 'mt-3 text-center';
@@ -1142,10 +1155,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const list = document.getElementById('legajos-list');
     const pageSizeSel = document.getElementById('legajos-page-size');
     const pagUl = document.getElementById('legajos-pagination');
-    if (!list || !pageSizeSel || !pagUl) return;
+    
+    console.log('Inicializando paginación legajos:', { list, pageSizeSel, pagUl });
+    
+    if (!list || !pageSizeSel || !pagUl) {
+      console.log('Elementos no encontrados para paginación de legajos');
+      return;
+    }
+    
+    const items = list.querySelectorAll('.legajo-item');
+    console.log('Items encontrados:', items.length);
+    
+    if (items.length === 0) {
+      console.log('No hay items para paginar');
+      return;
+    }
 
     paginate({
-      items: list.querySelectorAll('.legajo-item'),
+      items: items,
       pageSizeSelect: pageSizeSel,
       paginationUl: pagUl,
       onPageChange: null,
