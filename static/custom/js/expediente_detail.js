@@ -231,9 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = uploadForm.getAttribute('action');
       const formData = new FormData(uploadForm);
 
-      // mapear campo -> slot (1/2/3) que espera el backend
+      // mapear campo -> slot (2/3) que espera el backend
       const campo = (formData.get('campo') || '').toString().toLowerCase();
-      const slotMap = { 'archivo1': 1, 'archivo2': 2, 'archivo3': 3 };
+      const slotMap = { 'archivo2': 2, 'archivo3': 3 };
       const slot = slotMap[campo];
       if (!slot) {
         showAlert('danger', 'Campo inválido.');
@@ -752,6 +752,131 @@ document.addEventListener('DOMContentLoaded', () => {
         btnConfirmSubs.disabled = false;
         btnConfirmSubs.innerHTML = original;
       }
+    });
+  }
+
+  /* ===== VALIDACIÓN RENAPER ===== */
+  const modalValidarRenaper = document.getElementById('modalValidarRenaper');
+  if (modalValidarRenaper) {
+    const btnValidarRenaper = document.querySelectorAll('.btn-validar-renaper');
+    
+    btnValidarRenaper.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        const legajoId = btn.getAttribute('data-legajo-id');
+        if (!legajoId || !window.VALIDAR_RENAPER_URL_TEMPLATE) {
+          showAlert('danger', 'Error de configuración para validación Renaper.');
+          return;
+        }
+        
+        const url = window.VALIDAR_RENAPER_URL_TEMPLATE.replace('{id}', legajoId);
+        
+        // Mostrar modal y loading
+        const modal = new bootstrap.Modal(modalValidarRenaper);
+        modal.show();
+        
+        const loadingDiv = document.getElementById('renaper-loading');
+        const comparacionDiv = document.getElementById('renaper-comparacion');
+        const alertasDiv = document.getElementById('renaper-alertas');
+        
+        loadingDiv.style.display = 'block';
+        comparacionDiv.style.display = 'none';
+        alertasDiv.innerHTML = '';
+        
+        try {
+          const resp = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+              'X-CSRFToken': getCsrfToken(),
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json'
+            }
+          });
+          
+          const data = await resp.json();
+          
+          if (!resp.ok || !data.success) {
+            throw new Error(data.error || 'Error al consultar Renaper');
+          }
+          
+          // Mostrar comparación
+          loadingDiv.style.display = 'none';
+          comparacionDiv.style.display = 'block';
+          
+          document.getElementById('ciudadano-nombre').textContent = data.ciudadano_nombre;
+          
+          // Llenar datos provincia
+          const datosProvinciaTable = document.getElementById('datos-provincia');
+          datosProvinciaTable.innerHTML = '';
+          
+          const campos = [
+            { key: 'documento', label: 'DNI' },
+            { key: 'nombre', label: 'Nombre' },
+            { key: 'apellido', label: 'Apellido' },
+            { key: 'fecha_nacimiento', label: 'Fecha Nacimiento' },
+            { key: 'sexo', label: 'Sexo' },
+            { key: 'calle', label: 'Calle' },
+            { key: 'altura', label: 'Altura' },
+            { key: 'piso_departamento', label: 'Piso/Depto' },
+            { key: 'ciudad', label: 'Ciudad' },
+            { key: 'provincia', label: 'Provincia' },
+            { key: 'codigo_postal', label: 'Código Postal' }
+          ];
+          
+          campos.forEach(campo => {
+            const valorProvincia = data.datos_provincia[campo.key] || '-';
+            const valorRenaper = data.datos_renaper[campo.key] || '-';
+            
+            const coincide = valorProvincia === valorRenaper;
+            const claseCoincidencia = coincide ? 'table-success' : 'table-warning';
+            
+            const rowProvincia = document.createElement('tr');
+            rowProvincia.className = claseCoincidencia;
+            rowProvincia.innerHTML = `
+              <td><strong>${campo.label}</strong></td>
+              <td>${escapeHtml(valorProvincia)}</td>
+            `;
+            datosProvinciaTable.appendChild(rowProvincia);
+          });
+          
+          // Llenar datos Renaper
+          const datosRenaperTable = document.getElementById('datos-renaper');
+          datosRenaperTable.innerHTML = '';
+          
+          campos.forEach(campo => {
+            const valorProvincia = data.datos_provincia[campo.key] || '-';
+            const valorRenaper = data.datos_renaper[campo.key] || '-';
+            
+            const coincide = valorProvincia === valorRenaper;
+            const claseCoincidencia = coincide ? 'table-success' : 'table-warning';
+            
+            const rowRenaper = document.createElement('tr');
+            rowRenaper.className = claseCoincidencia;
+            rowRenaper.innerHTML = `
+              <td><strong>${campo.label}</strong></td>
+              <td>${escapeHtml(valorRenaper)}</td>
+            `;
+            datosRenaperTable.appendChild(rowRenaper);
+          });
+          
+          // Recargar página después de 3 segundos para mostrar botones de revisión
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+          
+        } catch (err) {
+          console.error('Error validación Renaper:', err);
+          loadingDiv.style.display = 'none';
+          alertasDiv.innerHTML = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              ${escapeHtml(err.message)}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        }
+      });
     });
   }
 
