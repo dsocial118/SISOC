@@ -138,14 +138,14 @@ class ValidacionRenaperView(View):
             # Datos provinciales
             datos_provincia = {
                 "documento": documento_consulta,
-                "nombre": getattr(ciudadano, 'nombre', '') or "",
-                "apellido": getattr(ciudadano, 'apellido', '') or "",
+                "nombre": (getattr(ciudadano, 'nombre', '') or "").title(),
+                "apellido": (getattr(ciudadano, 'apellido', '') or "").title(),
                 "fecha_nacimiento": ciudadano.fecha_nacimiento.strftime("%d/%m/%Y") if ciudadano.fecha_nacimiento else None,
                 "sexo": ciudadano.sexo.sexo if ciudadano.sexo else None,
-                "calle": getattr(ciudadano, 'calle', '') or "",
+                "calle": (getattr(ciudadano, 'calle', '') or "").title(),
                 "altura": str(ciudadano.altura) if ciudadano.altura else "",
-                "piso_departamento": getattr(ciudadano, 'piso_departamento', '') or "",
-                "ciudad": getattr(ciudadano, 'ciudad', '') or "",
+                "piso_departamento": (getattr(ciudadano, 'piso_departamento', '') or "").title(),
+                "ciudad": (getattr(ciudadano, 'ciudad', '') or "").title(),
                 "provincia": ciudadano.provincia.nombre if ciudadano.provincia else None,
                 "codigo_postal": str(ciudadano.codigo_postal) if ciudadano.codigo_postal else "",
             }
@@ -206,19 +206,31 @@ class ValidacionRenaperView(View):
             
             datos_renaper = resultado_renaper["data"]
             
-            # Formatear datos de Renaper para comparación
+            # Formatear fecha de Renaper al formato dd/mm/yyyy
+            fecha_renaper = datos_renaper.get("fecha_nacimiento")
+            if fecha_renaper:
+                try:
+                    from datetime import datetime
+                    # Si viene en formato YYYY-MM-DD, convertir a DD/MM/YYYY
+                    if "-" in fecha_renaper and len(fecha_renaper) == 10:
+                        fecha_obj = datetime.strptime(fecha_renaper, "%Y-%m-%d")
+                        fecha_renaper = fecha_obj.strftime("%d/%m/%Y")
+                except:
+                    pass  # Si hay error, mantener formato original
+            
+            # Formatear datos de Renaper para comparación (mismo formato que provincia)
             datos_renaper_formateados = {
                 "documento": datos_renaper.get("documento"),
-                "nombre": datos_renaper.get("nombre"),
-                "apellido": datos_renaper.get("apellido"),
-                "fecha_nacimiento": datos_renaper.get("fecha_nacimiento"),
+                "nombre": (datos_renaper.get("nombre") or "").title(),
+                "apellido": (datos_renaper.get("apellido") or "").title(),
+                "fecha_nacimiento": fecha_renaper,
                 "sexo": "Masculino" if sexo_renaper == "M" else "Femenino",
-                "calle": datos_renaper.get("calle"),
-                "altura": datos_renaper.get("altura"),
-                "piso_departamento": datos_renaper.get("piso_departamento"),
-                "ciudad": datos_renaper.get("ciudad"),
+                "calle": (datos_renaper.get("calle") or "").title(),
+                "altura": str(datos_renaper.get("altura") or ""),
+                "piso_departamento": (datos_renaper.get("piso_departamento") or "").title(),
+                "ciudad": (datos_renaper.get("ciudad") or "").title(),
                 "provincia": None,  # Se mapea desde provincia_id
-                "codigo_postal": datos_renaper.get("codigo_postal"),
+                "codigo_postal": str(datos_renaper.get("codigo_postal") or ""),
             }
             
             # Mapear provincia desde ID
