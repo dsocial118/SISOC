@@ -35,6 +35,15 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
         close_old_connections()
         relevamiento = Relevamiento.objects.get(id=self.relevamiento_id)
 
+        fecha_visita = relevamiento.fecha_visita or timezone.now()
+        if timezone.is_naive(fecha_visita):
+            fecha_visita = timezone.make_aware(
+                fecha_visita, timezone.get_current_timezone()
+            )
+        fecha_visita_str = fecha_visita.astimezone(timezone.get_current_timezone()).strftime(
+            "%d/%m/%Y %H:%M"
+        )
+
         data = {
             "Action": "Add",
             "Properties": {"Locale": "es-ES"},
@@ -42,17 +51,13 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
                 {
                     "Relevamiento id": f"{relevamiento.id}",
                     "Id_SISOC": f"{relevamiento.id}",
-                    "ESTADO": relevamiento.estado,
+                    "ESTADO": relevamiento.estado or "",
                     "TecnicoRelevador": (
                         f"{relevamiento.territorial_uid}"
                         if relevamiento.territorial_uid
                         else ""
                     ),
-                    "Fecha de visita": (
-                        relevamiento.fecha_visita.strftime("%Y-%m-%d")
-                        if relevamiento.fecha_visita
-                        else timezone.now().strftime("%Y-%m-%d")
-                    ),
+                    "Fecha de visita": fecha_visita_str,
                     "Id_Comedor": f"{relevamiento.comedor.id}",
                 }
             ],
@@ -81,6 +86,17 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
                     docPDF=gestionar_pdf
                 )
 
+        except requests.HTTPError as exc:
+            response_content = exc.response.text if exc.response is not None else ""
+            logger.exception(
+                "Error al sincronizar RELEVAMIENTO con GESTIONAR",
+                extra={
+                    "relevamiento_pk": relevamiento.id,
+                    "body": data,
+                    "status_code": exc.response.status_code if exc.response else None,
+                    "response_text": response_content[:1000],
+                },
+            )
         except Exception:
             logger.exception(
                 "Error al sincronizar RELEVAMIENTO con GESTIONAR",
