@@ -51,6 +51,51 @@ class JSONDataFormatter(logging.Formatter):
         return json.dumps(payload, ensure_ascii=False, default=str)
 
 
+class ExtraContextFilter(logging.Filter):
+    """Añade ``extra_context`` al registro con los campos extra serializados."""
+
+    _RESERVED_ATTRS = {
+        "name",
+        "msg",
+        "args",
+        "levelname",
+        "levelno",
+        "pathname",
+        "filename",
+        "module",
+        "exc_info",
+        "exc_text",
+        "stack_info",
+        "lineno",
+        "funcName",
+        "created",
+        "msecs",
+        "relativeCreated",
+        "thread",
+        "threadName",
+        "processName",
+        "process",
+        "message",
+        "asctime",
+        "extra_context",
+    }
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        extras = {
+            key: value
+            for key, value in record.__dict__.items()
+            if key not in self._RESERVED_ATTRS and not key.startswith("_")
+        }
+
+        record.extra_context = (
+            json.dumps(extras, ensure_ascii=False, default=str)
+            if extras
+            else ""
+        )
+
+        return True
+
+
 def convert_string_to_int(value: str | int | None) -> int | None:
     """Convertir una cadena a entero si contiene un valor numérico.
 

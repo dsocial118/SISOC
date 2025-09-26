@@ -232,6 +232,9 @@ LOGGING = {
             "()": "django.utils.log.CallbackFilter",
             "callback": lambda r: hasattr(r, "data"),
         },
+        "append_extra_context": {
+            "()": "core.utils.ExtraContextFilter",
+        },
     },
     "formatters": {
         "verbose": {
@@ -241,6 +244,10 @@ LOGGING = {
         "simple": {"format": "[{asctime}] {levelname} {message}", "style": "{"},
         "json_data": {
             "()": "core.utils.JSONDataFormatter",
+        },
+        "error_verbose": {
+            "format": "[{asctime}] {levelname} {name}: {message} {extra_context}",
+            "style": "{",
         },
     },
     "handlers": {
@@ -253,10 +260,10 @@ LOGGING = {
         },
         "error_file": {
             "level": "ERROR",
-            "filters": ["error_only"],
+            "filters": ["error_only", "append_extra_context"],
             "class": "core.utils.DailyFileHandler",
             "filename": str(LOG_DIR / "error.log"),
-            "formatter": "verbose",
+            "formatter": "error_verbose",
         },
         "warning_file": {
             "level": "WARNING",
@@ -267,10 +274,10 @@ LOGGING = {
         },
         "critical_file": {
             "level": "CRITICAL",
-            "filters": ["critical_only"],
+            "filters": ["critical_only", "append_extra_context"],
             "class": "core.utils.DailyFileHandler",
             "filename": str(LOG_DIR / "critical.log"),
-            "formatter": "verbose",
+            "formatter": "error_verbose",
         },
         "data_file": {
             "level": "INFO",
