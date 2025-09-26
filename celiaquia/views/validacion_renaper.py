@@ -36,6 +36,62 @@ class ValidacionRenaperView(View):
     
     @method_decorator(csrf_protect)
     def post(self, request, pk, legajo_id):
+        # Si viene el parámetro 'validacion_estado', guardar el estado
+        validacion_estado = request.POST.get('validacion_estado')
+        if validacion_estado:
+            return self._guardar_validacion_estado(request, pk, legajo_id, validacion_estado)
+        
+        # Si no, hacer la consulta normal a Renaper
+        return self._consultar_renaper(request, pk, legajo_id)
+    
+    def _guardar_validacion_estado(self, request, pk, legajo_id, validacion_estado):
+        """Guarda el estado de validación Renaper (1=correcto, 2=incorrecto)"""
+        try:
+            legajo = get_object_or_404(
+                ExpedienteCiudadano, 
+                pk=legajo_id, 
+                expediente__pk=pk
+            )
+            
+            # Validar que el estado sea válido
+            if validacion_estado not in ['1', '2', '3']:
+                return JsonResponse({
+                    "success": False,
+                    "error": "Estado de validación inválido"
+                })
+            
+            # Guardar el estado
+            legajo.estado_validacion_renaper = int(validacion_estado)
+            
+            # Si es subsanación, guardar el comentario y cambiar estado de revisión
+            comentario = request.POST.get('comentario')
+            if validacion_estado == '3' and comentario:
+                legajo.subsanacion_motivo = comentario
+                legajo.revision_tecnico = 'SUBSANAR'
+                legajo.save(update_fields=["estado_validacion_renaper", "subsanacion_motivo", "revision_tecnico", "modificado_en"])
+            else:
+                legajo.save(update_fields=["estado_validacion_renaper", "modificado_en"])
+            
+            mensajes = {'1': 'Aceptado', '2': 'Rechazado', '3': 'Subsanar'}
+            mensaje = mensajes.get(validacion_estado, 'Desconocido')
+            
+            return JsonResponse({
+                "success": True,
+                "message": f"Validación Renaper guardada: {mensaje}",
+                "validacion_estado": int(validacion_estado)
+            })
+            
+        except Exception as e:
+            logger.error(
+                "Error al guardar validación Renaper legajo %s: %s", 
+                legajo_id, str(e), exc_info=True
+            )
+            return JsonResponse({
+                "success": False,
+                "error": f"Error al guardar validación: {str(e)}"
+            }, status=500)
+    
+    def _consultar_renaper(self, request, pk, legajo_id):
         try:
             user = request.user
             
@@ -174,9 +230,7 @@ class ValidacionRenaperView(View):
                 except (Provincia.DoesNotExist, ValueError, TypeError):
                     datos_renaper_formateados["provincia"] = "Provincia no encontrada"
             
-            # Marcar como validado con Renaper
-            legajo.validado_renaper = True
-            legajo.save(update_fields=["validado_renaper", "modificado_en"])
+            # La validación se guardará cuando el usuario elija "Datos correctos" o "Datos incorrectos"
             
             return JsonResponse({
                 "success": True,

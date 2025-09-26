@@ -755,7 +755,137 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+
+
   /* ===== VALIDACIÓN RENAPER ===== */
+  
+  // Función para mostrar modal de subsanación Renaper
+  function mostrarModalSubsanarRenaper(legajoId, modalRenaper) {
+    const modalHtml = `
+      <div class="modal fade" id="modalSubsanarRenaper" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Subsanar Validación Renaper</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="comentario-subsanar-renaper" class="form-label">Comentario de subsanación</label>
+                <textarea id="comentario-subsanar-renaper" class="form-control" rows="3" 
+                          placeholder="Indique qué datos necesitan ser corregidos..." required></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-warning" id="btn-confirmar-subsanar-renaper">Confirmar Subsanación</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Eliminar modal anterior si existe
+    const modalExistente = document.getElementById('modalSubsanarRenaper');
+    if (modalExistente) modalExistente.remove();
+    
+    // Agregar nuevo modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    const modalSubsanar = new bootstrap.Modal(document.getElementById('modalSubsanarRenaper'));
+    modalSubsanar.show();
+    
+    // Event listener para confirmar
+    document.getElementById('btn-confirmar-subsanar-renaper').addEventListener('click', async () => {
+      const comentario = document.getElementById('comentario-subsanar-renaper').value.trim();
+      
+      if (!comentario) {
+        showAlert('warning', 'Debe ingresar un comentario de subsanación.');
+        return;
+      }
+      
+      await guardarValidacionRenaperConComentario(legajoId, '3', comentario);
+      modalSubsanar.hide();
+      modalRenaper.hide();
+      setTimeout(() => window.location.reload(), 1000);
+    });
+  }
+  
+  // Función para guardar el estado de validación Renaper
+  async function guardarValidacionRenaper(legajoId, estado, mensaje) {
+    try {
+      if (!window.VALIDAR_RENAPER_URL_TEMPLATE) {
+        throw new Error('URL de validación no configurada');
+      }
+      
+      const url = window.VALIDAR_RENAPER_URL_TEMPLATE.replace('{id}', legajoId);
+      
+      const formData = new FormData();
+      formData.append('validacion_estado', estado);
+      
+      const resp = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRFToken': getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      });
+      
+      const data = await resp.json();
+      
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || 'Error al guardar validación');
+      }
+      
+      showAlert('success', mensaje);
+      
+    } catch (err) {
+      console.error('Error guardar validación Renaper:', err);
+      showAlert('danger', 'Error al guardar validación: ' + err.message);
+    }
+  }
+  
+  // Función para guardar validación Renaper con comentario
+  async function guardarValidacionRenaperConComentario(legajoId, estado, comentario) {
+    try {
+      if (!window.VALIDAR_RENAPER_URL_TEMPLATE) {
+        throw new Error('URL de validación no configurada');
+      }
+      
+      const url = window.VALIDAR_RENAPER_URL_TEMPLATE.replace('{id}', legajoId);
+      
+      const formData = new FormData();
+      formData.append('validacion_estado', estado);
+      formData.append('comentario', comentario);
+      
+      const resp = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+        headers: {
+          'X-CSRFToken': getCsrfToken(),
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      });
+      
+      const data = await resp.json();
+      
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || 'Error al guardar validación');
+      }
+      
+      showAlert('success', 'Subsanación Renaper guardada correctamente.');
+      
+    } catch (err) {
+      console.error('Error guardar subsanación Renaper:', err);
+      showAlert('danger', 'Error al guardar subsanación: ' + err.message);
+    }
+  }
+  
   const modalValidarRenaper = document.getElementById('modalValidarRenaper');
   if (modalValidarRenaper) {
     const btnValidarRenaper = document.querySelectorAll('.btn-validar-renaper');
@@ -875,10 +1005,39 @@ document.addEventListener('DOMContentLoaded', () => {
             datosRenaperTable.appendChild(rowRenaper);
           });
           
-          // Recargar página después de 3 segundos para mostrar botones de revisión
-          setTimeout(() => {
-            window.location.reload();
-          }, 3000);
+          // Mostrar botones para validación de Renaper
+          const botonesDiv = document.createElement('div');
+          botonesDiv.className = 'mt-3 text-center';
+          botonesDiv.innerHTML = `
+            <h6>Validación de Renaper completada. ¿Los datos coinciden?</h6>
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-success btn-aprobar-renaper">✅ Datos correctos</button>
+              <button type="button" class="btn btn-danger btn-rechazar-renaper">❌ Datos incorrectos</button>
+              <button type="button" class="btn btn-warning btn-subsanar-renaper">📝 Subsanar</button>
+            </div>
+            <p class="small text-muted mt-2">Esto solo valida la información de Renaper. Luego podrás aprobar/rechazar todo el legajo.</p>
+          `;
+          
+          comparacionDiv.appendChild(botonesDiv);
+          
+          // Agregar event listeners para validación de Renaper
+          const legajoId = btn.getAttribute('data-legajo-id');
+          
+          botonesDiv.querySelector('.btn-aprobar-renaper').addEventListener('click', async () => {
+            await guardarValidacionRenaper(legajoId, '1', 'Datos aceptados. Ahora puedes revisar el legajo completo.');
+            modal.hide();
+            setTimeout(() => window.location.reload(), 1000);
+          });
+          
+          botonesDiv.querySelector('.btn-rechazar-renaper').addEventListener('click', async () => {
+            await guardarValidacionRenaper(legajoId, '2', 'Datos rechazados. El legajo no se puede revisar hasta corregir los datos.');
+            modal.hide();
+            setTimeout(() => window.location.reload(), 1000);
+          });
+          
+          botonesDiv.querySelector('.btn-subsanar-renaper').addEventListener('click', () => {
+            mostrarModalSubsanarRenaper(legajoId, modal);
+          });
           
         } catch (err) {
           console.error('Error validación Renaper:', err);
@@ -894,6 +1053,90 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* ===== MODAL RESPUESTA SUBSANACIÓN RENAPER ===== */
+  const modalRespuestaRenaper = document.getElementById('modalRespuestaSubsanacionRenaper');
+  if (modalRespuestaRenaper) {
+    modalRespuestaRenaper.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const legajoId = button.getAttribute('data-legajo-id');
+      const expedienteId = button.getAttribute('data-expediente-id');
+      const form = modalRespuestaRenaper.querySelector('#form-respuesta-subsanacion-renaper');
+      
+      const actionUrl = `/expedientes/${expedienteId}/ciudadanos/${legajoId}/respuesta-subsanacion-renaper/`;
+      form.setAttribute('action', actionUrl);
+      
+      const alertas = modalRespuestaRenaper.querySelector('#modal-alertas-renaper');
+      if (alertas) alertas.innerHTML = '';
+      
+      // Limpiar campos
+      document.getElementById('comentario-respuesta-renaper').value = '';
+      document.getElementById('archivo-respuesta-renaper').value = '';
+    });
+    
+    const formRespuesta = document.getElementById('form-respuesta-subsanacion-renaper');
+    formRespuesta.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const comentario = document.getElementById('comentario-respuesta-renaper').value.trim();
+      if (!comentario) {
+        showAlert('warning', 'Debe ingresar un comentario de respuesta.');
+        return;
+      }
+      
+      const url = formRespuesta.getAttribute('action');
+      const formData = new FormData(formRespuesta);
+      const btnSubmit = formRespuesta.querySelector('button[type="submit"]');
+      const originalHTML = btnSubmit.innerHTML;
+      const alertas = modalRespuestaRenaper.querySelector('#modal-alertas-renaper');
+      
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando...';
+      
+      try {
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        const data = await resp.json();
+        
+        if (!resp.ok || !data.success) {
+          throw new Error(data.message || 'Error al enviar respuesta');
+        }
+        
+        alertas.innerHTML = `
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ${data.message || 'Respuesta enviada correctamente.'}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+        
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(modalRespuestaRenaper);
+          modal.hide();
+          window.location.reload();
+        }, 800);
+        
+      } catch (err) {
+        alertas.innerHTML = `
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            ${err.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+        console.error('Error al enviar respuesta:', err);
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalHTML;
+      }
+    });
+  }
+  
   /* ===== Inicializar paginación para LEGAJOS ===== */
   (function initLegajosPagination(){
     const list = document.getElementById('legajos-list');
