@@ -36,59 +36,110 @@ class ValidacionRenaperView(View):
     
     @method_decorator(csrf_protect)
     def post(self, request, pk, legajo_id):
-        user = request.user
-        
-        # Obtener el legajo
-        legajo = get_object_or_404(
-            ExpedienteCiudadano, 
-            pk=legajo_id, 
-            expediente__pk=pk
-        )
-        
-        # Si es técnico, verificar que esté asignado al expediente
-        if _in_group(user, "TecnicoCeliaquia") and not user.is_superuser:
-            asignaciones = legajo.expediente.asignaciones_tecnicos.filter(tecnico=user)
-            if not asignaciones.exists():
-                return JsonResponse({
-                    "success": False, 
-                    "error": "No sos el técnico asignado a este expediente."
-                }, status=403)
-        
-        ciudadano = legajo.ciudadano
-        
-        # Convertir CUIT a DNI si es necesario
-        documento_consulta = ciudadano.documento
-        if len(str(documento_consulta)) == 11:  # Es un CUIT
-            # Extraer DNI del CUIT (posiciones 2-9)
-            documento_consulta = str(documento_consulta)[2:10]
-        
-        # Datos provinciales
-        datos_provincia = {
-            "documento": documento_consulta,
-            "nombre": ciudadano.nombre,
-            "apellido": ciudadano.apellido,
-            "fecha_nacimiento": ciudadano.fecha_nacimiento.strftime("%d/%m/%Y") if ciudadano.fecha_nacimiento else None,
-            "sexo": ciudadano.sexo.sexo if ciudadano.sexo else None,
-            "calle": ciudadano.calle,
-            "altura": ciudadano.altura,
-            "piso_departamento": ciudadano.piso_departamento,
-            "ciudad": ciudadano.ciudad,
-            "provincia": ciudadano.provincia.nombre if ciudadano.provincia else None,
-            "codigo_postal": ciudadano.codigo_postal,
-        }
-        
-        # Consultar Renaper
         try:
+            user = request.user
             
-            sexo_renaper = "M" if ciudadano.sexo and ciudadano.sexo.sexo == "Masculino" else "F"
+            # Obtener el legajo
+            legajo = get_object_or_404(
+                ExpedienteCiudadano, 
+                pk=legajo_id, 
+                expediente__pk=pk
+            )
+            
+            # Si es técnico, verificar que esté asignado al expediente
+            if _in_group(user, "TecnicoCeliaquia") and not user.is_superuser:
+                asignaciones = legajo.expediente.asignaciones_tecnicos.filter(tecnico=user)
+                if not asignaciones.exists():
+                    return JsonResponse({
+                        "success": False, 
+                        "error": "No sos el técnico asignado a este expediente."
+                    }, status=403)
+            
+            ciudadano = legajo.ciudadano
+            
+            # Validaciones básicas
+            if not ciudadano.sexo:
+                return JsonResponse({
+                    "success": False,
+                    "error": "El ciudadano no tiene sexo configurado"
+                })
+            
+            # Convertir CUIT (11 dígitos) a DNI (8 dígitos) para Renaper
+            documento_original = str(ciudadano.documento)
+            
+            if len(documento_original) == 11:  # Es CUIT de provincia
+                documento_consulta = documento_original[2:10]
+            else:
+                documento_consulta = documento_original
+            
+            # Validar que sea DNI válido (8 dígitos numéricos)
+            if not documento_consulta.isdigit() or len(documento_consulta) != 8:
+                return JsonResponse({
+                    "success": False,
+                    "error": f"No se pudo extraer DNI válido del documento: {documento_original}"
+                })
+            
+            # Datos provinciales
+            datos_provincia = {
+                "documento": documento_consulta,
+                "nombre": getattr(ciudadano, 'nombre', '') or "",
+                "apellido": getattr(ciudadano, 'apellido', '') or "",
+                "fecha_nacimiento": ciudadano.fecha_nacimiento.strftime("%d/%m/%Y") if ciudadano.fecha_nacimiento else None,
+                "sexo": ciudadano.sexo.sexo if ciudadano.sexo else None,
+                "calle": getattr(ciudadano, 'calle', '') or "",
+                "altura": str(ciudadano.altura) if ciudadano.altura else "",
+                "piso_departamento": getattr(ciudadano, 'piso_departamento', '') or "",
+                "ciudad": getattr(ciudadano, 'ciudad', '') or "",
+                "provincia": ciudadano.provincia.nombre if ciudadano.provincia else None,
+                "codigo_postal": str(ciudadano.codigo_postal) if ciudadano.codigo_postal else "",
+            }
+            
+            # Consultar Renaper
+            sexo_renaper = "M" if ciudadano.sexo.sexo == "Masculino" else "F"
+            
+            print(f"\n=== ENVIANDO A RENAPER ===")
+            print(f"DNI: {documento_consulta}")
+            print(f"Sexo: {sexo_renaper}")
+            print(f"Documento original: {documento_original}")
+            print(f"Sexo ciudadano: {ciudadano.sexo.sexo if ciudadano.sexo else 'None'}")
+            print(f"Ciudadano ID: {ciudadano.id}")
+            print(f"Legajo ID: {legajo.pk}")
+            
             resultado_renaper = consultar_datos_renaper(documento_consulta, sexo_renaper)
+            
+            print(f"\n=== RESPUESTA DE RENAPER ===")
+            print(f"Success: {resultado_renaper.get('success')}")
+            print(f"Keys: {list(resultado_renaper.keys())}")
+            if not resultado_renaper.get('success'):
+                print(f"Error: {resultado_renaper.get('error')}")
+                print(f"Raw response: {resultado_renaper.get('raw_response', 'N/A')}")
+            else:
+                print(f"Data keys: {list(resultado_renaper.get('data', {}).keys())}")
+            print(f"========================\n")
             
             if not resultado_renaper.get("success", False):
                 error_msg = resultado_renaper.get('error', 'Error desconocido al consultar Renaper')
-                logger.warning("Error Renaper para DNI %s: %s", ciudadano.documento, error_msg)
+                raw_response = resultado_renaper.get('raw_response', 'Sin respuesta raw')
+                
+                print(f"\n=== ERROR RENAPER ===")
+                print(f"DNI: {documento_consulta}")
+                print(f"Error: {error_msg}")
+                print(f"Raw response: {raw_response}")
+                print(f"==================\n")
+                
+                logger.error(
+                    "Error Renaper para DNI %s: %s. Raw response: %s", 
+                    documento_consulta, error_msg, raw_response
+                )
+                
                 return JsonResponse({
                     "success": False,
-                    "error": f"Error al consultar Renaper: {error_msg}"
+                    "error": f"Error al consultar Renaper: {error_msg}",
+                    "debug_info": {
+                        "dni_consultado": documento_consulta,
+                        "sexo": sexo_renaper,
+                        "raw_response": str(raw_response)[:200]  # Primeros 200 chars
+                    }
                 })
             
             if resultado_renaper.get("fallecido"):
@@ -116,12 +167,12 @@ class ValidacionRenaperView(View):
             
             # Mapear provincia desde ID
             if datos_renaper.get("provincia"):
-                from core.models import Provincia
                 try:
+                    from core.models import Provincia
                     provincia_obj = Provincia.objects.get(pk=datos_renaper["provincia"])
                     datos_renaper_formateados["provincia"] = provincia_obj.nombre
-                except Provincia.DoesNotExist:
-                    pass
+                except (Provincia.DoesNotExist, ValueError, TypeError):
+                    datos_renaper_formateados["provincia"] = "Provincia no encontrada"
             
             # Marcar como validado con Renaper
             legajo.validado_renaper = True
@@ -137,10 +188,10 @@ class ValidacionRenaperView(View):
             
         except Exception as e:
             logger.error(
-                "Error al validar con Renaper legajo %s: %s", 
-                legajo.pk, e, exc_info=True
+                "Error inesperado al validar con Renaper legajo %s: %s", 
+                legajo_id, str(e), exc_info=True
             )
             return JsonResponse({
                 "success": False,
-                "error": f"Error inesperado al consultar Renaper: {str(e)}"
+                "error": f"Error inesperado: {str(e)}"
             }, status=500)

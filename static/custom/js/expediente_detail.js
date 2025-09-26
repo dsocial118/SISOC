@@ -795,7 +795,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
           
-          const data = await resp.json();
+          const responseText = await resp.text();
+          console.log('=== RESPUESTA COMPLETA DEL SERVIDOR ===');
+          console.log('Status:', resp.status);
+          console.log('Headers:', Object.fromEntries(resp.headers.entries()));
+          console.log('Body:', responseText);
+          console.log('=======================================');
+          
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('ERROR AL PARSEAR JSON:', parseError);
+            console.error('Respuesta del servidor:', responseText);
+            throw new Error(`Error del servidor (${resp.status}): ${responseText.substring(0, 200)}`);
+          }
           
           if (!resp.ok || !data.success) {
             throw new Error(data.error || 'Error al consultar Renaper');
@@ -871,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
           loadingDiv.style.display = 'none';
           alertasDiv.innerHTML = `
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-              ${escapeHtml(err.message)}
+              Error validación Renaper: ${escapeHtml(err.message)}
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
           `;
