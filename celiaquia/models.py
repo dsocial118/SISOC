@@ -209,6 +209,7 @@ class ExpedienteCiudadano(models.Model):
         on_delete=models.SET_NULL,
         related_name="subsanaciones_realizadas",
     )
+    validado_renaper = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         unique_together = ("expediente", "ciudadano")
@@ -239,7 +240,7 @@ class ExpedienteCiudadano(models.Model):
         ]
 
     def _recompute_archivos_ok(self):
-        self.archivos_ok = bool(self.archivo1 and self.archivo2 and self.archivo3)
+        self.archivos_ok = bool(self.archivo2 and self.archivo3)
 
     def save(self, *args, **kwargs):
         self._recompute_archivos_ok()
@@ -248,13 +249,11 @@ class ExpedienteCiudadano(models.Model):
     def __str__(self):
         return f"{self.ciudadano.documento} - {self.ciudadano.nombre} {self.ciudadano.apellido}"
 
-    def tiene_tres_archivos(self) -> bool:
-        return bool(self.archivo1 and self.archivo2 and self.archivo3)
+    def tiene_dos_archivos(self) -> bool:
+        return bool(self.archivo2 and self.archivo3)
 
     def faltantes_archivos(self):
         faltan = []
-        if not self.archivo1:
-            faltan.append("archivo1")
         if not self.archivo2:
             faltan.append("archivo2")
         if not self.archivo3:

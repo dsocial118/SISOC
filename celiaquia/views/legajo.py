@@ -119,39 +119,38 @@ class LegajoArchivoUploadView(View):
                     status=500,
                 )
 
-        # Carga triple (archivo1/2/3)
-        if a1 or a2 or a3:
+        # Carga doble (archivo2/3)
+        if a2 or a3:
             try:
                 if (
-                    not self.exp_ciud.archivo1
-                    and not self.exp_ciud.archivo2
+                    not self.exp_ciud.archivo2
                     and not self.exp_ciud.archivo3
                 ):
-                    if not (a1 and a2 and a3):
+                    if not (a2 and a3):
                         return JsonResponse(
                             {
                                 "success": False,
-                                "message": "Debés adjuntar los tres archivos.",
+                                "message": "Debés adjuntar los dos archivos requeridos.",
                             },
                             status=400,
                         )
-                    LegajoService.subir_archivos_iniciales(self.exp_ciud, a1, a2, a3)
+                    LegajoService.subir_archivos_iniciales(self.exp_ciud, None, a2, a3)
                 else:
                     if self.exp_ciud.revision_tecnico != RevisionTecnico.SUBSANAR:
-                        if not (a1 and a2 and a3):
+                        if not (a2 and a3):
                             return JsonResponse(
                                 {
                                     "success": False,
-                                    "message": "Debés adjuntar los tres archivos.",
+                                    "message": "Debés adjuntar los dos archivos requeridos.",
                                 },
                                 status=400,
                             )
                         LegajoService.subir_archivos_iniciales(
-                            self.exp_ciud, a1, a2, a3
+                            self.exp_ciud, None, a2, a3
                         )
                     else:
                         LegajoService.actualizar_archivos_subsanacion(
-                            self.exp_ciud, a1, a2, a3
+                            self.exp_ciud, None, a2, a3
                         )
                 return JsonResponse(
                     {"success": True, "message": "Archivos cargados correctamente."}

@@ -55,14 +55,12 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
             msg = "No tiene permisos para confirmar este expediente."
             return JsonResponse({"success": False, "error": msg}, status=403)
 
-        # 3) Validación de negocio: todos los legajos con los 3 archivos
+        # 3) Validación de negocio: todos los legajos con los 2 archivos requeridos
         faltantes_qs = (
             ExpedienteCiudadano.objects.select_related("ciudadano")
             .filter(expediente_id=expediente.pk)
             .filter(
-                Q(archivo1__isnull=True)
-                | Q(archivo1="")
-                | Q(archivo2__isnull=True)
+                Q(archivo2__isnull=True)
                 | Q(archivo2="")
                 | Q(archivo3__isnull=True)
                 | Q(archivo3="")
@@ -74,7 +72,7 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
                 f"{l.ciudadano.apellido}, {l.ciudadano.nombre} (DNI {l.ciudadano.documento})"
                 for l in faltantes_qs[:10]
             ]
-            msg = "No podés confirmar el envío: hay legajos sin los 3 archivos. " + (
+            msg = "No podés confirmar el envío: hay legajos sin los 2 archivos requeridos. " + (
                 "Ejemplos: "
                 + "; ".join(ejemplos)
                 + (" …" if faltantes_qs.count() > 10 else "")

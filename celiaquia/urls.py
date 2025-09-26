@@ -33,6 +33,7 @@ from celiaquia.views.legajo import (
     LegajoArchivoUploadView,
     LegajoSubsanarView,
 )
+from celiaquia.views.validacion_renaper import ValidacionRenaperView
 from celiaquia.views.cupo import (
     CupoDashboardView,
     CupoProvinciaDetailView,
@@ -53,6 +54,13 @@ urlpatterns = [
             LegajoSubsanarView.as_view()
         ),
         name="legajo_subsanar",
+    ),
+    path(
+        "expedientes/<int:pk>/legajos/<int:legajo_id>/validar-renaper/",
+        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(
+            ValidacionRenaperView.as_view()
+        ),
+        name="legajo_validar_renaper",
     ),
     path(
         "expedientes/",

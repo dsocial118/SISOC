@@ -71,16 +71,23 @@ class APIClient:
             try:
                 error_data = response.json()
             except Exception:
-                error_data = response.text
+                error_data = response.text[:500] if hasattr(response, 'text') else 'Sin contenido'
             return {
                 "success": False,
                 "error": f"Error HTTP {response.status_code}: {error_data}",
+                "status_code": response.status_code
             }
 
         try:
             data = response.json()
         except Exception as e:
-            return {"success": False, "error": f"No se pudo decodificar JSON: {str(e)}"}
+            # Log the raw response for debugging
+            raw_text = response.text[:500] if hasattr(response, 'text') else 'No response text'
+            return {
+                "success": False, 
+                "error": f"Respuesta no es JSON válido: {str(e)}",
+                "raw_response": raw_text
+            }
 
         if not data.get("isSuccess", False):
             return {
