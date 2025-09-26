@@ -1,8 +1,9 @@
 /* Footer personalizado */
 .app-wrapper .app-footer,
 footer.app-footer {
+    height: 110px !important;
     background-color: #232d4f !important;
-    border-top: 5px solid #e7ba61 !important;
+    border-top: 15px solid #e7ba61 !important;
     color: #ffffff !important;
 }
 
@@ -31,6 +32,7 @@ footer.app-footer {
     border-radius: 20px;
     width: 40px;
     height: 40px;
+    display: block;
 }
 
 .main-header .nav-link.nav-link-rounded img {
