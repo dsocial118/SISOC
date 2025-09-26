@@ -209,7 +209,9 @@ class ExpedienteCiudadano(models.Model):
         on_delete=models.SET_NULL,
         related_name="subsanaciones_realizadas",
     )
-    validado_renaper = models.BooleanField(default=False, db_index=True)
+    estado_validacion_renaper = models.IntegerField(default=0, db_index=True, help_text="0=no validado, 1=aceptado, 2=rechazado, 3=subsanar")
+    subsanacion_renaper_comentario = models.TextField(null=True, blank=True, help_text="Comentario de respuesta a subsanación Renaper")
+    subsanacion_renaper_archivo = models.FileField(upload_to="legajos/subsanacion_renaper/", null=True, blank=True, help_text="Archivo de respuesta a subsanación Renaper")
 
     class Meta:
         unique_together = ("expediente", "ciudadano")

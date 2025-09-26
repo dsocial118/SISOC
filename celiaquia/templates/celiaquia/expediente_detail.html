@@ -323,22 +323,23 @@
                 {% endif %}
                 <div id="legajos-list" class="list-group">
                     {% for leg in legajos %}
-                        <div class="list-group-item border-0 mb-3 rounded shadow-sm legajo-item card-dark"
+                        <div class="list-group-item border-0 mb-3 rounded shadow-sm legajo-item card-dark {% if leg.revision_tecnico == 'SUBSANAR' %}border-warning{% endif %}"
                              data-legajo-id="{{ leg.pk }}"
-                             data-revision="{{ leg.revision_tecnico }}">
-                            {% if leg.revision_tecnico == 'SUBSANAR' %}
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="chip chip-warning">⚠ Requiere subsanar</span>
-                                    {% if leg.subsanacion_solicitada_en %}
-                                        <small class="muted">Solicitado: {{ leg.subsanacion_solicitada_en|date:"d/m/Y H:i" }}</small>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
+                             data-revision="{{ leg.revision_tecnico }}"
+                             {% if leg.revision_tecnico == 'SUBSANAR' %}style="border: 2px solid #ffc107 !important;"{% endif %}>
                             <div class="row gy-3 gx-3">
                                 <!-- Col 1: Datos + Revisión -->
                                 <div class="col-lg-3 col-md-5">
-                                    <div class="fw-semibold h6 mb-1">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
+                                    <div class="d-flex align-items-center mb-1">
+                                        {% if leg.revision_tecnico == 'SUBSANAR' %}
+                                            <span class="me-2" style="font-size: 1.2em;">⚠️</span>
+                                        {% endif %}
+                                        <div class="fw-semibold h6 mb-0">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
+                                    </div>
                                     <div class="muted small mb-2">DNI: {{ leg.ciudadano.documento }}</div>
+                                    {% if leg.revision_tecnico == 'SUBSANAR' and leg.subsanacion_solicitada_en %}
+                                        <div class="small text-warning mb-2">Solicitado: {{ leg.subsanacion_solicitada_en|date:"d/m/Y H:i" }}</div>
+                                    {% endif %}
                                     <div class="small">
                                         <span class="muted">Revisión:</span>
                                         {% if leg.revision_tecnico == 'APROBADO' %}
@@ -356,18 +357,53 @@
                                 </div>
                                 <!-- Col 2: Observación de Subsanación -->
                                 <div class="col-lg-4 col-md-7">
-                                    <div class="small muted">Observación (subsanación):</div>
-                                    <div class="mt-1">
-                                        {% if leg.subsanacion_motivo %}
-                                            <div class="p-2 rounded"
-                                                 style="background:rgba(255,255,255,.04);
-                                                        border:1px solid rgba(255,255,255,.08)">
-                                                <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                    {% if is_prov %}
+                                        <div class="small muted">Observación (subsanación):</div>
+                                        <div class="mt-1">
+                                            {% if leg.subsanacion_motivo %}
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(255,255,255,.04);
+                                                            border:1px solid rgba(255,255,255,.08)">
+                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                </div>
+                                            {% else %}
+                                                <span class="muted">—</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if leg.subsanacion_renaper_comentario %}
+                                            <div class="small muted mt-2">Respuesta provincia:</div>
+                                            <div class="mt-1">
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(255,193,7,.1);
+                                                            border:1px solid rgba(255,193,7,.3)">
+                                                    <span class="d-block text-break">{{ leg.subsanacion_renaper_comentario }}</span>
+                                                </div>
                                             </div>
-                                        {% else %}
-                                            <span class="muted">—</span>
                                         {% endif %}
-                                    </div>
+                                    {% else %}
+                                        <div class="small muted">Comentario enviado a provincia:</div>
+                                        <div class="mt-1">
+                                            {% if leg.subsanacion_motivo %}
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(255,255,255,.04);
+                                                            border:1px solid rgba(255,255,255,.08)">
+                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                </div>
+                                            {% else %}
+                                                <span class="muted">—</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if leg.subsanacion_renaper_comentario %}
+                                            <div class="small muted mt-2">Respuesta de provincia:</div>
+                                            <div class="mt-1">
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(40,167,69,.1);
+                                                            border:1px solid rgba(40,167,69,.3)">
+                                                    <span class="d-block text-break">{{ leg.subsanacion_renaper_comentario }}</span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
                                 </div>
                                 <!-- Col 3: Archivos -->
                                 <div class="col-lg-5">
@@ -436,6 +472,38 @@
                                             </button>
                                         {% endif %}
                                     </div>
+                                    <!-- Respuesta Subsanación Renaper -->
+                                    {% if leg.estado_validacion_renaper == 3 and is_prov %}
+                                        <div class="file-row mt-2"
+                                             style="background:rgba(255,193,7,.1);
+                                                    border:1px solid rgba(255,193,7,.3)">
+                                            <div>
+                                                <div class="muted small">Respuesta subsanación Renaper</div>
+                                                {% if leg.subsanacion_renaper_archivo %}
+                                                    <a href="{{ leg.subsanacion_renaper_archivo.url }}"
+                                                       target="_blank"
+                                                       class="text-success text-decoration-underline file-name">
+                                                        ✅ {{ leg.subsanacion_renaper_archivo.name }}
+                                                    </a>
+                                                {% else %}
+                                                    <span class="text-warning">⚠ Pendiente respuesta</span>
+                                                {% endif %}
+                                            </div>
+                                            <button type="button"
+                                                    class="btn btn-outline-warning btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalRespuestaSubsanacionRenaper"
+                                                    data-legajo-id="{{ leg.pk }}"
+                                                    data-expediente-id="{{ expediente.pk }}">
+                                                {% if leg.subsanacion_renaper_archivo %}
+                                                    Editar Respuesta
+                                                {% else %}
+                                                    Responder
+                                                {% endif %}
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                    </div>
                                 </div>
                             </div>
                             <div class="list-divider"></div>
@@ -446,7 +514,7 @@
                                         <div class="btn-toolbar flex-wrap"
                                              role="toolbar"
                                              aria-label="Acciones del legajo">
-                                            {% if not leg.validado_renaper %}
+                                            {% if leg.estado_validacion_renaper == 0 %}
                                                 <div class="btn-group btn-group-sm"
                                                      role="group"
                                                      aria-label="Validación Renaper">
@@ -457,7 +525,7 @@
                                                             data-bs-toggle="modal"
                                                             data-bs-target="#modalValidarRenaper">🔍 Validación Renaper</button>
                                                 </div>
-                                            {% else %}
+                                            {% elif leg.estado_validacion_renaper == 1 %}
                                                 <div class="btn-group btn-group-sm me-2"
                                                      role="group"
                                                      aria-label="Revisión técnico">
@@ -487,6 +555,14 @@
                                                             data-legajo-id="{{ leg.pk }}"
                                                             data-bs-toggle="modal"
                                                             data-bs-target="#modalValidarRenaper">✅ Renaper</button>
+                                                </div>
+                                            {% elif leg.estado_validacion_renaper == 3 %}
+                                                <div class="alert alert-info mb-0 py-1 px-2">
+                                                    <small>📝 Renaper requiere subsanación - No se puede revisar</small>
+                                                </div>
+                                            {% else %}
+                                                <div class="alert alert-warning mb-0 py-1 px-2">
+                                                    <small>❌ Datos Renaper incorrectos - No se puede revisar</small>
                                                 </div>
                                             {% endif %}
                                         </div>
@@ -662,6 +738,53 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit" class="btn btn-success" id="btn-cruce-submit">Ejecutar Cruce</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Modal: Respuesta Subsanación Renaper -->
+        <div class="modal fade"
+             id="modalRespuestaSubsanacionRenaper"
+             tabindex="-1"
+             aria-labelledby="modalRespuestaSubsanacionRenaperLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form id="form-respuesta-subsanacion-renaper" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a Subsanación Renaper</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="modal-alertas-renaper" class="mb-2"></div>
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label for="comentario-respuesta-renaper" class="form-label">Comentario de respuesta</label>
+                                    <textarea id="comentario-respuesta-renaper"
+                                              name="comentario"
+                                              class="form-control"
+                                              rows="3"
+                                              placeholder="Explique las correcciones realizadas..."
+                                              required></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label for="archivo-respuesta-renaper" class="form-label">Archivo de respuesta (opcional)</label>
+                                    <input type="file"
+                                           name="archivo"
+                                           id="archivo-respuesta-renaper"
+                                           class="form-control"
+                                           accept=".pdf,.jpg,.jpeg,.png" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-warning">Enviar Respuesta</button>
                         </div>
                     </form>
                 </div>
