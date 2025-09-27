@@ -174,9 +174,29 @@ class ImportacionServiceOptimized:
         fk_cache = {
             "sexo": {s.sexo.lower(): s.id for s in Sexo.objects.all()},
             "nacionalidad": {n.nacionalidad.lower(): n.id for n in Nacionalidad.objects.all()},
-            "municipio": {m.nombre.lower(): m.id for m in Municipio.objects.select_related('provincia').all()},
-            "localidad": {l.nombre.lower(): l.id for l in Localidad.objects.select_related('municipio').all()},
         }
+        
+        # Precarga de municipios y localidades por ID (como en el método estándar)
+        municipio_ids = set()
+        localidad_ids = set()
+        for _, row in df.iterrows():
+            if row.get('municipio'):
+                mun_str = str(row['municipio']).strip()
+                if mun_str and mun_str != 'nan' and mun_str.replace('.0', '').isdigit():
+                    municipio_ids.add(int(float(mun_str)))
+            if row.get('localidad'):
+                loc_str = str(row['localidad']).strip()
+                if loc_str and loc_str != 'nan' and loc_str.replace('.0', '').isdigit():
+                    localidad_ids.add(int(float(loc_str)))
+        
+        municipios_cache = {}
+        localidades_cache = {}
+        if municipio_ids:
+            for m in Municipio.objects.filter(pk__in=municipio_ids, provincia_id=provincia_usuario_id):
+                municipios_cache[m.pk] = m.pk
+        if localidad_ids:
+            for l in Localidad.objects.filter(pk__in=localidad_ids):
+                localidades_cache[l.pk] = l.pk
         
         # Precarga de ciudadanos existentes por documento
         documentos_excel = []
@@ -253,7 +273,8 @@ class ImportacionServiceOptimized:
                 payload["tipo_documento"] = tipo_doc_cuit_id
                 payload["provincia"] = provincia_usuario_id
                 
-                for fk in ["sexo", "nacionalidad", "municipio", "localidad"]:
+                # Resolver sexo y nacionalidad por nombre
+                for fk in ["sexo", "nacionalidad"]:
                     val = payload.get(fk)
                     if val:
                         resolved = resolve_fk_cached(fk, val)
@@ -262,6 +283,37 @@ class ImportacionServiceOptimized:
                             payload[fk] = None
                         else:
                             payload[fk] = resolved
+                
+                # Resolver municipio y localidad por ID (como en método estándar)
+                municipio_val = payload.get("municipio")
+                if municipio_val:
+                    municipio_str = str(municipio_val).strip()
+                    if municipio_str and municipio_str != 'nan' and municipio_str.replace('.0', '').isdigit():
+                        municipio_id = int(float(municipio_str))
+                        if municipio_id in municipios_cache:
+                            payload["municipio"] = municipios_cache[municipio_id]
+                        else:
+                            add_warning(offset, "municipio", f"{municipio_id} no encontrado")
+                            payload["municipio"] = None
+                    else:
+                        payload["municipio"] = None
+                else:
+                    payload["municipio"] = None
+                
+                localidad_val = payload.get("localidad")
+                if localidad_val:
+                    localidad_str = str(localidad_val).strip()
+                    if localidad_str and localidad_str != 'nan' and localidad_str.replace('.0', '').isdigit():
+                        localidad_id = int(float(localidad_str))
+                        if localidad_id in localidades_cache:
+                            payload["localidad"] = localidades_cache[localidad_id]
+                        else:
+                            add_warning(offset, "localidad", f"{localidad_id} no encontrado")
+                            payload["localidad"] = None
+                    else:
+                        payload["localidad"] = None
+                else:
+                    payload["localidad"] = None
 
                 # Validar email
                 email = payload.get("email")
