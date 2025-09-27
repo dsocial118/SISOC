@@ -20,6 +20,7 @@ from django.utils.html import escape
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
+from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.db.models import Q, Count
@@ -39,6 +40,11 @@ from celiaquia.services.expediente_service import (
     _set_estado,
 )
 from celiaquia.services.importacion_service import ImportacionService
+try:
+    from celiaquia.services.importacion_service_optimized import ImportacionServiceOptimized
+    OPTIMIZED_AVAILABLE = True
+except ImportError:
+    OPTIMIZED_AVAILABLE = False
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
@@ -75,7 +81,7 @@ def _user_provincia(user):
         return None
 
 
-def _parse_limit(value, default=5, max_cap=5000):
+def _parse_limit(value, default=None, max_cap=5000):
     if value is None:
         return default
     txt = str(value).strip().lower()
@@ -85,7 +91,7 @@ def _parse_limit(value, default=5, max_cap=5000):
         n = int(txt)
         if n <= 0:
             return None
-        return min(n, max_cap)
+        return min(n, max_cap) if max_cap is not None else n
     except Exception:
         return default
 
@@ -317,7 +323,7 @@ class ExpedientePreviewExcelView(View):
             return JsonResponse({"error": "No se recibió ningún archivo."}, status=400)
 
         raw_limit = request.POST.get("limit") or request.GET.get("limit")
-        max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
+        max_rows = _parse_limit(raw_limit, default=None, max_cap=None)
 
         try:
             preview = ImportacionService.preview_excel(archivo, max_rows=max_rows)
@@ -417,8 +423,8 @@ class ExpedienteDetailView(DetailView):
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
             raw_limit = self.request.GET.get("preview_limit")
-            max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
-            preview_limit_actual = raw_limit if raw_limit is not None else "5"
+            max_rows = _parse_limit(raw_limit, default=None, max_cap=None)
+            preview_limit_actual = raw_limit if raw_limit is not None else "all"
             try:
                 preview = ImportacionService.preview_excel(
                     expediente.excel_masivo, max_rows=max_rows
@@ -499,13 +505,37 @@ class ExpedienteImportView(View):
 
         start = time.time()
         try:
-            result = ImportacionService.importar_legajos_desde_excel(
-                expediente, expediente.excel_masivo, user
-            )
+            # Determinar si usar versión optimizada
+            use_optimized = False
+            total_rows = 0
+            
+            if OPTIMIZED_AVAILABLE:
+                try:
+                    # Preview limitado para evitar cargar archivos muy grandes
+                    preview = ImportacionService.preview_excel(expediente.excel_masivo, max_rows=50)
+                    total_rows = preview.get('total_rows', 0)
+                    
+                    OPTIMIZATION_THRESHOLD = getattr(settings, 'CELIAQUIA_OPTIMIZATION_THRESHOLD', 100)
+                    if total_rows > OPTIMIZATION_THRESHOLD:
+                        logger.info("Usando importación optimizada para %s registros", total_rows)
+                        use_optimized = True
+                except Exception as e:
+                    logger.warning("Error al determinar tamaño del archivo: %s", e)
+            
+            if use_optimized:
+                result = ImportacionServiceOptimized.importar_legajos_desde_excel_optimized(
+                    expediente, expediente.excel_masivo, user
+                )
+            else:
+                result = ImportacionService.importar_legajos_desde_excel(
+                    expediente, expediente.excel_masivo, user
+                )
+                
             elapsed = time.time() - start
+            method_used = "optimizada" if use_optimized else "estándar"
             messages.success(
                 request,
-                f"Importación: {result['validos']} válidos, {result['errores']} errores en {elapsed:.2f}s.",
+                f"Importación {method_used}: {result['validos']} válidos, {result['errores']} errores en {elapsed:.2f}s.",
             )
         except ValidationError as ve:
             messages.error(request, f"Error de validación: {ve.message}")
