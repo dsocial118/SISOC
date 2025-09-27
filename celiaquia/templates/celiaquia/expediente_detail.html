@@ -425,7 +425,7 @@
                                                 <span class="text-warning">⚠ Pendiente</span>
                                             {% endif %}
                                         </div>
-                                        {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
+                                        {% if is_prov and (expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR') %}
                                             <button type="button"
                                                     class="btn btn-outline-info btn-sm"
                                                     data-bs-toggle="modal"
@@ -457,7 +457,7 @@
                                                 <span class="text-warning">⚠ Pendiente</span>
                                             {% endif %}
                                         </div>
-                                        {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
+                                        {% if is_prov and (expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR') %}
                                             <button type="button"
                                                     class="btn btn-outline-info btn-sm"
                                                     data-bs-toggle="modal"
@@ -515,6 +515,16 @@
                                                     ✅ {{ leg.subsanacion_renaper_archivo.name }}
                                                 </a>
                                             </div>
+                                            {% if is_prov %}
+                                                <button type="button"
+                                                        class="btn btn-outline-warning btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalRespuestaSubsanacionRenaper"
+                                                        data-legajo-id="{{ leg.pk }}"
+                                                        data-expediente-id="{{ expediente.pk }}">
+                                                    Editar
+                                                </button>
+                                            {% endif %}
                                         </div>
                                     {% elif leg.revision_tecnico == 'SUBSANADO' and leg.subsanacion_renaper_archivo %}
                                         <div class="file-row mt-2"
@@ -535,7 +545,7 @@
                             </div>
                             <div class="list-divider"></div>
                             <!-- Acciones (línea separada para que no se solapen con nada) -->
-                            {% if is_tec and expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
+                            {% if is_tec and (expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE') %}
                                 {% with estado=leg.revision_tecnico %}
                                     <div class="d-flex justify-content-end">
                                         <div class="btn-toolbar flex-wrap"

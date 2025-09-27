@@ -9,61 +9,51 @@ from django.db.models import Q
 from django.utils import timezone
 
 from celiaquia.models import Expediente, ExpedienteCiudadano, RevisionTecnico
+from celiaquia.permissions import can_confirm_subsanacion
+from celiaquia.utils import error_response, success_response
 
 logger = logging.getLogger(__name__)
 
 
 def _in_group(user, name):
+    """Verifica si el usuario pertenece a un grupo específico."""
     return user.is_authenticated and user.groups.filter(name=name).exists()
 
 
 def _same_owner(user, exp) -> bool:
-    # si tu modelo guarda así al dueño del expediente:
+    """Verifica si el usuario es el propietario del expediente."""
     return exp.usuario_provincia_id == user.id
 
 
 class ExpedienteConfirmSubsanacionView(View):
+    """Vista para confirmar la subsanación de legajos en un expediente."""
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
 
     @method_decorator(csrf_protect)
     def post(self, request, pk):
-        user = request.user
-        if not user.is_authenticated:
-            raise PermissionDenied("Autenticación requerida.")
-
         exp = get_object_or_404(Expediente, pk=pk)
+        
+        # Validar permisos usando función centralizada
+        can_confirm_subsanacion(request.user, exp)
 
-        is_admin = user.is_superuser
-        is_prov = _in_group(user, "ProvinciaCeliaquia")
-
-        if not (is_admin or (is_prov and _same_owner(user, exp))):
-            raise PermissionDenied(
-                "No tenés permiso para confirmar la subsanación de este expediente."
-            )
-
-        # Legajos en SUBSANAR con faltantes
-        q_falta = (
-            Q(archivo1__isnull=True)
-            | Q(archivo1="")
-            | Q(archivo2__isnull=True)
+        # Legajos en SUBSANAR con faltantes (solo archivo2 y archivo3 son obligatorios)
+        query_archivos_faltantes = (
+            Q(archivo2__isnull=True)
             | Q(archivo2="")
             | Q(archivo3__isnull=True)
             | Q(archivo3="")
         )
-        faltan = ExpedienteCiudadano.objects.filter(
+        legajos_sin_archivos = ExpedienteCiudadano.objects.filter(
             expediente=exp, revision_tecnico=RevisionTecnico.SUBSANAR
-        ).filter(q_falta)
+        ).filter(query_archivos_faltantes)
 
-        if faltan.exists():
-            dnis = list(faltan.values_list("ciudadano__documento", flat=True)[:10])
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": "Hay legajos en SUBSANAR que aún no tienen los 3 archivos.",
-                    "ejemplo_dnis": dnis,
-                },
+        if legajos_sin_archivos.exists():
+            dnis = list(legajos_sin_archivos.values_list("ciudadano__documento", flat=True)[:10])
+            return error_response(
+                "Hay legajos en SUBSANAR que aún no tienen los archivos obligatorios (archivo2 y archivo3).",
                 status=400,
+                extra_data={"ejemplo_dnis": dnis}
             )
 
         # Cambiar SUBSANAR → SUBSANADO
@@ -77,15 +67,12 @@ class ExpedienteConfirmSubsanacionView(View):
         )
 
         logger.info(
-            "Confirmar subsanación exp=%s user=%s: %s legajos",
+            "Subsanación confirmada - Expediente: %s, Usuario: %s, Legajos actualizados: %s",
             exp.pk,
-            user.id,
+            request.user.id,
             actualizados,
         )
 
-        return JsonResponse(
-            {
-                "success": True,
-                "message": f"Se confirmaron {actualizados} legajos como SUBSANADO.",
-            }
+        return success_response(
+            f"Se confirmaron {actualizados} legajos como SUBSANADO."
         )
