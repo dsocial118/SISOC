@@ -51,10 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
     hideIfSinglePage = true,
   }) {
     const nodes = Array.from(items);
-    console.log('Paginate called with:', { itemsCount: nodes.length, pageSizeSelect, paginationUl });
+    console.log('Paginate called with:', { 
+      itemsCount: nodes.length, 
+      pageSizeSelect: pageSizeSelect?.id, 
+      paginationUl: paginationUl?.id,
+      pageSizeSelectValue: pageSizeSelect?.value
+    });
     
     if (!nodes.length || !pageSizeSelect || !paginationUl) {
-      console.log('Paginate: missing required elements');
+      console.log('Paginate: missing required elements', {
+        hasNodes: !!nodes.length,
+        hasPageSizeSelect: !!pageSizeSelect,
+        hasPaginationUl: !!paginationUl
+      });
       return;
     }
 
@@ -62,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const readPageSize = () => {
       const val = pageSizeSelect.value;
       const size = val === 'all' ? Infinity : parseInt(val, 10) || 10;
-      console.log('Page size:', val, '->', size);
+      console.log('Page size:', val, '->', size, 'from element:', pageSizeSelect.id);
       return size;
     };
 
@@ -74,8 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const start = (page - 1) * pageSize;
       const end = start + pageSize;
+      console.log('Renderizando página:', { page, pageSize, total, totalPages, start, end });
       nodes.forEach((el, i) => {
-        el.style.display = (i >= start && i < end) ? '' : 'none';
+        const shouldShow = (i >= start && i < end);
+        el.style.display = shouldShow ? '' : 'none';
+        if (i < 3) console.log(`Item ${i}: ${shouldShow ? 'visible' : 'oculto'}`);
       });
 
       paginationUl.innerHTML = '';
@@ -141,7 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof onPageChange === 'function') onPageChange({ page, pageSize: readPageSize(), total: nodes.length });
     }
 
-    pageSizeSelect.addEventListener('change', () => { page = 1; render(); });
+    pageSizeSelect.addEventListener('change', (e) => { 
+      console.log('Selector genérico cambió a:', e.target.value);
+      page = 1; 
+      render(); 
+    });
     render();
     return { goto: (p) => { page = p; render(); } };
   }
@@ -152,9 +168,36 @@ document.addEventListener('DOMContentLoaded', () => {
     btnProcess.addEventListener('click', async () => {
       btnProcess.disabled = true;
       let origHTML;
+      let progressInterval;
+      
       try {
         origHTML = btnProcess.innerHTML;
-        btnProcess.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
+        
+        // Crear indicador de progreso
+        const progressHtml = `
+          <div class="d-flex align-items-center">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            <span>Procesando <span id="progress-current">0</span> / <span id="progress-total">?</span> registros...</span>
+          </div>
+        `;
+        btnProcess.innerHTML = progressHtml;
+        
+        // Obtener total de registros del preview
+        const previewRows = document.querySelectorAll('.preview-row');
+        const totalRegistros = previewRows.length;
+        document.getElementById('progress-total').textContent = totalRegistros;
+        
+        // Simular progreso (actualizar cada 200ms)
+        let currentProgress = 0;
+        const incremento = Math.max(1, Math.floor(totalRegistros / 20)); // 20 actualizaciones aprox
+        
+        progressInterval = setInterval(() => {
+          if (currentProgress < totalRegistros) {
+            currentProgress = Math.min(currentProgress + incremento, totalRegistros);
+            const progressEl = document.getElementById('progress-current');
+            if (progressEl) progressEl.textContent = currentProgress;
+          }
+        }, 200);
 
         if (!window.PROCESS_URL) throw new Error('No se configuró PROCESS_URL.');
 
@@ -187,24 +230,41 @@ document.addEventListener('DOMContentLoaded', () => {
           const msg = data.error || data.message || `HTTP ${resp.status}`;
           throw new Error(msg);
         }
-
-        const baseMsg =
-          data.message ||
-          `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a EN ESPERA.`;
-        const errorExtra = data.errores ? ` ${data.errores} errores.` : '';
-        showAlert('success', '¡Listo! ', baseMsg, errorExtra);
-
-        setTimeout(() => window.location.reload(), 1000);
+        
+        // Completar progreso
+        clearInterval(progressInterval);
+        const progressCurrentEl = document.getElementById('progress-current');
+        if (progressCurrentEl) progressCurrentEl.textContent = totalRegistros;
+        
+        // Mostrar "Completado" por un momento
+        btnProcess.innerHTML = `
+          <div class="d-flex align-items-center">
+            <span class="text-success me-2">✓</span>
+            <span>Completado ${totalRegistros} / ${totalRegistros} registros</span>
+          </div>
+        `;
+        
+        setTimeout(() => {
+          const baseMsg =
+            data.message ||
+            `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a EN ESPERA.`;
+          const errorExtra = data.errores ? ` ${data.errores} errores.` : '';
+          showAlert('success', '¡Listo! ', baseMsg, errorExtra);
+          
+          setTimeout(() => window.location.reload(), 1000);
+        }, 800);
+        
       } catch (err) {
         console.error('Error procesar expediente:', err);
         showAlert('danger', 'Error al procesar el expediente: ', err.message);
         btnProcess.innerHTML = origHTML;
         btnProcess.disabled = false;
       } finally {
+        if (progressInterval) clearInterval(progressInterval);
         setTimeout(() => {
           btnProcess.innerHTML = origHTML;
           btnProcess.disabled = false;
-        }, 1500);
+        }, 2000);
       }
     });
   }
@@ -655,14 +715,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const tbody = document.getElementById('preview-tbody');
     const pageSizeSel = document.getElementById('preview-page-size');
     const pagUl = document.getElementById('preview-pagination');
-    if (!tbody || !pageSizeSel || !pagUl) return;
+    
+    if (!tbody || !pageSizeSel || !pagUl) {
+      console.log('Elementos preview no encontrados');
+      return;
+    }
 
-    paginate({
-      items: tbody.querySelectorAll('.preview-row'),
-      pageSizeSelect: pageSizeSel,
-      paginationUl: pagUl,
-      onPageChange: null,
+    const items = tbody.querySelectorAll('.preview-row');
+    if (items.length === 0) {
+      console.log('No hay filas preview para paginar');
+      return;
+    }
+
+    // Implementación simplificada para preview
+    let currentPage = 1;
+    
+    function getCurrentPageSize() {
+      const val = pageSizeSel.value;
+      return val === 'all' ? items.length : parseInt(val, 10) || 10;
+    }
+    
+    function renderPage() {
+      const pageSize = getCurrentPageSize();
+      const totalPages = Math.ceil(items.length / pageSize);
+      
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+      
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      
+      console.log('Renderizando preview:', { currentPage, pageSize, totalPages, start, end });
+      
+      items.forEach((item, index) => {
+        const shouldShow = index >= start && index < end;
+        item.style.display = shouldShow ? '' : 'none';
+      });
+      
+      // Generar paginación
+      pagUl.innerHTML = '';
+      
+      if (totalPages > 1) {
+        for (let i = 1; i <= totalPages; i++) {
+          const li = document.createElement('li');
+          li.className = `page-item${i === currentPage ? ' active' : ''}`;
+          li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+          li.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = i;
+            renderPage();
+          });
+          pagUl.appendChild(li);
+        }
+      }
+    }
+    
+    pageSizeSel.addEventListener('change', function() {
+      console.log('Selector de preview cambió a:', this.value);
+      currentPage = 1;
+      renderPage();
     });
+    
+    renderPage();
   })();
 
   // ===== CONFIRMAR ENVÍO =====
@@ -1151,31 +1265,65 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   /* ===== Inicializar paginación para LEGAJOS ===== */
-  (function initLegajosPagination(){
+  setTimeout(() => {
     const list = document.getElementById('legajos-list');
     const pageSizeSel = document.getElementById('legajos-page-size');
     const pagUl = document.getElementById('legajos-pagination');
     
-    console.log('Inicializando paginación legajos:', { list, pageSizeSel, pagUl });
+    console.log('DOM elements:', {
+      list: !!list,
+      pageSizeSel: !!pageSizeSel, 
+      pagUl: !!pagUl,
+      listId: list?.id,
+      selectorId: pageSizeSel?.id
+    });
     
-    if (!list || !pageSizeSel || !pagUl) {
-      console.log('Elementos no encontrados para paginación de legajos');
-      return;
-    }
+    if (!list || !pageSizeSel || !pagUl) return;
     
     const items = list.querySelectorAll('.legajo-item');
-    console.log('Items encontrados:', items.length);
+    console.log('Legajo items found:', items.length);
     
-    if (items.length === 0) {
-      console.log('No hay items para paginar');
+    if (items.length <= 10) {
+      console.log('Not enough items to paginate');
       return;
     }
 
-    paginate({
-      items: items,
-      pageSizeSelect: pageSizeSel,
-      paginationUl: pagUl,
-      onPageChange: null,
-    });
-  })();
+    let currentPage = 1;
+    
+    function renderPage() {
+      const pageSize = pageSizeSel.value === 'all' ? items.length : parseInt(pageSizeSel.value) || 10;
+      const totalPages = Math.ceil(items.length / pageSize);
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      
+      console.log('Rendering:', { pageSize, currentPage, totalPages, start, end });
+      
+      items.forEach((item, i) => {
+        item.style.display = (i >= start && i < end) ? 'block' : 'none';
+      });
+      
+      pagUl.innerHTML = '';
+      if (totalPages > 1) {
+        for (let i = 1; i <= totalPages; i++) {
+          const li = document.createElement('li');
+          li.className = `page-item${i === currentPage ? ' active' : ''}`;
+          li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+          li.onclick = (e) => {
+            e.preventDefault();
+            currentPage = i;
+            renderPage();
+          };
+          pagUl.appendChild(li);
+        }
+      }
+    }
+    
+    pageSizeSel.onchange = () => {
+      console.log('Page size changed to:', pageSizeSel.value);
+      currentPage = 1;
+      renderPage();
+    };
+    
+    renderPage();
+  }, 100);
 });

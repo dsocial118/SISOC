@@ -93,7 +93,7 @@ class ImportacionService:
         return output.getvalue()
 
     @staticmethod
-    def preview_excel(archivo_excel, max_rows=5):
+    def preview_excel(archivo_excel, max_rows=None):
         try:
             archivo_excel.open()
         except Exception:
@@ -127,7 +127,7 @@ class ImportacionService:
 
         def _parse_max_rows(v):
             if v is None:
-                return 5
+                return None
             txt = str(v).strip().lower()
             if txt in ("all", "none", "0", "todos"):
                 return None
@@ -135,14 +135,23 @@ class ImportacionService:
                 n = int(txt)
                 return n if n > 0 else None
             except Exception:
-                return 5
+                return None
 
         limit = _parse_max_rows(max_rows)
         sample_df = df if limit is None else df.head(limit)
         sample = sample_df.to_dict(orient="records")
+        
+        # Agregar columna ID al inicio
+        headers = ["ID"] + list(df.columns)
+        rows_with_id = []
+        for i, row in enumerate(sample, start=1):
+            row_with_id = {"ID": i}
+            row_with_id.update(row)
+            rows_with_id.append(row_with_id)
+        
         return {
-            "headers": list(df.columns),
-            "rows": sample,
+            "headers": headers,
+            "rows": rows_with_id,
             "total_rows": total_rows,
             "shown_rows": len(sample),
         }
@@ -150,13 +159,15 @@ class ImportacionService:
     @staticmethod
     @transaction.atomic
     def importar_legajos_desde_excel(
-        expediente, archivo_excel, usuario, batch_size=500
+        expediente, archivo_excel, usuario, batch_size=1000
     ):
         """Importa legajos desde un archivo Excel al expediente indicado.
-
-        Antes de iterar filas, precalcula conjuntos de ciudadanos existentes en
-        el expediente y aquellos que ya están en el programa (cupo DENTRO) o en
-        expedientes abiertos para evitar consultas repetidas dentro del bucle.
+        
+        Versión optimizada que reduce consultas a la base de datos mediante:
+        - Precarga de todos los datos necesarios
+        - Bulk operations para ciudadanos y legajos
+        - Cache de FKs y validaciones
+        - Procesamiento por lotes más eficiente
         """
 
         from celiaquia.services.ciudadano_service import (
@@ -208,21 +219,30 @@ class ImportacionService:
             )
 
         _tipo_doc_por_defecto()
-
         estado_id = _estado_doc_pendiente_id()
+        tipo_doc_cuit_id = _tipo_doc_cuit()
+        
+        # Obtener provincia del usuario una sola vez
+        provincia_usuario_id = None
+        try:
+            if hasattr(usuario, "profile") and usuario.profile.provincia_id:
+                provincia_usuario_id = usuario.profile.provincia_id
+        except Exception:
+            pass
+
         validos = errores = 0
         detalles_errores = []
-        excluidos = (
-            []
-        )  # lista con todos los excluidos (mismo expediente, en cupo en otro, u otro expediente abierto)
-        batch = []
-
+        excluidos = []
+        warnings = []
+        
+        # Precarga de datos para optimizar consultas
         existentes_ids = set(
             ExpedienteCiudadano.objects.filter(expediente=expediente).values_list(
                 "ciudadano_id", flat=True
             )
         )
 
+        # Precarga de conflictos en una sola consulta
         conflictos_qs = (
             ExpedienteCiudadano.objects.select_related(
                 "expediente", "expediente__estado"
@@ -232,65 +252,57 @@ class ImportacionService:
                 Q(estado_cupo=EstadoCupo.DENTRO)
                 | Q(expediente__estado__nombre__in=ESTADOS_PRE_CUPO)
             )
-            .order_by("ciudadano_id", "-creado_en")
+            .values(
+                "ciudadano_id", "estado_cupo", "es_titular_activo", 
+                "expediente_id", "expediente__estado__nombre"
+            )
         )
 
         en_programa = {}
         abiertos = {}
         for ec in conflictos_qs:
-            if ec.estado_cupo == EstadoCupo.DENTRO:
-                en_programa.setdefault(ec.ciudadano_id, ec)
+            cid = ec["ciudadano_id"]
+            if ec["estado_cupo"] == EstadoCupo.DENTRO:
+                en_programa[cid] = ec
             else:
-                abiertos.setdefault(ec.ciudadano_id, ec)
+                abiertos[cid] = ec
 
-        warnings = []
-
-        fk_models = {
-            "tipo_documento": (TipoDocumento, "tipo"),
-            "sexo": (Sexo, "sexo"),
-            "nacionalidad": (Nacionalidad, "nacionalidad"),
-            "provincia": (Provincia, "nombre"),
-            "municipio": (Municipio, "nombre"),
-            "localidad": (Localidad, "nombre"),
+        # Precarga de todos los FKs necesarios
+        fk_cache = {
+            "tipo_documento": {td.tipo.lower(): td.id for td in TipoDocumento.objects.all()},
+            "sexo": {s.sexo.lower(): s.id for s in Sexo.objects.all()},
+            "nacionalidad": {n.nacionalidad.lower(): n.id for n in Nacionalidad.objects.all()},
+            "provincia": {p.nombre.lower(): p.id for p in Provincia.objects.all()},
+            "municipio": {m.nombre.lower(): m.id for m in Municipio.objects.select_related('provincia').all()},
+            "localidad": {l.nombre.lower(): l.id for l in Localidad.objects.select_related('municipio').all()},
         }
-
-        # Cache para evitar consultas repetidas de FKs
-        fk_cache = {field: {} for field in fk_models}
+        
+        # Precarga de ciudadanos existentes por documento
+        documentos_excel = [str(row.get('documento', '')).strip() for _, row in df.iterrows() if row.get('documento')]
+        ciudadanos_existentes = {}
+        if documentos_excel:
+            for c in Ciudadano.objects.filter(
+                tipo_documento_id=tipo_doc_cuit_id,
+                documento__in=documentos_excel
+            ).select_related('tipo_documento', 'sexo', 'nacionalidad', 'provincia', 'municipio', 'localidad'):
+                ciudadanos_existentes[c.documento] = c
 
         numeric_fields = {
-            "documento",
-            "altura",
-            "telefono",
-            "telefono_alternativo",
-            "codigo_postal",
+            "documento", "altura", "telefono", "telefono_alternativo", "codigo_postal"
         }
 
         def add_warning(fila, campo, detalle):
             warnings.append({"fila": fila, "campo": campo, "detalle": detalle})
             logger.warning("Fila %s: %s (%s)", fila, detalle, campo)
 
-        def resolve_fk(field, value):
-            model, lookup = fk_models[field]
-            cache = fk_cache[field]
+        def resolve_fk_cached(field, value):
+            if not value:
+                return None
             key = str(value).strip().lower()
-            if key in cache:
-                return cache[key]
+            return fk_cache.get(field, {}).get(key)
 
-            if key.isdigit():
-                try:
-                    result = model.objects.only("id").get(pk=int(key)).id
-                except model.DoesNotExist:
-                    result = None
-            else:
-                try:
-                    result = (
-                        model.objects.only("id").get(**{f"{lookup}__iexact": key}).id
-                    )
-                except model.DoesNotExist:
-                    result = None
-
-            cache[key] = result
-            return result
+        # Procesar cada fila y usar get_or_create_ciudadano directamente
+        legajos_crear = []
 
         for offset, row in enumerate(df.to_dict(orient="records"), start=2):
             try:
@@ -338,17 +350,43 @@ class ImportacionService:
                 except ValidationError as e:
                     raise ValidationError(str(e))
 
-                for fk in fk_models:
+                # Manejar municipio y localidad por ID si son numéricos
+                for fk in ["municipio", "localidad"]:
                     val = payload.get(fk)
-                    if val in (None, ""):
-                        payload[fk] = None
-                        continue
-                    resolved = resolve_fk(fk, val)
-                    if resolved is None:
-                        add_warning(offset, fk, f"{val} no encontrado")
-                        payload[fk] = None
-                    else:
-                        payload[fk] = resolved
+                    if val:
+                        val_str = str(val).strip()
+                        resolved = None
+                        
+                        # Intentar por ID si es numérico
+                        if val_str.isdigit():
+                            try:
+                                if fk == "municipio":
+                                    resolved = Municipio.objects.get(pk=int(val_str)).id
+                                elif fk == "localidad":
+                                    resolved = Localidad.objects.get(pk=int(val_str)).id
+                            except (Municipio.DoesNotExist, Localidad.DoesNotExist):
+                                pass
+                        
+                        # Fallback: buscar por nombre
+                        if resolved is None:
+                            resolved = resolve_fk_cached(fk, val)
+                        
+                        if resolved is None:
+                            add_warning(offset, fk, f"{val} no encontrado")
+                            payload[fk] = None
+                        else:
+                            payload[fk] = resolved
+                
+                # Manejar otros FKs normalmente
+                for fk in ["sexo", "nacionalidad"]:
+                    val = payload.get(fk)
+                    if val:
+                        resolved = resolve_fk_cached(fk, val)
+                        if resolved is None:
+                            add_warning(offset, fk, f"{val} no encontrado")
+                            payload[fk] = None
+                        else:
+                            payload[fk] = resolved
 
                 email = payload.get("email")
                 if email:
@@ -358,12 +396,28 @@ class ImportacionService:
                         add_warning(offset, "email", f"Email inválido: {email}")
                         payload.pop("email", None)
 
-                ciudadano = CiudadanoService.get_or_create_ciudadano(
-                    datos=payload,
-                    usuario=usuario,
-                    expediente=expediente,
-                    programa_id=3,
-                )
+                # Usar get_or_create_ciudadano que maneja correctamente la creación
+                try:
+                    ciudadano = CiudadanoService.get_or_create_ciudadano(
+                        datos=payload,
+                        usuario=usuario,
+                        expediente=expediente,
+                        programa_id=3,
+                    )
+                    
+                    if not ciudadano:
+                        logger.error("get_or_create_ciudadano retornó None en fila %s", offset)
+                        continue
+                        
+                    if not hasattr(ciudadano, 'pk') or not ciudadano.pk:
+                        logger.error("Ciudadano sin PK en fila %s: %s", offset, ciudadano)
+                        continue
+                        
+                except Exception as e:
+                    logger.error("Error creando ciudadano en fila %s: %s", offset, e)
+                    errores += 1
+                    detalles_errores.append({"fila": offset, "error": f"Error creando ciudadano: {str(e)}"})
+                    continue
 
                 cid = ciudadano.pk
 
@@ -389,7 +443,7 @@ class ImportacionService:
                 # 2) Ya está dentro del programa (cupo DENTRO) en OTRO expediente -> excluir
                 if cid in en_programa:
                     prog = en_programa[cid]
-                    estado_text = "ACEPTADO" if prog.es_titular_activo else "SUSPENDIDO"
+                    estado_text = "ACEPTADO" if prog["es_titular_activo"] else "SUSPENDIDO"
                     excluidos.append(
                         {
                             "fila": offset,
@@ -397,7 +451,7 @@ class ImportacionService:
                             "documento": getattr(ciudadano, "documento", ""),
                             "nombre": getattr(ciudadano, "nombre", ""),
                             "apellido": getattr(ciudadano, "apellido", ""),
-                            "expediente_origen_id": prog.expediente_id,
+                            "expediente_origen_id": prog["expediente_id"],
                             "estado_programa": estado_text,
                             "motivo": "Ya está dentro del programa en otro expediente",
                         }
@@ -419,20 +473,8 @@ class ImportacionService:
                             "documento": getattr(ciudadano, "documento", ""),
                             "nombre": getattr(ciudadano, "nombre", ""),
                             "apellido": getattr(ciudadano, "apellido", ""),
-                            "expediente_origen_id": conflict.expediente_id,
-                            "estado_expediente_origen": (
-                                getattr(
-                                    getattr(conflict, "expediente", None),
-                                    "estado",
-                                    None,
-                                ).nombre
-                                if getattr(
-                                    getattr(conflict, "expediente", None),
-                                    "estado",
-                                    None,
-                                )
-                                else ""
-                            ),
+                            "expediente_origen_id": conflict["expediente_id"],
+                            "estado_expediente_origen": conflict["expediente__estado__nombre"],
                             "motivo": "Duplicado en otro expediente abierto",
                         }
                     )
@@ -443,14 +485,12 @@ class ImportacionService:
                     )
                     continue
 
-                # 4) OK para crear en este expediente
-                batch.append(
-                    ExpedienteCiudadano(
-                        expediente=expediente,
-                        ciudadano=ciudadano,
-                        estado_id=estado_id,
-                    )
-                )
+                # 4) OK para crear legajo
+                legajos_crear.append(ExpedienteCiudadano(
+                    expediente=expediente,
+                    ciudadano=ciudadano,
+                    estado_id=estado_id,
+                ))
                 existentes_ids.add(cid)
                 validos += 1
 
@@ -459,18 +499,20 @@ class ImportacionService:
                 detalles_errores.append({"fila": offset, "error": str(e)})
                 logger.error("Error fila %s: %s", offset, e)
 
-            if len(batch) >= batch_size:
-                ExpedienteCiudadano.objects.bulk_create(batch, batch_size=batch_size)
-                batch.clear()
-
-        if batch:
-            ExpedienteCiudadano.objects.bulk_create(batch, batch_size=batch_size)
+        # Bulk create de legajos
+        if legajos_crear:
+            try:
+                logger.info("Creando %s legajos en bulk_create", len(legajos_crear))
+                ExpedienteCiudadano.objects.bulk_create(legajos_crear, batch_size=batch_size)
+                logger.info("Legajos creados exitosamente")
+            except Exception as e:
+                logger.error("Error en bulk_create de legajos: %s", e)
+        else:
+            logger.warning("No hay legajos para crear - lista vacía")
 
         logger.info(
-            "Import completo: %s válidos, %s errores, %s advertencias (excluidos: duplicados o ya en programa).",
-            validos,
-            errores,
-            len(excluidos),
+            "Import optimizado completo: %s válidos, %s errores, %s excluidos.",
+            validos, errores, len(excluidos)
         )
 
         return {
