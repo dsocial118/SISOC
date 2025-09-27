@@ -717,6 +717,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
                     ]:
                         setattr(recursos_instance, field, value)
 
+            if "recibe_donaciones_particulares" in recursos_data:
+                recursos_instance.recibe_donaciones_particulares = recursos_data[
+                    "recibe_donaciones_particulares"
+                ]
+
             if "recursos_donaciones_particulares" in recursos_data:
                 recursos_instance.recursos_donaciones_particulares.set(
                     recursos_data["recursos_donaciones_particulares"]
