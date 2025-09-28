@@ -3,15 +3,8 @@ from functools import lru_cache
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
-from django.conf import settings
 from celiaquia.models import EstadoExpediente, Expediente
 from celiaquia.services.importacion_service import ImportacionService
-try:
-    from celiaquia.services.importacion_service_optimized import ImportacionServiceOptimized
-    OPTIMIZED_AVAILABLE = True
-except ImportError:
-    OPTIMIZED_AVAILABLE = False
-    logger.warning("Servicio optimizado no disponible, usando versión estándar")
 from celiaquia.services.legajo_service import LegajoService
 
 logger = logging.getLogger(__name__)
@@ -67,31 +60,9 @@ class ExpedienteService:
         if not expediente.excel_masivo:
             raise ValidationError("No hay archivo Excel cargado para procesar.")
 
-        # Configuración del umbral para optimización (usar optimizado para 50+ registros)
-        OPTIMIZATION_THRESHOLD = getattr(settings, 'CELIAQUIA_OPTIMIZATION_THRESHOLD', 50)
-        
-        # Usar versión optimizada para archivos grandes si está disponible
-        use_optimized = False
-        if OPTIMIZED_AVAILABLE:
-            try:
-                # Preview limitado para determinar tamaño sin cargar todo el archivo
-                preview = ImportacionService.preview_excel(expediente.excel_masivo, max_rows=50)
-                total_rows = preview.get('total_rows', 0)
-                
-                if total_rows > OPTIMIZATION_THRESHOLD:
-                    logger.info("Usando importación optimizada para %s registros", total_rows)
-                    use_optimized = True
-            except Exception as e:
-                logger.warning("Error al determinar tamaño del archivo: %s", e)
-        
-        if use_optimized:
-            result = ImportacionServiceOptimized.importar_legajos_desde_excel_optimized(
-                expediente, expediente.excel_masivo, usuario
-            )
-        else:
-            result = ImportacionService.importar_legajos_desde_excel(
-                expediente, expediente.excel_masivo, usuario
-            )
+        result = ImportacionService.importar_legajos_desde_excel(
+            expediente, expediente.excel_masivo, usuario
+        )
         _set_estado(expediente, "PROCESADO", usuario)
         logger.info(
             "Expediente %s procesado: legajos_creados=%s errores=%s excluidos=%s",

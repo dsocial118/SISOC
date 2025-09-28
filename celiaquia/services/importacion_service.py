@@ -278,13 +278,18 @@ class ImportacionService:
             warnings.append({"fila": fila, "campo": campo, "detalle": detalle})
             logger.warning("Fila %s: %s (%s)", fila, detalle, campo)
 
-        # Precarga de municipios y localidades para optimizar
+        # Precarga de datos para optimizar consultas
         municipios_cache = {}
         localidades_cache = {}
+        sexos_cache = {}
+        nacionalidades_cache = {}
         
         # Obtener todos los IDs únicos del Excel
         municipio_ids = set()
         localidad_ids = set()
+        sexos_nombres = set()
+        nacionalidades_nombres = set()
+        
         for _, row in df.iterrows():
             if row.get('municipio'):
                 mun_str = str(row['municipio']).strip()
@@ -294,15 +299,35 @@ class ImportacionService:
                 loc_str = str(row['localidad']).strip()
                 if loc_str and loc_str != 'nan' and loc_str.replace('.0', '').isdigit():
                     localidad_ids.add(int(float(loc_str)))
+            if row.get('sexo'):
+                sexos_nombres.add(str(row['sexo']).strip().lower())
+            if row.get('nacionalidad'):
+                nacionalidades_nombres.add(str(row['nacionalidad']).strip().lower())
         
-        # Cargar todos los municipios y localidades de una vez
+        # Cargar todos los datos de una vez
         if municipio_ids:
             for m in Municipio.objects.filter(pk__in=municipio_ids, provincia_id=provincia_usuario_id):
-                municipios_cache[m.pk] = m.pk  # GUARDAR ID, no nombre
+                municipios_cache[m.pk] = m.pk
         
         if localidad_ids:
             for l in Localidad.objects.filter(pk__in=localidad_ids):
-                localidades_cache[l.pk] = l.pk  # GUARDAR ID, no nombre
+                localidades_cache[l.pk] = l.pk
+                
+        if sexos_nombres:
+            try:
+                for s in Sexo.objects.all():
+                    if s.sexo.lower() in sexos_nombres:
+                        sexos_cache[s.sexo.lower()] = s.id
+            except Exception as e:
+                logger.warning("Error cargando sexos: %s", e)
+                
+        if nacionalidades_nombres:
+            try:
+                for n in Nacionalidad.objects.all():
+                    if n.nacionalidad.lower() in nacionalidades_nombres:
+                        nacionalidades_cache[n.nacionalidad.lower()] = n.id
+            except Exception as e:
+                logger.warning("Error cargando nacionalidades: %s", e)
         
         # Procesar cada fila
         legajos_crear = []
@@ -378,12 +403,13 @@ class ImportacionService:
                 else:
                     payload.pop("localidad", None)
 
-                # Resolver sexo y nacionalidad por nombre
+                # Resolver sexo y nacionalidad usando cache
                 sexo_val = payload.get("sexo")
                 if sexo_val:
-                    try:
-                        payload["sexo"] = Sexo.objects.get(sexo__iexact=str(sexo_val).strip()).id
-                    except Sexo.DoesNotExist:
+                    sexo_key = str(sexo_val).strip().lower()
+                    if sexo_key in sexos_cache:
+                        payload["sexo"] = sexos_cache[sexo_key]
+                    else:
                         add_warning(offset, "sexo", f"{sexo_val} no encontrado")
                         payload.pop("sexo", None)
                 else:
@@ -391,9 +417,10 @@ class ImportacionService:
                 
                 nacionalidad_val = payload.get("nacionalidad")
                 if nacionalidad_val:
-                    try:
-                        payload["nacionalidad"] = Nacionalidad.objects.get(nacionalidad__iexact=str(nacionalidad_val).strip()).id
-                    except Nacionalidad.DoesNotExist:
+                    nac_key = str(nacionalidad_val).strip().lower()
+                    if nac_key in nacionalidades_cache:
+                        payload["nacionalidad"] = nacionalidades_cache[nac_key]
+                    else:
                         add_warning(offset, "nacionalidad", f"{nacionalidad_val} no encontrado")
                         payload.pop("nacionalidad", None)
                 else:
