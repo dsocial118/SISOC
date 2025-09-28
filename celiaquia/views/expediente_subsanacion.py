@@ -63,7 +63,7 @@ class ExpedienteConfirmSubsanacionView(View):
             revision_tecnico=RevisionTecnico.SUBSANADO,
             modificado_en=timezone.now(),
             subsanacion_enviada_en=timezone.now(),
-            subsanacion_usuario=user,
+            subsanacion_usuario=request.user,
         )
 
         logger.info(
