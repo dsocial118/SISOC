@@ -275,7 +275,7 @@ class ComedorListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Datos para componentes Cotton
+        # Datos para componentes reutilizables
         context.update(
             {
                 # Breadcrumb
