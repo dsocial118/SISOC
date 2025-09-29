@@ -13,7 +13,7 @@ from typing import List, Dict, Optional, Tuple
 from comedores.models import TerritorialCache, TerritorialSyncLog, Comedor
 from core.models import Provincia
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class TerritorialService:

@@ -11,7 +11,7 @@ from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from celiaquia.permissions import can_edit_legajo_files, can_review_legajo
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 # Función _in_group movida a permissions.py para evitar duplicación

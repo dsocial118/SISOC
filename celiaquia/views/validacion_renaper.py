@@ -12,6 +12,34 @@ from ciudadanos.services.consulta_renaper import consultar_datos_renaper
 logger = logging.getLogger(__name__)
 
 
+def _truncate(value, length=500):
+    if isinstance(value, str) and len(value) > length:
+        return f"{value[:length]}…"
+    return value
+
+
+def _build_log_data(
+    user,
+    legajo=None,
+    ciudadano=None,
+    documento_original=None,
+    documento_consulta=None,
+    sexo_renaper=None,
+):
+    data = {
+        "user_id": getattr(user, "id", None),
+        "username": getattr(user, "get_username", lambda: None)(),
+        "legajo_id": getattr(legajo, "pk", None),
+        "expediente_id": getattr(legajo, "expediente_id", None),
+        "ciudadano_id": getattr(ciudadano, "id", None),
+        "documento_original": documento_original,
+        "documento_consulta": documento_consulta,
+        "sexo_consulta": sexo_renaper,
+        "sexo_registrado": getattr(getattr(ciudadano, "sexo", None), "sexo", None),
+    }
+    return {k: v for k, v in data.items() if v is not None}
+
+
 def _in_group(user, name: str) -> bool:
     return user.is_authenticated and user.groups.filter(name=name).exists()
 
@@ -55,6 +83,20 @@ class ValidacionRenaperView(View):
 
             # Validar que el estado sea válido
             if validacion_estado not in ["1", "2", "3"]:
+                logger.warning(
+                    "renaper.validation.invalid_status",
+                    extra={
+                        "data": {
+                            "legajo_id": legajo_id,
+                            "expediente_id": pk,
+                            "estado_recibido": validacion_estado,
+                            "user_id": getattr(request.user, "id", None),
+                            "username": getattr(
+                                request.user, "get_username", lambda: None
+                            )(),
+                        }
+                    },
+                )
                 return JsonResponse(
                     {"success": False, "error": "Estado de validación inválido"}
                 )
@@ -83,6 +125,22 @@ class ValidacionRenaperView(View):
             mensajes = {"1": "Aceptado", "2": "Rechazado", "3": "Subsanar"}
             mensaje = mensajes.get(validacion_estado, "Desconocido")
 
+            logger.info(
+                "renaper.validation.status_saved",
+                extra={
+                    "data": {
+                        "legajo_id": legajo_id,
+                        "expediente_id": legajo.expediente_id,
+                        "estado_guardado": mensaje,
+                        "requiere_subsanacion": validacion_estado == "3",
+                        "user_id": getattr(request.user, "id", None),
+                        "username": getattr(
+                            request.user, "get_username", lambda: None
+                        )(),
+                    }
+                },
+            )
+
             return JsonResponse(
                 {
                     "success": True,
@@ -91,12 +149,19 @@ class ValidacionRenaperView(View):
                 }
             )
 
-        except Exception as e:
-            logger.error(
-                "Error al guardar validación Renaper legajo %s: %s",
-                legajo_id,
-                str(e),
-                exc_info=True,
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logger.exception(
+                "renaper.validation.status_error",
+                extra={
+                    "data": {
+                        "legajo_id": legajo_id,
+                        "expediente_id": pk,
+                        "user_id": getattr(request.user, "id", None),
+                        "username": getattr(
+                            request.user, "get_username", lambda: None
+                        )(),
+                    }
+                },
             )
             return JsonResponse(
                 {"success": False, "error": "No se pudo guardar la validación por un error interno."},
@@ -118,6 +183,19 @@ class ValidacionRenaperView(View):
                     tecnico=user
                 )
                 if not asignaciones.exists():
+                    logger.warning(
+                        "renaper.validation.unauthorized",
+                        extra={
+                            "data": {
+                                "legajo_id": legajo_id,
+                                "expediente_id": pk,
+                                "user_id": getattr(user, "id", None),
+                                "username": getattr(
+                                    user, "get_username", lambda: None
+                                )(),
+                            }
+                        },
+                    )
                     return JsonResponse(
                         {
                             "success": False,
@@ -128,8 +206,43 @@ class ValidacionRenaperView(View):
 
             ciudadano = legajo.ciudadano
 
+            if not ciudadano:
+                logger.warning(
+                    "renaper.validation.missing_ciudadano",
+                    extra={
+                        "data": {
+                            "legajo_id": legajo_id,
+                            "expediente_id": pk,
+                            "user_id": getattr(user, "id", None),
+                            "username": getattr(user, "get_username", lambda: None)(),
+                        }
+                    },
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "El ciudadano asociado al legajo no existe.",
+                    }
+                )
+
             # Validaciones básicas
+            if not ciudadano.documento:
+                logger.warning(
+                    "renaper.validation.missing_documento",
+                    extra={"data": _build_log_data(user, legajo, ciudadano)},
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "El ciudadano no tiene documento cargado",
+                    }
+                )
+
             if not ciudadano.sexo:
+                logger.warning(
+                    "renaper.validation.missing_sexo",
+                    extra={"data": _build_log_data(user, legajo, ciudadano)},
+                )
                 return JsonResponse(
                     {
                         "success": False,
@@ -147,6 +260,17 @@ class ValidacionRenaperView(View):
 
             # Validar que sea DNI válido (8 dígitos numéricos)
             if not documento_consulta.isdigit() or len(documento_consulta) != 8:
+                logger.warning(
+                    "renaper.validation.invalid_documento",
+                    extra={
+                        "data": _build_log_data(
+                            user,
+                            legajo,
+                            ciudadano,
+                            documento_original=documento_original,
+                        )
+                    },
+                )
                 return JsonResponse(
                     {
                         "success": False,
@@ -182,29 +306,63 @@ class ValidacionRenaperView(View):
             # Consultar Renaper
             sexo_renaper = "M" if ciudadano.sexo.sexo == "Masculino" else "F"
 
-            print(f"\n=== ENVIANDO A RENAPER ===")
-            print(f"DNI: {documento_consulta}")
-            print(f"Sexo: {sexo_renaper}")
-            print(f"Documento original: {documento_original}")
-            print(
-                f"Sexo ciudadano: {ciudadano.sexo.sexo if ciudadano.sexo else 'None'}"
+            log_data = _build_log_data(
+                user,
+                legajo,
+                ciudadano,
+                documento_original=documento_original,
+                documento_consulta=documento_consulta,
+                sexo_renaper=sexo_renaper,
             )
-            print(f"Ciudadano ID: {ciudadano.id}")
-            print(f"Legajo ID: {legajo.pk}")
+
+            logger.info(
+                "renaper.validation.request",
+                extra={
+                    "data": {
+                        **log_data,
+                        "stage": "request",
+                    }
+                },
+            )
 
             resultado_renaper = consultar_datos_renaper(
                 documento_consulta, sexo_renaper
             )
 
-            print(f"\n=== RESPUESTA DE RENAPER ===")
-            print(f"Success: {resultado_renaper.get('success')}")
-            print(f"Keys: {list(resultado_renaper.keys())}")
+            response_summary = {
+                "success": resultado_renaper.get("success"),
+                "keys": sorted(list(resultado_renaper.keys())),
+                "fallecido": resultado_renaper.get("fallecido"),
+            }
             if not resultado_renaper.get("success"):
-                print(f"Error: {resultado_renaper.get('error')}")
-                print(f"Raw response: {resultado_renaper.get('raw_response', 'N/A')}")
+                response_summary["error"] = resultado_renaper.get("error")
+                response_summary["raw_response_excerpt"] = _truncate(
+                    resultado_renaper.get("raw_response", "Sin respuesta"),
+                )
+                logger.warning(
+                    "renaper.validation.response_error",
+                    extra={
+                        "data": {
+                            **log_data,
+                            "stage": "response",
+                            "response": response_summary,
+                        }
+                    },
+                )
             else:
-                print(f"Data keys: {list(resultado_renaper.get('data', {}).keys())}")
-            print(f"========================\n")
+                response_summary["data_keys"] = sorted(
+                    list(resultado_renaper.get("data", {}).keys())
+                )
+                logger.info(
+                    "renaper.validation.response_ok",
+                    extra={
+                        "data": {
+                            **log_data,
+                            "stage": "response",
+                            "response": response_summary,
+                        }
+                    },
+                )
 
             if not resultado_renaper.get("success", False):
                 error_msg = resultado_renaper.get(
@@ -214,17 +372,16 @@ class ValidacionRenaperView(View):
                     "raw_response", "Sin respuesta raw"
                 )
 
-                print(f"\n=== ERROR RENAPER ===")
-                print(f"DNI: {documento_consulta}")
-                print(f"Error: {error_msg}")
-                print(f"Raw response: {raw_response}")
-                print(f"==================\n")
-
                 logger.error(
-                    "Error Renaper para DNI %s: %s. Raw response: %s",
-                    documento_consulta,
-                    error_msg,
-                    raw_response,
+                    "renaper.validation.remote_error",
+                    extra={
+                        "data": {
+                            **log_data,
+                            "stage": "response",
+                            "error": error_msg,
+                            "raw_response_excerpt": _truncate(raw_response),
+                        }
+                    },
                 )
 
                 return JsonResponse(
@@ -235,6 +392,16 @@ class ValidacionRenaperView(View):
                 )
 
             if resultado_renaper.get("fallecido"):
+                logger.warning(
+                    "renaper.validation.fallecido",
+                    extra={
+                        "data": {
+                            **log_data,
+                            "stage": "response",
+                            "fallecido": True,
+                        }
+                    },
+                )
                 return JsonResponse(
                     {
                         "success": False,
@@ -285,6 +452,18 @@ class ValidacionRenaperView(View):
                     datos_renaper_formateados["provincia"] = "Provincia no encontrada"
 
             # La validación se guardará cuando el usuario elija "Datos correctos" o "Datos incorrectos"
+
+            logger.info(
+                "renaper.validation.result_ready",
+                extra={
+                    "data": {
+                        **log_data,
+                        "stage": "result",
+                        "campos_provincia": list(datos_provincia.keys()),
+                        "campos_renaper": list(datos_renaper_formateados.keys()),
+                    }
+                },
+            )
 
             return JsonResponse(
                 {

@@ -12,7 +12,7 @@ from celiaquia.models import Expediente, ExpedienteCiudadano, RevisionTecnico
 from celiaquia.permissions import can_confirm_subsanacion
 from celiaquia.utils import error_response, success_response
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def _in_group(user, name):

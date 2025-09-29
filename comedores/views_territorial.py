@@ -10,7 +10,7 @@ from django.views.decorators.http import require_http_methods
 
 from comedores.services.territorial_service import TerritorialService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 @login_required

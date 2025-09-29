@@ -7,7 +7,7 @@ from celiaquia.models import EstadoExpediente, Expediente
 from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.legajo_service import LegajoService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 User = get_user_model()
 
 
