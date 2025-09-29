@@ -51,6 +51,7 @@ class APIClient:
             token = self.get_token()
         except Exception as e:
             import logging
+
             logging.getLogger("django").exception("Error al obtener token")
             return {"success": False, "error": "Error interno al obtener token"}
 
@@ -65,6 +66,7 @@ class APIClient:
             return {"success": False, "error": "Error de conexión al servicio."}
         except RequestException as e:
             import logging
+
             logging.getLogger("django").exception(
                 "RequestException al conectar con Renaper"
             )
@@ -77,11 +79,15 @@ class APIClient:
             try:
                 error_data = response.json()
             except Exception:
-                error_data = response.text[:500] if hasattr(response, 'text') else 'Sin contenido'
+                error_data = (
+                    response.text[:500]
+                    if hasattr(response, "text")
+                    else "Sin contenido"
+                )
             return {
                 "success": False,
                 "error": f"Error HTTP {response.status_code}: Error en la respuesta del servicio.",
-                "status_code": response.status_code
+                "status_code": response.status_code,
             }
 
         try:
@@ -89,12 +95,15 @@ class APIClient:
         except Exception as e:
             # Log the raw response for debugging
             import logging
+
             logging.getLogger("django").exception("Respuesta no es JSON válido")
-            raw_text = response.text[:500] if hasattr(response, 'text') else 'No response text'
+            raw_text = (
+                response.text[:500] if hasattr(response, "text") else "No response text"
+            )
             return {
-                "success": False, 
+                "success": False,
                 "error": "Error interno: respuesta no es JSON válido.",
-                "raw_response": raw_text
+                "raw_response": raw_text,
             }
 
         if not data.get("isSuccess", False):
@@ -184,7 +193,11 @@ def consultar_datos_renaper(dni, sexo):
 
     except Exception as e:
         import logging
+
         logging.getLogger("django").exception(
             "Error inesperado en consultar_datos_renaper"
         )
-        return {"success": False, "error": "Error interno inesperado al consultar Renaper"}
+        return {
+            "success": False,
+            "error": "Error interno inesperado al consultar Renaper",
+        }
