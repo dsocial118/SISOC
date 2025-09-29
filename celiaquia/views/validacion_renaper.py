@@ -307,7 +307,30 @@ class ValidacionRenaperView(View):
             }
 
             # Consultar Renaper
-            sexo_renaper = "M" if ciudadano.sexo.sexo == "Masculino" else "F"
+            sexo_map = {"Masculino": "M", "Femenino": "F", "X": "X"}
+            sexo_valor = (getattr(ciudadano.sexo, "sexo", "") or "").strip()
+            sexo_renaper = sexo_map.get(sexo_valor)
+
+            if not sexo_renaper:
+                logger.warning(
+                    "renaper.validation.unsupported_sexo",
+                    extra={
+                        "data": _build_log_data(
+                            user,
+                            legajo,
+                            ciudadano,
+                            documento_original=documento_original,
+                            documento_consulta=documento_consulta,
+                            sexo_valor=sexo_valor,
+                        )
+                    },
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"Sexo {sexo_valor or 'desconocido'} no soportado para Renaper",
+                    }
+                )
 
             log_data = _build_log_data(
                 user,
@@ -332,12 +355,15 @@ class ValidacionRenaperView(View):
                 documento_consulta, sexo_renaper
             )
 
+            success = resultado_renaper.get("success", False)
+            fallecido = resultado_renaper.get("fallecido")
+
             response_summary = {
-                "success": resultado_renaper.get("success"),
+                "success": success,
                 "keys": sorted(list(resultado_renaper.keys())),
-                "fallecido": resultado_renaper.get("fallecido"),
+                "fallecido": fallecido,
             }
-            if not resultado_renaper.get("success"):
+            if not success:
                 response_summary["error"] = resultado_renaper.get("error")
                 response_summary["raw_response_excerpt"] = _truncate(
                     resultado_renaper.get("raw_response", "Sin respuesta"),
@@ -367,7 +393,25 @@ class ValidacionRenaperView(View):
                     },
                 )
 
-            if not resultado_renaper.get("success", False):
+            if fallecido:
+                logger.warning(
+                    "renaper.validation.fallecido",
+                    extra={
+                        "data": {
+                            **log_data,
+                            "stage": "response",
+                            "fallecido": True,
+                        }
+                    },
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "La persona figura como fallecida en Renaper",
+                    }
+                )
+
+            if not success:
                 error_msg = resultado_renaper.get(
                     "error", "Error desconocido al consultar Renaper"
                 )
@@ -391,24 +435,6 @@ class ValidacionRenaperView(View):
                     {
                         "success": False,
                         "error": "Ocurrió un error inesperado al consultar Renaper.",
-                    }
-                )
-
-            if resultado_renaper.get("fallecido"):
-                logger.warning(
-                    "renaper.validation.fallecido",
-                    extra={
-                        "data": {
-                            **log_data,
-                            "stage": "response",
-                            "fallecido": True,
-                        }
-                    },
-                )
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": "La persona figura como fallecida en Renaper",
                     }
                 )
 
