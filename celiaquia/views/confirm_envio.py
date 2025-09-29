@@ -72,10 +72,13 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
                 f"{l.ciudadano.apellido}, {l.ciudadano.nombre} (DNI {l.ciudadano.documento})"
                 for l in faltantes_qs[:10]
             ]
-            msg = "No podés confirmar el envío: hay legajos sin los 2 archivos requeridos. " + (
-                "Ejemplos: "
-                + "; ".join(ejemplos)
-                + (" …" if faltantes_qs.count() > 10 else "")
+            msg = (
+                "No podés confirmar el envío: hay legajos sin los 2 archivos requeridos. "
+                + (
+                    "Ejemplos: "
+                    + "; ".join(ejemplos)
+                    + (" …" if faltantes_qs.count() > 10 else "")
+                )
             )
             logger.info("Validación en confirmar envío falló: %s", msg)
 

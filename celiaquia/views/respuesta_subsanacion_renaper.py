@@ -17,75 +17,79 @@ def _in_group(user, name: str) -> bool:
 
 class RespuestaSubsanacionRenaperView(View):
     """Vista para responder a subsanación Renaper"""
-    
+
     def dispatch(self, request, *args, **kwargs):
         # Verificar permisos - solo provincia
         user = request.user
         if not user.is_authenticated:
             raise PermissionDenied("Autenticación requerida.")
-        
+
         is_admin = user.is_superuser
         is_prov = _in_group(user, "ProvinciaCeliaquia")
-        
+
         if not (is_admin or is_prov):
             raise PermissionDenied("Permiso denegado.")
-        
+
         return super().dispatch(request, *args, **kwargs)
-    
+
     @method_decorator(csrf_protect)
     def post(self, request, pk, legajo_id):
         try:
             # Obtener el legajo
             legajo = get_object_or_404(
-                ExpedienteCiudadano, 
-                pk=legajo_id, 
-                expediente__pk=pk
+                ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk
             )
-            
+
             # Verificar que el legajo esté en estado de subsanación Renaper
             if legajo.estado_validacion_renaper != 3:
-                return JsonResponse({
-                    "success": False,
-                    "error": "El legajo no está en estado de subsanación Renaper"
-                })
-            
-            comentario = request.POST.get('comentario', '').strip()
-            archivo = request.FILES.get('archivo')
-            
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "El legajo no está en estado de subsanación Renaper",
+                    }
+                )
+
+            comentario = request.POST.get("comentario", "").strip()
+            archivo = request.FILES.get("archivo")
+
             if not comentario:
-                return JsonResponse({
-                    "success": False,
-                    "error": "El comentario es obligatorio"
-                })
-            
+                return JsonResponse(
+                    {"success": False, "error": "El comentario es obligatorio"}
+                )
+
             # Guardar respuesta
             legajo.subsanacion_renaper_comentario = comentario
             if archivo:
                 legajo.subsanacion_renaper_archivo = archivo
-            
+
             # Cambiar estado a validado (1) para que pueda ser revisado
             legajo.estado_validacion_renaper = 1
-            legajo.revision_tecnico = 'SUBSANADO'
-            
-            legajo.save(update_fields=[
-                "subsanacion_renaper_comentario", 
-                "subsanacion_renaper_archivo",
-                "estado_validacion_renaper",
-                "revision_tecnico",
-                "modificado_en"
-            ])
-            
-            return JsonResponse({
-                "success": True,
-                "message": "Respuesta a subsanación Renaper enviada correctamente"
-            })
-            
+            legajo.revision_tecnico = "SUBSANADO"
+
+            legajo.save(
+                update_fields=[
+                    "subsanacion_renaper_comentario",
+                    "subsanacion_renaper_archivo",
+                    "estado_validacion_renaper",
+                    "revision_tecnico",
+                    "modificado_en",
+                ]
+            )
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": "Respuesta a subsanación Renaper enviada correctamente",
+                }
+            )
+
         except Exception as e:
             logger.error(
-                "Error al responder subsanación Renaper legajo %s: %s", 
-                legajo_id, str(e), exc_info=True
+                "Error al responder subsanación Renaper legajo %s: %s",
+                legajo_id,
+                str(e),
+                exc_info=True,
             )
-            return JsonResponse({
-                "success": False,
-                "error": f"Error inesperado: {str(e)}"
-            }, status=500)
+            return JsonResponse(
+                {"success": False, "error": f"Error inesperado: {str(e)}"}, status=500
+            )

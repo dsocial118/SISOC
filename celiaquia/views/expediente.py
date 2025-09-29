@@ -436,8 +436,7 @@ class ExpedienteDetailView(DetailView):
             )
 
         faltan_archivos = expediente.expediente_ciudadanos.filter(
-            Q(archivo2__isnull=True)
-            | Q(archivo3__isnull=True)
+            Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
         ).exists()
 
         # Cupo: usar propiedad expediente.provincia (puede ser None)
@@ -527,8 +526,7 @@ class ExpedienteConfirmView(View):
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
         faltantes_qs = expediente.expediente_ciudadanos.filter(
-            Q(archivo2__isnull=True)
-            | Q(archivo3__isnull=True)
+            Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
         )
         if faltantes_qs.exists():
             msg = "No se puede enviar: hay legajos sin los 2 archivos requeridos."

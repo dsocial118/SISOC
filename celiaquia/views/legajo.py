@@ -79,10 +79,7 @@ class LegajoArchivoUploadView(View):
         # Carga doble (archivo2/3)
         if a2 or a3:
             try:
-                if (
-                    not self.exp_ciud.archivo2
-                    and not self.exp_ciud.archivo3
-                ):
+                if not self.exp_ciud.archivo2 and not self.exp_ciud.archivo3:
                     if not (a2 and a3):
                         return JsonResponse(
                             {
@@ -145,7 +142,7 @@ class LegajoRechazarView(View):
         legajo = get_object_or_404(
             ExpedienteCiudadano, pk=pk, expediente__pk=expediente_id
         )
-        
+
         # Validar permisos usando función centralizada
         can_review_legajo(request.user, legajo.expediente)
         try:

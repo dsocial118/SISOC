@@ -132,37 +132,45 @@ class ImportacionService:
         limit = _parse_max_rows(max_rows)
         sample_df = df if limit is None else df.head(limit)
         sample = sample_df.to_dict(orient="records")
-        
+
         # Agregar columna ID al inicio y convertir IDs a nombres
         headers = ["ID"] + list(df.columns)
         rows_with_id = []
         for i, row in enumerate(sample, start=1):
             row_with_id = {"ID": i}
-            
+
             # Convertir IDs a nombres para preview
             if "municipio" in row and row["municipio"]:
                 municipio_str = str(row["municipio"]).strip()
-                if municipio_str and municipio_str != 'nan' and municipio_str.replace('.0', '').isdigit():
+                if (
+                    municipio_str
+                    and municipio_str != "nan"
+                    and municipio_str.replace(".0", "").isdigit()
+                ):
                     try:
                         municipio_id = int(float(municipio_str))
                         municipio = Municipio.objects.get(pk=municipio_id)
                         row["municipio"] = municipio.nombre
                     except:
                         pass
-            
+
             if "localidad" in row and row["localidad"]:
                 localidad_str = str(row["localidad"]).strip()
-                if localidad_str and localidad_str != 'nan' and localidad_str.replace('.0', '').isdigit():
+                if (
+                    localidad_str
+                    and localidad_str != "nan"
+                    and localidad_str.replace(".0", "").isdigit()
+                ):
                     try:
                         localidad_id = int(float(localidad_str))
                         localidad = Localidad.objects.get(pk=localidad_id)
                         row["localidad"] = localidad.nombre
                     except:
                         pass
-            
+
             row_with_id.update(row)
             rows_with_id.append(row_with_id)
-        
+
         return {
             "headers": headers,
             "rows": rows_with_id,
@@ -172,9 +180,11 @@ class ImportacionService:
 
     @staticmethod
     @transaction.atomic
-    def importar_legajos_desde_excel(expediente, archivo_excel, usuario, batch_size=1000):
+    def importar_legajos_desde_excel(
+        expediente, archivo_excel, usuario, batch_size=1000
+    ):
         """Importa legajos desde un archivo Excel al expediente indicado."""
-        
+
         try:
             archivo_excel.open()
         except Exception:
@@ -221,23 +231,29 @@ class ImportacionService:
         _tipo_doc_por_defecto()
         estado_id = _estado_doc_pendiente_id()
         tipo_doc_cuit_id = _tipo_doc_cuit()
-        
+
         # Obtener provincia del usuario
         provincia_usuario_id = None
         try:
-            if hasattr(usuario, "profile") and usuario.profile and usuario.profile.provincia_id:
+            if (
+                hasattr(usuario, "profile")
+                and usuario.profile
+                and usuario.profile.provincia_id
+            ):
                 provincia_usuario_id = usuario.profile.provincia_id
         except Exception as e:
             logger.warning("No se pudo obtener provincia del usuario: %s", e)
-        
+
         if not provincia_usuario_id:
-            raise ValidationError("El usuario debe tener una provincia configurada para importar legajos")
+            raise ValidationError(
+                "El usuario debe tener una provincia configurada para importar legajos"
+            )
 
         validos = errores = 0
         detalles_errores = []
         excluidos = []
         warnings = []
-        
+
         # Precarga de datos para optimizar consultas
         existentes_ids = set(
             ExpedienteCiudadano.objects.filter(expediente=expediente).values_list(
@@ -256,8 +272,11 @@ class ImportacionService:
                 | Q(expediente__estado__nombre__in=ESTADOS_PRE_CUPO)
             )
             .values(
-                "ciudadano_id", "estado_cupo", "es_titular_activo", 
-                "expediente_id", "expediente__estado__nombre"
+                "ciudadano_id",
+                "estado_cupo",
+                "es_titular_activo",
+                "expediente_id",
+                "expediente__estado__nombre",
             )
         )
 
@@ -271,7 +290,11 @@ class ImportacionService:
                 abiertos[cid] = ec
 
         numeric_fields = {
-            "documento", "altura", "telefono", "telefono_alternativo", "codigo_postal"
+            "documento",
+            "altura",
+            "telefono",
+            "telefono_alternativo",
+            "codigo_postal",
         }
 
         def add_warning(fila, campo, detalle):
@@ -283,36 +306,38 @@ class ImportacionService:
         localidades_cache = {}
         sexos_cache = {}
         nacionalidades_cache = {}
-        
+
         # Obtener todos los IDs únicos del Excel
         municipio_ids = set()
         localidad_ids = set()
         sexos_nombres = set()
         nacionalidades_nombres = set()
-        
+
         for _, row in df.iterrows():
-            if row.get('municipio'):
-                mun_str = str(row['municipio']).strip()
-                if mun_str and mun_str != 'nan' and mun_str.replace('.0', '').isdigit():
+            if row.get("municipio"):
+                mun_str = str(row["municipio"]).strip()
+                if mun_str and mun_str != "nan" and mun_str.replace(".0", "").isdigit():
                     municipio_ids.add(int(float(mun_str)))
-            if row.get('localidad'):
-                loc_str = str(row['localidad']).strip()
-                if loc_str and loc_str != 'nan' and loc_str.replace('.0', '').isdigit():
+            if row.get("localidad"):
+                loc_str = str(row["localidad"]).strip()
+                if loc_str and loc_str != "nan" and loc_str.replace(".0", "").isdigit():
                     localidad_ids.add(int(float(loc_str)))
-            if row.get('sexo'):
-                sexos_nombres.add(str(row['sexo']).strip().lower())
-            if row.get('nacionalidad'):
-                nacionalidades_nombres.add(str(row['nacionalidad']).strip().lower())
-        
+            if row.get("sexo"):
+                sexos_nombres.add(str(row["sexo"]).strip().lower())
+            if row.get("nacionalidad"):
+                nacionalidades_nombres.add(str(row["nacionalidad"]).strip().lower())
+
         # Cargar todos los datos de una vez
         if municipio_ids:
-            for m in Municipio.objects.filter(pk__in=municipio_ids, provincia_id=provincia_usuario_id):
+            for m in Municipio.objects.filter(
+                pk__in=municipio_ids, provincia_id=provincia_usuario_id
+            ):
                 municipios_cache[m.pk] = m.pk
-        
+
         if localidad_ids:
             for l in Localidad.objects.filter(pk__in=localidad_ids):
                 localidades_cache[l.pk] = l.pk
-                
+
         if sexos_nombres:
             try:
                 for s in Sexo.objects.all():
@@ -320,7 +345,7 @@ class ImportacionService:
                         sexos_cache[s.sexo.lower()] = s.id
             except Exception as e:
                 logger.warning("Error cargando sexos: %s", e)
-                
+
         if nacionalidades_nombres:
             try:
                 for n in Nacionalidad.objects.all():
@@ -328,7 +353,7 @@ class ImportacionService:
                         nacionalidades_cache[n.nacionalidad.lower()] = n.id
             except Exception as e:
                 logger.warning("Error cargando nacionalidades: %s", e)
-        
+
         # Procesar cada fila
         legajos_crear = []
 
@@ -365,6 +390,7 @@ class ImportacionService:
 
                 # Convertir fecha de nacimiento
                 from celiaquia.services.ciudadano_service import CiudadanoService
+
                 try:
                     payload["fecha_nacimiento"] = CiudadanoService._to_date(
                         payload.get("fecha_nacimiento")
@@ -377,27 +403,39 @@ class ImportacionService:
                 municipio_val = payload.get("municipio")
                 if municipio_val:
                     municipio_str = str(municipio_val).strip()
-                    if municipio_str and municipio_str != 'nan' and municipio_str.replace('.0', '').isdigit():
+                    if (
+                        municipio_str
+                        and municipio_str != "nan"
+                        and municipio_str.replace(".0", "").isdigit()
+                    ):
                         municipio_id = int(float(municipio_str))
                         if municipio_id in municipios_cache:
                             payload["municipio"] = municipios_cache[municipio_id]
                         else:
-                            add_warning(offset, "municipio", f"{municipio_id} no encontrado")
+                            add_warning(
+                                offset, "municipio", f"{municipio_id} no encontrado"
+                            )
                             payload.pop("municipio", None)
                     # Si no es numérico, asumir que ya es nombre
                 else:
                     payload.pop("municipio", None)
-                
+
                 # Localidad
                 localidad_val = payload.get("localidad")
                 if localidad_val:
                     localidad_str = str(localidad_val).strip()
-                    if localidad_str and localidad_str != 'nan' and localidad_str.replace('.0', '').isdigit():
+                    if (
+                        localidad_str
+                        and localidad_str != "nan"
+                        and localidad_str.replace(".0", "").isdigit()
+                    ):
                         localidad_id = int(float(localidad_str))
                         if localidad_id in localidades_cache:
                             payload["localidad"] = localidades_cache[localidad_id]
                         else:
-                            add_warning(offset, "localidad", f"{localidad_id} no encontrado")
+                            add_warning(
+                                offset, "localidad", f"{localidad_id} no encontrado"
+                            )
                             payload.pop("localidad", None)
                     # Si no es numérico, asumir que ya es nombre
                 else:
@@ -414,14 +452,16 @@ class ImportacionService:
                         payload.pop("sexo", None)
                 else:
                     payload.pop("sexo", None)
-                
+
                 nacionalidad_val = payload.get("nacionalidad")
                 if nacionalidad_val:
                     nac_key = str(nacionalidad_val).strip().lower()
                     if nac_key in nacionalidades_cache:
                         payload["nacionalidad"] = nacionalidades_cache[nac_key]
                     else:
-                        add_warning(offset, "nacionalidad", f"{nacionalidad_val} no encontrado")
+                        add_warning(
+                            offset, "nacionalidad", f"{nacionalidad_val} no encontrado"
+                        )
                         payload.pop("nacionalidad", None)
                 else:
                     payload.pop("nacionalidad", None)
@@ -443,67 +483,83 @@ class ImportacionService:
                         expediente=expediente,
                         programa_id=3,
                     )
-                    
+
                     if not ciudadano or not ciudadano.pk:
                         errores += 1
-                        detalles_errores.append({"fila": offset, "error": "No se pudo crear el ciudadano"})
+                        detalles_errores.append(
+                            {"fila": offset, "error": "No se pudo crear el ciudadano"}
+                        )
                         continue
-                        
+
                 except Exception as e:
                     logger.error("Error creando ciudadano en fila %s: %s", offset, e)
                     errores += 1
-                    detalles_errores.append({"fila": offset, "error": f"Error creando ciudadano: {str(e)}"})
+                    detalles_errores.append(
+                        {"fila": offset, "error": f"Error creando ciudadano: {str(e)}"}
+                    )
                     continue
 
                 cid = ciudadano.pk
 
                 # Validaciones de duplicados
                 if cid in existentes_ids:
-                    excluidos.append({
-                        "fila": offset,
-                        "ciudadano_id": cid,
-                        "documento": getattr(ciudadano, "documento", ""),
-                        "nombre": getattr(ciudadano, "nombre", ""),
-                        "apellido": getattr(ciudadano, "apellido", ""),
-                        "motivo": "Ya existe en este expediente",
-                    })
+                    excluidos.append(
+                        {
+                            "fila": offset,
+                            "ciudadano_id": cid,
+                            "documento": getattr(ciudadano, "documento", ""),
+                            "nombre": getattr(ciudadano, "nombre", ""),
+                            "apellido": getattr(ciudadano, "apellido", ""),
+                            "motivo": "Ya existe en este expediente",
+                        }
+                    )
                     continue
 
                 if cid in en_programa:
                     prog = en_programa[cid]
-                    estado_text = "ACEPTADO" if prog["es_titular_activo"] else "SUSPENDIDO"
-                    excluidos.append({
-                        "fila": offset,
-                        "ciudadano_id": cid,
-                        "documento": getattr(ciudadano, "documento", ""),
-                        "nombre": getattr(ciudadano, "nombre", ""),
-                        "apellido": getattr(ciudadano, "apellido", ""),
-                        "expediente_origen_id": prog["expediente_id"],
-                        "estado_programa": estado_text,
-                        "motivo": "Ya está dentro del programa en otro expediente",
-                    })
+                    estado_text = (
+                        "ACEPTADO" if prog["es_titular_activo"] else "SUSPENDIDO"
+                    )
+                    excluidos.append(
+                        {
+                            "fila": offset,
+                            "ciudadano_id": cid,
+                            "documento": getattr(ciudadano, "documento", ""),
+                            "nombre": getattr(ciudadano, "nombre", ""),
+                            "apellido": getattr(ciudadano, "apellido", ""),
+                            "expediente_origen_id": prog["expediente_id"],
+                            "estado_programa": estado_text,
+                            "motivo": "Ya está dentro del programa en otro expediente",
+                        }
+                    )
                     continue
 
                 if cid in abiertos:
                     conflict = abiertos[cid]
-                    excluidos.append({
-                        "fila": offset,
-                        "ciudadano_id": cid,
-                        "documento": getattr(ciudadano, "documento", ""),
-                        "nombre": getattr(ciudadano, "nombre", ""),
-                        "apellido": getattr(ciudadano, "apellido", ""),
-                        "expediente_origen_id": conflict["expediente_id"],
-                        "estado_expediente_origen": conflict["expediente__estado__nombre"],
-                        "motivo": "Duplicado en otro expediente abierto",
-                    })
+                    excluidos.append(
+                        {
+                            "fila": offset,
+                            "ciudadano_id": cid,
+                            "documento": getattr(ciudadano, "documento", ""),
+                            "nombre": getattr(ciudadano, "nombre", ""),
+                            "apellido": getattr(ciudadano, "apellido", ""),
+                            "expediente_origen_id": conflict["expediente_id"],
+                            "estado_expediente_origen": conflict[
+                                "expediente__estado__nombre"
+                            ],
+                            "motivo": "Duplicado en otro expediente abierto",
+                        }
+                    )
                     continue
 
                 # OK para crear legajo
-                legajos_crear.append(ExpedienteCiudadano(
-                    expediente=expediente,
-                    ciudadano=ciudadano,
-                    estado_id=estado_id,
-                ))
+                legajos_crear.append(
+                    ExpedienteCiudadano(
+                        expediente=expediente,
+                        ciudadano=ciudadano,
+                        estado_id=estado_id,
+                    )
+                )
                 existentes_ids.add(cid)
                 validos += 1
 
@@ -516,7 +572,9 @@ class ImportacionService:
         if legajos_crear:
             try:
                 logger.info("Creando %s legajos en bulk_create", len(legajos_crear))
-                ExpedienteCiudadano.objects.bulk_create(legajos_crear, batch_size=batch_size)
+                ExpedienteCiudadano.objects.bulk_create(
+                    legajos_crear, batch_size=batch_size
+                )
                 logger.info("Legajos creados exitosamente")
             except Exception as e:
                 logger.error("Error en bulk_create de legajos: %s", e)
@@ -525,7 +583,9 @@ class ImportacionService:
 
         logger.info(
             "Import completo: %s válidos, %s errores, %s excluidos.",
-            validos, errores, len(excluidos)
+            validos,
+            errores,
+            len(excluidos),
         )
 
         return {

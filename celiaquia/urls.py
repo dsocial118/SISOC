@@ -34,7 +34,9 @@ from celiaquia.views.legajo import (
     LegajoSubsanarView,
 )
 from celiaquia.views.validacion_renaper import ValidacionRenaperView
-from celiaquia.views.respuesta_subsanacion_renaper import RespuestaSubsanacionRenaperView
+from celiaquia.views.respuesta_subsanacion_renaper import (
+    RespuestaSubsanacionRenaperView,
+)
 from celiaquia.views.cupo import (
     CupoDashboardView,
     CupoProvinciaDetailView,
