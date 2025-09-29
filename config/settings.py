@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.admindocs",
     # Libs
-    "django_cotton",
     "crispy_forms",
     "crispy_bootstrap5",
     "django_extensions",
