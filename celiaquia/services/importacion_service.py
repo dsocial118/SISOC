@@ -13,7 +13,7 @@ from ciudadanos.models import Ciudadano, TipoDocumento, Sexo, Nacionalidad
 from core.models import Provincia, Municipio, Localidad
 from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def _norm_col(col: str) -> str:

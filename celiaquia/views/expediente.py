@@ -45,7 +45,7 @@ from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
 from core.models import Provincia, Localidad
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def _user_in_group(user, group_name: str) -> bool:

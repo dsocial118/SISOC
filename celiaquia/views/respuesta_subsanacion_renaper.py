@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_protect
 
 from celiaquia.models import ExpedienteCiudadano
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def _in_group(user, name: str) -> bool:

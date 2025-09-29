@@ -51,7 +51,7 @@ class APIClient:
             token = self.get_token()
         except Exception as e:
             import logging
-            logging.getLogger(__name__).exception("Error al obtener token")
+            logging.getLogger("django").exception("Error al obtener token")
             return {"success": False, "error": "Error interno al obtener token"}
 
         headers = {"Authorization": f"Bearer {token}"}
@@ -65,7 +65,9 @@ class APIClient:
             return {"success": False, "error": "Error de conexión al servicio."}
         except RequestException as e:
             import logging
-            logging.getLogger(__name__).exception("RequestException al conectar con Renaper")
+            logging.getLogger("django").exception(
+                "RequestException al conectar con Renaper"
+            )
             return {
                 "success": False,
                 "error": "Error interno de conexión al servicio.",
@@ -87,7 +89,7 @@ class APIClient:
         except Exception as e:
             # Log the raw response for debugging
             import logging
-            logging.getLogger(__name__).exception("Respuesta no es JSON válido")
+            logging.getLogger("django").exception("Respuesta no es JSON válido")
             raw_text = response.text[:500] if hasattr(response, 'text') else 'No response text'
             return {
                 "success": False, 
@@ -182,5 +184,7 @@ def consultar_datos_renaper(dni, sexo):
 
     except Exception as e:
         import logging
-        logging.getLogger(__name__).exception("Error inesperado en consultar_datos_renaper")
+        logging.getLogger("django").exception(
+            "Error inesperado en consultar_datos_renaper"
+        )
         return {"success": False, "error": "Error interno inesperado al consultar Renaper"}

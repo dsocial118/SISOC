@@ -9,7 +9,7 @@ from celiaquia.models import (
     RevisionTecnico,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 @lru_cache(maxsize=1)

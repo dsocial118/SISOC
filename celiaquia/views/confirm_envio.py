@@ -15,7 +15,7 @@ from celiaquia.models import Expediente, ExpedienteCiudadano
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.views.expediente import _is_ajax
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class ExpedienteConfirmView(LoginRequiredMixin, View):
