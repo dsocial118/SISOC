@@ -27,13 +27,14 @@ def _same_owner(user, exp) -> bool:
 
 class ExpedienteConfirmSubsanacionView(View):
     """Vista para confirmar la subsanación de legajos en un expediente."""
+
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
 
     @method_decorator(csrf_protect)
     def post(self, request, pk):
         exp = get_object_or_404(Expediente, pk=pk)
-        
+
         # Validar permisos usando función centralizada
         can_confirm_subsanacion(request.user, exp)
 
@@ -49,11 +50,13 @@ class ExpedienteConfirmSubsanacionView(View):
         ).filter(query_archivos_faltantes)
 
         if legajos_sin_archivos.exists():
-            dnis = list(legajos_sin_archivos.values_list("ciudadano__documento", flat=True)[:10])
+            dnis = list(
+                legajos_sin_archivos.values_list("ciudadano__documento", flat=True)[:10]
+            )
             return error_response(
                 "Hay legajos en SUBSANAR que aún no tienen los archivos obligatorios (archivo2 y archivo3).",
                 status=400,
-                extra_data={"ejemplo_dnis": dnis}
+                extra_data={"ejemplo_dnis": dnis},
             )
 
         # Cambiar SUBSANAR → SUBSANADO
