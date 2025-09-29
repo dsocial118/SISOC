@@ -7,6 +7,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 
 from celiaquia.models import ExpedienteCiudadano
+from celiaquia.permissions import can_confirm_subsanacion
 
 logger = logging.getLogger("django")
 
@@ -39,6 +40,9 @@ class RespuestaSubsanacionRenaperView(View):
             legajo = get_object_or_404(
                 ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk
             )
+
+            # Verificar permisos sobre el expediente asociado
+            can_confirm_subsanacion(request.user, legajo.expediente)
 
             # Verificar que el legajo esté en estado de subsanación Renaper
             if legajo.estado_validacion_renaper != 3:
@@ -81,6 +85,21 @@ class RespuestaSubsanacionRenaperView(View):
                     "success": True,
                     "message": "Respuesta a subsanación Renaper enviada correctamente",
                 }
+            )
+
+        except PermissionDenied as exc:
+            logger.warning(
+                "celiaquia.respuesta_subsanacion.permission_denied",
+                extra={
+                    "user_id": getattr(request.user, "id", None),
+                    "legajo_id": legajo_id,
+                    "expediente_id": pk,
+                    "error": str(exc),
+                },
+            )
+            return JsonResponse(
+                {"success": False, "error": str(exc)},
+                status=403,
             )
 
         except Exception as e:
