@@ -318,7 +318,7 @@ class ExpedientePreviewExcelView(View):
             return JsonResponse({"error": "No se recibió ningún archivo."}, status=400)
 
         raw_limit = request.POST.get("limit") or request.GET.get("limit")
-        max_rows = _parse_limit(raw_limit, default=None, max_cap=None)
+        max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
 
         try:
             preview = ImportacionService.preview_excel(archivo, max_rows=max_rows)
@@ -418,7 +418,7 @@ class ExpedienteDetailView(DetailView):
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
             raw_limit = self.request.GET.get("preview_limit")
-            max_rows = _parse_limit(raw_limit, default=None, max_cap=None)
+            max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
             preview_limit_actual = raw_limit if raw_limit is not None else "all"
             try:
                 preview = ImportacionService.preview_excel(
