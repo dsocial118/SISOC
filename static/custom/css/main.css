@@ -1,13 +1,14 @@
 /* Footer personalizado */
 .app-wrapper .app-footer,
 footer.app-footer {
-    position: static;
+    position: sticky;
     width: 100%;
     height: 110px !important;
     background-color: #232d4f !important;
     border-top: 15px solid #e7ba61 !important;
     color: #ffffff !important;
     margin-top: auto;
+    z-index: 3 !important;
 }
 
 .app-sidebar {
@@ -21,6 +22,7 @@ footer.app-footer {
 .app-main {
     margin-top: 72px;
     min-height: calc(100vh - 182px); /* 72px header + 110px footer */
+    margin-left: 300px;
 }
 
 .main-header {
@@ -68,4 +70,12 @@ header.main-header {
     background-color: #232d4f !important;
     border-bottom: 5px solid #e7ba61 !important;
     color: #ffffff !important;
+}
+
+
+@media (min-width: 992px) {
+    .sidebar-expand-lg.layout-fixed .app-sidebar {
+        position: fixed;
+        top: 76px !important;
+    }
 }
