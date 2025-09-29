@@ -230,19 +230,6 @@ BRAND_COLORS = {
 
 ---
 
-## 🚀 Migración desde Cotton
-
-```django
-<!-- ANTES (Cotton - con errores) -->
-{% load cotton %}
-{% c "breadcrumb" items=breadcrumb_items %}
-
-<!-- DESPUÉS (Include - funcionando) -->  
-{% include 'components/breadcrumb.html' with items=breadcrumb_items %}
-```
-
----
-
 ## 📋 Checklist de Implementación
 
 ### Para nuevos templates:
