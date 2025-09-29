@@ -1,37 +1,31 @@
 /* Footer personalizado */
 .app-wrapper .app-footer,
 footer.app-footer {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    left: 0;
-    z-index: 4;
+    position: static;
+    width: 100%;
     height: 110px !important;
     background-color: #232d4f !important;
     border-top: 15px solid #e7ba61 !important;
     color: #ffffff !important;
+    margin-top: auto;
 }
 
 .app-sidebar {
-    z-index: 3;
     background-color: #232d4f !important;
+    top: 72px !important; /* Altura del header */
+    bottom: 0;
+    height: calc(100vh - 72px);
+    z-index:3;
 }
 
 .app-main {
     margin-top: 72px;
-    margin-left: 300px;
-    margin-bottom: 110px;
+    min-height: calc(100vh - 182px); /* 72px header + 110px footer */
 }
 
 .main-header {
     padding: 0.5rem 1rem; /* Ajusta el padding según sea necesario */
     z-index: 4;
-}
-
-.app-sidebar {
-    position: fixed !important;
-    top: 72px !important; /* Altura del header */
-    bottom: 110px; /* Altura del footer */
 }
 
 .main-header .nav-links {
@@ -43,11 +37,6 @@ footer.app-footer {
 
 .main-header .brand-image {
     max-height: 32px;/* Espacio entre la imagen y el texto */
-}
-.main-header{
-    background-color: #232d4f !important;
-    border-bottom: 5px solid #e7ba61 !important;
-    color: #ffffff !important;
 }
 
 .main-header .nav-link.nav-link-rounded {
@@ -76,4 +65,7 @@ header.main-header {
     top: 0;
     left: 0;
     right: 0;
+    background-color: #232d4f !important;
+    border-bottom: 5px solid #e7ba61 !important;
+    color: #ffffff !important;
 }
