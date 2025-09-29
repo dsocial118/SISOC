@@ -91,5 +91,5 @@ class RespuestaSubsanacionRenaperView(View):
                 exc_info=True,
             )
             return JsonResponse(
-                {"success": False, "error": f"Error inesperado: {str(e)}"}, status=500
+                {"success": False, "error": "Se produjo un error inesperado. Por favor, inténtelo nuevamente más tarde."}, status=500
             )
