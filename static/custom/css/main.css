@@ -1,14 +1,37 @@
 /* Footer personalizado */
 .app-wrapper .app-footer,
 footer.app-footer {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    z-index: 4;
     height: 110px !important;
     background-color: #232d4f !important;
     border-top: 15px solid #e7ba61 !important;
     color: #ffffff !important;
 }
 
+.app-sidebar {
+    z-index: 3;
+    background-color: #232d4f !important;
+}
+
+.app-main {
+    margin-top: 72px;
+    margin-left: 300px;
+    margin-bottom: 110px;
+}
+
 .main-header {
     padding: 0.5rem 1rem; /* Ajusta el padding según sea necesario */
+    z-index: 4;
+}
+
+.app-sidebar {
+    position: fixed !important;
+    top: 72px !important; /* Altura del header */
+    bottom: 110px; /* Altura del footer */
 }
 
 .main-header .nav-links {
@@ -39,4 +62,18 @@ footer.app-footer {
     height: 24px;
     width: 24px;
     margin: 8px;
+}
+
+footer {
+    color: #fff;
+    font-size: 0.8rem;
+    margin-top: 2rem;
+        font-family: 'Montserrat', sans-serif;
+}
+
+header.main-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
 }

@@ -3,14 +3,14 @@
     <li class="nav-item">
         <a href="{% url 'dashboard' %}"
            class="nav-link {% if 'dashboard' in pagina_actual %}active{% endif %}">
-            <i class="nav-icon fas fa-chart-pie"></i>
-            <p>Dashboard</p>
+            <img src="{% static 'custom/img/iconos_sidebar/tableros.svg' %}" alt="">
+            <p>Tableros</p>
         </a>
     </li>
     {% if request.user|has_group:"Administrador" %}
         <li class="nav-item">
             <a href="#" class="nav-link">
-                <i class="nav-icon fas fa-users"></i>
+                <img src="{% static 'custom/img/iconos_sidebar/administracion.svg' %}" alt="">
                 <p>
                     Administración
                     <i class="nav-arrow bi bi-chevron-right"></i>
@@ -47,7 +47,7 @@
 <!-- MENÚ LEGAJOS CON INDENTACIÓN CORRECTA -->
 <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual %}menu-open{% endif %}">
     <a href="#" class="nav-link">
-        <i class="nav-icon fa fa-address-card"></i>
+        <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="">
         <p>
             Legajos
             <i class="nav-arrow bi bi-chevron-right"></i>
