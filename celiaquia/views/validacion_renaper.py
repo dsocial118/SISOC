@@ -99,7 +99,7 @@ class ValidacionRenaperView(View):
                 exc_info=True,
             )
             return JsonResponse(
-                {"success": False, "error": f"Error al guardar validación: {str(e)}"},
+                {"success": False, "error": "No se pudo guardar la validación por un error interno."},
                 status=500,
             )
 
@@ -230,14 +230,7 @@ class ValidacionRenaperView(View):
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": f"Error al consultar Renaper: {error_msg}",
-                        "debug_info": {
-                            "dni_consultado": documento_consulta,
-                            "sexo": sexo_renaper,
-                            "raw_response": str(raw_response)[
-                                :200
-                            ],  # Primeros 200 chars
-                        },
+                        "error": "Ocurrió un error inesperado al consultar Renaper.",
                     }
                 )
 
@@ -311,5 +304,5 @@ class ValidacionRenaperView(View):
                 exc_info=True,
             )
             return JsonResponse(
-                {"success": False, "error": f"Error inesperado: {str(e)}"}, status=500
+                {"success": False, "error": "Ha ocurrido un error inesperado. Por favor, contacte al administrador."}, status=500
             )
