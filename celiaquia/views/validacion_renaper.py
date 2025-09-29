@@ -164,7 +164,10 @@ class ValidacionRenaperView(View):
                 },
             )
             return JsonResponse(
-                {"success": False, "error": "No se pudo guardar la validación por un error interno."},
+                {
+                    "success": False,
+                    "error": "No se pudo guardar la validación por un error interno.",
+                },
                 status=500,
             )
 
@@ -483,10 +486,16 @@ class ValidacionRenaperView(View):
                         "legajo_id": legajo_id,
                         "expediente_id": pk,
                         "user_id": getattr(request.user, "id", None),
-                        "username": getattr(request.user, "get_username", lambda: None)(),
+                        "username": getattr(
+                            request.user, "get_username", lambda: None
+                        )(),
                     }
                 },
             )
             return JsonResponse(
-                {"success": False, "error": "Ha ocurrido un error inesperado. Por favor, contacte al administrador."}, status=500
+                {
+                    "success": False,
+                    "error": "Ha ocurrido un error inesperado. Por favor, contacte al administrador.",
+                },
+                status=500,
             )
