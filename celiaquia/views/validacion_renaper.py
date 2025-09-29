@@ -475,12 +475,17 @@ class ValidacionRenaperView(View):
                 }
             )
 
-        except Exception as e:
-            logger.error(
-                "Error inesperado al validar con Renaper legajo %s: %s",
-                legajo_id,
-                str(e),
-                exc_info=True,
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logger.exception(
+                "renaper.validation.unhandled_error",
+                extra={
+                    "data": {
+                        "legajo_id": legajo_id,
+                        "expediente_id": pk,
+                        "user_id": getattr(request.user, "id", None),
+                        "username": getattr(request.user, "get_username", lambda: None)(),
+                    }
+                },
             )
             return JsonResponse(
                 {"success": False, "error": "Ha ocurrido un error inesperado. Por favor, contacte al administrador."}, status=500
