@@ -9,7 +9,7 @@ from celiaquia.models import (
     RevisionTecnico,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 @lru_cache(maxsize=1)
@@ -29,7 +29,7 @@ def _set_estado_archivo_cargado(obj, update_fields):
 
 def _recalc_archivos_ok(obj, update_fields):
     if hasattr(obj, "archivos_ok"):
-        val = bool(obj.archivo1 and obj.archivo2 and obj.archivo3)
+        val = bool(obj.archivo2 and obj.archivo3)
         if obj.archivos_ok != val:
             obj.archivos_ok = val
             update_fields.append("archivos_ok")
@@ -80,20 +80,19 @@ class LegajoService:
     def subir_archivos_iniciales(
         exp_ciudadano: ExpedienteCiudadano, archivo1, archivo2, archivo3
     ):
-        if not archivo1 or not archivo2 or not archivo3:
-            raise ValidationError("Debés adjuntar los tres archivos requeridos.")
+        if not archivo2 or not archivo3:
+            raise ValidationError("Debés adjuntar los dos archivos requeridos.")
 
-        exp_ciudadano.archivo1 = archivo1
         exp_ciudadano.archivo2 = archivo2
         exp_ciudadano.archivo3 = archivo3
 
-        update_fields = ["archivo1", "archivo2", "archivo3"]
+        update_fields = ["archivo2", "archivo3"]
         _set_estado_archivo_cargado(exp_ciudadano, update_fields)
         _recalc_archivos_ok(exp_ciudadano, update_fields)
 
         update_fields.append("modificado_en")
         exp_ciudadano.save(update_fields=update_fields)
-        logger.info("Legajo %s: tres archivos cargados.", exp_ciudadano.pk)
+        logger.info("Legajo %s: dos archivos cargados.", exp_ciudadano.pk)
         return exp_ciudadano
 
     @staticmethod
@@ -158,8 +157,7 @@ class LegajoService:
         if hasattr(ExpedienteCiudadano, "archivos_ok"):
             return not qs.filter(archivos_ok=False).exists()
         return (
-            not qs.filter(archivo1__isnull=True).exists()
-            and not qs.filter(archivo2__isnull=True).exists()
+            not qs.filter(archivo2__isnull=True).exists()
             and not qs.filter(archivo3__isnull=True).exists()
         )
 
@@ -168,12 +166,11 @@ class LegajoService:
         expediente, limit: int | None = None, friendly_names: dict | None = None
     ):
         """
-        Devuelve una lista de dicts con legajos que NO tienen los 3 archivos.
+        Devuelve una lista de dicts con legajos que NO tienen los 2 archivos requeridos.
         - limit: corta la lista al llegar a N (útil para previsualización).
         - friendly_names: mapping opcional para mostrar nombres legibles de cada archivo.
         """
         friendly_names = friendly_names or {
-            "archivo1": "DNI",
             "archivo2": "Biopsia / Constancia médica",
             "archivo3": "Negativa ANSES",
         }
@@ -197,8 +194,6 @@ class LegajoService:
         faltantes = []
         for leg in qs.iterator():
             miss = []
-            if not leg.archivo1:
-                miss.append("archivo1")
             if not leg.archivo2:
                 miss.append("archivo2")
             if not leg.archivo3:
