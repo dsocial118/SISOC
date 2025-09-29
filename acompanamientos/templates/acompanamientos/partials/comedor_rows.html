@@ -1,0 +1,13 @@
+{% for comedor in comedores %}
+    <tr>
+        <td>{{ comedor.nombre }}</td>
+        <td>
+            <a href="{% url 'detalle_acompanamiento' comedor.id %}"
+               class="btn btn-primary btn-sm">Ver Acompañamiento</a>
+        </td>
+    </tr>
+{% empty %}
+    <tr>
+        <td colspan="2" class="text-center">No se encontraron comedores.</td>
+    </tr>
+{% endfor %}

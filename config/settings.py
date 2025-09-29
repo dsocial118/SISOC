@@ -62,11 +62,9 @@ INSTALLED_APPS = [
     # Apps propias
     "users",
     "core",
-    "configuraciones",
     "dashboard",
     "comedores",
     "organizaciones",
-    "provincias",
     "cdi",
     "ciudadanos",
     "duplas",

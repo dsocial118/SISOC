@@ -8,15 +8,13 @@ from organizaciones.views import (
     OrganizacionDetailView,
     OrganizacionDeleteView,
     FirmanteCreateView,
-    Aval1CreateView,
-    Aval2CreateView,
-    Aval1UpdateView,
-    Aval2UpdateView,
+    AvalCreateView,
+    AvalUpdateView,
     FirmanteUpdateView,
     FirmanteDeleteView,
-    Aval1DeleteView,
-    Aval2DeleteView,
+    AvalDeleteView,
     sub_tipo_entidad_ajax,
+    organizaciones_ajax,
 )
 
 urlpatterns = [
@@ -61,38 +59,28 @@ urlpatterns = [
         name="firmante_eliminar",
     ),
     path(
-        "organizaciones/aval1/crear/<int:organizacion_pk>",
-        group_required(["Organizaciones"])(Aval1CreateView.as_view()),
-        name="aval1_crear",
+        "organizaciones/aval/crear/<int:organizacion_pk>",
+        group_required(["Organizaciones"])(AvalCreateView.as_view()),
+        name="aval_crear",
     ),
     path(
-        "organizaciones/aval1/editar/<int:pk>",
-        group_required(["Organizaciones"])(Aval1UpdateView.as_view()),
-        name="aval1_editar",
+        "organizaciones/aval/editar/<int:pk>",
+        group_required(["Organizaciones"])(AvalUpdateView.as_view()),
+        name="aval_editar",
     ),
     path(
-        "organizaciones/aval1/eliminar/<int:pk>",
-        group_required(["Organizaciones"])(Aval1DeleteView.as_view()),
-        name="aval1_eliminar",
-    ),
-    path(
-        "organizaciones/aval2/crear/<int:organizacion_pk>",
-        group_required(["Organizaciones"])(Aval2CreateView.as_view()),
-        name="aval2_crear",
-    ),
-    path(
-        "organizaciones/aval2/editar/<int:pk>",
-        group_required(["Organizaciones"])(Aval2UpdateView.as_view()),
-        name="aval2_editar",
-    ),
-    path(
-        "organizaciones/aval2/eliminar/<int:pk>",
-        group_required(["Organizaciones"])(Aval2DeleteView.as_view()),
-        name="aval2_eliminar",
+        "organizaciones/aval/eliminar/<int:pk>",
+        group_required(["Organizaciones"])(AvalDeleteView.as_view()),
+        name="aval_eliminar",
     ),
     path(
         "organizaciones/subtipos-entidad/ajax/",
         group_required(["Organizaciones"])(sub_tipo_entidad_ajax),
         name="organizacion_subtipos_entidad_ajax",
+    ),
+    path(
+        "organizaciones/ajax/",
+        group_required(["Organizaciones"])(organizaciones_ajax),
+        name="organizaciones_ajax",
     ),
 ]

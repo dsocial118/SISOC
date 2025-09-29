@@ -1,0 +1,27 @@
+{% load custom_filters %}
+{% for organizacion in organizaciones %}
+    <tr>
+        <td>
+            <a href="{% url 'organizacion_detalle' organizacion.id %}"
+               class="font-weight-bold link-handler"
+               title="Ver detalles">{{ organizacion.nombre }}</a>
+        </td>
+        <td>{{ organizacion.cuit |default_if_none:"-" }}</td>
+        <td>{{ organizacion.telefono | default_if_none:"-" }}</td>
+        <td>{{ organizacion.email | default_if_none:"-" }}</td>
+        <td class="project-actions text-right">
+            <div class="btn-group" role="group">
+                <a href="{% url 'organizacion_detalle' organizacion.id %}"
+                   class="btn btn-primary btn-sm ver link-handler">Ver</a>
+                <a href="{% url 'organizacion_editar' organizacion.id %}"
+                   class="btn btn-primary btn-sm editar link-handler">Editar</a>
+                <a href="{% url 'organizacion_eliminar' organizacion.id %}"
+                   class="btn btn-danger btn-sm eliminar link-handler">Eliminar</a>
+            </div>
+        </td>
+    </tr>
+{% empty %}
+    <tr>
+        <td colspan="5" class="text-center text-muted py-4">No hay organizaciones disponibles.</td>
+    </tr>
+{% endfor %}

@@ -233,29 +233,22 @@
                     <i class="nav-arrow bi bi-chevron-right"></i>
                 </p>
             </a>
-            <ul class="nav nav-treeview" style="display: none;">
+            <ul class="nav nav-treeview">
                 <li class="nav-item">
-                    <a href="{% url 'expediente_list' %}" class="nav-link ms-4">
-                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                        <p>Expediente</p>
+                    <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
+                        <i class="nav-icon fas fa-folder-open"></i>
+                        <p>Expedientes</p>
                     </a>
                 </li>
                 {% if request.user|has_group:"CoordinadorCeliaquia" %}
                     <li class="nav-item">
-                        <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-4">
-                            <i class="nav-icon bi bi-arrow-return-right"></i>
-                            <p>Cupos</p>
+                        <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
+                            <i class="nav-icon fas fa-chart-bar"></i>
+                            <p>Dashboard Cupos</p>
                         </a>
                     </li>
                 {% endif %}
-                <li class="nav-item">
-                    <a href="{% url 'admisiones_legales_listar' %}" class="nav-link ms-4">
-                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                        <p>Reclamos</p>
-                    </a>
-                </li>
             </ul>
         </li>
-    </ul>
-</li>
+    {% endif %}
 {% endwith %}

@@ -1,7 +1,9 @@
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect, JsonResponse
+from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
@@ -11,13 +13,12 @@ from django.views.generic import (
     UpdateView,
 )
 
-from organizaciones.forms import OrganizacionForm, FirmanteForm, Aval1Form, Aval2Form
+from organizaciones.forms import OrganizacionForm, FirmanteForm, AvalForm
 from organizaciones.models import (
     Organizacion,
     SubtipoEntidad,
     Firmante,
-    Aval1,
-    Aval2,
+    Aval,
     RolFirmante,
 )
 
@@ -163,6 +164,16 @@ class FirmanteCreateView(CreateView):
             messages.error(self.request, "Falta el id de la organización.")
             return self.form_invalid(form)
 
+        rol = form.cleaned_data.get("rol")
+        if rol:
+            exists = Firmante.objects.filter(
+                organizacion_id=organizacion_pk, rol=rol
+            ).exists()
+            if exists:
+                form.add_error(
+                    "rol", "Ya existe un firmante con ese rol para esta organización."
+                )
+                return self.form_invalid(form)
         # asignar FK y guardar
         form.instance.organizacion_id = organizacion_pk
         self.object = form.save()
@@ -182,10 +193,10 @@ class FirmanteCreateView(CreateView):
         )
 
 
-class Aval1CreateView(CreateView):
-    model = Aval1
-    form_class = Aval1Form
-    template_name = "aval1_form.html"
+class AvalCreateView(CreateView):
+    model = Aval
+    form_class = AvalForm
+    template_name = "aval_form.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -235,67 +246,7 @@ class Aval1CreateView(CreateView):
 
     def get_success_url_add_new(self):
         return reverse(
-            "aval1_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
-        )
-
-
-class Aval2CreateView(CreateView):
-    model = Aval2
-    form_class = Aval2Form
-    template_name = "aval2_form.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        organizacion_pk = (
-            self.kwargs.get("organizacion_pk")
-            or self.kwargs.get("pk")
-            or self.request.GET.get("organizacion")
-            or self.request.POST.get("organizacion")
-        )
-
-        context["organizacion_pk"] = organizacion_pk
-        context["hidden_fields_send"] = [
-            {"name": "organizacion_id", "value": organizacion_pk}
-        ]
-        # botones/breadcrumbs que usan las plantillas
-        context["back_button"] = {
-            "url": reverse("organizacion_detalle", kwargs={"pk": organizacion_pk}),
-            "label": "Volver",
-        }
-        context["action_buttons"] = [{"label": "Guardar", "type": "submit"}]
-        context["breadcrumb_items"] = []
-        context["guardar_otro_send"] = True
-        return context
-
-    def form_valid(self, form):
-        if form.is_valid():
-            organizacion_pk = (
-                self.kwargs.get("organizacion_id")
-                or self.request.POST.get("organizacion_id")
-                or self.request.GET.get("organizacion_id")
-            )
-            if not organizacion_pk:
-                messages.error(self.request, "Falta el id de la organización.")
-                return self.form_invalid(form)
-
-            form.instance.organizacion_id = organizacion_pk
-            self.object = form.save()
-            if "guardar_otro" in self.request.POST:
-                return HttpResponseRedirect(self.get_success_url_add_new())
-            else:
-                return HttpResponseRedirect(self.get_success_url())
-        else:
-            return self.form_invalid(form)
-
-    def get_success_url(self):
-        return reverse(
-            "organizacion_detalle",
-            kwargs={"pk": self.object.organizacion.pk},
-        )
-
-    def get_success_url_add_new(self):
-        return reverse(
-            "aval2_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
+            "aval_crear", kwargs={"organizacion_pk": self.object.organizacion.pk}
         )
 
 
@@ -330,11 +281,34 @@ class FirmanteUpdateView(UpdateView):
         return context
 
     def form_valid(self, form):
+        organizacion = getattr(self.object, "organizacion", None)
+        organizacion_pk = (
+            organizacion.pk
+            if organizacion
+            else (
+                self.request.POST.get("organizacion_id")
+                or self.request.GET.get("organizacion_id")
+            )
+        )
+
+        # validar que no exista otro firmante con el mismo rol en la misma organización
+        rol = form.cleaned_data.get("rol")
+        if rol:
+            exists = (
+                Firmante.objects.filter(organizacion_id=organizacion_pk, rol=rol)
+                .exclude(pk=self.object.pk)
+                .exists()
+            )
+            if exists:
+                form.add_error(
+                    "rol", "Ya existe un firmante con ese rol para esta organización."
+                )
+                return self.form_invalid(form)
+
         if form.is_valid():
             self.object = form.save()
             return HttpResponseRedirect(self.get_success_url())
-        else:
-            return self.form_invalid(form)
+        return self.form_invalid(form)
 
     def get_success_url(self):
         return reverse(
@@ -342,33 +316,10 @@ class FirmanteUpdateView(UpdateView):
         )
 
 
-class Aval1UpdateView(UpdateView):
-    model = Aval1
-    form_class = Aval1Form
-    template_name = "aval1_form.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["guardar_otro_send"] = False
-        return context
-
-    def form_valid(self, form):
-        if form.is_valid():
-            self.object = form.save()
-            return HttpResponseRedirect(self.get_success_url())
-        else:
-            return self.form_invalid(form)
-
-    def get_success_url(self):
-        return reverse(
-            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
-        )
-
-
-class Aval2UpdateView(UpdateView):
-    model = Aval2
-    form_class = Aval2Form
-    template_name = "aval2_form.html"
+class AvalUpdateView(UpdateView):
+    model = Aval
+    form_class = AvalForm
+    template_name = "aval_form.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -418,40 +369,10 @@ class FirmanteDeleteView(DeleteView):
         )
 
 
-class Aval1DeleteView(DeleteView):
-    model = Aval1
-    template_name = "aval1_confirm_delete.html"
-    context_object_name = "aval1"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["breadcrumb_items"] = [
-            {
-                "url": reverse(
-                    "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
-                ),
-                "label": "Detalle de Organización",
-            },
-            {"url": "", "label": "Confirmar Eliminación"},
-        ]
-        context["delete_message"] = (
-            f"¿Está seguro que desea eliminar el aval {self.object.nombre}"
-        )
-        context["cancel_url"] = reverse(
-            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
-        )
-        return context
-
-    def get_success_url(self):
-        return reverse(
-            "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
-        )
-
-
-class Aval2DeleteView(DeleteView):
-    model = Aval2
-    template_name = "aval2_confirm_delete.html"
-    context_object_name = "aval2"
+class AvalDeleteView(DeleteView):
+    model = Aval
+    template_name = "aval_confirm_delete.html"
+    context_object_name = "aval"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -506,8 +427,7 @@ class OrganizacionDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["firmantes"] = self.object.firmantes.select_related("rol")
-        context["avales1"] = self.object.avales1.all()
-        context["avales2"] = self.object.avales2.all()
+        context["avales_data"] = self.object.avales.all()
         context["table_headers"] = [
             {"title": "Nombre"},
             {"title": "Rol"},
@@ -550,6 +470,7 @@ class OrganizacionDetailView(DetailView):
             {"label": "Localidad", "value": self.object.localidad},
             {"label": "Provincia", "value": self.object.provincia},
             {"label": "Partido", "value": self.object.partido},
+            {"label": "Fecha de vencimiento", "value": self.object.fecha_vencimiento},
         ]
 
         context["table_headers_avales"] = [
@@ -564,13 +485,9 @@ class OrganizacionDetailView(DetailView):
             {"name": "nombre"},
             {"name": "cuit"},
         ]
-        context["actions_avales1"] = [
-            {"url_name": "aval1_editar", "label": "Editar", "type": "primary"},
-            {"url_name": "aval1_eliminar", "label": "Eliminar", "type": "danger"},
-        ]
-        context["actions_avales2"] = [
-            {"url_name": "aval2_editar", "label": "Editar", "type": "primary"},
-            {"url_name": "aval2_eliminar", "label": "Eliminar", "type": "danger"},
+        context["actions_avales"] = [
+            {"url_name": "aval_editar", "label": "Editar", "type": "primary"},
+            {"url_name": "aval_eliminar", "label": "Eliminar", "type": "danger"},
         ]
         try:
             if self.object.tipo_entidad.nombre == "Asociación de hecho":
@@ -615,3 +532,84 @@ def sub_tipo_entidad_ajax(request):
 
     data = [{"id": subtipo.id, "text": subtipo.nombre} for subtipo in subtipo_entidades]
     return JsonResponse(data, safe=False)
+
+
+def organizaciones_ajax(request):
+    """
+    Vista AJAX para filtrar organizaciones en tiempo real.
+    Retorna HTML renderizado de las filas de la tabla y paginación.
+    """
+    busqueda = request.GET.get("busqueda", "").strip()
+    page_number = request.GET.get("page", 1)
+
+    organizaciones = Organizacion.objects.all()
+
+    if busqueda:
+        organizaciones = (
+            organizaciones.filter(
+                Q(nombre__icontains=busqueda)
+                | Q(cuit__icontains=busqueda)
+                | Q(telefono__icontains=busqueda)
+                | Q(email__icontains=busqueda)
+            )
+            .select_related("tipo_entidad", "subtipo_entidad")
+            .only(
+                "id",
+                "nombre",
+                "cuit",
+                "telefono",
+                "email",
+                "tipo_entidad__nombre",
+                "subtipo_entidad__nombre",
+            )
+        )
+    else:
+        organizaciones = (
+            organizaciones.select_related("tipo_entidad", "subtipo_entidad")
+            .only(
+                "id",
+                "nombre",
+                "cuit",
+                "telefono",
+                "email",
+                "tipo_entidad__nombre",
+                "subtipo_entidad__nombre",
+            )
+            .order_by("-id")
+        )
+
+    paginator = Paginator(organizaciones, 10)  # 10 elementos por página
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (ValueError, TypeError):
+        page_obj = paginator.get_page(1)
+
+    table_html = render_to_string(
+        "organizaciones/partials/organizacion_rows.html",
+        {"organizaciones": page_obj.object_list},
+        request=request,
+    )
+
+    pagination_html = render_to_string(
+        "components/pagination.html",
+        {
+            "is_paginated": page_obj.has_other_pages(),
+            "page_obj": page_obj,
+            "query": busqueda,
+            "prev_text": "Volver",
+            "next_text": "Continuar",
+        },
+        request=request,
+    )
+
+    return JsonResponse(
+        {
+            "html": table_html,
+            "pagination_html": pagination_html,
+            "count": paginator.count,
+            "current_page": page_obj.number,
+            "total_pages": paginator.num_pages,
+            "has_previous": page_obj.has_previous(),
+            "has_next": page_obj.has_next(),
+        }
+    )
