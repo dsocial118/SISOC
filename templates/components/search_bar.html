@@ -90,8 +90,7 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
             <a href="{% url reset_url %}" class="btn btn-secondary btn-lg">Resetear</a>
         {% endif %}
         {% if add_url and show_add_button|default:True %}
-            {% if
-                add_url_full %}
+            {% if add_url_full %}
                 <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
             {% elif add_url|is_url %}
                 <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
