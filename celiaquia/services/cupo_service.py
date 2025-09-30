@@ -18,7 +18,7 @@ from celiaquia.models import (
     ResultadoSintys,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class CupoNoConfigurado(Exception):

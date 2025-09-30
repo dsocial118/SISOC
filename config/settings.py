@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.admindocs",
     # Libs
-    "django_cotton",
     "crispy_forms",
     "crispy_bootstrap5",
     "django_extensions",
@@ -280,15 +279,19 @@ LOGGING = {
             "formatter": "json_data",
         },
     },
+    "root": {
+        "handlers": [
+            "info_file",
+            "error_file",
+            "warning_file",
+            "critical_file",
+            "data_file",
+        ],
+        "level": "DEBUG" if DEBUG else "INFO",
+    },
     "loggers": {
         "django": {
-            "handlers": [
-                "info_file",
-                "error_file",
-                "warning_file",
-                "critical_file",
-                "data_file",
-            ],
+            "handlers": [],
             "level": "DEBUG" if DEBUG else "INFO",
             "propagate": True,
         },

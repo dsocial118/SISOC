@@ -27,7 +27,7 @@ from ciudadanos.models import (
 
 from celiaquia.models import ExpedienteCiudadano
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 @lru_cache(maxsize=1)

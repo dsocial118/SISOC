@@ -92,6 +92,16 @@ function actualizarEstado(selectElement) {
             return;
         }
 
+        // Si es "Rectificar" → solo texto rojo, sin botones
+        if (nuevoEstado === "Rectificar") {
+            td.innerHTML = '';
+            const span = document.createElement('span');
+            span.className = 'ps-3 text-danger';
+            span.textContent = nuevoEstado;
+            td.appendChild(span);
+            return;
+        }
+
         // En cualquier otro caso: solo Tecnico Comedor ve el select
         if (grupo === "Tecnico Comedor") {
             td.innerHTML = '';
