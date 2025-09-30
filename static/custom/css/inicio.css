@@ -1,4 +1,7 @@
-/* Estilos específicos para la página de inicio */
+body {
+    overflow-y:hidden;
+}
+
 body .app-main {
     background-color: white !important;
     margin-top: 72px;

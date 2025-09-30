@@ -79,3 +79,84 @@ header.main-header {
         top: 76px !important;
     }
 }
+
+.sidebar-wrapper .sidebar-menu > .nav-item > .nav-link.active:not(:hover) {
+    color: #e7ba61;
+}
+
+
+.nav-main-item>a {
+    border-top: 1px solid var(--lte-sidebar-color);
+    padding: 8px 24px;
+}
+
+.nav-main-item.menu-open>a {
+    border-top: none;
+    border-bottom: none;
+}
+
+ul > .nav-main-item:first-child>a {
+    border-top: none;
+}
+
+.nav-main-item:last-child {
+    border-bottom: 1px solid var(--lte-sidebar-color);
+}
+
+.nav-main-item.menu-open::before {
+    content: "";
+    position: absolute;
+    border-left: 12px solid #e7ba61;
+    height: 60px;
+    width: 12px;
+}
+
+.nav-item.menu-open > .nav-link {
+    color: #e7ba61 !important;
+}
+
+.nav-item {
+    min-height: 60px;
+}
+
+.nav-item .nav-link {
+    height: 60px;
+}
+
+.nav-item.menu-open > .nav-link img {
+    filter: invert(67%) sepia(54%) saturate(559%) hue-rotate(340deg) brightness(230%) contrast(50%);
+}
+
+.sidebar-menu .nav-link {
+    border-radius: 0px;
+}
+
+.sidebar-menu .nav-item > .nav-link {
+    margin-bottom: 0;
+}
+
+ul:has(.nav-main-item) {
+    margin-left: -16px;
+    margin-right: -16px;
+}
+
+aside .nav-link {
+  display: flex;
+  align-items: center; /* Centra verticalmente */
+  gap: 0.5rem; /* Espacio entre el icono y el texto */
+  text-decoration: none;
+  color: #e7ba61; /* Tu color dorado */
+  padding: 0.5rem 1rem;
+}
+
+aside .nav-link i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem; /* Ajusta el tamaño del ícono */
+}
+
+aside .nav-link p {
+  margin: 0; /* Quita márgenes por defecto */
+  line-height: 1; /* Evita desalineación vertical */
+}
