@@ -46,7 +46,7 @@
                 <h3 class="card-title">{{ main_title|default:"Bandeja" }}</h3>
                 {% if search_form %}
                     <div class="card-tools">
-                        <form method="GET">
+                        <form method="GET" action="{{ search_action|default:'' }}">
                             <div class="input-group input-group-sm">
                                 <input type="text"
                                        class="form-control"
