@@ -108,6 +108,11 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
                    {% if button.title %}title="{{ button.title }}"{% endif %}>{{ button.label }}</a>
             {% endfor %}
         {% endif %}
+        {% if not ajax_search_mode %}
+            {% with form_id=comedores_filters_mode|yesno:"filters-form,simple-search-form" %}
+                <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
+            {% endwith %}
+        {% endif %}
     </div>
 </div>
 {% if comedores_filters_mode %}
