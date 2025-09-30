@@ -1,5 +1,5 @@
-{# Componente Action Buttons #}
-{# Uso: {% include 'components/action_buttons.html' with back_button=back_btn buttons=action_buttons container_class='my-class' %} #}
+<!-- Componente Action Buttons -->
+<!-- Uso: include 'components/action_buttons.html' with back_button=back_btn buttons=action_buttons container_class='my-class' -->
 <div class="{% if container_class %}{{ container_class }}{% else %}d-flex justify-content-between mb-4{% endif %}">
     {% if back_button %}
         <a href="{{ back_button.url }}"

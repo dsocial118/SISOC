@@ -1,5 +1,5 @@
-{# Componente Timeline #}
-{# Uso: {% include 'components/timeline.html' with events=timeline_events style='left' %} #}
+<!-- Componente Timeline -->
+<!-- Uso: include 'components/timeline.html' with events=timeline_events style='left' -->
 <div class="timeline {{ container_class|default:'' }} timeline-{{ style|default:'left' }}">
     {% for event in events %}
         <div class="timeline-item {% if event.class %}{{ event.class }}{% endif %}">
@@ -23,7 +23,7 @@
         </div>
     {% endfor %}
 </div>
-{# CSS personalizado #}
+<!-- CSS personalizado -->
 <style>
     .timeline {
         position: relative;
