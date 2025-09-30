@@ -23,7 +23,7 @@
             </ul>
         {% endif %}
         <div class="text-left">
-            <form method="post">
+            <form method="post" action="{{ action|default:'' }}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger btn-sm">{{ confirm_text|default:"Eliminar" }}</button>
                 {% if cancel_url_with_id %}
