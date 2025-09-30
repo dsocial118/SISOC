@@ -1,20 +1,20 @@
-{#
-  Reusable table card for cupo lists.
+<!--
+Reusable table card for cupo lists.
 
-  Parameters expected:
-  - title: text for the card header.
-  - table_id: id attribute for the table element.
-  - filter_id: id attribute for the search input.
-  - filter_label: label text for accessibility.
-  - filter_placeholder: placeholder for the search input.
-  - rows: iterable of legajos to render.
-  - empty_message: text when there are no rows.
-  - show_revision (optional): include "Revisión" column.
-  - show_resultado (optional): include "Resultado" column.
-  - show_activo (optional): include "Activo" column.
-  - show_actions (optional): include actions column.
-  - colspan: number of columns for the empty message row.
-#}
+Parameters expected:
+- title: text for the card header.
+- table_id: id attribute for the table element.
+- filter_id: id attribute for the search input.
+- filter_label: label text for accessibility.
+- filter_placeholder: placeholder for the search input.
+- rows: iterable of legajos to render.
+- empty_message: text when there are no rows.
+- show_revision (optional): include "Revisión" column.
+- show_resultado (optional): include "Resultado" column.
+- show_activo (optional): include "Activo" column.
+- show_actions (optional): include actions column.
+- colspan: number of columns for the empty message row.
+-->
 <div class="card mt-3">
     <div class="card-header bg-dark">
         <div class="d-flex justify-content-between align-items-center">

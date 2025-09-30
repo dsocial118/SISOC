@@ -1,6 +1,6 @@
 {% load custom_filters %}
-{# Componente Form Buttons #}
-{# Uso: {% include 'components/form_buttons.html' with cancel_url=cancel_url buttons=form_buttons layout='between' %} #}
+<!-- Componente Form Buttons -->
+<!-- Uso: include 'components/form_buttons.html' with cancel_url=cancel_url buttons=form_buttons layout='between' -->
 <div class="row">
     <div class="col-md-12">
         <div class="form-group mb-0 mt-3 d-flex {% if layout == 'center' %}justify-content-center{% elif layout == 'end' %}justify-content-end{% else %}justify-content-between{% endif %}">
@@ -25,7 +25,7 @@
                         </button>
                     {% endfor %}
                 {% else %}
-                    {# Botones por defecto #}
+                    <!-- Botones por defecto -->
                     {% if default_save %}
                         <button type="submit" class="btn btn-primary mb-3">
                             <i class="fas fa-save me-1"></i> {{ save_text|default:"Guardar" }}
