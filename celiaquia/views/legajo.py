@@ -8,13 +8,13 @@ from django.views.decorators.csrf import csrf_protect
 from celiaquia.models import EstadoLegajo, ExpedienteCiudadano, RevisionTecnico
 from celiaquia.services.legajo_service import LegajoService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
+from celiaquia.permissions import can_edit_legajo_files, can_review_legajo
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
-def _in_group(user, name: str) -> bool:
-    return user.is_authenticated and user.groups.filter(name=name).exists()
+# Función _in_group movida a permissions.py para evitar duplicación
 
 
 class LegajoArchivoUploadView(View):
@@ -25,51 +25,8 @@ class LegajoArchivoUploadView(View):
             expediente__pk=kwargs["expediente_id"],
         )
 
-        # ---- Permisos ----
-        user = request.user
-        if not user.is_authenticated:
-            raise PermissionDenied("Autenticación requerida.")
-
-        is_admin = user.is_superuser
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
-        is_tec = _in_group(user, "TecnicoCeliaquia")
-        is_prov = _in_group(user, "ProvinciaCeliaquia")
-
-        if not (is_admin or is_coord or is_tec or is_prov):
-            raise PermissionDenied("Permiso denegado.")
-
-        # Provincia: misma provincia + estados permitidos
-        if is_prov and not (is_admin or is_coord):
-            owner = getattr(self.exp_ciud.expediente, "usuario_provincia", None)
-            up = getattr(user, "profile", None)
-            op = getattr(owner, "profile", None)
-            if (
-                not owner
-                or not up
-                or not op
-                or getattr(up, "provincia_id", None)
-                != getattr(op, "provincia_id", None)
-            ):
-                raise PermissionDenied(
-                    "No pertenece a la misma provincia del expediente."
-                )
-
-            estado_nombre = getattr(
-                getattr(self.exp_ciud.expediente, "estado", None), "nombre", ""
-            )
-            if not (
-                estado_nombre == "EN_ESPERA"
-                or self.exp_ciud.revision_tecnico == RevisionTecnico.SUBSANAR
-            ):
-                raise PermissionDenied("No puede editar archivos en el estado actual.")
-
-        # Técnico: si querés permitirlo, que sea el asignado
-        if is_tec and not (is_admin or is_coord):
-            asignaciones = self.exp_ciud.expediente.asignaciones_tecnicos.filter(
-                tecnico=user
-            )
-            if not asignaciones.exists():
-                raise PermissionDenied("No sos el técnico asignado a este expediente.")
+        # Validar permisos usando función centralizada
+        can_edit_legajo_files(request.user, self.exp_ciud.expediente, self.exp_ciud)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -119,39 +76,35 @@ class LegajoArchivoUploadView(View):
                     status=500,
                 )
 
-        # Carga triple (archivo1/2/3)
-        if a1 or a2 or a3:
+        # Carga doble (archivo2/3)
+        if a2 or a3:
             try:
-                if (
-                    not self.exp_ciud.archivo1
-                    and not self.exp_ciud.archivo2
-                    and not self.exp_ciud.archivo3
-                ):
-                    if not (a1 and a2 and a3):
+                if not self.exp_ciud.archivo2 and not self.exp_ciud.archivo3:
+                    if not (a2 and a3):
                         return JsonResponse(
                             {
                                 "success": False,
-                                "message": "Debés adjuntar los tres archivos.",
+                                "message": "Debés adjuntar los dos archivos requeridos.",
                             },
                             status=400,
                         )
-                    LegajoService.subir_archivos_iniciales(self.exp_ciud, a1, a2, a3)
+                    LegajoService.subir_archivos_iniciales(self.exp_ciud, None, a2, a3)
                 else:
                     if self.exp_ciud.revision_tecnico != RevisionTecnico.SUBSANAR:
-                        if not (a1 and a2 and a3):
+                        if not (a2 and a3):
                             return JsonResponse(
                                 {
                                     "success": False,
-                                    "message": "Debés adjuntar los tres archivos.",
+                                    "message": "Debés adjuntar los dos archivos requeridos.",
                                 },
                                 status=400,
                             )
                         LegajoService.subir_archivos_iniciales(
-                            self.exp_ciud, a1, a2, a3
+                            self.exp_ciud, None, a2, a3
                         )
                     else:
                         LegajoService.actualizar_archivos_subsanacion(
-                            self.exp_ciud, a1, a2, a3
+                            self.exp_ciud, None, a2, a3
                         )
                 return JsonResponse(
                     {"success": True, "message": "Archivos cargados correctamente."}
@@ -184,29 +137,14 @@ class LegajoArchivoUploadView(View):
 class LegajoRechazarView(View):
     @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
-        # Validación de permisos
-        user = request.user
-        if not user.is_authenticated:
-            raise PermissionDenied("Autenticación requerida.")
-
-        is_admin = user.is_superuser
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
-        is_tec = _in_group(user, "TecnicoCeliaquia")
-
-        if not (is_admin or is_coord or is_tec):
-            raise PermissionDenied("Permiso denegado.")
-
         expediente_id = kwargs.get("expediente_id")
         pk = kwargs.get("pk")
         legajo = get_object_or_404(
             ExpedienteCiudadano, pk=pk, expediente__pk=expediente_id
         )
 
-        # Validar que el técnico esté asignado al expediente
-        if is_tec and not (is_admin or is_coord):
-            asignaciones = legajo.expediente.asignaciones_tecnicos.filter(tecnico=user)
-            if not asignaciones.exists():
-                raise PermissionDenied("No sos el técnico asignado a este expediente.")
+        # Validar permisos usando función centralizada
+        can_review_legajo(request.user, legajo.expediente)
         try:
             CupoService.liberar_slot(
                 legajo=legajo,
@@ -414,9 +352,7 @@ class LegajoSubsanarView(View):
             nombre="PENDIENTE_SUBSANACION"
         )
         legajo.estado = estado_sub
-        legajo.revision_tecnico = (
-            "SUBSANAR"  # si usás constante: RevisionTecnico.SUBSANAR
-        )
+        legajo.revision_tecnico = RevisionTecnico.SUBSANAR
 
         update_fields = ["estado", "revision_tecnico", "modificado_en"]
 

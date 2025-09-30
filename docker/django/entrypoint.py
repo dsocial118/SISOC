@@ -1,9 +1,15 @@
+import logging
 import os
 import subprocess
 import time
 import pymysql
 import shutil
 from pathlib import Path
+
+
+if not logging.getLogger().handlers:
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger("django")
 
 
 def wait_for_mysql():
@@ -22,15 +28,15 @@ def wait_for_mysql():
         return
 
     if not all([host, user, password]):
-        print(
+        logger.error(
             "❌ Error: Faltan variables de entorno para la conexión a la base de datos"
         )
-        print(
+        logger.error(
             "   Asegúrese de definir DATABASE_HOST, DATABASE_USER y DATABASE_PASSWORD"
         )
         return
 
-    print("⏳ Esperando que MySQL esté disponible...")
+    logger.info("⏳ Esperando que MySQL esté disponible...")
     while True:
         try:
             conn = pymysql.connect(host=host, port=port, user=user, password=password)
@@ -39,7 +45,7 @@ def wait_for_mysql():
         except pymysql.MySQLError:
             time.sleep(5)
     time.sleep(10)
-    print("✅ MySQL está listo.")
+    logger.info("✅ MySQL está listo.")
 
 
 def run_django_commands():
@@ -67,7 +73,7 @@ def run_server():
 
     if deploy_gunicorn:
         cache_busting()
-        print("🚀 Iniciando Django en modo producción con Gunicorn...")
+        logger.info("🚀 Iniciando Django en modo producción con Gunicorn...")
         subprocess.run(
             [
                 "gunicorn",
@@ -85,7 +91,7 @@ def run_server():
             ]
         )
     else:
-        print("🧪 Iniciando Django en modo desarrollo...")
+        logger.info("🧪 Iniciando Django en modo desarrollo...")
         subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
 
 
@@ -94,9 +100,9 @@ def cache_busting():
         Path(__file__).resolve().parent.parent / "static_root"
     )  # Raíz del proyecto
     if static_root.exists() and static_root.is_dir():
-        print(f"🧹 Eliminando carpeta de estáticos: {static_root}")
+        logger.info("🧹 Eliminando carpeta de estáticos: %s", static_root)
         shutil.rmtree(static_root)
-    print("📦 Ejecutando collectstatic para cache busting...")
+    logger.info("📦 Ejecutando collectstatic para cache busting...")
     subprocess.run(
         ["python", "manage.py", "collectstatic", "--noinput"],
         stdout=subprocess.DEVNULL,

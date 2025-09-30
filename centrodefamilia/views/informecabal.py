@@ -23,7 +23,7 @@ from centrodefamilia.services.informe_cabal_service import (
     persist_file_and_rows,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")

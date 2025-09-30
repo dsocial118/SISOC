@@ -1,7 +1,12 @@
 # Generated manually for territorial cache provincia migration
 
+import logging
+
 from django.db import migrations, models
 import django.db.models.deletion
+
+
+logger = logging.getLogger("django")
 
 
 def limpiar_cache_territorial(apps, schema_editor):
@@ -10,13 +15,17 @@ def limpiar_cache_territorial(apps, schema_editor):
     """
     TerritorialCache = apps.get_model('comedores', 'TerritorialCache')
     TerritorialSyncLog = apps.get_model('comedores', 'TerritorialSyncLog')
-    
+
     # Limpiar cache existente - será regenerado con el nuevo sistema
     deleted_count = TerritorialCache.objects.all().count()
     TerritorialCache.objects.all().delete()
-    
-    print(f"Eliminados {deleted_count} registros de cache territorial existentes")
-    print("El cache será regenerado automáticamente por provincia en el primer uso")
+
+    logger.info(
+        "Eliminados %s registros de cache territorial existentes", deleted_count
+    )
+    logger.info(
+        "El cache será regenerado automáticamente por provincia en el primer uso"
+    )
 
 
 def reverse_limpiar_cache(apps, schema_editor):

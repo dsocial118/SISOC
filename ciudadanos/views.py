@@ -379,7 +379,7 @@ class CiudadanosListView(ListView):
                 # Fallback para versiones anteriores de Django
                 context["page_range"] = page_obj.paginator.page_range
 
-        # Datos para componentes Cotton
+        # Datos para componentes reutilizables
         context.update(
             {
                 "mostrar_resultados": mostrar_resultados,
@@ -945,7 +945,7 @@ class CiudadanosDeleteView(DeleteView):
         ):
             relaciones_existentes.append("Grupo Familiar")
 
-        # Datos para componentes Cotton
+        # Datos para componentes reutilizables
         context.update(
             {
                 "relaciones_existentes": relaciones_existentes,

@@ -16,7 +16,7 @@ from celiaquia.models import PagoExpediente
 from celiaquia.forms import PagoRespuestaUploadForm
 from celiaquia.services.pago_service import PagoService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class PagoExpedienteListView(ListView):

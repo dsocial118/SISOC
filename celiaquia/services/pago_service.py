@@ -21,7 +21,7 @@ from celiaquia.models import (
 )
 from celiaquia.services.cupo_service import CupoService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def _norm_digits(s: str) -> str:

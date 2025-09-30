@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from openpyxl import load_workbook
 from centrodefamilia.models import Centro, CabalArchivo, InformeCabalRegistro
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 EXPECTED_HEADERS = [
     "NroTarjeta",
