@@ -14,7 +14,7 @@ from centrodefamilia.services.beneficiarios_service import (
     prepare_beneficiarios_for_display,
     prepare_responsables_for_display,
     get_filtered_beneficiarios,
-    get_responsables_queryset,
+    get_filtered_responsables,
     get_responsable_detail_context,
     get_beneficiario_detail_queryset,
 )
@@ -69,12 +69,25 @@ class ResponsableListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return get_responsables_queryset()
+        return get_filtered_responsables(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_responsables_list_context())
         prepare_responsables_for_display(context["responsables"])
+        context.update(
+            {
+                "breadcrumb_items": [
+                    {"text": "Responsables", "url": reverse("responsables_list")},
+                    {"text": "Listar", "active": True},
+                ],
+                "reset_url": reverse("responsables_list"),
+                "filters_mode": True,
+                "filters_js": "custom/js/responsables_search_bar.js",
+                "filters_action": reverse("responsables_list"),
+                "show_add_button": False,
+            }
+        )
         return context
 
 
