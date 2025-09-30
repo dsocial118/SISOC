@@ -1,5 +1,5 @@
-{# Componente Tabs #}
-{# Uso: {% include 'components/tabs.html' with tabs=tab_items active_tab='tab1' tab_content=tab_contents %} #}
+<!-- Componente Tabs -->
+<!-- Uso: include 'components/tabs.html' with tabs=tab_items active_tab='tab1' tab_content=tab_contents -->
 <div class="tabs-container {{ container_class|default:'' }}">
     <!-- Nav tabs -->
     <ul class="nav nav-{% if style == 'pills' %}pills{% else %}tabs{% endif %} {% if nav_class %}{{ nav_class }}{% endif %}"
@@ -45,7 +45,7 @@
         {% endfor %}
     </div>
 </div>
-{# CSS personalizado #}
+<!-- CSS personalizado -->
 <style>
     .tabs-container .nav-tabs .nav-link {
         border-bottom: 2px solid transparent;
