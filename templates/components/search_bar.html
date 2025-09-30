@@ -99,7 +99,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                 <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
             {% endif %}
         {% endif %}
-        {# Botones adicionales personalizados #}
+        <!-- Botones adicionales personalizados -->
         {% if additional_buttons %}
             {% for button in additional_buttons %}
                 <a href="{{ button.url }}"

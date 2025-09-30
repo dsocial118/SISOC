@@ -1,5 +1,5 @@
-{# Componente Alert Message #}
-{# Uso: {% include 'components/alert_message.html' with type='success' message='Operación exitosa' dismissible=True icon='fas fa-check' %} #}
+<!-- Componente Alert Message -->
+<!-- Uso: include 'components/alert_message.html' with type='success' message='Operación exitosa' dismissible=True icon='fas fa-check' -->
 {% if message %}
     <div class="alert alert-{{ type|default:'info' }} {% if dismissible %}alert-dismissible fade show{% endif %} {{ class|default:'' }}"
          role="alert"
@@ -16,7 +16,7 @@
         {% endif %}
     </div>
 {% endif %}
-{# Para mostrar mensajes de Django automáticamente #}
+<!-- Para mostrar mensajes de Django automáticamente -->
 {% if show_django_messages %}
     {% if messages %}
         {% for message in messages %}
