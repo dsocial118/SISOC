@@ -25,19 +25,19 @@ class UserListView(AdminRequiredMixin, ListView):
 
         # Configuración para el componente data_table
         context["table_headers"] = [
-            {"title": 'Nombre'},
-            {"title": 'Apellido'},
+            {"title": "Nombre"},
+            {"title": "Apellido"},
             {"title": "Username"},
             {"title": "Email"},
-            {"title": 'Rol'},
+            {"title": "Rol"},
         ]
 
         context["table_fields"] = [
             {"name": "first_name"},
-            {"name": 'last_name'},
+            {"name": "last_name"},
             {"name": "username"},
             {"name": "email"},
-            {"name": 'rol'},
+            {"name": "rol"},
         ]
 
         context["table_actions"] = [
