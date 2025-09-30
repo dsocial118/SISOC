@@ -45,6 +45,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
+                        <th>Número de Expediente</th>
                         <th>Fecha creación</th>
                         <th>Provincia</th>
                         <th>Estado</th>
@@ -58,6 +59,7 @@
                     {% for exp in expedientes %}
                         <tr data-exp-id="{{ exp.pk }}">
                             <td>{{ exp.pk }}</td>
+                            <td>{{ exp.numero_expediente|default:"-" }}</td>
                             <td>{{ exp.fecha_creacion|date:"d/m/Y H:i" }}</td>
                             <td>{{ exp.provincia }}</td>
                             <td>
@@ -149,7 +151,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="{% if request.user|has_group:'CoordinadorCeliaquia' or request.user|has_group:'TecnicoCeliaquia' %}6{% else %}5{% endif %}"
+                            <td colspan="{% if request.user|has_group:'CoordinadorCeliaquia' or request.user|has_group:'TecnicoCeliaquia' %}7{% else %}6{% endif %}"
                                 class="text-center text-muted py-3">No hay expedientes registrados.</td>
                         </tr>
                     {% endfor %}

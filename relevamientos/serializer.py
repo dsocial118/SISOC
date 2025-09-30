@@ -6,7 +6,7 @@ from relevamientos.models import Relevamiento
 from relevamientos.service import RelevamientoService
 from core.utils import format_fecha_django
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class RelevamientoSerializer(serializers.ModelSerializer):

@@ -44,7 +44,7 @@ from celiaquia.services.cupo_service import (
     CupoNoConfigurado,
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 DOCUMENTO_COL_CANDIDATAS = {
     "documento",
