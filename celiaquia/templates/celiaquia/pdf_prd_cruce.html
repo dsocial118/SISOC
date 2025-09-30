@@ -2,375 +2,426 @@
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
-        {% load math_extras %}
+        <title>PRD - Resultado de Cruce</title>
         <style>
-    @page {
-      size: A4;
-      margin: 3.5cm 2cm 2.5cm 2cm;
-      @top-center { content: element(header); }
-      @bottom-center {
-        content: "Página " counter(page) " de " counter(pages);
-        font-size: 10pt; color: #666;
-      }
-    }
-    body { font-family: Arial, sans-serif; font-size: 10pt; margin: 0; color: #222; }
-
-    #header {
-      position: running(header);
-      height: 3cm;
-      padding: 0.5cm 1cm;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #ddd;
-    }
-    .header-left {
-      font-weight: bold;
-      padding-top: 6px;
-      padding-right: 30px;
-      font-size: 10pt;
-      text-align: left;
-      line-height: 1.3;
-      letter-spacing: .3px;
-    }
-    .header-right {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 9pt;
-      text-align: center;
-      line-height: 1.1;
-      padding-left: 30px;
-    }
-    .header-right img {
-      max-height: 42px; height: auto; width: auto; margin-bottom: 4px;
-      filter: grayscale(100%);
-    }
-
-    h1, h2, h3, h4 { margin: 0; }
-    h4 { text-align: center; margin-top: 12px; margin-bottom: 6px; }
-    .title {
-      text-align: center;
-      font-weight: bold;
-      font-size: 14pt;
-      margin: 16px 0 8px 0;
-      letter-spacing: .2px;
-    }
-    .subtle { color: #555; }
-
-    .meta {
-      margin: 10px 0 16px 0;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 18px;
-    }
-    .meta .item { line-height: 1.5; }
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      font-size: 9pt;
-      border-radius: 10px;
-      background: #f1f1f1;
-      border: 1px solid #e1e1e1;
-      color: #333;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin: 8px 0 10px 0;
-    }
-    .card {
-      border: 1px solid #e6e6e6;
-      border-radius: 6px;
-      padding: 12px;
-      background: #fafafa;
-    }
-    .card h5 {
-      margin: 0 0 8px 0;
-      font-size: 11pt;
-      color: #333;
-    }
-    .kpi {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 14px;
-    }
-    .kpi .kv { line-height: 1.4; }
-    .kpi .kv b { font-size: 11pt; }
-
-    .progress {
-      height: 10px;
-      background: #eee;
-      border-radius: 6px;
-      overflow: hidden;
-      margin-top: 6px;
-      border: 1px solid #e2e2e2;
-    }
-    .bar {
-      height: 10px;
-      display: block;
-      border-radius: 6px;
-    }
-    .bar--ok  { background-color: #22c55e; }
-    .bar--bad { background-color: #ef4444; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      border: 1px solid #ddd;
-      page-break-inside: auto;
-    }
-    th, td {
-      padding: 6px 8px;
-      border: 1px solid #e5e5e5;
-      vertical-align: top;
-    }
-    th { background: #f3f6fb; color: #333; font-weight: 600; text-align: left; }
-    .muted { color: #777; }
-    ul { margin: 6px 0 0 18px; padding: 0; }
-    li { line-height: 1.7; margin-bottom: 4px; }
-
-    .section { margin-top: 14px; }
-    .small { font-size: 9pt; }
-    .avoid-break { page-break-inside: avoid; }
-    .page-break { page-break-before: always; }
+        @page {
+            size: A4;
+            margin: 2.5cm 2cm 2cm 2cm;
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        
+        body {
+            font-family: "Times New Roman", serif;
+            font-size: 10pt;
+            line-height: 1.3;
+            color: #000;
+        }
+        
+        .header {
+            border-bottom: 3px solid #1e3a8a;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .header-top {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .escudo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 10px;
+            display: block;
+        }
+        
+        .gobierno {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .ministerio {
+            font-size: 9pt;
+            color: #374151;
+            margin-top: 3px;
+        }
+        
+        .secretaria {
+            font-size: 8pt;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        
+        .title {
+            font-size: 16pt;
+            font-weight: bold;
+            text-align: center;
+            color: #1e3a8a;
+            margin: 20px 0 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            font-size: 11pt;
+            text-align: center;
+            color: #374151;
+            font-weight: bold;
+        }
+        
+        .documento-info {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .info-grid {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            display: inline-block;
+            width: 48%;
+            padding: 10px;
+            margin: 1%;
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            vertical-align: top;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #1f2937;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .info-value {
+            margin-top: 3px;
+            font-size: 10pt;
+        }
+        
+        .summary-cards {
+            width: 100%;
+            margin: 25px 0;
+            background: #f1f5f9;
+            padding: 15px;
+            border: 2px solid #1e3a8a;
+        }
+        
+        .card {
+            display: inline-block;
+            width: 22%;
+            text-align: center;
+            padding: 12px;
+            margin: 1%;
+            border: 1px solid #1e3a8a;
+            background-color: #ffffff;
+            vertical-align: top;
+        }
+        
+        .card-number {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+        
+        .card-label {
+            font-size: 8pt;
+            color: #374151;
+            margin-top: 5px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .section {
+            margin: 25px 0;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #1e3a8a;
+            border-bottom: 2px solid #1e3a8a;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            border: 2px solid #1e3a8a;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #9ca3af;
+        }
+        
+        th {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 9pt;
+            text-transform: uppercase;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        .text-center { text-align: center; }
+        .text-success { color: #059669; font-weight: bold; }
+        .text-danger { color: #dc2626; font-weight: bold; }
+        .text-warning { color: #d97706; font-weight: bold; }
+        .text-muted { color: #6b7280; }
+        
+        .no-data {
+            text-align: center;
+            color: #6b7280;
+            font-style: italic;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        
+        .footer-notes {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8fafc;
+            border-left: 4px solid #1e3a8a;
+            font-size: 9pt;
+        }
+        
+        .footer-notes ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .footer-notes li {
+            margin-bottom: 5px;
+        }
+        
+        .firma-section {
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .firma-linea {
+            border-top: 1px solid #000;
+            width: 200px;
+            margin: 30px auto 5px;
+        }
+        
+        .firma-texto {
+            font-size: 9pt;
+            color: #374151;
+        }
         </style>
     </head>
     <body>
-        <div id="header">
-            <div class="header-left">
-                PROGRAMA CELIAQUIA
-                <br />
-            </div>
-            <div class="header-right">
+        <div class="header">
+            <div class="header-top">
                 <img src="https://www.casarosada.gob.ar/images/escudo_nacional_argentino.png"
-                     alt="Escudo Nacional" />
-                Secretaría de Niñez, Adolescencia y Familia
-                <br />
-                Ministerio de Capital Humano
+                     alt="Escudo Nacional Argentino"
+                     class="escudo" />
+                <div class="gobierno">República Argentina</div>
+                <div class="ministerio">Ministerio de Capital Humano</div>
+                <div class="secretaria">Secretaría de Niñez, Adolescencia y Familia</div>
+            </div>
+            <div class="title">Programa de Detección y Control de la Enfermedad Celíaca</div>
+            <div class="subtitle">PRD - Resultado de Cruce por CUIT/DNI</div>
+        </div>
+        <div class="documento-info">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Fecha de Generación:</div>
+                    <div class="info-value">{{ ahora }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Técnico Asignado:</div>
+                    <div class="info-value">{{ tecnico|default:"No asignado" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Usuario Provincial:</div>
+                    <div class="info-value">
+                        {{ expediente.usuario_provincia.get_full_name|default:expediente.usuario_provincia.username }}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Provincia:</div>
+                    <div class="info-value">{{ expediente.usuario_provincia.profile.provincia|default:"No especificada" }}</div>
+                </div>
             </div>
         </div>
-        <main>
-            <div class="title">PRD — Resultado de Cruce por CUIT/DNI</div>
-            <div class="meta">
-                <div class="item">
-                    <b>Fecha:</b> {{ ahora }}
-                </div>
-                <div class="item">
-                    <b>Técnico asignado:</b>
-                    {% if tecnico %}
-                        <span class="badge">{{ tecnico }}</span>
-                    {% else %}
-                        <span class="muted">—</span>
-                    {% endif %}
-                </div>
-                <div class="item">
-                    <b>Usuario provincial:</b>
-                    {% if expediente.usuario_provincia %}
-                        <span class="badge">
-                            {{ expediente.usuario_provincia.get_full_name|default:expediente.usuario_provincia.username }}
-                        </span>
-                    {% else %}
-                        <span class="muted">—</span>
-                    {% endif %}
-                </div>
-                <div class="item">
-                    <b>Legajos en nómina (aprobados por técnico):</b> {{ resumen.total_legajos }}
-                </div>
-            </div>
-            <div class="cards">
+        <div class="section">
+            <div class="section-title">Resumen Ejecutivo</div>
+            <div class="summary-cards">
                 <div class="card">
-                    <h5>Resumen de archivo</h5>
-                    <div class="kpi">
-                        <div class="kv" style="grid-column: span 2;">
-                            <span class="muted">Identificadores leídos (archivo)</span>
-                            <br />
-                            <b>
-                                {{ resumen.total_cuits_archivo|default_if_none:0|sum2:resumen.total_dnis_archivo|default_if_none:0 }}
-                            </b>
-                            <div class="small muted">
-                                CUITs: {{ resumen.total_cuits_archivo|default_if_none:0 }}
-                                · DNIs: {{ resumen.total_dnis_archivo|default_if_none:0 }}
-                            </div>
-                        </div>
-                        <div class="kv">
-                            <span class="muted">Matcheados</span>
-                            <br />
-                            <b>{{ resumen.matcheados }}</b>
-                        </div>
-                        <div class="kv">
-                            <span class="muted">No matcheados</span>
-                            <br />
-                            <b>{{ resumen.no_matcheados }}</b>
-                        </div>
+                    <div class="card-number">{{ resumen.total_legajos|default:0 }}</div>
+                    <div class="card-label">
+                        Total Legajos
+                        <br />
+                        Aprobados
                     </div>
                 </div>
                 <div class="card">
-                    <h5>Porcentajes</h5>
-                    {% with
-                        pm=resumen.matcheados|pct:resumen.total_legajos|clamp:"0,100"
-                        pn=resumen.no_matcheados|pct:resumen.total_legajos|clamp:"0,100"
-                        %}
-                        <div class="small">Matcheados ({{ pm|floatformat:1 }}%)</div>
-                        <div class="progress">
-                            <span class="bar bar--ok" style="width: {{ pm|floatformat:1 }}%;"></span>
-                        </div>
-                        <div class="small" style="margin-top:8px;">No matcheados ({{ pn|floatformat:1 }}%)</div>
-                        <div class="progress">
-                            <span class="bar bar--bad" style="width: {{ pn|floatformat:1 }}%;"></span>
-                        </div>
-                    {% endwith %}
+                    <div class="card-number text-success">{{ resumen.matcheados|default:0 }}</div>
+                    <div class="card-label">Matcheados</div>
+                </div>
+                <div class="card">
+                    <div class="card-number text-danger">{{ resumen.no_matcheados|default:0 }}</div>
+                    <div class="card-label">No Matcheados</div>
+                </div>
+                <div class="card">
+                    <div class="card-number text-warning">{{ resumen.cupo_fuera_count|default:0 }}</div>
+                    <div class="card-label">Fuera de Cupo</div>
                 </div>
             </div>
-            {% if resumen.cupo or resumen.cupo_total_asignado %}
-                <div class="cards avoid-break">
-                    <div class="card" style="grid-column: span 2;">
-                        <h5>Cupo provincial</h5>
-                        {% if resumen.cupo %}
-                            <div class="kpi">
-                                <div class="kv">
-                                    <span class="muted">Total asignado</span>
-                                    <br />
-                                    <b>{{ resumen.cupo.total_asignado }}</b>
-                                </div>
-                                <div class="kv">
-                                    <span class="muted">Usados</span>
-                                    <br />
-                                    <b>{{ resumen.cupo.usados }}</b>
-                                </div>
-                                <div class="kv">
-                                    <span class="muted">Disponibles</span>
-                                    <br />
-                                    <b>{{ resumen.cupo.disponibles }}</b>
-                                </div>
-                                <div class="kv">
-                                    <span class="muted">Fuera de cupo</span>
-                                    <br />
-                                    <b>{{ resumen.cupo_fuera_count|default:"—" }}</b>
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="kpi">
-                                <div class="kv">
-                                    <span class="muted">Total asignado</span>
-                                    <br />
-                                    <b>{{ resumen.cupo_total_asignado }}</b>
-                                </div>
-                                <div class="kv">
-                                    <span class="muted">Usados</span>
-                                    <br />
-                                    <b>{{ resumen.cupo_usados }}</b>
-                                </div>
-                                <div class="kv">
-                                    <span class="muted">Disponibles</span>
-                                    <br />
-                                    <b>{{ resumen.cupo_disponibles }}</b>
-                                </div>
-                                <div class="kv">
-                                    <span class="muted">Fuera de cupo</span>
-                                    <br />
-                                    <b>{{ resumen.cupo_fuera_count|default:"—" }}</b>
-                                </div>
-                            </div>
-                        {% endif %}
+        </div>
+        {% if resumen.cupo %}
+            <div class="section">
+                <div class="section-title">Información de Cupo Provincial</div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Total Asignado:</div>
+                        <div class="info-value">{{ resumen.cupo.total_asignado|default:0 }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Usados:</div>
+                        <div class="info-value">{{ resumen.cupo.usados|default:0 }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Disponibles:</div>
+                        <div class="info-value">{{ resumen.cupo.disponibles|default:0 }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Fuera de Cupo:</div>
+                        <div class="info-value">{{ resumen.cupo_fuera_count|default:0 }}</div>
                     </div>
                 </div>
-            {% endif %}
-            {% if resumen.detalle_match and resumen.detalle_match|length > 0 %}
-                <div class="section">
-                    <h4>Detalle de aprobado</h4>
+            </div>
+        {% endif %}
+        {% if resumen.detalle_match %}
+            <div class="section">
+                <div class="section-title">Detalle de Beneficiarios Aprobados ({{ resumen.matcheados|default:0 }})</div>
+                {% if resumen.detalle_match|length > 0 %}
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 32px;"></th>
-                                <th>Documento</th>
-                                <th>Nombre</th>
-                                <th>Apellido</th>
-                                <th>Coincidencia por</th>
+                                <th width="5%">N°</th>
+                                <th width="15%">DNI</th>
+                                <th width="15%">CUIT</th>
+                                <th width="25%">Nombre</th>
+                                <th width="25%">Apellido</th>
+                                <th width="15%">Validado por</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for fila in resumen.detalle_match %}
                                 <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>{{ fila.dni|default_if_none:"" }}</td>
-                                    <td>{{ fila.nombre|default_if_none:"" }}</td>
-                                    <td>{{ fila.apellido|default_if_none:"" }}</td>
-                                    <td class="muted">{{ fila.por|default_if_none:"" }}</td>
+                                    <td class="text-center">{{ forloop.counter }}</td>
+                                    <td>{{ fila.dni|default:"" }}</td>
+                                    <td>{{ fila.cuit|default:"" }}</td>
+                                    <td>{{ fila.nombre|default:"" }}</td>
+                                    <td>{{ fila.apellido|default:"" }}</td>
+                                    <td class="text-center">{{ fila.por|default:"" }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
-            {% endif %}
-            {% if resumen.detalle_fuera_cupo and resumen.detalle_fuera_cupo|length > 0 %}
-                <div class="section page-break">
-                    <h4>Fuera de cupo (lista de espera)</h4>
+                {% else %}
+                    <div class="no-data">No se registran beneficiarios aprobados</div>
+                {% endif %}
+            </div>
+        {% endif %}
+        {% if resumen.detalle_no_match %}
+            <div class="section">
+                <div class="section-title">Detalle de Beneficiarios No Aprobados ({{ resumen.no_matcheados|default:0 }})</div>
+                {% if resumen.detalle_no_match|length > 0 %}
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 32px;"></th>
-                                <th>Documento</th>
-                                <th>Nombre</th>
-                                <th>Apellido</th>
+                                <th width="5%">N°</th>
+                                <th width="15%">DNI</th>
+                                <th width="20%">CUIT Esperado</th>
+                                <th width="60%">Observación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fila in resumen.detalle_no_match %}
+                                <tr>
+                                    <td class="text-center">{{ forloop.counter }}</td>
+                                    <td>{{ fila.dni|default:"" }}</td>
+                                    <td>{{ fila.cuit|default:"" }}</td>
+                                    <td>{{ fila.observacion|default:"No coincide por CUIT ni por DNI" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="no-data">No se registran beneficiarios rechazados</div>
+                {% endif %}
+            </div>
+        {% endif %}
+        {% if resumen.detalle_fuera_cupo %}
+            <div class="section">
+                <div class="section-title">Lista de Espera - Fuera de Cupo ({{ resumen.cupo_fuera_count|default:0 }})</div>
+                {% if resumen.detalle_fuera_cupo|length > 0 %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="5%">N°</th>
+                                <th width="15%">DNI</th>
+                                <th width="20%">CUIT</th>
+                                <th width="30%">Nombre</th>
+                                <th width="30%">Apellido</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for fila in resumen.detalle_fuera_cupo %}
                                 <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>{% firstof fila.dni fila.documento fila.cuit "" %}</td>
-                                    <td>{{ fila.nombre|default_if_none:"" }}</td>
-                                    <td>{{ fila.apellido|default_if_none:"" }}</td>
+                                    <td class="text-center">{{ forloop.counter }}</td>
+                                    <td>{{ fila.dni|default:"" }}</td>
+                                    <td>{{ fila.cuit|default:"" }}</td>
+                                    <td>{{ fila.nombre|default:"" }}</td>
+                                    <td>{{ fila.apellido|default:"" }}</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
-            {% endif %}
-            <div class="page-break"></div>
-            <div class="section">
-                <h4>Detalle de no aprobado</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 32px;"></th>
-                            <th>DNI</th>
-                            <th>CUIT esperado</th>
-                            <th>Observación</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if resumen.detalle_no_match and resumen.detalle_no_match|length %}
-                            {% for fila in resumen.detalle_no_match %}
-                                <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>{{ fila.dni|default_if_none:"" }}</td>
-                                    <td>{{ fila.cuit|default_if_none:"" }}</td>
-                                    <td class="muted">{{ fila.observacion|default:"No coincide por CUIT ni por DNI." }}</td>
-                                </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td colspan="4" class="muted">No se registran casos sin match.</td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
+                {% else %}
+                    <div class="no-data">No se registran beneficiarios fuera de cupo</div>
+                {% endif %}
             </div>
-            <div class="section">
-                <h4>Notas</h4>
-                <ul>
-                    <li>Las coincidencias se determinan por CUIT exacto (11 dígitos) o por DNI normalizado (sin ceros a la izquierda).</li>
-                    <li>En columnas con rótulo “cuit” que contengan valores de 8 dígitos, se interpretan como DNI.</li>
-                    <li>Regla aplicada: sólo se cruzan legajos con revisión del técnico en estado “APROBADO”.</li>
-                    <li>Los “Fuera de cupo” son aprobados con match que no ingresan por falta de disponibilidad en la provincia.</li>
-                </ul>
-            </div>
-        </main>
+        {% endif %}
+        <div class="footer-notes">
+            <div class="section-title" style="font-size: 10pt; margin-bottom: 10px;">Notas Técnicas</div>
+            <ul>
+                <li>Las coincidencias se determinan por CUIT exacto (11 dígitos) o por DNI normalizado sin ceros iniciales.</li>
+                <li>Solo se procesan legajos con revisión técnica en estado "APROBADO" por el técnico asignado.</li>
+                <li>Los beneficiarios "Fuera de cupo" son casos aprobados que no ingresan por falta de disponibilidad provincial.</li>
+                <li>Este documento constituye el Parte de Recepción Definitiva (PRD) del proceso de cruce con SINTYS.</li>
+                <li>Documento generado automáticamente el {{ ahora }} por el sistema SISOC.</li>
+            </ul>
+        </div>
+        <div class="firma-section">
+            <div class="firma-linea"></div>
+            <div class="firma-texto">Firma y Sello del Técnico Responsable</div>
+        </div>
     </body>
 </html>
