@@ -3,6 +3,7 @@
 <div class="card card-body shadow">
     {% if title %}<h2 class="text-center display-4 mb-4">{{ title }}</h2>{% endif %}
     <form method="post"
+          action="{{ action|default:'' }}"
           enctype="multipart/form-data"
           {% if form_id %}id="{{ form_id }}"{% endif %}
           {% if novalidate %}novalidate{% endif %}>
