@@ -11,19 +11,7 @@
 {% endblock %}
 {% block content %}
     {% with is_tec=request.user|has_group:"TecnicoCeliaquia" is_coord=request.user|has_group:"CoordinadorCeliaquia" is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
-        <style>
-    /* Extras sutiles para legajos */
-    .card-dark { background-color:#1f2d3d; color:#e9eef5; border:1px solid #2a3a4f; }
-    .chip { display:inline-flex; align-items:center; gap:.4rem; padding:.2rem .6rem; border-radius:999px; font-size:.75rem; }
-    .chip-warning { background:#ffe08a; color:#3b2f00; }
-    .badge-soft { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); }
-    .file-row { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.35rem .6rem; border-radius:.5rem; }
-    .file-row + .file-row { margin-top:.35rem; }
-    .file-name { max-width: 32ch; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:bottom; }
-    .muted { color:#9fb3c8!important; }
-    .list-divider { border-top:1px dashed rgba(255,255,255,.12); margin:.6rem 0; }
-    .btn-toolbar.flex-wrap > .btn-group { margin-bottom:.4rem; }
-        </style>
+
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
@@ -846,16 +834,21 @@
     </div>
 {% endwith %}
 {% endblock %}
+{% block customCSS %}
+    <link rel="stylesheet" href="{% static 'custom/css/expediente_detail.css' %}">
+{% endblock %}
+
 {% block customJS %}
-    <script>
-    window.PROCESS_URL           = "{% url 'expediente_procesar' expediente.pk %}";
-    window.CONFIRM_URL           = "{% url 'expediente_confirm' expediente.pk %}";
-    window.CRUCE_URL             = "{% url 'expediente_cruce_cuit' expediente.pk %}";
-    window.CSRF_TOKEN            = "{{ csrf_token }}";
-    window.REVISAR_URL_TEMPLATE  = "{% url 'legajo_revisar' expediente.pk 0 %}".replace("/0/", "/{id}/");
-    window.CONFIRM_SUBS_URL      = "{% url 'expediente_confirm_subsanacion' expediente.pk %}";
-    window.VALIDAR_RENAPER_URL_TEMPLATE = "{% url 'legajo_validar_renaper' expediente.pk 0 %}".replace("/0/", "/{id}/");
-    </script>
+    <!-- Meta tags para configuración -->
+    <meta name="process-url" content="{% url 'expediente_procesar' expediente.pk %}">
+    <meta name="confirm-url" content="{% url 'expediente_confirm' expediente.pk %}">
+    <meta name="cruce-url" content="{% url 'expediente_cruce_cuit' expediente.pk %}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta name="revisar-url-template" content="{% url 'legajo_revisar' expediente.pk 0 %}">
+    <meta name="confirm-subs-url" content="{% url 'expediente_confirm_subsanacion' expediente.pk %}">
+    <meta name="validar-renaper-url-template" content="{% url 'legajo_validar_renaper' expediente.pk 0 %}">
+    
+    <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
