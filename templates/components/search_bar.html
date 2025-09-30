@@ -1,5 +1,6 @@
 {% load custom_filters static %}
-<link rel="stylesheet" href="{% static 'custom/css/comedoresSearchBar.css' %}" />
+<link rel="stylesheet"
+      href="{% static 'custom/css/comedoresSearchBar.css' %}" />
 {% comment %}
 Componente Search Bar
 Uso clásico (texto): {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %}
@@ -36,7 +37,9 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
         </div>
     </div>
 {% elif comedores_filters_mode %}
-    <form method="GET" action="{{ filters_action|default:'' }}" id="filters-form">
+    <form method="GET"
+          action="{{ filters_action|default:'' }}"
+          id="filters-form">
         <div class="row">
             <div class="col-md-10 offset-md-1">
                 <div class="form-group">
@@ -59,7 +62,9 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
         </div>
     </form>
 {% else %}
-    <form method="GET" action="{{ search_action|default:'' }}" id="simple-search-form">
+    <form method="GET"
+          action="{{ search_action|default:'' }}"
+          id="simple-search-form">
         <div class="row">
             <div class="col-md-10 offset-md-1">
                 <div class="form-group">

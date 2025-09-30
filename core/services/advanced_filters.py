@@ -230,7 +230,9 @@ class AdvancedFilterEngine:
         q_object = Q(**{lookup: casted})
         return ~q_object if negate else q_object
 
-    def _coerce_value(self, field: str, value: Any, field_type: str) -> tuple[bool, Any]:
+    def _coerce_value(
+        self, field: str, value: Any, field_type: str
+    ) -> tuple[bool, Any]:
         """Intenta castear ``value`` según el tipo del campo."""
 
         if field in self.field_casts:
