@@ -126,7 +126,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Autenticación / Redirecciones
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "dashboard"
+LOGIN_REDIRECT_URL = "inicio"
 LOGOUT_REDIRECT_URL = "login"
 ACCOUNT_FORMS = {"login": "users.forms.UserLoginForm"}
 
