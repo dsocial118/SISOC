@@ -26,8 +26,9 @@ class AdvancedFilterEngine:
 
     Args:
         field_map: Mapea el identificador expuesto a lookups de Django ORM.
-        field_types: Define el tipo lógico de cada campo (por ejemplo ``text`` o
-            ``number``). Se usa para validar operadores y castear valores.
+        field_types: Define el tipo lógico de cada campo (por ejemplo ``text``,
+            ``number`` o ``boolean``). Se usa para validar operadores y castear
+            valores.
         allowed_ops: Opcional. Permite personalizar los operadores permitidos por
             tipo. Si no se provee se espera ``{"text": {...}, "number": {...}}``.
         field_casts: Funciones de casteo por campo; útiles cuando se requieren
@@ -223,6 +224,12 @@ class AdvancedFilterEngine:
                 lookup = f"{mapped_field}__gt"
             elif op == "lt":
                 lookup = f"{mapped_field}__lt"
+        elif field_type == "boolean":
+            if op == "eq":
+                lookup = f"{mapped_field}__exact"
+            elif op == "ne":
+                lookup = f"{mapped_field}__exact"
+                negate = True
 
         if not lookup:
             return None
@@ -246,6 +253,18 @@ class AdvancedFilterEngine:
                 return True, int(value)
             except (TypeError, ValueError):
                 return False, None
+        if field_type == "boolean":
+            truthy = {True, 1, "1", "true", "t", "yes", "y"}
+            falsy = {False, 0, "0", "false", "f", "no", "n"}
+
+            if isinstance(value, str):
+                value = value.strip().lower()
+
+            if value in truthy:
+                return True, True
+            if value in falsy:
+                return True, False
+            return False, None
 
         return True, value
 

@@ -275,3 +275,6 @@ logs/
 
 #Archivos de MAC
 .DS_Store
+
+# Archivos de VSCode
+.vscode/
