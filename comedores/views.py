@@ -454,6 +454,7 @@ class ComedorDetailView(DetailView):
         return ComedorService.post_comedor_relevamiento(request, self.object)
 
 
+# TODO: Sacar de la vista de comedores
 class AsignarDuplaListView(ListView):
     model = Comedor
     template_name = "comedor/asignar_dupla_form.html"

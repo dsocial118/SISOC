@@ -1,15 +1,11 @@
 {% load custom_filters static %}
-<link rel="stylesheet"
-      href="{% static 'custom/css/comedoresSearchBar.css' %}" />
-{# Componente Search Bar #} {# Uso clásico (texto): {% include
-'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...'
-help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query
-add_text='Agregar' %} Modo filtros combinables: {% include
-'components/search_bar.html' with titulo='Buscar' reset_url=reset_url
-add_url=add_url comedores_filters_mode=True %} Modo búsqueda AJAX dinámica: {%
-include 'components/search_bar.html' with titulo='Buscar'
-placeholder='Buscar...' reset_url=reset_url add_url=add_url
-ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
+<link rel="stylesheet" href="{% static 'custom/css/comedoresSearchBar.css' %}" />
+{% comment %}
+Componente Search Bar
+Uso clásico (texto): {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %}
+Modo filtros combinables: {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url comedores_filters_mode=True %}
+Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titulo='Buscar' placeholder='Buscar...' reset_url=reset_url add_url=add_url ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %}
+{% endcomment %}
 <h2 class="text-center display-4 mb-4">{{ titulo|default:"Buscar" }}</h2>
 {% if ajax_search_mode %}
     <!-- Modo búsqueda AJAX dinámica -->
@@ -40,7 +36,7 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
         </div>
     </div>
 {% elif comedores_filters_mode %}
-    <form method="GET" id="filters-form">
+    <form method="GET" action="{{ filters_action|default:'' }}" id="filters-form">
         <div class="row">
             <div class="col-md-10 offset-md-1">
                 <div class="form-group">
@@ -63,7 +59,7 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
         </div>
     </form>
 {% else %}
-    <form method="GET" id="simple-search-form">
+    <form method="GET" action="{{ search_action|default:'' }}" id="simple-search-form">
         <div class="row">
             <div class="col-md-10 offset-md-1">
                 <div class="form-group">
@@ -90,8 +86,7 @@ ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %} #}
             <a href="{% url reset_url %}" class="btn btn-secondary btn-lg">Resetear</a>
         {% endif %}
         {% if add_url and show_add_button|default:True %}
-            {% if
-                add_url_full %}
+            {% if add_url_full %}
                 <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
             {% elif add_url|is_url %}
                 <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
