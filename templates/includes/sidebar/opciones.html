@@ -43,13 +43,36 @@
         </li>
     {% endif %}
     <!-- Tableros -->
-    <li class="nav-item">
-        <a href="{% url 'dashboard' %}"
-           class="nav-link {% if 'dashboard' in pagina_actual %}active{% endif %}">
+    <li class="nav-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
+        <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/tableros.svg' %}" alt="">
-            <p>Tableros</p>
+            <p>
+                Tableros
+                <i class="nav-arrow bi bi-chevron-right"></i>
+            </p>
         </a>
+        <ul class="nav nav-treeview">
+            <li class="nav-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
+                <a href="#"
+                   class="nav-link nav-dot ms-2 {% if 'dashboard' in pagina_actual %}active{% endif %}">
+                    <p>
+                        Centros de Familia
+                        <i class="nav-arrow bi bi-chevron-right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        <a href="{% url 'dashboard' %}"
+                           class="nav-link ms-4 {% if 'dashboard/listar' in pagina_actual %}active{% endif %}">
+                            <i class="nav-icon bi bi-arrow-return-right"></i>
+                            <p>Buscar</p>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
     </li>
+    
 
     <!-- MENÚ LEGAJOS -->
     <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual %}menu-open{% endif %}">
