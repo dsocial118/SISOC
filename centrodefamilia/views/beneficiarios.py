@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.generic import ListView, DetailView, View
 
 from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
@@ -12,7 +13,7 @@ from centrodefamilia.services.beneficiarios_service import (
     get_responsables_list_context,
     prepare_beneficiarios_for_display,
     prepare_responsables_for_display,
-    get_beneficiarios_queryset,
+    get_filtered_beneficiarios,
     get_responsables_queryset,
     get_responsable_detail_context,
     get_beneficiario_detail_queryset,
@@ -38,12 +39,26 @@ class BeneficiariosListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return get_beneficiarios_queryset()
+        return get_filtered_beneficiarios(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_beneficiarios_list_context())
         prepare_beneficiarios_for_display(context["beneficiarios"])
+        context.update(
+            {
+                "breadcrumb_items": [
+                    {"text": "Beneficiarios", "url": reverse("beneficiarios_list")},
+                    {"text": "Listar", "active": True},
+                ],
+                "reset_url": reverse("beneficiarios_list"),
+                "add_url": reverse("beneficiarios_crear"),
+                "filters_mode": True,
+                "filters_js": "custom/js/beneficiarios_search_bar.js",
+                "filters_action": reverse("beneficiarios_list"),
+                "add_text": "Crear un nuevo Preinscripto",
+            }
+        )
         return context
 
 
