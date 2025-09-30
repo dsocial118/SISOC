@@ -753,21 +753,23 @@ class CruceService:
         try:
             pdf_bytes = CruceService._generar_prd_pdf(expediente, resumen)
             expediente.documento.save(
-                f"{nombre_base}.pdf", ContentFile(pdf_bytes), save=False
+                f"{nombre_base}.pdf", ContentFile(pdf_bytes), save=True
             )
+            logger.info("PDF generado y guardado: %s", expediente.documento.name)
         except Exception as e:
             logger.warning("No fue posible generar PDF (se usará CSV fallback): %s", e)
             csv_bytes = CruceService._generar_prd_csv(expediente, resumen)
             expediente.documento.save(
-                f"{nombre_base}.csv", ContentFile(csv_bytes), save=False
+                f"{nombre_base}.csv", ContentFile(csv_bytes), save=True
             )
+            logger.info("CSV generado y guardado: %s", expediente.documento.name)
 
         estado_final, _ = EstadoExpediente.objects.get_or_create(
             nombre="CRUCE_FINALIZADO"
         )
         expediente.estado = estado_final
         expediente.usuario_modificador = usuario
-        expediente.save(update_fields=["documento", "estado", "usuario_modificador"])
+        expediente.save(update_fields=["estado", "usuario_modificador"])
 
         logger.info(
             (
