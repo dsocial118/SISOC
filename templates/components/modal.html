@@ -28,7 +28,7 @@
             <div class="modal-body {% if body_class %}{{ body_class }}{% endif %}">
                 {% if content %}{{ content|safe }}{% endif %}
                 {% if form %}
-                    <form {% if form_action %}action="{{ form_action }}"{% endif %}
+                    <form action="{{ form_action|default:'' }}"
                           {% if form_method %}method="{{ form_method }}"{% else %}method="POST"{% endif %}
                           {% if form_id %}id="{{ form_id }}"{% endif %}>
                         {% csrf_token %}
