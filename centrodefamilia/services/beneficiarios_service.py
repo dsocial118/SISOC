@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Count
+from core.services.advanced_filters import AdvancedFilterEngine
 from centrodefamilia.models import (
     Responsable,
     Beneficiario,
@@ -11,6 +12,12 @@ from centrodefamilia.models import (
 )
 from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from centrodefamilia.services.beneficiarios_filter_config import (
+    FIELD_MAP as BENEFICIARIO_FILTER_MAP,
+    FIELD_TYPES as BENEFICIARIO_FIELD_TYPES,
+    TEXT_OPS as BENEFICIARIO_TEXT_OPS,
+    NUM_OPS as BENEFICIARIO_NUM_OPS,
+)
 from django.db import transaction
 
 
@@ -68,6 +75,16 @@ def crear_beneficiario(beneficiario_data, responsable, vinculo_parental, usuario
         form.save_m2m()
 
     return beneficiario, form
+
+
+BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=BENEFICIARIO_FILTER_MAP,
+    field_types=BENEFICIARIO_FIELD_TYPES,
+    allowed_ops={
+        "text": BENEFICIARIO_TEXT_OPS,
+        "number": BENEFICIARIO_NUM_OPS,
+    },
+)
 
 
 def guardar_datos_renaper(request, persona, tipo, es_nuevo=True):
@@ -517,6 +534,13 @@ def prepare_responsables_for_display(responsables):
         responsable.apellido_nombre = f"{responsable.apellido}, {responsable.nombre}"
         responsable.genero_display = responsable.get_genero_display()
         responsable.vinculo_display = responsable.get_vinculo_parental_display()
+
+
+def get_filtered_beneficiarios(request_or_get):
+    """Aplica filtros combinables sobre el listado de beneficiarios."""
+
+    base_qs = get_beneficiarios_queryset()
+    return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
 
 def get_beneficiarios_queryset():
