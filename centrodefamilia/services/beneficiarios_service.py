@@ -18,6 +18,12 @@ from centrodefamilia.services.beneficiarios_filter_config import (
     TEXT_OPS as BENEFICIARIO_TEXT_OPS,
     NUM_OPS as BENEFICIARIO_NUM_OPS,
 )
+from centrodefamilia.services.responsables_filter_config import (
+    FIELD_MAP as RESPONSABLE_FILTER_MAP,
+    FIELD_TYPES as RESPONSABLE_FIELD_TYPES,
+    TEXT_OPS as RESPONSABLE_TEXT_OPS,
+    NUM_OPS as RESPONSABLE_NUM_OPS,
+)
 from django.db import transaction
 
 
@@ -83,6 +89,16 @@ BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
     allowed_ops={
         "text": BENEFICIARIO_TEXT_OPS,
         "number": BENEFICIARIO_NUM_OPS,
+    },
+)
+
+
+RESPONSABLE_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=RESPONSABLE_FILTER_MAP,
+    field_types=RESPONSABLE_FIELD_TYPES,
+    allowed_ops={
+        "text": RESPONSABLE_TEXT_OPS,
+        "number": RESPONSABLE_NUM_OPS,
     },
 )
 
@@ -541,6 +557,13 @@ def get_filtered_beneficiarios(request_or_get):
 
     base_qs = get_beneficiarios_queryset()
     return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
+
+
+def get_filtered_responsables(request_or_get):
+    """Aplica filtros combinables sobre el listado de responsables."""
+
+    base_qs = get_responsables_queryset()
+    return RESPONSABLE_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
 
 def get_beneficiarios_queryset():
