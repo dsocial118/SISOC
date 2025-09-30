@@ -3,7 +3,7 @@
 {% with pagina_actual=request.resolver_match.route %}
     
     <!-- INICIO -->
-    <li class="nav-item">
+    <li class="nav-item nav-main-item">
         <a href="{% url 'inicio' %}"
            class="nav-link {% if 'inicio' in pagina_actual %}active{% endif %}">
             <img src="{% static 'custom/img/iconos_sidebar/inicio.svg' %}" alt="">
@@ -12,7 +12,7 @@
     </li>
     <!-- ADMINISTRACIÓN -->
     {% if request.user|has_group:"Administrador" %}
-        <li class="nav-item">
+        <li class="nav-item nav-main-item">
             <a href="#" class="nav-link">
                 <img src="{% static 'custom/img/iconos_sidebar/administracion.svg' %}" alt="">
                 <p>
@@ -43,7 +43,7 @@
         </li>
     {% endif %}
     <!-- Tableros -->
-    <li class="nav-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
+    <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/tableros.svg' %}" alt="">
             <p>
@@ -75,7 +75,7 @@
     
 
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual %}menu-open{% endif %}">
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="">
             <p>
