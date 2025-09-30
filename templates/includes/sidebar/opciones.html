@@ -24,21 +24,18 @@
                 <li class="nav-item">
                     <a href="{% url 'usuarios' %}"
                        class="nav-link nav-dot ms-2 {% if 'usuarios' in pagina_actual or 'password' in pagina_actual %}active{% endif %}">
-                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Usuarios</p>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'grupos' %}"
                        class="nav-link nav-dot ms-2 {% if 'grupos' in pagina_actual %}active{% endif %}">
-                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Grupos</p>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'dupla_list' %}"
                        class="nav-link nav-dot ms-2 {% if 'dupla' in pagina_actual %}active{% endif %}">
-                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Duplas</p>
                     </a>
                 </li>
