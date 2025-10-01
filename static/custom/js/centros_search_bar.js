@@ -51,7 +51,6 @@
     const BOOL_OPS = [
         { value: 'eq', label: 'Igual a' },
         { value: 'ne', label: 'Distinto de' },
-        { value: 'empty', label: 'Vacio' },
     ];
 
     const rowsContainer = document.getElementById('filters-rows');

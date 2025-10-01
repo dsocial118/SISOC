@@ -6,7 +6,6 @@
     const TEXT_FIELDS = [
         { value: 'apellido', label: 'Apellido' },
         { value: 'nombre', label: 'Nombre' },
-        { value: 'genero', label: 'Genero' },
         { value: 'vinculo_parental', label: 'Vinculo parental' },
         { value: 'correo_electronico', label: 'Correo electronico' },
         { value: 'barrio', label: 'Barrio' },
@@ -27,6 +26,16 @@
         { value: 'altura', label: 'Altura' },
         { value: 'cantidad_beneficiarios', label: 'Cantidad de beneficiarios' }
     ];
+    const CHOICE_FIELDS = {
+        genero: {
+            label: 'Genero',
+            options: [
+                { value: 'F', label: 'Femenino' },
+                { value: 'M', label: 'Masculino' },
+                { value: 'X', label: 'Otro/No binario' },
+            ],
+        },
+    };
 
     const TEXT_OPS = [
         { value: 'contains', label: 'Contiene' },
@@ -41,6 +50,10 @@
         { value: 'gt', label: 'Mayor a' },
         { value: 'lt', label: 'Menor a' },
         { value: 'empty', label: 'Vacio' }
+    ];
+    const CHOICE_OPS = [
+        { value: 'eq', label: 'Igual a' },
+        { value: 'ne', label: 'Distinto de' },
     ];
 
     const rowsContainer = document.getElementById('filters-rows');
@@ -61,11 +74,27 @@
         return sel;
     }
 
+    function choiceFieldOptions() {
+        return Object.keys(CHOICE_FIELDS).map(key => ({
+            value: key,
+            label: CHOICE_FIELDS[key].label,
+        }));
+    }
+
     function fieldOptions() {
         return [
             ...TEXT_FIELDS,
-            ...NUMBER_FIELDS
+            ...NUMBER_FIELDS,
+            ...choiceFieldOptions()
         ];
+    }
+
+    function isChoiceField(field) {
+        return Object.prototype.hasOwnProperty.call(CHOICE_FIELDS, field);
+    }
+
+    function getChoiceOptions(field) {
+        return isChoiceField(field) ? CHOICE_FIELDS[field].options : [];
     }
 
     function addRow(prefill) {
@@ -78,6 +107,9 @@
         valueInput.type = 'text';
         valueInput.className = 'form-control form-control-sm';
         valueInput.placeholder = 'Valor';
+
+        const choiceValueSel = createSelect([], 'form-select form-select-sm');
+        choiceValueSel.style.display = 'none';
 
         const emptyModeSel = createSelect([
             { value: 'both', label: 'Nulos o vacios' },
@@ -98,15 +130,34 @@
         function refreshOps() {
             const field = fieldSel.value;
             const isNum = isNumberField(field);
+            const isChoice = isChoiceField(field);
             opSel.innerHTML = '';
-            const ops = isNum ? NUM_OPS : TEXT_OPS;
+            const ops = isNum ? NUM_OPS : (isChoice ? CHOICE_OPS : TEXT_OPS);
             ops.forEach(opt => {
                 const o = document.createElement('option');
                 o.value = opt.value;
                 o.textContent = opt.label;
                 opSel.appendChild(o);
             });
-            opSel.value = isNum ? 'eq' : 'contains';
+            if (isChoice) {
+                opSel.value = 'eq';
+            } else {
+                opSel.value = isNum ? 'eq' : 'contains';
+            }
+
+            if (isChoice) {
+                const choiceOpts = getChoiceOptions(field);
+                choiceValueSel.innerHTML = '';
+                choiceOpts.forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt.value;
+                    option.textContent = opt.label;
+                    choiceValueSel.appendChild(option);
+                });
+                if (choiceOpts.length) {
+                    choiceValueSel.value = choiceOpts[0].value;
+                }
+            }
             adjustValueVisibility();
         }
 
@@ -114,6 +165,17 @@
             const op = opSel.value;
             const field = fieldSel.value;
             const isNum = isNumberField(field);
+            const isChoice = isChoiceField(field);
+
+            if (isChoice) {
+                valueInput.style.display = 'none';
+                emptyModeSel.style.display = 'none';
+                choiceValueSel.style.display = 'inline-block';
+                return;
+            }
+
+            choiceValueSel.style.display = 'none';
+
             if (op === 'empty') {
                 valueInput.style.display = 'none';
                 emptyModeSel.style.display = 'inline-block';
@@ -149,9 +211,16 @@
         row.appendChild(fieldSel);
         row.appendChild(opSel);
         row.appendChild(valueInput);
+        row.appendChild(choiceValueSel);
         row.appendChild(emptyModeSel);
         row.appendChild(removeBtn);
         rowsContainer.appendChild(row);
+
+        row._fieldSel = fieldSel;
+        row._opSel = opSel;
+        row._valueInput = valueInput;
+        row._choiceSel = choiceValueSel;
+        row._emptyModeSel = emptyModeSel;
 
         if (prefill) {
             if (prefill.field) fieldSel.value = prefill.field;
@@ -161,7 +230,11 @@
             if (prefill.op === 'empty') {
                 emptyModeSel.value = (prefill.empty_mode || 'both');
             } else if (typeof prefill.value !== 'undefined') {
-                valueInput.value = prefill.value;
+                if (isChoiceField(fieldSel.value)) {
+                    choiceValueSel.value = prefill.value;
+                } else {
+                    valueInput.value = prefill.value;
+                }
             }
         } else {
             fieldSel.value = 'apellido';
@@ -179,11 +252,22 @@
         const rows = rowsContainer.children;
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
-            const [fieldSel, opSel, valueInput, emptyModeSel] = row.querySelectorAll('select, input');
+            const fieldSel = row._fieldSel;
+            const opSel = row._opSel;
+            const valueInput = row._valueInput;
+            const choiceSel = row._choiceSel;
+            const emptyModeSel = row._emptyModeSel;
+
             const field = fieldSel.value;
             const op = opSel.value;
+
             if (op === 'empty') {
                 items.push({ field, op, empty_mode: emptyModeSel.value });
+            } else if (isChoiceField(field)) {
+                const selected = choiceSel.value;
+                if (selected) {
+                    items.push({ field, op, value: selected });
+                }
             } else {
                 const value = valueInput.value.trim();
                 if (value !== '') {

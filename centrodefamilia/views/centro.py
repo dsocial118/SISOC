@@ -34,6 +34,17 @@ from centrodefamilia.forms import CentroForm
 from core.services.advanced_filters import AdvancedFilterEngine
 
 
+BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=CENTRO_FILTER_MAP,
+    field_types=CENTRO_FIELD_TYPES,
+    allowed_ops={
+        "text": CENTRO_TEXT_OPS,
+        "number": CENTRO_NUM_OPS,
+        "boolean": CENTRO_BOOL_OPS,
+    },
+)
+
+
 class CentroListView(LoginRequiredMixin, ListView):
     model = Centro
     template_name = "centros/centro_list.html"
@@ -43,15 +54,6 @@ class CentroListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         base_qs = Centro.objects.select_related("faro_asociado", "referente").order_by(
             "nombre"
-        )
-        BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
-            field_map=CENTRO_FILTER_MAP,
-            field_types=CENTRO_FIELD_TYPES,
-            allowed_ops={
-                "text": CENTRO_TEXT_OPS,
-                "number": CENTRO_NUM_OPS,
-                "boolean": CENTRO_BOOL_OPS,
-            },
         )
 
         user = self.request.user

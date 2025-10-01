@@ -1,4 +1,4 @@
-"""Configuración para filtros combinables de beneficiarios."""
+"""Configuración para filtros combinables de centros."""
 
 from typing import Dict
 
@@ -23,6 +23,7 @@ FIELD_MAP: Dict[str, str] = {
     "apellido_referente": "apellido_referente",
     "telefono_referente": "telefono_referente",
     "correo_referente": "correo_referente",
+    "activo": "activo",
 }
 
 FIELD_TYPES: Dict[str, str] = {
@@ -65,6 +66,6 @@ FIELD_TYPES: Dict[str, str] = {
 
 TEXT_OPS = {"contains", "ncontains", "eq", "ne", "empty"}
 NUM_OPS = {"eq", "ne", "gt", "lt", "empty"}
-BOOL_OPS = {"eq", "ne", "empty"}
+BOOL_OPS = {"eq", "ne"}
 
 __all__ = ["FIELD_MAP", "FIELD_TYPES", "TEXT_OPS", "NUM_OPS", "BOOL_OPS"]
