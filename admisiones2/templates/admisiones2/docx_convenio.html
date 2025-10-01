@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <style>
+        @page {
+            size: A4;
+            margin: 3.5cm 2cm 2.5cm 2cm; /* márgenes: top, right, bottom, left */
+            @top-center {
+                content: element(header);
+            }
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 10pt;
+                color: #666;
+            }
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            margin: 0;
+        }
+
+        #header {
+            position: running(header);
+            height: 3cm;
+            padding: 0.5cm 1cm;
+            /*border-bottom: 1px solid #ccc;*/
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            font-weight: bold;
+            padding-top: 15px;
+            padding-right: 30px;
+            font-size: 10pt;
+            text-align: left;
+            flex-direction: column; /* si hay varios elementos apilados verticalmente */
+            align-items: center;    /* centro horizontal */
+            justify-content: center; /* centro vertical */
+            text-align: center; /* para textos multilínea */
+        }
+
+        .header-right {
+            display: flex;
+            flex-direction: column; /* si hay varios elementos apilados verticalmente */
+            align-items: center;    /* centro horizontal */
+            justify-content: center; /* centro vertical */
+            font-size: 9pt;
+            text-align: center; /* para textos multilínea */
+            line-height: 0.5;
+            padding-left:30px;
+        }
+
+        .header-right img {
+            max-height: 40px;
+            height: auto;
+            width: auto;
+            margin-bottom: 0px;
+        }
+        main {
+            /* padding-top: 1cm; */
+            box-sizing: border-box;
+        }
+
+        h4 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 2px solid black;
+        }
+
+        th, td {
+            padding: 6px;
+            border: 1px solid #ccc;
+            vertical-align: top;
+        }
+
+        th[colspan="2"] {
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+
+        .salto_pagina {
+            page-break-before: always;
+            /* También podés usar page-break-inside: avoid; para evitar quiebres dentro */
+        }
+
+        .table-bordered {
+            border: 1px solid #ccc;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-start {
+            text-align: left;
+        }
+
+        .align-middle {
+            vertical-align: middle;
+        }
+        li {
+          line-height: 1.8;
+          margin-bottom: 0.5em;
+        }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div class="header-left">
+                <br />
+                PROGRAMA ALIMENTAR
+                <br />
+                COMUNIDAD
+            </div>
+            <div class="header-right">
+                <img src="https://www.casarosada.gob.ar/images/escudo_nacional_argentino.png"
+                     style="filter: grayscale(100%);
+                            max-height:40px" />
+                <br />
+                Secretaría de Niñez, Adolescencia y Familia
+                <br />
+                Ministerio de Capital Humano
+            </div>
+        </div>
+        <main>
+            <h4>
+                CONVENIO ENTRE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO Y LA (TIPO ENTIDAD) {{ informe.nombre_organizacion }} DE LA PROVINCIA DE {{ informe.provincia_organizacion }}
+            </h4>
+            <p>
+                Entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, representada en este acto por el Subsecretario de Promoción Humana Sr. Martín Domingo Lepera (DNI N° 30.957.827), con domicilio en Av. 9 de Julio N° 1925 - Piso 16, CABA, en adelante "LA SECRETARÍA"; y la (tipo entidad) {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, CUIT {{ informe.cuit_organizacion }}, representada en este acto por {{ informe.representante_cargo }} {{ informe.representante_nombre }}, DNI N° {{ informe.representante_dni }}, (Secretario/a) DNI N° (DNI), y (Tesorero/a) DNI N° (DNI), con domicilio en {{ informe.domicilio_organizacion }}, Ciudad de {{ informe.localidad_organizacion }}, Provincia de {{ informe.provincia_organizacion }}, en adelante “(tipo entidad)”, denominadas conjuntamente “LAS PARTES”, convienen celebrar el presente convenio sujeto a las siguientes cláusulas:
+            </p>
+            <h5>Cláusula Primera. Objeto</h5>
+            <p>
+                El presente Convenio tiene como objeto fortalecer el servicio alimentario de Comedores y/o Merenderos comunitarios, complementando las prestaciones brindadas a personas en situación de vulnerabilidad social y económica, según lo establecido en la Resolución N° RESOL-2025-151-APN-MCH y su Anexo - IF-2025-32668963-APN-SSPH#MCH.
+            </p>
+            <h5>Cláusula Segunda. Financiamiento</h5>
+            <p>
+                “(TIPO ENTIDAD)” acepta que "LA SECRETARÍA" otorgue fondos en carácter de subsidio no reintegrable, sujeto a rendición de cuentas, para el {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” de la localidad de {{ informe.localidad_espacio }}, Provincia de {{ informe.provincia_espacio }}, tramitado por Expediente N° {{ informe.expediente_nro }}. Detalles en ANEXO IF {{ admision.legales_num_if }} (nombre anexo).
+            </p>
+            <h5>Cláusula Tercera. Forma de Pago</h5>
+            <p>
+                Los fondos serán acreditados mensualmente en una cuenta vinculada a una Tarjeta Electrónica a nombre del administrador designado. Se notificará por correo electrónico la acreditación, conforme al ANEXO.
+            </p>
+            <h5>Cláusula Cuarta. Destino de Fondos</h5>
+            <p>
+                Los fondos deben destinarse exclusivamente a la adquisición de alimentos para el servicio alimentario del Comedor/Merendero indicado. Se prohíbe su uso para otros fines y se deberá garantizar la intangibilidad de los fondos.
+            </p>
+            <h5>Cláusula Quinta. Asignación de Recursos</h5>
+            <p>
+                La tarjeta prepaga sólo podrá utilizarse para adquirir alimentos. Se prohíbe la compra a personas o empresas con vínculos con los responsables del comedor o de la entidad. También se prohíbe el uso con fines políticos.
+            </p>
+            <h5>Cláusula Sexta. Carácter de los Alimentos</h5>
+            <p>Los alimentos deberán cumplir con el Código Alimentario Nacional y contar con fecha de vencimiento adecuada.</p>
+            <h5>Cláusula Séptima. Prestación del Servicio</h5>
+            <p>
+                Ante suspensión o modificación del servicio, deberá notificarse a "LA SECRETARÍA" en un plazo máximo de 10 días. En tal caso, la tarjeta debe devolverse. Toda modificación del comedor deberá comunicarse fehacientemente.
+            </p>
+            <h5>Cláusula Octava. Plazo de Utilización de Fondos - Cereo</h5>
+            <p>
+                Los fondos deberán utilizarse en el mes de su acreditación. Vencido el plazo, los saldos serán restituidos a "LA SECRETARÍA" mediante cereo bancario.
+            </p>
+            <h5>Cláusula Novena. Plazo de Ejecución</h5>
+            <p>
+                El convenio tendrá una duración máxima de 6 meses desde la primera acreditación. "LA SECRETARÍA" podrá rescindirlo con 15 días de antelación.
+            </p>
+            <h5>Cláusula Décima. Registros Documentales</h5>
+            <p>
+                El Comedor/Merendero deberá llevar registros de novedades, asistentes, colaboradores y prestaciones otorgadas, disponibles en sus instalaciones.
+            </p>
+            <h5>Cláusula Décima Primera. Rendición de Cuentas</h5>
+            <p>
+                “(TIPO ENTIDAD)” rendirá cuentas documentadas conforme a lo establecido en el ANEXO. La documentación deberá cumplir con normas de AFIP y conservarse por 10 años.
+            </p>
+            <h5>Cláusula Décima Segunda. Carga de Comprobantes</h5>
+            <p>
+                Se deberá cargar los comprobantes de pago en una plataforma electrónica en un plazo de 7 días corridos desde el pago.
+            </p>
+            <h5>Cláusula Décima Tercera. Informe de Gestión</h5>
+            <p>
+                Se deberá presentar DDJJ de cumplimiento de objeto social a los 40 días de la acreditación, con datos de beneficiarios, viandas y artículos adquiridos. En caso de incumplimiento, podrá suspenderse el pago.
+            </p>
+            <h5>Cláusula Décima Cuarta. Auditoría y Control</h5>
+            <p>
+                "LA SECRETARÍA" podrá auditar el comedor de manera presencial o virtual. Se podrá requerir exhibición de registros y documentación en cualquier momento.
+            </p>
+            <h5>Cláusula Décima Quinta. Sanciones</h5>
+            <p>
+                El incumplimiento habilita a "LA SECRETARÍA" a cancelar el convenio, exigir reintegros y aplicar sanciones legales.
+            </p>
+            <h5>Cláusula Décima Sexta. Responsabilidad</h5>
+            <p>
+                “(TIPO ENTIDAD)” será responsable exclusiva por contrataciones, personal y actividades derivadas. "LA SECRETARÍA" queda exenta de cualquier responsabilidad legal o laboral.
+            </p>
+            <h5>Cláusula Décima Séptima. Integridad</h5>
+            <p>
+                Se declara que no hubo prácticas corruptas. "LA SECRETARÍA" podrá sancionar si se detectan irregularidades o falta de integridad conforme la Ley Nº 27.401.
+            </p>
+            <h5>Cláusula Décima Octava. Controversias</h5>
+            <p>
+                Las partes intentarán resolver diferencias de buena fe. En caso contrario, se someterán a los tribunales federales de CABA.
+            </p>
+            <h5>Cláusula Décima Novena. Consentimiento Ley 25.326</h5>
+            <p>“(TIPO ENTIDAD)” autoriza la recolección y análisis de sus datos personales para fines exclusivos del Programa.</p>
+            <h5>Cláusula Vigésima. Domicilios</h5>
+            <p>
+                Los domicilios físicos y electrónicos indicados se considerarán válidos para notificaciones, salvo comunicación fehaciente en contrario.
+            </p>
+            <h5>Cláusula Vigésima Primera. Entrada en Vigencia</h5>
+            <p>
+                El convenio entrará en vigencia al ser aprobado por acto administrativo de "LA SECRETARÍA" y notificado al correo informado en el Anexo.
+            </p>
+            <h5>Cláusula Vigésima Segunda. Responsable Sustituto</h5>
+            <p>
+                “(TIPO ENTIDAD)” podrá designar un responsable sustituto mediante nota comunicativa. El nuevo responsable asumirá las obligaciones del anterior.
+            </p>
+            <p style="margin-top: 2em;">
+                En prueba de conformidad, se suscriben dos ejemplares de igual tenor en la Ciudad Autónoma de Buenos Aires, en la fecha: ___________
+            </p>
+        </main>
+    </body>
+</html>
