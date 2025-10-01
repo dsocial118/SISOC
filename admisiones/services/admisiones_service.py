@@ -275,9 +275,7 @@ class AdmisionService:
     def create_admision(comedor_pk, tipo_convenio_id):
         comedor = get_object_or_404(Comedor, pk=comedor_pk)
         tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
-        estado = get_object_or_404(
-            EstadoAdmision, nombre__iexact="Pendiente"
-        )
+        estado = get_object_or_404(EstadoAdmision, nombre__iexact="Pendiente")
 
         return Admision.objects.create(
             comedor=comedor,
