@@ -51,13 +51,13 @@ document.addEventListener('DOMContentLoaded', () => {
     hideIfSinglePage = true,
   }) {
     const nodes = Array.from(items);
-    console.log('Paginate called with:', { 
-      itemsCount: nodes.length, 
-      pageSizeSelect: pageSizeSelect?.id, 
+    console.log('Paginate called with:', {
+      itemsCount: nodes.length,
+      pageSizeSelect: pageSizeSelect?.id,
       paginationUl: paginationUl?.id,
       pageSizeSelectValue: pageSizeSelect?.value
     });
-    
+
     if (!nodes.length || !pageSizeSelect || !paginationUl) {
       console.log('Paginate: missing required elements', {
         hasNodes: !!nodes.length,
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const liPrev = document.createElement('li');
         liPrev.className = `page-item${page === 1 ? ' disabled' : ''}`;
         liPrev.innerHTML = `<a class="page-link" href="#" aria-label="Anterior">&laquo;</a>`;
-        liPrev.addEventListener('click', (e) => { e.preventDefault(); if (page > 1) { page--; render(); }});
+        liPrev.addEventListener('click', (e) => { e.preventDefault(); if (page > 1) { page--; render(); } });
         paginationUl.appendChild(liPrev);
 
         const maxBtns = 7;
@@ -146,17 +146,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const liNext = document.createElement('li');
         liNext.className = `page-item${page === totalPages ? ' disabled' : ''}`;
         liNext.innerHTML = `<a class="page-link" href="#" aria-label="Siguiente">&raquo;</a>`;
-        liNext.addEventListener('click', (e) => { e.preventDefault(); if (page < totalPages) { page++; render(); }});
+        liNext.addEventListener('click', (e) => { e.preventDefault(); if (page < totalPages) { page++; render(); } });
         paginationUl.appendChild(liNext);
       }
 
       if (typeof onPageChange === 'function') onPageChange({ page, pageSize: readPageSize(), total: nodes.length });
     }
 
-    pageSizeSelect.addEventListener('change', (e) => { 
+    pageSizeSelect.addEventListener('change', (e) => {
       console.log('Selector genérico cambió a:', e.target.value);
-      page = 1; 
-      render(); 
+      page = 1;
+      render();
     });
     render();
     return { goto: (p) => { page = p; render(); } };
@@ -169,10 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
       btnProcess.disabled = true;
       let origHTML;
       let progressInterval;
-      
+
       try {
         origHTML = btnProcess.innerHTML;
-        
+
         // Crear indicador de progreso
         const progressHtml = `
           <div class="d-flex align-items-center">
@@ -181,16 +181,16 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
         btnProcess.innerHTML = progressHtml;
-        
+
         // Obtener total de registros del preview
         const previewRows = document.querySelectorAll('.preview-row');
         const totalRegistros = previewRows.length;
         document.getElementById('progress-total').textContent = totalRegistros;
-        
+
         // Simular progreso (actualizar cada 200ms)
         let currentProgress = 0;
         const incremento = Math.max(1, Math.floor(totalRegistros / 20)); // 20 actualizaciones aprox
-        
+
         progressInterval = setInterval(() => {
           if (currentProgress < totalRegistros) {
             currentProgress = Math.min(currentProgress + incremento, totalRegistros);
@@ -230,12 +230,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const msg = data.error || data.message || `HTTP ${resp.status}`;
           throw new Error(msg);
         }
-        
+
         // Completar progreso
         clearInterval(progressInterval);
         const progressCurrentEl = document.getElementById('progress-current');
         if (progressCurrentEl) progressCurrentEl.textContent = totalRegistros;
-        
+
         // Mostrar "Completado" por un momento
         btnProcess.innerHTML = `
           <div class="d-flex align-items-center">
@@ -243,17 +243,17 @@ document.addEventListener('DOMContentLoaded', () => {
             <span>Completado ${totalRegistros} / ${totalRegistros} registros</span>
           </div>
         `;
-        
+
         setTimeout(() => {
           const baseMsg =
             data.message ||
             `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a EN ESPERA.`;
           const errorExtra = data.errores ? ` ${data.errores} errores.` : '';
           showAlert('success', '¡Listo! ', baseMsg, errorExtra);
-          
+
           setTimeout(() => window.location.reload(), 1000);
         }, 800);
-        
+
       } catch (err) {
         console.error('Error procesar expediente:', err);
         showAlert('danger', 'Error al procesar el expediente: ', err.message);
@@ -466,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formCruce = document.getElementById('form-cruce-cuit');
     const alertasCruce = document.getElementById('cruce-alertas');
     const titleEl = document.getElementById('modalCruceCuitLabel');
-    const helpEl  = document.getElementById('cruce-help');
+    const helpEl = document.getElementById('cruce-help');
     const btnSubmit = document.getElementById('btn-cruce-submit');
 
     modalCruce.addEventListener('show.bs.modal', (e) => {
@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ===== Revisión de legajos (Aprobar / Rechazar) ===== */
-  (function initRevisionLegajos(){
+  (function initRevisionLegajos() {
     const buttons = document.querySelectorAll('.btn-revision');
     if (!buttons.length) return;
 
@@ -616,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
       [btnAprobar, btnRechazar].forEach(b => {
         if (!b) return;
         b.classList.remove('active');
-        b.classList.remove('btn-success','btn-danger');
+        b.classList.remove('btn-success', 'btn-danger');
         b.classList.add('btn-outline-success');
         if (b && b.dataset.accion === 'RECHAZAR') {
           b.classList.remove('btn-outline-success');
@@ -652,7 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
 
         const container = btn.closest('.legajo-item') || document;
-        const btnAprobar  = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="APROBAR"]`);
+        const btnAprobar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="APROBAR"]`);
         const btnRechazar = container.querySelector(`.btn-revision[data-legajo-id="${legajoId}"][data-accion="RECHAZAR"]`);
 
         setLoading(btn, true);
@@ -711,11 +711,11 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
 
   /* ===== Inicializar paginación para PREVIEW ===== */
-  (function initPreviewPagination(){
+  (function initPreviewPagination() {
     const tbody = document.getElementById('preview-tbody');
     const pageSizeSel = document.getElementById('preview-page-size');
     const pagUl = document.getElementById('preview-pagination');
-    
+
     if (!tbody || !pageSizeSel || !pagUl) {
       console.log('Elementos preview no encontrados');
       return;
@@ -729,32 +729,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Implementación simplificada para preview
     let currentPage = 1;
-    
+
     function getCurrentPageSize() {
       const val = pageSizeSel.value;
       return val === 'all' ? items.length : parseInt(val, 10) || 10;
     }
-    
+
     function renderPage() {
       const pageSize = getCurrentPageSize();
       const totalPages = Math.ceil(items.length / pageSize);
-      
+
       if (currentPage > totalPages) currentPage = totalPages;
       if (currentPage < 1) currentPage = 1;
-      
+
       const start = (currentPage - 1) * pageSize;
       const end = start + pageSize;
-      
+
       console.log('Renderizando preview:', { currentPage, pageSize, totalPages, start, end });
-      
+
       items.forEach((item, index) => {
         const shouldShow = index >= start && index < end;
         item.style.display = shouldShow ? '' : 'none';
       });
-      
+
       // Generar paginación
       pagUl.innerHTML = '';
-      
+
       if (totalPages > 1) {
         for (let i = 1; i <= totalPages; i++) {
           const li = document.createElement('li');
@@ -769,13 +769,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
-    
-    pageSizeSel.addEventListener('change', function() {
+
+    pageSizeSel.addEventListener('change', function () {
       console.log('Selector de preview cambió a:', this.value);
       currentPage = 1;
       renderPage();
     });
-    
+
     renderPage();
   })();
 
@@ -879,7 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   /* ===== VALIDACIÓN RENAPER ===== */
-  
+
   // Función para mostrar modal de subsanación Renaper
   function mostrarModalSubsanarRenaper(legajoId, modalRenaper) {
     const modalHtml = `
@@ -905,45 +905,45 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
     `;
-    
+
     // Eliminar modal anterior si existe
     const modalExistente = document.getElementById('modalSubsanarRenaper');
     if (modalExistente) modalExistente.remove();
-    
+
     // Agregar nuevo modal
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
+
     const modalSubsanar = new bootstrap.Modal(document.getElementById('modalSubsanarRenaper'));
     modalSubsanar.show();
-    
+
     // Event listener para confirmar
     document.getElementById('btn-confirmar-subsanar-renaper').addEventListener('click', async () => {
       const comentario = document.getElementById('comentario-subsanar-renaper').value.trim();
-      
+
       if (!comentario) {
         showAlert('warning', 'Debe ingresar un comentario de subsanación.');
         return;
       }
-      
+
       await guardarValidacionRenaperConComentario(legajoId, '3', comentario);
       modalSubsanar.hide();
       modalRenaper.hide();
       setTimeout(() => window.location.reload(), 1000);
     });
   }
-  
+
   // Función para guardar el estado de validación Renaper
   async function guardarValidacionRenaper(legajoId, estado, mensaje) {
     try {
       if (!window.VALIDAR_RENAPER_URL_TEMPLATE) {
         throw new Error('URL de validación no configurada');
       }
-      
+
       const url = window.VALIDAR_RENAPER_URL_TEMPLATE.replace('{id}', legajoId);
-      
+
       const formData = new FormData();
       formData.append('validacion_estado', estado);
-      
+
       const resp = await fetch(url, {
         method: 'POST',
         body: formData,
@@ -954,34 +954,34 @@ document.addEventListener('DOMContentLoaded', () => {
           'Accept': 'application/json'
         }
       });
-      
+
       const data = await resp.json();
-      
+
       if (!resp.ok || !data.success) {
         throw new Error(data.error || 'Error al guardar validación');
       }
-      
+
       showAlert('success', mensaje);
-      
+
     } catch (err) {
       console.error('Error guardar validación Renaper:', err);
       showAlert('danger', 'Error al guardar validación: ' + err.message);
     }
   }
-  
+
   // Función para guardar validación Renaper con comentario
   async function guardarValidacionRenaperConComentario(legajoId, estado, comentario) {
     try {
       if (!window.VALIDAR_RENAPER_URL_TEMPLATE) {
         throw new Error('URL de validación no configurada');
       }
-      
+
       const url = window.VALIDAR_RENAPER_URL_TEMPLATE.replace('{id}', legajoId);
-      
+
       const formData = new FormData();
       formData.append('validacion_estado', estado);
       formData.append('comentario', comentario);
-      
+
       const resp = await fetch(url, {
         method: 'POST',
         body: formData,
@@ -992,49 +992,49 @@ document.addEventListener('DOMContentLoaded', () => {
           'Accept': 'application/json'
         }
       });
-      
+
       const data = await resp.json();
-      
+
       if (!resp.ok || !data.success) {
         throw new Error(data.error || 'Error al guardar validación');
       }
-      
+
       showAlert('success', 'Subsanación Renaper guardada correctamente.');
-      
+
     } catch (err) {
       console.error('Error guardar subsanación Renaper:', err);
       showAlert('danger', 'Error al guardar subsanación: ' + err.message);
     }
   }
-  
+
   const modalValidarRenaper = document.getElementById('modalValidarRenaper');
   if (modalValidarRenaper) {
     const btnValidarRenaper = document.querySelectorAll('.btn-validar-renaper');
-    
+
     btnValidarRenaper.forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
-        
+
         const legajoId = btn.getAttribute('data-legajo-id');
         if (!legajoId || !window.VALIDAR_RENAPER_URL_TEMPLATE) {
           showAlert('danger', 'Error de configuración para validación Renaper.');
           return;
         }
-        
+
         const url = window.VALIDAR_RENAPER_URL_TEMPLATE.replace('{id}', legajoId);
-        
+
         // Mostrar modal y loading
         const modal = new bootstrap.Modal(modalValidarRenaper);
         modal.show();
-        
+
         const loadingDiv = document.getElementById('renaper-loading');
         const comparacionDiv = document.getElementById('renaper-comparacion');
         const alertasDiv = document.getElementById('renaper-alertas');
-        
+
         loadingDiv.style.display = 'block';
         comparacionDiv.style.display = 'none';
         alertasDiv.innerHTML = '';
-        
+
         try {
           const resp = await fetch(url, {
             method: 'POST',
@@ -1045,14 +1045,14 @@ document.addEventListener('DOMContentLoaded', () => {
               'Accept': 'application/json'
             }
           });
-          
+
           const responseText = await resp.text();
           console.log('=== RESPUESTA COMPLETA DEL SERVIDOR ===');
           console.log('Status:', resp.status);
           console.log('Headers:', Object.fromEntries(resp.headers.entries()));
           console.log('Body:', responseText);
           console.log('=======================================');
-          
+
           let data;
           try {
             data = JSON.parse(responseText);
@@ -1061,21 +1061,21 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Respuesta del servidor:', responseText);
             throw new Error(`Error del servidor (${resp.status}): ${responseText.substring(0, 200)}`);
           }
-          
+
           if (!resp.ok || !data.success) {
             throw new Error(data.error || 'Error al consultar Renaper');
           }
-          
+
           // Mostrar comparación
           loadingDiv.style.display = 'none';
           comparacionDiv.style.display = 'block';
-          
+
           document.getElementById('ciudadano-nombre').textContent = data.ciudadano_nombre;
-          
+
           // Llenar datos provincia
           const datosProvinciaTable = document.getElementById('datos-provincia');
           datosProvinciaTable.innerHTML = '';
-          
+
           const campos = [
             { key: 'documento', label: 'DNI' },
             { key: 'nombre', label: 'Nombre' },
@@ -1089,14 +1089,14 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'provincia', label: 'Provincia' },
             { key: 'codigo_postal', label: 'Código Postal' }
           ];
-          
+
           campos.forEach(campo => {
             const valorProvincia = data.datos_provincia[campo.key] || '-';
             const valorRenaper = data.datos_renaper[campo.key] || '-';
-            
+
             const coincide = valorProvincia === valorRenaper;
             const claseCoincidencia = coincide ? 'table-success' : 'table-warning';
-            
+
             const rowProvincia = document.createElement('tr');
             rowProvincia.className = claseCoincidencia;
             rowProvincia.innerHTML = `
@@ -1105,18 +1105,18 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             datosProvinciaTable.appendChild(rowProvincia);
           });
-          
+
           // Llenar datos Renaper
           const datosRenaperTable = document.getElementById('datos-renaper');
           datosRenaperTable.innerHTML = '';
-          
+
           campos.forEach(campo => {
             const valorProvincia = data.datos_provincia[campo.key] || '-';
             const valorRenaper = data.datos_renaper[campo.key] || '-';
-            
+
             const coincide = valorProvincia === valorRenaper;
             const claseCoincidencia = coincide ? 'table-success' : 'table-warning';
-            
+
             const rowRenaper = document.createElement('tr');
             rowRenaper.className = claseCoincidencia;
             rowRenaper.innerHTML = `
@@ -1125,13 +1125,13 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             datosRenaperTable.appendChild(rowRenaper);
           });
-          
+
           // Limpiar botones anteriores si existen
           const botonesExistentes = comparacionDiv.querySelector('.mt-3.text-center');
           if (botonesExistentes) {
             botonesExistentes.remove();
           }
-          
+
           // Mostrar botones para validación de Renaper
           const botonesDiv = document.createElement('div');
           botonesDiv.className = 'mt-3 text-center';
@@ -1144,28 +1144,28 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <p class="small text-muted mt-2">Esto solo valida la información de Renaper. Luego podrás aprobar/rechazar todo el legajo.</p>
           `;
-          
+
           comparacionDiv.appendChild(botonesDiv);
-          
+
           // Agregar event listeners para validación de Renaper
           const legajoId = btn.getAttribute('data-legajo-id');
-          
+
           botonesDiv.querySelector('.btn-aprobar-renaper').addEventListener('click', async () => {
             await guardarValidacionRenaper(legajoId, '1', 'Datos aceptados. Ahora puedes revisar el legajo completo.');
             modal.hide();
             setTimeout(() => window.location.reload(), 1000);
           });
-          
+
           botonesDiv.querySelector('.btn-rechazar-renaper').addEventListener('click', async () => {
             await guardarValidacionRenaper(legajoId, '2', 'Datos rechazados. El legajo no se puede revisar hasta corregir los datos.');
             modal.hide();
             setTimeout(() => window.location.reload(), 1000);
           });
-          
+
           botonesDiv.querySelector('.btn-subsanar-renaper').addEventListener('click', () => {
             mostrarModalSubsanarRenaper(legajoId, modal);
           });
-          
+
         } catch (err) {
           console.error('Error validación Renaper:', err);
           loadingDiv.style.display = 'none';
@@ -1183,42 +1183,82 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== MODAL RESPUESTA SUBSANACIÓN RENAPER ===== */
   const modalRespuestaRenaper = document.getElementById('modalRespuestaSubsanacionRenaper');
   if (modalRespuestaRenaper) {
-    modalRespuestaRenaper.addEventListener('show.bs.modal', function (event) {
+    const formRespuesta = modalRespuestaRenaper.querySelector('#form-respuesta-subsanacion-renaper');
+    if (!formRespuesta) {
+      console.error('No se encontró el formulario de respuesta Renaper dentro del modal.');
+      return;
+    }
+
+    const renderModalAlert = (type, message) => {
+      const alertasNode = modalRespuestaRenaper.querySelector('#modal-alertas-renaper');
+      if (!alertasNode) return;
+      alertasNode.innerHTML = `
+        <div class="alert alert-${escapeHtml(type)} alert-dismissible fade show" role="alert">
+          ${escapeHtml(message)}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      `;
+    };
+
+    modalRespuestaRenaper.addEventListener('show.bs.modal', (event) => {
       const button = event.relatedTarget;
-      const legajoId = button.getAttribute('data-legajo-id');
-      const expedienteId = button.getAttribute('data-expediente-id');
-      const form = modalRespuestaRenaper.querySelector('#form-respuesta-subsanacion-renaper');
-      
-      const actionUrl = `/expedientes/${expedienteId}/ciudadanos/${legajoId}/respuesta-subsanacion-renaper/`;
-      form.setAttribute('action', actionUrl);
-      
+      const legajoId = button ? button.getAttribute('data-legajo-id') : null;
+      const expedienteId = button ? button.getAttribute('data-expediente-id') : null;
       const alertas = modalRespuestaRenaper.querySelector('#modal-alertas-renaper');
       if (alertas) alertas.innerHTML = '';
-      
-      // Limpiar campos
-      document.getElementById('comentario-respuesta-renaper').value = '';
-      document.getElementById('archivo-respuesta-renaper').value = '';
-    });
-    
-    const formRespuesta = document.getElementById('form-respuesta-subsanacion-renaper');
-    formRespuesta.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const comentario = document.getElementById('comentario-respuesta-renaper').value.trim();
-      if (!comentario) {
-        showAlert('warning', 'Debe ingresar un comentario de respuesta.');
+
+      if (!legajoId || !expedienteId) {
+        console.error('Modal Respuesta Renaper abierto sin IDs requeridos.', { legajoId, expedienteId, button });
+        formRespuesta.removeAttribute('action');
+        delete modalRespuestaRenaper.dataset.actionUrl;
+        renderModalAlert('danger', 'No se pudo preparar el formulario porque faltan datos del legajo.');
         return;
       }
-      
-      const url = formRespuesta.getAttribute('action');
-      const formData = new FormData(formRespuesta);
-      const btnSubmit = formRespuesta.querySelector('button[type="submit"]');
-      const originalHTML = btnSubmit.innerHTML;
+
+      const actionUrl = `/expedientes/${expedienteId}/ciudadanos/${legajoId}/respuesta-subsanacion-renaper/`;
+      formRespuesta.setAttribute('action', actionUrl);
+      modalRespuestaRenaper.dataset.actionUrl = actionUrl;
+
+      // Limpiar campos
+      const comentarioInput = document.getElementById('comentario-respuesta-renaper');
+      const archivoInput = document.getElementById('archivo-respuesta-renaper');
+      if (comentarioInput) comentarioInput.value = '';
+      if (archivoInput) archivoInput.value = '';
+    });
+
+    formRespuesta.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const comentarioInput = document.getElementById('comentario-respuesta-renaper');
+      const comentario = comentarioInput ? comentarioInput.value.trim() : '';
       const alertas = modalRespuestaRenaper.querySelector('#modal-alertas-renaper');
-      
+      if (alertas) alertas.innerHTML = '';
+      if (!comentario) {
+        showAlert('warning', 'Debe ingresar un comentario de respuesta.');
+        renderModalAlert('warning', 'Debe ingresar un comentario de respuesta.');
+        return;
+      }
+
+      const btnSubmit = formRespuesta.querySelector('button[type="submit"]');
+      if (!btnSubmit) {
+        console.error('No se encontró el botón de envío en el formulario de respuesta Renaper.');
+        renderModalAlert('danger', 'No se pudo enviar la respuesta por un error de configuración.');
+        return;
+      }
+
+      const url = formRespuesta.getAttribute('action') || modalRespuestaRenaper.dataset.actionUrl;
+      if (!url) {
+        console.error('Intento de envío de respuesta Renaper sin URL configurada.');
+        renderModalAlert('danger', 'No se pudo determinar la URL para enviar la respuesta. Cerrá el modal e intentá nuevamente.');
+        return;
+      }
+
+      const formData = new FormData(formRespuesta);
+      const originalHTML = btnSubmit.innerHTML;
+
       btnSubmit.disabled = true;
       btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando...';
-      
+
       try {
         const resp = await fetch(url, {
           method: 'POST',
@@ -1229,33 +1269,23 @@ document.addEventListener('DOMContentLoaded', () => {
             'X-Requested-With': 'XMLHttpRequest'
           }
         });
-        
+
         const data = await resp.json();
-        
+
         if (!resp.ok || !data.success) {
           throw new Error(data.message || 'Error al enviar respuesta');
         }
-        
-        alertas.innerHTML = `
-          <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ${data.message || 'Respuesta enviada correctamente.'}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        `;
-        
+
+        renderModalAlert('success', data.message || 'Respuesta enviada correctamente.');
+
         setTimeout(() => {
           const modal = bootstrap.Modal.getInstance(modalRespuestaRenaper);
           modal.hide();
           window.location.reload();
         }, 800);
-        
+
       } catch (err) {
-        alertas.innerHTML = `
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            ${err.message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        `;
+        renderModalAlert('danger', err.message || 'Error al enviar respuesta');
         console.error('Error al enviar respuesta:', err);
       } finally {
         btnSubmit.disabled = false;
@@ -1263,45 +1293,45 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  
+
   /* ===== Inicializar paginación para LEGAJOS ===== */
   setTimeout(() => {
     const list = document.getElementById('legajos-list');
     const pageSizeSel = document.getElementById('legajos-page-size');
     const pagUl = document.getElementById('legajos-pagination');
-    
+
     console.log('DOM elements:', {
       list: !!list,
-      pageSizeSel: !!pageSizeSel, 
+      pageSizeSel: !!pageSizeSel,
       pagUl: !!pagUl,
       listId: list?.id,
       selectorId: pageSizeSel?.id
     });
-    
+
     if (!list || !pageSizeSel || !pagUl) return;
-    
+
     const items = list.querySelectorAll('.legajo-item');
     console.log('Legajo items found:', items.length);
-    
+
     if (items.length <= 10) {
       console.log('Not enough items to paginate');
       return;
     }
 
     let currentPage = 1;
-    
+
     function renderPage() {
       const pageSize = pageSizeSel.value === 'all' ? items.length : parseInt(pageSizeSel.value) || 10;
       const totalPages = Math.ceil(items.length / pageSize);
       const start = (currentPage - 1) * pageSize;
       const end = start + pageSize;
-      
+
       console.log('Rendering:', { pageSize, currentPage, totalPages, start, end });
-      
+
       items.forEach((item, i) => {
         item.style.display = (i >= start && i < end) ? 'block' : 'none';
       });
-      
+
       pagUl.innerHTML = '';
       if (totalPages > 1) {
         for (let i = 1; i <= totalPages; i++) {
@@ -1317,13 +1347,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
-    
+
     pageSizeSel.onchange = () => {
       console.log('Page size changed to:', pageSizeSel.value);
       currentPage = 1;
       renderPage();
     };
-    
+
     renderPage();
   }, 100);
 });
