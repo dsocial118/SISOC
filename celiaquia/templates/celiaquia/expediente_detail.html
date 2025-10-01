@@ -11,19 +11,6 @@
 {% endblock %}
 {% block content %}
     {% with is_tec=request.user|has_group:"TecnicoCeliaquia" is_coord=request.user|has_group:"CoordinadorCeliaquia" is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
-        <style>
-    /* Extras sutiles para legajos */
-    .card-dark { background-color:#1f2d3d; color:#e9eef5; border:1px solid #2a3a4f; }
-    .chip { display:inline-flex; align-items:center; gap:.4rem; padding:.2rem .6rem; border-radius:999px; font-size:.75rem; }
-    .chip-warning { background:#ffe08a; color:#3b2f00; }
-    .badge-soft { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); }
-    .file-row { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.35rem .6rem; border-radius:.5rem; }
-    .file-row + .file-row { margin-top:.35rem; }
-    .file-name { max-width: 32ch; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:bottom; }
-    .muted { color:#9fb3c8!important; }
-    .list-divider { border-top:1px dashed rgba(255,255,255,.12); margin:.6rem 0; }
-    .btn-toolbar.flex-wrap > .btn-group { margin-bottom:.4rem; }
-        </style>
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
@@ -46,7 +33,7 @@
                                 data-mode="new">Subir Excel de Documentos (Cruce)</button>
                     {% endif %}
                     {% if expediente.cruce_excel %}
-                        {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
+                        {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' or expediente.estado.nombre == 'CRUCE_FINALIZADO' %}
                             <button type="button"
                                     class="btn btn-warning btn-sm"
                                     data-bs-toggle="modal"
@@ -400,8 +387,108 @@
                                 </div>
                                 <!-- Col 3: Archivos -->
                                 <div class="col-lg-5">
-                                    {% comment %} Aquí mantené la misma estructura de tus file-row {% endcomment %}
-                                    {{ block.super }}
+                                    <!-- Biopsia positiva y/o constancia médica -->
+                                    <div class="file-row" style="background:rgba(255,255,255,.02);">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="small muted">Biopsia/Constancia médica:</span>
+                                            {% if leg.archivo2 %}
+                                                <a href="{{ leg.archivo2.url }}"
+                                                   target="_blank"
+                                                   class="file-name text-decoration-underline">{{ leg.archivo2.name|default:"archivo2" }}</a>
+                                            {% else %}
+                                                <span class="text-danger small">No subido</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if is_prov %}
+                                            {% if expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
+                                                <button type="button"
+                                                        class="btn btn-outline-info btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalSubirArchivo"
+                                                        data-legajo-id="{{ leg.pk }}"
+                                                        data-expediente-id="{{ expediente.pk }}"
+                                                        data-file-field="archivo2">
+                                                    {% if leg.archivo2 %}
+                                                        Editar
+                                                    {% else %}
+                                                        Subir
+                                                    {% endif %}
+                                                </button>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                    <!-- Negativa de ANSES -->
+                                    <div class="file-row" style="background:rgba(255,255,255,.02);">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="small muted">Negativa ANSES:</span>
+                                            {% if leg.archivo3 %}
+                                                <a href="{{ leg.archivo3.url }}"
+                                                   target="_blank"
+                                                   class="file-name text-decoration-underline">{{ leg.archivo3.name|default:"archivo3" }}</a>
+                                            {% else %}
+                                                <span class="text-danger small">No subido</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if is_prov %}
+                                            {% if expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
+                                                <button type="button"
+                                                        class="btn btn-outline-info btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalSubirArchivo"
+                                                        data-legajo-id="{{ leg.pk }}"
+                                                        data-expediente-id="{{ expediente.pk }}"
+                                                        data-file-field="archivo3">
+                                                    {% if leg.archivo3 %}
+                                                        Editar
+                                                    {% else %}
+                                                        Subir
+                                                    {% endif %}
+                                                </button>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                    <!-- Respuesta Subsanación Renaper -->
+                                    {% if leg.revision_tecnico == 'SUBSANAR' %}
+                                        <div class="file-row" style="background:rgba(255,193,7,.1);">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="small muted">Respuesta subsanación:</span>
+                                                {% if leg.subsanacion_renaper_archivo %}
+                                                    <a href="{{ leg.subsanacion_renaper_archivo.url }}"
+                                                       target="_blank"
+                                                       class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
+                                                {% else %}
+                                                    <span class="text-warning small">Pendiente de respuesta</span>
+                                                {% endif %}
+                                            </div>
+                                            {% if is_prov %}
+                                                <button type="button"
+                                                        class="btn btn-outline-warning btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalRespuestaSubsanacionRenaper"
+                                                        data-legajo-id="{{ leg.pk }}"
+                                                        data-expediente-id="{{ expediente.pk }}">
+                                                    {% if leg.subsanacion_renaper_archivo %}
+                                                        Editar
+                                                    {% else %}
+                                                        Responder
+                                                    {% endif %}
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {% elif leg.revision_tecnico == 'SUBSANADO' %}
+                                        <div class="file-row" style="background:rgba(40,167,69,.1);">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="small muted">Respuesta subsanación:</span>
+                                                {% if leg.subsanacion_renaper_archivo %}
+                                                    <a href="{{ leg.subsanacion_renaper_archivo.url }}"
+                                                       target="_blank"
+                                                       class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
+                                                {% else %}
+                                                    <span class="text-muted small">Sin archivo de respuesta</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="list-divider"></div>
@@ -412,7 +499,19 @@
                                          role="toolbar"
                                          aria-label="Acciones del legajo">
                                         {% with estado=leg.revision_tecnico %}
-                                            {% if leg.estado_validacion_renaper == 0 %}
+                                            {% if estado == 'SUBSANADO' and leg.estado_validacion_renaper != 1 %}
+                                                <!-- Subsanado pero sin validación Renaper aprobada -->
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button"
+                                                            class="btn btn-info btn-validar-renaper"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalValidarRenaper">
+                                                        🔍 Validar Renaper
+                                                    </button>
+                                                </div>
+                                            {% elif leg.estado_validacion_renaper == 0 %}
+                                                <!-- Sin validar Renaper -->
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <button type="button"
                                                             class="btn btn-info btn-validar-renaper"
@@ -423,6 +522,7 @@
                                                     </button>
                                                 </div>
                                             {% elif leg.estado_validacion_renaper == 1 %}
+                                                <!-- Renaper aprobado: mostrar botones de revisión -->
                                                 <div class="btn-group btn-group-sm me-2" role="group">
                                                     <button type="button"
                                                             class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
@@ -650,11 +750,12 @@
                                           required></textarea>
                             </div>
                             <div class="col-12">
-                                <label for="archivo-respuesta-renaper" class="form-label">Archivo de respuesta (opcional)</label>
+                                <label for="archivo-respuesta-renaper" class="form-label">Archivo de respuesta *</label>
                                 <input type="file"
                                        name="archivo"
                                        id="archivo-respuesta-renaper"
                                        class="form-control"
+                                       required
                                        accept=".pdf,.jpg,.jpeg,.png" />
                             </div>
                         </div>
@@ -732,16 +833,26 @@
     </div>
 {% endwith %}
 {% endblock %}
+{% block customCSS %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/expediente_detail.css' %}" />
+{% endblock %}
 {% block customJS %}
-    <script>
-    window.PROCESS_URL           = "{% url 'expediente_procesar' expediente.pk %}";
-    window.CONFIRM_URL           = "{% url 'expediente_confirm' expediente.pk %}";
-    window.CRUCE_URL             = "{% url 'expediente_cruce_cuit' expediente.pk %}";
-    window.CSRF_TOKEN            = "{{ csrf_token }}";
-    window.REVISAR_URL_TEMPLATE  = "{% url 'legajo_revisar' expediente.pk 0 %}".replace("/0/", "/{id}/");
-    window.CONFIRM_SUBS_URL      = "{% url 'expediente_confirm_subsanacion' expediente.pk %}";
-    window.VALIDAR_RENAPER_URL_TEMPLATE = "{% url 'legajo_validar_renaper' expediente.pk 0 %}".replace("/0/", "/{id}/");
-    </script>
+    <!-- Meta tags para configuración -->
+    <meta name="process-url"
+          content="{% url 'expediente_procesar' expediente.pk %}" />
+    <meta name="confirm-url"
+          content="{% url 'expediente_confirm' expediente.pk %}" />
+    <meta name="cruce-url"
+          content="{% url 'expediente_cruce_cuit' expediente.pk %}" />
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <meta name="revisar-url-template"
+          content="{% url 'legajo_revisar' expediente.pk 0 %}" />
+    <meta name="confirm-subs-url"
+          content="{% url 'expediente_confirm_subsanacion' expediente.pk %}" />
+    <meta name="validar-renaper-url-template"
+          content="{% url 'legajo_validar_renaper' expediente.pk 0 %}" />
+    <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
