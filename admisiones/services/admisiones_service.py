@@ -275,26 +275,45 @@ class AdmisionService:
 
     @staticmethod
     def create_admision(comedor_pk, tipo_convenio_id):
-
         try:
+            # Buscar comedor
+            comedor = Comedor.objects.filter(pk=comedor_pk).first()
+            if not comedor:
+                logger.warning(
+                    "Comedor no encontrado", extra={"comedor_pk": comedor_pk}
+                )
+                return None
 
-            comedor = get_object_or_404(Comedor, pk=comedor_pk)
+            # Buscar tipo de convenio
+            tipo_convenio = TipoConvenio.objects.filter(pk=tipo_convenio_id).first()
+            if not tipo_convenio:
+                logger.warning(
+                    "TipoConvenio no encontrado",
+                    extra={"tipo_convenio_id": tipo_convenio_id},
+                )
+                return None
 
-            tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
+            # Buscar estado inicial (Pendiente)
+            estado = EstadoAdmision.objects.filter(nombre__iexact="Pendiente").first()
+            if not estado:
+                logger.error("EstadoAdmision 'Pendiente' no existe en la BD")
+                return None
 
-            estado = 1
-
+            # Crear admisión
             return Admision.objects.create(
-                comedor=comedor, tipo_convenio=tipo_convenio, estado_id=estado
+                comedor=comedor,
+                tipo_convenio=tipo_convenio,
+                estado=estado,
             )
 
         except Exception:
-
             logger.exception(
-                "Error en create_admision",
-                extra={"comedor_pk": comedor_pk, "tipo_convenio_id": tipo_convenio_id},
+                "Error inesperado en create_admision",
+                extra={
+                    "comedor_pk": comedor_pk,
+                    "tipo_convenio_id": tipo_convenio_id,
+                },
             )
-
             return None
 
     @staticmethod
