@@ -22,6 +22,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         exclude = [
             "admision",
             "estado",
+            "estado_formulario",
             "tipo",
             "declaracion_jurada_recepcion_subsidios",
             "constancia_inexistencia_percepcion_otros_subsidios",
@@ -44,9 +45,15 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         admision = kwargs.pop("admision", None)
+        self.require_full = kwargs.pop("require_full", False)
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.required = True
+
+        if self.require_full:
+            for field in self.fields.values():
+                field.required = True
+        else:
+            for field in self.fields.values():
+                field.required = False
 
         letras_fields = [
             "prestaciones_desayuno_letras",
@@ -60,29 +67,42 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 self.fields[field_name].widget.attrs["readonly"] = True
                 self.fields[field_name].initial = "Cero"
 
-        if admision:
-            try:
+            if admision:
                 anexo = Anexo.objects.filter(admision=admision).last()
-                nombre = anexo.responsable_nombre or ""
-                apellido = anexo.responsable_apellido or ""
                 comedor = admision.comedor
-                organizacion = comedor.organizacion
+                organizacion = comedor.organizacion if comedor else None
 
-                self.fields["expediente_nro"].initial = anexo.expediente
-                self.fields["nombre_espacio"].initial = anexo.efector
-                self.fields["tipo_espacio"].initial = anexo.tipo_espacio
-                self.fields["barrio_espacio"].initial = comedor.barrio
-                self.fields["localidad_espacio"].initial = comedor.localidad
-                self.fields["partido_espacio"].initial = comedor.partido
-                self.fields["provincia_espacio"].initial = comedor.provincia
-                self.fields["domicilio_espacio"].initial = anexo.domicilio
-                self.fields["responsable_tarjeta_nombre"].initial = (
-                    f"{nombre} {apellido}".strip()
+                self.fields["expediente_nro"].initial = admision.num_expediente
+                calle = getattr(comedor, "calle", "")
+                numero = getattr(comedor, "numero", "")
+
+                self.fields["nombre_espacio"].initial = comedor.nombre
+                self.fields["domicilio_espacio"].initial = f"{calle} {numero}".strip()
+                self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
+                self.fields["localidad_espacio"].initial = getattr(
+                    comedor, "localidad", ""
                 )
-                self.fields["responsable_tarjeta_domicilio"].initial = (
-                    anexo.responsable_domicilio
+                self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
+                self.fields["provincia_espacio"].initial = getattr(
+                    comedor, "provincia", ""
                 )
-                self.fields["responsable_tarjeta_mail"].initial = anexo.responsable_mail
+
+                if anexo:
+                    nombre = anexo.responsable_nombre or ""
+                    apellido = anexo.responsable_apellido or ""
+
+                    self.fields["nombre_espacio"].initial = anexo.efector
+                    self.fields["tipo_espacio"].initial = anexo.tipo_espacio
+                    self.fields["domicilio_espacio"].initial = anexo.domicilio
+                    self.fields["responsable_tarjeta_nombre"].initial = (
+                        f"{nombre} {apellido}".strip()
+                    )
+                    self.fields["responsable_tarjeta_domicilio"].initial = (
+                        anexo.responsable_domicilio
+                    )
+                    self.fields["responsable_tarjeta_mail"].initial = (
+                        anexo.responsable_mail
+                    )
 
                 if organizacion:
                     self.fields["nombre_organizacion"].initial = organizacion.nombre
@@ -100,9 +120,6 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     )
                     self.fields["partido_organizacion"].initial = organizacion.partido
 
-            except Anexo.DoesNotExist:
-                pass
-
 
 class InformeTecnicoBaseForm(forms.ModelForm):
     class Meta:
@@ -110,6 +127,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
         exclude = [
             "admision",
             "estado",
+            "estado_formulario",
             "tipo",
             "validacion_registro_nacional",
             "IF_relevamiento_territorial",
@@ -125,9 +143,15 @@ class InformeTecnicoBaseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         admision = kwargs.pop("admision", None)
+        self.require_full = kwargs.pop("require_full", False)
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.required = True
+
+        if self.require_full:
+            for field in self.fields.values():
+                field.required = True
+        else:
+            for field in self.fields.values():
+                field.required = False
 
         letras_fields = [
             "prestaciones_desayuno_letras",
@@ -141,29 +165,40 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 self.fields[field_name].widget.attrs["readonly"] = True
                 self.fields[field_name].initial = "Cero"
 
-        if admision:
-            try:
+            if admision:
                 anexo = Anexo.objects.filter(admision=admision).last()
-                nombre = anexo.responsable_nombre or ""
-                apellido = anexo.responsable_apellido or ""
                 comedor = admision.comedor
-                organizacion = comedor.organizacion
+                organizacion = comedor.organizacion if comedor else None
 
-                self.fields["expediente_nro"].initial = anexo.expediente
-                self.fields["nombre_espacio"].initial = anexo.efector
-                self.fields["tipo_espacio"].initial = anexo.tipo_espacio
-                self.fields["barrio_espacio"].initial = comedor.barrio
-                self.fields["localidad_espacio"].initial = comedor.localidad
-                self.fields["partido_espacio"].initial = comedor.partido
-                self.fields["provincia_espacio"].initial = comedor.provincia
-                self.fields["domicilio_espacio"].initial = anexo.domicilio
-                self.fields["responsable_tarjeta_nombre"].initial = (
-                    f"{nombre} {apellido}".strip()
-                )
-                self.fields["responsable_tarjeta_domicilio"].initial = (
-                    anexo.responsable_domicilio
-                )
-                self.fields["responsable_tarjeta_mail"].initial = anexo.responsable_mail
+                if anexo:
+                    nombre = anexo.responsable_nombre or ""
+                    apellido = anexo.responsable_apellido or ""
+                    self.fields["expediente_nro"].initial = anexo.expediente
+                    self.fields["nombre_espacio"].initial = anexo.efector
+                    self.fields["tipo_espacio"].initial = anexo.tipo_espacio
+                    self.fields["barrio_espacio"].initial = getattr(
+                        comedor, "barrio", ""
+                    )
+                    self.fields["localidad_espacio"].initial = getattr(
+                        comedor, "localidad", ""
+                    )
+                    self.fields["partido_espacio"].initial = getattr(
+                        comedor, "partido", ""
+                    )
+                    self.fields["provincia_espacio"].initial = getattr(
+                        comedor, "provincia", ""
+                    )
+                    self.fields["domicilio_espacio"].initial = anexo.domicilio
+                    self.fields["responsable_tarjeta_nombre"].initial = (
+                        f"{nombre} {apellido}".strip()
+                    )
+                    self.fields["responsable_tarjeta_domicilio"].initial = (
+                        anexo.responsable_domicilio
+                    )
+                    self.fields["responsable_tarjeta_mail"].initial = (
+                        anexo.responsable_mail
+                    )
+
                 if organizacion:
                     self.fields["nombre_organizacion"].initial = organizacion.nombre
                     self.fields["cuit_organizacion"].initial = organizacion.cuit
@@ -179,9 +214,6 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                         organizacion.provincia
                     )
                     self.fields["partido_organizacion"].initial = organizacion.partido
-
-            except Anexo.DoesNotExist:
-                pass
 
 
 class InformeTecnicoEstadoForm(forms.Form):
@@ -249,7 +281,14 @@ class LegalesRectificarForm(forms.ModelForm):
 class ProyectoDisposicionForm(forms.ModelForm):
     class Meta:
         model = FormularioProyectoDisposicion
-        exclude = ["admision", "creado", "creado_por", "archivo"]
+        exclude = [
+            "admision",
+            "creado",
+            "creado_por",
+            "archivo",
+            "numero_if",
+            "archivo_docx",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -260,7 +299,14 @@ class ProyectoDisposicionForm(forms.ModelForm):
 class ProyectoConvenioForm(forms.ModelForm):
     class Meta:
         model = FormularioProyectoDeConvenio
-        exclude = ["admision", "creado", "creado_por", "archivo"]
+        exclude = [
+            "admision",
+            "creado",
+            "creado_por",
+            "archivo",
+            "numero_if",
+            "archivo_docx",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -299,16 +345,20 @@ class DocumentosExpedienteForm(forms.ModelForm):
 class AnexoForm(forms.ModelForm):
     class Meta:
         model = Anexo
-        exclude = ["admision"]
+        exclude = [
+            "admision",
+            "expediente",
+            "efector",
+            "tipo_espacio",
+            "domicilio",
+            "barrio",
+            "mail",
+        ]
         error_messages = {
             "responsable_cuit": {
                 "max_value": "El CUIT/CUIL debe tener como máximo 11 dígitos.",
                 "invalid": "Ingresá solo números sin puntos ni guiones.",
                 "required": "El campo CUIT/CUIL es obligatorio.",
-            },
-            "barrio": {
-                "required": "El campo Barrio es obligatorio.",
-                "max_length": "El Barrio no puede tener más de 50 caracteres.",
             },
         }
         widgets = {
@@ -392,24 +442,125 @@ class AnexoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         admision = kwargs.pop("admision", None)
+        self.require_full = kwargs.pop("require_full", False)
         super().__init__(*args, **kwargs)
+
         for field in self.fields.values():
-            field.required = True
+            field.required = self.require_full
+
         for field_name, field in self.fields.items():
             if isinstance(field.widget, forms.NumberInput):
                 if self.initial.get(field_name) is None:
                     field.widget.attrs.setdefault("value", 0)
 
-        if admision and admision.comedor:
-            comedor = admision.comedor
-            calle = getattr(comedor, "calle", "")
-            numero = getattr(comedor, "numero", "")
-
-            self.fields["efector"].initial = comedor.nombre
-            self.fields["domicilio"].initial = f"{calle} {numero}".strip()
-            self.fields["expediente"].initial = admision.num_expediente
-
-        # Valores por defecto solo para casos nuevos (no edición)
         if not self.instance.pk:
             self.fields["total_acreditaciones"].initial = "6"
             self.fields["plazo_ejecucion"].initial = "6 meses"
+
+
+class ConvenioNumIFFORM(forms.ModelForm):
+    class Meta:
+        model = FormularioProyectoDeConvenio
+        fields = ["numero_if"]
+        labels = {
+            "numero_if": "Número de IF de Proyecto de Convenio",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = True
+
+
+class DisposicionNumIFFORM(forms.ModelForm):
+    class Meta:
+        model = FormularioProyectoDisposicion
+        fields = ["numero_if"]
+        labels = {
+            "numero_if": "Número de IF de Proyecto Disposición",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = True
+
+
+class IntervencionJuridicosForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = [
+            "intervencion_juridicos",
+            "rechazo_juridicos_motivo",
+            "dictamen_motivo",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["intervencion_juridicos"].required = True
+        self.fields["rechazo_juridicos_motivo"].required = False
+        self.fields["dictamen_motivo"].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        intervencion = cleaned_data.get("intervencion_juridicos")
+        motivo = cleaned_data.get("rechazo_juridicos_motivo")
+        dictamen = cleaned_data.get("dictamen_motivo")
+
+        if intervencion == "rechazado":
+            if not motivo:
+                self.add_error(
+                    "rechazo_juridicos_motivo",
+                    "Debe especificar el motivo cuando la intervención jurídica es Rechazado.",
+                )
+            elif motivo == "dictamen" and not dictamen:
+                self.add_error(
+                    "dictamen_motivo",
+                    "Debe especificar el detalle cuando el motivo de rechazo es Dictamen.",
+                )
+
+        return cleaned_data
+
+
+class InformeSGAForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = ["informe_sga"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = True
+
+
+class ConvenioForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = ["numero_convenio", "archivo_convenio"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = True
+
+
+class DisposicionForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = ["numero_disposicion", "archivo_disposicion"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = True
+
+
+class ReinicioExpedienteForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = ["observaciones_reinicio_expediente"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = True
