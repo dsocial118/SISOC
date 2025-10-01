@@ -21,8 +21,6 @@ from admisiones.forms.admisiones_forms import (
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from comedores.models import Comedor
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
-
 import logging
 
 
@@ -275,46 +273,17 @@ class AdmisionService:
 
     @staticmethod
     def create_admision(comedor_pk, tipo_convenio_id):
-        try:
-            # Buscar comedor
-            comedor = Comedor.objects.filter(pk=comedor_pk).first()
-            if not comedor:
-                logger.warning(
-                    "Comedor no encontrado", extra={"comedor_pk": comedor_pk}
-                )
-                return None
+        comedor = get_object_or_404(Comedor, pk=comedor_pk)
+        tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
+        estado = get_object_or_404(
+            EstadoAdmision, nombre__iexact="Pendiente"
+        )
 
-            # Buscar tipo de convenio
-            tipo_convenio = TipoConvenio.objects.filter(pk=tipo_convenio_id).first()
-            if not tipo_convenio:
-                logger.warning(
-                    "TipoConvenio no encontrado",
-                    extra={"tipo_convenio_id": tipo_convenio_id},
-                )
-                return None
-
-            # Buscar estado inicial (Pendiente)
-            estado = EstadoAdmision.objects.filter(nombre__iexact="Pendiente").first()
-            if not estado:
-                logger.error("EstadoAdmision 'Pendiente' no existe en la BD")
-                return None
-
-            # Crear admisión
-            return Admision.objects.create(
-                comedor=comedor,
-                tipo_convenio=tipo_convenio,
-                estado=estado,
-            )
-
-        except Exception:
-            logger.exception(
-                "Error inesperado en create_admision",
-                extra={
-                    "comedor_pk": comedor_pk,
-                    "tipo_convenio_id": tipo_convenio_id,
-                },
-            )
-            return None
+        return Admision.objects.create(
+            comedor=comedor,
+            tipo_convenio=tipo_convenio,
+            estado=estado,
+        )
 
     @staticmethod
     def get_admision_update_context(admision):
