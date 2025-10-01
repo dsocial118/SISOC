@@ -18,7 +18,7 @@
                 {% with reset_url_name='centro_list' %}
                     {% with add_url_name='centro_create' %}
                         {% with tbody_id='centros-table-body' %}
-                            {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name add_url=add_url_name add_text='Agregar' additional_buttons=centro_additional_buttons query=request.GET.busqueda ajax_search_mode=True ajax_url=ajax_url target_tbody_id=tbody_id %}
+                            {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name add_url=add_url_name add_text='Agregar' additional_buttons=centro_additional_buttons query=request.GET.busqueda filters_mode=filters_mode filters_js=filters_js filters_action=filters_action %}
                         {% endwith %}
                     {% endwith %}
                 {% endwith %}
@@ -95,4 +95,5 @@
         </div>
     </div>
 {% endblock %}
-{% block customJS %}{% endblock %}
+{% block customJS %}
+{% endblock %}
