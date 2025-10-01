@@ -121,6 +121,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
     {% if filters_js %}
         <script src="{% static filters_js %}"></script>
     {% else %}
+        <!-- FIXME: hacer generico -->
         <script src="{% static 'custom/js/comedores_search_bar.js' %}"></script>
     {% endif %}
 {% elif ajax_search_mode %}
