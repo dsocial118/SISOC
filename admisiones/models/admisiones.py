@@ -62,7 +62,6 @@ class Admision(models.Model):
         Comedor,
         on_delete=models.SET_NULL,
         null=True,
-        related_name="admisiones_admisiones",
     )
     estado = models.ForeignKey(EstadoAdmision, on_delete=models.SET_NULL, null=True)
     tipo_convenio = models.ForeignKey(
