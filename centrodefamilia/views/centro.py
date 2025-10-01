@@ -29,6 +29,7 @@ from centrodefamilia.services.centro_filter_config import (
     TEXT_OPS as CENTRO_TEXT_OPS,
     NUM_OPS as CENTRO_NUM_OPS,
     BOOL_OPS as CENTRO_BOOL_OPS,
+    get_filters_ui_config as get_centro_filters_ui_config,
 )
 from centrodefamilia.forms import CentroForm
 from core.services.advanced_filters import AdvancedFilterEngine
@@ -81,8 +82,9 @@ class CentroListView(LoginRequiredMixin, ListView):
         ctx.update(
             {
                 "filters_mode": True,
-                "filters_js": "custom/js/centros_search_bar.js",
+                "filters_js": "custom/js/advanced_filters.js",
                 "filters_action": reverse("centro_list"),
+                "filters_config": get_centro_filters_ui_config(),
                 "add_url": reverse("centro_create"),
             }
         )

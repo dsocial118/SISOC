@@ -1,6 +1,6 @@
 """Configuración para filtros combinables de centros."""
 
-from typing import Dict
+from typing import Any, Dict
 
 FIELD_MAP: Dict[str, str] = {
     "nombre": "nombre",
@@ -64,8 +64,78 @@ FIELD_TYPES: Dict[str, str] = {
     },
 }
 
-TEXT_OPS = {"contains", "ncontains", "eq", "ne", "empty"}
-NUM_OPS = {"eq", "ne", "gt", "lt", "empty"}
-BOOL_OPS = {"eq", "ne"}
+TEXT_OPS = ["contains", "ncontains", "eq", "ne", "empty"]
+NUM_OPS = ["eq", "ne", "gt", "lt", "empty"]
+BOOL_OPS = ["eq", "ne"]
 
-__all__ = ["FIELD_MAP", "FIELD_TYPES", "TEXT_OPS", "NUM_OPS", "BOOL_OPS"]
+FILTER_FIELDS = [
+    {"name": "nombre", "label": "Nombre", "type": "text"},
+    {"name": "tipo", "label": "Tipo", "type": "text"},
+    {"name": "faro_asociado", "label": "Faro asociado", "type": "text"},
+    {"name": "codigo", "label": "Código", "type": "text"},
+    {
+        "name": "organizacion_asociada",
+        "label": "Organización asociada",
+        "type": "text",
+    },
+    {"name": "provincia", "label": "Provincia", "type": "text"},
+    {"name": "municipio", "label": "Municipio", "type": "text"},
+    {"name": "localidad", "label": "Localidad", "type": "text"},
+    {"name": "calle", "label": "Calle", "type": "text"},
+    {"name": "numero", "label": "Número", "type": "number"},
+    {
+        "name": "domicilio_actividad",
+        "label": "Domicilio de actividades",
+        "type": "text",
+    },
+    {"name": "telefono", "label": "Teléfono", "type": "text"},
+    {"name": "celular", "label": "Celular", "type": "text"},
+    {"name": "correo", "label": "Correo", "type": "text"},
+    {"name": "sitio_web", "label": "Sitio web", "type": "text"},
+    {"name": "link_redes", "label": "Link redes", "type": "text"},
+    {
+        "name": "nombre_referente",
+        "label": "Nombre del referente",
+        "type": "text",
+    },
+    {
+        "name": "apellido_referente",
+        "label": "Apellido del referente",
+        "type": "text",
+    },
+    {
+        "name": "telefono_referente",
+        "label": "Teléfono del referente",
+        "type": "text",
+    },
+    {
+        "name": "correo_referente",
+        "label": "Correo del referente",
+        "type": "text",
+    },
+    {"name": "activo", "label": "Activo", "type": "boolean"},
+]
+
+
+def get_filters_ui_config() -> Dict[str, Any]:
+    """Configuración serializable para el front de filtros avanzados."""
+
+    return {
+        "fields": FILTER_FIELDS,
+        "operators": {
+            "text": list(TEXT_OPS),
+            "number": list(NUM_OPS),
+            "boolean": list(BOOL_OPS),
+        },
+    }
+
+
+__all__ = [
+    "FIELD_MAP",
+    "FIELD_TYPES",
+    "TEXT_OPS",
+    "NUM_OPS",
+    "BOOL_OPS",
+    "FILTER_FIELDS",
+    "get_filters_ui_config",
+]
