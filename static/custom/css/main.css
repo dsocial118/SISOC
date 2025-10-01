@@ -13,10 +13,51 @@ footer.app-footer {
 
 .app-sidebar {
     background-color: #232d4f !important;
+    position: fixed;
     top: 72px !important; /* Altura del header */
-    bottom: 0;
-    height: calc(100vh - 72px);
+    height: calc(100vh - 180px);
+    overflow-y: auto;
     z-index:3;
+}
+
+.app-sidebar .sidebar-wrapper {
+    overflow-y: auto;
+    height: 100%;
+}
+
+/* Estilos personalizados para la scrollbar del sidebar */
+.app-sidebar::-webkit-scrollbar,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.app-sidebar::-webkit-scrollbar-track,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.app-sidebar::-webkit-scrollbar-thumb,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.app-sidebar:hover::-webkit-scrollbar-thumb,
+.app-sidebar .sidebar-wrapper:hover::-webkit-scrollbar-thumb {
+    background: #e7ba61;
+    opacity: 0.7;
+}
+
+.app-sidebar::-webkit-scrollbar-thumb:hover,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #d4a856 !important;
+    opacity: 1 !important;
+}
+
+.app-sidebar::-webkit-scrollbar-corner,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 .app-main {
@@ -78,6 +119,12 @@ header.main-header {
         position: fixed;
         top: 76px !important;
     }
+
+    .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
+        height: 100%;
+    }
+
+
 }
 
 .sidebar-wrapper .sidebar-menu > .nav-item > .nav-link.active:not(:hover) {
