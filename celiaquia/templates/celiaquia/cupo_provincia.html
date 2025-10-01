@@ -80,39 +80,9 @@
         </div>
     {% endif %}
     <div id="alerts"></div>
-    {% include 'celiaquia/partials/cupo_table.html' with
-    title='Cupos ocupados (titulares activos)'
-    table_id='tabla-ocupados'
-    filter_id='filtro-ocupados'
-    filter_label='Filtrar cupos ocupados'
-    filter_placeholder='Filtrar por DNI, nombre o expediente'
-    rows=ocupados
-    empty_message='No hay titulares ocupando cupo.'
-    show_revision=True
-    show_resultado=True
-    show_activo=True
-    show_actions=True
-    colspan=9 %}
-    {% include 'celiaquia/partials/cupo_table.html' with
-    title='Suspendidos (cupo ocupado, no activos)'
-    table_id='tabla-suspendidos'
-    filter_id='filtro-suspendidos'
-    filter_label='Filtrar suspendidos'
-    filter_placeholder='Filtrar por DNI, nombre o expediente'
-    rows=suspendidos
-    empty_message='No hay suspendidos.'
-    show_activo=True
-    show_actions=True
-    colspan=7 %}
-    {% include 'celiaquia/partials/cupo_table.html' with
-    title='Lista de espera (Fuera de cupo)'
-    table_id='tabla-lista-espera'
-    filter_id='filtro-lista-espera'
-    filter_label='Filtrar lista de espera'
-    filter_placeholder='Filtrar por DNI, nombre o expediente'
-    rows=lista_espera
-    empty_message='Sin lista de espera.'
-    colspan=5 %}
+    {% include 'celiaquia/partials/cupo_table.html' with title='Cupos ocupados (titulares activos)' table_id='tabla-ocupados' filter_id='filtro-ocupados' filter_label='Filtrar cupos ocupados' filter_placeholder='Filtrar por DNI, nombre o expediente' rows=ocupados empty_message='No hay titulares ocupando cupo.' show_revision=True show_resultado=True show_activo=True show_actions=True colspan=9 %}
+    {% include 'celiaquia/partials/cupo_table.html' with title='Suspendidos (cupo ocupado, no activos)' table_id='tabla-suspendidos' filter_id='filtro-suspendidos' filter_label='Filtrar suspendidos' filter_placeholder='Filtrar por DNI, nombre o expediente' rows=suspendidos empty_message='No hay suspendidos.' show_activo=True show_actions=True colspan=7 %}
+    {% include 'celiaquia/partials/cupo_table.html' with title='Lista de espera (Fuera de cupo)' table_id='tabla-lista-espera' filter_id='filtro-lista-espera' filter_label='Filtrar lista de espera' filter_placeholder='Filtrar por DNI, nombre o expediente' rows=lista_espera empty_message='Sin lista de espera.' colspan=5 %}
     <!-- Modal Configurar Cupo -->
     <div class="modal fade"
          id="modalConfigCupo"

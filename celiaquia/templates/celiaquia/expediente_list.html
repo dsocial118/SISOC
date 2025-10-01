@@ -70,7 +70,7 @@
                             {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
                                 <td>
                                     {% if request.user|has_group:"CoordinadorCeliaquia" %}
-                                        {# SOLO mostrar selector cuando el estado ya es RECEPCIONADO o ASIGNADO #}
+                                        <!-- SOLO mostrar selector cuando el estado ya es RECEPCIONADO o ASIGNADO -->
                                         {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
                                             <div>
                                                 <select class="form-select form-select-sm js-tecnico"
@@ -78,7 +78,7 @@
                                                     <option value="">— Agregar técnico —</option>
                                                     {% for t in tecnicos %}<option value="{{ t.id }}">{{ t.get_full_name|default:t.username }}</option>{% endfor %}
                                                 </select>
-                                                {# Badges de técnicos asignados #}
+                                                <!-- Badges de técnicos asignados -->
                                                 {% if exp.asignaciones_tecnicos.all %}
                                                     <div class="mt-2">
                                                         {% for asignacion in exp.asignaciones_tecnicos.all %}
@@ -111,7 +111,7 @@
                             <td class="text-end">
                                 <a href="{% url 'expediente_detail' exp.pk %}"
                                    class="btn btn-sm btn-outline-primary">Ver</a>
-                                {# PROVINCIA #}
+                                <!-- PROVINCIA -->
                                 {% if request.user|has_group:"ProvinciaCeliaquia" %}
                                     {% if exp.estado.nombre == 'CREADO' %}
                                         <a href="{% url 'expediente_update' exp.pk %}"
@@ -129,7 +129,7 @@
                                         </button>
                                     {% endif %}
                                 {% endif %}
-                                {# SUBSECRETARÍA #}
+                                <!-- SUBSECRETARÍA -->
                                 {% if request.user|has_group:"CoordinadorCeliaquia" %}
                                     {% if exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}
                                         <button type="button"
@@ -138,7 +138,7 @@
                                             Recepcionar
                                         </button>
                                     {% endif %}
-                                    {# Mostrar Asignar solo si RECEPCIONADO o ASIGNADO #}
+                                    <!-- Mostrar Asignar solo si RECEPCIONADO o ASIGNADO -->
                                     {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
                                         <button type="button"
                                                 class="btn btn-sm btn-primary js-assign"

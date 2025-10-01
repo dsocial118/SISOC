@@ -10,11 +10,7 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% with
-        is_tec=request.user|has_group:"TecnicoCeliaquia"
-        is_coord=request.user|has_group:"CoordinadorCeliaquia"
-        is_prov=request.user|has_group:"ProvinciaCeliaquia"
-        %}
+    {% with is_tec=request.user|has_group:"TecnicoCeliaquia" is_coord=request.user|has_group:"CoordinadorCeliaquia" is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
         <style>
     /* Extras sutiles para legajos */
     .card-dark { background-color:#1f2d3d; color:#e9eef5; border:1px solid #2a3a4f; }
@@ -38,7 +34,7 @@
                 {% endif %}
             </div>
             <div class="d-flex gap-2">
-                {# Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia #}
+                <!-- Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia -->
                 {% if is_tec or is_coord %}
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
                         <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
@@ -459,20 +455,20 @@
         {% else %}
             <p class="text-muted">No hay legajos cargados.</p>
         {% endif %}
-        {# Confirmar Envío: solo Provincia en EN_ESPERA #}
+        <!-- Confirmar Envío: solo Provincia en EN_ESPERA -->
         {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
             <div class="text-end mt-3">
                 <button id="btn-confirm" class="btn btn-success">Confirmar Envío</button>
             </div>
         {% endif %}
-        {# Confirmar Subsanación: solo Provincia en ASIGNADO y si hay_subsanar #}
+        <!-- Confirmar Subsanación: solo Provincia en ASIGNADO y si hay_subsanar -->
         {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
             <div class="text-end mt-3">
                 <button id="btn-confirm-subs" class="btn btn-warning">Confirmar Subsanación</button>
             </div>
         {% endif %}
     </div>
-    {# Asignar Técnico: solo Coordinador (según tu condición actual por id) #}
+    <!-- Asignar Técnico: solo Coordinador (según tu condición actual por id) -->
     {% if expediente.estado.id == 2 and is_coord %}
         <div class="card mb-4">
             <div class="card-header bg-light">

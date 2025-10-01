@@ -1,5 +1,5 @@
-{# Componente Loading Spinner #}
-{# Uso: {% include 'components/loading_spinner.html' with type='border' message='Cargando...' size='sm' color='primary' %} #}
+<!-- Componente Loading Spinner -->
+<!-- Uso: include 'components/loading_spinner.html' with type='border' message='Cargando...' size='sm' color='primary' -->
 <div class="d-flex {% if center %}justify-content-center{% endif %} {% if vertical_center %}align-items-center{% endif %} {{ container_class|default:'' }}"
      {% if id %}id="{{ id }}"{% endif %}
      {% if hidden %}style="display: none;"{% endif %}>
@@ -23,7 +23,7 @@
             <div class="rect5"></div>
         </div>
     {% else %}
-        {# Default: border spinner #}
+        <!-- Default: border spinner -->
         <div class="spinner-border {% if color %}text-{{ color }}{% endif %} {% if size %}spinner-border-{{ size }}{% endif %}"
              role="status">
             <span class="visually-hidden">{{ sr_text|default:'Cargando...' }}</span>
@@ -33,7 +33,7 @@
         <span class="{% if message_class %}{{ message_class }}{% else %}ms-2{% endif %}">{{ message }}</span>
     {% endif %}
 </div>
-{# CSS personalizado para spinners adicionales #}
+<!-- CSS personalizado para spinners adicionales -->
 {% if type == 'dots' or type == 'pulse' %}
     <style>
     {% if type == 'dots' %}
@@ -85,7 +85,7 @@
     {% endif %}
     </style>
 {% endif %}
-{# Overlay completo opcional #}
+<!-- Overlay completo opcional -->
 {% if overlay %}
     <div class="loading-overlay"
          {% if id %}id="{{ id }}_overlay"{% endif %}
