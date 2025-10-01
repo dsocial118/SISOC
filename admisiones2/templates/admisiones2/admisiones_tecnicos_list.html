@@ -54,7 +54,8 @@
                                                 </a>
                                             {% else %}
                                                 {% if request.user|has_group:"Tecnico Comedor" %}
-                                                    <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}" class="btn btn-primary btn-sm">Crear</a>
+                                                    <a href="{% url 'admisiones_tecnicos_crear' comedor.id %}"
+                                                       class="btn btn-primary btn-sm">Crear</a>
                                                 {% endif %}
                                             {% endif %}
                                         </div>

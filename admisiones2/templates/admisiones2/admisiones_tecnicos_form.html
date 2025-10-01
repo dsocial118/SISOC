@@ -7,7 +7,12 @@
 ;
 {% block title %}Admision: {{ comedor.nombre }}{% endblock %}
 ;
-{% block titulo-pagina %}{{ comedor.nombre }}{% if admision.enviada_a_archivo %}<span class="ms-3 fs-5 bg-danger text-white">Rechazado: {{ admision.get_rechazo_juridicos_motivo_display}} / Enviado a Archivo</span>{% endif %}{% endblock %}
+{% block titulo-pagina %}
+    {{ comedor.nombre }}
+    {% if admision.enviada_a_archivo %}
+        <span class="ms-3 fs-5 bg-danger text-white">Rechazado: {{ admision.get_rechazo_juridicos_motivo_display }} / Enviado a Archivo</span>
+    {% endif %}
+{% endblock %}
 ;
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -45,25 +50,25 @@
                             data-bs-target="#modalRectificarDocumetacion">Rectificar Documentación</button>
                 {% endif %}
                 {% if informe_tecnico.estado != "Validado" %}
-                        {% if admision.estado.nombre == "Finalizada" and not admision.num_expediente %}
-                            <button type="button"
-                                    class="btn btn-primary mr-1"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#caratularExpediente">Caratular expediente</button>
+                    {% if admision.estado.nombre == "Finalizada" and not admision.num_expediente %}
+                        <button type="button"
+                                class="btn btn-primary mr-1"
+                                data-bs-toggle="modal"
+                                data-bs-target="#caratularExpediente">Caratular expediente</button>
+                    {% endif %}
+                    {% if admision.estado.nombre == "Finalizada" and admision.num_expediente %}
+                        {% if not informe_tecnico %}
+                            <a href="{% url 'informe_tecnico_crear' tipo=admision.tipo_informe admision_id=admision.id %}"
+                               class="btn btn-primary mr-1">Crear Informe Técnico</a>
+                        {% else %}
+                            <a href="{% url 'informe_tecnico_editar' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
+                               class="btn btn-primary mr-1">Editar Informe Técnico</a>
                         {% endif %}
-                        {% if admision.estado.nombre == "Finalizada" and admision.num_expediente %}
-                            {% if not informe_tecnico %}
-                                 <a href="{% url 'informe_tecnico_crear' tipo=admision.tipo_informe admision_id=admision.id %}"
-                                   class="btn btn-primary mr-1">Crear Informe Técnico</a>
-                            {% else %}
-                                 <a href="{% url 'informe_tecnico_editar' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
-                                   class="btn btn-primary mr-1">Editar Informe Técnico</a>
-                            {% endif%}
-                        {% endif %}
+                    {% endif %}
                 {% else %}
                     {% if not admision.enviada_a_archivo %}
-                    <a href="{% url 'informe_complementario_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
-                       class="btn btn-primary mr-1">Informe Técnico Complementario</a>
+                        <a href="{% url 'informe_complementario_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
+                           class="btn btn-primary mr-1">Informe Técnico Complementario</a>
                     {% endif %}
                     {% if not admision.enviado_legales %}
                         <button type="button"
@@ -180,7 +185,9 @@
                                                 Informe Técnico:
                                                 <span class="fw-bold">{{ informe_tecnico.estado |default_if_none:"-" }}</span>
                                                 {% if informe_tecnico.estado == "Validado" %}<i class="bi bi-check-circle-fill text-success">{% endif %}
-                                                    {% if informe_tecnico.estado == "Para revision" or informe_tecnico.estado == "Iniciado"  %}<i class="bi bi-check-circle-fill text-warning">{% endif %}
+                                                    {% if informe_tecnico.estado == "Para revision" or informe_tecnico.estado == "Iniciado" %}
+                                                        <i class="bi bi-check-circle-fill text-warning">
+                                                        {% endif %}
                                                         {% if informe_tecnico.estado == "A subsanar" %}<i class="bi bi-exclamation-circle-fill text-danger">{% endif %}
                                                             {% if not informe_tecnico %}<i class="bi bi-x-circle-fill text-danger">{% endif %}
                                                             </i>
@@ -189,7 +196,7 @@
                                                     {% if pdf %}
                                                         <li class="nav-item">
                                                             <div class="comment-text">
-                                                                Informe Tecnico: 
+                                                                Informe Tecnico:
                                                                 <span class="fw-bold"><a href="{{ pdf.archivo.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i></a></span>
                                                                 <span class="fw-bold"><a href="{{ pdf.archivo_docx.url }}" target="_blank"><i class="bi bi-filetype-docx text-info h4 ms-3 text-bold"></i></a></span>
                                                             </div>
@@ -282,15 +289,21 @@
                                         <div class="card">
                                             <div class="card-header d-flex align-items-center">
                                                 <h2 class="card-title fw-bold fs-3 mb-0">
-                                                  Documentos requeridos
-                                                  <span class="fs-5 ms-3"><small> {{ stats.obligatorios_completos }}/{{ stats.obligatorios_total }}</small> {% if stats.obligatorios_completos == stats.obligatorios_total %} <i class="bi bi-check-circle-fill text-success"></i>{% else %} <i class="bi bi-x-circle-fill text-danger"></i>{% endif %}</span>
+                                                    Documentos requeridos
+                                                    <span class="fs-5 ms-3"><small>{{ stats.obligatorios_completos }}/{{ stats.obligatorios_total }}</small>
+                                                        {% if stats.obligatorios_completos == stats.obligatorios_total %}
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                        {% else %}
+                                                            <i class="bi bi-x-circle-fill text-danger"></i>
+                                                        {% endif %}
+                                                    </span>
                                                 </h2>
-                                              <div class="d-flex align-items-center gap-2 ms-auto">
-                                                <span class="badge bg-success" title="Aceptados">Aceptados: {{ stats.aceptados }}</span>
-                                                <span class="badge bg-primary" title="A Validar Abogado">Validar Abogado: {{ stats.a_validar_abogado }}</span>
-                                                <span class="badge bg-danger" title="Rectificar">Rectificar: {{ stats.rectificar }}</span>
-                                                <span class="badge bg-secondary" title="Pendientes">Pendientes: {{ stats.pendientes }}</span>
-                                              </div>
+                                                <div class="d-flex align-items-center gap-2 ms-auto">
+                                                    <span class="badge bg-success" title="Aceptados">Aceptados: {{ stats.aceptados }}</span>
+                                                    <span class="badge bg-primary" title="A Validar Abogado">Validar Abogado: {{ stats.a_validar_abogado }}</span>
+                                                    <span class="badge bg-danger" title="Rectificar">Rectificar: {{ stats.rectificar }}</span>
+                                                    <span class="badge bg-secondary" title="Pendientes">Pendientes: {{ stats.pendientes }}</span>
+                                                </div>
                                             </div>
                                             <div class="card-body card-comments p-0 pb-1">
                                                 <!-- CONTENEDOR DE DOCUMENTOS -->
@@ -309,39 +322,46 @@
                                                             {% for doc in documentos %}
                                                                 {% include "admisiones2/includes/documento_row.html" %}
                                                             {% endfor %}
-                                                                <tr><td colspan="4" class="p-3"></td></tr>
-                                                                <tr class="table-secondary">
-                                                                  <td colspan="4" class="fw-bold text-center py-2">
-                                                                    Documentación adicional
-                                                                  </td>
-                                                                </tr>
+                                                            <tr>
+                                                                <td colspan="4" class="p-3"></td>
+                                                            </tr>
+                                                            <tr class="table-secondary">
+                                                                <td colspan="4" class="fw-bold text-center py-2">Documentación adicional</td>
+                                                            </tr>
                                                             {% for doc in documentos_personalizados %}
                                                                 {% include "admisiones2/includes/documento_row.html" %}
                                                             {% endfor %}
                                                             {% if request.user|has_group:"Tecnico Comedor" and not es_crear and not admision.enviada_a_archivo %}
-                                                                <tr id="fila-agregar-documento" data-documentacion-id="" data-archivo-id="">
-                                                                  <td class="ps-1">
-                                                                    <input type="text"
-                                                                           class="form-control form-control-sm"
-                                                                           id="nuevoDocumentoNombre"
-                                                                           placeholder="Nombre del documento adicional" />
-                                                                  </td>
-                                                                  <td class="ps-1">
-                                                                    <span class="badge bg-secondary"></span>
-                                                                  </td>
-                                                                  <td>
-                                                                    <input type="file" id="nuevoDocumentoArchivo" class="d-none">
-                                                                    <button type="button" class="btn btn-sm btn-outline-primary" id="btnAbrirFile">
-                                                                      Adjuntar
-                                                                    </button>
-                                                                    <div class="progress mt-2" id="progress-container-nuevo" style="display:none; height:3px">
-                                                                      <div class="progress-bar progress-bar-striped"
-                                                                           role="progressbar"
-                                                                           id="progress-bar-nuevo"
-                                                                           style="width:0%">0%</div>
-                                                                    </div>
-                                                                  </td>
-                                                                  <td><span class="text-muted">-</span></td>
+                                                                <tr id="fila-agregar-documento"
+                                                                    data-documentacion-id=""
+                                                                    data-archivo-id="">
+                                                                    <td class="ps-1">
+                                                                        <input type="text"
+                                                                               class="form-control form-control-sm"
+                                                                               id="nuevoDocumentoNombre"
+                                                                               placeholder="Nombre del documento adicional" />
+                                                                    </td>
+                                                                    <td class="ps-1">
+                                                                        <span class="badge bg-secondary"></span>
+                                                                    </td>
+                                                                    <td>
+                                                                        <input type="file" id="nuevoDocumentoArchivo" class="d-none" />
+                                                                        <button type="button"
+                                                                                class="btn btn-sm btn-outline-primary"
+                                                                                id="btnAbrirFile">Adjuntar</button>
+                                                                        <div class="progress mt-2"
+                                                                             id="progress-container-nuevo"
+                                                                             style="display:none;
+                                                                                    height:3px">
+                                                                            <div class="progress-bar progress-bar-striped"
+                                                                                 role="progressbar"
+                                                                                 id="progress-bar-nuevo"
+                                                                                 style="width:0%">0%</div>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td>
+                                                                        <span class="text-muted">-</span>
+                                                                    </td>
                                                                 </tr>
                                                             {% endif %}
                                                         </tbody>
@@ -351,7 +371,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                                                <!-- MODAL OBSERVACIONES RECTIFICAR -->
+                                <!-- MODAL OBSERVACIONES RECTIFICAR -->
                                 <div class="modal fade"
                                      id="modalObservacionRectificar"
                                      tabindex="-1"
@@ -375,21 +395,17 @@
                                                               id="observacionRectificar"
                                                               rows="4"
                                                               maxlength="2000"></textarea>
-                                                    <div class="text-danger small mt-2"
-                                                         id="observacionRectificarError"></div>
+                                                    <div class="text-danger small mt-2" id="observacionRectificarError"></div>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button"
-                                                        class="btn btn-secondary"
-                                                        data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="button"
-                                                        class="btn btn-primary"
-                                                        id="btnConfirmarRectificar">Guardar observaciones</button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="button" class="btn btn-primary" id="btnConfirmarRectificar">Guardar observaciones</button>
                                             </div>
                                         </div>
                                     </div>
-                                </div><!-- MODAL DE CONFIRMACIÓN -->
+                                </div>
+                                <!-- MODAL DE CONFIRMACIÓN -->
                                 <div class="modal fade"
                                      id="modalConfirmarEliminar"
                                      tabindex="-1"
@@ -449,10 +465,7 @@
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                    <button type="submit"
-                                                            class="btn btn-danger"
-                                                            id="nuevoConfirmarSeleccion"
-                                                            >Cambiar y eliminar</button>
+                                                    <button type="submit" class="btn btn-danger" id="nuevoConfirmarSeleccion">Cambiar y eliminar</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -651,7 +664,3 @@
                                     }
                                 </style>
                             {% endblock %}
-
-
-
-

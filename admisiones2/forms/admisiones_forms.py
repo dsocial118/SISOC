@@ -55,7 +55,6 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             for field in self.fields.values():
                 field.required = False
 
-
         letras_fields = [
             "prestaciones_desayuno_letras",
             "prestaciones_almuerzo_letras",
@@ -80,9 +79,13 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 self.fields["nombre_espacio"].initial = comedor.nombre
                 self.fields["domicilio_espacio"].initial = f"{calle} {numero}".strip()
                 self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
-                self.fields["localidad_espacio"].initial = getattr(comedor, "localidad", "")
+                self.fields["localidad_espacio"].initial = getattr(
+                    comedor, "localidad", ""
+                )
                 self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
-                self.fields["provincia_espacio"].initial = getattr(comedor, "provincia", "")
+                self.fields["provincia_espacio"].initial = getattr(
+                    comedor, "provincia", ""
+                )
 
                 if anexo:
                     nombre = anexo.responsable_nombre or ""
@@ -91,18 +94,30 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     self.fields["nombre_espacio"].initial = anexo.efector
                     self.fields["tipo_espacio"].initial = anexo.tipo_espacio
                     self.fields["domicilio_espacio"].initial = anexo.domicilio
-                    self.fields["responsable_tarjeta_nombre"].initial = f"{nombre} {apellido}".strip()
-                    self.fields["responsable_tarjeta_domicilio"].initial = anexo.responsable_domicilio
-                    self.fields["responsable_tarjeta_mail"].initial = anexo.responsable_mail
+                    self.fields["responsable_tarjeta_nombre"].initial = (
+                        f"{nombre} {apellido}".strip()
+                    )
+                    self.fields["responsable_tarjeta_domicilio"].initial = (
+                        anexo.responsable_domicilio
+                    )
+                    self.fields["responsable_tarjeta_mail"].initial = (
+                        anexo.responsable_mail
+                    )
 
                 if organizacion:
                     self.fields["nombre_organizacion"].initial = organizacion.nombre
                     self.fields["cuit_organizacion"].initial = organizacion.cuit
                     self.fields["mail_organizacion"].initial = organizacion.email
                     self.fields["telefono_organizacion"].initial = organizacion.telefono
-                    self.fields["domicilio_organizacion"].initial = organizacion.domicilio
-                    self.fields["localidad_organizacion"].initial = organizacion.localidad
-                    self.fields["provincia_organizacion"].initial = organizacion.provincia
+                    self.fields["domicilio_organizacion"].initial = (
+                        organizacion.domicilio
+                    )
+                    self.fields["localidad_organizacion"].initial = (
+                        organizacion.localidad
+                    )
+                    self.fields["provincia_organizacion"].initial = (
+                        organizacion.provincia
+                    )
                     self.fields["partido_organizacion"].initial = organizacion.partido
 
 
@@ -161,25 +176,44 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     self.fields["expediente_nro"].initial = anexo.expediente
                     self.fields["nombre_espacio"].initial = anexo.efector
                     self.fields["tipo_espacio"].initial = anexo.tipo_espacio
-                    self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
-                    self.fields["localidad_espacio"].initial = getattr(comedor, "localidad", "")
-                    self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
-                    self.fields["provincia_espacio"].initial = getattr(comedor, "provincia", "")
+                    self.fields["barrio_espacio"].initial = getattr(
+                        comedor, "barrio", ""
+                    )
+                    self.fields["localidad_espacio"].initial = getattr(
+                        comedor, "localidad", ""
+                    )
+                    self.fields["partido_espacio"].initial = getattr(
+                        comedor, "partido", ""
+                    )
+                    self.fields["provincia_espacio"].initial = getattr(
+                        comedor, "provincia", ""
+                    )
                     self.fields["domicilio_espacio"].initial = anexo.domicilio
-                    self.fields["responsable_tarjeta_nombre"].initial = f"{nombre} {apellido}".strip()
-                    self.fields["responsable_tarjeta_domicilio"].initial = anexo.responsable_domicilio
-                    self.fields["responsable_tarjeta_mail"].initial = anexo.responsable_mail
+                    self.fields["responsable_tarjeta_nombre"].initial = (
+                        f"{nombre} {apellido}".strip()
+                    )
+                    self.fields["responsable_tarjeta_domicilio"].initial = (
+                        anexo.responsable_domicilio
+                    )
+                    self.fields["responsable_tarjeta_mail"].initial = (
+                        anexo.responsable_mail
+                    )
 
                 if organizacion:
                     self.fields["nombre_organizacion"].initial = organizacion.nombre
                     self.fields["cuit_organizacion"].initial = organizacion.cuit
                     self.fields["mail_organizacion"].initial = organizacion.email
                     self.fields["telefono_organizacion"].initial = organizacion.telefono
-                    self.fields["domicilio_organizacion"].initial = organizacion.domicilio
-                    self.fields["localidad_organizacion"].initial = organizacion.localidad
-                    self.fields["provincia_organizacion"].initial = organizacion.provincia
+                    self.fields["domicilio_organizacion"].initial = (
+                        organizacion.domicilio
+                    )
+                    self.fields["localidad_organizacion"].initial = (
+                        organizacion.localidad
+                    )
+                    self.fields["provincia_organizacion"].initial = (
+                        organizacion.provincia
+                    )
                     self.fields["partido_organizacion"].initial = organizacion.partido
-
 
 
 class InformeTecnicoEstadoForm(forms.Form):
@@ -247,7 +281,14 @@ class LegalesRectificarForm(forms.ModelForm):
 class ProyectoDisposicionForm(forms.ModelForm):
     class Meta:
         model = FormularioProyectoDisposicion
-        exclude = ["admision", "creado", "creado_por", "archivo", "numero_if", "archivo_docx"]
+        exclude = [
+            "admision",
+            "creado",
+            "creado_por",
+            "archivo",
+            "numero_if",
+            "archivo_docx",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -258,7 +299,14 @@ class ProyectoDisposicionForm(forms.ModelForm):
 class ProyectoConvenioForm(forms.ModelForm):
     class Meta:
         model = FormularioProyectoDeConvenio
-        exclude = ["admision", "creado", "creado_por", "archivo", "numero_if", "archivo_docx"]
+        exclude = [
+            "admision",
+            "creado",
+            "creado_por",
+            "archivo",
+            "numero_if",
+            "archivo_docx",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -297,7 +345,15 @@ class DocumentosExpedienteForm(forms.ModelForm):
 class AnexoForm(forms.ModelForm):
     class Meta:
         model = Anexo
-        exclude = ["admision","expediente", "efector", "tipo_espacio", "domicilio", "barrio", "mail"]
+        exclude = [
+            "admision",
+            "expediente",
+            "efector",
+            "tipo_espacio",
+            "domicilio",
+            "barrio",
+            "mail",
+        ]
         error_messages = {
             "responsable_cuit": {
                 "max_value": "El CUIT/CUIL debe tener como máximo 11 dígitos.",
@@ -401,6 +457,7 @@ class AnexoForm(forms.ModelForm):
             self.fields["total_acreditaciones"].initial = "6"
             self.fields["plazo_ejecucion"].initial = "6 meses"
 
+
 class ConvenioNumIFFORM(forms.ModelForm):
     class Meta:
         model = FormularioProyectoDeConvenio
@@ -413,6 +470,7 @@ class ConvenioNumIFFORM(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = True
+
 
 class DisposicionNumIFFORM(forms.ModelForm):
     class Meta:
@@ -427,10 +485,15 @@ class DisposicionNumIFFORM(forms.ModelForm):
         for field in self.fields.values():
             field.required = True
 
+
 class IntervencionJuridicosForm(forms.ModelForm):
     class Meta:
         model = Admision
-        fields = ["intervencion_juridicos", "rechazo_juridicos_motivo", "dictamen_motivo"]
+        fields = [
+            "intervencion_juridicos",
+            "rechazo_juridicos_motivo",
+            "dictamen_motivo",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -463,37 +526,40 @@ class InformeSGAForm(forms.ModelForm):
     class Meta:
         model = Admision
         fields = ["informe_sga"]
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = True
+
 
 class ConvenioForm(forms.ModelForm):
     class Meta:
         model = Admision
         fields = ["numero_convenio", "archivo_convenio"]
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = True
+
 
 class DisposicionForm(forms.ModelForm):
     class Meta:
         model = Admision
         fields = ["numero_disposicion", "archivo_disposicion"]
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.required = True
 
+
 class ReinicioExpedienteForm(forms.ModelForm):
     class Meta:
         model = Admision
         fields = ["observaciones_reinicio_expediente"]
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
