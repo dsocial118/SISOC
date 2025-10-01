@@ -47,6 +47,7 @@
 
       const formData = new FormData();
       formData.append('excel_masivo', fileInput.files[0]);
+      formData.append('limit', 'all');
 
       try {
         const response = await fetch(window.PREVIEW_URL, {

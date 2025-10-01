@@ -10,41 +10,22 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <h2 class="text-center display-4 mb-4">Buscar Centro</h2>
-    <form method="GET">
-        <div class="row">
-            <div class="col-md-10 offset-md-1">
-                <div class="form-group">
-                    <div class="input-group input-group-lg">
-                        <input type="search"
-                               class="form-control form-control-lg"
-                               placeholder="Buscar por nombre, dirección o tipo"
-                               name="busqueda"
-                               value="{{ request.GET.busqueda }}" />
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-lg btn-primary">
-                                <i class="fa fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
-    <div class="row mt-3">
-        <div class="col-12 text-center">
-            <a href="{% url 'centro_list' %}"
-               class="btn btn-secondary btn-lg d-block d-sm-inline mt-2">Resetear</a>
-            {% if can_add %}
-                <a href="{% url 'centro_create' %}" class="btn btn-primary btn-lg mt-2">Agregar</a>
-                <a href="{% url 'actividad_create_sola' %}"
-                   class="btn btn-primary btn-lg mt-2">Agregar Actividad</a>
-                <a href="{% url 'informecabal_list' %}"
-                   class="btn btn-info btn-lg mt-2"
-                   id="btn-cabal">Procesar Informe Cabal</a>
-            {% endif %}
-        </div>
-    </div>
+    {% url 'centros_ajax' as ajax_url %}
+    <!-- Variables para evitar problemas de formateo -->
+    {% with titulo_search='Buscar Centro' %}
+        {% with placeholder_text='Buscar por nombre, dirección o tipo' %}
+            {% with help_text='Buscar por nombre, dirección o tipo' %}
+                {% with reset_url_name='centro_list' %}
+                    {% with add_url_name='centro_create' %}
+                        {% with tbody_id='centros-table-body' %}
+                            {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name add_url=add_url_name add_text='Agregar' additional_buttons=centro_additional_buttons query=request.GET.busqueda filters_mode=filters_mode filters_js=filters_js filters_action=filters_action %}
+                        {% endwith %}
+                    {% endwith %}
+                {% endwith %}
+            {% endwith %}
+        {% endwith %}
+    {% endwith %}
+    <!-- Centros Table with AJAX -->
     <div class="row mt-5">
         <div class="col-12">
             <div class="card">
@@ -60,7 +41,7 @@
                                 {% endfor %}
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="centros-table-body">
                             {% for centro in centros %}
                                 <tr>
                                     <td>
@@ -106,10 +87,13 @@
                             {% endfor %}
                         </tbody>
                     </table>
-                    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=request.GET.busqueda prev_text='Volver' next_text='Continuar' %}
+                    <div id="pagination-container">
+                        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=request.GET.busqueda prev_text='Volver' next_text='Continuar' %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 {% endblock %}
-{% block customJS %}{% endblock %}
+{% block customJS %}
+{% endblock %}

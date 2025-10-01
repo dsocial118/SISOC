@@ -1,7 +1,6 @@
 import re
-import json
 import logging
-from typing import Union, Any, Dict, List, Tuple
+from typing import Any
 
 from django.db.models import Q, Count, Prefetch, QuerySet
 from django.db import transaction
@@ -29,7 +28,22 @@ from intervenciones.models.intervenciones import Intervencion
 
 logger = logging.getLogger("django")
 
+from core.services.advanced_filters import AdvancedFilterEngine
 from comedores.services.filter_config import FIELD_MAP, FIELD_TYPES, TEXT_OPS, NUM_OPS
+
+
+COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=FIELD_MAP,
+    field_types=FIELD_TYPES,
+    allowed_ops={
+        "text": TEXT_OPS,
+        "number": NUM_OPS,
+    },
+    field_casts={
+        "latitud": float,
+        "longitud": float,
+    },
+)
 
 
 class ComedorService:
@@ -94,110 +108,12 @@ class ComedorService:
     @staticmethod
     def get_filtered_comedores(request_or_get: Any) -> QuerySet:
         """
-        Filtra comedores a partir de un único parámetro GET `filters` (JSON URL-encoded).
-
-        Estructura esperada:
-            {
-              "logic": "AND" | "OR",                # combinación global (default AND)
-              "items": [
-                {"field": str, "op": str, "value": Any, "empty_mode": "both|null|blank"}
-              ]
-            }
-
-        - Items del MISMO `field` se combinan con OR.
-        - Resultados por campo se combinan con `logic` global (AND/OR).
-        - Valida por whitelist (FIELD_MAP, TEXT_OPS/NUM_OPS) y castea números de forma segura.
-        - Items inválidos se ignoran con tolerancia a errores.
-        - Devuelve un QuerySet con `.values(...)` optimizado para listado.
+        Filtra comedores usando el JSON avanzado recibido en el parámetro GET
+        ``filters``. La construcción del ``Q`` final se delega en
+        ``COMEDOR_ADVANCED_FILTER`` para poder reutilizar el mismo parser en
+        otras vistas de listado.
         """
 
-        def _coerce_value(field: str, value: Any) -> Tuple[bool, Any]:
-            """Cast seguro según tipo de campo. Devuelve (ok, valor_cast)."""
-            ftype = FIELD_TYPES.get(field)
-            if ftype == "number":
-                try:
-                    if field in {"latitud", "longitud"}:
-                        return True, float(value)
-                    # enteros
-                    return True, int(value)
-                except (TypeError, ValueError):
-                    return False, None
-            # texto
-            return True, value
-
-        def _build_q_for_item(item: Dict[str, Any]) -> Union[Q, None]:
-            """Construye el Q() para un item de filtro.
-
-            - Valida field/op en whitelist.
-            - Maneja operador `empty` con `empty_mode` y tipos de campo.
-            - Aplica negación para `ne` y `ncontains` invirtiendo el Q.
-            - Ignora valores faltantes/strings vacíos.
-            """
-            field = item.get("field")
-            op = item.get("op")
-            if not field or field not in FIELD_MAP:
-                return None
-            mapped = FIELD_MAP[field]
-            ftype = FIELD_TYPES.get(field)
-            if ftype == "text" and op not in TEXT_OPS:
-                return None
-            if ftype == "number" and op not in NUM_OPS:
-                return None
-
-            # Operador empty no usa value
-            if op == "empty":
-                empty_mode = (item.get("empty_mode") or "both").lower()
-                # isnull aplica siempre; exact="" solo a campos de texto.
-                null_q = Q(**{f"{mapped}__isnull": True})
-                if ftype == "text":
-                    blank_q = Q(**{f"{mapped}__exact": ""})
-                    if empty_mode == "null":
-                        return null_q
-                    if empty_mode == "blank":
-                        return blank_q
-                    # both (default)
-                    return null_q | blank_q
-                # Para numéricos blank no aplica
-                return null_q
-
-            # Para otros operadores, validar y castear valor
-            value = item.get("value")
-            if value is None or (isinstance(value, str) and value.strip() == ""):
-                return None
-            ok, casted = _coerce_value(field, value)
-            if not ok:
-                return None
-
-            lookup = None
-            negate = False
-            if ftype == "text":
-                if op == "eq":
-                    lookup = f"{mapped}__iexact"
-                elif op == "ne":
-                    lookup = f"{mapped}__iexact"
-                    negate = True
-                elif op == "contains":
-                    lookup = f"{mapped}__icontains"
-                elif op == "ncontains":
-                    lookup = f"{mapped}__icontains"
-                    negate = True
-            else:  # number
-                if op == "eq":
-                    lookup = f"{mapped}__exact"
-                elif op == "ne":
-                    lookup = f"{mapped}__exact"
-                    negate = True
-                elif op == "gt":
-                    lookup = f"{mapped}__gt"
-                elif op == "lt":
-                    lookup = f"{mapped}__lt"
-
-            if not lookup:
-                return None
-            q = Q(**{lookup: casted})
-            return ~q if negate else q
-
-        # Base queryset (sin filtros si `filters` inválido/ausente).
         base_qs = (
             Comedor.objects.select_related(
                 "provincia", "municipio", "localidad", "referente", "tipocomedor"
@@ -219,72 +135,7 @@ class ComedorService:
             )
             .order_by("-id")
         )
-
-        # Obtener filters desde request o QueryDict de forma robusta
-        try:
-            get_params = (
-                request_or_get.GET if hasattr(request_or_get, "GET") else request_or_get
-            )
-        except Exception:
-            get_params = {}
-
-        filters_raw = None
-        if isinstance(get_params, dict):
-            filters_raw = get_params.get("filters")
-        else:
-            try:
-                filters_raw = get_params.get("filters")
-            except Exception:
-                filters_raw = None
-
-        if not filters_raw:
-            return base_qs
-
-        try:
-            payload = json.loads(filters_raw)
-        except (json.JSONDecodeError, TypeError):
-            return base_qs
-
-        items = payload.get("items") or []
-        if not isinstance(items, list) or len(items) == 0:
-            return base_qs
-
-        # Agrupar por field
-        groups: Dict[str, List[Q]] = {}
-        for it in items:
-            if not isinstance(it, dict):
-                continue
-            q = _build_q_for_item(it)
-            if q is None:
-                continue
-            field = it.get("field")
-            groups.setdefault(field, []).append(q)
-
-        if not groups:
-            return base_qs
-
-        # Combinar grupos: mismo campo con OR; entre campos según lógica global.
-        logic = str(payload.get("logic") or "AND").upper()
-        logic = "OR" if logic == "OR" else "AND"
-
-        # Q final
-        final_q: Union[Q, None] = None
-        for qlist in groups.values():
-            if not qlist:
-                continue
-            group_q = qlist[0]
-            for subq in qlist[1:]:
-                group_q = group_q | subq
-
-            if final_q is None:
-                final_q = group_q
-            else:
-                final_q = (final_q | group_q) if logic == "OR" else (final_q & group_q)
-
-        if final_q is None:
-            return base_qs
-
-        return base_qs.filter(final_q)
+        return COMEDOR_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
     @staticmethod
     def get_comedor_detail_object(comedor_id: int):
@@ -341,7 +192,7 @@ class ComedorService:
     @staticmethod
     def get_ubicaciones_ids(data):
         """Convierte nombres de ubicaciones a sus IDs correspondientes dentro de ``data``."""
-        from configuraciones.models import (  # pylint: disable=import-outside-toplevel,no-name-in-module
+        from core.models import (  # pylint: disable=import-outside-toplevel
             Provincia,
             Municipio,
             Localidad,

@@ -3,8 +3,7 @@ from django.forms import inlineformset_factory
 from organizaciones.models import (
     Organizacion,
     Firmante,
-    Aval1,
-    Aval2,
+    Aval,
 )
 from core.models import Municipio, Provincia, Localidad
 
@@ -55,6 +54,11 @@ class OrganizacionForm(forms.ModelForm):
     class Meta:
         model = Organizacion
         fields = "__all__"
+        widgets = {
+            "fecha_vencimiento": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+        }
 
 
 class FirmanteForm(forms.ModelForm):
@@ -71,9 +75,9 @@ class FirmanteForm(forms.ModelForm):
             self.add_error("cuit", "El CUIT es obligatorio para el rol Aval")
 
 
-class Aval1Form(forms.ModelForm):
+class AvalForm(forms.ModelForm):
     class Meta:
-        model = Aval1
+        model = Aval
         fields = ["nombre", "cuit"]
 
     def __init__(self, *args, **kwargs):
@@ -82,24 +86,9 @@ class Aval1Form(forms.ModelForm):
         self.fields["cuit"].required = False
 
 
-class Aval2Form(forms.ModelForm):
-    class Meta:
-        model = Aval2
-        fields = ["nombre", "cuit"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["nombre"].required = False
-        self.fields["cuit"].required = False
-
-
-Aval1Formset = inlineformset_factory(
-    Organizacion, Aval1, form=Aval1Form, extra=1, max_num=1, can_delete=True
+AvalFormset = inlineformset_factory(
+    Organizacion, Aval, form=AvalForm, extra=1, max_num=1, can_delete=True
 )
-Aval2Formset = inlineformset_factory(
-    Organizacion, Aval2, form=Aval2Form, extra=1, max_num=1, can_delete=True
-)
-
 FirmanteFormset = inlineformset_factory(
     Organizacion, Firmante, form=FirmanteForm, extra=0, can_delete=True
 )

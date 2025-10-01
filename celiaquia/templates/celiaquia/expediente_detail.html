@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static custom_filters %}
+{% load static custom_filters dict_extras %}
 {% block title %}Expediente{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -10,24 +10,7 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% with
-        is_tec=request.user|has_group:"TecnicoCeliaquia"
-        is_coord=request.user|has_group:"CoordinadorCeliaquia"
-        is_prov=request.user|has_group:"ProvinciaCeliaquia"
-        %}
-        <style>
-    /* Extras sutiles para legajos */
-    .card-dark { background-color:#1f2d3d; color:#e9eef5; border:1px solid #2a3a4f; }
-    .chip { display:inline-flex; align-items:center; gap:.4rem; padding:.2rem .6rem; border-radius:999px; font-size:.75rem; }
-    .chip-warning { background:#ffe08a; color:#3b2f00; }
-    .badge-soft { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); }
-    .file-row { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.35rem .6rem; border-radius:.5rem; }
-    .file-row + .file-row { margin-top:.35rem; }
-    .file-name { max-width: 32ch; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:bottom; }
-    .muted { color:#9fb3c8!important; }
-    .list-divider { border-top:1px dashed rgba(255,255,255,.12); margin:.6rem 0; }
-    .btn-toolbar.flex-wrap > .btn-group { margin-bottom:.4rem; }
-        </style>
+    {% with is_tec=request.user|has_group:"TecnicoCeliaquia" is_coord=request.user|has_group:"CoordinadorCeliaquia" is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
@@ -38,7 +21,7 @@
                 {% endif %}
             </div>
             <div class="d-flex gap-2">
-                {# Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia #}
+                <!-- Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia -->
                 {% if is_tec or is_coord %}
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
                         <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
@@ -50,7 +33,7 @@
                                 data-mode="new">Subir Excel de Documentos (Cruce)</button>
                     {% endif %}
                     {% if expediente.cruce_excel %}
-                        {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
+                        {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' or expediente.estado.nombre == 'CRUCE_FINALIZADO' %}
                             <button type="button"
                                     class="btn btn-warning btn-sm"
                                     data-bs-toggle="modal"
@@ -104,6 +87,9 @@
             <div class="row">
                 <div class="col-md-6">
                     <p>
+                        <strong>Número de expediente:</strong> {{ expediente.numero_expediente|default:"-" }}
+                    </p>
+                    <p>
                         <strong>Estado:</strong> {{ expediente.estado.display_name }}
                     </p>
                     <p>
@@ -132,10 +118,6 @@
                             <span class="text-muted">No asignado</span>
                         {% endif %}
                     </p>
-                    {% if expediente.estado.id == 4 and is_coord %}
-                        <a href="{% url 'expediente_asignar_tecnico' expediente.pk %}"
-                           class="btn btn-outline-warning btn-sm">Cambiar Técnico</a>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -302,21 +284,17 @@
             {% if legajos %}
                 {% if faltan_archivos %}
                     <div class="alert alert-warning">
-                        Para enviar el expediente, todos los legajos deben tener <strong>los 3 archivos</strong>.
+                        Para enviar el expediente, todos los legajos deben tener <strong>los 2 archivos requeridos</strong>.
                         <ul class="mt-2 mb-0">
                             {% for leg in legajos %}
-                                {% with m1=leg.archivo1 m2=leg.archivo2 m3=leg.archivo3 %}
-                                    {% if not m1 or not m2 or not m3 %}
+                                {% with m2=leg.archivo2 m3=leg.archivo3 %}
+                                    {% if not m2 or not m3 %}
                                         <li>
                                             {{ leg.ciudadano.apellido }}, {{ leg.ciudadano.nombre }} (DNI {{ leg.ciudadano.documento }}):
-                                            {% if not m1 %}<span class="text-danger">falta archivo 1</span>{% endif %}
-                                            {% if not m2 %}
-                                                {% if not m1 %}—{% endif %}
-                                                <span class="text-danger">falta archivo 2</span>
-                                            {% endif %}
+                                            {% if not m2 %}<span class="text-danger">falta biopsia/constancia médica</span>{% endif %}
                                             {% if not m3 %}
-                                                {% if not m1 or not m2 %}—{% endif %}
-                                                <span class="text-danger">falta archivo 3</span>
+                                                {% if not m2 %}—{% endif %}
+                                                <span class="text-danger">falta negativa ANSES</span>
                                             {% endif %}
                                         </li>
                                     {% endif %}
@@ -327,22 +305,21 @@
                 {% endif %}
                 <div id="legajos-list" class="list-group">
                     {% for leg in legajos %}
-                        <div class="list-group-item border-0 mb-3 rounded shadow-sm legajo-item card-dark"
+                        <div class="list-group-item border-0 mb-3 rounded shadow-sm legajo-item card-dark {% if leg.revision_tecnico == 'SUBSANAR' %}border-warning{% elif leg.revision_tecnico == 'SUBSANADO' %}border-info{% endif %}"
                              data-legajo-id="{{ leg.pk }}"
-                             data-revision="{{ leg.revision_tecnico }}">
-                            {% if leg.revision_tecnico == 'SUBSANAR' %}
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <span class="chip chip-warning">⚠ Requiere subsanar</span>
-                                    {% if leg.subsanacion_solicitada_en %}
-                                        <small class="muted">Solicitado: {{ leg.subsanacion_solicitada_en|date:"d/m/Y H:i" }}</small>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
+                             data-revision="{{ leg.revision_tecnico }}"
+                             {% if leg.revision_tecnico == 'SUBSANAR' %} style="border: 2px solid #ffc107 !important;" {% elif leg.revision_tecnico == 'SUBSANADO' %} style="border: 2px solid #17a2b8 !important;" {% endif %}>
                             <div class="row gy-3 gx-3">
-                                <!-- Col 1: Datos + Revisión -->
+                                <!-- Col 1: Datos -->
                                 <div class="col-lg-3 col-md-5">
-                                    <div class="fw-semibold h6 mb-1">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
+                                    <div class="d-flex align-items-center mb-1">
+                                        {% if leg.revision_tecnico == 'SUBSANAR' %}<span class="me-2" style="font-size: 1.2em;">⚠️</span>{% endif %}
+                                        <div class="fw-semibold h6 mb-0">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
+                                    </div>
                                     <div class="muted small mb-2">DNI: {{ leg.ciudadano.documento }}</div>
+                                    {% if leg.revision_tecnico == 'SUBSANAR' and leg.subsanacion_solicitada_en %}
+                                        <div class="small text-warning mb-2">Solicitado: {{ leg.subsanacion_solicitada_en|date:"d/m/Y H:i" }}</div>
+                                    {% endif %}
                                     <div class="small">
                                         <span class="muted">Revisión:</span>
                                         {% if leg.revision_tecnico == 'APROBADO' %}
@@ -358,340 +335,525 @@
                                         {% endif %}
                                     </div>
                                 </div>
-                                <!-- Col 2: Observación de Subsanación -->
+                                <!-- Col 2: Observaciones -->
                                 <div class="col-lg-4 col-md-7">
-                                    <div class="small muted">Observación (subsanación):</div>
-                                    <div class="mt-1">
-                                        {% if leg.subsanacion_motivo %}
-                                            <div class="p-2 rounded"
-                                                 style="background:rgba(255,255,255,.04);
-                                                        border:1px solid rgba(255,255,255,.08)">
-                                                <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                    {% if is_prov %}
+                                        <div class="small muted">Observación (subsanación):</div>
+                                        <div class="mt-1">
+                                            {% if leg.subsanacion_motivo %}
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(255,255,255,.04);
+                                                            border:1px solid rgba(255,255,255,.08)">
+                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                </div>
+                                            {% else %}
+                                                <span class="muted">—</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if leg.subsanacion_renaper_comentario %}
+                                            <div class="small muted mt-2">Respuesta provincia:</div>
+                                            <div class="mt-1">
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(255,193,7,.1);
+                                                            border:1px solid rgba(255,193,7,.3)">
+                                                    <span class="d-block text-break">{{ leg.subsanacion_renaper_comentario }}</span>
+                                                </div>
                                             </div>
-                                        {% else %}
-                                            <span class="muted">—</span>
                                         {% endif %}
-                                    </div>
+                                    {% else %}
+                                        <div class="small muted">Comentario enviado a provincia:</div>
+                                        <div class="mt-1">
+                                            {% if leg.subsanacion_motivo %}
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(255,255,255,.04);
+                                                            border:1px solid rgba(255,255,255,.08)">
+                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                </div>
+                                            {% else %}
+                                                <span class="muted">—</span>
+                                            {% endif %}
+                                        </div>
+                                        {% if leg.subsanacion_renaper_comentario %}
+                                            <div class="small muted mt-2">Respuesta de provincia:</div>
+                                            <div class="mt-1">
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(40,167,69,.1);
+                                                            border:1px solid rgba(40,167,69,.3)">
+                                                    <span class="d-block text-break">{{ leg.subsanacion_renaper_comentario }}</span>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
                                 </div>
                                 <!-- Col 3: Archivos -->
                                 <div class="col-lg-5">
-                                    <div class="small muted mb-1">Archivos del legajo</div>
-                                    <!-- Archivo 1 -->
-                                    <div class="file-row"
-                                         style="background:rgba(255,255,255,.03);
-                                                border:1px solid rgba(255,255,255,.08)">
-                                        <div>
-                                            <div class="muted small">DNI</div>
-                                            {% if leg.archivo1 %}
-                                                <a href="{{ leg.archivo1.url }}"
-                                                   target="_blank"
-                                                   class="text-success text-decoration-underline file-name">
-                                                    ✅ {{ leg.archivo1.name }}
-                                                </a>
-                                            {% else %}
-                                                <span class="text-warning">⚠ Pendiente</span>
-                                            {% endif %}
-                                        </div>
-                                        {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
-                                            <button type="button"
-                                                    class="btn btn-outline-info btn-sm"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalSubirArchivo"
-                                                    data-legajo-id="{{ leg.pk }}"
-                                                    data-expediente-id="{{ expediente.pk }}"
-                                                    data-file-field="archivo1">
-                                                {% if leg.archivo1 %}
-                                                    Editar
-                                                {% else %}
-                                                    Subir
-                                                {% endif %}
-                                            </button>
-                                        {% endif %}
-                                    </div>
-                                    <!-- Archivo 2 -->
-                                    <div class="file-row"
-                                         style="background:rgba(255,255,255,.03);
-                                                border:1px solid rgba(255,255,255,.08)">
-                                        <div>
-                                            <div class="muted small">Biopsia positiva y/o constancia médica</div>
+                                    <!-- Biopsia positiva y/o constancia médica -->
+                                    <div class="file-row" style="background:rgba(255,255,255,.02);">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="small muted">Biopsia/Constancia médica:</span>
                                             {% if leg.archivo2 %}
                                                 <a href="{{ leg.archivo2.url }}"
                                                    target="_blank"
-                                                   class="text-success text-decoration-underline file-name">
-                                                    ✅ {{ leg.archivo2.name }}
-                                                </a>
+                                                   class="file-name text-decoration-underline">{{ leg.archivo2.name|default:"archivo2" }}</a>
                                             {% else %}
-                                                <span class="text-warning">⚠ Pendiente</span>
+                                                <span class="text-danger small">No subido</span>
                                             {% endif %}
                                         </div>
-                                        {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
-                                            <button type="button"
-                                                    class="btn btn-outline-info btn-sm"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalSubirArchivo"
-                                                    data-legajo-id="{{ leg.pk }}"
-                                                    data-expediente-id="{{ expediente.pk }}"
-                                                    data-file-field="archivo2">
-                                                {% if leg.archivo2 %}
-                                                    Editar
-                                                {% else %}
-                                                    Subir
-                                                {% endif %}
-                                            </button>
+                                        {% if is_prov %}
+                                            {% if expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
+                                                <button type="button"
+                                                        class="btn btn-outline-info btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalSubirArchivo"
+                                                        data-legajo-id="{{ leg.pk }}"
+                                                        data-expediente-id="{{ expediente.pk }}"
+                                                        data-file-field="archivo2">
+                                                    {% if leg.archivo2 %}
+                                                        Editar
+                                                    {% else %}
+                                                        Subir
+                                                    {% endif %}
+                                                </button>
+                                            {% endif %}
                                         {% endif %}
                                     </div>
-                                    <!-- Archivo 3 -->
-                                    <div class="file-row"
-                                         style="background:rgba(255,255,255,.03);
-                                                border:1px solid rgba(255,255,255,.08)">
-                                        <div>
-                                            <div class="muted small">Negativa de ANSES</div>
+                                    <!-- Negativa de ANSES -->
+                                    <div class="file-row" style="background:rgba(255,255,255,.02);">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="small muted">Negativa ANSES:</span>
                                             {% if leg.archivo3 %}
                                                 <a href="{{ leg.archivo3.url }}"
                                                    target="_blank"
-                                                   class="text-success text-decoration-underline file-name">
-                                                    ✅ {{ leg.archivo3.name }}
-                                                </a>
+                                                   class="file-name text-decoration-underline">{{ leg.archivo3.name|default:"archivo3" }}</a>
                                             {% else %}
-                                                <span class="text-warning">⚠ Pendiente</span>
+                                                <span class="text-danger small">No subido</span>
                                             {% endif %}
                                         </div>
-                                        {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
-                                            <button type="button"
-                                                    class="btn btn-outline-info btn-sm"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalSubirArchivo"
-                                                    data-legajo-id="{{ leg.pk }}"
-                                                    data-expediente-id="{{ expediente.pk }}"
-                                                    data-file-field="archivo3">
-                                                {% if leg.archivo3 %}
-                                                    Editar
-                                                {% else %}
-                                                    Subir
-                                                {% endif %}
-                                            </button>
+                                        {% if is_prov %}
+                                            {% if expediente.estado.nombre == 'EN_ESPERA' or leg.revision_tecnico == 'SUBSANAR' %}
+                                                <button type="button"
+                                                        class="btn btn-outline-info btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalSubirArchivo"
+                                                        data-legajo-id="{{ leg.pk }}"
+                                                        data-expediente-id="{{ expediente.pk }}"
+                                                        data-file-field="archivo3">
+                                                    {% if leg.archivo3 %}
+                                                        Editar
+                                                    {% else %}
+                                                        Subir
+                                                    {% endif %}
+                                                </button>
+                                            {% endif %}
                                         {% endif %}
                                     </div>
+                                    <!-- Respuesta Subsanación Renaper -->
+                                    {% if leg.revision_tecnico == 'SUBSANAR' %}
+                                        <div class="file-row" style="background:rgba(255,193,7,.1);">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="small muted">Respuesta subsanación:</span>
+                                                {% if leg.subsanacion_renaper_archivo %}
+                                                    <a href="{{ leg.subsanacion_renaper_archivo.url }}"
+                                                       target="_blank"
+                                                       class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
+                                                {% else %}
+                                                    <span class="text-warning small">Pendiente de respuesta</span>
+                                                {% endif %}
+                                            </div>
+                                            {% if is_prov %}
+                                                <button type="button"
+                                                        class="btn btn-outline-warning btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalRespuestaSubsanacionRenaper"
+                                                        data-legajo-id="{{ leg.pk }}"
+                                                        data-expediente-id="{{ expediente.pk }}">
+                                                    {% if leg.subsanacion_renaper_archivo %}
+                                                        Editar
+                                                    {% else %}
+                                                        Responder
+                                                    {% endif %}
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    {% elif leg.revision_tecnico == 'SUBSANADO' %}
+                                        <div class="file-row" style="background:rgba(40,167,69,.1);">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="small muted">Respuesta subsanación:</span>
+                                                {% if leg.subsanacion_renaper_archivo %}
+                                                    <a href="{{ leg.subsanacion_renaper_archivo.url }}"
+                                                       target="_blank"
+                                                       class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
+                                                {% else %}
+                                                    <span class="text-muted small">Sin archivo de respuesta</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="list-divider"></div>
-                            <!-- Acciones (línea separada para que no se solapen con nada) -->
-                            {% if is_tec and expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
-                                {% with estado=leg.revision_tecnico %}
-                                    <div class="d-flex justify-content-end">
-                                        <div class="btn-toolbar flex-wrap"
-                                             role="toolbar"
-                                             aria-label="Acciones del legajo">
-                                            <div class="btn-group btn-group-sm me-2"
-                                                 role="group"
-                                                 aria-label="Revisión técnico">
-                                                <button type="button"
-                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                        title="Aprobar"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-accion="APROBAR">✅ Aprobar</button>
-                                                <button type="button"
-                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                        title="Pedir subsanación"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalSubsanar">📝 Subsanar</button>
-                                                <button type="button"
-                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                        title="Rechazar"
-                                                        data-legajo-id="{{ leg.pk }}"
-                                                        data-accion="RECHAZAR">❌ Rechazar</button>
-                                            </div>
-                                        </div>
+                            <!-- Acciones -->
+                            {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
+                                <div class="d-flex justify-content-end mt-2">
+                                    <div class="btn-toolbar flex-wrap"
+                                         role="toolbar"
+                                         aria-label="Acciones del legajo">
+                                        {% with estado=leg.revision_tecnico %}
+                                            {% if estado == 'SUBSANADO' and leg.estado_validacion_renaper != 1 %}
+                                                <!-- Subsanado pero sin validación Renaper aprobada -->
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button"
+                                                            class="btn btn-info btn-validar-renaper"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalValidarRenaper">
+                                                        🔍 Validar Renaper
+                                                    </button>
+                                                </div>
+                                            {% elif leg.estado_validacion_renaper == 0 %}
+                                                <!-- Sin validar Renaper -->
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button"
+                                                            class="btn btn-info btn-validar-renaper"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalValidarRenaper">
+                                                        🔍 Validar Renaper
+                                                    </button>
+                                                </div>
+                                            {% elif leg.estado_validacion_renaper == 1 %}
+                                                <!-- Renaper aprobado: mostrar botones de revisión -->
+                                                <div class="btn-group btn-group-sm me-2" role="group">
+                                                    <button type="button"
+                                                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-accion="APROBAR">✅ Aprobar</button>
+                                                    <button type="button"
+                                                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalSubsanar">📝 Subsanar</button>
+                                                    <button type="button"
+                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                            data-legajo-id="{{ leg.pk }}"
+                                                            data-accion="RECHAZAR">❌ Rechazar</button>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
                                     </div>
-                                {% endwith %}
+                                </div>
                             {% endif %}
                         </div>
                     {% endfor %}
                 </div>
-                <nav class="mt-3">
-                    <ul id="legajos-pagination"
-                        class="pagination pagination-sm justify-content-center mb-0">
-                    </ul>
-                </nav>
-            {% else %}
-                <p class="text-muted">No hay legajos cargados.</p>
-            {% endif %}
-            {# Confirmar Envío: solo Provincia en EN_ESPERA #}
-            {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
-                <div class="text-end mt-3">
-                    <button id="btn-confirm" class="btn btn-success">Confirmar Envío</button>
-                </div>
-            {% endif %}
-            {# Confirmar Subsanación: solo Provincia en ASIGNADO y si hay_subsanar #}
-            {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
-                <div class="text-end mt-3">
-                    <button id="btn-confirm-subs" class="btn btn-warning">Confirmar Subsanación</button>
-                </div>
-            {% endif %}
-        </div>
-        {# Asignar Técnico: solo Coordinador (según tu condición actual por id) #}
-        {% if expediente.estado.id == 2 and is_coord %}
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Asignar Técnico</h5>
-                </div>
-                <div class="card-body">
-                    <form method="post"
-                          action="{% url 'expediente_asignar_tecnico' expediente.pk %}">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label for="tecnico">Seleccionar Técnico:</label>
-                            <select name="tecnico_id" id="tecnico" class="form-control">
-                                {% for tecnico in tecnicos %}
-                                    <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-2">Asignar</button>
-                    </form>
-                </div>
+            </div>
+            <nav class="mt-3">
+                <ul id="legajos-pagination"
+                    class="pagination pagination-sm justify-content-center mb-0">
+                </ul>
+            </nav>
+        {% else %}
+            <p class="text-muted">No hay legajos cargados.</p>
+        {% endif %}
+        <!-- Confirmar Envío: solo Provincia en EN_ESPERA -->
+        {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
+            <div class="text-end mt-3">
+                <button id="btn-confirm" class="btn btn-success">Confirmar Envío</button>
             </div>
         {% endif %}
-        <!-- Modal: subir/editar archivo de legajo (individual por campo) -->
-        <div class="modal fade"
-             id="modalSubirArchivo"
-             tabindex="-1"
-             aria-labelledby="modalSubirArchivoLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <form id="form-subir-archivo" method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalSubirArchivoLabel">Subir/Editar archivo del legajo</h5>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Cerrar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div id="modal-alertas" class="mb-2"></div>
-                            <div class="row g-2">
-                                <div class="col-12">
-                                    <label class="form-label">Seleccionar archivo a actualizar</label>
-                                    <select name="campo" id="campo-archivo" class="form-select" required>
-                                        <option value="archivo1">DNI</option>
-                                        <option value="archivo2">Biopsia positiva y/o constancia médica</option>
-                                        <option value="archivo3">Negativa de ANSES</option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <label for="id_archivo" class="form-label">PDF o imagen</label>
-                                    <input type="file"
-                                           name="archivo"
-                                           id="id_archivo"
-                                           class="form-control"
-                                           required
-                                           accept=".pdf,.jpg,.jpeg,.png" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Guardar</button>
-                        </div>
-                    </form>
-                </div>
+        <!-- Confirmar Subsanación: solo Provincia en ASIGNADO y si hay_subsanar -->
+        {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
+            <div class="text-end mt-3">
+                <button id="btn-confirm-subs" class="btn btn-warning">Confirmar Subsanación</button>
+            </div>
+        {% endif %}
+    </div>
+    <!-- Asignar Técnico: solo Coordinador (según tu condición actual por id) -->
+    {% if expediente.estado.id == 2 and is_coord %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Asignar Técnico</h5>
+            </div>
+            <div class="card-body">
+                <form method="post"
+                      action="{% url 'expediente_asignar_tecnico' expediente.pk %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="tecnico">Seleccionar Técnico:</label>
+                        <select name="tecnico_id" id="tecnico" class="form-control">
+                            {% for tecnico in tecnicos %}
+                                <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Asignar</button>
+                </form>
             </div>
         </div>
-        <!-- Modal: pedir SUBSANACIÓN -->
-        <div class="modal fade"
-             id="modalSubsanar"
-             tabindex="-1"
-             aria-labelledby="modalSubsanarLabel"
-             aria-hidden="true">
-            <div class="modal-dialog">
-                <form class="modal-content" id="form-subsanar" method="post">
+    {% endif %}
+    <!-- Modal: subir/editar archivo de legajo (individual por campo) -->
+    <div class="modal fade"
+         id="modalSubirArchivo"
+         tabindex="-1"
+         aria-labelledby="modalSubirArchivoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="form-subir-archivo" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title" id="modalSubsanarLabel">Solicitud de subsanación</h5>
+                        <h5 class="modal-title" id="modalSubirArchivoLabel">Subir/Editar archivo del legajo</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
                                 aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
-                        <input type="hidden" name="accion" value="SUBSANAR" />
-                        <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
-                        <div class="mb-2">
-                            <label for="subsanar-motivo" class="form-label">Indicar el motivo</label>
-                            <textarea id="subsanar-motivo"
-                                      name="motivo"
-                                      class="form-control"
-                                      rows="3"
-                                      required
-                                      maxlength="500"></textarea>
+                        <div id="modal-alertas" class="mb-2"></div>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label">Seleccionar archivo a actualizar</label>
+                                <select name="campo" id="campo-archivo" class="form-select" required>
+                                    <option value="archivo2">Biopsia positiva y/o constancia médica</option>
+                                    <option value="archivo3">Negativa de ANSES</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="id_archivo" class="form-label">PDF o imagen</label>
+                                <input type="file"
+                                       name="archivo"
+                                       id="id_archivo"
+                                       class="form-control"
+                                       required
+                                       accept=".pdf,.jpg,.jpeg,.png" />
+                            </div>
                         </div>
-                        <small class="text-muted d-block">
-                            El legajo quedará en estado <strong>SUBSANAR</strong> y la provincia podrá actualizar los archivos.
-                        </small>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-warning" id="btn-confirm-subsanar">Confirmar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
                     </div>
                 </form>
             </div>
         </div>
-        <!-- Modal: cruce CUIT/DNI -->
-        <div class="modal fade"
-             id="modalCruceCuit"
-             tabindex="-1"
-             aria-labelledby="modalCruceCuitLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <form id="form-cruce-cuit" method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalCruceCuitLabel">Subir Excel de Documentos (con encabezado)</h5>
-                            <button type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Cerrar"></button>
+    </div>
+    <!-- Modal: pedir SUBSANACIÓN -->
+    <div class="modal fade"
+         id="modalSubsanar"
+         tabindex="-1"
+         aria-labelledby="modalSubsanarLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" id="form-subsanar" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalSubsanarLabel">Solicitud de subsanación</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="accion" value="SUBSANAR" />
+                    <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
+                    <div class="mb-2">
+                        <label for="subsanar-motivo" class="form-label">Indicar el motivo</label>
+                        <textarea id="subsanar-motivo"
+                                  name="motivo"
+                                  class="form-control"
+                                  rows="3"
+                                  required
+                                  maxlength="500"></textarea>
+                    </div>
+                    <small class="text-muted d-block">
+                        El legajo quedará en estado <strong>SUBSANAR</strong> y la provincia podrá actualizar los archivos.
+                    </small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning" id="btn-confirm-subsanar">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal: cruce CUIT/DNI -->
+    <div class="modal fade"
+         id="modalCruceCuit"
+         tabindex="-1"
+         aria-labelledby="modalCruceCuitLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="form-cruce-cuit" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalCruceCuitLabel">Subir Excel de Documentos (con encabezado)</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="cruce-alertas" class="mb-2"></div>
+                        <div class="form-group">
+                            <label for="id_excel_cuit">
+                                Archivo Excel (.xlsx) con columna <code>documento</code>
+                            </label>
+                            <input type="file"
+                                   name="excel_cuit"
+                                   id="id_excel_cuit"
+                                   class="form-control"
+                                   required
+                                   accept=".xlsx,.xls,.csv" />
+                            <small id="cruce-help" class="text-muted">
+                                Debe incluir encabezado; columna válida: <strong>documento</strong>.
+                            </small>
                         </div>
-                        <div class="modal-body">
-                            <div id="cruce-alertas" class="mb-2"></div>
-                            <div class="form-group">
-                                <label for="id_excel_cuit">
-                                    Archivo Excel (.xlsx) con columna <code>documento</code>
-                                </label>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success" id="btn-cruce-submit">Ejecutar Cruce</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal: Respuesta Subsanación Renaper -->
+    <div class="modal fade"
+         id="modalRespuestaSubsanacionRenaper"
+         tabindex="-1"
+         aria-labelledby="modalRespuestaSubsanacionRenaperLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="form-respuesta-subsanacion-renaper"
+                      method="post"
+                      enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a Subsanación Renaper</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="modal-alertas-renaper" class="mb-2"></div>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label for="comentario-respuesta-renaper" class="form-label">Comentario de respuesta</label>
+                                <textarea id="comentario-respuesta-renaper"
+                                          name="comentario"
+                                          class="form-control"
+                                          rows="3"
+                                          placeholder="Explique las correcciones realizadas..."
+                                          required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label for="archivo-respuesta-renaper" class="form-label">Archivo de respuesta *</label>
                                 <input type="file"
-                                       name="excel_cuit"
-                                       id="id_excel_cuit"
+                                       name="archivo"
+                                       id="archivo-respuesta-renaper"
                                        class="form-control"
                                        required
-                                       accept=".xlsx,.xls,.csv" />
-                                <small id="cruce-help" class="text-muted">
-                                    Debe incluir encabezado; columna válida: <strong>documento</strong>.
-                                </small>
+                                       accept=".pdf,.jpg,.jpeg,.png" />
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-success" id="btn-cruce-submit">Ejecutar Cruce</button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning">Enviar Respuesta</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal: Validación Renaper -->
+    <div class="modal fade"
+         id="modalValidarRenaper"
+         tabindex="-1"
+         aria-labelledby="modalValidarRenaperLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalValidarRenaperLabel">Validación Renaper</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="renaper-alertas" class="mb-3"></div>
+                    <div id="renaper-loading" class="text-center py-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Consultando Renaper...</span>
                         </div>
-                    </form>
+                        <p class="mt-2">Consultando datos en Renaper...</p>
+                    </div>
+                    <div id="renaper-comparacion" style="display: none;">
+                        <h6 class="mb-3">
+                            Comparación de datos: <span id="ciudadano-nombre"></span>
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0">Datos de la Provincia</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-sm mb-0">
+                                            <tbody id="datos-provincia">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-success text-white">
+                                        <h6 class="mb-0">Datos de Renaper</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-sm mb-0">
+                                            <tbody id="datos-renaper">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
-    {% endwith %}
+    </div>
+{% endwith %}
+{% endblock %}
+{% block customCSS %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/expediente_detail.css' %}" />
 {% endblock %}
 {% block customJS %}
-    <script>
-    window.PROCESS_URL           = "{% url 'expediente_procesar' expediente.pk %}";
-    window.CONFIRM_URL           = "{% url 'expediente_confirm' expediente.pk %}";
-    window.CRUCE_URL             = "{% url 'expediente_cruce_cuit' expediente.pk %}";
-    window.CSRF_TOKEN            = "{{ csrf_token }}";
-    window.REVISAR_URL_TEMPLATE  = "{% url 'legajo_revisar' expediente.pk 0 %}".replace("/0/", "/{id}/");
-    window.CONFIRM_SUBS_URL      = "{% url 'expediente_confirm_subsanacion' expediente.pk %}";
-    </script>
+    <!-- Meta tags para configuración -->
+    <meta name="process-url"
+          content="{% url 'expediente_procesar' expediente.pk %}" />
+    <meta name="confirm-url"
+          content="{% url 'expediente_confirm' expediente.pk %}" />
+    <meta name="cruce-url"
+          content="{% url 'expediente_cruce_cuit' expediente.pk %}" />
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <meta name="revisar-url-template"
+          content="{% url 'legajo_revisar' expediente.pk 0 %}" />
+    <meta name="confirm-subs-url"
+          content="{% url 'expediente_confirm_subsanacion' expediente.pk %}" />
+    <meta name="validar-renaper-url-template"
+          content="{% url 'legajo_validar_renaper' expediente.pk 0 %}" />
+    <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
+    <script src="{% static 'custom/js/global_pagination.js' %}"></script>
 {% endblock %}

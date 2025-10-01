@@ -14,7 +14,7 @@ from django.db.models import Q
 from comedores.models import Comedor
 from comedores.tasks import build_comedor_payload
 
-LOG = logging.getLogger("django")
+logger = logging.getLogger("django")
 TIMEOUT = 30
 MAX_WORKERS = 5
 BATCH_SIZE = 100
@@ -152,7 +152,7 @@ class Command(BaseCommand):
                     else:
                         fail += 1
                         err_str = repr(err)
-                        LOG.error("Fallo sync comedor %s: %s", cid, err_str)
+                        logger.error("Fallo sync comedor %s: %s", cid, err_str)
                         if verbose:
                             failures.append({"id": cid, "error": err_str})
 

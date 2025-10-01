@@ -10,7 +10,8 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% include 'components/search_bar.html' with titulo='Buscar Organizacion' placeholder='Buscar por nombre, CUIT, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='organizaciones' add_url='organizacion_crear' add_text='Agregar' button_append=True query=query %}
+    {% url 'organizaciones_ajax' as ajax_url %}
+    {% include 'components/search_bar.html' with titulo='Buscar Organizacion' placeholder='Buscar por nombre, CUIT, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='organizaciones' add_url='organizacion_crear' add_text='Agregar' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='organizaciones-tbody' query=query %}
     <div class="row mt-5">
         <div class="col-12">
             <div class="card">
@@ -25,39 +26,16 @@
                                 <th style="width: 15%" class="notexport">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for organizacion in organizaciones %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'organizacion_detalle' organizacion.id %}"
-                                           class="font-weight-bold link-handler"
-                                           title="Ver detalles">{{ organizacion.nombre }}</a>
-                                    </td>
-                                    <td>{{ organizacion.cuit |default_if_none:"-" }}</td>
-                                    <td>{{ organizacion.telefono | default_if_none:"-" }}</td>
-                                    <td>{{ organizacion.email | default_if_none:"-" }}</td>
-                                    <td class="project-actions text-right">
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'organizacion_detalle' organizacion.id %}"
-                                               class="btn btn-primary btn-sm ver link-handler">Ver</a>
-                                            <a href="{% url 'organizacion_editar' organizacion.id %}"
-                                               class="btn btn-primary btn-sm editar link-handler">Editar</a>
-                                            <a href="{% url 'organizacion_eliminar' organizacion.id %}"
-                                               class="btn btn-danger btn-sm eliminar link-handler">Eliminar</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">No hay organizaciones disponibles.</td>
-                                </tr>
-                            {% endfor %}
+                        <tbody id="organizaciones-tbody">
+                            {% include 'organizaciones/partials/organizacion_rows.html' with organizaciones=organizaciones %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
+    <div id="pagination-container">
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
+    </div>
 {% endblock %}
 {% block customJS %}{% endblock %}

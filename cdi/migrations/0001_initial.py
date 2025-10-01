@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("organizaciones", "0001_initial"),
-        ("configuraciones", "0001_initial"),
+        ("core", "0001_initial"),
     ]
 
     operations = [
@@ -112,7 +112,7 @@ class Migration(migrations.Migration):
                 (
                     "dias_funcionamiento",
                     models.ManyToManyField(
-                        blank=True, related_name="centros", to="configuraciones.dia"
+                        blank=True, related_name="centros", to="core.dia"
                     ),
                 ),
                 (
@@ -121,13 +121,13 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
-                        to="configuraciones.localidad",
+                        to="core.localidad",
                     ),
                 ),
                 (
                     "meses_funcionamiento",
                     models.ManyToManyField(
-                        blank=True, related_name="centros", to="configuraciones.mes"
+                        blank=True, related_name="centros", to="core.mes"
                     ),
                 ),
                 (
@@ -136,7 +136,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
-                        to="configuraciones.municipio",
+                        to="core.municipio",
                     ),
                 ),
                 (
@@ -154,13 +154,13 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
-                        to="configuraciones.provincia",
+                        to="core.provincia",
                     ),
                 ),
                 (
                     "turnos_funcionamiento",
                     models.ManyToManyField(
-                        blank=True, related_name="centros", to="configuraciones.turno"
+                        blank=True, related_name="centros", to="core.turno"
                     ),
                 ),
             ],

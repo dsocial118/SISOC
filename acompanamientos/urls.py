@@ -22,4 +22,11 @@ urlpatterns = [
         group_required(["Tecnico Comedor"])(views.restaurar_hito),
         name="restaurar_hito",
     ),
+    path(
+        "acompanamiento/ajax/",
+        group_required(["Acompanamiento Listar", "Area Legales", "Tecnico Comedor"])(
+            views.comedores_acompanamiento_ajax
+        ),
+        name="comedores_acompanamiento_ajax",
+    ),
 ]

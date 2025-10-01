@@ -28,7 +28,7 @@
                                     <td>{{ reg.razon_social }}</td>
                                     <td>${{ reg.importe|floatformat:2 }}</td>
                                     <td>{{ reg.fecha_trx|date:"d/m/Y" }}</td>
-                                    {# Pago aceptado o no aceptado según motivo_rechazo #}
+                                    <!-- Pago aceptado o no aceptado según motivo_rechazo -->
                                     {% if reg.motivo_rechazo and reg.motivo_rechazo != "0" %}
                                         <td class="text-danger font-weight-bold">Pago no aceptado</td>
                                     {% else %}

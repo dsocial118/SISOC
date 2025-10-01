@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from ciudadanos.models import Ciudadano, Provincia
+from ciudadanos.models import Ciudadano
+from core.models import Provincia
 
 User = get_user_model()
 
@@ -208,6 +209,20 @@ class ExpedienteCiudadano(models.Model):
         on_delete=models.SET_NULL,
         related_name="subsanaciones_realizadas",
     )
+    estado_validacion_renaper = models.IntegerField(
+        default=0,
+        db_index=True,
+        help_text="0=no validado, 1=aceptado, 2=rechazado, 3=subsanar",
+    )
+    subsanacion_renaper_comentario = models.TextField(
+        null=True, blank=True, help_text="Comentario de respuesta a subsanación Renaper"
+    )
+    subsanacion_renaper_archivo = models.FileField(
+        upload_to="legajos/subsanacion_renaper/",
+        null=True,
+        blank=True,
+        help_text="Archivo de respuesta a subsanación Renaper",
+    )
 
     class Meta:
         unique_together = ("expediente", "ciudadano")
@@ -238,7 +253,7 @@ class ExpedienteCiudadano(models.Model):
         ]
 
     def _recompute_archivos_ok(self):
-        self.archivos_ok = bool(self.archivo1 and self.archivo2 and self.archivo3)
+        self.archivos_ok = bool(self.archivo2 and self.archivo3)
 
     def save(self, *args, **kwargs):
         self._recompute_archivos_ok()
@@ -247,13 +262,11 @@ class ExpedienteCiudadano(models.Model):
     def __str__(self):
         return f"{self.ciudadano.documento} - {self.ciudadano.nombre} {self.ciudadano.apellido}"
 
-    def tiene_tres_archivos(self) -> bool:
-        return bool(self.archivo1 and self.archivo2 and self.archivo3)
+    def tiene_dos_archivos(self) -> bool:
+        return bool(self.archivo2 and self.archivo3)
 
     def faltantes_archivos(self):
         faltan = []
-        if not self.archivo1:
-            faltan.append("archivo1")
         if not self.archivo2:
             faltan.append("archivo2")
         if not self.archivo3:
