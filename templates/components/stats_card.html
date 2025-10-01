@@ -1,9 +1,9 @@
-{# Componente Stats Card #}
-{# Uso: {% include 'components/stats_card.html' with title='Usuarios' value='150' icon='fas fa-users' color='primary' url=detail_url %} #}
+<!-- Componente Stats Card -->
+<!-- Uso: include 'components/stats_card.html' with title='Usuarios' value='150' icon='fas fa-users' color='primary' url=detail_url -->
 <div class="{% if col_class %}{{ col_class }}{% else %}col-12 col-sm-6 col-md-3{% endif %}">
     <div class="{% if card_type == 'info-box' %}info-box{% else %}card{% endif %} {% if hover %}card-hover{% endif %} {{ card_class|default:'' }}">
         {% if card_type == 'info-box' %}
-            {# Estilo AdminLTE Info Box #}
+            <!-- Estilo AdminLTE Info Box -->
             <span class="info-box-icon bg-{{ color|default:'primary' }}">
                 <i class="{{ icon|default:'fas fa-chart-bar' }}"></i>
             </span>
@@ -13,7 +13,7 @@
                 {% if subtitle %}<span class="info-box-more">{{ subtitle }}</span>{% endif %}
             </div>
         {% elif card_type == 'small-box' %}
-            {# Estilo AdminLTE Small Box #}
+            <!-- Estilo AdminLTE Small Box -->
             <div class="small-box bg-{{ color|default:'primary' }}">
                 <div class="inner">
                     <h3>{{ value|default:'0' }}</h3>
@@ -29,7 +29,7 @@
                 {% endif %}
             </div>
         {% else %}
-            {# Estilo Card Bootstrap personalizado #}
+            <!-- Estilo Card Bootstrap personalizado -->
             <div class="card-body {% if url %}card-link-hover{% endif %}">
                 <div class="d-flex align-items-center">
                     {% if icon %}
@@ -84,7 +84,7 @@
                     </a>
                 {% endif %}
             {% endif %}
-            {# Overlay de loading opcional #}
+            <!-- Overlay de loading opcional -->
             {% if loading %}
                 <div class="card-loading-overlay">
                     <div class="spinner-border text-{{ color|default:'primary' }}"
@@ -95,7 +95,7 @@
             {% endif %}
         </div>
     </div>
-    {# CSS personalizado #}
+    <!-- CSS personalizado -->
     <style>
     .stat-icon {
         width: 48px;

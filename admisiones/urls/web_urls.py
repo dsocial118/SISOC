@@ -17,6 +17,8 @@ from admisiones.views.web_views import (
     AdmisionesLegalesDetailView,
     AnexoCreateView,
     AnexoUpdateView,
+    admisiones_legales_ajax,
+    admisiones_tecnicos_ajax,
 )
 
 urlpatterns = [
@@ -114,5 +116,16 @@ urlpatterns = [
         "comedores/admisiones/legales/ver/<int:pk>",
         group_required(["Area Legales"])(AdmisionesLegalesDetailView.as_view()),
         name="admisiones_legales_ver",
+    ),
+    # AJAX endpoints
+    path(
+        "comedores/admisiones/legales/ajax/",
+        admisiones_legales_ajax,
+        name="admisiones_legales_ajax",
+    ),
+    path(
+        "comedores/admisiones/tecnicos/ajax/",
+        admisiones_tecnicos_ajax,
+        name="admisiones_tecnicos_ajax",
     ),
 ]

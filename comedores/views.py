@@ -275,7 +275,7 @@ class ComedorListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Datos para componentes Cotton
+        # Datos para componentes reutilizables
         context.update(
             {
                 # Breadcrumb
@@ -454,6 +454,7 @@ class ComedorDetailView(DetailView):
         return ComedorService.post_comedor_relevamiento(request, self.object)
 
 
+# TODO: Sacar de la vista de comedores
 class AsignarDuplaListView(ListView):
     model = Comedor
     template_name = "comedor/asignar_dupla_form.html"

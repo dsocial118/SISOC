@@ -20,6 +20,7 @@ from django.utils.html import escape
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
+from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.db.models import Q, Count
@@ -44,7 +45,7 @@ from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
 from core.models import Provincia, Localidad
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 def _user_in_group(user, group_name: str) -> bool:
@@ -75,7 +76,7 @@ def _user_provincia(user):
         return None
 
 
-def _parse_limit(value, default=5, max_cap=5000):
+def _parse_limit(value, default=None, max_cap=5000):
     if value is None:
         return default
     txt = str(value).strip().lower()
@@ -85,7 +86,7 @@ def _parse_limit(value, default=5, max_cap=5000):
         n = int(txt)
         if n <= 0:
             return None
-        return min(n, max_cap)
+        return min(n, max_cap) if max_cap is not None else n
     except Exception:
         return default
 
@@ -94,10 +95,18 @@ class LocalidadesLookupView(View):
     """Provide a JSON list of localidades filtered by provincia and municipio."""
 
     def get(self, request):
+        user = request.user
         provincia_id = request.GET.get("provincia")
         municipio_id = request.GET.get("municipio")
 
         localidades = Localidad.objects.select_related("municipio__provincia")
+
+        # Filtrar por provincia del usuario si es provincial
+        if _is_provincial(user):
+            prov = _user_provincia(user)
+            if prov:
+                localidades = localidades.filter(municipio__provincia=prov)
+
         if provincia_id:
             localidades = localidades.filter(municipio__provincia_id=provincia_id)
         if municipio_id:
@@ -137,6 +146,12 @@ class ExpedienteListView(ListView):
                 "usuario_provincia__profile__provincia",
             )
             .prefetch_related("asignaciones_tecnicos__tecnico")
+            .annotate(
+                legajos_subsanar_count=Count(
+                    "expediente_ciudadanos",
+                    filter=Q(expediente_ciudadanos__revision_tecnico="SUBSANAR"),
+                )
+            )
             .only(
                 "id",
                 "fecha_creacion",
@@ -339,7 +354,16 @@ class ExpedienteCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["provincias"] = Provincia.objects.order_by("nombre")
+        user = self.request.user
+
+        # Filtrar provincias según el usuario
+        if _is_provincial(user):
+            # Usuario provincial: solo su provincia
+            prov = _user_provincia(user)
+            ctx["provincias"] = [prov] if prov else []
+        else:
+            # Admin/Coordinador: todas las provincias
+            ctx["provincias"] = Provincia.objects.order_by("nombre")
         return ctx
 
     def form_valid(self, form):
@@ -418,7 +442,7 @@ class ExpedienteDetailView(DetailView):
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
             raw_limit = self.request.GET.get("preview_limit")
             max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
-            preview_limit_actual = raw_limit if raw_limit is not None else "5"
+            preview_limit_actual = raw_limit if raw_limit is not None else "all"
             try:
                 preview = ImportacionService.preview_excel(
                     expediente.excel_masivo, max_rows=max_rows
@@ -435,9 +459,7 @@ class ExpedienteDetailView(DetailView):
             )
 
         faltan_archivos = expediente.expediente_ciudadanos.filter(
-            Q(archivo1__isnull=True)
-            | Q(archivo2__isnull=True)
-            | Q(archivo3__isnull=True)
+            Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
         ).exists()
 
         # Cupo: usar propiedad expediente.provincia (puede ser None)
@@ -498,15 +520,13 @@ class ExpedienteImportView(View):
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
-        start = time.time()
         try:
             result = ImportacionService.importar_legajos_desde_excel(
                 expediente, expediente.excel_masivo, user
             )
-            elapsed = time.time() - start
             messages.success(
                 request,
-                f"Importación: {result['validos']} válidos, {result['errores']} errores en {elapsed:.2f}s.",
+                f"Importación: {result['validos']} válidos, {result['errores']} errores.",
             )
         except ValidationError as ve:
             messages.error(request, f"Error de validación: {ve.message}")
@@ -529,12 +549,10 @@ class ExpedienteConfirmView(View):
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
         faltantes_qs = expediente.expediente_ciudadanos.filter(
-            Q(archivo1__isnull=True)
-            | Q(archivo2__isnull=True)
-            | Q(archivo3__isnull=True)
+            Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
         )
         if faltantes_qs.exists():
-            msg = "No se puede enviar: hay legajos sin los 3 archivos requeridos."
+            msg = "No se puede enviar: hay legajos sin los 2 archivos requeridos."
             if _is_ajax(request):
                 return JsonResponse({"success": False, "error": msg}, status=400)
             messages.error(request, msg)

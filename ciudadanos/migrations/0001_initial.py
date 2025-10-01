@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("configuraciones", "0001_initial"),
+        ("core", "0001_initial"),
     ]
 
     operations = [
@@ -1280,7 +1280,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
-                        to="configuraciones.localidad",
+                        to="core.localidad",
                     ),
                 ),
                 (
@@ -2094,7 +2094,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        to="configuraciones.localidad",
+                        to="core.localidad",
                         verbose_name="Localidad de la institucion",
                     ),
                 ),
@@ -2115,7 +2115,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        to="configuraciones.municipio",
+                        to="core.municipio",
                         verbose_name="Municipio de la institucion",
                     ),
                 ),
@@ -2136,7 +2136,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        to="configuraciones.provincia",
+                        to="core.provincia",
                         verbose_name="Provincia de la institucion",
                     ),
                 ),
@@ -2406,7 +2406,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
-                to="configuraciones.localidad",
+                to="core.localidad",
             ),
         ),
         migrations.AddField(
@@ -2427,7 +2427,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
-                to="configuraciones.municipio",
+                to="core.municipio",
             ),
         ),
         migrations.AddField(
@@ -2447,7 +2447,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
-                to="configuraciones.provincia",
+                to="core.provincia",
             ),
         ),
         migrations.AddField(
@@ -2456,7 +2456,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
-                to="configuraciones.sexo",
+                to="core.sexo",
             ),
         ),
         migrations.AddField(

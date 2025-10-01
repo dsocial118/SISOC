@@ -24,6 +24,8 @@ class UserCreationForm(forms.ModelForm):
         label="Provincia",
     )
 
+    rol = forms.CharField(max_length=100, required=False, label="Rol")
+
     class Meta:
         model = User
         fields = [
@@ -33,6 +35,9 @@ class UserCreationForm(forms.ModelForm):
             "groups",
             "es_usuario_provincial",
             "provincia",
+            "last_name",
+            "first_name",
+            "rol",
         ]
 
     def clean(self):
@@ -85,6 +90,7 @@ class CustomUserChangeForm(forms.ModelForm):
         widget=forms.Select(attrs={"class": "select2"}),
         label="Provincia",
     )
+    rol = forms.CharField(max_length=100, required=False, label="Rol")
 
     class Meta:
         model = User
@@ -95,6 +101,9 @@ class CustomUserChangeForm(forms.ModelForm):
             "groups",
             "es_usuario_provincial",
             "provincia",
+            "last_name",
+            "first_name",
+            "rol",
         ]
 
     def __init__(self, *args, **kwargs):

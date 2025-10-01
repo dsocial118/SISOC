@@ -1,6 +1,6 @@
 # centrodefamilia/urls.py
 from django.urls import path
-from configuraciones.decorators import group_required
+from core.decorators import group_required
 
 from centrodefamilia.views.informecabal import (
     InformeCabalArchivoDetailView,
@@ -18,6 +18,7 @@ from centrodefamilia.views.centro import (
     CentroListView,
     CentroUpdateView,
     InformeCabalArchivoPorCentroDetailView,
+    centros_ajax,
 )
 
 from centrodefamilia.views.actividad import (
@@ -56,6 +57,11 @@ urlpatterns = [
         "centros/",
         group_required(["ReferenteCentro", "CDF SSE"])(CentroListView.as_view()),
         name="centro_list",
+    ),
+    path(
+        "centros/ajax/",
+        group_required(["ReferenteCentro", "CDF SSE"])(centros_ajax),
+        name="centros_ajax",
     ),
     path(
         "centros/nuevo/",
