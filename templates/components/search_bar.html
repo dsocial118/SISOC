@@ -39,9 +39,13 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
         </div>
     </div>
 {% elif filters_mode %}
+    {% if filters_config %}
+        {{ filters_config|json_script:"filters-config-json" }}
+    {% endif %}
     <form method="GET"
           action="{{ filters_action|default:'' }}"
-          id="filters-form">
+          id="filters-form"
+          {% if filters_config %}data-config-id="filters-config-json"{% endif %}>
         <div class="row">
             <div class="col-md-10 offset-md-1">
                 <div class="form-group">
@@ -118,12 +122,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
     </div>
 </div>
 {% if filters_mode %}
-    {% if filters_js %}
-        <script src="{% static filters_js %}"></script>
-    {% else %}
-        <!-- FIXME: hacer generico -->
-        <script src="{% static 'custom/js/comedores_search_bar.js' %}"></script>
-    {% endif %}
+    <script src="{% static filters_js|default:'custom/js/advanced_filters.js' %}"></script>
 {% elif ajax_search_mode %}
     <script>
   document.addEventListener("DOMContentLoaded", function () {

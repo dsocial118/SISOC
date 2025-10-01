@@ -18,6 +18,12 @@ from centrodefamilia.services.beneficiarios_service import (
     get_responsable_detail_context,
     get_beneficiario_detail_queryset,
 )
+from centrodefamilia.services.beneficiarios_filter_config import (
+    get_filters_ui_config as get_beneficiarios_filters_ui_config,
+)
+from centrodefamilia.services.responsables_filter_config import (
+    get_filters_ui_config as get_responsables_filters_ui_config,
+)
 
 
 class BuscarCUILView(View):
@@ -54,8 +60,9 @@ class BeneficiariosListView(ListView):
                 "reset_url": reverse("beneficiarios_list"),
                 "add_url": reverse("beneficiarios_crear"),
                 "filters_mode": True,
-                "filters_js": "custom/js/beneficiarios_search_bar.js",
+                "filters_js": "custom/js/advanced_filters.js",
                 "filters_action": reverse("beneficiarios_list"),
+                "filters_config": get_beneficiarios_filters_ui_config(),
                 "add_text": "Crear un nuevo Preinscripto",
             }
         )
@@ -83,8 +90,9 @@ class ResponsableListView(ListView):
                 ],
                 "reset_url": reverse("responsables_list"),
                 "filters_mode": True,
-                "filters_js": "custom/js/responsables_search_bar.js",
+                "filters_js": "custom/js/advanced_filters.js",
                 "filters_action": reverse("responsables_list"),
+                "filters_config": get_responsables_filters_ui_config(),
                 "show_add_button": False,
             }
         )
