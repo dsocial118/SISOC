@@ -1,10 +1,10 @@
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
-from django.urls import reverse_lazy
+from django.urls import reverse,reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .forms import CustomUserChangeForm, UserCreationForm
-
+from .services import UsuariosService
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
@@ -20,6 +20,9 @@ class UserListView(AdminRequiredMixin, ListView):
     template_name = "user/user_list.html"
     context_object_name = "users"
 
+    def get_queryset(self):
+        return UsuariosService.get_filtered_usuarios(self.request)
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -54,7 +57,21 @@ class UserListView(AdminRequiredMixin, ListView):
                 "class": "eliminar",
             },
         ]
-
+        context.update(UsuariosService.get_usuarios_list_context())
+        context.update(
+            {
+                "breadcrumb_items": [
+                    {"text": "Usuarios", "url": reverse("usuarios")},
+                    {"text": "Listar", "active": True},
+                ],
+                "reset_url": reverse("usuarios"),
+                "add_url": reverse("usuario_crear"),
+                "filters_mode": True,
+                "filters_js": "custom/js/usuarios_search_bar.js",
+                "filters_action": reverse("usuarios"),
+                "add_text": "Crear un nuevo Usuario",
+            }
+        )
         return context
 
 
