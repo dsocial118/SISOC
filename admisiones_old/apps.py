@@ -3,7 +3,7 @@ from django.apps import AppConfig
 
 class AdmisionesConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "admisiones2"
+    name = "admisiones"
 
     def ready(self):
-        import admisiones2.signals  # pylint: disable=unused-import, import-outside-toplevel
+        import admisiones.signals  # pylint: disable=unused-import, import-outside-toplevel

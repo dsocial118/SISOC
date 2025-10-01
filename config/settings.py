@@ -71,7 +71,6 @@ INSTALLED_APPS = [
     "ciudadanos",
     "duplas",
     "admisiones",
-    "admisiones2",
     "intervenciones",
     "historial",
     "acompanamientos",

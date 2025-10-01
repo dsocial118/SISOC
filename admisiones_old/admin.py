@@ -1,8 +1,9 @@
 from django.contrib import admin
-from admisiones2.models.admisiones import (
+from admisiones.models.admisiones import (
     EstadoAdmision,
     TipoConvenio,
     Admision,
+    TipoDocumentacion,
     Documentacion,
     ArchivoAdmision,
     InformeTecnico,
@@ -16,6 +17,7 @@ from admisiones2.models.admisiones import (
 admin.site.register(EstadoAdmision)
 admin.site.register(TipoConvenio)
 admin.site.register(Admision)
+admin.site.register(TipoDocumentacion)
 admin.site.register(Documentacion)
 admin.site.register(ArchivoAdmision)
 admin.site.register(InformeTecnico)
