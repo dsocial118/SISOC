@@ -9,9 +9,68 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
 {% endcomment %}
 {% firstof filters_mode comedores_filters_mode False as filters_mode_value %}
 {% with filters_mode=filters_mode_value %}
-    <h2 class="text-center display-4 mb-4">{{ titulo|default:"Buscar" }}</h2>
-    {% if ajax_search_mode %}
-        <!-- Modo búsqueda AJAX dinámica -->
+<h2 class="text-center display-4 mb-4">{{ titulo|default:"Buscar" }}</h2>
+{% if ajax_search_mode %}
+    <!-- Modo búsqueda AJAX dinámica -->
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="form-group">
+                <div class="input-group input-group-lg">
+                    <input type="search"
+                           id="ajax-search-input"
+                           class="form-control form-control-lg"
+                           placeholder="{{ placeholder|default:'Buscar' }}"
+                           title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
+                           autocomplete="off"
+                           value="{{ query|default:'' }}" />
+                </div>
+                <small class="form-text text-muted">
+                    <span id="ajax-results-count"></span>
+                </small>
+            </div>
+        </div>
+    </div>
+    <!-- Indicador de carga para AJAX -->
+    <div id="ajax-loading-indicator"
+         class="text-center py-3"
+         style="display: none">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Cargando...</span>
+        </div>
+    </div>
+{% elif filters_mode %}
+    {% if filters_config %}
+        {{ filters_config|json_script:"filters-config-json" }}
+    {% endif %}
+    <form method="GET"
+          action="{{ filters_action|default:'' }}"
+          id="filters-form"
+          {% if filters_config %}data-config-id="filters-config-json"{% endif %}>
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="form-group">
+                    <div class="d-flex align-items-center mb-2">
+                        <label class="me-2 mb-0">Combinar filtros con</label>
+                        <select id="filters-logic"
+                                class="form-select form-select-sm"
+                                style="width: auto">
+                            <option value="AND" selected>AND</option>
+                            <option value="OR">OR</option>
+                        </select>
+                        <button type="button"
+                                id="add-filter"
+                                class="btn btn-sm btn-outline-success ms-2">Agregar filtro</button>
+                    </div>
+                    <div id="filters-rows" class="mb-2"></div>
+                    <input type="hidden" name="filters" id="filters-input" />
+                </div>
+            </div>
+        </div>
+    </form>
+{% else %}
+    <form method="GET"
+          action="{{ search_action|default:'' }}"
+          id="simple-search-form">
         <div class="row">
             <div class="col-md-10 offset-md-1">
                 <div class="form-group">
@@ -117,15 +176,11 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
             {% endif %}
         </div>
     </div>
-    {% if filters_mode %}
-        {% if filters_js %}
-            <script src="{% static filters_js %}"></script>
-        {% else %}
-            <!-- FIXME: hacer generico -->
-            <script src="{% static 'custom/js/comedores_search_bar.js' %}"></script>
-        {% endif %}
-    {% elif ajax_search_mode %}
-        <script>
+</div>
+{% if filters_mode %}
+    <script src="{% static filters_js|default:'custom/js/advanced_filters.js' %}"></script>
+{% elif ajax_search_mode %}
+    <script>
   document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("ajax-search-input");
     const tbody = document.getElementById(
