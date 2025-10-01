@@ -19,7 +19,6 @@ FIELD_TYPES: Dict[str, str] = {
         "rol",
     ]},
     **{key: "number" for key in [
-        "dni"
     ]},
 }
 
