@@ -21,25 +21,31 @@ FIELD_MAP: Dict[str, str] = {
 }
 
 FIELD_TYPES: Dict[str, str] = {
-    **{key: "text" for key in [
-        "apellido",
-        "nombre",
-        "genero",
-        "domicilio",
-        "barrio",
-        "correo_electronico",
-        "responsable_apellido",
-        "responsable_nombre",
-        "provincia",
-        "municipio",
-        "localidad",
-    ]},
-    **{key: "number" for key in [
-        "dni",
-        "cuil",
-        "codigo_postal",
-        "altura",
-    ]},
+    **{
+        key: "text"
+        for key in [
+            "apellido",
+            "nombre",
+            "genero",
+            "domicilio",
+            "barrio",
+            "correo_electronico",
+            "responsable_apellido",
+            "responsable_nombre",
+            "provincia",
+            "municipio",
+            "localidad",
+        ]
+    },
+    **{
+        key: "number"
+        for key in [
+            "dni",
+            "cuil",
+            "codigo_postal",
+            "altura",
+        ]
+    },
 }
 
 TEXT_OPS = {"contains", "ncontains", "eq", "ne", "empty"}

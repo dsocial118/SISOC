@@ -1,0 +1,64 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Comedores - Expedientes{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% block content %}
+    {% include 'components/search_bar.html' with titulo='Expedientes' placeholder='Buscar por nombre, ubicación, referente, etc.' help_text='Buscar por nombre, ubicación, referente, etc.' reset_url='admisiones_legales_listar' query=query show_add_button=False %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Comedor</th>
+                                <th>Tipo convenio</th>
+                                <th>Num Expediente</th>
+                                <th>Modificado</th>
+                                <th>Estado</th>
+                                <th style="width: 10%" class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for admision in admisiones %}
+                                <tr>
+                                    <td>
+                                        {% if admision.comedor and admision.comedor.id %}
+                                            <a href="{% url 'comedor_detalle' admision.comedor.id %}"
+                                               class="font-weight-bold link-handler"
+                                               title="Ver detalles">{{ admision.comedor.nombre }}</a>
+                                        {% else %}
+                                            <span class="text-muted">Sin comedor asignado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ admision.tipo_convenio.nombre }}</td>
+                                    <td>{{ admision.num_expediente }}</td>
+                                    <td>{{ admision.modificado|date:'d/m/Y' }}</td>
+                                    <td>{{ admision.estado_legales| default_if_none:"-" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'admisiones_legales_ver' admision.id %}"
+                                               class="btn btn-primary btn-sm">Ver</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No hay expedientes registrados.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if is_paginated %}
+                        {% include 'components/pagination.html' %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
+{% endblock %}

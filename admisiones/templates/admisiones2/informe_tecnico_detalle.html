@@ -1,0 +1,177 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load static custom_filters %}
+{% block title %}Informe Técnico: {{ admision.comedor.nombre }}{% endblock %}
+{% block titulo-pagina %}Informe Técnico: {{ admision.comedor.nombre }} - Estado: {{ object.estado }}{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'admisiones_tecnicos_editar' admision.id %}">{{ admision.comedor.nombre }}</a>
+        </div>
+        <div class="breadcrumb-item active">Informe Técnico</div>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="row justify-content-between d-print-none mx-1 mb-3">
+            <div class="col-auto">
+                <a href="{% url 'admisiones_tecnicos_editar' admision.id %}"
+                   class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
+            </div>
+            <div class="col-auto">
+                {% if request.user|has_group:"Abogado Dupla" %}
+                    {% if object.estado != "Validado" %}
+                        <a href="#"
+                           class="btn btn-primary mr-1"
+                           data-bs-toggle="modal"
+                           data-bs-target="#cambiarEstadoModal">Cambiar estado</a>
+                    {% endif %}
+                {% endif %}
+                {% if pdf %}<a href="{{ pdf.archivo.url }}" class="btn btn-primary" target="_blank">📄 PDF</a>{% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="list-group">
+                {% for nombre, valor in campos %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ nombre }}</h6>
+                            <p class="mb-1">{{ valor }}</p>
+                        </div>
+                        {% if request.user|has_group:"Abogado Dupla" and object.estado != "Validado" %}
+                            <div class="form-check">
+                                <input class="form-check-input campo-subsanar"
+                                       type="checkbox"
+                                       name="campos_subsanar"
+                                       value="{{ nombre }}"
+                                       id="check_{{ forloop.counter }}" />
+                                <label class="form-check-label" for="check_{{ forloop.counter }}">Subsanar</label>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <a href="{% url 'comedor_detalle' admision.comedor_id %}"
+           class="btn btn-secondary mt-3">Volver</a>
+    </div>
+    <!-- Modal para confirmar cambio de estado -->
+    <div class="modal fade"
+         id="cambiarEstadoModal"
+         tabindex="-1"
+         aria-labelledby="cambiarEstadoModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="post" action="#">
+                {% csrf_token %}
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="cambiarEstadoModalLabel">Cambiar estado del informe</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="estado" class="form-label">Nuevo estado</label>
+                            <select class="form-select" id="estado" name="estado" required>
+                                <option value="">Seleccione un estado</option>
+                                <option value="A subsanar">A subsanar</option>
+                                <option value="Validado">Validado</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 d-none" id="observacion-container">
+                            <label for="observacion" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observacion" name="observacion" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3 d-none h6 d-flex justify-content-center align-items-center text-center"
+                             id="observacion-error">
+                            <i class="bi bi-x-circle-fill text-danger me-1"></i> Debe marcar al menos un campo para subsanar.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const estadoSelect = document.getElementById("estado");
+    const checkboxes = document.querySelectorAll(".campo-subsanar");
+    const obsContainer = document.getElementById("observacion-container");
+    const errorMsg = document.getElementById("observacion-error");
+    const guardarBtn = document.querySelector("#cambiarEstadoModal .modal-footer button[type=submit]");
+    const observacionField = document.getElementById("observacion");
+
+    function actualizarUI() {
+        const estado = estadoSelect.value;
+        const hayTildado = Array.from(checkboxes).some(cb => cb.checked);
+
+        if (estado === "A subsanar") {
+            if (hayTildado) {
+                obsContainer.classList.remove("d-none");
+                errorMsg.classList.add("d-none");
+                guardarBtn.disabled = false;
+            } else {
+                obsContainer.classList.add("d-none");
+                errorMsg.textContent = "Debe marcar al menos un campo para subsanar.";
+                errorMsg.classList.remove("d-none");
+                guardarBtn.disabled = true;
+            }
+        } else {
+            obsContainer.classList.add("d-none");
+            errorMsg.classList.add("d-none");
+            guardarBtn.disabled = false;
+        }
+    }
+
+    estadoSelect.addEventListener("change", actualizarUI);
+    checkboxes.forEach(cb => cb.addEventListener("change", actualizarUI));
+
+    const form = document.querySelector("#cambiarEstadoModal form");
+    form.addEventListener("submit", function (e) {
+        // Elimina campos ocultos anteriores
+        document.querySelectorAll("input[name='campos_a_subsanar']").forEach(el => el.remove());
+
+        const estado = estadoSelect.value;
+        const hayTildado = Array.from(checkboxes).some(cb => cb.checked);
+        const observacionTexto = observacionField.value.trim();
+
+        if (estado === "A subsanar") {
+            if (!hayTildado) {
+                e.preventDefault();
+                errorMsg.textContent = "Debe marcar al menos un campo para subsanar.";
+                errorMsg.classList.remove("d-none");
+                obsContainer.classList.add("d-none");
+                return;
+            }
+
+            if (observacionTexto === "") {
+                e.preventDefault();
+                errorMsg.textContent = "Debe completar el campo de observaciones.";
+                errorMsg.classList.remove("d-none");
+                obsContainer.classList.remove("d-none");
+                return;
+            }
+
+            // Agrega inputs ocultos por cada campo tildado
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "campos_a_subsanar";
+                    input.value = cb.value;
+                    form.appendChild(input);
+                }
+            });
+        }
+    });
+});
+    </script>
+{% endblock %}
