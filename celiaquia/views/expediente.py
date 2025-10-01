@@ -95,10 +95,18 @@ class LocalidadesLookupView(View):
     """Provide a JSON list of localidades filtered by provincia and municipio."""
 
     def get(self, request):
+        user = request.user
         provincia_id = request.GET.get("provincia")
         municipio_id = request.GET.get("municipio")
 
         localidades = Localidad.objects.select_related("municipio__provincia")
+
+        # Filtrar por provincia del usuario si es provincial
+        if _is_provincial(user):
+            prov = _user_provincia(user)
+            if prov:
+                localidades = localidades.filter(municipio__provincia=prov)
+
         if provincia_id:
             localidades = localidades.filter(municipio__provincia_id=provincia_id)
         if municipio_id:
@@ -138,6 +146,12 @@ class ExpedienteListView(ListView):
                 "usuario_provincia__profile__provincia",
             )
             .prefetch_related("asignaciones_tecnicos__tecnico")
+            .annotate(
+                legajos_subsanar_count=Count(
+                    "expediente_ciudadanos",
+                    filter=Q(expediente_ciudadanos__revision_tecnico="SUBSANAR"),
+                )
+            )
             .only(
                 "id",
                 "fecha_creacion",
@@ -340,7 +354,16 @@ class ExpedienteCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["provincias"] = Provincia.objects.order_by("nombre")
+        user = self.request.user
+
+        # Filtrar provincias según el usuario
+        if _is_provincial(user):
+            # Usuario provincial: solo su provincia
+            prov = _user_provincia(user)
+            ctx["provincias"] = [prov] if prov else []
+        else:
+            # Admin/Coordinador: todas las provincias
+            ctx["provincias"] = Provincia.objects.order_by("nombre")
         return ctx
 
     def form_valid(self, form):

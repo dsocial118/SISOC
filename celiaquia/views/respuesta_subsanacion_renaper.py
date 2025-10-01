@@ -66,15 +66,14 @@ class RespuestaSubsanacionRenaperView(View):
             if archivo:
                 legajo.subsanacion_renaper_archivo = archivo
 
-            # Cambiar estado a validado (1) para que pueda ser revisado
-            legajo.estado_validacion_renaper = 1
+            # Mantener estado de subsanación Renaper (3) hasta que técnico valide nuevamente
+            # legajo.estado_validacion_renaper = 3  # Ya está en 3, no cambiar
             legajo.revision_tecnico = "SUBSANADO"
 
             legajo.save(
                 update_fields=[
                     "subsanacion_renaper_comentario",
                     "subsanacion_renaper_archivo",
-                    "estado_validacion_renaper",
                     "revision_tecnico",
                     "modificado_en",
                 ]
