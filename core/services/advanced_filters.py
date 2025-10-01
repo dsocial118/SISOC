@@ -27,8 +27,8 @@ class AdvancedFilterEngine:
     Args:
         field_map: Mapea el identificador expuesto a lookups de Django ORM.
         field_types: Define el tipo lógico de cada campo (por ejemplo ``text``,
-            ``number`` o ``boolean``). Se usa para validar operadores y castear
-            valores.
+            ``choice``, ``number`` o ``boolean``). Se usa para validar
+            operadores y castear valores.
         allowed_ops: Opcional. Permite personalizar los operadores permitidos por
             tipo. Si no se provee se espera ``{"text": {...}, "number": {...}}``.
         field_casts: Funciones de casteo por campo; útiles cuando se requieren
@@ -45,13 +45,20 @@ class AdvancedFilterEngine:
         field_casts: Optional[Mapping[str, Callable[[Any], Any]]] = None,
         param_name: str = "filters",
     ) -> None:
-        self.field_map = field_map
-        self.field_types = field_types
+        self.field_map = dict(field_map)
+        self.field_types = dict(field_types)
         self.allowed_ops = {
             key: set(value) for key, value in (allowed_ops or {}).items()
         }
         self.field_casts = dict(field_casts or {})
         self.param_name = param_name
+
+        missing_mappings = set(self.field_types) - set(self.field_map)
+        if missing_mappings:
+            raise ValueError(
+                "AdvancedFilterEngine: field_types contiene claves sin mapeo: "
+                + ", ".join(sorted(missing_mappings))
+            )
 
     def filter_queryset(self, queryset: QuerySet, request_or_get: Any) -> QuerySet:
         """Devuelve ``queryset`` filtrado según los datos recibidos.
@@ -213,6 +220,12 @@ class AdvancedFilterEngine:
                 lookup = f"{mapped_field}__icontains"
             elif op == "ncontains":
                 lookup = f"{mapped_field}__icontains"
+                negate = True
+        elif field_type == "choice":
+            if op == "eq":
+                lookup = f"{mapped_field}__iexact"
+            elif op == "ne":
+                lookup = f"{mapped_field}__iexact"
                 negate = True
         elif field_type == "number":
             if op == "eq":

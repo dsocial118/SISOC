@@ -29,7 +29,6 @@ FIELD_TYPES: Dict[str, str] = {
     **{key: "text" for key in [
         "apellido",
         "nombre",
-        "genero",
         "vinculo_parental",
         "correo_electronico",
         "barrio",
@@ -43,6 +42,7 @@ FIELD_TYPES: Dict[str, str] = {
         "numero_telefono_fijo",
         "monoblock",
     ]},
+    "genero": "choice",
     **{key: "number" for key in [
         "dni",
         "cuil",
@@ -54,5 +54,6 @@ FIELD_TYPES: Dict[str, str] = {
 
 TEXT_OPS = {"contains", "ncontains", "eq", "ne", "empty"}
 NUM_OPS = {"eq", "ne", "gt", "lt", "empty"}
+CHOICE_OPS = {"eq", "ne"}
 
-__all__ = ["FIELD_MAP", "FIELD_TYPES", "TEXT_OPS", "NUM_OPS"]
+__all__ = ["FIELD_MAP", "FIELD_TYPES", "TEXT_OPS", "NUM_OPS", "CHOICE_OPS"]
