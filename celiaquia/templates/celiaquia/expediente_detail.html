@@ -11,7 +11,6 @@
 {% endblock %}
 {% block content %}
     {% with is_tec=request.user|has_group:"TecnicoCeliaquia" is_coord=request.user|has_group:"CoordinadorCeliaquia" is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
-
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
@@ -835,19 +834,24 @@
 {% endwith %}
 {% endblock %}
 {% block customCSS %}
-    <link rel="stylesheet" href="{% static 'custom/css/expediente_detail.css' %}">
+    <link rel="stylesheet"
+          href="{% static 'custom/css/expediente_detail.css' %}" />
 {% endblock %}
-
 {% block customJS %}
     <!-- Meta tags para configuración -->
-    <meta name="process-url" content="{% url 'expediente_procesar' expediente.pk %}">
-    <meta name="confirm-url" content="{% url 'expediente_confirm' expediente.pk %}">
-    <meta name="cruce-url" content="{% url 'expediente_cruce_cuit' expediente.pk %}">
-    <meta name="csrf-token" content="{{ csrf_token }}">
-    <meta name="revisar-url-template" content="{% url 'legajo_revisar' expediente.pk 0 %}">
-    <meta name="confirm-subs-url" content="{% url 'expediente_confirm_subsanacion' expediente.pk %}">
-    <meta name="validar-renaper-url-template" content="{% url 'legajo_validar_renaper' expediente.pk 0 %}">
-    
+    <meta name="process-url"
+          content="{% url 'expediente_procesar' expediente.pk %}" />
+    <meta name="confirm-url"
+          content="{% url 'expediente_confirm' expediente.pk %}" />
+    <meta name="cruce-url"
+          content="{% url 'expediente_cruce_cuit' expediente.pk %}" />
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <meta name="revisar-url-template"
+          content="{% url 'legajo_revisar' expediente.pk 0 %}" />
+    <meta name="confirm-subs-url"
+          content="{% url 'expediente_confirm_subsanacion' expediente.pk %}" />
+    <meta name="validar-renaper-url-template"
+          content="{% url 'legajo_validar_renaper' expediente.pk 0 %}" />
     <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
