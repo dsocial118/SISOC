@@ -40,7 +40,29 @@ class Admision(models.Model):
         ("Finalizado", "Finalizado"),
     ]
 
-    comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
+    ESTADOS_INTERVENCION_JURIDICOS = [
+        ("validado", "Validado"),
+        ("rechazado", "Rechazado"),
+    ]
+
+    MOTIVO_RECHAZO_JURIDICOS = [
+        ("providencia", "Por providencia"),
+        ("dictamen", "Por dictamen"),
+    ]
+    MOTIVO_DICTAMEN = [
+        ("observacion en informe técnico", "Observación en informe técnico"),
+        ("observacion en proyecto de convenio", "Observación en proyecto de convenio"),
+        (
+            "observacion en proyecto de disposicion",
+            "Observación en proyecto de disposición",
+        ),
+    ]
+
+    comedor = models.ForeignKey(
+        Comedor,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
     estado = models.ForeignKey(EstadoAdmision, on_delete=models.SET_NULL, null=True)
     tipo_convenio = models.ForeignKey(
         TipoConvenio, on_delete=models.SET_NULL, null=True
@@ -63,8 +85,49 @@ class Admision(models.Model):
         blank=True,
         verbose_name="Estado",
     )
+    intervencion_juridicos = models.CharField(
+        max_length=20,
+        choices=ESTADOS_INTERVENCION_JURIDICOS,
+        null=True,
+        blank=True,
+        verbose_name="Intervención Jurídicos",
+    )
+    rechazo_juridicos_motivo = models.CharField(
+        max_length=40,
+        choices=MOTIVO_RECHAZO_JURIDICOS,
+        null=True,
+        blank=True,
+        verbose_name="Motivo Rechazo Jurídicos",
+    )
+    dictamen_motivo = models.CharField(
+        max_length=40,
+        choices=MOTIVO_DICTAMEN,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de observación",
+    )
+    informe_sga = models.BooleanField(default=False, verbose_name="Estados Informe SGA")
+    numero_convenio = models.CharField(max_length=100, blank=True, null=True)
+    archivo_convenio = models.FileField(
+        upload_to="admisiones/convenios/", null=True, blank=True
+    )
+    numero_disposicion = models.CharField(max_length=100, blank=True, null=True)
+    archivo_disposicion = models.FileField(
+        upload_to="admisiones/disposicion/", null=True, blank=True
+    )
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
+    )
+    observaciones_reinicio_expediente = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones reinicio de expediente"
+    )
+    observaciones_informe_tecnico_complementario = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Observaciones informe técnico complementario",
+    )
+    enviada_a_archivo = models.BooleanField(
+        default=False, verbose_name="Enviada a Archivo"
     )
 
     @property
@@ -84,27 +147,10 @@ class Admision(models.Model):
         ordering = ["-creado"]
 
 
-class TipoDocumentacion(models.Model):
-    """
-    Opciones de tipos de documentación asociadas a una admisión.
-    """
-
-    nombre = models.CharField(max_length=255, unique=True)
-    descripcion = models.CharField(max_length=255, blank=True, null=True)
-
-    def __str__(self):
-        return str(self.nombre)
-
-    class Meta:
-        verbose_name = "Tipo de Documentación"
-        verbose_name_plural = "Tipos de Documentación"
-        ordering = ["nombre"]
-
-
 class Documentacion(models.Model):
     nombre = models.CharField(max_length=255)
-    tipo = models.ForeignKey(TipoDocumentacion, on_delete=models.SET_NULL, null=True)
     convenios = models.ManyToManyField("TipoConvenio", blank=True)
+    obligatorio = models.BooleanField(default=True)
 
     def __str__(self):
         return str(self.nombre) if self.nombre else "Sin nombre"
@@ -112,7 +158,12 @@ class Documentacion(models.Model):
 
 class ArchivoAdmision(models.Model):
     admision = models.ForeignKey(Admision, on_delete=models.CASCADE)
-    documentacion = models.ForeignKey(Documentacion, on_delete=models.CASCADE)
+    documentacion = models.ForeignKey(
+        Documentacion, on_delete=models.CASCADE, null=True, blank=True
+    )
+    nombre_personalizado = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="Nombre personalizado"
+    )
     archivo = models.FileField(
         upload_to="admisiones/admisiones_archivos/", null=True, blank=True
     )
@@ -120,7 +171,7 @@ class ArchivoAdmision(models.Model):
         max_length=20,
         choices=[
             ("pendiente", "Pendiente"),
-            ("validar", "A Validar"),
+            ("Documento adjunto", "Documento adjunto"),
             ("A Validar Abogado", "A Validar Abogado"),
             ("Rectificar", "Rectificar"),
             ("Aceptado", "Aceptado"),
@@ -149,12 +200,21 @@ class ArchivoAdmision(models.Model):
             )
         super().delete(*args, **kwargs)
 
+    @property
+    def es_personalizado(self):
+        return self.documentacion_id is None
+
     def __str__(self):
-        return f"{self.admision.id} - {self.documentacion.nombre}"
+        if self.documentacion:
+            nombre = self.documentacion.nombre
+        else:
+            nombre = self.nombre_personalizado or "Documento sin nombre"
+        return f"{self.admision.id} - {nombre}"
 
 
 class InformeTecnico(models.Model):
     ESTADOS = [
+        ("Iniciado", "Iniciado"),
         ("Para revision", "Para revisión"),
         ("Validado", "Validado"),
         ("A subsanar", "A subsanar"),
@@ -163,7 +223,14 @@ class InformeTecnico(models.Model):
         ("base", "Base"),
         ("juridico", "Jurídico"),
     ]
+    ESTADOS_FORM = [
+        ("borrador", "Borrador"),
+        ("finalizado", "Finalizado"),
+    ]
 
+    estado_formulario = models.CharField(
+        max_length=20, choices=ESTADOS_FORM, default="borrador"
+    )
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     # Campos comunes de los informes tecnicos.
 
@@ -270,19 +337,19 @@ class InformeTecnico(models.Model):
     )
 
     prestaciones_desayuno_letras = models.CharField(
-        "Cantidad de Prestaciones Semanales Desayuno - En letras (Solicitante)",
+        "Cantidad de Prestaciones Semanales Desayuno - En números (Solicitante)",
         max_length=255,
     )
     prestaciones_almuerzo_letras = models.CharField(
-        "Cantidad de Prestaciones Semanales Almuerzo - En letras (Solicitante)",
+        "Cantidad de Prestaciones Semanales Almuerzo - En números (Solicitante)",
         max_length=255,
     )
     prestaciones_merienda_letras = models.CharField(
-        "Cantidad de Prestaciones Semanales Merienda - En letras (Solicitante)",
+        "Cantidad de Prestaciones Semanales Merienda - En números (Solicitante)",
         max_length=255,
     )
     prestaciones_cena_letras = models.CharField(
-        "Cantidad de Prestaciones Semanales Cena - En letras (Solicitante)",
+        "Cantidad de Prestaciones Semanales Cena - En números (Solicitante)",
         max_length=255,
     )
     if_relevamiento = models.CharField("IF de relevamiento territorial", max_length=255)
@@ -319,7 +386,6 @@ class InformeTecnico(models.Model):
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
-        default="Para revision",
         verbose_name="Estado del Informe",
     )
 
@@ -431,8 +497,16 @@ class InformeTecnicoPDF(models.Model):
         max_length=20, choices=[("base", "Base"), ("juridico", "Jurídico")]
     )
     informe_id = models.PositiveIntegerField()
-    comedor = models.ForeignKey(Comedor, on_delete=models.SET_NULL, null=True)
-    archivo = models.FileField(upload_to="admisiones/informes_tecnicos/")
+    comedor = models.ForeignKey(
+        Comedor,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admisiones_informes_tecnicos_pdf",
+    )
+    archivo = models.FileField(upload_to="admisiones/informes_tecnicos/pdf")
+    archivo_docx = models.FileField(
+        upload_to="admisiones/informes_tecnicos/docx", null=True, blank=True
+    )
     creado = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -446,7 +520,12 @@ class AdmisionHistorial(models.Model):
     campo = models.CharField(max_length=50)
     valor_anterior = models.TextField(blank=True, null=True)
     valor_nuevo = models.TextField(blank=True, null=True)
-    usuario = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, null=True)
+    usuario = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admisiones_historial",
+    )
     fecha = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -455,18 +534,27 @@ class AdmisionHistorial(models.Model):
 
 class FormularioProyectoDisposicion(models.Model):
     admision = models.ForeignKey(
-        "Admision", on_delete=models.CASCADE, related_name="proyecto_disposicion"
+        "Admision",
+        on_delete=models.CASCADE,
+        related_name="admisiones_proyecto_disposicion",
     )
     tipo = models.CharField(
         max_length=20,
         choices=[("incorporacion", "Incorporación"), ("renovacion", "Renovación")],
     )
     archivo = models.FileField(
-        upload_to="admisiones/formularios_disposicion/", null=True
+        upload_to="admisiones/formularios_disposicion/pdf", null=True
     )
+    archivo_docx = models.FileField(
+        upload_to="admisiones/formularios_disposicion/docx", null=True
+    )
+    numero_if = models.CharField(max_length=100, blank=True, null=True)
     creado = models.DateTimeField(auto_now_add=True)
     creado_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admisiones_formularios_disposicion",
     )
 
     def __str__(self):
@@ -477,12 +565,21 @@ class FormularioProyectoDeConvenio(models.Model):
     admision = models.ForeignKey(
         "Admision",
         on_delete=models.CASCADE,
-        related_name="proyecto_convenio",
+        related_name="admisiones_proyecto_convenio",
     )
-    archivo = models.FileField(upload_to="admisiones/formularios_convenio/", null=True)
+    archivo = models.FileField(
+        upload_to="admisiones/formularios_convenio/pdf", null=True
+    )
+    archivo_docx = models.FileField(
+        upload_to="admisiones/formularios_convenio/docx", null=True
+    )
+    numero_if = models.CharField(max_length=100, blank=True, null=True)
     creado = models.DateTimeField(auto_now_add=True)
     creado_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admisiones_formularios_convenio",
     )
 
     def __str__(self):
@@ -514,7 +611,10 @@ class InformeComplementario(models.Model):
     pdf = models.FileField(upload_to="admisiones/informes_complementarios/", null=True)
     creado = models.DateField(auto_now_add=True, null=True, blank=True)
     creado_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admisiones_informes_complementarios",
     )
 
 
