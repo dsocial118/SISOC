@@ -52,7 +52,10 @@ class Admision(models.Model):
     MOTIVO_DICTAMEN = [
         ("observacion en informe técnico", "Observación en informe técnico"),
         ("observacion en proyecto de convenio", "Observación en proyecto de convenio"),
-        ("observacion en proyecto de disposicion", "Observación en proyecto de disposición"),
+        (
+            "observacion en proyecto de disposicion",
+            "Observación en proyecto de disposición",
+        ),
     ]
 
     comedor = models.ForeignKey(
@@ -88,24 +91,23 @@ class Admision(models.Model):
         choices=ESTADOS_INTERVENCION_JURIDICOS,
         null=True,
         blank=True,
-        verbose_name="Intervención Jurídicos"
+        verbose_name="Intervención Jurídicos",
     )
-    rechazo_juridicos_motivo =models.CharField(
+    rechazo_juridicos_motivo = models.CharField(
         max_length=40,
         choices=MOTIVO_RECHAZO_JURIDICOS,
         null=True,
         blank=True,
         verbose_name="Motivo Rechazo Jurídicos",
     )
-    dictamen_motivo =models.CharField(
+    dictamen_motivo = models.CharField(
         max_length=40,
         choices=MOTIVO_DICTAMEN,
         null=True,
         blank=True,
         verbose_name="Tipo de observación",
     )
-    informe_sga = models.BooleanField(
-        default=False, verbose_name="Estados Informe SGA")
+    informe_sga = models.BooleanField(default=False, verbose_name="Estados Informe SGA")
     numero_convenio = models.CharField(max_length=100, blank=True, null=True)
     archivo_convenio = models.FileField(
         upload_to="admisiones2/convenios/", null=True, blank=True
@@ -121,10 +123,13 @@ class Admision(models.Model):
         blank=True, null=True, verbose_name="Observaciones reinicio de expediente"
     )
     observaciones_informe_tecnico_complementario = models.TextField(
-        blank=True, null=True, verbose_name="Observaciones informe técnico complementario"
+        blank=True,
+        null=True,
+        verbose_name="Observaciones informe técnico complementario",
     )
     enviada_a_archivo = models.BooleanField(
-        default=False, verbose_name="Enviada a Archivo")
+        default=False, verbose_name="Enviada a Archivo"
+    )
 
     @property
     def tipo_informe(self):
@@ -147,7 +152,7 @@ class Documentacion(models.Model):
     nombre = models.CharField(max_length=255)
     convenios = models.ManyToManyField("TipoConvenio", blank=True)
     obligatorio = models.BooleanField(default=True)
-    
+
     def __str__(self):
         return str(self.nombre) if self.nombre else "Sin nombre"
 
@@ -224,7 +229,9 @@ class InformeTecnico(models.Model):
         ("finalizado", "Finalizado"),
     ]
 
-    estado_formulario = models.CharField(max_length=20, choices=ESTADOS_FORM, default="borrador")
+    estado_formulario = models.CharField(
+        max_length=20, choices=ESTADOS_FORM, default="borrador"
+    )
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     # Campos comunes de los informes tecnicos.
 
@@ -498,7 +505,9 @@ class InformeTecnicoPDF(models.Model):
         related_name="admisiones2_informes_tecnicos_pdf",
     )
     archivo = models.FileField(upload_to="admisiones2/informes_tecnicos/pdf")
-    archivo_docx = models.FileField(upload_to="admisiones2/informes_tecnicos/docx", null=True, blank=True)
+    archivo_docx = models.FileField(
+        upload_to="admisiones2/informes_tecnicos/docx", null=True, blank=True
+    )
     creado = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -526,7 +535,9 @@ class AdmisionHistorial(models.Model):
 
 class FormularioProyectoDisposicion(models.Model):
     admision = models.ForeignKey(
-        "Admision", on_delete=models.CASCADE, related_name="admisiones2_proyecto_disposicion"
+        "Admision",
+        on_delete=models.CASCADE,
+        related_name="admisiones2_proyecto_disposicion",
     )
     tipo = models.CharField(
         max_length=20,
@@ -557,8 +568,12 @@ class FormularioProyectoDeConvenio(models.Model):
         on_delete=models.CASCADE,
         related_name="admisiones2_proyecto_convenio",
     )
-    archivo = models.FileField(upload_to="admisiones2/formularios_convenio/pdf", null=True)
-    archivo_docx = models.FileField(upload_to="admisiones2/formularios_convenio/docx", null=True)
+    archivo = models.FileField(
+        upload_to="admisiones2/formularios_convenio/pdf", null=True
+    )
+    archivo_docx = models.FileField(
+        upload_to="admisiones2/formularios_convenio/docx", null=True
+    )
     numero_if = models.CharField(max_length=100, blank=True, null=True)
     creado = models.DateTimeField(auto_now_add=True)
     creado_por = models.ForeignKey(
@@ -579,7 +594,9 @@ class DocumentosExpediente(models.Model):
     nombre = models.CharField(max_length=255, blank=True, null=True)
     tipo = models.CharField(max_length=255, blank=True, null=True)
     value = models.CharField(max_length=255, blank=True, null=True)
-    archivo = models.FileField(upload_to="admisiones2/expediente", null=True, blank=True)
+    archivo = models.FileField(
+        upload_to="admisiones2/expediente", null=True, blank=True
+    )
     rectificar = models.BooleanField(default=False, verbose_name="Rectificar")
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
@@ -610,4 +627,3 @@ class InformeComplementarioCampos(models.Model):
     informe_complementario = models.ForeignKey(
         InformeComplementario, on_delete=models.CASCADE
     )
-

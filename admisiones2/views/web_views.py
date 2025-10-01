@@ -312,9 +312,11 @@ class InformeTecnicosCreateView(CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         admision, _ = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
-        action = self.request.POST.get("action") if self.request.method == "POST" else None
+        action = (
+            self.request.POST.get("action") if self.request.method == "POST" else None
+        )
         kwargs["admision"] = admision
-        kwargs["require_full"] = (action == "submit")
+        kwargs["require_full"] = action == "submit"
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -324,8 +326,10 @@ class InformeTecnicosCreateView(CreateView):
         context.setdefault("tipo", tipo)
         context.setdefault("comedor", getattr(admision, "comedor", None))
 
-        action = self.request.POST.get("action") if self.request.method == "POST" else None
-        require_full = (action == "submit")
+        action = (
+            self.request.POST.get("action") if self.request.method == "POST" else None
+        )
+        require_full = action == "submit"
 
         if "anexof" not in context or self.request.method == "POST":
             data = self.request.POST if self.request.method == "POST" else None
@@ -365,6 +369,7 @@ class InformeTecnicosCreateView(CreateView):
     def get_success_url(self):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
 
+
 class InformeTecnicosUpdateView(UpdateView):
     template_name = "admisiones2/informe_tecnico_form.html"
     context_object_name = "informe_tecnico"
@@ -379,8 +384,10 @@ class InformeTecnicosUpdateView(UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        action = self.request.POST.get("action") if self.request.method == "POST" else None
-        kwargs["require_full"] = (action == "submit")
+        action = (
+            self.request.POST.get("action") if self.request.method == "POST" else None
+        )
+        kwargs["require_full"] = action == "submit"
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -390,8 +397,10 @@ class InformeTecnicosUpdateView(UpdateView):
         for clave, valor in contexto_servicio.items():
             context.setdefault(clave, valor)
 
-        action = self.request.POST.get("action") if self.request.method == "POST" else None
-        require_full = (action == "submit")
+        action = (
+            self.request.POST.get("action") if self.request.method == "POST" else None
+        )
+        require_full = action == "submit"
 
         data = self.request.POST if self.request.method == "POST" else None
         files = self.request.FILES if self.request.method == "POST" else None
@@ -493,7 +502,9 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
         if "form" not in context:
             context["form"] = self.get_form()
         if "form_legales_num_if" not in context:
-            context["form_legales_num_if"] = LegalesNumIFForm(instance=self.get_object())
+            context["form_legales_num_if"] = LegalesNumIFForm(
+                instance=self.get_object()
+            )
         return context
 
     def post(self, request, *args, **kwargs):

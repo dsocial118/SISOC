@@ -64,7 +64,13 @@ class AdmisionService:
     @staticmethod
     def _estados_resumen():
 
-        return ["Pendiente", "Documento adjunto", "A Validar Abogado", "Rectificar", "Aceptado"]
+        return [
+            "Pendiente",
+            "Documento adjunto",
+            "A Validar Abogado",
+            "Rectificar",
+            "Aceptado",
+        ]
 
     @staticmethod
     def _resumen_vacio():
@@ -294,9 +300,11 @@ class AdmisionService:
     @staticmethod
     def get_admision_update_context(admision):
         try:
-            documentaciones = Documentacion.objects.filter(
-                models.Q(convenios=admision.tipo_convenio)
-            ).distinct().order_by("-obligatorio", "nombre")
+            documentaciones = (
+                Documentacion.objects.filter(models.Q(convenios=admision.tipo_convenio))
+                .distinct()
+                .order_by("-obligatorio", "nombre")
+            )
 
             archivos_subidos = ArchivoAdmision.objects.filter(
                 admision=admision
@@ -629,10 +637,13 @@ class AdmisionService:
             grupo_usuario = AdmisionService.get_dupla_grupo_por_usuario(request.user)
             observacion = (request.POST.get("observacion", "") or "").strip()
 
-            display_objetivo, estado_canonico = AdmisionService._normalize_estado_display(estado)
+            display_objetivo, estado_canonico = (
+                AdmisionService._normalize_estado_display(estado)
+            )
 
             requiere_observacion = (
-                display_objetivo.lower() == "rectificar" and grupo_usuario == "Abogado Dupla"
+                display_objetivo.lower() == "rectificar"
+                and grupo_usuario == "Abogado Dupla"
             )
             if requiere_observacion and not observacion:
                 return {
@@ -675,7 +686,9 @@ class AdmisionService:
 
                 return False
 
-            _, estado_normalizado = AdmisionService._normalize_estado_display(nuevo_estado)
+            _, estado_normalizado = AdmisionService._normalize_estado_display(
+                nuevo_estado
+            )
             archivo.estado = estado_normalizado
 
             if observacion is not None:

@@ -9,8 +9,13 @@
 ;
 {% block
     titulo-pagina %}
-    {{ admision.num_expediente }} - {% if admision.enviada_a_archivo %}<span class="fs-5 bg-danger text-white">Rechazado: {{ admision.get_rechazo_juridicos_motivo_display}} / Enviado a Archivo</span>{% else %}{{ admision.estado_legales|
-    default_if_none:"Estado a definir" }}{% endif %}
+    {{ admision.num_expediente }} -
+    {% if admision.enviada_a_archivo %}
+        <span class="fs-5 bg-danger text-white">Rechazado: {{ admision.get_rechazo_juridicos_motivo_display }} / Enviado a Archivo</span>
+    {% else %}
+        {{ admision.estado_legales|
+        default_if_none:"Estado a definir" }}
+    {% endif %}
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -49,7 +54,6 @@
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
                             data-bs-target="#modalFormConvenio">Formulario Proyecto de Convenio</button>
-
                 {% endif %}
                 {% if not formulario_proyecto.numero_if and
                     formulario_proyecto_completo and admision.legales_num_if %}
@@ -63,7 +67,6 @@
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
                             data-bs-target="#modalFormReso">Formulario Proyecto Disposición</button>
-
                 {% endif %}
                 {% if not formulario_reso.numero_if and
                     formulario_reso_completo and admision.legales_num_if %}
@@ -81,34 +84,34 @@
                 {% endif %}
             {% endif %}
             {% if not admision.informe_sga and admision.intervencion_juridicos == "validado" %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalInformeSGA">Informe SGA</button>
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalInformeSGA">Informe SGA</button>
             {% endif %}
             {% if not admision.numero_disposicion and  admision.numero_convenio %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalDisposicion">Disposición</button>
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalDisposicion">Disposición</button>
             {% endif %}
             {% if not admision.numero_convenio and  admision.informe_sga %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalConvenio">Convenio</button>
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalConvenio">Convenio</button>
             {% endif %}
             {% if not admision.enviada_a_archivo and not admision.dictamen_motivo and admision.rechazo_juridicos_motivo %}
-                    <button type="button"
-                            class="btn btn-danger mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalReinicioExpediente">Reinicio de Expediente</button>
+                <button type="button"
+                        class="btn btn-danger mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalReinicioExpediente">Reinicio de Expediente</button>
             {% endif %}
             {% if admision.dictamen_motivo == "observacion en informe técnico" %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalConvenio">Solicitar Informe Técnico Complementario</button>
+                <button type="button"
+                        class="btn btn-primary mr-1"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalConvenio">Solicitar Informe Técnico Complementario</button>
             {% endif %}
         </div>
     </div>
@@ -142,9 +145,9 @@
                                     <a href="{{ formulario_reso.archivo_docx.url }}" target="_blank">
                                         <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
                                     </a>
-                                
                                     {% if formulario_reso.numero_if %}
-                                        <br/>{{ formulario_reso.numero_if }}
+                                        <br />
+                                        {{ formulario_reso.numero_if }}
                                         <i class="bi bi-check-circle-fill text-success"></i>
                                     {% else %}
                                         <i class="bi bi-exclamation-circle-fill text-warning"></i>
@@ -164,9 +167,9 @@
                                     <a href="{{ formulario_proyecto.archivo_docx.url }}" target="_blank">
                                         <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
                                     </a>
-                                
                                     {% if formulario_proyecto.numero_if %}
-                                        <br/>{{ formulario_proyecto.numero_if }}
+                                        <br />
+                                        {{ formulario_proyecto.numero_if }}
                                         <i class="bi bi-check-circle-fill text-success"></i>
                                     {% else %}
                                         <i class="bi bi-exclamation-circle-fill text-warning"></i>
@@ -191,51 +194,51 @@
                             </div>
                         </li>
                         {% if admision.dictamen_motivo %}
-                        <li class="nav-item">
-                            <div class="comment-text">
-                                Motivo Dictamen:
-                                <span class="fw-bold">{{ admision.get_dictamen_motivo_display }}</span>
-                            </div>
-                        </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Motivo Dictamen:
+                                    <span class="fw-bold">{{ admision.get_dictamen_motivo_display }}</span>
+                                </div>
+                            </li>
                         {% else %}
-                        <li class="nav-item">
-                            <div class="comment-text">
-                                Informe SGA:
-                                {% if admision.informe_sga %}
-                                    <i class="bi bi-check-circle-fill text-success"></i>
-                                {% else %}
-                                    <i class="bi bi-x-circle-fill text-danger"></i>
-                                {% endif %}
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <div class="comment-text">
-                                Convenio:
-                                {% if admision.numero_convenio %}
-                                    <a href="{{ admision.archivo_convenio.url }}" target="_blank">
-                                        <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
-                                    </a>
-                                    <span class="fw-bold">{{ admision.numero_convenio }}</span>
-                                    <i class="bi bi-check-circle-fill text-success"></i>
-                                {% else %}
-                                    <i class="bi bi-x-circle-fill text-danger"></i>
-                                {% endif %}
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <div class="comment-text">
-                                Disposición:
-                                {% if admision.numero_disposicion %}
-                                    <a href="{{ admision.archivo_disposicion.url }}" target="_blank">
-                                        <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
-                                    </a>
-                                    <span class="fw-bold">{{ admision.numero_disposicion }}</span>
-                                    <i class="bi bi-check-circle-fill text-success"></i>
-                                {% else %}
-                                    <i class="bi bi-x-circle-fill text-danger"></i>
-                                {% endif %}
-                            </div>
-                        </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Informe SGA:
+                                    {% if admision.informe_sga %}
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger"></i>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Convenio:
+                                    {% if admision.numero_convenio %}
+                                        <a href="{{ admision.archivo_convenio.url }}" target="_blank">
+                                            <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                        <span class="fw-bold">{{ admision.numero_convenio }}</span>
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger"></i>
+                                    {% endif %}
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Disposición:
+                                    {% if admision.numero_disposicion %}
+                                        <a href="{{ admision.archivo_disposicion.url }}" target="_blank">
+                                            <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                        <span class="fw-bold">{{ admision.numero_disposicion }}</span>
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger"></i>
+                                    {% endif %}
+                                </div>
+                            </li>
                         {% endif %}
                     </ul>
                 </div>
@@ -425,68 +428,69 @@
             </div>
         </div>
     </div>
-        <!-- Modal para modificar Informe SGA -->
-<div class="modal fade" id="modalInformeSGA" tabindex="-1"
-     aria-labelledby="modalInformeSGALabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form id="informeSGAForm" method="POST" action="">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalInformeSGALabel">
-                        Informe SGA
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                   ¿Desea modificar el estado del Informe SGA?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit"
-                            name="BtnInformeSGA"
-                            class="btn btn-primary">Confirmar</button>
-                </div>
-            </form>
+    <!-- Modal para modificar Informe SGA -->
+    <div class="modal fade"
+         id="modalInformeSGA"
+         tabindex="-1"
+         aria-labelledby="modalInformeSGALabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="informeSGAForm" method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalInformeSGALabel">Informe SGA</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">¿Desea modificar el estado del Informe SGA?</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" name="BtnInformeSGA" class="btn btn-primary">Confirmar</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
-
-
-<!-- Modal para confirmar Intervención Jurídicos -->
-<div class="modal fade" id="modalIntervencionJuridicos" tabindex="-1"
-     aria-labelledby="modalIntervencionJuridicosLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form id="intervencionJuridicosForm" method="POST" action="">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalIntervencionJuridicosLabel">Expediente:</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-
-                <div class="modal-body mb-2">
-                    {{ form_intervencion_juridicos.intervencion_juridicos|as_crispy_field }}
-                    <div id="motivoRechazoField" style="display:none;">
-                        {{ form_intervencion_juridicos.rechazo_juridicos_motivo|as_crispy_field }}
+    <!-- Modal para confirmar Intervención Jurídicos -->
+    <div class="modal fade"
+         id="modalIntervencionJuridicos"
+         tabindex="-1"
+         aria-labelledby="modalIntervencionJuridicosLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="intervencionJuridicosForm" method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalIntervencionJuridicosLabel">Expediente:</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                     </div>
-                    <div id="motivoDictamenField" style="display:none;">
-                        {{ form_intervencion_juridicos.dictamen_motivo|as_crispy_field }}
+                    <div class="modal-body mb-2">
+                        {{ form_intervencion_juridicos.intervencion_juridicos|as_crispy_field }}
+                        <div id="motivoRechazoField" style="display:none;">
+                            {{ form_intervencion_juridicos.rechazo_juridicos_motivo|as_crispy_field }}
+                        </div>
+                        <div id="motivoDictamenField" style="display:none;">
+                            {{ form_intervencion_juridicos.dictamen_motivo|as_crispy_field }}
+                        </div>
                     </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit"
-                            id="IntervencionJuridicosId"
-                            name="BtnIntervencionJuridicos"
-                            class="btn btn-primary">Confirmar</button>
-                </div>
-            </form>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                id="IntervencionJuridicosId"
+                                name="BtnIntervencionJuridicos"
+                                class="btn btn-primary">Confirmar</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
-
     <!-- MODAL RECTIFICAR -->
     <div class="modal fade"
          id="modalRectificar"
@@ -581,7 +585,7 @@
             </div>
         </div>
     </div>
-            <!-- MODAL Reinicio de Expediente -->
+    <!-- MODAL Reinicio de Expediente -->
     <div class="modal fade"
          id="modalReinicioExpediente"
          tabindex="-1"
@@ -613,7 +617,7 @@
             </div>
         </div>
     </div>
-        <!-- MODAL Convenio -->
+    <!-- MODAL Convenio -->
     <div class="modal fade"
          id="modalConvenio"
          tabindex="-1"
@@ -645,7 +649,7 @@
             </div>
         </div>
     </div>
-            <!-- MODAL Disposicion -->
+    <!-- MODAL Disposicion -->
     <div class="modal fade"
          id="modalDisposicion"
          tabindex="-1"
@@ -706,7 +710,7 @@
             </div>
         </div>
     </div>
-        <!-- MODAL IF Proyecto Convenio-->
+    <!-- MODAL IF Proyecto Convenio-->
     <div class="modal fade"
          id="modalConvenioNumIF"
          tabindex="-1"
@@ -735,7 +739,7 @@
             </div>
         </div>
     </div>
-            <!-- MODAL IF Proyecto Disposicion-->
+    <!-- MODAL IF Proyecto Disposicion-->
     <div class="modal fade"
          id="modalDispoNumIF"
          tabindex="-1"
@@ -799,5 +803,5 @@
     </div>
 {% endblock %}
 {% block customJS %}
-<script src="{% static 'custom/js/admisioneslegalesdetail.js' %}"></script>
+    <script src="{% static 'custom/js/admisioneslegalesdetail.js' %}"></script>
 {% endblock %}

@@ -22,16 +22,12 @@
             {% csrf_token %}
             {% if form.non_field_errors %}
                 <div class="alert alert-danger">
-                    {% for error in form.non_field_errors %}
-                        <p class="mb-0">{{ error }}</p>
-                    {% endfor %}
+                    {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
                 </div>
             {% endif %}
             {% if anexof.non_field_errors %}
                 <div class="alert alert-danger">
-                    {% for error in anexof.non_field_errors %}
-                        <p class="mb-0">{{ error }}</p>
-                    {% endfor %}
+                    {% for error in anexof.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
                 </div>
             {% endif %}
             <div class="container">
@@ -135,12 +131,8 @@
                 <div class="mt-3">
                     <a class="btn btn-secondary"
                        href="{% url 'admisiones_tecnicos_editar' admision.id %}">Cancelar</a>
-                    <button type="submit" name="action" value="draft" class="btn btn-primary">
-                        Guardar borrador
-                    </button>
-                    <button type="submit" name="action" value="submit" class="btn btn-success">
-                        Finalizar
-                    </button>
+                    <button type="submit" name="action" value="draft" class="btn btn-primary">Guardar borrador</button>
+                    <button type="submit" name="action" value="submit" class="btn btn-success">Finalizar</button>
                 </div>
             </div>
         </form>
