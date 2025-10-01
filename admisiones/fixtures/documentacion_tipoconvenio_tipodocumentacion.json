@@ -1,561 +1,694 @@
 [
-    {
-        "model": "admisiones.tipodocumentacion",
-        "pk": 1,
-        "fields": {
-            "nombre": "todos",
-            "descripcion": "Todos"
-        }
-    },
-    {
-        "model": "admisiones.tipodocumentacion",
-        "pk": 2,
-        "fields": {
-            "nombre": "especifico",
-            "descripcion": "Específico"
-        }
-    },
-    {
-        "model": "admisiones.tipoconvenio",
-        "pk": 1,
-        "fields": {
-            "nombre": "Organización Base"
-        }
-    },
-    {
-        "model": "admisiones.tipoconvenio",
-        "pk": 2,
-        "fields": {
-            "nombre": "Personería jurídica eclesiástica"
-        }
-    },
-    {
-        "model": "admisiones.tipoconvenio",
-        "pk": 3,
-        "fields": {
-            "nombre": "Personería jurídica"
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 1,
-        "fields": {
-            "nombre": "Nota de Solicitud e inclusión al programa",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 2,
-        "fields": {
-            "nombre": "Designación Organismos Públicos / Acta constitutiva (conformación)",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 3,
-        "fields": {
-            "nombre": "DNIs - Organización Base",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 4,
-        "fields": {
-            "nombre": "Nombre Aval 1",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 5,
-        "fields": {
-            "nombre": "Acta constitutiva - Aval 1",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 6,
-        "fields": {
-            "nombre": "Estatuto - Aval 1",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 7,
-        "fields": {
-            "nombre": "Reso Personería jurídica - Aval 1",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 8,
-        "fields": {
-            "nombre": "Acta Designación - Aval 1",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 9,
-        "fields": {
-            "nombre": "DNI Autoridades - Aval 1",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 10,
-        "fields": {
-            "nombre": "Nombre Aval 2",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 11,
-        "fields": {
-            "nombre": "Acta constitutiva - Aval 2",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 12,
-        "fields": {
-            "nombre": "Estatuto - Aval 2",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 13,
-        "fields": {
-            "nombre": "Reso Personería jurídica - Aval 2",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 14,
-        "fields": {
-            "nombre": "Acta Designación - Aval 2",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 15,
-        "fields": {
-            "nombre": "DNI Autoridades - Aval 2",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 16,
-        "fields": {
-            "nombre": "Inscripción RENACOM",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 17,
-        "fields": {
-            "nombre": "Relevamiento al Programa (PAC)",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 18,
-        "fields": {
-            "nombre": "DNI Responsable del Comedor",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 19,
-        "fields": {
-            "nombre": "DNI Titular Tarjeta",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 20,
-        "fields": {
-            "nombre": "Informe Comedores y Merenderos",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 21,
-        "fields": {
-            "nombre": "Memo PNUD",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 22,
-        "fields": {
-            "nombre": "Respuesta Memo PNUD",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 23,
-        "fields": {
-            "nombre": "Material de difusión",
-            "tipo": 1,
-            "convenios": [1]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 24,
-        "fields": {
-            "nombre": "Nota de Solicitud e inclusión al programa",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 25,
-        "fields": {
-            "nombre": "Acta constitutiva",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 26,
-        "fields": {
-            "nombre": "Estatuto",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 27,
-        "fields": {
-            "nombre": "Reso Personería jurídica",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 28,
-        "fields": {
-            "nombre": "Acta Designación",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 29,
-        "fields": {
-            "nombre": "Acto de reconocimiento (de culto)",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 30,
-        "fields": {
-            "nombre": "Declaración Jurada",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 31,
-        "fields": {
-            "nombre": "DNI Autoridades",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 32,
-        "fields": {
-            "nombre": "Acta Solicitud de Subsidio",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 33,
-        "fields": {
-            "nombre": "Constancia AFIP",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 34,
-        "fields": {
-            "nombre": "Preinscripción RENACOM",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 35,
-        "fields": {
-            "nombre": "Validación RENACOM",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 36,
-        "fields": {
-            "nombre": "Inscripción RENACOM",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 37,
-        "fields": {
-            "nombre": "DNI Responsable del Comedor",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 38,
-        "fields": {
-            "nombre": "DNI Titular Tarjeta",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 39,
-        "fields": {
-            "nombre": "Informe Comedores y Merenderos",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 40,
-        "fields": {
-            "nombre": "Memo PNUD",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 41,
-        "fields": {
-            "nombre": "Respuesta Memo PNUD",
-            "tipo": 1,
-            "convenios": [2]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 42,
-        "fields": {
-            "nombre": "Nota de Solicitud e inclusión al programa",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 43,
-        "fields": {
-            "nombre": "Acta constitutiva",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 44,
-        "fields": {
-            "nombre": "Estatuto",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 45,
-        "fields": {
-            "nombre": "Reso Personería jurídica",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 46,
-        "fields": {
-            "nombre": "Acta Designación",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 47,
-        "fields": {
-            "nombre": "Declaración Jurada",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 48,
-        "fields": {
-            "nombre": "DNI Autoridades",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 49,
-        "fields": {
-            "nombre": "Acta Solicitud de Subsidio",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 50,
-        "fields": {
-            "nombre": "Constancia AFIP",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 51,
-        "fields": {
-            "nombre": "Preinscripción RENACOM",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 52,
-        "fields": {
-            "nombre": "Validación RENACOM",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 53,
-        "fields": {
-            "nombre": "Inscripción RENACOM",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 54,
-        "fields": {
-            "nombre": "DNI Responsable del Comedor",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 55,
-        "fields": {
-            "nombre": "DNI Titular Tarjeta",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 56,
-        "fields": {
-            "nombre": "Informe Comedores y Merenderos",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 57,
-        "fields": {
-            "nombre": "Memo PNUD",
-            "tipo": 1,
-            "convenios": [3]
-        }
-    },
-    {
-        "model": "admisiones.documentacion",
-        "pk": 58,
-        "fields": {
-            "nombre": "Respuesta Memo PNUD",
-            "tipo": 1,
-            "convenios": [3]
-        }
+  {
+    "model": "admisiones.tipoconvenio",
+    "pk": 1,
+    "fields": {
+      "nombre": "Organización Base"
     }
+  },
+  {
+    "model": "admisiones.tipoconvenio",
+    "pk": 2,
+    "fields": {
+      "nombre": "Personería Jurídica Eclesiástica"
+    }
+  },
+  {
+    "model": "admisiones.tipoconvenio",
+    "pk": 3,
+    "fields": {
+      "nombre": "Personería Jurídica"
+    }
+  },
+{
+  "model": "admisiones.documentacion",
+  "pk": 1,
+  "fields": {
+    "nombre": "Nota de solicitud e Inclusión al Programa",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 2,
+  "fields": {
+    "nombre": "Acta Constitutiva",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 3,
+  "fields": {
+    "nombre": "Estatuto",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 4,
+  "fields": {
+    "nombre": "Reso Personería Jurídica",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 5,
+  "fields": {
+    "nombre": "Acta Designación",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 6,
+  "fields": {
+    "nombre": "DNI Presidente",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 7,
+  "fields": {
+    "nombre": "DNI Tesorero",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 8,
+  "fields": {
+    "nombre": "DNI Secretario",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 9,
+  "fields": {
+    "nombre": "Acta de Solicitud de Subsidio",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 10,
+  "fields": {
+    "nombre": "Constancia AFIP",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 11,
+  "fields": {
+    "nombre": "Preinscripción RENACOM",
+    "convenios": [
+      3
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 12,
+  "fields": {
+    "nombre": "Validación RENACOM",
+    "convenios": [
+      3
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 13,
+  "fields": {
+    "nombre": "Inscripción RENACOM",
+    "convenios": [
+      3
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 14,
+  "fields": {
+    "nombre": "Relevamiento Programa PAC",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 15,
+  "fields": {
+    "nombre": "DNI Responsable Comedor",
+    "convenios": [
+      3
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 16,
+  "fields": {
+    "nombre": "DNI Titular Tarjeta",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 17,
+  "fields": {
+    "nombre": "Informe Comedores y Merenderos",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 18,
+  "fields": {
+    "nombre": "Memo PNUD",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 19,
+  "fields": {
+    "nombre": "Respuesta Memo PNUD",
+    "convenios": [
+      3
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 20,
+  "fields": {
+    "nombre": "Otro/s Documento/s",
+    "convenios": [
+      3
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 21,
+  "fields": {
+    "nombre": "Nota de Solicitud e Inclusión al Programa",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 22,
+  "fields": {
+    "nombre": "Personería Jurídica (o equivalente)",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 23,
+  "fields": {
+    "nombre": "Acta Designación",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 24,
+  "fields": {
+    "nombre": "Acta de Reconocimiento de Culto",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 25,
+  "fields": {
+    "nombre": "DNI Obispo",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 26,
+  "fields": {
+    "nombre": "Constancia AFIP",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 27,
+  "fields": {
+    "nombre": "Preinscripción RENACOM",
+    "convenios": [
+      2
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 28,
+  "fields": {
+    "nombre": "Validación RENACOM",
+    "convenios": [
+      2
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 29,
+  "fields": {
+    "nombre": "Inscripción RENACOM",
+    "convenios": [
+      2
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 30,
+  "fields": {
+    "nombre": "Relevamiento Programa PAC",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 31,
+  "fields": {
+    "nombre": "DNI Responsable Comedor",
+    "convenios": [
+      2
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 32,
+  "fields": {
+    "nombre": "DNI Titular Tarjeta",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 33,
+  "fields": {
+    "nombre": "Informe Comedores y Merenderos",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 34,
+  "fields": {
+    "nombre": "Memo PNUD",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 35,
+  "fields": {
+    "nombre": "Respuesta Memo PNUD",
+    "convenios": [
+      2
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 36,
+  "fields": {
+    "nombre": "Otro/s Documento/s",
+    "convenios": [
+      2
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 37,
+  "fields": {
+    "nombre": "Nota de Solicitud e Inclusión al Programa",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 38,
+  "fields": {
+    "nombre": "Designación Organismos Públicos / Acta constitutiva",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 39,
+  "fields": {
+    "nombre": "DNI Responsable 1",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 40,
+  "fields": {
+    "nombre": "DNI Responsable 2",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 41,
+  "fields": {
+    "nombre": "Acta constitutiva - Aval 1",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 42,
+  "fields": {
+    "nombre": "Estatuto - Aval 1",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 43,
+  "fields": {
+    "nombre": "Reso Personería Jurídica - Aval 1",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 44,
+  "fields": {
+    "nombre": "Acta Designación - Aval 1",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 45,
+  "fields": {
+    "nombre": "DNI Autoridades - Aval 1",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 46,
+  "fields": {
+    "nombre": "Acta constitutiva - Aval 2",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 47,
+  "fields": {
+    "nombre": "Estatuto - Aval 2",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 48,
+  "fields": {
+    "nombre": "Reso Personería Jurídica - Aval 2",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 49,
+  "fields": {
+    "nombre": "Acta Designación - Aval 2",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 50,
+  "fields": {
+    "nombre": "DNI Autoridades - Aval 2",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 51,
+  "fields": {
+    "nombre": "Preinscripción RENACOM",
+    "convenios": [
+      1
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 52,
+  "fields": {
+    "nombre": "Validación RENACOM",
+    "convenios": [
+      1
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 53,
+  "fields": {
+    "nombre": "Inscripción RENACOM",
+    "convenios": [
+      1
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 54,
+  "fields": {
+    "nombre": "Relevamiento Programa PAC",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 55,
+  "fields": {
+    "nombre": "DNI Responsable comedor",
+    "convenios": [
+      1
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 56,
+  "fields": {
+    "nombre": "DNI Titular tarjeta",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 57,
+  "fields": {
+    "nombre": "Informe Comedores y Merenderos",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 58,
+  "fields": {
+    "nombre": "Memo PNUD",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 59,
+  "fields": {
+    "nombre": "Respuesta Memo PNUD",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 60,
+  "fields": {
+    "nombre": "Material de Difusión",
+    "convenios": [
+      1
+    ],
+    "obligatorio": false
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 61,
+  "fields": {
+    "nombre": "Otro/s Documento/s",
+    "convenios": [
+      1
+    ],
+    "obligatorio": false
+  }
+}
 ]
