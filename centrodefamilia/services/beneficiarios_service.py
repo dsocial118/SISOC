@@ -17,14 +17,38 @@ from centrodefamilia.services.beneficiarios_filter_config import (
     FIELD_TYPES as BENEFICIARIO_FIELD_TYPES,
     TEXT_OPS as BENEFICIARIO_TEXT_OPS,
     NUM_OPS as BENEFICIARIO_NUM_OPS,
+    CHOICE_OPS as BENEFICIARIO_CHOICE_OPS,
 )
 from centrodefamilia.services.responsables_filter_config import (
     FIELD_MAP as RESPONSABLE_FILTER_MAP,
     FIELD_TYPES as RESPONSABLE_FIELD_TYPES,
     TEXT_OPS as RESPONSABLE_TEXT_OPS,
     NUM_OPS as RESPONSABLE_NUM_OPS,
+    CHOICE_OPS as RESPONSABLE_CHOICE_OPS,
 )
 from django.db import transaction
+
+
+def _normalize_genero(value):
+    """Devuelve el código de género aceptado a partir de entradas humanas."""
+
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if not normalized:
+            return value
+
+        mapping = {
+            "f": "F",
+            "femenino": "F",
+            "m": "M",
+            "masculino": "M",
+            "x": "X",
+            "otro": "X",
+            "no binario": "X",
+            "otro/no binario": "X",
+        }
+        return mapping.get(normalized, value.strip())
+    return value
 
 
 def obtener_o_crear_responsable(responsable_data, usuario):
@@ -89,7 +113,9 @@ BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
     allowed_ops={
         "text": BENEFICIARIO_TEXT_OPS,
         "number": BENEFICIARIO_NUM_OPS,
+        "choice": BENEFICIARIO_CHOICE_OPS,
     },
+    field_casts={"genero": _normalize_genero},
 )
 
 
@@ -99,7 +125,9 @@ RESPONSABLE_ADVANCED_FILTER = AdvancedFilterEngine(
     allowed_ops={
         "text": RESPONSABLE_TEXT_OPS,
         "number": RESPONSABLE_NUM_OPS,
+        "choice": RESPONSABLE_CHOICE_OPS,
     },
+    field_casts={"genero": _normalize_genero},
 )
 
 
