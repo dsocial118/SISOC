@@ -6,6 +6,7 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
+    {% include 'components/search_bar.html' with titulo="Buscar Responsable" reset_url=reset_url filters_mode=filters_mode filters_js=filters_js filters_action=filters_action show_add_button=show_add_button %}
     <div class="container mt-4">
         <h2>Listado de Responsables</h2>
         {% load custom_filters %}

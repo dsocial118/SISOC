@@ -4,9 +4,11 @@
 {% comment %}
 Componente Search Bar
 Uso clásico (texto): {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %}
-Modo filtros combinables: {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url comedores_filters_mode=True %}
+Modo filtros combinables: {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url filters_mode=True %}
 Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titulo='Buscar' placeholder='Buscar...' reset_url=reset_url add_url=add_url ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %}
 {% endcomment %}
+{% firstof filters_mode comedores_filters_mode False as filters_mode_value %}
+{% with filters_mode=filters_mode_value %}
 <h2 class="text-center display-4 mb-4">{{ titulo|default:"Buscar" }}</h2>
 {% if ajax_search_mode %}
     <!-- Modo búsqueda AJAX dinámica -->
@@ -36,7 +38,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
             <span class="sr-only">Cargando...</span>
         </div>
     </div>
-{% elif comedores_filters_mode %}
+{% elif filters_mode %}
     <form method="GET"
           action="{{ filters_action|default:'' }}"
           id="filters-form">
@@ -99,7 +101,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                 <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
             {% endif %}
         {% endif %}
-        {# Botones adicionales personalizados #}
+        <!-- Botones adicionales personalizados -->
         {% if additional_buttons %}
             {% for button in additional_buttons %}
                 <a href="{{ button.url }}"
@@ -109,14 +111,18 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
             {% endfor %}
         {% endif %}
         {% if not ajax_search_mode %}
-            {% with form_id=comedores_filters_mode|yesno:"filters-form,simple-search-form" %}
+            {% with form_id=filters_mode|yesno:"filters-form,simple-search-form" %}
                 <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
             {% endwith %}
         {% endif %}
     </div>
 </div>
-{% if comedores_filters_mode %}
-    <script src="{% static 'custom/js/comedores_search_bar.js' %}"></script>
+{% if filters_mode %}
+    {% if filters_js %}
+        <script src="{% static filters_js %}"></script>
+    {% else %}
+        <script src="{% static 'custom/js/comedores_search_bar.js' %}"></script>
+    {% endif %}
 {% elif ajax_search_mode %}
     <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -283,3 +289,4 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
   });
     </script>
 {% endif %}
+{% endwith %}
