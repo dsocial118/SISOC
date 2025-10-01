@@ -14,7 +14,7 @@ footer.app-footer {
 .app-sidebar {
     background-color: #232d4f !important;
     position: fixed;
-    top: 72px !important; /* Altura del header */
+    top: 72px !important;
     height: calc(100vh - 180px);
     overflow-y: auto;
     z-index:3;
@@ -25,7 +25,6 @@ footer.app-footer {
     height: 100%;
 }
 
-/* Estilos personalizados para la scrollbar del sidebar */
 .app-sidebar::-webkit-scrollbar,
 .app-sidebar .sidebar-wrapper::-webkit-scrollbar {
     width: 6px;
@@ -62,12 +61,12 @@ footer.app-footer {
 
 .app-main {
     margin-top: 72px;
-    min-height: calc(100vh - 182px); /* 72px header + 110px footer */
+    min-height: calc(100vh - 182px); 
     margin-left: 300px;
 }
 
 .main-header {
-    padding: 0.5rem 1rem; /* Ajusta el padding según sea necesario */
+    padding: 0.5rem 1rem;
     z-index: 4;
 }
 
@@ -79,7 +78,7 @@ footer.app-footer {
 }
 
 .main-header .brand-image {
-    max-height: 32px;/* Espacio entre la imagen y el texto */
+    max-height: 32px;
 }
 
 .main-header .nav-link.nav-link-rounded {
@@ -189,10 +188,9 @@ ul:has(.nav-main-item) {
 
 aside .nav-link {
   display: flex;
-  align-items: center; /* Centra verticalmente */
-  gap: 0.5rem; /* Espacio entre el icono y el texto */
+  align-items: center;
+  gap: 0.5rem;
   text-decoration: none;
-  color: #e7ba61; /* Tu color dorado */
   padding: 0.5rem 1rem;
 }
 
@@ -200,10 +198,10 @@ aside .nav-link i {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem; /* Ajusta el tamaño del ícono */
+  font-size: 1.2rem; 
 }
 
 aside .nav-link p {
-  margin: 0; /* Quita márgenes por defecto */
-  line-height: 1; /* Evita desalineación vertical */
+  margin: 0; 
+  line-height: 1;
 }
