@@ -41,22 +41,18 @@ class UsuariosService:
         """Configuración para la lista de usuarios"""
         return {
             "table_headers": [
-                {"title": "CUIL", "width": "12%"},
+                {"title": "Nombre", "width": "12%"},
                 {"title": "Apellido y Nombre", "width": "20%"},
-                {"title": "DNI", "width": "10%"},
-                {"title": "Género", "width": "8%"},
-                {"title": "Responsable", "width": "20%"},
-                {"title": "Provincia", "width": "15%"},
-                {"title": "Municipio", "width": "15%"},
+                {"title": "Username", "width": "10%"},
+                {"title": "Email", "width": "8%"},
+                {"title": "Rol", "width": "20%"},
             ],
             "table_fields": [
-                {"name": "cuil"},
-                {"name": "apellido_nombre"},
-                {"name": "dni"},
-                {"name": "genero_display"},
-                {"name": "responsable_nombre"},
-                {"name": "provincia"},
-                {"name": "municipio"},
+                {"name": "first_name"},
+                {"name": "last_name"},
+                {"name": "username"},
+                {"name": "email"},
+                {"name": "rol"},
             ],
             "table_actions": [
                 {

@@ -4,23 +4,13 @@
      * Replica la logica de comedores pero con campos y etiquetas propias.
      */
     const TEXT_FIELDS = [
-        { value: 'apellido', label: 'Apellido' },
-        { value: 'nombre', label: 'Nombre' },
-        { value: 'genero', label: 'Genero' },
-        { value: 'domicilio', label: 'Domicilio' },
-        { value: 'barrio', label: 'Barrio' },
-        { value: 'correo_electronico', label: 'Correo electronico' },
-        { value: 'responsable_apellido', label: 'Apellido del responsable' },
-        { value: 'responsable_nombre', label: 'Nombre del responsable' },
-        { value: 'provincia', label: 'Provincia' },
-        { value: 'municipio', label: 'Municipio' },
-        { value: 'localidad', label: 'Localidad' }
+        { value: 'first_name', label: 'Apellido' },
+        { value: 'last_name', label: 'Nombre' },
+        { value: 'username', label: 'Usuario' },
+        { value: 'email', label: 'Email' },
+        { value: 'rol', label: 'Rol' },
     ];
     const NUMBER_FIELDS = [
-        { value: 'dni', label: 'DNI' },
-        { value: 'cuil', label: 'CUIL' },
-        { value: 'codigo_postal', label: 'Codigo postal' },
-        { value: 'altura', label: 'Altura' }
     ];
 
     const TEXT_OPS = [
