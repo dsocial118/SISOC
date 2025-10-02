@@ -1,7 +1,38 @@
 {% load static custom_filters %}
 
 {% with pagina_actual=request.resolver_match.route %}
-    
+
+    <!-- INFORMACIÓN DE USUARIO -->
+    <li class="nav-item user-info mb-3">
+        <div class="user-panel d-flex align-items-center p-3">
+            <div class="user-avatar me-3">
+                <div class="avatar-circle d-flex align-items-center justify-content-center bg-primary text-white rounded-circle"
+                     style="width: 45px; height: 45px; font-size: 16px; font-weight: 600;">
+                    {% comment %}
+                    Cuando agreguen los campos 'nombres' y 'apellido' al modelo User,
+                    reemplazar este bloque por:
+                    {% if request.user.nombres and request.user.apellido %}
+                        {{ request.user.nombres|first|upper }}{{ request.user.apellido|first|upper }}
+                    {% else %}
+                        {{ request.user.username|first|upper }}
+                    {% endif %}
+                    {% endcomment %}
+                    {{ request.user.username|first|upper }}
+                </div>
+            </div>
+            <div class="info flex-grow-1">
+                <p class="mb-1 text-white fw-bold">{{ request.user.get_full_name|default:request.user.username }}</p>
+                <p class="mb-0 text-white-50 small">
+                    {% if request.user.groups.all %}
+                        {{ request.user.groups.first.name }}
+                    {% else %}
+                        Sin grupo
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </li>
+
     <!-- INICIO -->
     <li class="nav-item nav-main-item">
         <a href="{% url 'inicio' %}"
