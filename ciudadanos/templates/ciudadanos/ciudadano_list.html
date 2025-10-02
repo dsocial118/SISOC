@@ -13,7 +13,7 @@
 {% block content %}
     {% url 'ciudadanos_ajax' as ajax_url %}
     {% include 'components/search_bar.html' with titulo="Buscar Ciudadano" placeholder="Buscar" help_text="Ingresar DNI o apellido." reset_url=reset_url add_url=add_url show_add_button=can_add query=query ajax_search_mode=True ajax_url=ajax_url target_tbody_id="ciudadanos-table-body" %}
-    <div class="row mt-5">
+    <div class="row mt-5 max-width-100">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">

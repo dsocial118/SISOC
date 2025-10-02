@@ -59,7 +59,7 @@ footer.app-footer {
 }
 
 .app-main {
-    margin-top: 72px;
+    margin-top: 96px;
     min-height: calc(100vh - 182px); 
     margin-left: 300px;
 }
@@ -120,6 +120,10 @@ header.main-header {
 
     .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
         height: calc(100vh - 180px);
+        overflow-x: hidden !important;
+    }
+
+    .nav-item {
         overflow-x: hidden !important;
     }
 
@@ -204,4 +208,12 @@ aside .nav-link i {
 aside .nav-link p {
   margin: 0; 
   line-height: 1;
+}
+
+.sidebar-wrapper div:nth-child(2) {
+    overflow-x: hidden !important;
+}
+
+.max-width-100 {
+    max-width: 100%;
 }
