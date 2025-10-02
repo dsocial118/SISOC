@@ -94,7 +94,7 @@
             {% block title %}{% endblock %}
         </title>
     </head>
-    <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary dark-mode{% if request.user.profile.darkmode %}dark-mode{% endif %} ">
+    <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary dark-mode{% if request.user.profile.dark_mode %}dark-mode{% endif %} ">
         <div class="app-wrapper">
             {% include 'includes/new_navbar.html' %}
             {% include 'includes/sidebar/new_base.html' %}

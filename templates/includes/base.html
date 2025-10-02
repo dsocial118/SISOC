@@ -59,18 +59,21 @@
               href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
               integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
               crossorigin="anonymous" />
-        <!--end::Fonts--><!--begin::Third Party Plugin(OverlayScrollbars)-->
+        <!--end::Fonts-->
+        <!--begin::Third Party Plugin(OverlayScrollbars)-->
         <link rel="stylesheet" href="{% static 'dist/css/adminlte.css' %}" />
         <link rel="stylesheet"
               href="https://cdn.jsdelivr.net/npm/overlayscrollbars@2.3.0/styles/overlayscrollbars.min.css"
               integrity="sha256-dSokZseQNT08wYEWiz5iLI8QPlKxG+TswNRD8k35cpg="
               crossorigin="anonymous" />
-        <!--end::Third Party Plugin(OverlayScrollbars)--><!--begin::Third Party Plugin(Bootstrap Icons)-->
+        <!--end::Third Party Plugin(OverlayScrollbars)-->
+        <!--begin::Third Party Plugin(Bootstrap Icons)-->
         <link rel="stylesheet"
               href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.min.css"
               integrity="sha256-Qsx5lrStHZyR9REqhUF8iQt73X06c8LGIUPzpOhwRrI="
               crossorigin="anonymous" />
-        <!--end::Third Party Plugin(Bootstrap Icons)--><!--begin::Required Plugin(AdminLTE)-->
+        <!--end::Third Party Plugin(Bootstrap Icons)-->
+        <!--begin::Required Plugin(AdminLTE)-->
         <link rel="stylesheet"
               href="https://cdn.jsdelivr.net/npm/apexcharts@3.37.1/dist/apexcharts.css"
               integrity="sha256-4MX+61mt9NVvvuPjUWdUdyfZfxSB1/Rf9WtqRHgG5S0="
@@ -81,24 +84,28 @@
               integrity="sha256-+uGLJmmTKOqBr+2E6KDYs/NRsHxSkONXFHUL0fy2O/4="
               crossorigin="anonymous" />
         <!-- custom -->
-        {% comment %} <link rel="stylesheet" href="{% static 'custom/css/custom.css' %}" /> {% endcomment %}
+        {% comment %}
+    <link rel="stylesheet" href="{% static 'custom/css/custom.css' %}" />
+        {% endcomment %}
         <link rel="stylesheet" href="{% static 'custom/css/utils.css' %}" />
+        <link rel="stylesheet" href="{% static 'custom/css/main.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/hitos.css' %}" />
-        {% comment %} <link rel="stylesheet" href="{% static 'custom/css/nuevoColorPrimary.css' %}" /> {% endcomment %}
-        {% comment %} <link rel="stylesheet" href="{% static 'custom/css/nuevoColorInfo.css' %}" /> {% endcomment %}
+        {% comment %}
+        <link rel="stylesheet" href="{% static 'custom/css/nuevoColorPrimary.css' %}" />
+        <link rel="stylesheet" href="{% static 'custom/css/nuevoColorInfo.css' %}" />
+        {% endcomment %}
         <!-- Estilos adicionales por pagina-->
         {% block head %}{% endblock %}
         <!-- Bloque titulo -->
-        <title>SISOC -
-            {% block title %}{% endblock %}
-        </title>
+        <title>SISOC - {% block title %}{% endblock %}</title>
     </head>
-    <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary {% if request.user.profile.darkmode %}dark-mode{% endif %} ">
+    <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary {% if request.user.profile.dark_mode %}dark-mode{% endif %}">
+        {% include 'includes/header.html' %}
         <div class="app-wrapper">
-            {% include 'includes/navbar.html' %}
             {% include 'includes/sidebar/base.html' %}
             {% block main-content %}
-                {% comment %} Contenido principal {% endcomment %}
+                {% comment %}
+                Contenido principal {% endcomment %}
             {% endblock %}
             {% include "includes/footer.html" %}
             <!-- /.Footer -->
@@ -132,8 +139,8 @@
                     <!-- Mensajes Success y Error --- TOASTR-->
                     <!-- FIXME: Validar si es necesario mover este script dado que es pequeño y contiene tags de django -->
                     <script language="JavaScript" type="text/javascript">
-                        toastr.options = {"positionClass": "toast-bottom-right"}
-                        toastr.{{ message.tags }}("{{ message }}");
+        toastr.options = {"positionClass": "toast-bottom-right"}
+        toastr.{{ message.tags }}("{{ message }}");
                     </script>
                 {% endfor %}
             {% endif %}
