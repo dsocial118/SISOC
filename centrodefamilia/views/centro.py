@@ -29,9 +29,21 @@ from centrodefamilia.services.centro_filter_config import (
     TEXT_OPS as CENTRO_TEXT_OPS,
     NUM_OPS as CENTRO_NUM_OPS,
     BOOL_OPS as CENTRO_BOOL_OPS,
+    get_filters_ui_config as get_centro_filters_ui_config,
 )
 from centrodefamilia.forms import CentroForm
 from core.services.advanced_filters import AdvancedFilterEngine
+
+
+BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=CENTRO_FILTER_MAP,
+    field_types=CENTRO_FIELD_TYPES,
+    allowed_ops={
+        "text": CENTRO_TEXT_OPS,
+        "number": CENTRO_NUM_OPS,
+        "boolean": CENTRO_BOOL_OPS,
+    },
+)
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -43,15 +55,6 @@ class CentroListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         base_qs = Centro.objects.select_related("faro_asociado", "referente").order_by(
             "nombre"
-        )
-        BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
-            field_map=CENTRO_FILTER_MAP,
-            field_types=CENTRO_FIELD_TYPES,
-            allowed_ops={
-                "text": CENTRO_TEXT_OPS,
-                "number": CENTRO_NUM_OPS,
-                "boolean": CENTRO_BOOL_OPS,
-            },
         )
 
         user = self.request.user
@@ -79,8 +82,9 @@ class CentroListView(LoginRequiredMixin, ListView):
         ctx.update(
             {
                 "filters_mode": True,
-                "filters_js": "custom/js/centros_search_bar.js",
+                "filters_js": "custom/js/advanced_filters.js",
                 "filters_action": reverse("centro_list"),
+                "filters_config": get_centro_filters_ui_config(),
                 "add_url": reverse("centro_create"),
             }
         )

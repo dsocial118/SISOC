@@ -1,0 +1,10 @@
+body {
+    overflow-y:hidden;
+}
+
+body .app-main {
+    background-color: white !important;
+    margin-top: 72px;
+    min-height: calc(100vh - 182px);
+    margin-left: 300px;
+}
