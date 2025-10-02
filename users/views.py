@@ -27,51 +27,7 @@ class UserListView(AdminRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         # Configuración para el componente data_table
-        context["table_headers"] = [
-            {"title": "Nombre"},
-            {"title": "Apellido"},
-            {"title": "Username"},
-            {"title": "Email"},
-            {"title": "Rol"},
-        ]
-
-        context["table_fields"] = [
-            {"name": "first_name"},
-            {"name": "last_name"},
-            {"name": "username"},
-            {"name": "email"},
-            {"name": "rol"},
-        ]
-
-        context["table_actions"] = [
-            {
-                "label": "Editar",
-                "url_name": "usuario_editar",
-                "type": "primary",
-                "class": "editar",
-            },
-            {
-                "label": "Eliminar",
-                "url_name": "usuario_borrar",
-                "type": "danger",
-                "class": "eliminar",
-            },
-        ]
         context.update(UsuariosService.get_usuarios_list_context())
-        context.update(
-            {
-                "breadcrumb_items": [
-                    {"text": "Usuarios", "url": reverse("usuarios")},
-                    {"text": "Listar", "active": True},
-                ],
-                "reset_url": reverse("usuarios"),
-                "add_url": reverse("usuario_crear"),
-                "filters_mode": True,
-                "filters_js": "custom/js/usuarios_search_bar.js",
-                "filters_action": reverse("usuarios"),
-                "add_text": "Crear un nuevo Usuario",
-            }
-        )
         return context
 
 

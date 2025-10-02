@@ -2,8 +2,8 @@
 {% load static custom_filters %}
 {% block title %}Usuarios{% endblock %}
 {% block titulo-pagina %}Usuarios{% endblock %}
-{% include 'components/search_bar.html' with titulo="Buscar Usuario" reset_url=reset_url filters_mode=filters_mode filters_js=filters_js filters_action=filters_action show_add_button=show_add_button %} 
 {% block content %}
+    {% include 'components/search_bar.html' with titulo="Buscar Usuario" reset_url=reset_url filters_mode=filters_mode filters_js=filters_js filters_action=filters_action show_add_button=show_add_button %} 
     <div class="row d-flex justify-content-between my-3 mx-sm-2">
         <div class="col-12 col-sm-3">
             <a class="btn btn-primary mb-2 mb-sm-0 d-block d-sm-inline"
