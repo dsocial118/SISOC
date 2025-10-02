@@ -1,20 +1,42 @@
-$(document).ready(function() {
+document.addEventListener("DOMContentLoaded", function () {
+    const modalElement = document.getElementById("seleccionModal");
+    const selectTipo = document.getElementById("tipoConvenio");
+    const confirmarBtn = document.getElementById("confirmarSeleccion");
 
-    // Mostrar el modal al inicio
-    $("#seleccionModal").modal("show");
+    if (!modalElement || !selectTipo || !confirmarBtn) {
+        return;
+    }
 
-    // Habilitar botón de confirmación si se selecciona un tipo de organización
-    $("#tipoConvenio").change(function() {  // Asegúrate de que este ID es correcto
-        $("#confirmarSeleccion").prop("disabled", !$(this).val());
+    let bootstrapModal = null;
+
+    if (window.bootstrap && typeof bootstrap.Modal === "function") {
+        bootstrapModal = new bootstrap.Modal(modalElement, {
+            backdrop: "static",
+            keyboard: false,
+        });
+        bootstrapModal.show();
+    } else if (window.jQuery && typeof window.jQuery(modalElement).modal === "function") {
+        window.jQuery(modalElement).modal({ backdrop: "static", keyboard: false });
+        window.jQuery(modalElement).modal("show");
+    }
+
+    selectTipo.addEventListener("change", function () {
+        confirmarBtn.disabled = !selectTipo.value;
     });
 
-    // Al hacer clic en confirmar, ocultar el modal y actualizar la tabla
-    $("#confirmarSeleccion").click(function() {
-        var tipo = $("#tipoConvenio").val();  // Asegúrate de que coincide con el select
-        if (!tipo) return;
+    confirmarBtn.addEventListener("click", function () {
+        if (!selectTipo.value) {
+            return;
+        }
 
-        $("#seleccionModal").modal("hide");
-        actualizarTabla(tipo);
+        if (bootstrapModal) {
+            bootstrapModal.hide();
+        } else if (window.jQuery && typeof window.jQuery(modalElement).modal === "function") {
+            window.jQuery(modalElement).modal("hide");
+        }
+
+        if (typeof actualizarTabla === "function") {
+            actualizarTabla(selectTipo.value);
+        }
     });
-
 });

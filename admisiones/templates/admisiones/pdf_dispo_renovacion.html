@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <style>
+@page {
+    size: A4;
+    margin: 3.5cm 2cm 2.5cm 2cm; /* márgenes: top, right, bottom, left */
+    @top-center {
+        content: element(header);
+    }
+    @bottom-center {
+        content: "Página " counter(page) " de " counter(pages);
+        font-size: 10pt;
+        color: #666;
+    }
+}
+
+body {
+    font-family: Arial, sans-serif;
+    font-size: 10pt;
+    margin: 0;
+    text-align: justify;   /* 👈 texto justificado global */
+    line-height: 1.5;
+}
+
+#header {
+    position: running(header);
+    height: 3cm;
+    padding: 0.5cm 1cm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    font-weight: bold;
+    padding-top: 15px;
+    padding-right: 30px;
+    font-size: 10pt;
+    text-align: center;
+}
+
+.header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 9pt;
+    text-align: center;
+    line-height: 0.5;
+    padding-left:30px;
+}
+
+.header-right img {
+    max-height: 40px;
+    height: auto;
+    width: auto;
+    margin-bottom: 0px;
+}
+
+main {
+    box-sizing: border-box;
+}
+
+h1, h2, h3, h4 {
+    text-align: center; /* 👈 títulos centrados automáticamente */
+    margin: 0.5em 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    border: 2px solid black;
+}
+
+th, td {
+    padding: 6px;
+    border: 1px solid #ccc;
+    vertical-align: top;
+    text-align: justify; /* 👈 contenido de tabla justificado */
+}
+
+th[colspan="2"] {
+    text-align: center;
+    background-color: #f0f0f0;
+}
+
+.salto_pagina {
+    page-break-before: always;
+}
+
+.table-bordered {
+    border: 1px solid #ccc;
+}
+
+.text-center {
+    text-align: center; /* 👈 clase para forzar centrado */
+}
+
+.text-start {
+    text-align: left;   /* 👈 clase para forzar alineación izquierda */
+}
+
+.align-middle {
+    vertical-align: middle;
+}
+
+li {
+    line-height: 1.8;
+    margin-bottom: 0.5em;
+    text-align: justify;
+}
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div class="header-left">
+                <br />
+                PROGRAMA ALIMENTAR
+                <br />
+                COMUNIDAD
+            </div>
+            <div class="header-right">
+                <img src="https://www.casarosada.gob.ar/images/escudo_nacional_argentino.png"
+                     style="filter: grayscale(100%);
+                            max-height:40px" />
+                <br />
+                Secretaría de Niñez, Adolescencia y Familia
+                <br />
+                Ministerio de Capital Humano
+            </div>
+        </div>
+        <main>
+            <p>
+                VISTO el Expediente N.º {{ admision.legales_num_if }}, la Resolución del entonces Ministerio de Desarrollo Social N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, y,
+            </p>
+            <p>
+                <strong>CONSIDERANDO:</strong>
+            </p>
+            <p>
+                Que por el artículo 87 de la Ley N.º 27.701 se prorrogó hasta el 31 de diciembre de 2025 la Emergencia Alimentaria Nacional dispuesta por el Decreto de Necesidad y Urgencia N.° 108 dictado el 15 de enero de 2002.
+            </p>
+            <p>
+                Que la Ley N.º 25.724 creó el Programa Nacional de Nutrición y Alimentación en cumplimiento del deber indelegable del Estado de garantizar el derecho a la alimentación de toda la ciudadanía.
+            </p>
+            <p>
+                Que mediante Resolución del entonces Ministerio de Desarrollo Social Resolución N° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, se creó el Programa ALIMENTAR COMUNIDAD, a los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH.
+            </p>
+            <p>
+                Que mediante la Ley de Ministerios N.° 22.520 (t.o. por Decreto N.° 438 del 12 de marzo de 1992) y sus normas modificatorias y complementarias, se establecen las competencias del MINISTERIO DE CAPITAL HUMANO, el cual tiene a cargo los compromisos y obligaciones asumidos por el entonces MINISTERIO DE DESARROLLO SOCIAL DE LA NACIÓN.
+            </p>
+            <p>
+                Que por el Decreto N.° DCTO-2019-50-APN-PTE del 19 de diciembre de 2019 y sus normas modificatorias y complementarias, se aprobó la conformación organizativa del MINISTERIO DE CAPITAL HUMANO y se establecieron los objetivos de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO, entre los que se destaca el diseño e implementación de políticas sociales de seguridad alimentaria destinadas a la población en situación de vulnerabilidad social.
+            </p>
+            <p>
+                Que conforme el Decreto N.° DECTO-2025-151-APN-PTE de fecha 28 de febrero de 2025 corresponde a la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO entender en el diseño, gestión y evaluación de las políticas sociales tendientes a incluir, acompañar y proteger a la población en situación de vulnerabilidad social, a través de la implementación de programas de seguridad alimentaria, por lo cual la implementación del Programa “ALIMENTAR COMUNIDAD” es absorbida por ésta.
+            </p>
+            <p>
+                Que, a su vez, el citado Decreto establece como responsabilidad primaria de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO proponer, planificar y coordinar la ejecución de políticas sociales y acciones que propicien la seguridad alimentaria de la población con alta vulnerabilidad social, priorizando el fortalecimiento de la unidad doméstica en riesgo social.
+            </p>
+            <p>
+                Que por Resolución N.° RESOL-2025-238-APN-SNNAYF#MCH del 15 de abril de 2025, se le encomienda al Señor Subsecretario de Promoción Humana de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO la firma de todos los convenios y de los actos administrativos que resulten necesarios para la implementación de las políticas alimentarias de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA.
+            </p>
+            <p>
+                Que por Resolución RESOL-202X-X(NOMBRE RESO ANTERIOR-Deberia ser manual))XX-APN-SNNAYF#MCH del Xdia_fecha_reso(Manual)x de Xxmes_reso(Manual)xxx de 2024 se incorporó al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.
+            </p>
+            <p>
+                Que, en dicho contexto, la Organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }} ha solicitado la continuidad del financiamiento al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo.
+            </p>
+            <p>
+                Que, con el propósito de garantizar la continuidad de la asistencia alimentaria que dicho espacio venía recibiendo, corresponde destacar que lo establecido en la Resolución N.° RESOL-2025-151-APN-MCH de fecha 31 de marzo de 2025, en lo relativo al límite de incorporaciones por entidad requirente, no resulta aplicable a aquellas organizaciones que, al momento del dictado de la mencionada norma, ya contaban con efectores incorporados al Programa o recibían asistencia en el marco de otros programas alimentarios de similar naturaleza financiados por el Gobierno Nacional.
+            </p>
+            <p>
+                Que la DIRECCIÓN DE ASISTENCIA INSTITUCIONAL ALIMENTARIA de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO ha evaluado favorablemente la petición efectuada por la Organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}.
+            </p>
+            <p>Que el Servicio Jurídico pertinente ha tomado la intervención de su competencia.</p>
+            <p>
+                Que la SUBSECRETARÍA DE GESTIÓN ADMINISTRATIVA de la SECRETARÍA DE COORDINACIÓN LEGAL Y ADMINISTRATIVA del MINISTERIO DE CAPITAL HUMANO, ha tomado la intervención de su competencia.
+            </p>
+            <p>
+                Que la presente medida se dicta en virtud de lo dispuesto en la Ley de Ministerios N.° 22.520 (t.o. por Decreto N.° 438 del 12 de marzo de 1992) y sus normas modificatorias y complementarias, las Leyes N.° 27.701 y N.° 25.724, la Ley N° 24.156 de Administración Financiera y de los Sistemas de Control del Sector Público Nacional, su Decreto Reglamentario N.°1344/2007 y sus normas modificatorias y complementarias, el Decreto N.° DCTO-2019-50-APN-PTE del 19 de diciembre de 2019 y sus normas modificatorias y complementarias, el Decreto N.° DECTO-2025-170-APN-PTE del 6 de marzo de 2025 y las Resoluciones del entonces Ministerio de Desarrollo Social N.° RESOL-2020-8-APN-MDS del 8 de enero de 2020 y sus normas modificatorias y complementarias, N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias y Resolución de la Secretaría Nacional de Niñez, Adolescencia y Familia del Ministerio de Capital Humano N.° RESOL-2025-238-APN-SNNAYF#MCH del 15 de abril de 2025.
+            </p>
+            <p>Por ello,</p>
+            <p>
+                <strong>EL SEÑOR SUBSECRETARIO DE PROMOCIÓN HUMANA DE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO DISPONE:</strong>
+            </p>
+            <p>
+                <strong>ARTÍCULO 1°.-</strong> Apruébase el Convenio a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO y la Organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}, asociada al CUIT N.° {{ informe.cuit_organizacion }}, que, como Proyecto de Convenio identificado como IF-2025-XX(Pconvenio)XXXX-APN-DNPA#MCH, forma parte integrante de la presente Disposición.
+            </p>
+            <p>
+                <strong>ARTÍCULO 2°.-</strong> Otórgase el financiamiento, conforme a lo aprobado por Artículo 1°, al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” solicitado por la Organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}, del Programa “ALIMENTAR COMUNIDAD” para la adquisición de alimentos mediante una tarjeta prepaga física o virtual a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo. La carga de fondos se realizará conforme a las disponibilidades financieras y presupuestarias existentes y en los términos y condiciones establecidos en el Convenio referido en el presente acto.
+            </p>
+            <p>
+                <strong>ARTÍCULO 3°.-</strong> Los fondos otorgados a través de la tarjeta prepaga física o virtual, están sujetos a rendición de cuentas documentada, conforme a lo establecido en la Ley de Administración Financiera y de los Sistemas de Control del Sector Público Nacional N.° 24.156, su Decreto Reglamentario N.° 1344/2007 y normas modificatorias y complementarias; la Resolución del entonces Ministerio de Desarrollo Social N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, Resolución del entonces Ministerio de Desarrollo Social N.° 2458 del 23 de agosto de 2004 y lo estipulado en el respectivo Convenio.
+            </p>
+            <p>
+                <strong>ARTÍCULO 4°.-</strong> La AUDITORÍA SECTORIAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA de la UNIDAD DE AUDITORÍA INTERNA del MINISTERIO DE CAPITAL HUMANO, la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, y la SINDICATURA GENERAL DE LA NACIÓN (SIGEN) están facultadas para controlar la inversión de los fondos otorgados en el marco de la presente Disposición, en virtud de la normativa mencionada en el Artículo 3° y en el contexto de las acciones de gestión social responsable, monitoreo y seguimiento, ya sea de manera concomitante o posterior a la ejecución del subsidio.
+            </p>
+            <p>
+                <strong>ARTÍCULO 5°.-</strong> Comuníquese y oportunamente archívese.
+            </p>
+        </main>
+    </body>
+</html>
