@@ -4,7 +4,7 @@ Centraliza mapeos de campos, tipos y operadores permitidos para
 evitar duplicación y facilitar mantenimiento.
 """
 
-from typing import Dict
+from typing import Any, Dict
 
 # Mapea el nombre de campo expuesto en filtros -> lookup real en Django ORM
 FIELD_MAP: Dict[str, str] = {
@@ -118,11 +118,34 @@ FILTER_FIELDS = [
     {"name": "comienzo", "label": "Comienzo (año)", "type": "number"},
     {"name": "numero", "label": "Número", "type": "number"},
     {"name": "codigo_postal", "label": "Código Postal", "type": "number"},
-    {"name": "latitud", "label": "Latitud", "type": "number"},
-    {"name": "longitud", "label": "Longitud", "type": "number"},
+    {
+        "name": "latitud",
+        "label": "Latitud",
+        "type": "number",
+        "input": {"step": "any"},
+    },
+    {
+        "name": "longitud",
+        "label": "Longitud",
+        "type": "number",
+        "input": {"step": "any"},
+    },
 ]
 
 DEFAULT_FIELD = "nombre"
+
+
+def get_filters_ui_config() -> Dict[str, Any]:
+    """Configuración serializable para la UI de filtros avanzados."""
+
+    return {
+        "fields": FILTER_FIELDS,
+        "operators": {
+            "text": list(TEXT_OPS),
+            "number": list(NUM_OPS),
+        },
+    }
+
 
 __all__ = [
     "FIELD_MAP",
@@ -131,4 +154,5 @@ __all__ = [
     "NUM_OPS",
     "FILTER_FIELDS",
     "DEFAULT_FIELD",
+    "get_filters_ui_config",
 ]

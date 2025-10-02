@@ -27,5 +27,10 @@ def load_localidad(request):
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
 
 
+def inicio_view(request):
+    """Vista para la página de inicio del sistema"""
+    return render(request, "inicio.html")
+
+
 def error_500_view(request):
     return render(request, "500.html")
