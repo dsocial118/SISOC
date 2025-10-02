@@ -15,7 +15,6 @@ footer.app-footer {
     background-color: #232d4f !important;
     position: fixed;
     top: 72px !important;
-    height: calc(100vh - 180px);
     overflow-y: auto;
     z-index:3;
 }
@@ -120,7 +119,8 @@ header.main-header {
     }
 
     .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
-        height: 100%;
+        height: calc(100vh - 180px);
+        overflow-x: hidden !important;
     }
 
 
