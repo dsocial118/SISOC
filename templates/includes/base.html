@@ -91,18 +91,15 @@
         <link rel="stylesheet" href="{% static 'custom/css/main.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/hitos.css' %}" />
         {% comment %}
-    <link rel="stylesheet" href="{% static 'custom/css/nuevoColorPrimary.css' %}" />
-{% endcomment %} {% comment %}
-    <link rel="stylesheet" href="{% static 'custom/css/nuevoColorInfo.css' %}" />
+        <link rel="stylesheet" href="{% static 'custom/css/nuevoColorPrimary.css' %}" />
+        <link rel="stylesheet" href="{% static 'custom/css/nuevoColorInfo.css' %}" />
         {% endcomment %}
         <!-- Estilos adicionales por pagina-->
         {% block head %}{% endblock %}
         <!-- Bloque titulo -->
-        <title>SISOC -
-            {% block title %}{% endblock %}
-        </title>
+        <title>SISOC - {% block title %}{% endblock %}</title>
     </head>
-    <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary {% if request.user.profile.darkmode %}dark-mode{% endif %}">
+    <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary {% if request.user.profile.dark_mode %}dark-mode{% endif %}">
         {% include 'includes/header.html' %}
         <div class="app-wrapper">
             {% include 'includes/sidebar/base.html' %}
@@ -110,8 +107,7 @@
                 {% comment %}
                 Contenido principal {% endcomment %}
             {% endblock %}
-            {% include
-            "includes/footer.html" %}
+            {% include "includes/footer.html" %}
             <!-- /.Footer -->
             <!-- Control Sidebar -->
             <aside class="control-sidebar control-sidebar-dark">
@@ -139,8 +135,7 @@
             </div>
             {% include "scripts/mainscripts.html" %}
             {% if messages %}
-                {% for message
-                    in messages %}
+                {% for message in messages %}
                     <!-- Mensajes Success y Error --- TOASTR-->
                     <!-- FIXME: Validar si es necesario mover este script dado que es pequeño y contiene tags de django -->
                     <script language="JavaScript" type="text/javascript">
