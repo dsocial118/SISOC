@@ -23,7 +23,27 @@ from centrodefamilia.models import (
     InformeCabalRegistro,
     ParticipanteActividad,
 )
+from centrodefamilia.services.centro_filter_config import (
+    FIELD_MAP as CENTRO_FILTER_MAP,
+    FIELD_TYPES as CENTRO_FIELD_TYPES,
+    TEXT_OPS as CENTRO_TEXT_OPS,
+    NUM_OPS as CENTRO_NUM_OPS,
+    BOOL_OPS as CENTRO_BOOL_OPS,
+    get_filters_ui_config as get_centro_filters_ui_config,
+)
 from centrodefamilia.forms import CentroForm
+from core.services.advanced_filters import AdvancedFilterEngine
+
+
+BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=CENTRO_FILTER_MAP,
+    field_types=CENTRO_FIELD_TYPES,
+    allowed_ops={
+        "text": CENTRO_TEXT_OPS,
+        "number": CENTRO_NUM_OPS,
+        "boolean": CENTRO_BOOL_OPS,
+    },
+)
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -33,27 +53,42 @@ class CentroListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        qs = Centro.objects.select_related("faro_asociado", "referente")
-        user = self.request.user
+        base_qs = Centro.objects.select_related("faro_asociado", "referente").order_by(
+            "nombre"
+        )
 
-        if user.is_superuser:
-            pass
-        elif user.groups.filter(name="CDF SSE").exists():
+        user = self.request.user
+        busq = self.request.GET.get("busqueda", "").strip()
+
+        if user.is_superuser or user.groups.filter(name="CDF SSE").exists():
             pass
         elif user.groups.filter(name="ReferenteCentro").exists():
-            qs = qs.filter(referente=user)
+            base_qs = base_qs.filter(referente=user)
         else:
             return Centro.objects.none()
 
-        busq = self.request.GET.get("busqueda", "").strip()
         if busq:
-            qs = qs.filter(Q(nombre__icontains=busq) | Q(tipo__icontains=busq))
+            base_qs = base_qs.filter(
+                Q(nombre__icontains=busq) | Q(tipo__icontains=busq)
+            )
 
-        return qs.order_by("nombre")
+        return BOOL_ADVANCED_FILTER.filter_queryset(base_qs, self.request.GET)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
+
+        # Search bar config
+        ctx.update(
+            {
+                "filters_mode": True,
+                "filters_js": "custom/js/advanced_filters.js",
+                "filters_action": reverse("centro_list"),
+                "filters_config": get_centro_filters_ui_config(),
+                "add_url": reverse("centro_create"),
+            }
+        )
+
         ctx["can_add"] = (
             user.is_superuser or user.groups.filter(name="CDF SSE").exists()
         )

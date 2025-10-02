@@ -6,7 +6,7 @@ from ciudadanos.models import Sexo, TipoDocumento
 from requests.exceptions import RequestException, ConnectionError
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 API_BASE = settings.RENAPER_API_URL
 LOGIN_URL = f"{API_BASE}/auth/login"

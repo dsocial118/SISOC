@@ -11,7 +11,7 @@
 {% block breadcrumb %}{% endblock %}
 {% block menu-adicional %}{% endblock %}
 {% block content %}
-    {# Bloque SSE: sólo indicadores nuevos #}
+    <!-- Bloque SSE: sólo indicadores nuevos -->
     {% if request.user|has_group:"Dashboard Centrodefamilia" %}
         <div class="row">
             <div class="container">

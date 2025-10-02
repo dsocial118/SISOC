@@ -1,118 +1,213 @@
-document.addEventListener("DOMContentLoaded", function () {
-    let selectConvenio = document.getElementById("nuevoTipoConvenio");
-    let confirmarBtn = document.getElementById("nuevoConfirmarSeleccion");
+﻿const PERSONALIZED_FLAG = "1";
 
-    selectConvenio.addEventListener("change", function () {
-        confirmarBtn.disabled = !selectConvenio.value;
-    });
+document.addEventListener("DOMContentLoaded", function () {
+    const nombreInput = document.getElementById("nuevoDocumentoNombre");
+    const archivoInput = document.getElementById("nuevoDocumentoArchivo");
+    const abrirBtn = document.getElementById("btnAbrirFile");
+    const progressContainer = document.getElementById("progress-container-nuevo");
+    const progressBar = document.getElementById("progress-bar-nuevo");
+
+    if (nombreInput && archivoInput && abrirBtn && window.URL_CREAR_DOCUMENTO_PERSONALIZADO) {
+        abrirBtn.addEventListener("click", function () {
+            if (!nombreInput.value.trim()) {
+                alert("Por favor, escriba un nombre antes de adjuntar un archivo.");
+                return;
+            }
+            archivoInput.click();
+        });
+
+        archivoInput.addEventListener("change", function () {
+            if (!archivoInput.files.length) return;
+
+            const formData = new FormData();
+            formData.append("nombre", nombreInput.value.trim());
+            formData.append("archivo", archivoInput.files[0]);
+
+            progressContainer.style.display = "block";
+            progressBar.style.width = "0%";
+            progressBar.textContent = "0%";
+
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", window.URL_CREAR_DOCUMENTO_PERSONALIZADO, true);
+            xhr.setRequestHeader("X-CSRFToken", CSRF_TOKEN);
+
+            xhr.upload.addEventListener("progress", function (e) {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + "%";
+                    progressBar.textContent = percent + "%";
+                }
+            });
+
+            xhr.onload = function () {
+                const hideProgress = () => {
+                    progressContainer.style.display = "none";
+                };
+
+                let data;
+
+                try {
+                    data = JSON.parse(xhr.responseText);
+                    console.log("Respuesta servidor:", data);
+                } catch (error) {
+                    console.error("Respuesta inesperada:", xhr.responseText);
+                    alert("Error inesperado en la respuesta del servidor.");
+                    hideProgress();
+                    return;
+                }
+
+                const isSuccessful = xhr.status >= 200 && xhr.status < 300 && data && data.success;
+
+                if (isSuccessful) {
+                    const tbody = document.getElementById("tablaDocumentosBody");
+                    const placeholderRow = document.getElementById("fila-agregar-documento");
+
+                    if (tbody && placeholderRow && data.html) {
+                        placeholderRow.insertAdjacentHTML("beforebegin", data.html);
+                    }
+
+                    nombreInput.value = "";
+                    archivoInput.value = "";
+
+                    if (progressBar) {
+                        progressBar.style.width = "100%";
+                        progressBar.textContent = "100%";
+                    }
+
+                    hideProgress();
+                    return;
+                }
+
+                alert((data && data.error) || "No se pudo cargar el documento.");
+                hideProgress();
+            };
+
+            xhr.onerror = function () {
+                alert("Error de red al subir el documento.");
+                progressContainer.style.display = "none";
+            };
+
+            xhr.send(formData);
+        });
+    }
 });
 
+
 function subirArchivo(admisionId, documentoId) {
-    let inputFile = document.getElementById(`file-${documentoId}`);
-    let file = inputFile.files[0];
+    const inputFile = document.getElementById(`file-${documentoId}`);
+    const file = inputFile ? inputFile.files[0] : null;
 
     if (!file) {
         alert("Por favor, selecciona un archivo antes de adjuntar.");
         return;
     }
 
-    // Crear un nuevo contenedor para la barra de progreso
-    let progressContainer = document.getElementById(`progress-container-${documentoId}`);
-    let progressBar = document.getElementById(`progress-bar-${documentoId}`);
+    const progressContainer = document.getElementById(`progress-container-${documentoId}`);
+    const progressBar = document.getElementById(`progress-bar-${documentoId}`);
 
-    // Mostrar la barra de progreso
-    progressContainer.style.display = "block";
-    progressBar.style.width = "0%";
-    progressBar.innerText = "0%";
+    if (progressContainer && progressBar) {
+        progressContainer.style.display = "block";
+        progressBar.style.width = "0%";
+        progressBar.innerText = "0%";
+    }
 
-    let formData = new FormData();
+    const formData = new FormData();
     formData.append("archivo", file);
 
-    let url = `/admision/${admisionId}/documentacion/${documentoId}/subir/`;
-
-    let xhr = new XMLHttpRequest();
+    const url = `/admision/${admisionId}/documentacion/${documentoId}/subir/`;
+    const xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
 
-    // Enviar la solicitud con el progreso
     xhr.upload.onprogress = function (event) {
-        if (event.lengthComputable) {
-            let percent = (event.loaded / event.total) * 100;
-            progressBar.style.width = percent + "%";
-            progressBar.innerText = Math.round(percent) + "%";
+        if (event.lengthComputable && progressBar) {
+            const percent = (event.loaded / event.total) * 100;
+            progressBar.style.width = `${percent}%`;
+            progressBar.innerText = `${Math.round(percent)}%`;
         }
     };
 
     xhr.onload = function () {
         if (xhr.status === 200) {
-            let data = JSON.parse(xhr.responseText);
-            if (data.success) {
-                const urlActualizarEstado = window.URL_ACTUALIZAR_ESTADO;
-                            
-                document.getElementById(`estado-${documentoId}`).innerHTML = `
-                    <select class="form-control"
-                        onchange="actualizarEstado(this)"
-                        data-admision-id="${admisionId}"
-                        data-documento-id="${documentoId}"
-                        data-url="${urlActualizarEstado}">
-                        <option value="validar" ${data.nuevo_estado === 'validar' ? 'selected' : ''}>A Validar</option>
-                        <option value="A Validar Abogado" ${data.nuevo_estado === 'A Validar Abogado' ? 'selected' : ''}>A Validar Abogado</option>
-                        <option value="Rectificar" ${data.nuevo_estado === 'Rectificar' ? 'selected' : ''}>Rectificar</option>
-                    </select>
-                `;
-
-                inputFile.disabled = true; 
-                let button = inputFile.nextElementSibling;
-                button.innerText = "Adjuntado";
-                button.disabled = true;
-
-                // Agregar botón de eliminar
-                let fila = document.getElementById(`fila-${documentoId}`);
-                // Verificá si ya existe el botón eliminar
-                let eliminarExistente = fila.querySelector(`button[data-eliminar-id="${documentoId}"]`);
-                
-                if (!eliminarExistente) {
-                    let eliminarBtn = document.createElement("button");
-                    eliminarBtn.className = "btn btn-sm btn-danger fw-bold px-3";
-                    eliminarBtn.innerText = "X";
-                    eliminarBtn.setAttribute("data-eliminar-id", documentoId);
-                    eliminarBtn.onclick = function () {
-                        confirmarEliminar(admisionId, documentoId);
-                    };
-                    fila.querySelector("td:last-child").appendChild(eliminarBtn);
+            const data = JSON.parse(xhr.responseText);
+            if (data.success && data.html && data.row_id) {
+                const existingRow = document.getElementById(`fila-${data.row_id}`);
+                if (existingRow) {
+                    existingRow.outerHTML = data.html;
                 }
-                // Ocultar la barra de progreso una vez completado
-                progressContainer.style.display = "none";
-            } else {
-                alert("Error al subir el archivo: " + data.error);
-                // Ocultar la barra de progreso si ocurre un error
-                progressContainer.style.display = "none";
+            } else if (!data.success) {
+                alert("Error al subir el archivo: " + (data.error || ""));
             }
         } else {
             alert("Error al subir el archivo");
-            // Ocultar la barra de progreso si ocurre un error
+        }
+
+        if (progressContainer) {
             progressContainer.style.display = "none";
         }
     };
 
-    xhr.setRequestHeader("X-CSRFToken", CSRF_TOKEN); 
+    xhr.onerror = function () {
+        alert("Error al subir el archivo");
+        if (progressContainer) {
+            progressContainer.style.display = "none";
+        }
+    };
+
+    xhr.setRequestHeader("X-CSRFToken", CSRF_TOKEN);
     xhr.send(formData);
 }
 
 let admisionIdEliminar;
-let documentoIdEliminar;
+let documentacionIdEliminar;
+let archivoIdEliminar;
 
-function confirmarEliminar(admisionId, documentoId) {
+function confirmarEliminar(admisionId, documentacionId, archivoId) {
     admisionIdEliminar = admisionId;
-    documentoIdEliminar = documentoId;
+    documentacionIdEliminar = documentacionId !== undefined && documentacionId !== null
+        ? documentacionId
+        : null;
+    archivoIdEliminar = archivoId !== undefined && archivoId !== null
+        ? archivoId
+        : null;
     $("#modalConfirmarEliminar").modal("show");
 }
 
-document.getElementById("btnConfirmarEliminar").addEventListener("click", function () {
-    eliminarArchivo(admisionIdEliminar, documentoIdEliminar);
-});
+const botonConfirmarEliminar = document.getElementById("btnConfirmarEliminar");
+if (botonConfirmarEliminar) {
+    botonConfirmarEliminar.addEventListener("click", function () {
+        eliminarArchivo(admisionIdEliminar);
+    });
+}
 
-function eliminarArchivo(admisionId, documentoId) {
-    let url = `/admision/${admisionId}/documentacion/${documentoId}/eliminar/`;
+function eliminarArchivo(admisionId) {
+    const rowId = documentacionIdEliminar !== null
+        ? String(documentacionIdEliminar)
+        : (archivoIdEliminar !== null ? `custom-${archivoIdEliminar}` : null);
+    const fila = rowId ? document.getElementById(`fila-${rowId}`) : null;
+    const esPersonalizado = fila && fila.dataset.personalizado === PERSONALIZED_FLAG;
+
+    let identifier = documentacionIdEliminar !== null ? documentacionIdEliminar : archivoIdEliminar;
+    if (identifier === null) {
+        return;
+    }
+
+    let url = `/admision/${admisionId}/documentacion/${identifier}/eliminar/`;
+    const params = new URLSearchParams();
+    if (archivoIdEliminar !== null) {
+        params.append("archivo_id", archivoIdEliminar);
+    }
+    if ([...params].length) {
+        url += `?${params.toString()}`;
+    }
+
+    const removeObservationRows = (...ids) => {
+        ids.filter(Boolean).forEach((id) => {
+            const obsRow = document.getElementById(`fila-obs-${id}`);
+            if (obsRow) {
+                obsRow.remove();
+            }
+        });
+    };
 
     fetch(url, {
         method: "DELETE",
@@ -120,26 +215,28 @@ function eliminarArchivo(admisionId, documentoId) {
             "X-CSRFToken": CSRF_TOKEN,
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            let fila = document.getElementById(`fila-${documentoId}`);
-            fila.innerHTML = `
-                <td class="ps-3">${data.nombre}</td>
-                <td class="px-3" id="estado-${documentoId}">Pendiente</td>
-                <td>
-                    <input type="file" id="file-${documentoId}" />
-                    <button class="btn btn-primary btn-sm" onclick="subirArchivo(${admisionId}, ${documentoId})">Adjuntar</button>
-                    <!-- Volver a agregar la barra de progreso -->
-                    <div class="progress mt-2" style="display:none; height: 3px;" id="progress-container-${documentoId}">
-                        <div class="progress-bar  progress-bar-striped" role="progressbar" id="progress-bar-${documentoId}" style="width: 0%;">0%</div>
-                    </div>
-                </td>
-            `;
-            $("#modalConfirmarEliminar").modal("hide");
-        } else {
-            alert("Error al eliminar el archivo: " + data.error);
-        }
-    })
-    .catch(error => console.error("Error al eliminar:", error));
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const targetRowId = data.row_id ? String(data.row_id) : rowId;
+                const archivoIdTexto = archivoIdEliminar !== null ? String(archivoIdEliminar) : null;
+                removeObservationRows(targetRowId, archivoIdTexto);
+
+                if (esPersonalizado) {
+                    if (fila) {
+                        fila.remove();
+                    }
+                } else if (fila) {
+                    if (data.html && data.row_id) {
+                        fila.outerHTML = data.html;
+                    } else {
+                        fila.remove();
+                    }
+                }
+                $("#modalConfirmarEliminar").modal("hide");
+            } else {
+                alert("Error al eliminar el archivo: " + (data.error || ""));
+            }
+        })
+        .catch(error => console.error("Error al eliminar:", error));
 }

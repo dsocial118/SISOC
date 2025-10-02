@@ -1,6 +1,6 @@
 {% load custom_filters %}
-{# Componente Delete Confirm #}
-{# Uso: {% include 'components/delete_confirm.html' with object_name=object title='Mi Título' warning_items=lista warning_message='Mensaje' cancel_url=url confirm_text='Eliminar' cancel_text='Cancelar' %} #}
+<!-- Componente Delete Confirm -->
+<!-- Uso: include 'components/delete_confirm.html' with object_name=object title='Mi Título' warning_items=lista warning_message='Mensaje' cancel_url=url confirm_text='Eliminar' cancel_text='Cancelar' -->
 <div class="error-page mt-5 px-3">
     <div class="error-content">
         <h3>
@@ -23,7 +23,7 @@
             </ul>
         {% endif %}
         <div class="text-left">
-            <form method="post">
+            <form method="post" action="{{ action|default:'' }}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger btn-sm">{{ confirm_text|default:"Eliminar" }}</button>
                 {% if cancel_url_with_id %}

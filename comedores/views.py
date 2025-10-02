@@ -37,6 +37,7 @@ from comedores.models import (
     Nomina,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.services.filter_config import get_filters_ui_config
 from duplas.dupla_service import DuplaService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from relevamientos.service import RelevamientoService
@@ -275,7 +276,7 @@ class ComedorListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Datos para componentes Cotton
+        # Datos para componentes reutilizables
         context.update(
             {
                 # Breadcrumb
@@ -286,7 +287,10 @@ class ComedorListView(ListView):
                 # Search bar
                 "reset_url": reverse("comedores"),
                 "add_url": reverse("comedor_crear"),
-                "comedores_filters_mode": True,
+                "filters_mode": True,
+                "filters_js": "custom/js/advanced_filters.js",
+                "filters_action": reverse("comedores"),
+                "filters_config": get_filters_ui_config(),
             }
         )
 
@@ -454,6 +458,7 @@ class ComedorDetailView(DetailView):
         return ComedorService.post_comedor_relevamiento(request, self.object)
 
 
+# TODO: Sacar de la vista de comedores
 class AsignarDuplaListView(ListView):
     model = Comedor
     template_name = "comedor/asignar_dupla_form.html"
