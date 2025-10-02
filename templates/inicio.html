@@ -1,0 +1,17 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/inicio.css' %}" />
+{% endblock %}
+{% block breadcrumb %}{% endblock %}
+{% block content %}
+    <div style="min-height: 70vh;
+                background-image: url('{% static 'custom/img/loginPresentacion.svg' %}');
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain">
+        <div class="card-body d-flex align-items-center justify-content-center">
+            <!-- El contenido de la imagen de fondo se mostrará aquí -->
+        </div>
+    </div>
+{% endblock %}

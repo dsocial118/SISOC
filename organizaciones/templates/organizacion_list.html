@@ -12,7 +12,7 @@
 {% block content %}
     {% url 'organizaciones_ajax' as ajax_url %}
     {% include 'components/search_bar.html' with titulo='Buscar Organizacion' placeholder='Buscar por nombre, CUIT, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='organizaciones' add_url='organizacion_crear' add_text='Agregar' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='organizaciones-tbody' query=query %}
-    <div class="row mt-5">
+    <div class="row mt-5 max-width-100">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
