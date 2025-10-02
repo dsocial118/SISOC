@@ -97,7 +97,9 @@
         <!-- Estilos adicionales por pagina-->
         {% block head %}{% endblock %}
         <!-- Bloque titulo -->
-        <title>SISOC - {% block title %}{% endblock %}</title>
+        <title>SISOC -
+            {% block title %}{% endblock %}
+        </title>
     </head>
     <body class="layout-fixed sidebar-expand-lg sidebar-mini bg-body-tertiary {% if request.user.profile.dark_mode %}dark-mode{% endif %}">
         {% include 'includes/header.html' %}
