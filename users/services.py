@@ -1,12 +1,6 @@
 import logging
-from django.contrib.auth.models import User, Group
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.http import JsonResponse
-from django.db.models import Count
-from django.shortcuts import get_object_or_404
-from users.models import Profile
-from django.urls import reverse, reverse_lazy
+from django.contrib.auth.models import User
+from django.urls import reverse
 from core.services.advanced_filters import AdvancedFilterEngine
 from users.users_filter_config import (
     FIELD_MAP as BENEFICIARIO_FILTER_MAP,
