@@ -11,15 +11,17 @@ FIELD_MAP: Dict[str, str] = {
 }
 
 FIELD_TYPES: Dict[str, str] = {
-    **{key: "text" for key in [
-        "username",
-        "email",
-        "first_name",
-        "last_name",
-        "rol",
-    ]},
-    **{key: "number" for key in [
-    ]},
+    **{
+        key: "text"
+        for key in [
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "rol",
+        ]
+    },
+    **{key: "number" for key in []},
 }
 
 TEXT_OPS = {"contains", "ncontains", "eq", "ne", "empty"}

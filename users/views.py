@@ -1,10 +1,11 @@
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
-from django.urls import reverse,reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .forms import CustomUserChangeForm, UserCreationForm
 from .services import UsuariosService
+
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
@@ -22,7 +23,7 @@ class UserListView(AdminRequiredMixin, ListView):
 
     def get_queryset(self):
         return UsuariosService.get_filtered_usuarios(self.request)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 

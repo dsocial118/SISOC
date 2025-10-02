@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from users.models import Profile
-from django.urls import reverse,reverse_lazy
+from django.urls import reverse, reverse_lazy
 from core.services.advanced_filters import AdvancedFilterEngine
 from users.users_filter_config import (
     FIELD_MAP as BENEFICIARIO_FILTER_MAP,
@@ -14,6 +14,7 @@ from users.users_filter_config import (
     TEXT_OPS as BENEFICIARIO_TEXT_OPS,
     NUM_OPS as BENEFICIARIO_NUM_OPS,
 )
+
 logger = logging.getLogger("django")
 
 BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -24,6 +25,8 @@ BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
         "number": BENEFICIARIO_NUM_OPS,
     },
 )
+
+
 class UsuariosService:
     @staticmethod
     def get_filtered_usuarios(request_or_get):
@@ -56,18 +59,18 @@ class UsuariosService:
                 {"name": "rol"},
             ],
             "table_actions": [
-           {
-                "label": "Editar",
-                "url_name": "usuario_editar",
-                "type": "primary",
-                "class": "editar",
-            },
-            {
-                "label": "Eliminar",
-                "url_name": "usuario_borrar",
-                "type": "danger",
-                "class": "eliminar",
-            },
+                {
+                    "label": "Editar",
+                    "url_name": "usuario_editar",
+                    "type": "primary",
+                    "class": "editar",
+                },
+                {
+                    "label": "Eliminar",
+                    "url_name": "usuario_borrar",
+                    "type": "danger",
+                    "class": "eliminar",
+                },
             ],
             "breadcrumb_items": [
                 {"text": "Usuarios", "url": reverse("usuarios")},
