@@ -2,6 +2,9 @@
   "profile": "django",
   "ignore": "H026,H029,H006,H023,T001,T003,H031,H030,T002,H008,H021,T032",
   "max-line-length": 200,
+  "max-attribute-length": 200,
   "indent": 4,
-  "close_void_tags": true
+  "close_void_tags": true,
+  "format_attribute_template_tags": false,
+  "preserve_blank_lines": true
 }

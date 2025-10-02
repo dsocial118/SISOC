@@ -1,0 +1,219 @@
+/* Footer personalizado */
+.app-wrapper .app-footer,
+footer.app-footer {
+    position: sticky;
+    width: 100%;
+    height: 110px !important;
+    background-color: #232d4f !important;
+    border-top: 15px solid #e7ba61 !important;
+    color: #ffffff !important;
+    margin-top: auto;
+    z-index: 3 !important;
+}
+
+.app-sidebar {
+    background-color: #232d4f !important;
+    position: fixed;
+    top: 72px !important;
+    overflow-y: auto;
+    z-index:3;
+}
+
+.app-sidebar .sidebar-wrapper {
+    overflow-y: auto;
+    height: 100%;
+}
+
+.app-sidebar::-webkit-scrollbar,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.app-sidebar::-webkit-scrollbar-track,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.app-sidebar::-webkit-scrollbar-thumb,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.app-sidebar:hover::-webkit-scrollbar-thumb,
+.app-sidebar .sidebar-wrapper:hover::-webkit-scrollbar-thumb {
+    background: #e7ba61;
+    opacity: 0.7;
+}
+
+.app-sidebar::-webkit-scrollbar-thumb:hover,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #d4a856 !important;
+    opacity: 1 !important;
+}
+
+.app-sidebar::-webkit-scrollbar-corner,
+.app-sidebar .sidebar-wrapper::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+.app-main {
+    margin-top: 96px;
+    min-height: calc(100vh - 182px); 
+    margin-left: 300px;
+}
+
+.main-header {
+    padding: 0.5rem 1rem;
+    z-index: 4;
+}
+
+.main-header .nav-links {
+    display: flex;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+}
+
+.main-header .brand-image {
+    max-height: 32px;
+}
+
+.main-header .nav-link.nav-link-rounded {
+    background-color: #EDEDED;
+    border-radius: 20px;
+    width: 40px;
+    height: 40px;
+    display: block;
+}
+
+.main-header .nav-link.nav-link-rounded img {
+    height: 24px;
+    width: 24px;
+    margin: 8px;
+}
+
+footer {
+    color: #fff;
+    font-size: 0.8rem;
+    margin-top: 2rem;
+        font-family: 'Montserrat', sans-serif;
+}
+
+header.main-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #232d4f !important;
+    border-bottom: 5px solid #e7ba61 !important;
+    color: #ffffff !important;
+}
+
+
+@media (min-width: 992px) {
+    .sidebar-expand-lg.layout-fixed .app-sidebar {
+        position: fixed;
+        top: 76px !important;
+    }
+
+    .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
+        height: calc(100vh - 180px);
+        overflow-x: hidden !important;
+    }
+
+    .nav-item {
+        overflow-x: hidden !important;
+    }
+
+
+}
+
+.sidebar-wrapper .sidebar-menu > .nav-item > .nav-link.active:not(:hover) {
+    color: #e7ba61;
+}
+
+
+.nav-main-item>a {
+    border-top: 1px solid var(--lte-sidebar-color);
+    padding: 8px 24px;
+}
+
+.nav-main-item.menu-open>a {
+    border-top: none;
+    border-bottom: none;
+}
+
+ul > .nav-main-item:first-child>a {
+    border-top: none;
+}
+
+.nav-main-item:last-child {
+    border-bottom: 1px solid var(--lte-sidebar-color);
+}
+
+.nav-main-item.menu-open::before {
+    content: "";
+    position: absolute;
+    border-left: 12px solid #e7ba61;
+    height: 60px;
+    width: 12px;
+}
+
+.nav-item.menu-open > .nav-link {
+    color: #e7ba61 !important;
+}
+
+.nav-item {
+    min-height: 60px;
+}
+
+.nav-item .nav-link {
+    height: 60px;
+}
+
+.nav-item.menu-open > .nav-link img {
+    filter: invert(67%) sepia(54%) saturate(559%) hue-rotate(340deg) brightness(230%) contrast(50%);
+}
+
+.sidebar-menu .nav-link {
+    border-radius: 0px;
+}
+
+.sidebar-menu .nav-item > .nav-link {
+    margin-bottom: 0;
+}
+
+ul:has(.nav-main-item) {
+    margin-left: -16px;
+    margin-right: -16px;
+}
+
+aside .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+}
+
+aside .nav-link i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem; 
+}
+
+aside .nav-link p {
+  margin: 0; 
+  line-height: 1;
+}
+
+.sidebar-wrapper div:nth-child(2) {
+    overflow-x: hidden !important;
+}
+
+.max-width-100 {
+    max-width: 100%;
+}

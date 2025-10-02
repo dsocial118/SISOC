@@ -134,6 +134,7 @@ FILTER_FIELDS = [
 
 DEFAULT_FIELD = "nombre"
 
+
 def get_filters_ui_config() -> Dict[str, Any]:
     """Configuración serializable para la UI de filtros avanzados."""
 

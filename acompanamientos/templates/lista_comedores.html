@@ -16,7 +16,7 @@
             {% endwith %}
         {% endwith %}
     {% endwith %}
-    <div class="row mt-5">
+    <div class="row mt-5 max-width-100">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
@@ -49,13 +49,13 @@
                     <div id="pagination-container">
                         {% if is_paginated %}
                             {% include 'components/pagination.html' %}
-                            {% endif %}
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
-    {% endblock %}
-    {% block customJS %}
-        <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
-    {% endblock %}
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
+{% endblock %}
