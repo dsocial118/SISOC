@@ -1,20 +1,16 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
 {% load crispy_forms_tags %}
-;
 {% load static custom_filters %}
 ;
 {% block title %}Expediente: {{ admision.num_expediente }}{% endblock %}
 ;
-{% block
-    titulo-pagina %}
+{% block titulo-pagina %}
     {{ admision.num_expediente }} -
     {% if admision.enviada_a_archivo %}
         <span class="fs-5 bg-danger text-white">Rechazado: {{ admision.get_rechazo_juridicos_motivo_display }} / Enviado a Archivo</span>
     {% else %}
-        {{ admision.estado_legales|
-        default_if_none:"Estado a definir" }}
+        {{ admision.estado_legales|default_if_none:"Estado a definir" }}
     {% endif %}
 {% endblock %}
 ;
@@ -34,8 +30,7 @@
                class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            {% if admision.estado_legales == "Rectificado" or admision.estado_legales ==
-                None %}
+            {% if admision.estado_legales == "Rectificado" or admision.estado_legales == None %}
                 {% if not admision.intervencion_juridicos and formulario_proyecto.numero_if and formulario_reso.numero_if %}
                     <button type="button"
                             class="btn btn-primary mr-1"
@@ -48,15 +43,13 @@
                             data-bs-toggle="modal"
                             data-bs-target="#modalLegalesNumIF">Agregar Número de expediente</button>
                 {% endif %}
-                {% if not formulario_proyecto_completo and admision.legales_num_if
-                    %}
+                {% if not formulario_proyecto_completo and admision.legales_num_if %}
                     <button type="button"
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
                             data-bs-target="#modalFormConvenio">Formulario Proyecto de Convenio</button>
                 {% endif %}
-                {% if not formulario_proyecto.numero_if and
-                    formulario_proyecto_completo and admision.legales_num_if %}
+                {% if not formulario_proyecto.numero_if and formulario_proyecto_completo and admision.legales_num_if %}
                     <button type="button"
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
@@ -68,15 +61,13 @@
                             data-bs-toggle="modal"
                             data-bs-target="#modalFormReso">Formulario Proyecto Disposición</button>
                 {% endif %}
-                {% if not formulario_reso.numero_if and
-                    formulario_reso_completo and admision.legales_num_if %}
+                {% if not formulario_reso.numero_if and formulario_reso_completo and admision.legales_num_if %}
                     <button type="button"
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
                             data-bs-target="#modalDispoNumIF">IF Proyecto Disposición</button>
                 {% endif %}
-                {% if not formulario_proyecto_completo and not
-                    formulario_reso_completo and not admision.legales_num_if %}
+                {% if not formulario_proyecto_completo and not formulario_reso_completo and not admision.legales_num_if %}
                     <button type="button"
                             class="btn btn-warning mr-1"
                             data-bs-toggle="modal"
@@ -126,13 +117,13 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Estado expediente:
-                                <span class="fw-bold">{{ admision.estado_legales| default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.estado_legales|default_if_none:"-" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Número de expediente:
-                                <span class="fw-bold">{{ admision.legales_num_if |default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.legales_num_if|default_if_none:"-" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
@@ -142,9 +133,11 @@
                                     <a href="{{ formulario_reso.archivo.url }}" target="_blank">
                                         <i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i>
                                     </a>
-                                    <a href="{{ formulario_reso.archivo_docx.url }}" target="_blank">
-                                        <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
-                                    </a>
+                                    {% if formulario_reso.archivo_docx %}
+                                        <a href="{{ formulario_reso.archivo_docx.url }}" target="_blank">
+                                            <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                    {% endif %}
                                     {% if formulario_reso.numero_if %}
                                         <br />
                                         {{ formulario_reso.numero_if }}
@@ -161,12 +154,16 @@
                             <div class="comment-text">
                                 Formulario Proyecto de Convenio:
                                 {% if formulario_proyecto_completo %}
-                                    <a href="{{ formulario_proyecto.archivo.url }}" target="_blank">
-                                        <i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i>
-                                    </a>
-                                    <a href="{{ formulario_proyecto.archivo_docx.url }}" target="_blank">
-                                        <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
-                                    </a>
+                                    {% if formulario_proyecto.archivo %}
+                                        <a href="{{ formulario_proyecto.archivo.url }}" target="_blank">
+                                            <i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if formulario_proyecto.archivo_docx %}
+                                        <a href="{{ formulario_proyecto.archivo_docx.url }}" target="_blank">
+                                            <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                    {% endif %}
                                     {% if formulario_proyecto.numero_if %}
                                         <br />
                                         {{ formulario_proyecto.numero_if }}
@@ -254,25 +251,25 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Tipo Convenio:
-                                <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.tipo_convenio.nombre|default_if_none:"-" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Estado:
-                                <span class="fw-bold">{{ admision.estado.nombre| default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.estado.nombre|default_if_none:"-" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Fecha:
-                                <span class="fw-bold">{{ admision.creado |date:'d/m/Y' }}</span>
+                                <span class="fw-bold">{{ admision.creado|date:'d/m/Y' }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Número de Expediente:
-                                <span class="fw-bold">{{ admision.num_expediente |default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.num_expediente|default_if_none:"-" }}</span>
                             </div>
                         </li>
                         {% if pdf_url %}
@@ -288,7 +285,7 @@
                                 <div class="comment-text">
                                     Informes Complementarios:
                                     {% for i in informes_complementarios %}
-                                        <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado |date:'d/m/Y' }}</a></span>
+                                        <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado|date:'d/m/Y' }}</a></span>
                                         <br />
                                     {% endfor %}
                                 </div>
@@ -314,36 +311,31 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Tipo Comedor:
-                                <span class="fw-bold">{{ admision.comedor.tipocomedor| default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.tipocomedor|default_if_none:"-" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Programa:
-                                <span class="fw-bold">{{ admision.comedor.programa| default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.programa|default_if_none:"-" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Organización:
-                                <span class="fw-bold">{{ admision.comedor.organizacion | default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.organizacion|default_if_none:"-" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Provincia:
-                                <span class="fw-bold">{{ admision.comedor.provincia | default_if_none:"-" }} - {{
-                                    admision.comedor.municipio | default_if_none:"-" }} - {{
-                                admision.comedor.localidad | default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.provincia|default_if_none:"-" }} - {{ admision.comedor.municipio|default_if_none:"-" }} - {{ admision.comedor.localidad|default_if_none:"-" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Calle:
-                                <span class="fw-bold">{{ admision.comedor.calle | default_if_none:"-" }} {{
-                                    admision.comedor.numero | default_if_none:"-" }} - Piso: {{
-                                    admision.comedor.piso | default_if_none:"-" }} {{
-                                admision.comedor.departamento | default_if_none:"" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.calle|default_if_none:"-" }} {{ admision.comedor.numero|default_if_none:"-" }} - Piso: {{ admision.comedor.piso|default_if_none:"-" }} {{ admision.comedor.departamento|default_if_none:"" }}</span>
                             </div>
                         </li>
                     </ul>
@@ -410,12 +402,10 @@
                                         <td class="ps-3">
                                             {% if cambio.valor_nuevo == "True" %}
                                                 Si
-                                            {% elif
-                                                cambio.valor_nuevo == "False" %}
+                                            {% elif cambio.valor_nuevo == "False" %}
                                                 No
                                             {% else %}
-                                                {{
-                                                cambio.valor_nuevo| default_if_none:"-" }}
+                                                {{ cambio.valor_nuevo|default_if_none:"-" }}
                                             {% endif %}
                                         </td>
                                         <td class="ps-3">{{ cambio.usuario.username }}</td>
@@ -511,10 +501,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             {{ form.observaciones.label_tag }} {{ form.observaciones }}
-                            {% if
-                                form.observaciones.errors %}
-                                <div class="text-danger">{{ form.observaciones.errors }}</div>
-                            {% endif %}
+                            {% if form.observaciones.errors %}<div class="text-danger">{{ form.observaciones.errors }}</div>{% endif %}
                         </div>
                     </div>
                     <div class="modal-footer">

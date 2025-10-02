@@ -98,45 +98,45 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
             </div>
         </form>
     {% endif %}
-        <div class="row mt-3">
-            <div class="col-12 d-flex flex-wrap justify-content-center gap-2 search-actions">
-                {% if reset_url_full %}
-                    <a href="{{ reset_url_full }}" class="btn btn-secondary btn-lg">Resetear</a>
-                {% elif reset_url|is_url %}
-                    <a href="{{ reset_url }}" class="btn btn-secondary btn-lg">Resetear</a>
+    <div class="row mt-3">
+        <div class="col-12 d-flex flex-wrap justify-content-center gap-2 search-actions">
+            {% if reset_url_full %}
+                <a href="{{ reset_url_full }}" class="btn btn-secondary btn-lg">Resetear</a>
+            {% elif reset_url|is_url %}
+                <a href="{{ reset_url }}" class="btn btn-secondary btn-lg">Resetear</a>
+            {% else %}
+                <a href="{% url reset_url %}" class="btn btn-secondary btn-lg">Resetear</a>
+            {% endif %}
+            {% if add_url and show_add_button|default:True %}
+                {% if add_url_full %}
+                    <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
+                {% elif add_url|is_url %}
+                    <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% else %}
-                    <a href="{% url reset_url %}" class="btn btn-secondary btn-lg">Resetear</a>
+                    <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% endif %}
-                {% if add_url and show_add_button|default:True %}
-                    {% if add_url_full %}
-                        <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
-                    {% elif add_url|is_url %}
-                        <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
-                    {% else %}
-                        <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
-                    {% endif %}
-                {% endif %}
-                <!-- Botones adicionales personalizados -->
-                {% if additional_buttons %}
-                    {% for button in additional_buttons %}
-                        <a href="{{ button.url }}"
-                           class="{{ button.class|default:'btn btn-primary btn-lg' }}"
-                           {% if button.id %}id="{{ button.id }}"{% endif %}
-                           {% if button.title %}title="{{ button.title }}"{% endif %}>{{ button.label }}</a>
-                    {% endfor %}
-                {% endif %}
-                {% if not ajax_search_mode %}
-                    {% with form_id=filters_mode|yesno:"filters-form,simple-search-form" %}
-                        <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
-                    {% endwith %}
-                {% endif %}
-            </div>
+            {% endif %}
+            <!-- Botones adicionales personalizados -->
+            {% if additional_buttons %}
+                {% for button in additional_buttons %}
+                    <a href="{{ button.url }}"
+                       class="{{ button.class|default:'btn btn-primary btn-lg' }}"
+                       {% if button.id %}id="{{ button.id }}"{% endif %}
+                       {% if button.title %}title="{{ button.title }}"{% endif %}>{{ button.label }}</a>
+                {% endfor %}
+            {% endif %}
+            {% if not ajax_search_mode %}
+                {% with form_id=filters_mode|yesno:"filters-form,simple-search-form" %}
+                    <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
+                {% endwith %}
+            {% endif %}
         </div>
     </div>
-    {% if filters_mode %}
-        <script src="{% static filters_js|default:'custom/js/advanced_filters.js' %}"></script>
-    {% elif ajax_search_mode %}
-        <script>
+</div>
+{% if filters_mode %}
+    <script src="{% static filters_js|default:'custom/js/advanced_filters.js' %}"></script>
+{% elif ajax_search_mode %}
+    <script>
   document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("ajax-search-input");
     const tbody = document.getElementById(
@@ -299,6 +299,6 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
       setupPaginationHandlers();
     }
   });
-        </script>
-    {% endif %}
+    </script>
+{% endif %}
 {% endwith %}
