@@ -18,7 +18,7 @@ def send_relevamiento_to_gestionar(sender, instance, created, **kwargs):
 def update_comedor_geolocalizacion(sender, instance, created, **kwargs):
     """
     Actualiza la geolocalización del comedor cuando el relevamiento está finalizado
-    y tiene datos de excepción con latitud/longitud.
+    y tiene datos de excepción con latitud/longitud. n
     """
     if instance.estado in ["Finalizado", "Finalizado/Excepciones"]:
         if instance.excepcion and instance.comedor:
