@@ -9,6 +9,14 @@ from .views import (
 
 urlpatterns = [
     path("inicio/", login_required(inicio_view), name="inicio"),
-    path("ajax/load-municipios/", login_required(load_municipios), name="ajax_load_municipios"),
-    path("ajax/load-localidades/", login_required(load_localidad), name="ajax_load_localidades"),
+    path(
+        "ajax/load-municipios/",
+        login_required(load_municipios),
+        name="ajax_load_municipios",
+    ),
+    path(
+        "ajax/load-localidades/",
+        login_required(load_localidad),
+        name="ajax_load_localidades",
+    ),
 ]
