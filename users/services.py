@@ -1,5 +1,6 @@
 import logging
 from django.contrib.auth.models import User
+from django.db.models import F
 from django.urls import reverse
 from core.services.advanced_filters import AdvancedFilterEngine
 from users.users_filter_config import (
@@ -7,6 +8,7 @@ from users.users_filter_config import (
     FIELD_TYPES as BENEFICIARIO_FIELD_TYPES,
     TEXT_OPS as BENEFICIARIO_TEXT_OPS,
     NUM_OPS as BENEFICIARIO_NUM_OPS,
+    get_filters_ui_config,
 )
 
 logger = logging.getLogger("django")
@@ -32,7 +34,11 @@ class UsuariosService:
     def get_usuarios_queryset():
         """Query optimizada para usuarios"""
         # Profile tiene FK a User y a Provincia; seleccionar esas relaciones evita consultas N+1
-        return User.objects.select_related("profile").order_by("-id")
+        return (
+            User.objects.select_related("profile")
+            .annotate(rol=F("profile__rol"))
+            .order_by("-id")
+        )
 
     @staticmethod
     def get_usuarios_list_context():
@@ -73,7 +79,7 @@ class UsuariosService:
             "reset_url": reverse("usuarios"),
             "add_url": reverse("usuario_crear"),
             "filters_mode": True,
-            "filters_js": "custom/js/usuarios_search_bar.js",
+            "filters_config": get_filters_ui_config(),
             "filters_action": reverse("usuarios"),
             "show_add_button": True,
         }
