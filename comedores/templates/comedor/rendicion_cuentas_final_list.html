@@ -5,8 +5,93 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    {% include 'components/search_bar.html' with titulo="Buscar Documento" placeholder="Buscar por comedor o tipo de documento" help_text="Ingresar comedor o tipo de documento." additional_buttons=additional_search_buttons query=query %}
-    {% include 'components/rendicion_cuentas_table.html' with documentos=documentos %}
+    {% url 'documentos_rendicion_cuentas_final_ajax' as ajax_url %}
+    <!-- Variables para evitar problemas de formateo -->
+    {% with titulo_search='Buscar Documento' %}
+        {% with placeholder_text='Buscar por comedor o tipo de documento' %}
+            {% with help_text='Ingresar comedor o tipo de documento.' %}
+                {% with reset_url_name='rendicion_cuentas_final_listar' %}
+                    {% with tbody_id='rendicion-cuentas-table-body' %}
+                        {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name additional_buttons=additional_search_buttons query=query ajax_search_mode=True ajax_url=ajax_url target_tbody_id=tbody_id %}
+                    {% endwith %}
+                {% endwith %}
+            {% endwith %}
+        {% endwith %}
+    {% endwith %}
+    <!-- Rendición de Cuentas Table with AJAX -->
+    <div class="row mt-5 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Comedor</th>
+                                <th>Fecha de modificacion</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                                <th>Validar</th>
+                                <th>Subsanar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rendicion-cuentas-table-body">
+                            {% for documento in documentos %}
+                                <tr class="documento-row estado-{{ documento.estado.nombre|lower|slugify }}">
+                                    <td>{{ documento.tipo.nombre }}</td>
+                                    <td>{{ documento.rendicion_final.comedor.nombre }}</td>
+                                    <td>{{ documento.fecha_modificacion|date:"d/m/Y H:i"|default:"-" }}</td>
+                                    <td>{{ documento.estado.nombre }}</td>
+                                    <td>
+                                        {% if documento.documento %}
+                                            <a href="{{ documento.documento.url }}"
+                                               target="_blank"
+                                               class="btn btn-primary btn-sm">Visualizar</a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-secondary" disabled>Visualizar</button>
+                                        {% endif %}
+                                    </td>
+                                    {% if documento.estado.nombre == "En análisis" %}
+                                        <td>
+                                            <form method="post"
+                                                  action="{% url 'validar_documento_rendicion_cuentas_final' documento.id %}"
+                                                  onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-warning btn-sm">Validar</button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <button type="button"
+                                                    class="btn btn-danger btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalSubsanar"
+                                                    data-documento-id="{{ documento.id }}">Subsanar</button>
+                                        </td>
+                                    {% else %}
+                                        <td>
+                                            <button class="btn btn-sm btn-secondary" disabled>Validar</button>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-secondary" disabled>Subsanar</button>
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No se encontraron documentos.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <div id="pagination-container">
+                        {% if is_paginated %}
+                            {% include 'components/pagination.html' %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade"
          id="modalSubsanar"
          tabindex="-1"

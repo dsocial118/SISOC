@@ -37,6 +37,7 @@ from comedores.models import (
     Nomina,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.services.filter_config import get_filters_ui_config
 from duplas.dupla_service import DuplaService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from relevamientos.service import RelevamientoService
@@ -159,69 +160,69 @@ class NominaCreateView(CreateView):
         return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
     def get_context_data(self, **kwargs):
-        if hasattr(self, "object") and self.object:
-            return super().get_context_data(**kwargs)
+        from ciudadanos.models import EstadoIntervencion
 
-        # Caso sin self.object
-        context = {}
-
+        context = super().get_context_data(**kwargs)
         context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
 
-        query = self.request.GET.get("query")
+        query = self.request.GET.get("query", "")
         ciudadanos = (
             ComedorService.buscar_ciudadanos_por_documento(query) if query else []
         )
-        no_resultados = bool(query) and not ciudadanos
 
         context.update(
             {
                 "ciudadanos": ciudadanos,
-                "no_resultados": no_resultados,
+                "no_resultados": bool(query) and not ciudadanos,
+                "form_ciudadano": kwargs.get("form_ciudadano")
+                or CiudadanoFormParaNomina(),
+                "form_nomina_extra": kwargs.get("form_nomina_extra")
+                or NominaExtraForm(),
+                "estados": EstadoIntervencion.objects.all(),
             }
         )
-
-        context["form"] = self.get_form()
-        context["form_ciudadano"] = kwargs.get(
-            "form_ciudadano"
-        ) or CiudadanoFormParaNomina(self.request.POST or None)
-        context["form_nomina_extra"] = kwargs.get(
-            "form_nomina_extra"
-        ) or NominaExtraForm(self.request.POST or None)
-
         return context
 
     def post(self, request, *args, **kwargs):
-        if "ciudadano" in request.POST:
-            # Agregar ciudadano existente a nómina
-            form = NominaForm(request.POST)
-            if form.is_valid():
-                ciudadano_id = form.cleaned_data["ciudadano"].id
-                estado_id = form.cleaned_data["estado"].id
-                observaciones = form.cleaned_data.get("observaciones")
+        ciudadano_id = request.POST.get("ciudadano_id")
 
-                ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-                    comedor_id=self.kwargs["pk"],
-                    ciudadano_id=ciudadano_id,
-                    user=request.user,
-                    estado_id=estado_id,
-                    observaciones=observaciones,
-                )
+        if ciudadano_id:
+            # Agregar ciudadano existente
+            form_nomina_extra = NominaExtraForm(request.POST)
 
-                if ok:
-                    messages.success(request, msg)
-                else:
-                    messages.warning(request, msg)
-                return redirect(self.get_success_url())
-            else:
+            if not form_nomina_extra.is_valid():
                 messages.error(
-                    request, "Datos inválidos para agregar ciudadano a la nómina."
+                    request,
+                    "Datos inválidos para agregar ciudadano a la nómina.",
                 )
-                context = self.get_context_data(form=form)
+                context = self.get_context_data(
+                    form_nomina_extra=form_nomina_extra,
+                )
                 return self.render_to_response(context)
+
+            estado = form_nomina_extra.cleaned_data.get("estado")
+            estado_id = estado.id if estado else None
+            observaciones = form_nomina_extra.cleaned_data.get("observaciones", "")
+
+            ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+                comedor_id=self.kwargs["pk"],
+                ciudadano_id=ciudadano_id,
+                user=request.user,
+                estado_id=estado_id,
+                observaciones=observaciones,
+            )
+
+            if ok:
+                messages.success(request, msg)
+            else:
+                messages.warning(request, msg)
+
+            return redirect(self.get_success_url())
         else:
-            # Crear ciudadano nuevo y agregar a nómina
+            # Crear ciudadano nuevo
             form_ciudadano = CiudadanoFormParaNomina(request.POST)
             form_nomina_extra = NominaExtraForm(request.POST)
+
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
                 estado = form_nomina_extra.cleaned_data.get("estado")
                 estado_id = estado.id if estado else None
@@ -234,6 +235,7 @@ class NominaCreateView(CreateView):
                     estado_id=estado_id,
                     observaciones=observaciones,
                 )
+
                 if ok:
                     messages.success(request, msg)
                     return redirect(self.get_success_url())
@@ -242,7 +244,6 @@ class NominaCreateView(CreateView):
             else:
                 messages.warning(request, "Errores en el formulario de ciudadano.")
 
-            # Si no válido o fallo, volvemos a mostrar con errores el form_ciudadano
             context = self.get_context_data(
                 form_ciudadano=form_ciudadano,
                 form_nomina_extra=form_nomina_extra,
@@ -275,7 +276,7 @@ class ComedorListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Datos para componentes Cotton
+        # Datos para componentes reutilizables
         context.update(
             {
                 # Breadcrumb
@@ -286,7 +287,10 @@ class ComedorListView(ListView):
                 # Search bar
                 "reset_url": reverse("comedores"),
                 "add_url": reverse("comedor_crear"),
-                "comedores_filters_mode": True,
+                "filters_mode": True,
+                "filters_js": "custom/js/advanced_filters.js",
+                "filters_action": reverse("comedores"),
+                "filters_config": get_filters_ui_config(),
             }
         )
 
@@ -454,6 +458,7 @@ class ComedorDetailView(DetailView):
         return ComedorService.post_comedor_relevamiento(request, self.object)
 
 
+# TODO: Sacar de la vista de comedores
 class AsignarDuplaListView(ListView):
     model = Comedor
     template_name = "comedor/asignar_dupla_form.html"

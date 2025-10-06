@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("organizaciones", "0001_initial"),
         ("ciudadanos", "0001_initial"),
-        ("configuraciones", "0001_initial"),
+        ("core", "0001_initial"),
         ("duplas", "0001_initial"),
     ]
 
@@ -245,7 +245,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        to="configuraciones.localidad",
+                        to="core.localidad",
                     ),
                 ),
                 (
@@ -254,7 +254,7 @@ class Migration(migrations.Migration):
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        to="configuraciones.municipio",
+                        to="core.municipio",
                     ),
                 ),
                 (
@@ -435,7 +435,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
-                to="configuraciones.provincia",
+                to="core.provincia",
             ),
         ),
         migrations.AddField(
@@ -535,7 +535,7 @@ class Migration(migrations.Migration):
                         default=1,
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,
-                        to="configuraciones.sexo",
+                        to="core.sexo",
                     ),
                 ),
             ],

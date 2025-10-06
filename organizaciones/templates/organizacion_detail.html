@@ -46,27 +46,14 @@
     {% if avales %}
         <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
             <div class="col-auto">
-                <h4 style="display: inline;">Aval 1</h4>
+                <h4 style="display: inline;">Aval</h4>
             </div>
             <div class="col-auto">
-                <a href="{% url 'aval1_crear' organizacion.id %}"
+                <a href="{% url 'aval_crear' organizacion.id %}"
                    class="btn btn-primary mr-1">Agregar Aval</a>
             </div>
         </div>
-        {% include 'components/data_table.html' with headers=table_headers_avales items=avales1 fields=table_fields_avales actions=actions_avales1 show_actions=show_actions empty_message='No hay avales registrados.' %}
-        {% if is_paginated %}
-            {% include 'components/pagination.html' %}
-        {% endif %}
-        <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
-            <div class="col-auto">
-                <h4 style="display: inline;">Aval 2</h4>
-            </div>
-            <div class="col-auto">
-                <a href="{% url 'aval2_crear' organizacion.id %}"
-                   class="btn btn-primary mr-1">Agregar Aval</a>
-            </div>
-        </div>
-        {% include 'components/data_table.html' with headers=table_headers_avales items=avales2 fields=table_fields_avales actions=actions_avales2 show_actions=show_actions empty_message='No hay avales registrados.' %}
+        {% include 'components/data_table.html' with headers=table_headers_avales items=avales_data fields=table_fields_avales actions=actions_avales show_actions=show_actions empty_message='No hay avales registrados.' %}
         {% if is_paginated %}
             {% include 'components/pagination.html' %}
         {% endif %}

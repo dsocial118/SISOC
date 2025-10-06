@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.admindocs",
     # Libs
-    "django_cotton",
     "crispy_forms",
     "crispy_bootstrap5",
     "django_extensions",
@@ -62,11 +61,9 @@ INSTALLED_APPS = [
     # Apps propias
     "users",
     "core",
-    "configuraciones",
     "dashboard",
     "comedores",
     "organizaciones",
-    "provincias",
     "cdi",
     "ciudadanos",
     "duplas",
@@ -128,7 +125,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Autenticación / Redirecciones
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "dashboard"
+LOGIN_REDIRECT_URL = "inicio"
 LOGOUT_REDIRECT_URL = "login"
 ACCOUNT_FORMS = {"login": "users.forms.UserLoginForm"}
 
@@ -282,15 +279,19 @@ LOGGING = {
             "formatter": "json_data",
         },
     },
+    "root": {
+        "handlers": [
+            "info_file",
+            "error_file",
+            "warning_file",
+            "critical_file",
+            "data_file",
+        ],
+        "level": "DEBUG" if DEBUG else "INFO",
+    },
     "loggers": {
         "django": {
-            "handlers": [
-                "info_file",
-                "error_file",
-                "warning_file",
-                "critical_file",
-                "data_file",
-            ],
+            "handlers": [],
             "level": "DEBUG" if DEBUG else "INFO",
             "propagate": True,
         },

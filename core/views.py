@@ -18,13 +18,18 @@ def load_municipios(request):
 
 def load_localidad(request):
     municipio_id = request.GET.get("municipio_id")
-    departamento_id = request.GET.get("departamento_id")
 
     if municipio_id:
         localidades = Localidad.objects.filter(municipio=municipio_id)
     else:
-        localidades = Localidad.objects.filter(departamento=departamento_id)
+        localidades = Localidad.objects.none()
+
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
+
+
+def inicio_view(request):
+    """Vista para la página de inicio del sistema"""
+    return render(request, "inicio.html")
 
 
 def error_500_view(request):

@@ -5,6 +5,7 @@ from admisiones.views.web_views import (
     eliminar_archivo_admision,
     actualizar_estado_archivo,
     actualizar_numero_gde_archivo,
+    crear_documento_personalizado,
     AdmisionesTecnicosListView,
     AdmisionesTecnicosCreateView,
     AdmisionesTecnicosUpdateView,
@@ -16,8 +17,9 @@ from admisiones.views.web_views import (
     AdmisionesLegalesDetailView,
     AnexoCreateView,
     AnexoUpdateView,
+    admisiones_legales_ajax,
+    admisiones_tecnicos_ajax,
 )
-from intervenciones.views import sub_estados_intervenciones_ajax
 
 urlpatterns = [
     path(
@@ -50,6 +52,11 @@ urlpatterns = [
         "admision/<int:admision_id>/documentacion/<int:documentacion_id>/eliminar/",
         eliminar_archivo_admision,
         name="eliminar_archivo_admision",
+    ),
+    path(
+        "admision/<int:admision_id>/documentacion/personalizada/agregar/",
+        crear_documento_personalizado,
+        name="documento_personalizado_crear",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:admision_id>/crear/",
@@ -109,5 +116,16 @@ urlpatterns = [
         "comedores/admisiones/legales/ver/<int:pk>",
         group_required(["Area Legales"])(AdmisionesLegalesDetailView.as_view()),
         name="admisiones_legales_ver",
+    ),
+    # AJAX endpoints
+    path(
+        "comedores/admisiones/legales/ajax/",
+        admisiones_legales_ajax,
+        name="admisiones_legales_ajax",
+    ),
+    path(
+        "comedores/admisiones/tecnicos/ajax/",
+        admisiones_tecnicos_ajax,
+        name="admisiones_tecnicos_ajax",
     ),
 ]

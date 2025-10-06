@@ -50,7 +50,10 @@ class APIClient:
         try:
             token = self.get_token()
         except Exception as e:
-            return {"success": False, "error": f"Error al obtener token: {str(e)}"}
+            import logging
+
+            logging.getLogger("django").exception("Error al obtener token")
+            return {"success": False, "error": "Error interno al obtener token"}
 
         headers = {"Authorization": f"Bearer {token}"}
         params = {"dni": dni, "sexo": sexo.upper()}
@@ -62,30 +65,51 @@ class APIClient:
         except ConnectionError:
             return {"success": False, "error": "Error de conexión al servicio."}
         except RequestException as e:
+            import logging
+
+            logging.getLogger("django").exception(
+                "RequestException al conectar con Renaper"
+            )
             return {
                 "success": False,
-                "error": f"No se pudo conectar al servicio: {str(e)}",
+                "error": "Error interno de conexión al servicio.",
             }
 
         if response.status_code != 200:
             try:
                 error_data = response.json()
             except Exception:
-                error_data = response.text
+                error_data = (
+                    response.text[:500]
+                    if hasattr(response, "text")
+                    else "Sin contenido"
+                )
             return {
                 "success": False,
-                "error": f"Error HTTP {response.status_code}: {error_data}",
+                "error": f"Error HTTP {response.status_code}: Error en la respuesta del servicio.",
+                "status_code": response.status_code,
             }
 
         try:
             data = response.json()
         except Exception as e:
-            return {"success": False, "error": f"No se pudo decodificar JSON: {str(e)}"}
+            # Log the raw response for debugging
+            import logging
+
+            logging.getLogger("django").exception("Respuesta no es JSON válido")
+            raw_text = (
+                response.text[:500] if hasattr(response, "text") else "No response text"
+            )
+            return {
+                "success": False,
+                "error": "Error interno: respuesta no es JSON válido.",
+                "raw_response": raw_text,
+            }
 
         if not data.get("isSuccess", False):
             return {
                 "success": False,
-                "error": f"API error: {data.get('message', 'Error desconocido')}",
+                "error": "Respuesta de Renaper no indica éxito.",
                 "raw_response": data,
             }
 
@@ -168,4 +192,12 @@ def consultar_datos_renaper(dni, sexo):
         return {"success": True, "data": datos_mapeados, "datos_api": datos}
 
     except Exception as e:
-        return {"success": False, "error": f"Error inesperado: {str(e)}"}
+        import logging
+
+        logging.getLogger("django").exception(
+            "Error inesperado en consultar_datos_renaper"
+        )
+        return {
+            "success": False,
+            "error": "Error interno inesperado al consultar Renaper",
+        }

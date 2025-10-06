@@ -20,7 +20,7 @@ from celiaquia.models import (
 from celiaquia.forms import CupoBajaLegajoForm, CupoSuspenderLegajoForm
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 
 
 class CupoDashboardView(View):

@@ -21,6 +21,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast
 from django.http import HttpResponseRedirect, JsonResponse, Http404
+from django.template.loader import render_to_string
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
 from django.views.decorators.http import require_POST
@@ -378,7 +379,7 @@ class CiudadanosListView(ListView):
                 # Fallback para versiones anteriores de Django
                 context["page_range"] = page_obj.paginator.page_range
 
-        # Datos para componentes Cotton
+        # Datos para componentes reutilizables
         context.update(
             {
                 "mostrar_resultados": mostrar_resultados,
@@ -400,6 +401,77 @@ class CiudadanosListView(ListView):
         )
 
         return context
+
+
+def ciudadanos_ajax(request):
+    """
+    Vista AJAX para búsqueda dinámica de ciudadanos
+    """
+    query = request.GET.get("busqueda", "").strip()
+    page = request.GET.get("page", 1)
+
+    # Usar la misma lógica de filtrado que CiudadanosListView
+    queryset = (
+        Ciudadano.objects.select_related("tipo_documento", "sexo", "localidad")
+        .only(
+            "id",
+            "apellido",
+            "nombre",
+            "documento",
+            "tipo_documento__tipo",
+            "sexo__sexo",
+            "localidad__nombre",
+            "estado",
+        )
+        .order_by("-id")
+    )
+
+    if query:
+        filter_condition = Q(apellido__icontains=query)
+        if query.isnumeric():
+            queryset = queryset.annotate(doc_str=Cast("documento", TextField()))
+            filter_condition |= Q(doc_str__startswith=query)
+        queryset = queryset.filter(filter_condition)
+
+    # Paginación
+    paginator = Paginator(queryset, 10)  # mismo paginate_by que CiudadanosListView
+
+    try:
+        page_obj = paginator.get_page(page)
+    except (ValueError, TypeError):
+        page_obj = paginator.get_page(1)
+
+    # Renderizar solo las filas de la tabla
+    table_html = render_to_string(
+        "ciudadanos/partials/ciudadano_rows.html",
+        {"ciudadanos": page_obj.object_list},
+        request=request,
+    )
+
+    # Renderizar paginación
+    pagination_html = render_to_string(
+        "components/pagination.html",
+        {
+            "is_paginated": page_obj.has_other_pages(),
+            "page_obj": page_obj,
+            "query": query,
+            "prev_text": "Volver",
+            "next_text": "Continuar",
+        },
+        request=request,
+    )
+
+    return JsonResponse(
+        {
+            "html": table_html,
+            "pagination_html": pagination_html,
+            "count": paginator.count,
+            "current_page": page_obj.number,
+            "total_pages": paginator.num_pages,
+            "has_previous": page_obj.has_previous(),
+            "has_next": page_obj.has_next(),
+        }
+    )
 
 
 class CiudadanosDetailView(DetailView):
@@ -873,7 +945,7 @@ class CiudadanosDeleteView(DeleteView):
         ):
             relaciones_existentes.append("Grupo Familiar")
 
-        # Datos para componentes Cotton
+        # Datos para componentes reutilizables
         context.update(
             {
                 "relaciones_existentes": relaciones_existentes,

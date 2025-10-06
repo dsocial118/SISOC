@@ -1,7 +1,7 @@
 {% load custom_filters %}
-{# Componente Data Table #}
-{# Uso: {% include 'components/data_table.html' with headers=table_headers items=object_list show_actions=True actions_width='15%' empty_message='No hay datos' %} #}
-<div class="row mt-3">
+<!-- Componente Data Table -->
+<!-- Uso: include 'components/data_table.html' with headers=table_headers items=object_list show_actions=True actions_width='15%' empty_message='No hay datos' -->
+<div class="row mt-3 max-width-100">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
@@ -26,7 +26,7 @@
                             {% for item in items %}
                                 <tr>
                                     {% if custom_cells %}
-                                        {# Modo personalizado - permite definir las celdas manualmente #}
+                                        <!-- Modo personalizado - permite definir las celdas manualmente -->
                                         {% for cell in item.cells %}
                                             <td {% if cell.class %}class="{{ cell.class }}"{% endif %}>
                                                 {% if cell.link_url and not disable_links %}
@@ -41,7 +41,7 @@
                                             </td>
                                         {% endfor %}
                                     {% else %}
-                                        {# Modo automático - definir campos en la vista #}
+                                        <!-- Modo automático - definir campos en la vista -->
                                         {% for field in fields %}
                                             <td>
                                                 {% if field.link_field and not disable_links %}
@@ -59,7 +59,7 @@
                                     {% if show_actions %}
                                         <td class="project-actions text-right">
                                             {% if custom_actions %}
-                                                {# Acciones personalizadas para cada item #}
+                                                <!-- Acciones personalizadas para cada item -->
                                                 {% if item.actions %}
                                                     <div class="btn-group" role="group">
                                                         {% for action in item.actions %}
@@ -71,7 +71,7 @@
                                                     </div>
                                                 {% endif %}
                                             {% else %}
-                                                {# Acciones estándar #}
+                                                <!-- Acciones estándar -->
                                                 {% if actions %}
                                                     <div class="btn-group" role="group">
                                                         {% for action in actions %}
@@ -97,7 +97,7 @@
                         </tbody>
                     </table>
                 </div>
-                {# Paginación opcional integrada #}
+                <!-- Paginación opcional integrada -->
                 {% if include_pagination %}
                     {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range query=query %}
                 {% endif %}

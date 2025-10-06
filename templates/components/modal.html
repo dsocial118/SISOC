@@ -1,5 +1,5 @@
-{# Componente Modal #}
-{# Uso: {% include 'components/modal.html' with modal_id='myModal' title='Mi Modal' content='Contenido...' buttons=modal_buttons %} #}
+<!-- Componente Modal -->
+<!-- Uso: include 'components/modal.html' with modal_id='myModal' title='Mi Modal' content='Contenido...' buttons=modal_buttons -->
 <div class="modal fade"
      id="{{ modal_id|default:'defaultModal' }}"
      tabindex="-1"
@@ -28,7 +28,7 @@
             <div class="modal-body {% if body_class %}{{ body_class }}{% endif %}">
                 {% if content %}{{ content|safe }}{% endif %}
                 {% if form %}
-                    <form {% if form_action %}action="{{ form_action }}"{% endif %}
+                    <form action="{{ form_action|default:'' }}"
                           {% if form_method %}method="{{ form_method }}"{% else %}method="POST"{% endif %}
                           {% if form_id %}id="{{ form_id }}"{% endif %}>
                         {% csrf_token %}
@@ -58,7 +58,7 @@
                             {% endif %}
                         {% endfor %}
                     {% else %}
-                        {# Botones por defecto #}
+                        <!-- Botones por defecto -->
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                         <button type="button" class="btn btn-primary">Confirmar</button>
                     {% endif %}
@@ -67,7 +67,7 @@
         </div>
     </div>
 </div>
-{# Trigger button opcional #}
+<!-- Trigger button opcional -->
 {% if trigger_button %}
     <button type="button"
             class="btn btn-{{ trigger_button.style|default:'primary' }} {{ trigger_button.class|default:'' }}"

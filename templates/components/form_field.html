@@ -1,5 +1,5 @@
-{# Componente Form Field #}
-{# Uso: {% include 'components/form_field.html' with field=form.nombre label='Nombre completo' help_text='Ingrese su nombre' required=True %} #}
+<!-- Componente Form Field -->
+<!-- Uso: include 'components/form_field.html' with field=form.nombre label='Nombre completo' help_text='Ingrese su nombre' required=True -->
 <div class="form-group {% if col_class %}{{ col_class }}{% endif %} {% if field.errors %}has-error{% endif %}">
     {% if label or field.label %}
         <label for="{{ field.id_for_label }}"
@@ -77,7 +77,7 @@
                id="{{ field.id_for_label }}"
                value="{{ field.value|default:'' }}" />
     {% else %}
-        {# Input por defecto (text, email, password, number, date, etc.) #}
+        <!-- Input por defecto (text, email, password, number, date, etc.) -->
         <input type="{{ field_type|default:'text' }}"
                name="{{ field.name }}"
                id="{{ field.id_for_label }}"
@@ -92,11 +92,11 @@
                {% if step %}step="{{ step }}"{% endif %}
                {% if pattern %}pattern="{{ pattern }}"{% endif %} />
     {% endif %}
-    {# Texto de ayuda #}
+    <!-- Texto de ayuda -->
     {% if help_text or field.help_text %}
         <div class="form-text text-muted">{{ help_text|default:field.help_text }}</div>
     {% endif %}
-    {# Errores del campo #}
+    <!-- Errores del campo -->
     {% if field.errors %}
         <div class="invalid-feedback">
             {% for error in field.errors %}
@@ -105,11 +105,11 @@
             {% endfor %}
         </div>
     {% endif %}
-    {# Input group adicional (prefijo/sufijo) #}
+    <!-- Input group adicional (prefijo/sufijo) -->
     {% if prefix or suffix %}
         <div class="input-group {% if input_group_class %}{{ input_group_class }}{% endif %}">
             {% if prefix %}<span class="input-group-text">{{ prefix }}</span>{% endif %}
-            {# Re-render del input dentro del group #}
+            <!-- Re-render del input dentro del group -->
             <input type="{{ field_type|default:'text' }}"
                    name="{{ field.name }}"
                    id="{{ field.id_for_label }}"

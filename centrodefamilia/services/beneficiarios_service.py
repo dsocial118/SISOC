@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Count
+from core.services.advanced_filters import AdvancedFilterEngine
 from centrodefamilia.models import (
     Responsable,
     Beneficiario,
@@ -11,7 +12,43 @@ from centrodefamilia.models import (
 )
 from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from centrodefamilia.services.beneficiarios_filter_config import (
+    FIELD_MAP as BENEFICIARIO_FILTER_MAP,
+    FIELD_TYPES as BENEFICIARIO_FIELD_TYPES,
+    TEXT_OPS as BENEFICIARIO_TEXT_OPS,
+    NUM_OPS as BENEFICIARIO_NUM_OPS,
+    CHOICE_OPS as BENEFICIARIO_CHOICE_OPS,
+)
+from centrodefamilia.services.responsables_filter_config import (
+    FIELD_MAP as RESPONSABLE_FILTER_MAP,
+    FIELD_TYPES as RESPONSABLE_FIELD_TYPES,
+    TEXT_OPS as RESPONSABLE_TEXT_OPS,
+    NUM_OPS as RESPONSABLE_NUM_OPS,
+    CHOICE_OPS as RESPONSABLE_CHOICE_OPS,
+)
 from django.db import transaction
+
+
+def _normalize_genero(value):
+    """Devuelve el código de género aceptado a partir de entradas humanas."""
+
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if not normalized:
+            return value
+
+        mapping = {
+            "f": "F",
+            "femenino": "F",
+            "m": "M",
+            "masculino": "M",
+            "x": "X",
+            "otro": "X",
+            "no binario": "X",
+            "otro/no binario": "X",
+        }
+        return mapping.get(normalized, value.strip())
+    return value
 
 
 def obtener_o_crear_responsable(responsable_data, usuario):
@@ -68,6 +105,30 @@ def crear_beneficiario(beneficiario_data, responsable, vinculo_parental, usuario
         form.save_m2m()
 
     return beneficiario, form
+
+
+BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=BENEFICIARIO_FILTER_MAP,
+    field_types=BENEFICIARIO_FIELD_TYPES,
+    allowed_ops={
+        "text": BENEFICIARIO_TEXT_OPS,
+        "number": BENEFICIARIO_NUM_OPS,
+        "choice": BENEFICIARIO_CHOICE_OPS,
+    },
+    field_casts={"genero": _normalize_genero},
+)
+
+
+RESPONSABLE_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=RESPONSABLE_FILTER_MAP,
+    field_types=RESPONSABLE_FIELD_TYPES,
+    allowed_ops={
+        "text": RESPONSABLE_TEXT_OPS,
+        "number": RESPONSABLE_NUM_OPS,
+        "choice": RESPONSABLE_CHOICE_OPS,
+    },
+    field_casts={"genero": _normalize_genero},
+)
 
 
 def guardar_datos_renaper(request, persona, tipo, es_nuevo=True):
@@ -517,6 +578,20 @@ def prepare_responsables_for_display(responsables):
         responsable.apellido_nombre = f"{responsable.apellido}, {responsable.nombre}"
         responsable.genero_display = responsable.get_genero_display()
         responsable.vinculo_display = responsable.get_vinculo_parental_display()
+
+
+def get_filtered_beneficiarios(request_or_get):
+    """Aplica filtros combinables sobre el listado de beneficiarios."""
+
+    base_qs = get_beneficiarios_queryset()
+    return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
+
+
+def get_filtered_responsables(request_or_get):
+    """Aplica filtros combinables sobre el listado de responsables."""
+
+    base_qs = get_responsables_queryset()
+    return RESPONSABLE_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
 
 def get_beneficiarios_queryset():

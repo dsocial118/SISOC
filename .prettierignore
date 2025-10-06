@@ -1,0 +1,4 @@
+# Excluir templates de Django del formateo automático
+**/templates/**/*.html
+*.html
+**/*.html

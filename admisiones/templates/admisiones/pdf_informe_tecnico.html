@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <style>
+  @page {
+    size: A4;
+    margin: 3.5cm 2cm 2.5cm 2cm; /* top right bottom left */
+    @top-center { content: element(header); }
+    @bottom-center {
+      content: "Página " counter(page) " de " counter(pages);
+      font-size: 10pt;
+      color: #666;
+    }
+  }
+
+  html { hyphens: auto; }
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 10pt;
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  /* Header fijo en cada página */
+  #header {
+    position: running(header);
+    height: 3cm;
+    padding: 0.5cm 1cm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;      /* centro horizontal */
+    justify-content: center;  /* centro vertical */
+    font-weight: bold;
+    padding-top: 15px;
+    padding-right: 30px;
+    font-size: 10pt;
+    text-align: center;       /* textos multilínea centrados */
+  }
+
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 9pt;
+    text-align: center;
+    line-height: 1.1;
+    padding-left: 30px;
+  }
+  .header-right img {
+    max-height: 40px;
+    height: auto;
+    width: auto;
+    margin-bottom: 0;
+    filter: grayscale(100%);
+  }
+
+  main {
+    box-sizing: border-box;
+  }
+
+  /* Títulos */
+  h4 {
+    text-align: center;
+    margin: 0 0 10px 0;
+  }
+
+  /* Párrafos y listas: justificados */
+  main p,
+  main li {
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
+  }
+  main p { margin: 0 0 10px 0; }
+
+  /* Tablas */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0 0 0;
+    border: 2px solid #000;
+  }
+  th, td {
+    padding: 6px;
+    border: 1px solid #ccc;
+    vertical-align: top;
+  }
+  th[colspan="2"] {
+    text-align: center;
+    background-color: #f0f0f0;
+  }
+
+  /* Utilidades */
+  .salto_pagina { page-break-before: always; }
+  .table-bordered { border: 1px solid #ccc; }
+  .text-center { text-align: center; }
+  .text-start { text-align: left; }
+  .align-middle { vertical-align: middle; }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div class="header-left">
+                <br />
+                PROGRAMA ALIMENTAR COMUNIDAD
+            </div>
+            <div class="header-right">
+                <img src="https://www.casarosada.gob.ar/images/escudo_nacional_argentino.png"
+                     style="filter: grayscale(100%);
+                            max-height:40px" />
+                <br />
+                Secretaría de Niñez, Adolescencia y Familia
+                <br />
+                Ministerio de Capital Humano
+            </div>
+        </div>
+        <main>
+            <h4>INFORME TÉCNICO SOCIAL</h4>
+            Expediente Nro.: {{ informe.expediente_nro }}
+            <br />
+            La {{ informe.nombre_organizacion }}, solicita la incorporación del comedor y/o merendero. “{{ informe.nombre_espacio }}” al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota identificada como {{ informe.nota_gde_if }}
+            <table>
+                <tbody>
+                    <tr>
+                        <th colspan="2" style="width: 100%;">Organización Solicitante</th>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Nombre:</th>
+                        <td>{{ informe.nombre_organizacion }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Domicilio:</th>
+                        <td>{{ informe.domicilio_organizacion }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Localidad:</th>
+                        <td>{{ informe.localidad_organizacion }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Partido:</th>
+                        <td>{{ informe.partido_organizacion }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Provincia:</th>
+                        <td>{{ informe.provincia_organizacion }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Teléfono:</th>
+                        <td>{{ informe.telefono_organizacion }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Mail:</th>
+                        <td>{{ informe.mail_organizacion }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">CUIT:</th>
+                        <td>{{ informe.cuit_organizacion }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br />
+            <table>
+                <tbody>
+                    <tr>
+                        <th colspan="2" style="width: 100%;">Representante de la Organización Solicitante</th>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Nombre y apellido:</th>
+                        <td>{{ informe.representante_nombre }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Cargo:</th>
+                        <td>{{ informe.representante_cargo }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">DNI:</th>
+                        <td>{{ informe.representante_dni }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br />
+            <table>
+                <tbody>
+                    <tr>
+                        <th colspan="2" style="width: 100%;">Datos del Comedor y/o Merendero</th>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Tipo:</th>
+                        <td>{{ informe.tipo_espacio }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Nombre:</th>
+                        <td>{{ informe.nombre_espacio }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Domicilio:</th>
+                        <td>{{ informe.domicilio_espacio }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Barrio:</th>
+                        <td>{{ informe.barrio_espacio }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Localidad:</th>
+                        <td>{{ informe.localidad_espacio }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Partido:</th>
+                        <td>{{ informe.partido_espacio }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Provincia:</th>
+                        <td>{{ informe.provincia_espacio }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br />
+            <div class="salto_pagina"></div>
+            <table>
+                <tbody>
+                    <tr>
+                        <th colspan="2" style="width: 100%;">Responsable de la Tarjeta</th>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Nombre:</th>
+                        <td>{{ informe.responsable_tarjeta_nombre }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">DNI:</th>
+                        <td>{{ informe.responsable_tarjeta_dni }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Domicilio:</th>
+                        <td>{{ informe.responsable_tarjeta_domicilio }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Localidad:</th>
+                        <td>{{ informe.responsable_tarjeta_localidad }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Provincia:</th>
+                        <td>{{ informe.responsable_tarjeta_provincia }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Teléfono:</th>
+                        <td>{{ informe.responsable_tarjeta_telefono }}</td>
+                    </tr>
+                    <tr>
+                        <th style="width: 25%;">Mail:</th>
+                        <td>{{ informe.responsable_tarjeta_mail }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <br />
+            <p>
+                Mediante la Resolución N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023, modificada por Resolución N.° RESOL-2025-151-APN-MCH del 31 de marzo de 2025 se creó el Programa “ALIMENTAR COMUNIDAD”, a los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH.
+                Los lineamientos del Programa “Alimentar Comunidad” establecen que el mecanismo a utilizar para la asistencia a Comedores y/o Merenderos comunitarios sea mediante la utilización de una tarjeta prepaga física o virtual, otorgada a comedores/ merenderos para que con ella puedan efectuar la compra de alimentos, por un plazo de 6 (SEIS) meses contados a partir del primer fondeo.
+                En ese marco, es necesario realizar un trabajo conjunto y articulado con el fin de implementar dicho Programa para acompañar y consolidar la cobertura de las necesidades básicas de cada habitante.
+                La Institución solicitó la incorporación del {{ informe.tipo_espacio }} {{ informe.nombre_espacio }} al Programa Alimentar Comunidad, mediante Nota GDE {{ informe.nota_gde_if }}, con la siguiente solicitud:
+            </p>
+            <ul>
+                <li>
+                    <strong>DESAYUNO:</strong> {{ texto_comidas.Desayunos|safe }}
+                </li>
+                <li>
+                    <strong>ALMUERZO:</strong> {{ texto_comidas.Almuerzos|safe }}
+                </li>
+                <li>
+                    <strong>MERIENDA:</strong> {{ texto_comidas.Meriendas|safe }}
+                </li>
+                <li>
+                    <strong>CENA:</strong> {{ texto_comidas.Cenas|safe }}
+                </li>
+            </ul>
+            <p>
+                A los efectos del cumplimiento de los requisitos de admisibilidad al Programa Alimentar Comunidad, se agrega:
+                Las constancias de inexistencia de percepción por parte de la organización solicitante de otros subsidios nacionales para asistencia alimentaria:
+                <br />
+                - En {{ informe.constancia_subsidios_dnsa }} se informó que el {{ informe.nombre_organizacion }} “no tiene convenios de otorgamiento de subsidios vigentes en el componente ’Fortalecimiento a Comedores y Merenderos Comunitarios’”
+                <br />
+                - En nota {{ informe.constancia_subsidios_pnud }} se informó que el {{ informe.nombre_espacio }} – {{ informe.domicilio_espacio }} NO resulta beneficiario de complementos alimentarios otorgados por el Programa Abordaje Comunitario en el marco del Programa de las Naciones Unidas para el Desarrollo.
+            </p>
+            <h4>EVALUACIÓN TÉCNICA</h4>
+            <p>
+                La {{ informe.nombre_organizacion }}, solicita la incorporación del {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las familias en situación de vulnerabilidad.
+                La población destinataria se encuentra ubicada en el Partido {{ informe.partido_espacio }} de la provincia {{ informe.provincia_espacio }}. Es menester destacar que la asistencia alimentaria gratuita que brinda el mismo a personas en situación de vulnerabilidad, resulta necesaria y vital para alcanzar con mayor eficiencia la seguridad alimentaria.
+                Conforme al relevamiento del Programa identificado como {{ informe.IF_relevamiento_territorial }}, se ha constatado la existencia del {{ informe.tipo_espacio }} en el territorio, el cual brinda asistencia alimentaria a personas en situación de vulnerabilidad social.
+                Se adecúan las prestaciones entre lo relevado en territorio y lo requerido por la institución solicitante según los criterios del Programa.
+                A continuación, se resumen las cantidades aprobadas:
+            </p>
+            <table class="table table-bordered text-center align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Comida / Día</th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                        <th>Sábado</th>
+                        <th>Domingo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th class="text-start">Desayuno</th>
+                        <td>{{ anexo.desayuno_lunes }}</td>
+                        <td>{{ anexo.desayuno_martes }}</td>
+                        <td>{{ anexo.desayuno_miercoles }}</td>
+                        <td>{{ anexo.desayuno_jueves }}</td>
+                        <td>{{ anexo.desayuno_viernes }}</td>
+                        <td>{{ anexo.desayuno_sabado }}</td>
+                        <td>{{ anexo.desayuno_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-start">Almuerzo</th>
+                        <td>{{ anexo.almuerzo_lunes }}</td>
+                        <td>{{ anexo.almuerzo_martes }}</td>
+                        <td>{{ anexo.almuerzo_miercoles }}</td>
+                        <td>{{ anexo.almuerzo_jueves }}</td>
+                        <td>{{ anexo.almuerzo_viernes }}</td>
+                        <td>{{ anexo.almuerzo_sabado }}</td>
+                        <td>{{ anexo.almuerzo_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-start">Merienda</th>
+                        <td>{{ anexo.merienda_lunes }}</td>
+                        <td>{{ anexo.merienda_martes }}</td>
+                        <td>{{ anexo.merienda_miercoles }}</td>
+                        <td>{{ anexo.merienda_jueves }}</td>
+                        <td>{{ anexo.merienda_viernes }}</td>
+                        <td>{{ anexo.merienda_sabado }}</td>
+                        <td>{{ anexo.merienda_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-start">Cena</th>
+                        <td>{{ anexo.cena_lunes }}</td>
+                        <td>{{ anexo.cena_martes }}</td>
+                        <td>{{ anexo.cena_miercoles }}</td>
+                        <td>{{ anexo.cena_jueves }}</td>
+                        <td>{{ anexo.cena_viernes }}</td>
+                        <td>{{ anexo.cena_sabado }}</td>
+                        <td>{{ anexo.cena_domingo }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% if informe.conclusiones %}
+                <br />
+                <table>
+                    <tbody>
+                        <tr>
+                            <th colspan="2" style="width: 100%;">Aplicación de Criterios</th>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="padding: 10px;">{{ informe.conclusiones|linebreaks }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            {% endif %}
+            <br />
+            <p>
+                Los criterios técnicos y programáticos establecidos para evaluar la solicitud de cada comedor implican una definición de la cantidad de prestaciones a partir de la comparación entre la información relevada en la visita en territorio y la cantidad solicitada para cada día y para cada tipo de prestación. Se considera como cantidad de prestaciones relevada en territorio a la suma de las prestaciones brindadas en la actualidad más las personas en lista de espera. En esa línea, los criterios se enmarcan en los siguientes parámetros:
+            </p>
+            <p>
+                A. Cuando la cantidad de prestaciones solicitadas mediante nota sean inferiores al número identificado en el relevamiento en territorio (suma de prestaciones actuales más personas identificadas en lista de espera), deberá prevalecer la cantidad solicitada por la institución entendiendo que la diferencia es cubierta con otro tipo de recursos.
+            </p>
+            <p>
+                B. Cuando la cantidad de prestaciones solicitadas mediante nota sean superiores a las identificadas en la visita (suma de prestaciones actuales más personas identificadas en la lista de espera) deberá prevalecer el número de prestaciones relevado en la visita.
+            </p>
+            <p>
+                Por todo lo expuesto se considera pertinente la solicitud realizada por la {{ informe.nombre_organizacion }} para adherir al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.
+                Todo lo resultante en este Informe Técnico se resume en Anexo identificado como (ALGUN IF-???).
+            </p>
+            <p>
+                Cabe destacar que la tramitación de las presentes actuaciones mediante las cuales se aprueba el convenio de incorporación al Programa mencionado no implica en este acto erogación presupuestaria alguna.
+            </p>
+            <p>
+                Dicha erogación será tramitada pertinentemente en expedientes de pago mensuales a fin de acreditar los fondos correspondientes a los comedores incorporados al Programa Alimentar Comunidad.
+            </p>
+            <p>Consecuentemente, se sugiere dar prosecución al trámite correspondiente.</p>
+        </div>
+    </main>
+</body>
+</html>

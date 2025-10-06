@@ -1,5 +1,5 @@
-{# Componente Form Stepper #}
-{# Uso: {% include 'components/form_stepper.html' with steps=stepper_steps current_step=1 %} #}
+<!-- Componente Form Stepper -->
+<!-- Uso: include 'components/form_stepper.html' with steps=stepper_steps current_step=1 -->
 <div class="card card-primary card-outline mb-4">
     <div class="card-body">
         <div class="bs-stepper">
@@ -29,7 +29,7 @@
                 {% endfor %}
             </div>
             {% if show_content %}
-                <div class="row mt-5">
+                <div class="row mt-5 max-width-100">
                     <div class="col-12">
                         {% if content %}{{ content|safe }}{% endif %}
                     </div>

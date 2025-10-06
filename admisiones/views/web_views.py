@@ -6,6 +6,7 @@ from django.views.generic import CreateView, ListView, UpdateView, DetailView
 from admisiones.forms.admisiones_forms import (
     AdmisionForm,
     LegalesRectificarForm,
+    LegalesNumIFForm,
     AnexoForm,
 )
 from admisiones.models.admisiones import (
@@ -14,9 +15,12 @@ from admisiones.models.admisiones import (
     Anexo,
 )
 from admisiones.services.admisiones_service import AdmisionService
+
+
 from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
 from django.views.generic.edit import FormMixin
+from django.template.loader import render_to_string
 
 from django.urls import reverse
 from django.http import HttpResponseRedirect
@@ -24,49 +28,128 @@ from django.http import HttpResponseRedirect
 
 @require_POST
 def subir_archivo_admision(request, admision_id, documentacion_id):
-    if request.FILES.get("archivo"):
-        archivo_admision, created = AdmisionService.handle_file_upload(
-            admision_id, documentacion_id, request.FILES["archivo"]
+    archivo = request.FILES.get("archivo")
+    if not archivo:
+        return JsonResponse(
+            {"success": False, "error": "No se recibio un archivo"}, status=400
         )
-        return JsonResponse({"success": True, "estado": archivo_admision.estado})
+
+    archivo_admision, created = AdmisionService.handle_file_upload(
+        admision_id, documentacion_id, archivo
+    )
+    if not archivo_admision:
+        return JsonResponse(
+            {"success": False, "error": "No se pudo guardar el archivo"}, status=400
+        )
+
+    documento = AdmisionService._serialize_documentacion(
+        archivo_admision.documentacion,
+        archivo_admision,
+    )
+    html = render_to_string(
+        "admisiones/includes/documento_row.html",
+        {"doc": documento, "admision": archivo_admision.admision},
+        request=request,
+    )
+
     return JsonResponse(
-        {"success": False, "error": "No se recibió un archivo"}, status=400
+        {
+            "success": True,
+            "html": html,
+            "row_id": documento.get("row_id"),
+            "documento": documento,
+            "estado_display": documento.get("estado"),
+            "estado_valor": documento.get("estado_valor"),
+            "archivo_id": archivo_admision.id,
+        }
     )
 
 
 def eliminar_archivo_admision(request, admision_id, documentacion_id):
     if request.method == "DELETE":
-        # Verificar permisos del usuario antes de buscar el archivo
         admision = get_object_or_404(Admision, pk=admision_id)
 
-        # Si no es superuser, verificar que pertenezca a la dupla del comedor
         if not request.user.is_superuser:
-            # Importar el servicio para usar el método de verificación
-            from admisiones.services.admisiones_service import AdmisionService
 
             comedor = admision.comedor
             if not comedor:
                 return JsonResponse(
-                    {"success": False, "error": "Admisión sin comedor asociado."},
+                    {"success": False, "error": "Admision sin comedor asociado."},
                     status=403,
                 )
 
-            # Usar el método de verificación del servicio
             if not AdmisionService._verificar_permiso_dupla(request.user, comedor):
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": "Sin permisos para modificar esta admisión.",
+                        "error": "Sin permisos para modificar esta admision.",
                     },
                     status=403,
                 )
 
-        archivo = get_object_or_404(
-            ArchivoAdmision, admision_id=admision_id, documentacion_id=documentacion_id
+        archivo = ArchivoAdmision.objects.filter(
+            admision_id=admision_id, documentacion_id=documentacion_id
+        ).first()
+
+        if not archivo:
+            archivo_id_param = request.GET.get("archivo_id")
+            if archivo_id_param:
+                archivo = ArchivoAdmision.objects.filter(
+                    admision_id=admision_id, id=archivo_id_param
+                ).first()
+
+        if not archivo:
+            archivo = get_object_or_404(
+                ArchivoAdmision, admision_id=admision_id, id=documentacion_id
+            )
+
+        estado_actual = (archivo.estado or "").strip().lower()
+        if estado_actual in {"aceptado", "a validar abogado"}:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "No se puede eliminar un documento en estado aceptado o a validar abogado.",
+                },
+                status=400,
+            )
+
+        documentacion = archivo.documentacion
+        nombre_documento = (
+            documentacion.nombre
+            if documentacion
+            else archivo.nombre_personalizado or "Documento adicional"
         )
+        es_personalizado = documentacion is None
+
+        documento_serializado = None
+        if documentacion:
+            documento_serializado = AdmisionService._serialize_documentacion(
+                documentacion, None
+            )
+
         AdmisionService.delete_admision_file(archivo)
-        return JsonResponse({"success": True, "nombre": archivo.documentacion.nombre})
-    return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
+
+        response_data = {
+            "success": True,
+            "nombre": nombre_documento,
+            "personalizado": es_personalizado,
+        }
+
+        if documento_serializado:
+            html = render_to_string(
+                "admisiones/includes/documento_row.html",
+                {"doc": documento_serializado, "admision": admision},
+                request=request,
+            )
+            response_data.update(
+                {
+                    "html": html,
+                    "row_id": documento_serializado.get("row_id"),
+                }
+            )
+
+        return JsonResponse(response_data)
+    return JsonResponse({"success": False, "error": "Metodo no permitido"}, status=405)
 
 
 def actualizar_estado_archivo(request):
@@ -115,9 +198,40 @@ def actualizar_numero_gde_archivo(request):
         )
 
 
+@require_POST
+def crear_documento_personalizado(request, admision_id):
+    archivo = request.FILES.get("archivo")
+    nombre = request.POST.get("nombre", "")
+
+    archivo_admision, error = AdmisionService.crear_documento_personalizado(
+        admision_id, nombre, archivo, request.user
+    )
+
+    if not archivo_admision:
+        status_code = 403 if error and "permiso" in error.lower() else 400
+        return JsonResponse(
+            {
+                "success": False,
+                "error": error or "No se pudo guardar el documento.",
+            },
+            status=status_code,
+        )
+
+    documento = AdmisionService.serialize_documento_personalizado(archivo_admision)
+    html = render_to_string(
+        "admisiones/includes/documento_row.html",
+        {"doc": documento, "admision": archivo_admision.admision},
+        request=request,
+    )
+
+    return JsonResponse(
+        {"success": True, "documento": documento, "html": html}, status=201
+    )
+
+
 class AdmisionesTecnicosListView(ListView):
     model = Admision
-    template_name = "admisiones_tecnicos_list.html"
+    template_name = "admisiones/admisiones_tecnicos_list.html"
     context_object_name = "comedores"
     paginate_by = 10
 
@@ -129,7 +243,6 @@ class AdmisionesTecnicosListView(ListView):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
 
-        # Breadcrumb items
         context["breadcrumb_items"] = [
             {"name": "Admisiones", "url": "admisiones_tecnicos_listar"},
             {"name": "Listar", "active": True},
@@ -140,7 +253,7 @@ class AdmisionesTecnicosListView(ListView):
 
 class AdmisionesTecnicosCreateView(CreateView):
     model = Admision
-    template_name = "admisiones_tecnicos_form.html"
+    template_name = "admisiones/admisiones_tecnicos_form.html"
     form_class = AdmisionForm
     context_object_name = "admision"
 
@@ -161,7 +274,7 @@ class AdmisionesTecnicosCreateView(CreateView):
 
 class AdmisionesTecnicosUpdateView(UpdateView):
     model = Admision
-    template_name = "admisiones_tecnicos_form.html"
+    template_name = "admisiones/admisiones_tecnicos_form.html"
     form_class = AdmisionForm
     context_object_name = "admision"
 
@@ -185,7 +298,7 @@ class AdmisionesTecnicosUpdateView(UpdateView):
 
 
 class InformeTecnicosCreateView(CreateView):
-    template_name = "informe_tecnico_form.html"
+    template_name = "admisiones/informe_tecnico_form.html"
     context_object_name = "informe_tecnico"
 
     def get_form_class(self):
@@ -199,30 +312,66 @@ class InformeTecnicosCreateView(CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         admision, _ = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
+        action = (
+            self.request.POST.get("action") if self.request.method == "POST" else None
+        )
         kwargs["admision"] = admision
+        kwargs["require_full"] = action == "submit"
         return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        admision, tipo = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
+        context.setdefault("admision", admision)
+        context.setdefault("tipo", tipo)
+        context.setdefault("comedor", getattr(admision, "comedor", None))
+
+        action = (
+            self.request.POST.get("action") if self.request.method == "POST" else None
+        )
+        require_full = action == "submit"
+
+        if "anexof" not in context or self.request.method == "POST":
+            data = self.request.POST if self.request.method == "POST" else None
+            files = self.request.FILES if self.request.method == "POST" else None
+            context["anexof"] = InformeService.get_anexo_form(
+                admision, data, files, require_full=require_full
+            )
+
+        return context
 
     def form_valid(self, form):
         admision, tipo = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
         form.instance.tipo = tipo
-        InformeService.preparar_informe_para_creacion(form.instance, admision.id)
-        return super().form_valid(form)
+        action = self.request.POST.get("action")
+
+        resultado = InformeService.guardar_informe_y_anexo(
+            form,
+            admision,
+            self.request.POST,
+            self.request.FILES,
+            es_creacion=True,
+            action=action,
+        )
+
+        if not resultado.get("success"):
+            context = self.get_context_data(form=form)
+            context["anexof"] = resultado.get("anexof")
+            return self.render_to_response(context)
+
+        self.object = resultado.get("informe")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
 
     def get_success_url(self):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(
-            InformeService.get_informe_create_context(
-                self.kwargs.get("admision_id"), self.kwargs.get("tipo", "base")
-            )
-        )
-        return context
-
 
 class InformeTecnicosUpdateView(UpdateView):
-    template_name = "informe_tecnico_form.html"
+    template_name = "admisiones/informe_tecnico_form.html"
     context_object_name = "informe_tecnico"
 
     def get_queryset(self):
@@ -233,22 +382,66 @@ class InformeTecnicosUpdateView(UpdateView):
         tipo = InformeService.get_tipo_from_kwargs(self.kwargs)
         return InformeService.get_form_class_por_tipo(tipo)
 
-    def form_valid(self, form):
-        InformeService.verificar_estado_para_revision(form.instance)
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        action = (
+            self.request.POST.get("action") if self.request.method == "POST" else None
+        )
+        kwargs["require_full"] = action == "submit"
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         tipo = InformeService.get_tipo_from_kwargs(self.kwargs)
-        context.update(InformeService.get_informe_update_context(self.object, tipo))
+        contexto_servicio = InformeService.get_informe_update_context(self.object, tipo)
+        for clave, valor in contexto_servicio.items():
+            context.setdefault(clave, valor)
+
+        action = (
+            self.request.POST.get("action") if self.request.method == "POST" else None
+        )
+        require_full = action == "submit"
+
+        data = self.request.POST if self.request.method == "POST" else None
+        files = self.request.FILES if self.request.method == "POST" else None
+        if "anexof" not in context or self.request.method == "POST":
+            context["anexof"] = InformeService.get_anexo_form(
+                self.object.admision, data, files, require_full=require_full
+            )
+
         return context
+
+    def form_valid(self, form):
+        admision = form.instance.admision
+        action = self.request.POST.get("action")
+
+        resultado = InformeService.guardar_informe_y_anexo(
+            form,
+            admision,
+            self.request.POST,
+            self.request.FILES,
+            es_creacion=False,
+            action=action,
+        )
+
+        if not resultado.get("success"):
+            context = self.get_context_data(form=form)
+            context["anexof"] = resultado.get("anexof")
+            return self.render_to_response(context)
+
+        self.object = resultado.get("informe")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        context = self.get_context_data(form=form)
+        return self.render_to_response(context)
+
+    def get_success_url(self):
+        return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
 
 
 class InformeTecnicoDetailView(DetailView):
-    template_name = "informe_tecnico_detalle.html"
+    template_name = "admisiones/informe_tecnico_detalle.html"
     context_object_name = "informe_tecnico"
 
     def get_queryset(self):
@@ -274,7 +467,7 @@ class InformeTecnicoDetailView(DetailView):
 
 class AdmisionesLegalesListView(ListView):
     model = Admision
-    template_name = "admisiones_legales_list.html"
+    template_name = "admisiones/admisiones_legales_list.html"
     context_object_name = "admisiones"
     paginate_by = 10
 
@@ -286,7 +479,6 @@ class AdmisionesLegalesListView(ListView):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
 
-        # Breadcrumb items
         context["breadcrumb_items"] = [
             {"name": "Expedientes", "url": "admisiones_legales_listar"},
             {"name": "Listar", "active": True},
@@ -297,7 +489,7 @@ class AdmisionesLegalesListView(ListView):
 
 class AdmisionesLegalesDetailView(FormMixin, DetailView):
     model = Admision
-    template_name = "admisiones_legales_detalle.html"
+    template_name = "admisiones/admisiones_legales_detalle.html"
     context_object_name = "admision"
     form_class = LegalesRectificarForm
 
@@ -309,6 +501,10 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
         context.update(LegalesService.get_legales_context(self.get_object()))
         if "form" not in context:
             context["form"] = self.get_form()
+        if "form_legales_num_if" not in context:
+            context["form_legales_num_if"] = LegalesNumIFForm(
+                instance=self.get_object()
+            )
         return context
 
     def post(self, request, *args, **kwargs):
@@ -319,7 +515,7 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
 class AnexoCreateView(CreateView):
     model = Anexo
     form_class = AnexoForm
-    template_name = "anexo_form.html"
+    template_name = "admisiones/anexo_form.html"
 
     def dispatch(self, request, *args, **kwargs):
         self.admision = AdmisionService.get_admision_instance(kwargs["admision_id"])
@@ -346,7 +542,7 @@ class AnexoCreateView(CreateView):
 class AnexoUpdateView(UpdateView):
     model = Anexo
     form_class = AnexoForm
-    template_name = "anexo_form.html"
+    template_name = "admisiones/anexo_form.html"
 
     def dispatch(self, request, *args, **kwargs):
         self.admision = AdmisionService.get_admision_instance(kwargs["admision_id"])
@@ -365,7 +561,7 @@ class AnexoUpdateView(UpdateView):
 
 
 class InformeTecnicoComplementarioDetailView(DetailView):
-    template_name = "informe_tecnico_complementario_detalle.html"
+    template_name = "admisiones/informe_tecnico_complementario_detalle.html"
     context_object_name = "informe_tecnico"
 
     def get_queryset(self):
@@ -395,3 +591,97 @@ class InformeTecnicoComplementarioDetailView(DetailView):
         tipo = self.kwargs.get("tipo", "base")
         context.update(InformeService.get_context_informe_detail(self.object, tipo))
         return context
+
+
+def admisiones_legales_ajax(request):
+    """Endpoint AJAX para búsqueda filtrada de admisiones legales"""
+    from django.template.loader import render_to_string
+    from django.core.paginator import Paginator
+    from core.decorators import group_required
+
+    # Aplicar el decorador manualmente para mantener permisos
+    @group_required(["Abogado Dupla"])
+    def _admisiones_legales_ajax(request):
+        query = request.GET.get("busqueda", "")
+        page = request.GET.get("page", 1)
+
+        # Obtener admisiones filtradas usando el mismo servicio que la vista principal
+        admisiones = LegalesService.get_admisiones_legales_filtradas(query)
+
+        # Paginación
+        paginator = Paginator(
+            admisiones, 10
+        )  # Mismo paginate_by que la vista principal
+        page_obj = paginator.get_page(page)
+
+        # Renderizar las filas de la tabla
+        html = render_to_string(
+            "partials/admisiones_legales_rows.html",
+            {"admisiones": page_obj, "request": request},
+            request=request,
+        )
+
+        # Renderizar paginación
+        pagination_html = render_to_string(
+            "components/pagination.html",
+            {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+            request=request,
+        )
+
+        return JsonResponse(
+            {
+                "html": html,
+                "pagination_html": pagination_html,
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "has_previous": page_obj.has_previous(),
+                "has_next": page_obj.has_next(),
+                "current_page": page_obj.number,
+            }
+        )
+
+    return _admisiones_legales_ajax(request)
+
+
+def admisiones_tecnicos_ajax(request):
+    """Endpoint AJAX para búsqueda filtrada de admisiones técnicos"""
+    from django.template.loader import render_to_string
+    from django.core.paginator import Paginator
+    from core.decorators import group_required
+
+    # Aplicar el decorador manualmente para mantener permisos
+    @group_required(["Tecnico Comedor", "Abogado Dupla"])
+    def _admisiones_tecnicos_ajax(request):
+        query = request.GET.get("busqueda", "")
+        page = request.GET.get("page", 1)
+
+        comedores = AdmisionService.get_comedores_filtrados(request.user, query)
+
+        paginator = Paginator(comedores, 10)  # Mismo paginate_by que la vista principal
+        page_obj = paginator.get_page(page)
+
+        html = render_to_string(
+            "partials/admisiones_tecnicos_rows.html",
+            {"comedores": page_obj, "request": request},
+            request=request,
+        )
+
+        pagination_html = render_to_string(
+            "components/pagination.html",
+            {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
+            request=request,
+        )
+
+        return JsonResponse(
+            {
+                "html": html,
+                "pagination_html": pagination_html,
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "has_previous": page_obj.has_previous(),
+                "has_next": page_obj.has_next(),
+                "current_page": page_obj.number,
+            }
+        )
+
+    return _admisiones_tecnicos_ajax(request)
