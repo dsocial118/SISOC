@@ -160,69 +160,49 @@ class NominaCreateView(CreateView):
         return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
     def get_context_data(self, **kwargs):
-        if hasattr(self, "object") and self.object:
-            return super().get_context_data(**kwargs)
-
-        # Caso sin self.object
-        context = {}
-
+        from ciudadanos.models import EstadoIntervencion
+        
+        context = super().get_context_data(**kwargs)
         context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
-
-        query = self.request.GET.get("query")
-        ciudadanos = (
-            ComedorService.buscar_ciudadanos_por_documento(query) if query else []
-        )
-        no_resultados = bool(query) and not ciudadanos
-
-        context.update(
-            {
-                "ciudadanos": ciudadanos,
-                "no_resultados": no_resultados,
-            }
-        )
-
-        context["form"] = self.get_form()
-        context["form_ciudadano"] = kwargs.get(
-            "form_ciudadano"
-        ) or CiudadanoFormParaNomina(self.request.POST or None)
-        context["form_nomina_extra"] = kwargs.get(
-            "form_nomina_extra"
-        ) or NominaExtraForm(self.request.POST or None)
-
+        
+        query = self.request.GET.get("query", "")
+        ciudadanos = ComedorService.buscar_ciudadanos_por_documento(query) if query else []
+        
+        context.update({
+            "ciudadanos": ciudadanos,
+            "no_resultados": bool(query) and not ciudadanos,
+            "form_ciudadano": kwargs.get("form_ciudadano") or CiudadanoFormParaNomina(),
+            "form_nomina_extra": kwargs.get("form_nomina_extra") or NominaExtraForm(),
+            "estados": EstadoIntervencion.objects.all(),
+        })
         return context
 
     def post(self, request, *args, **kwargs):
-        if "ciudadano" in request.POST:
-            # Agregar ciudadano existente a nómina
-            form = NominaForm(request.POST)
-            if form.is_valid():
-                ciudadano_id = form.cleaned_data["ciudadano"].id
-                estado_id = form.cleaned_data["estado"].id
-                observaciones = form.cleaned_data.get("observaciones")
-
-                ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-                    comedor_id=self.kwargs["pk"],
-                    ciudadano_id=ciudadano_id,
-                    user=request.user,
-                    estado_id=estado_id,
-                    observaciones=observaciones,
-                )
-
-                if ok:
-                    messages.success(request, msg)
-                else:
-                    messages.warning(request, msg)
-                return redirect(self.get_success_url())
+        ciudadano_id = request.POST.get("ciudadano_id")
+        
+        if ciudadano_id:
+            # Agregar ciudadano existente
+            estado_id = request.POST.get("estado")
+            observaciones = request.POST.get("observaciones", "")
+            
+            ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+                comedor_id=self.kwargs["pk"],
+                ciudadano_id=ciudadano_id,
+                user=request.user,
+                estado_id=estado_id,
+                observaciones=observaciones,
+            )
+            
+            if ok:
+                messages.success(request, msg)
             else:
-                messages.error(
-                    request, "Datos inválidos para agregar ciudadano a la nómina."
-                )
-                context = self.get_context_data(form=form)
-                return self.render_to_response(context)
+                messages.warning(request, msg)
+            return redirect(self.get_success_url())
         else:
-            # Crear ciudadano nuevo y agregar a nómina
+            # Crear ciudadano nuevo
             form_ciudadano = CiudadanoFormParaNomina(request.POST)
             form_nomina_extra = NominaExtraForm(request.POST)
+            
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
                 estado = form_nomina_extra.cleaned_data.get("estado")
                 estado_id = estado.id if estado else None
@@ -235,6 +215,7 @@ class NominaCreateView(CreateView):
                     estado_id=estado_id,
                     observaciones=observaciones,
                 )
+                
                 if ok:
                     messages.success(request, msg)
                     return redirect(self.get_success_url())
@@ -243,7 +224,6 @@ class NominaCreateView(CreateView):
             else:
                 messages.warning(request, "Errores en el formulario de ciudadano.")
 
-            # Si no válido o fallo, volvemos a mostrar con errores el form_ciudadano
             context = self.get_context_data(
                 form_ciudadano=form_ciudadano,
                 form_nomina_extra=form_nomina_extra,
