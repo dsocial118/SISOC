@@ -8,10 +8,8 @@ crispy_forms_tags %}
 ;
 {% block title %}Expediente: {{ admision.num_expediente }}{% endblock %}
 ;
-{% block
-    titulo-pagina %}
-    {{ admision.num_expediente }} - {{ admision.estado_legales|
-    default_if_none:"Estado a definir" }}
+{% block titulo-pagina %}
+    {{ admision.num_expediente }} - {{ admision.estado_legales | default_if_none:"Estado a definir" }}
 {% endblock %}
 ;
 {% block breadcrumb %}
@@ -45,8 +43,7 @@ crispy_forms_tags %}
                             data-bs-toggle="modal"
                             data-bs-target="#modalLegalesNumIF">Agregar Número de expediente</button>
                 {% endif %}
-                {% if not formulario_reso_completo and admision.legales_num_if
-                    %}
+                {% if not formulario_reso_completo and admision.legales_num_if %}
                     <button type="button"
                             class="btn btn-primary mr-1"
                             data-bs-toggle="modal"
