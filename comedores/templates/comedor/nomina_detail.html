@@ -1,115 +1,158 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Nómina – {{ object.nombre }}{% endblock %}
+{% block titulo-pagina %}
+    Nómina de {{ object.nombre }}
+    <span class="ml-2 h5">| {{ object.provincia.nombre | default_if_none:"-" }}, {{ object.municipio.nombre | default_if_none:"-" }}</span>
+{% endblock %}
 {% block breadcrumb %}
-    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' object.id %}">{{ object.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Nómina</li>
+    </ol>
 {% endblock %}
 {% block content %}
-    {% include 'components/action_buttons.html' with buttons=action_buttons class="row mb-3" %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    
+    <!-- Botón Volver -->
+    <div class="row justify-content-between d-print-none mx-1 mb-3">
+        <div class="col-auto">
+            <a href="{% url 'comedor_detalle' object.id %}" class="btn btn-secondary mr-1">Volver</a>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'nomina_crear' object.id %}" class="btn btn-primary mr-1">
+                <i class="fa fa-plus"></i> Agregar a Nómina
+            </a>
+        </div>
+    </div>
     
     <!-- Contadores de Nómina -->
-    <div class="row mb-3">
-        <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div class="card-body text-white text-center py-2">
-                    <div class="d-flex align-items-center justify-content-center mb-1">
-                        <i class="bi bi-people-fill fs-5 me-2"></i>
-                        <h5 class="mb-0 fw-bold">{{ cantidad_nomina }}</h5>
+    <div class="row text-center mb-3">
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
+            <div class="info-card" style="background-color: #3498db; color: #ffffff; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-users fa-2x"></i>
                     </div>
-                    <small class="opacity-75">Total en Nómina</small>
+                    <div class="col-9 text-start">
+                        <p>{{ cantidad_nomina }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label" style="margin: 0 -15px -15px; background-color: #2980b9; border-radius: 0 0 10px 10px;">
+                    <h5 class="mt-2">Total en Nómina</h5>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);">
-                <div class="card-body text-white text-center py-2">
-                    <div class="d-flex align-items-center justify-content-center mb-1">
-                        <i class="bi bi-person-fill fs-5 me-2"></i>
-                        <h5 class="mb-0 fw-bold">{{ nominaM }}</h5>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
+            <div class="info-card" style="background-color: #9b59b6; color: #ffffff; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-male fa-2x"></i>
                     </div>
-                    <small class="opacity-75">Masculino</small>
+                    <div class="col-9 text-start">
+                        <p>{{ nominaM }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label" style="margin: 0 -15px -15px; background-color: #8e44ad; border-radius: 0 0 10px 10px;">
+                    <h5 class="mt-2">Masculino</h5>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);">
-                <div class="card-body text-white text-center py-2">
-                    <div class="d-flex align-items-center justify-content-center mb-1">
-                        <i class="bi bi-person-fill fs-5 me-2"></i>
-                        <h5 class="mb-0 fw-bold">{{ nominaF }}</h5>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
+            <div class="info-card" style="background-color: #e74c3c; color: #ffffff; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-female fa-2x"></i>
                     </div>
-                    <small class="opacity-75">Femenino</small>
+                    <div class="col-9 text-start">
+                        <p>{{ nominaF }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label" style="margin: 0 -15px -15px; background-color: #c0392b; border-radius: 0 0 10px 10px;">
+                    <h5 class="mt-2">Femenino</h5>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);">
-                <div class="card-body text-white text-center py-2">
-                    <div class="d-flex align-items-center justify-content-center mb-1">
-                        <i class="bi bi-clock-fill fs-5 me-2"></i>
-                        <h5 class="mb-0 fw-bold">{{ espera }}</h5>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
+            <div class="info-card" style="background-color: #f39c12; color: #ffffff; border-radius: 10px; padding: 15px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-clock fa-2x"></i>
                     </div>
-                    <small class="opacity-75">Lista de Espera</small>
+                    <div class="col-9 text-start">
+                        <p>{{ espera }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label" style="margin: 0 -15px -15px; background-color: #e67e22; border-radius: 0 0 10px 10px;">
+                    <h5 class="mt-2">Lista de Espera</h5>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="card shadow-sm">
-        <div class="card-header d-flex align-items-center">
-            <h5 class="mb-0">Historial de Nómina</h5>
-            <a href="{% url 'nomina_crear' object.id %}" class="btn btn-success btn-sm ms-auto">
-                <i class="bi bi-plus-circle"></i> Agregar a Nómina
-            </a>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Apellido</th>
-                            <th>Nombre</th>
-                            <th>Sexo</th>
-                            <th>DNI</th>
-                            <th>Estado</th>
-                            <th></th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for e in nomina %}
-                            <tr>
-                                <td>{{ e.fecha|date:"d/m/Y" }}</td>
-                                <td>{{ e.ciudadano.apellido }}</td>
-                                <td>{{ e.ciudadano.nombre }}</td>
-                                <td>{{ e.ciudadano.sexo.sexo }}</td>
-                                <td>{{ e.ciudadano.documento }}</td>
-                                <td>{{ e.estado.nombre }}</td>
-                                <td>
-                                    <a href="#"
-                                       class="btn btn-sm btn-primary editar-nomina"
-                                       data-id="{{ e.id }}">Editar</a>
-                                </td>
-                                <td>
-                                    <a href="{% url 'nomina_borrar' object.id e.id %}"
-                                       class="btn btn-sm btn-danger">Eliminar</a>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="8" class="text-center py-4">No hay registros.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Tabla de Nómina -->
+    <div class="row relevamiento-container">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">Historial de Nómina</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-1">
+                    <div class="container m-0 table-responsive">
+                        <table class="table table-striped table-bordered table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Apellido</th>
+                                    <th>Nombre</th>
+                                    <th>Sexo</th>
+                                    <th>DNI</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for e in nomina %}
+                                    <tr>
+                                        <td>{{ e.fecha|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}">{{ e.ciudadano.apellido }}</a>
+                                        </td>
+                                        <td>{{ e.ciudadano.nombre }}</td>
+                                        <td>{{ e.ciudadano.sexo.sexo }}</td>
+                                        <td>{{ e.ciudadano.documento }}</td>
+                                        <td>{{ e.estado.nombre }}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-primary editar-nomina" data-id="{{ e.id }}">Editar</a>
+                                            <a href="{% url 'nomina_borrar' object.id e.id %}" class="btn btn-sm btn-danger ml-1">Eliminar</a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">No hay registros en la nómina.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% if nomina.has_other_pages %}
+                    <div class="card-footer">
+                        {% include 'components/pagination.html' with is_paginated=nomina.has_other_pages page_obj=nomina prev_text='‹' next_text='›' center=True %}
+                    </div>
+                {% endif %}
             </div>
         </div>
-        {% if nomina.has_other_pages %}
-            <div class="card-footer">
-                {% include 'components/pagination.html' with is_paginated=nomina.has_other_pages page_obj=nomina prev_text='‹' next_text='›' center=True %}
-            </div>
-        {% endif %}
     </div>
     <!-- Modal Editar -->
     <div class="modal fade"
