@@ -3,7 +3,11 @@
 {% block title %}Nómina – {{ object.nombre }}{% endblock %}
 {% block titulo-pagina %}
     Nómina de {{ object.nombre }}
-    <span class="ml-2 h5">| {{ object.provincia.nombre | default_if_none:"-" }}, {{ object.municipio.nombre | default_if_none:"-" }}</span>
+    <span class="ml-2 h5">
+        |
+        {% if object.provincia %}{{ object.provincia.nombre }}{% else %}-{% endif %},
+        {% if object.municipio %}{{ object.municipio.nombre }}{% else %}-{% endif %}
+    </span>
 {% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
