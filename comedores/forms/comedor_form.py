@@ -62,9 +62,10 @@ class NominaExtraForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         from ciudadanos.models import EstadoIntervencion
+
         self.fields["estado"].queryset = EstadoIntervencion.objects.all()
         self.fields["estado"].empty_label = "Seleccione un estado"
-    
+
     class Meta:
         model = Nomina
         fields = ["estado", "observaciones"]
