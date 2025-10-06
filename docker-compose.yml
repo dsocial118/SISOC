@@ -30,7 +30,7 @@ services:
       - ${DOCKER_DEBUGGER_PORT_FORWARD}:${DOCKER_DEBUGGER_PORT}
     volumes:
       - .:/sisoc/
-    user: "${RUN_UID}:${RUN_GID}"
+    user: "${RUN_UID:-1000}:${RUN_GID:-1000}"
     restart: always
 
 volumes:

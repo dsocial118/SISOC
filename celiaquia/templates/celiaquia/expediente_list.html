@@ -42,9 +42,10 @@
     <div class="card shadow-sm">
         <div class="table-responsive">
             <table class="table table-hover table-striped mb-0">
-                <thead class="table-light">
+                <thead class="table-dark">
                     <tr>
                         <th>ID</th>
+                        <th>Número de Expediente</th>
                         <th>Fecha creación</th>
                         <th>Provincia</th>
                         <th>Estado</th>
@@ -58,17 +59,25 @@
                     {% for exp in expedientes %}
                         <tr data-exp-id="{{ exp.pk }}">
                             <td>{{ exp.pk }}</td>
+                            <td>{{ exp.numero_expediente|default:"-" }}</td>
                             <td>{{ exp.fecha_creacion|date:"d/m/Y H:i" }}</td>
                             <td>{{ exp.provincia }}</td>
                             <td>
                                 <span class="badge {% if exp.estado.nombre == 'CREADO' %}bg-secondary {% elif exp.estado.nombre == 'EN_ESPERA' %}bg-info {% elif exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}bg-warning {% elif exp.estado.nombre == 'RECEPCIONADO' %}bg-secondary {% elif exp.estado.nombre == 'ASIGNADO' %}bg-primary {% elif exp.estado.nombre == 'PROCESO_DE_CRUCE' %}bg-dark {% elif exp.estado.nombre == 'CRUCE_FINALIZADO' %}bg-success {% else %}bg-light text-dark{% endif %}">
                                     {{ exp.estado.display_name }}
                                 </span>
+                                {% if exp.legajos_subsanar_count > 0 %}
+                                    <div class="mt-1">
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fa fa-exclamation-triangle"></i> {{ exp.legajos_subsanar_count }} a subsanar
+                                        </span>
+                                    </div>
+                                {% endif %}
                             </td>
                             {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
                                 <td>
                                     {% if request.user|has_group:"CoordinadorCeliaquia" %}
-                                        {# SOLO mostrar selector cuando el estado ya es RECEPCIONADO o ASIGNADO #}
+                                        <!-- SOLO mostrar selector cuando el estado ya es RECEPCIONADO o ASIGNADO -->
                                         {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
                                             <div>
                                                 <select class="form-select form-select-sm js-tecnico"
@@ -76,7 +85,7 @@
                                                     <option value="">— Agregar técnico —</option>
                                                     {% for t in tecnicos %}<option value="{{ t.id }}">{{ t.get_full_name|default:t.username }}</option>{% endfor %}
                                                 </select>
-                                                {# Badges de técnicos asignados #}
+                                                <!-- Badges de técnicos asignados -->
                                                 {% if exp.asignaciones_tecnicos.all %}
                                                     <div class="mt-2">
                                                         {% for asignacion in exp.asignaciones_tecnicos.all %}
@@ -109,7 +118,7 @@
                             <td class="text-end">
                                 <a href="{% url 'expediente_detail' exp.pk %}"
                                    class="btn btn-sm btn-outline-primary">Ver</a>
-                                {# PROVINCIA #}
+                                <!-- PROVINCIA -->
                                 {% if request.user|has_group:"ProvinciaCeliaquia" %}
                                     {% if exp.estado.nombre == 'CREADO' %}
                                         <a href="{% url 'expediente_update' exp.pk %}"
@@ -127,7 +136,7 @@
                                         </button>
                                     {% endif %}
                                 {% endif %}
-                                {# SUBSECRETARÍA #}
+                                <!-- SUBSECRETARÍA -->
                                 {% if request.user|has_group:"CoordinadorCeliaquia" %}
                                     {% if exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}
                                         <button type="button"
@@ -136,7 +145,7 @@
                                             Recepcionar
                                         </button>
                                     {% endif %}
-                                    {# Mostrar Asignar solo si RECEPCIONADO o ASIGNADO #}
+                                    <!-- Mostrar Asignar solo si RECEPCIONADO o ASIGNADO -->
                                     {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
                                         <button type="button"
                                                 class="btn btn-sm btn-primary js-assign"
@@ -149,7 +158,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="{% if request.user|has_group:'CoordinadorCeliaquia' or request.user|has_group:'TecnicoCeliaquia' %}6{% else %}5{% endif %}"
+                            <td colspan="{% if request.user|has_group:'CoordinadorCeliaquia' or request.user|has_group:'TecnicoCeliaquia' %}7{% else %}6{% endif %}"
                                 class="text-center text-muted py-3">No hay expedientes registrados.</td>
                         </tr>
                     {% endfor %}
