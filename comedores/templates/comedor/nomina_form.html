@@ -14,7 +14,8 @@
         <h2 class="text-center display-4 mb-4">Agregar a Nómina</h2>
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                     role="alert">
                     {{ message }}
                     <button type="button" class="close" data-dismiss="alert" aria-label="Cerrar">
                         <span aria-hidden="true">&times;</span>
@@ -22,7 +23,7 @@
                 </div>
             {% endfor %}
         {% endif %}
-        
+ 
         <!-- Buscar Ciudadano -->
         <div class="card mb-3">
             <div class="card-header font-weight-bold">Buscar Ciudadano</div>
@@ -41,7 +42,7 @@
                 </form>
             </div>
         </div>
-        
+ 
         <!-- Resultados de Búsqueda -->
         {% if ciudadanos %}
             <div class="card mb-3">
@@ -79,7 +80,7 @@
                 </div>
             </div>
         {% endif %}
-        
+ 
         <!-- Formulario Creación de Ciudadano -->
         {% if request.GET.query and no_resultados %}
             <div class="alert alert-info mb-3">
@@ -110,16 +111,23 @@
             </div>
         {% endif %}
     </div>
-    
+ 
     <!-- Modal Agregar Ciudadano -->
-    <div class="modal fade" id="modalNomina" tabindex="-1" aria-labelledby="modalNominaLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="modalNomina"
+         tabindex="-1"
+         aria-labelledby="modalNominaLabel"
+         aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form method="post" id="form-nomina">
                     {% csrf_token %}
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalNominaLabel">Agregar a Nómina</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
                         <input type="hidden" name="ciudadano_id" id="ciudadano_id" />
@@ -129,9 +137,7 @@
                                 <label for="estado" class="form-label">Estado</label>
                                 <select name="estado" id="estado" class="form-control">
                                     <option value="">Seleccione un estado</option>
-                                    {% for estado in estados %}
-                                        <option value="{{ estado.id }}">{{ estado.nombre }}</option>
-                                    {% endfor %}
+                                    {% for estado in estados %}<option value="{{ estado.id }}">{{ estado.nombre }}</option>{% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-12 mt-3">
