@@ -4,6 +4,7 @@ from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .forms import CustomUserChangeForm, UserCreationForm
+from .services import UsuariosService
 
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -20,41 +21,14 @@ class UserListView(AdminRequiredMixin, ListView):
     template_name = "user/user_list.html"
     context_object_name = "users"
 
+    def get_queryset(self):
+        return UsuariosService.get_filtered_usuarios(self.request)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         # Configuración para el componente data_table
-        context["table_headers"] = [
-            {"title": "Nombre"},
-            {"title": "Apellido"},
-            {"title": "Username"},
-            {"title": "Email"},
-            {"title": "Rol"},
-        ]
-
-        context["table_fields"] = [
-            {"name": "first_name"},
-            {"name": "last_name"},
-            {"name": "username"},
-            {"name": "email"},
-            {"name": "rol"},
-        ]
-
-        context["table_actions"] = [
-            {
-                "label": "Editar",
-                "url_name": "usuario_editar",
-                "type": "primary",
-                "class": "editar",
-            },
-            {
-                "label": "Eliminar",
-                "url_name": "usuario_borrar",
-                "type": "danger",
-                "class": "eliminar",
-            },
-        ]
-
+        context.update(UsuariosService.get_usuarios_list_context())
         return context
 
 
