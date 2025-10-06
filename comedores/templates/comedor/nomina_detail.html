@@ -6,9 +6,61 @@
 {% endblock %}
 {% block content %}
     {% include 'components/action_buttons.html' with buttons=action_buttons class="row mb-3" %}
+    
+    <!-- Contadores de Nómina -->
+    <div class="row mb-3">
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white text-center py-2">
+                    <div class="d-flex align-items-center justify-content-center mb-1">
+                        <i class="bi bi-people-fill fs-5 me-2"></i>
+                        <h5 class="mb-0 fw-bold">{{ cantidad_nomina }}</h5>
+                    </div>
+                    <small class="opacity-75">Total en Nómina</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);">
+                <div class="card-body text-white text-center py-2">
+                    <div class="d-flex align-items-center justify-content-center mb-1">
+                        <i class="bi bi-person-fill fs-5 me-2"></i>
+                        <h5 class="mb-0 fw-bold">{{ nominaM }}</h5>
+                    </div>
+                    <small class="opacity-75">Masculino</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);">
+                <div class="card-body text-white text-center py-2">
+                    <div class="d-flex align-items-center justify-content-center mb-1">
+                        <i class="bi bi-person-fill fs-5 me-2"></i>
+                        <h5 class="mb-0 fw-bold">{{ nominaF }}</h5>
+                    </div>
+                    <small class="opacity-75">Femenino</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);">
+                <div class="card-body text-white text-center py-2">
+                    <div class="d-flex align-items-center justify-content-center mb-1">
+                        <i class="bi bi-clock-fill fs-5 me-2"></i>
+                        <h5 class="mb-0 fw-bold">{{ espera }}</h5>
+                    </div>
+                    <small class="opacity-75">Lista de Espera</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="card shadow-sm">
-        <div class="card-header">
+        <div class="card-header d-flex align-items-center">
             <h5 class="mb-0">Historial de Nómina</h5>
+            <a href="{% url 'nomina_crear' object.id %}" class="btn btn-success btn-sm ms-auto">
+                <i class="bi bi-plus-circle"></i> Agregar a Nómina
+            </a>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
