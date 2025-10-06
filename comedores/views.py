@@ -188,8 +188,21 @@ class NominaCreateView(CreateView):
 
         if ciudadano_id:
             # Agregar ciudadano existente
-            estado_id = request.POST.get("estado")
-            observaciones = request.POST.get("observaciones", "")
+            form_nomina_extra = NominaExtraForm(request.POST)
+
+            if not form_nomina_extra.is_valid():
+                messages.error(
+                    request,
+                    "Datos inválidos para agregar ciudadano a la nómina.",
+                )
+                context = self.get_context_data(
+                    form_nomina_extra=form_nomina_extra,
+                )
+                return self.render_to_response(context)
+
+            estado = form_nomina_extra.cleaned_data.get("estado")
+            estado_id = estado.id if estado else None
+            observaciones = form_nomina_extra.cleaned_data.get("observaciones", "")
 
             ok, msg = ComedorService.agregar_ciudadano_a_nomina(
                 comedor_id=self.kwargs["pk"],
@@ -203,6 +216,7 @@ class NominaCreateView(CreateView):
                 messages.success(request, msg)
             else:
                 messages.warning(request, msg)
+
             return redirect(self.get_success_url())
         else:
             # Crear ciudadano nuevo
