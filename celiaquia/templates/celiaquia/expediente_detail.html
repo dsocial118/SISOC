@@ -97,13 +97,13 @@
             <div class="row">
                 <div class="col-md-6">
                     <p>
-                        <strong>NÃºmero de expediente:</strong> {{ expediente.numero_expediente|default:"-" }}
+                        <strong>Numero de expediente:</strong> {{ expediente.numero_expediente|default:"-" }}
                     </p>
                     <p>
                         <strong>Estado:</strong> {{ expediente.estado.display_name }}
                     </p>
                     <p>
-                        <strong>Fecha de creaciÃ³n:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}
+                        <strong>Fecha de creacion:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}
                     </p>
                     {% if expediente.documento %}
                         <p class="mb-0">
@@ -119,7 +119,7 @@
                         <strong>Provincia:</strong> {{ expediente.usuario_provincia.profile.provincia|default:"-" }}
                     </p>
                     <p>
-                        <strong>TÃ©cnicos asignados:</strong>
+                        <strong>Tecnicos asignados:</strong>
                         {% if expediente.asignaciones_tecnicos.exists %}
                             {% for asignacion in expediente.asignaciones_tecnicos.all %}
                                 <span class="badge bg-info me-1">{{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}</span>
@@ -1193,6 +1193,8 @@
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
 {% endblock %}
+
+
 
 
 
