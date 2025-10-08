@@ -4,10 +4,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/hitos.css' %}" />
 {% endblock %}
 {% block title %}Acompañamiento{% endblock %}
-{% block
-    titulo-pagina %}
-    Acompañamiento
-{% endblock %}
+{% block titulo-pagina %}Acompañamiento{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -60,8 +57,7 @@
                             <div class="info-item">
                                 <div class="info-label">Vencimiento de Mandato</div>
                                 <div class="info-value fecha-valor">
-                                    {{ info_relevante.fecha_vencimiento_mandatos|date:'d/m/Y'
-                                    |default_if_none:"—" }}
+                                    {{ info_relevante.fecha_vencimiento_mandatos|date:'d/m/Y'|default_if_none:"—" }}
                                 </div>
                             </div>
                             <div class="info-item">

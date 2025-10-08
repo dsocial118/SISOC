@@ -3,115 +3,114 @@
     <head>
         <meta charset="UTF-8" />
         <style>
-        @page {
-            size: A4;
-            margin: 3.5cm 2cm 2.5cm 2cm; /* márgenes: top, right, bottom, left */
-            @top-center {
-                content: element(header);
-            }
-            @bottom-center {
-                content: "Página " counter(page) " de " counter(pages);
-                font-size: 10pt;
-                color: #666;
-            }
-        }
+@page {
+    size: A4;
+    margin: 3.5cm 2cm 2.5cm 2cm; /* márgenes: top, right, bottom, left */
+    @top-center {
+        content: element(header);
+    }
+    @bottom-center {
+        content: "Página " counter(page) " de " counter(pages);
+        font-size: 10pt;
+        color: #666;
+    }
+}
 
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 10pt;
-            margin: 0;
-        }
+body {
+    font-family: Arial, sans-serif;
+    font-size: 10pt;
+    margin: 0;
+    text-align: justify;   /* 👈 regla global de justificado */
+    line-height: 1.5;
+}
 
-        #header {
-            position: running(header);
-            height: 3cm;
-            padding: 0.5cm 1cm;
-            /*border-bottom: 1px solid #ccc;*/
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+#header {
+    position: running(header);
+    height: 3cm;
+    padding: 0.5cm 1cm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-        .header-left {
-            font-weight: bold;
-            padding-top: 15px;
-            padding-right: 30px;
-            font-size: 10pt;
-            text-align: left;
-            flex-direction: column; /* si hay varios elementos apilados verticalmente */
-            align-items: center;    /* centro horizontal */
-            justify-content: center; /* centro vertical */
-            text-align: center; /* para textos multilínea */
-        }
+.header-left {
+    font-weight: bold;
+    padding-top: 15px;
+    padding-right: 30px;
+    font-size: 10pt;
+    text-align: center;
+}
 
-        .header-right {
-            display: flex;
-            flex-direction: column; /* si hay varios elementos apilados verticalmente */
-            align-items: center;    /* centro horizontal */
-            justify-content: center; /* centro vertical */
-            font-size: 9pt;
-            text-align: center; /* para textos multilínea */
-            line-height: 0.5;
-            padding-left:30px;
-        }
+.header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 9pt;
+    text-align: center;
+    line-height: 0.5;
+    padding-left: 30px;
+}
 
-        .header-right img {
-            max-height: 40px;
-            height: auto;
-            width: auto;
-            margin-bottom: 0px;
-        }
-        main {
-            /* padding-top: 1cm; */
-            box-sizing: border-box;
-        }
+.header-right img {
+    max-height: 40px;
+    height: auto;
+    width: auto;
+    margin-bottom: 0px;
+}
 
-        h4 {
-            text-align: center;
-        }
+main {
+    box-sizing: border-box;
+}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            border: 2px solid black;
-        }
+h4 {
+    text-align: center; /* 👈 sobrescribe la regla global */
+}
 
-        th, td {
-            padding: 6px;
-            border: 1px solid #ccc;
-            vertical-align: top;
-        }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    border: 2px solid black;
+}
 
-        th[colspan="2"] {
-            text-align: center;
-            background-color: #f0f0f0;
-        }
+th, td {
+    padding: 6px;
+    border: 1px solid #ccc;
+    vertical-align: top;
+    text-align: justify; /* 👈 aseguramos justificado en tablas */
+}
 
-        .salto_pagina {
-            page-break-before: always;
-            /* También podés usar page-break-inside: avoid; para evitar quiebres dentro */
-        }
+th[colspan="2"] {
+    text-align: center; /* 👈 este sí centrado */
+    background-color: #f0f0f0;
+}
 
-        .table-bordered {
-            border: 1px solid #ccc;
-        }
+.salto_pagina {
+    page-break-before: always;
+}
 
-        .text-center {
-            text-align: center;
-        }
+.table-bordered {
+    border: 1px solid #ccc;
+}
 
-        .text-start {
-            text-align: left;
-        }
+.text-center {
+    text-align: center; /* 👈 utilidad para forzar centrado */
+}
 
-        .align-middle {
-            vertical-align: middle;
-        }
-        li {
-          line-height: 1.8;
-          margin-bottom: 0.5em;
-        }
+.text-start {
+    text-align: left;   /* 👈 utilidad para forzar alineación izquierda */
+}
+
+.align-middle {
+    vertical-align: middle;
+}
+
+li {
+    line-height: 1.8;
+    margin-bottom: 0.5em;
+    text-align: justify;
+}
         </style>
     </head>
     <body>
@@ -184,7 +183,7 @@
                 <strong>EL SEÑOR SUBSECRETARIO DE PROMOCIÓN HUMANA DE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO DISPONE:</strong>
             </p>
             <p>
-                <strong>ARTÍCULO 1°.-</strong> Apruébase el Convenio a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO y la organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}, asociada al CUIT N.° {{ informe.cuit_organizacion }}, que, como Proyecto de Convenio identificado como IF-2025-XXX(IF_PROYCONVENIO)XXX-APN-DAIA#MCH, forma parte integrante de la presente Disposición.
+                <strong>ARTÍCULO 1°.-</strong> Apruébase el Convenio a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO y la organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}, asociada al CUIT N.° {{ informe.cuit_organizacion }}, que, como Proyecto de Convenio identificado como {{ proyecto_convenio.numero_if }}, forma parte integrante de la presente Disposición.
             </p>
             <p>
                 <strong>ARTÍCULO 2°.-</strong> Incorpórase al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” designado por la organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}, al Programa “ALIMENTAR COMUNIDAD” para la adquisición de alimentos mediante una tarjeta prepaga física a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo. La carga de fondos se realizará conforme a las disponibilidades financieras y presupuestarias existentes y en los términos y condiciones establecidos en el Convenio referido en el presente acto.
