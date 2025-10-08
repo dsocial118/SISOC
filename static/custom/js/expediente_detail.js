@@ -1009,6 +1009,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const modalValidarRenaper = document.getElementById('modalValidarRenaper');
   if (modalValidarRenaper) {
+    // Limpiar backdrop cuando se cierra el modal
+    modalValidarRenaper.addEventListener('hidden.bs.modal', function () {
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('padding-right');
+    });
+
     const btnValidarRenaper = document.querySelectorAll('.btn-validar-renaper');
 
     btnValidarRenaper.forEach(btn => {
@@ -1291,6 +1300,39 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = originalHTML;
       }
+    });
+  }
+
+  /* ===== FILTRO POR ESTADO ===== */
+  const filtroEstado = document.getElementById('filtro-estado');
+  if (filtroEstado) {
+    filtroEstado.addEventListener('change', function() {
+      const estadoSeleccionado = this.value;
+      const filas = document.querySelectorAll('tbody tr:not(.collapse)');
+      
+      filas.forEach(fila => {
+        if (!estadoSeleccionado) {
+          fila.style.display = '';
+          return;
+        }
+        
+        const estadoCell = fila.querySelector('td:nth-child(2)');
+        let estadoFila = '';
+        
+        if (estadoCell) {
+          const badge = estadoCell.querySelector('.badge');
+          if (badge) {
+            const texto = badge.textContent.trim();
+            if (texto === 'Aprobado') estadoFila = 'APROBADO';
+            else if (texto === 'Rechazado') estadoFila = 'RECHAZADO';
+            else if (texto === 'Subsanar') estadoFila = 'SUBSANAR';
+            else if (texto === 'Subsanado') estadoFila = 'SUBSANADO';
+            else if (texto === 'Pendiente') estadoFila = 'PENDIENTE';
+          }
+        }
+        
+        fila.style.display = estadoFila === estadoSeleccionado ? '' : 'none';
+      });
     });
   }
 
