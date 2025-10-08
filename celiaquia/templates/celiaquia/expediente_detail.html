@@ -25,7 +25,17 @@
                 {% if is_tec or is_coord %}
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
                         <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
-                           class="btn btn-outline-success btn-sm me-2">Descargar nÃ³mina Sintys</a>
+                           class="btn btn-outline-success btn-sm me-2">Descargar nómina Sintys</a>
+                        <button type="button"
+                                class="btn btn-outline-info btn-sm me-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalHistorial">Ver Historial</button>
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm me-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalEstructuraFamiliar">
+                            <i class="fas fa-users"></i> Ver Familias
+                        </button>
                         <button type="button"
                                 class="btn btn-success btn-sm me-2"
                                 data-bs-toggle="modal"
@@ -121,11 +131,8 @@
                 </div>
             </div>
         </div>
-        {% if is_coord %}
-            <div class="p-3 rounded shadow mb-4"
-                 style="background-color:#1c2a3a;
-                        color:#e0e0e0">
-                <h5 class="mb-3">Historial de estados</h5>
+        {% if False %}
+
                 <div class="list-group">
                     {% for h in historial_page_obj %}
                         <div class="list-group-item border-0 mb-3 rounded shadow-sm card-dark">
@@ -267,8 +274,22 @@
                     color: #e0e0e0">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="mb-3">Legajos</h5>
-                <div class="d-flex align-items-center gap-2">
-                    <label for="legajos-page-size" class="me-2 mb-0 small">Registros por pÃ¡gina:</label>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="filtro-estado" class="me-2 mb-0 small">Filtrar por estado:</label>
+                        <select id="filtro-estado"
+                                class="form-select form-select-sm"
+                                style="width: auto">
+                            <option value="">Todos</option>
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="APROBADO">Aprobado</option>
+                            <option value="RECHAZADO">Rechazado</option>
+                            <option value="SUBSANAR">Subsanar</option>
+                            <option value="SUBSANADO">Subsanado</option>
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label for="legajos-page-size" class="me-2 mb-0 small">Registros por página:</label>
                     <select id="legajos-page-size"
                             class="form-select form-select-sm"
                             style="width: auto">
@@ -279,13 +300,10 @@
                         <option value="50">50</option>
                         <option value="all">Todos</option>
                     </select>
+                    </div>
                 </div>
             </div>
-            <div class="mb-4">
-                <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalEstructuraFamiliar">
-                    <i class="fas fa-users"></i> Ver Estructura Familiar ({{ total_responsables }} responsable{{ total_responsables|pluralize }}, {{ total_hijos_sin_responsable }} hijo{{ total_hijos_sin_responsable|pluralize }} sin responsable)
-                </button>
-            </div>
+
             {% if legajos %}
 
                 <div class="table-responsive">
@@ -301,7 +319,7 @@
                         </thead>
                         <tbody>
                             {% for leg in legajos %}
-                                <tr class="{% if leg.revision_tecnico == 'SUBSANAR' %}table-warning{% elif leg.revision_tecnico == 'RECHAZADO' %}table-danger{% elif leg.revision_tecnico == 'APROBADO' %}table-success{% endif %}">
+                                <tr class="{% if leg.revision_tecnico == 'RECHAZADO' %}table-danger{% elif leg.revision_tecnico == 'APROBADO' %}table-success{% endif %}" {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% endif %}>
                                     <td>
                                         <div>
                                             <div class="fw-semibold">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
@@ -1012,10 +1030,99 @@
          aria-labelledby="modalEstructuraFamiliarLabel"
          aria-hidden="true">
         <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="background-color: #2c3e50; color: #e0e0e0;">
+                <div class="modal-header" style="border-bottom: 1px solid #495057;">
+                    <h5 class="modal-title" id="modalEstructuraFamiliarLabel">
+                        <i class="fas fa-users"></i> Estructura Familiar
+                    </h5>
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>DNI</th>
+                                    <th>Rol</th>
+                                    <th>Relación</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for leg in legajos %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</td>
+                                        <td>{{ leg.ciudadano.documento }}</td>
+                                        <td>
+                                            {% if leg.es_responsable %}
+                                                <span class="badge bg-info">👨👩👧👦 Responsable</span>
+                                            {% else %}
+                                                <span class="badge bg-success">👶 Beneficiario</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if leg.es_responsable %}
+                                                {% if leg.hijos_a_cargo %}
+                                                    A cargo de: 
+                                                    {% for hijo in leg.hijos_a_cargo %}
+                                                        {{ hijo.nombre }} {{ hijo.apellido }}{% if not forloop.last %}, {% endif %}
+                                                    {% endfor %}
+                                                {% else %}
+                                                    Sin hijos a cargo
+                                                {% endif %}
+                                            {% else %}
+                                                {% for otro_leg in legajos %}
+                                                    {% if otro_leg.es_responsable %}
+                                                        {% for hijo in otro_leg.hijos_a_cargo %}
+                                                            {% if hijo.id == leg.ciudadano.id %}
+                                                                Responsable: {{ otro_leg.ciudadano.nombre }} {{ otro_leg.ciudadano.apellido }}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if leg.revision_tecnico == 'APROBADO' %}
+                                                <span class="badge bg-success">Aprobado</span>
+                                            {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                                                <span class="badge bg-danger">Rechazado</span>
+                                            {% elif leg.revision_tecnico == 'SUBSANAR' %}
+                                                <span class="badge bg-warning text-dark">Subsanar</span>
+                                            {% elif leg.revision_tecnico == 'SUBSANADO' %}
+                                                <span class="badge bg-info text-dark">Subsanado</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Pendiente</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #495057;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Historial de Estados -->
+    <div class="modal fade"
+         id="modalHistorial"
+         tabindex="-1"
+         aria-labelledby="modalHistorialLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalEstructuraFamiliarLabel">
-                        <i class="fas fa-users"></i> Estructura Familiar del Expediente
+                    <h5 class="modal-title" id="modalHistorialLabel">
+                        <i class="fas fa-history"></i> Historial de Estados
                     </h5>
                     <button type="button"
                             class="btn-close"
@@ -1023,7 +1130,34 @@
                             aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    {% include 'components/estructura_familiar.html' %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Estado Anterior</th>
+                                    <th>Estado Nuevo</th>
+                                    <th>Usuario</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for h in historial_page_obj %}
+                                    <tr>
+                                        <td>{{ h.fecha|date:"d/m/Y H:i" }}</td>
+                                        <td>{{ h.estado_anterior.display_name }}</td>
+                                        <td>{{ h.estado_nuevo.display_name }}</td>
+                                        <td>{{ h.usuario.get_full_name|default:h.usuario.username|default:"-" }}</td>
+                                        <td>{{ h.observaciones|default:"-" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">Sin cambios de estado</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
