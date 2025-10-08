@@ -134,7 +134,7 @@ class ImportacionService:
         for c in df.columns:
             try:
                 if hasattr(df[c], "dt"):
-                    df[c] = df[c].apply(lambda x: x.date() if hasattr(x, "date") else x)
+                    df[c] = df[c].apply(lambda x: x.date() if hasattr(x, "date") and pd.notna(x) else ("" if pd.isna(x) else x))
             except Exception:
                 pass
 
