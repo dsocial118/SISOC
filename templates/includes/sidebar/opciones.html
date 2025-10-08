@@ -148,7 +148,7 @@
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        {% if request.user|has_group:"Comedores Listar" %}
+                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" %}
                             <li class="nav-item">
                                 <a href="{% url 'comedores' %}"
                                    class="nav-link ms-4 {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
@@ -158,7 +158,7 @@
                             </li>
                         {% endif %}
                         <!-- ADMISION -->
-                        {% if request.user|has_group:"Comedores Listar" %}
+                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" %}
                             <li class="nav-item ms-4 {% if 'admisiones' in pagina_actual %}menu-open{% endif %}">
                                 <a href="#" class="nav-link">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
