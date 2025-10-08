@@ -1,12 +1,13 @@
 <!-- Componente Pagination -->
-<!-- Uso: include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range query=query prev_text='Anterior' next_text='Siguiente' -->
+<!-- Uso: include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range query=query page_param='page' prev_text='Anterior' next_text='Siguiente' -->
 {% if is_paginated %}
+    {% with page_param_name=page_param|default:'page' %}
     <div class="mt-2">
         <ul class="pagination">
             <!-- Botón Anterior -->
             {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}"
+                    <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ page_obj.previous_page_number }}"
                        class="page-link">{{ prev_text|default:"Volver" }}</a>
                 </li>
             {% else %}
@@ -23,7 +24,7 @@
                         </li>
                     {% else %}
                         <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ i }}"
+                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
                                class="page-link">{{ i }}</a>
                         </li>
                     {% endif %}
@@ -32,17 +33,17 @@
                 {% for i in page_obj.paginator.page_range %}
                     {% if page_obj.number == i %}
                         <li class="page-item active">
-                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ i }}"
+                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
                                class="page-link">{{ i }}</a>
                         </li>
                     {% elif i > page_obj.number|add:'-5' and i < page_obj.number|add:'5' %}
                         <li class="page-item">
-                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ i }}"
+                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
                                class="page-link">{{ i }}</a>
                         </li>
                     {% elif i == 1 or i == page_obj.paginator.num_pages %}
                         <li class="page-item">
-                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ i }}"
+                            <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ i }}"
                                class="page-link">{{ i }}</a>
                         </li>
                     {% elif i == page_obj.number|add:'-6' or i == page_obj.number|add:'6' %}
@@ -55,7 +56,7 @@
             <!-- Botón Siguiente -->
             {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != 'page' and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}"
+                    <a href="?{% if query %}busqueda={{ query }}&{% endif %}{% for key, value in request.GET.items %}{% if key != page_param_name and key != 'busqueda' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{{ page_param_name }}={{ page_obj.next_page_number }}"
                        class="page-link">{{ next_text|default:"Continuar" }}</a>
                 </li>
             {% else %}
@@ -65,4 +66,5 @@
             {% endif %}
         </ul>
     </div>
+    {% endwith %}
 {% endif %}

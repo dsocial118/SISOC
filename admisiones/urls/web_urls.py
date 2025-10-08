@@ -13,10 +13,9 @@ from admisiones.views.web_views import (
     InformeTecnicosUpdateView,
     InformeTecnicoDetailView,
     InformeTecnicoComplementarioDetailView,
+    InformeTecnicoComplementarioReviewView,
     AdmisionesLegalesListView,
     AdmisionesLegalesDetailView,
-    AnexoCreateView,
-    AnexoUpdateView,
     admisiones_legales_ajax,
     admisiones_tecnicos_ajax,
 )
@@ -74,7 +73,7 @@ urlpatterns = [
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",
-        group_required(["Comedores", "Tecnico Comedor"])(
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
             InformeTecnicoDetailView.as_view()
         ),
         name="informe_tecnico_ver",
@@ -85,16 +84,6 @@ urlpatterns = [
             InformeTecnicoComplementarioDetailView.as_view()
         ),
         name="informe_complementario_ver",
-    ),
-    path(
-        "comedores/admision/anexo/<int:admision_id>/crear/",
-        group_required(["Comedores", "Tecnico Comedor"])(AnexoCreateView.as_view()),
-        name="anexo_crear",
-    ),
-    path(
-        "comedores/admision/anexo/<int:admision_id>/editar/",
-        group_required(["Comedores", "Tecnico Comedor"])(AnexoUpdateView.as_view()),
-        name="anexo_editar",
     ),
     path(
         "ajax/actualizar-estado/",
@@ -116,6 +105,13 @@ urlpatterns = [
         "comedores/admisiones/legales/ver/<int:pk>",
         group_required(["Area Legales"])(AdmisionesLegalesDetailView.as_view()),
         name="admisiones_legales_ver",
+    ),
+    path(
+        "comedores/admisiones/legales/revisar-complementario/<int:pk>",
+        group_required(["Area Legales"])(
+            InformeTecnicoComplementarioReviewView.as_view()
+        ),
+        name="revisar_informe_complementario",
     ),
     # AJAX endpoints
     path(

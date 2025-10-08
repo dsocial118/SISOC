@@ -1,7 +1,6 @@
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import redirect
 from django.contrib import messages
-from django.shortcuts import get_object_or_404
 from django.db import models
 from django.template.loader import render_to_string, get_template
 from weasyprint import HTML
@@ -43,10 +42,180 @@ from admisiones.forms.admisiones_forms import (
     ConvenioForm,
     DisposicionForm,
     ReinicioExpedienteForm,
+    SolicitarInformeComplementarioForm,
 )
 
 
 class LegalesService:
+    @staticmethod
+    def _safe_redirect(request, admision):
+        """Helper method for safe redirects"""
+        if url_has_allowed_host_and_scheme(
+            request.path_info, allowed_hosts={request.get_host()}
+        ):
+            return redirect(request.path_info)
+        return redirect("admisiones_legales_ver", pk=admision.pk)
+
+    @staticmethod
+    def _save_formulario_with_user(form, admision, request):
+        """Helper to save formulario with user assignment"""
+        instance = form.save(commit=False)
+        instance.admision = admision
+        if not getattr(instance, "creado_por", None) and request.user.is_authenticated:
+            instance.creado_por = request.user
+        instance.save()
+        return instance
+
+    @staticmethod
+    def _reset_dictamen_flow(admision):
+        """Reset flow based on dictamen type"""
+        reset_fields = {
+            "intervencion_juridicos": None,
+            "rechazo_juridicos_motivo": None,
+            "dictamen_motivo": None,
+        }
+
+        if admision.dictamen_motivo == "observacion en proyecto de convenio":
+            FormularioProyectoDeConvenio.objects.filter(admision=admision).delete()
+            FormularioProyectoDisposicion.objects.filter(admision=admision).delete()
+            reset_fields["estado_legales"] = "Expediente Agregado"
+        elif admision.dictamen_motivo == "observacion en proyecto de disposicion":
+            FormularioProyectoDisposicion.objects.filter(admision=admision).delete()
+            reset_fields["estado_legales"] = "IF Convenio Asignado"
+
+        for field, value in reset_fields.items():
+            setattr(admision, field, value)
+        admision.save()
+
+    @staticmethod
+    def get_botones_disponibles(admision):
+        """Retorna los botones que deben mostrarse según el estado actual"""
+        botones = []
+
+        puede_rectificar = not admision.legales_num_if
+
+        formulario_proyecto = admision.admisiones_proyecto_convenio.first()
+        formulario_reso = admision.admisiones_proyecto_disposicion.first()
+
+        if admision.enviado_legales and admision.estado_legales == "Enviado a Legales":
+            if puede_rectificar:
+                botones.append("rectificar")
+            if not admision.legales_num_if:
+                botones.append("agregar_expediente")
+            return botones
+
+        if admision.estado_legales == "Expediente Agregado":
+            botones.append("formulario_convenio")
+        elif admision.estado_legales == "Formulario Convenio Creado":
+            botones.append("if_convenio")
+        elif admision.estado_legales == "IF Convenio Asignado":
+            botones.append("formulario_disposicion")
+        elif admision.estado_legales == "Formulario Disposición Creado":
+            botones.append("if_disposicion")
+        elif admision.estado_legales == "IF Disposición Asignado":
+            botones.append("intervencion_juridicos")
+        elif admision.estado_legales == "Juridicos: Rechazado":
+            if admision.rechazo_juridicos_motivo == "providencia":
+                botones.append("reinicio_expediente")
+            elif admision.rechazo_juridicos_motivo == "dictamen":
+                if admision.dictamen_motivo == "observacion en informe técnico":
+                    if not admision.complementario_solicitado:
+                        botones.append("informe_complementario")
+
+        elif admision.estado_legales == "Informe Complementario Enviado":
+            botones.append("revisar_informe_complementario")
+        elif admision.estado_legales == "Informe Complementario: Validado":
+            from admisiones.models.admisiones import InformeTecnicoComplementarioPDF
+
+            pdf_complementario = InformeTecnicoComplementarioPDF.objects.filter(
+                admision=admision
+            ).first()
+
+            if pdf_complementario and not pdf_complementario.numero_if:
+                botones.append("if_informe_complementario")
+            else:
+
+                botones.append("formulario_convenio")
+
+        elif admision.estado_legales in ["Rectificado", None]:
+            if not admision.legales_num_if:
+                botones.append("agregar_expediente")
+            elif not formulario_proyecto:
+                botones.append("formulario_convenio")
+            elif formulario_proyecto and not formulario_proyecto.numero_if:
+                botones.append("if_convenio")
+            elif formulario_proyecto.numero_if and not formulario_reso:
+                botones.append("formulario_disposicion")
+            elif formulario_reso and not formulario_reso.numero_if:
+                botones.append("if_disposicion")
+            elif (
+                formulario_proyecto.numero_if
+                and formulario_reso.numero_if
+                and not admision.intervencion_juridicos
+            ):
+                botones.append("intervencion_juridicos")
+
+            if puede_rectificar and not formulario_proyecto and not formulario_reso:
+                botones.append("rectificar")
+
+        elif (
+            admision.estado_legales == "Juridicos: Validado"
+            and not admision.informe_sga
+        ):
+            botones.append("informe_sga")
+
+        if admision.informe_sga and not admision.numero_convenio:
+            botones.append("convenio")
+
+        if admision.numero_convenio and not admision.numero_disposicion:
+            botones.append("disposicion")
+
+        if (
+            not admision.enviada_a_archivo
+            and not admision.dictamen_motivo
+            and admision.rechazo_juridicos_motivo
+            and admision.estado_legales != "Juridicos: Rechazado"
+        ):
+            botones.append("reinicio_expediente")
+
+        if (
+            admision.dictamen_motivo == "observacion en informe técnico"
+            and not admision.complementario_solicitado
+            and admision.estado_legales != "Juridicos: Rechazado"
+        ):
+            botones.append("informe_complementario")
+
+        return botones
+
+    @staticmethod
+    def actualizar_estado_por_accion(admision, accion):
+        """Actualiza el estado_legales basado en la acción realizada"""
+        if accion == "intervencion_juridicos":
+            if admision.intervencion_juridicos == "validado":
+                admision.estado_legales = "Juridicos: Validado"
+            elif admision.intervencion_juridicos == "rechazado":
+                admision.estado_legales = "Juridicos: Rechazado"
+        else:
+            estados_por_accion = {
+                "agregar_expediente": "Expediente Agregado",
+                "formulario_convenio": "Formulario Convenio Creado",
+                "if_convenio": "IF Convenio Asignado",
+                "formulario_disposicion": "Formulario Disposición Creado",
+                "if_disposicion": "IF Disposición Asignado",
+                "informe_sga": "Informe SGA Generado",
+                "convenio": "Convenio Firmado",
+                "disposicion": "Acompañamiento Pendiente",
+                "rectificar": "A Rectificar",
+                "reinicio_expediente": "Archivado",
+                "informe_complementario": "Informe Complementario Solicitado",
+                "enviar_informe_complementario": "Informe Complementario Enviado",
+            }
+
+            if accion in estados_por_accion:
+                admision.estado_legales = estados_por_accion[accion]
+
+        admision.save(update_fields=["estado_legales"])
+
     @staticmethod
     def enviar_a_rectificar(request, admision):
         try:
@@ -59,10 +228,6 @@ class LegalesService:
                     admision.estado_id = 3
                     cambios = True
 
-                if admision.estado_legales != "A Rectificar":
-                    admision.estado_legales = "A Rectificar"
-                    cambios = True
-
                 if admision.observaciones != observaciones:
                     admision.observaciones = observaciones
                     cambios = True
@@ -70,6 +235,7 @@ class LegalesService:
                 if cambios:
                     admision.save()
 
+                LegalesService.actualizar_estado_por_accion(admision, "rectificar")
                 messages.success(request, "Enviado a rectificar con éxito.")
             else:
                 messages.error(request, "Error al enviar a rectificar.")
@@ -88,27 +254,19 @@ class LegalesService:
             form = LegalesNumIFForm(request.POST, instance=admision)
             if form.is_valid():
                 form.save()
+                LegalesService.actualizar_estado_por_accion(
+                    admision, "agregar_expediente"
+                )
                 messages.success(request, "Número de IF guardado correctamente.")
             else:
                 messages.error(request, "Error al guardar el número de IF.")
-            if url_has_allowed_host_and_scheme(
-                request.path_info, allowed_hosts={request.get_host()}
-            ):
-                return redirect(request.path_info)
-            else:
-                return redirect("admisiones_legales_ver", pk=admision.pk)
+            return LegalesService._safe_redirect(request, admision)
         except Exception:
             logger.exception(
-                "Error en guardar_legales_num_if",
-                extra={"admision_pk": admision.pk},
+                "Error en guardar_legales_num_if", extra={"admision_pk": admision.pk}
             )
             messages.error(request, "Error inesperado al guardar el número de IF.")
-            if url_has_allowed_host_and_scheme(
-                request.path_info, allowed_hosts={request.get_host()}
-            ):
-                return redirect(request.path_info)
-            else:
-                return redirect("admisiones_legales_ver", pk=admision.pk)
+            return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def guardar_intervencion_juridicos(request, admision):
@@ -116,6 +274,22 @@ class LegalesService:
             form = IntervencionJuridicosForm(request.POST, instance=admision)
             if form.is_valid():
                 form.save()
+
+                if (
+                    admision.intervencion_juridicos == "rechazado"
+                    and admision.rechazo_juridicos_motivo == "dictamen"
+                    and admision.dictamen_motivo
+                    in [
+                        "observacion en proyecto de convenio",
+                        "observacion en proyecto de disposicion",
+                    ]
+                ):
+                    LegalesService._reset_dictamen_flow(admision)
+                else:
+                    LegalesService.actualizar_estado_por_accion(
+                        admision, "intervencion_juridicos"
+                    )
+
                 messages.success(
                     request, "Intervención Jurídicos guardada correctamente."
                 )
@@ -136,6 +310,8 @@ class LegalesService:
         try:
             admision.informe_sga = not admision.informe_sga
             admision.save(update_fields=["informe_sga"])
+            if admision.informe_sga:
+                LegalesService.actualizar_estado_por_accion(admision, "informe_sga")
             messages.success(
                 request,
                 f"Informe SGA {'Aceptado' if admision.informe_sga else 'No aceptado'}.",
@@ -155,6 +331,7 @@ class LegalesService:
             form = ConvenioForm(request.POST, request.FILES, instance=admision)
             if form.is_valid():
                 form.save()
+                LegalesService.actualizar_estado_por_accion(admision, "convenio")
                 messages.success(request, "Convenio guardado correctamente.")
             else:
                 logger.error("Errores en ConvenioForm: %s", form.errors)
@@ -173,6 +350,7 @@ class LegalesService:
             form = DisposicionForm(request.POST, request.FILES, instance=admision)
             if form.is_valid():
                 form.save()
+                LegalesService.actualizar_estado_por_accion(admision, "disposicion")
                 messages.success(request, "Disposición guardada correctamente.")
             else:
                 logger.error("Errores en DisposicionForm: %s", form.errors)
@@ -188,19 +366,14 @@ class LegalesService:
     @staticmethod
     def guardar_convenio_num_if(request, admision):
         try:
-            formulario = admision.admisiones_proyecto_convenio.first()
-            if formulario is None:
-                formulario = FormularioProyectoDeConvenio(admision=admision)
+            formulario = (
+                admision.admisiones_proyecto_convenio.first()
+                or FormularioProyectoDeConvenio(admision=admision)
+            )
             form = ConvenioNumIFFORM(request.POST, instance=formulario)
             if form.is_valid():
-                convenio = form.save(commit=False)
-                convenio.admision = admision
-                if (
-                    not getattr(convenio, "creado_por", None)
-                    and request.user.is_authenticated
-                ):
-                    convenio.creado_por = request.user
-                convenio.save()
+                LegalesService._save_formulario_with_user(form, admision, request)
+                LegalesService.actualizar_estado_por_accion(admision, "if_convenio")
                 messages.success(
                     request, "Número IF de Proyecto de Convenio guardado correctamente."
                 )
@@ -211,8 +384,7 @@ class LegalesService:
             return redirect(request.path_info)
         except Exception:
             logger.exception(
-                "Error en guardar_convenio_num_if",
-                extra={"admision_pk": admision.pk},
+                "Error en guardar_convenio_num_if", extra={"admision_pk": admision.pk}
             )
             messages.error(
                 request,
@@ -227,12 +399,14 @@ class LegalesService:
             if form.is_valid():
                 reinicio = form.save(commit=False)
                 reinicio.enviada_a_archivo = True
-                reinicio.estado_legales = "Archivado"
                 reinicio.save(
                     update_fields=[
                         "observaciones_reinicio_expediente",
                         "enviada_a_archivo",
                     ]
+                )
+                LegalesService.actualizar_estado_por_accion(
+                    admision, "reinicio_expediente"
                 )
                 messages.success(
                     request,
@@ -252,21 +426,177 @@ class LegalesService:
             return redirect(request.path_info)
 
     @staticmethod
+    def revisar_informe_complementario(request, admision):
+        try:
+            informe_complementario = InformeComplementario.objects.filter(
+                admision=admision, estado="enviado_validacion"
+            ).first()
+
+            if not informe_complementario:
+                messages.error(
+                    request, "No se encontró informe complementario para revisar."
+                )
+                return redirect(request.path_info)
+
+            accion = request.POST.get("accion_complementario")
+            observaciones = request.POST.get("observaciones_complementario", "")
+
+            if accion == "validar":
+                informe_complementario.estado = "validado"
+                informe_complementario.save()
+
+                from admisiones.services.informes_service import InformeService
+
+                pdf_final = InformeService.generar_y_guardar_pdf_complementario(
+                    informe_complementario
+                )
+
+                if pdf_final:
+
+                    admision.estado_legales = "Informe Complementario: Validado"
+                    admision.save(update_fields=["estado_legales"])
+                    messages.success(
+                        request,
+                        "Informe complementario validado correctamente. Se ha generado el PDF final.",
+                    )
+                else:
+                    messages.error(
+                        request,
+                        "Error al generar el PDF final del informe complementario.",
+                    )
+
+            elif accion == "rectificar":
+                if not observaciones.strip():
+                    messages.error(
+                        request, "Las observaciones son obligatorias para rectificar."
+                    )
+                    return redirect(request.path_info)
+
+                informe_complementario.estado = "rectificar"
+                informe_complementario.observaciones_legales = observaciones
+                informe_complementario.save()
+                admision.estado_legales = "Informe Complementario Solicitado"
+                admision.save(update_fields=["estado_legales"])
+                messages.success(
+                    request, "Informe complementario enviado a rectificar."
+                )
+            else:
+                messages.error(request, "Acción no válida.")
+                return redirect(request.path_info)
+
+            return redirect("admisiones_legales_ver", pk=admision.pk)
+        except Exception:
+            logger.exception(
+                "Error en revisar_informe_complementario",
+                extra={"admision_pk": admision.pk},
+            )
+            messages.error(
+                request, "Error inesperado al revisar informe complementario."
+            )
+            return redirect(request.path_info)
+
+    @staticmethod
+    def guardar_if_informe_complementario(request, admision):
+        try:
+            numero_if = request.POST.get("numero_if_complementario", "").strip()
+            if not numero_if:
+                messages.error(request, "El número IF es obligatorio.")
+                return redirect(request.path_info)
+
+            from admisiones.models.admisiones import InformeTecnicoComplementarioPDF
+
+            pdf_complementario = InformeTecnicoComplementarioPDF.objects.filter(
+                admision=admision
+            ).first()
+
+            if pdf_complementario:
+                pdf_complementario.numero_if = numero_if
+                pdf_complementario.save()
+
+                LegalesService._limpiar_flujo_anterior(admision)
+
+                messages.success(
+                    request,
+                    "Número IF del informe complementario guardado correctamente.",
+                )
+            else:
+                messages.error(
+                    request, "No se encontró PDF de informe complementario validado."
+                )
+
+            return redirect(request.path_info)
+        except Exception:
+            logger.exception(
+                "Error en guardar_if_informe_complementario",
+                extra={"admision_pk": admision.pk},
+            )
+            messages.error(
+                request, "Error inesperado al guardar IF del informe complementario."
+            )
+            return redirect(request.path_info)
+
+    @staticmethod
+    def _limpiar_flujo_anterior(admision):
+        """Limpia los datos del flujo anterior para reiniciar desde formulario convenio"""
+        try:
+
+            FormularioProyectoDeConvenio.objects.filter(admision=admision).delete()
+            FormularioProyectoDisposicion.objects.filter(admision=admision).delete()
+
+            admision.intervencion_juridicos = None
+            admision.rechazo_juridicos_motivo = None
+            admision.dictamen_motivo = None
+
+            admision.estado_legales = "Informe Complementario: Validado"
+            admision.save()
+
+        except Exception:
+            logger.exception(
+                "Error en _limpiar_flujo_anterior",
+                extra={"admision_pk": admision.pk},
+            )
+
+    @staticmethod
+    def guardar_observaciones_informe_complementario(request, admision):
+        try:
+            form = SolicitarInformeComplementarioForm(request.POST, instance=admision)
+            if form.is_valid():
+                complementario = form.save(commit=False)
+                complementario.complementario_solicitado = True
+                complementario.save(
+                    update_fields=[
+                        "observaciones_informe_tecnico_complementario",
+                        "complementario_solicitado",
+                    ]
+                )
+                LegalesService.actualizar_estado_por_accion(
+                    admision, "informe_complementario"
+                )
+                messages.success(request, "Informe complementario solicitado.")
+            else:
+                messages.error(request, "Error al solicitar informe complementario.")
+            return redirect(request.path_info)
+        except Exception:
+            logger.exception(
+                "Error en guardar_observaciones_informe_complementario",
+                extra={"admision_pk": admision.pk},
+            )
+            messages.error(
+                request, "Error inesperado al solicitar informe complementario."
+            )
+            return redirect(request.path_info)
+
+    @staticmethod
     def guardar_dispo_num_if(request, admision):
         try:
-            formulario = admision.admisiones_proyecto_disposicion.first()
-            if formulario is None:
-                formulario = FormularioProyectoDisposicion(admision=admision)
+            formulario = (
+                admision.admisiones_proyecto_disposicion.first()
+                or FormularioProyectoDisposicion(admision=admision)
+            )
             form = DisposicionNumIFFORM(request.POST, instance=formulario)
             if form.is_valid():
-                disposicion = form.save(commit=False)
-                disposicion.admision = admision
-                if (
-                    not getattr(disposicion, "creado_por", None)
-                    and request.user.is_authenticated
-                ):
-                    disposicion.creado_por = request.user
-                disposicion.save()
+                LegalesService._save_formulario_with_user(form, admision, request)
+                LegalesService.actualizar_estado_por_accion(admision, "if_disposicion")
                 messages.success(
                     request,
                     "Número IF de Proyecto de Disposición guardado correctamente.",
@@ -278,8 +608,7 @@ class LegalesService:
             return redirect(request.path_info)
         except Exception:
             logger.exception(
-                "Error en guardar_dispo_num_if",
-                extra={"admision_pk": admision.pk},
+                "Error en guardar_dispo_num_if", extra={"admision_pk": admision.pk}
             )
             messages.error(
                 request,
@@ -300,12 +629,9 @@ class LegalesService:
             condiciones_validas = (
                 reso_completo
                 and proyecto_completo
-                and (
-                    admision.observaciones is None
-                    or admision.observaciones.strip() == ""
-                )
+                and not (admision.observaciones and admision.observaciones.strip())
                 and admision.estado_legales != "A Rectificar"
-                and admision.legales_num_if not in [None, ""]
+                and admision.legales_num_if
             )
 
             if condiciones_validas:
@@ -320,24 +646,13 @@ class LegalesService:
                     "No se puede validar: asegúrese de completar ambos formularios y agregar el Número IF.",
                 )
 
-            if url_has_allowed_host_and_scheme(
-                request.path_info, allowed_hosts={request.get_host()}
-            ):
-                return redirect(request.path_info)
-            else:
-                return redirect("admisiones_legales_ver", pk=admision.pk)
+            return LegalesService._safe_redirect(request, admision)
         except Exception:
             logger.exception(
-                "Error en validar_juridicos",
-                extra={"admision_pk": admision.pk},
+                "Error en validar_juridicos", extra={"admision_pk": admision.pk}
             )
             messages.error(request, "Error inesperado al validar jurídicos.")
-            if url_has_allowed_host_and_scheme(
-                request.path_info, allowed_hosts={request.get_host()}
-            ):
-                return redirect(request.path_info)
-            else:
-                return redirect("admisiones_legales_ver", pk=admision.pk)
+            return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def guardar_formulario_reso(request, admision):
@@ -356,22 +671,28 @@ class LegalesService:
             if request.user.is_authenticated:
                 nuevo_formulario.creado_por = request.user
             nuevo_formulario.save()
+            LegalesService.actualizar_estado_por_accion(
+                admision, "formulario_disposicion"
+            )
 
             informe = (
                 InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
             )
 
             pdf_template_name = (
-                "admisiones/pdf_dispo_incorporacion.html"
+                "admisiones/pdf/pdf_dispo_incorporacion.html"
                 if nuevo_formulario.tipo == "incorporacion"
-                else "admisiones/pdf_dispo_renovacion.html"
+                else "admisiones/pdf/pdf_dispo_renovacion.html"
             )
-            docx_template_name = pdf_template_name.replace("pdf_", "docx_")
+            docx_template_name = pdf_template_name.replace("pdf/pdf_", "docx/docx_")
+
+            proyecto_convenio = admision.admisiones_proyecto_convenio.first()
 
             context = {
                 "admision": admision,
                 "formulario": nuevo_formulario,
                 "informe": informe,
+                "proyecto_convenio": proyecto_convenio,
             }
 
             html_pdf = render_to_string(pdf_template_name, context)
@@ -526,11 +847,20 @@ class LegalesService:
             if request.user.is_authenticated:
                 nuevo_formulario.creado_por = request.user
             nuevo_formulario.save()
+            LegalesService.actualizar_estado_por_accion(admision, "formulario_convenio")
 
-            context = {"admision": admision, "formulario": nuevo_formulario}
+            informe = (
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+            )
 
-            pdf_template_name = "admisiones/pdf_convenio.html"
-            docx_template_name = "admisiones/docx_convenio.html"
+            context = {
+                "admision": admision,
+                "formulario": nuevo_formulario,
+                "informe": informe,
+            }
+
+            pdf_template_name = "admisiones/pdf/pdf_convenio.html"
+            docx_template_name = "admisiones/docx/docx_convenio.html"
 
             html_pdf = render_to_string(pdf_template_name, context)
             if not html_pdf.strip():
@@ -758,6 +1088,19 @@ class LegalesService:
             if "btnReinicioExpediente" in request.POST:
                 return LegalesService.guardar_reinicio_expediente(request, admision)
 
+            if "btnInformeComplementario" in request.POST:
+                return LegalesService.guardar_observaciones_informe_complementario(
+                    request, admision
+                )
+
+            if "btnRevisarInformeComplementario" in request.POST:
+                return LegalesService.revisar_informe_complementario(request, admision)
+
+            if "btnIFInformeComplementario" in request.POST:
+                return LegalesService.guardar_if_informe_complementario(
+                    request, admision
+                )
+
             if "ValidacionJuridicos" in request.POST:
                 return LegalesService.validar_juridicos(request, admision)
 
@@ -775,7 +1118,6 @@ class LegalesService:
             if "btnDocumentoExpediente" in request.POST:
                 return LegalesService.guardar_documento_expediente(request, admision)
 
-            # Por defecto, recargar la misma página
             return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception:
             logger.exception(
@@ -786,7 +1128,7 @@ class LegalesService:
             return redirect("admisiones_legales_ver", pk=admision.pk)
 
     @staticmethod
-    def get_legales_context(admision):
+    def get_legales_context(admision, request=None):
         try:
             documentaciones = Documentacion.objects.filter(
                 models.Q(convenios=admision.tipo_convenio)
@@ -795,8 +1137,49 @@ class LegalesService:
             archivos_subidos = ArchivoAdmision.objects.filter(admision=admision)
             informes_complementarios = InformeComplementario.objects.filter(
                 admision=admision
-            )
-            historial = admision.historial.all().order_by("-fecha")
+            ).order_by("-creado")
+
+            from admisiones.models.admisiones import InformeTecnicoComplementarioPDF
+
+            pdf_complementario_final = InformeTecnicoComplementarioPDF.objects.filter(
+                admision=admision
+            ).first()
+            from django.core.paginator import Paginator
+            
+            historial_queryset = admision.historial.all().order_by("-fecha")
+            paginator = Paginator(historial_queryset, 10)
+            page_number = request.GET.get('historial_page', 1) if request else 1
+            historial_page = paginator.get_page(page_number)
+            
+            # Preparar datos para el componente data_table
+            historial_headers = [
+                {"title": "Fecha", "width": "20%"},
+                {"title": "Campo", "width": "25%"},
+                {"title": "Valor", "width": "35%"},
+                {"title": "Usuario", "width": "20%"},
+            ]
+            
+
+            
+            # Formatear datos del historial para el componente
+            historial_cambios = []
+            for cambio in historial_page:
+                valor_formateado = cambio.valor_nuevo
+                if valor_formateado == "True":
+                    valor_formateado = "Si"
+                elif valor_formateado == "False":
+                    valor_formateado = "No"
+                elif not valor_formateado:
+                    valor_formateado = "-"
+                    
+                historial_cambios.append({
+                    "cells": [
+                        {"content": cambio.fecha.strftime("%d/%m/%Y %H:%M")},
+                        {"content": cambio.campo},
+                        {"content": valor_formateado},
+                        {"content": cambio.usuario.username if cambio.usuario else "-"},
+                    ]
+                })
 
             archivos_dict = {}
             documentos_personalizados = []
@@ -866,7 +1249,11 @@ class LegalesService:
             return {
                 "documentos": documentos_info,
                 "informe": informe,
-                "historial_cambios": historial,
+                "historial_cambios": historial_cambios,
+                "historial_headers": historial_headers,
+                "historial_page_obj": historial_page,
+                "historial_is_paginated": historial_page.has_other_pages(),
+                "historial_page_param": "historial_page",
                 "pdf_url": (
                     getattr(admision, "informe_pdf", None).archivo.url
                     if getattr(admision, "informe_pdf", None)
@@ -889,12 +1276,17 @@ class LegalesService:
                 "form_convenio": ConvenioForm(instance=admision),
                 "form_disposicion": DisposicionForm(instance=admision),
                 "form_reinicio_expediente": ReinicioExpedienteForm(instance=admision),
+                "form_solicitar_informe_complementario": SolicitarInformeComplementarioForm(
+                    instance=admision
+                ),
                 "documentos_form": documentos_form,
                 "value_informe_sga": ultimos_valores["Informe SGA"],
                 "value_disposicion": ultimos_valores["Disposición"],
                 "value_firma_convenio": ultimos_valores["Firma Convenio"],
                 "value_numero_conv": ultimos_valores["Numero CONV"],
                 "informes_complementarios": informes_complementarios,
+                "pdf_complementario_final": pdf_complementario_final,
+                "botones_disponibles": LegalesService.get_botones_disponibles(admision),
             }
         except Exception:
             logger.exception(
