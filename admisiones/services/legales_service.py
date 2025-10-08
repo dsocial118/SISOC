@@ -34,7 +34,6 @@ from admisiones.forms.admisiones_forms import (
     LegalesRectificarForm,
     ProyectoDisposicionForm,
     ProyectoConvenioForm,
-    DocumentosExpedienteForm,
     ConvenioNumIFFORM,
     DisposicionNumIFFORM,
     IntervencionJuridicosForm,
@@ -999,47 +998,6 @@ class LegalesService:
             return redirect(request.path_info)
 
     @staticmethod
-    def guardar_documento_expediente(request, admision):
-        try:
-            form = DocumentosExpedienteForm(request.POST, request.FILES)
-            if form.is_valid():
-                documento = form.save(commit=False)
-                documento.admision = admision
-                documento.save()
-
-                cambio_estado = {
-                    "Informe SGA": "Informe SGA Generado",
-                    "Disposición": "Disposición Generada",
-                    "Firma Convenio": "Convenio Firmado",
-                    "Numero CONV": "Finalizado",
-                }
-
-                tipo = documento.tipo
-                nuevo_estado = cambio_estado.get(tipo)
-
-                if nuevo_estado:
-                    admision.estado_legales = nuevo_estado
-                    admision.save(update_fields=["estado_legales"])
-
-                messages.success(request, "Se ha cargado con éxito.")
-            else:
-                messages.error(request, "Error al guardar.")
-                logger.error(
-                    "Error al guardar documento de expediente: %s", form.errors
-                )
-
-            return redirect(request.path_info)
-        except Exception:
-            logger.exception(
-                "Error en guardar_documento_expediente",
-                extra={"admision_pk": admision.pk},
-            )
-            messages.error(
-                request, "Error inesperado al guardar el documento de expediente."
-            )
-            return redirect(request.path_info)
-
-    @staticmethod
     def get_admisiones_legales_filtradas(query=""):
         try:
             queryset = Admision.objects.filter(enviado_legales=True).select_related(
@@ -1115,9 +1073,6 @@ class LegalesService:
             if "btnObservaciones" in request.POST:
                 return LegalesService.enviar_a_rectificar(request, admision)
 
-            if "btnDocumentoExpediente" in request.POST:
-                return LegalesService.guardar_documento_expediente(request, admision)
-
             return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception:
             logger.exception(
@@ -1145,12 +1100,12 @@ class LegalesService:
                 admision=admision
             ).first()
             from django.core.paginator import Paginator
-            
+
             historial_queryset = admision.historial.all().order_by("-fecha")
             paginator = Paginator(historial_queryset, 10)
-            page_number = request.GET.get('historial_page', 1) if request else 1
+            page_number = request.GET.get("historial_page", 1) if request else 1
             historial_page = paginator.get_page(page_number)
-            
+
             # Preparar datos para el componente data_table
             historial_headers = [
                 {"title": "Fecha", "width": "20%"},
@@ -1158,9 +1113,7 @@ class LegalesService:
                 {"title": "Valor", "width": "35%"},
                 {"title": "Usuario", "width": "20%"},
             ]
-            
 
-            
             # Formatear datos del historial para el componente
             historial_cambios = []
             for cambio in historial_page:
@@ -1171,15 +1124,21 @@ class LegalesService:
                     valor_formateado = "No"
                 elif not valor_formateado:
                     valor_formateado = "-"
-                    
-                historial_cambios.append({
-                    "cells": [
-                        {"content": cambio.fecha.strftime("%d/%m/%Y %H:%M")},
-                        {"content": cambio.campo},
-                        {"content": valor_formateado},
-                        {"content": cambio.usuario.username if cambio.usuario else "-"},
-                    ]
-                })
+
+                historial_cambios.append(
+                    {
+                        "cells": [
+                            {"content": cambio.fecha.strftime("%d/%m/%Y %H:%M")},
+                            {"content": cambio.campo},
+                            {"content": valor_formateado},
+                            {
+                                "content": (
+                                    cambio.usuario.username if cambio.usuario else "-"
+                                )
+                            },
+                        ]
+                    }
+                )
 
             archivos_dict = {}
             documentos_personalizados = []
@@ -1231,7 +1190,6 @@ class LegalesService:
                 convenio_num_if_form = ConvenioNumIFFORM()
 
             legales_num_if_form = LegalesNumIFForm(instance=admision)
-            documentos_form = DocumentosExpedienteForm(initial={"admision": admision})
 
             documentos_expediente = DocumentosExpediente.objects.filter(
                 admision=admision
@@ -1279,7 +1237,6 @@ class LegalesService:
                 "form_solicitar_informe_complementario": SolicitarInformeComplementarioForm(
                     instance=admision
                 ),
-                "documentos_form": documentos_form,
                 "value_informe_sga": ultimos_valores["Informe SGA"],
                 "value_disposicion": ultimos_valores["Disposición"],
                 "value_firma_convenio": ultimos_valores["Firma Convenio"],

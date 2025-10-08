@@ -442,7 +442,9 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(LegalesService.get_legales_context(self.get_object(), self.request))
+        context.update(
+            LegalesService.get_legales_context(self.get_object(), self.request)
+        )
         context.setdefault("form", self.get_form())
         context.setdefault(
             "form_legales_num_if", LegalesNumIFForm(instance=self.get_object())

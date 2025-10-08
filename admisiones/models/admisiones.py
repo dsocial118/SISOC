@@ -34,6 +34,7 @@ class Admision(models.Model):
         ("Enviado a Legales", "Enviado a Legales"),
         ("A Rectificar", "A Rectificar"),
         ("Rectificado", "Rectificado"),
+        ("Pendiente de Validacion", "Pendiente de Validacion"),
         ("Expediente Agregado", "Expediente Agregado"),
         ("Formulario Convenio Creado", "Formulario Convenio Creado"),
         ("IF Convenio Asignado", "IF Convenio Asignado"),
