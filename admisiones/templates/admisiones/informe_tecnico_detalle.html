@@ -27,7 +27,13 @@
                            data-bs-target="#cambiarEstadoModal">Cambiar estado</a>
                     {% endif %}
                 {% endif %}
-                {% if pdf %}<a href="{{ pdf.archivo.url }}" class="btn btn-primary" target="_blank">📄 PDF</a>{% endif %}
+                {% if pdf %}
+                    <a href="{{ pdf.archivo.url }}" class="btn btn-primary" target="_blank">📄 PDF Final</a>
+                {% elif pdf_borrador %}
+                    <a href="{{ pdf_borrador.archivo.url }}"
+                       class="btn btn-warning"
+                       target="_blank">📄 PDF Borrador</a>
+                {% endif %}
             </div>
         </div>
         <div class="row">

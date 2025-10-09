@@ -57,8 +57,7 @@
                             <div class="info-item">
                                 <div class="info-label">Vencimiento de Mandato</div>
                                 <div class="info-value fecha-valor">
-                                    {{ info_relevante.fecha_vencimiento_mandatos|date:'d/m/Y'
-                                    |default_if_none:"—" }}
+                                    {{ info_relevante.fecha_vencimiento_mandatos|date:'d/m/Y'|default_if_none:"—" }}
                                 </div>
                             </div>
                             <div class="info-item">

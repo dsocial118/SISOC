@@ -12,7 +12,6 @@ from admisiones.models.admisiones import (
     ArchivoAdmision,
     InformeTecnico,
     InformeTecnicoPDF,
-    Anexo,
     InformeComplementario,
 )
 from admisiones.forms.admisiones_forms import (
@@ -331,14 +330,35 @@ class AdmisionService:
                 resumen_estados, obligatorios_totales, obligatorios_completos
             )
 
-            comedor = Comedor.objects.get(pk=admision.comedor_id)
+            comedor = admision.comedor
             convenios = TipoConvenio.objects.all()
-            caratular_form = CaratularForm(instance=admision)
+            caratular_form = CaratularForm(instance=admision) if admision else None
             informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
             informes_complementarios = InformeComplementario.objects.filter(
                 admision=admision
             )
-            anexo = Anexo.objects.filter(admision=admision).first()
+
+            # Información para informe complementario
+            informe_complementario_pendiente = informes_complementarios.filter(
+                estado__in=["rectificar", "borrador"]
+            ).first()
+
+            mostrar_informe_complementario = (
+                admision.estado_legales == "Informe Complementario Solicitado"
+                or (
+                    informe_complementario_pendiente
+                    and informe_complementario_pendiente.estado == "rectificar"
+                )
+            )
+
+            observaciones_complementario = None
+            if (
+                informe_complementario_pendiente
+                and informe_complementario_pendiente.observaciones_legales
+            ):
+                observaciones_complementario = (
+                    informe_complementario_pendiente.observaciones_legales
+                )
             pdf = InformeTecnicoPDF.objects.filter(admision=admision).first()
 
             return {
@@ -348,13 +368,14 @@ class AdmisionService:
                 "convenios": convenios,
                 "caratular_form": caratular_form,
                 "informe_tecnico": informe_tecnico,
-                "anexo": anexo,
                 "pdf": pdf,
                 "informes_complementarios": informes_complementarios,
                 "resumen_estados": resumen_estados,
                 "obligatorios_totales": obligatorios_totales,
                 "obligatorios_completos": obligatorios_completos,
                 "stats": stats,
+                "mostrar_informe_complementario": mostrar_informe_complementario,
+                "observaciones_complementario": observaciones_complementario,
             }
 
         except Exception:
@@ -776,7 +797,7 @@ class AdmisionService:
             if not admision.enviado_legales:
 
                 admision.enviado_legales = True
-
+                admision.estado_legales = "Enviado a Legales"
                 admision.save()
 
                 return True
@@ -800,7 +821,7 @@ class AdmisionService:
             if not admision.enviado_acompaniamiento:
 
                 admision.enviado_acompaniamiento = True
-
+                admision.estado_legales = "Acompañamiento Iniciado"
                 admision.save()
 
                 return True
