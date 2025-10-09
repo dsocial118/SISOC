@@ -83,26 +83,28 @@
                 <i class="nav-arrow bi bi-chevron-right"></i>
             </p>
         </a>
-        <ul class="nav nav-treeview">
-            <li class="nav-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
-                <a href="#"
-                   class="nav-link nav-dot ms-2 {% if 'dashboard' in pagina_actual %}active{% endif %}">
-                    <p>
-                        Centros de Familia
-                        <i class="nav-arrow bi bi-chevron-right"></i>
-                    </p>
-                </a>
-                <ul class="nav nav-treeview">
-                    <li class="nav-item">
-                        <a href="{% url 'dashboard' %}"
-                           class="nav-link ms-4 {% if 'dashboard/listar' in pagina_actual %}active{% endif %}">
-                            <i class="nav-icon bi bi-arrow-return-right"></i>
-                            <p>Buscar</p>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-        </ul>
+        {% if request.user|has_group:"Dashboard Centrodefamilia" %}
+            <ul class="nav nav-treeview">
+                <li class="nav-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
+                    <a href="#"
+                    class="nav-link nav-dot ms-2 {% if 'dashboard' in pagina_actual %}active{% endif %}">
+                        <p>
+                            Centros de Familia
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="{% url 'dashboard' %}"
+                            class="nav-link ms-4 {% if 'dashboard/listar' in pagina_actual %}active{% endif %}">
+                                <i class="nav-icon bi bi-arrow-return-right"></i>
+                                <p>Buscar</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        {% endif %}
     </li>
     <!-- MENÚ LEGAJOS -->
     <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual %}menu-open{% endif %}">
@@ -136,7 +138,7 @@
                 </li>
             {% endif %}
             <!-- COMEDORES -->
-            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" %}
+            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Comedores Listar" %}
                 <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual %}active{% endif %}">
@@ -146,37 +148,41 @@
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{% url 'comedores' %}"
-                               class="nav-link ms-4 {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
-                                <i class="nav-icon bi bi-arrow-return-right"></i>
-                                <p>Ver Comedores</p>
-                            </a>
-                        </li>
+                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" %}
+                            <li class="nav-item">
+                                <a href="{% url 'comedores' %}"
+                                   class="nav-link ms-4 {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Ver Comedores</p>
+                                </a>
+                            </li>
+                        {% endif %}
                         <!-- ADMISION -->
-                        <li class="nav-item ms-4 {% if 'admisiones' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#" class="nav-link">
-                                <i class="nav-icon bi bi-arrow-return-right"></i>
-                                <p>
-                                    Admisión - Comedores
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'admisiones_tecnicos_listar' %}"
-                                       class="nav-link nav-dot ms-4 {% if 'admisiones_tecnicos' in pagina_actual %}active{% endif %}">
-                                        <p>Técnicos</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{% url 'admisiones_legales_listar' %}"
-                                       class="nav-link nav-dot ms-4 {% if 'admisiones_legales' in pagina_actual %}active{% endif %}">
-                                        <p>Legales</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" %}
+                            <li class="nav-item ms-4 {% if 'admisiones' in pagina_actual %}menu-open{% endif %}">
+                                <a href="#" class="nav-link">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>
+                                        Admisión - Comedores
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    <li class="nav-item">
+                                        <a href="{% url 'admisiones_tecnicos_listar' %}"
+                                           class="nav-link nav-dot ms-4 {% if 'admisiones_tecnicos' in pagina_actual %}active{% endif %}">
+                                            <p>Técnicos</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{% url 'admisiones_legales_listar' %}"
+                                           class="nav-link nav-dot ms-4 {% if 'admisiones_legales' in pagina_actual %}active{% endif %}">
+                                            <p>Legales</p>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% endif %}
                         <!-- ACOMPAÑAMIENTO -->
                         {% if request.user|has_group:"Area Legales" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" %}
                             <li class="nav-item">
@@ -285,6 +291,7 @@
                 </li>
             {% endif %}
             <!-- CELIAQUÍA -->
+            {% if request.user|has_group:"TecnicoCeliaquia" or request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"ProvinciaCeliaquia" %}
             <li class="nav-item">
                 <a href="#" class="nav-link nav-dot ms-2">
                     <p>
@@ -309,6 +316,7 @@
                     {% endif %}
                 </ul>
             </li>
+            {% endif %}
         </ul>
     </li>
 {% endwith %}
