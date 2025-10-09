@@ -63,6 +63,7 @@ class UserCreationForm(forms.ModelForm):
                 if self.cleaned_data.get("es_usuario_provincial")
                 else None
             )
+            profile.rol = self.cleaned_data.get("rol")
             profile.save()
 
         return user
@@ -120,6 +121,7 @@ class CustomUserChangeForm(forms.ModelForm):
         if prof:
             self.fields["es_usuario_provincial"].initial = prof.es_usuario_provincial
             self.fields["provincia"].initial = prof.provincia
+            self.fields["rol"].initial = prof.rol
 
     def clean(self):
         cleaned = super().clean()
@@ -149,6 +151,7 @@ class CustomUserChangeForm(forms.ModelForm):
                 if self.cleaned_data.get("es_usuario_provincial")
                 else None
             )
+            profile.rol = self.cleaned_data.get("rol")
             profile.save()
 
         return user
