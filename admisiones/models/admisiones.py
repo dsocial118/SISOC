@@ -56,6 +56,11 @@ class Admision(models.Model):
         ("validado", "Validado"),
         ("rechazado", "Rechazado"),
     ]
+        
+    TIPO_ADMISION = [
+        ("incorporacion", "Incorporación"),
+        ("renovacion", "Renovación"),
+    ]
 
     MOTIVO_RECHAZO_JURIDICOS = [
         ("providencia", "Por providencia"),
@@ -76,6 +81,13 @@ class Admision(models.Model):
         null=True,
     )
     estado = models.ForeignKey(EstadoAdmision, on_delete=models.SET_NULL, null=True)
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_ADMISION,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de Admisión",
+    )
     tipo_convenio = models.ForeignKey(
         TipoConvenio, on_delete=models.SET_NULL, null=True
     )

@@ -99,7 +99,7 @@
             </div>
         </div>
     {% endif %}
-    {% if es_crear %}
+    {% if not admision.tipo_convenio %}
         <!-- MODAL DE SELECCIÓN INICIAL -->
         <div class="modal fade"
              id="seleccionModal"
@@ -112,8 +112,7 @@
              aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form method="POST"
-                          action="{% url 'admisiones_tecnicos_crear' pk=comedor.pk %}">
+                    <form method="POST">
                         {% csrf_token %}
                         <div class="modal-header">
                             <h5 class="modal-title">Seleccione el tipo de convenio</h5>
@@ -161,6 +160,12 @@
                                     </span>
                                 </div>
                             </li>
+                            <li class="nav-item">
+                                        <div class="comment-text">
+                                            Tipo:
+                                            <span class="fw-bold">{{ admision.get_tipo_display| default_if_none:"-" }}</span>
+                                        </div>
+                                    </li>
                             <li class="nav-item">
                                 <div class="comment-text">
                                     Estado:
@@ -678,6 +683,18 @@
                             {% endblock %}
                             {% block customJS %}
                                 <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
+                                {% if not admision.tipo_convenio %}
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            var modal = new bootstrap.Modal(document.getElementById('seleccionModal'));
+                                            modal.show();
+                                            
+                                            document.getElementById('tipoConvenio').addEventListener('change', function() {
+                                                document.getElementById('confirmarSeleccion').disabled = !this.value;
+                                            });
+                                        });
+                                    </script>
+                                {% endif %}
                                 {% if es_crear %}
                                     <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
                                 {% endif %}

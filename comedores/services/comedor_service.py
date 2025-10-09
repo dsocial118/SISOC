@@ -421,3 +421,42 @@ class ComedorService:
         if not ok:
             ciudadano.delete()
         return ok, msg
+
+    
+    @staticmethod
+    def crear_admision_desde_comedor(request, comedor):
+        """
+        Crea una nueva admisión asociada al comedor actual.
+
+        Regla:
+        - Solo puede haber una admisión de tipo 'incorporacion' por comedor.
+        - Puede haber múltiples admisiones de tipo 'renovacion'.
+        Luego redirige nuevamente al detalle del comedor.
+        """
+
+        tipo_admision = request.POST.get("admision")
+
+        if not tipo_admision:
+            messages.error(request, "Debe seleccionar un tipo de admisión.")
+            return redirect(request.path)
+
+        if tipo_admision == "incorporacion":
+            if Admision.objects.filter(comedor=comedor, tipo="incorporacion").exists():
+                messages.warning(
+                    request,
+                    "Ya existe una admisión de tipo 'Incorporación' para este comedor.",
+                )
+                return redirect(request.path)
+
+        nueva_admision = Admision.objects.create(
+            comedor=comedor,
+            tipo=tipo_admision,
+        )
+
+        messages.success(
+            request,
+            f"Se creó una nueva admisión de tipo '{nueva_admision.get_tipo_display()}' correctamente.",
+        )
+
+        # 🔁 Redirigir al mismo comedor
+        return redirect("comedor_detalle", pk=comedor.pk)

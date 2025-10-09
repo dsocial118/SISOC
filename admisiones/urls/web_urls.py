@@ -17,7 +17,6 @@ from admisiones.views.web_views import (
     AdmisionesLegalesListView,
     AdmisionesLegalesDetailView,
     admisiones_legales_ajax,
-    admisiones_tecnicos_ajax,
 )
 
 urlpatterns = [
@@ -119,9 +118,5 @@ urlpatterns = [
         admisiones_legales_ajax,
         name="admisiones_legales_ajax",
     ),
-    path(
-        "comedores/admisiones/tecnicos/ajax/",
-        admisiones_tecnicos_ajax,
-        name="admisiones_tecnicos_ajax",
-    ),
+
 ]
