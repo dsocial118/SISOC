@@ -227,7 +227,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-3">Vista previa del Excel</h5>
                     <div class="d-flex align-items-center gap-2">
-                        <label for="preview-page-size" class="me-2 mb-0 small">Registros por pÃ¡gina:</label>
+                        <label for="preview-page-size" class="me-2 mb-0 small">Registros por pagina:</label>
                         <select id="preview-page-size"
                                 class="form-select form-select-sm"
                                 style="width: auto">
@@ -354,6 +354,8 @@
                                             <span class="badge bg-danger">Rechazado</span>
                                         {% elif leg.revision_tecnico == 'SUBSANAR' %}
                                             <span class="badge bg-warning text-dark">Subsanar</span>
+                                        {% elif leg.revision_tecnico == 'SUBSANADO' %}
+                                            <span class="badge bg-info text-dark">Subsanado</span>
                                         {% else %}
                                             <span class="badge bg-secondary">Pendiente</span>
                                         {% endif %}
@@ -404,7 +406,7 @@
                                                     <!-- Col 2: Observaciones -->
                                                     <div class="col-lg-4 col-md-7">
                                                         {% if is_prov %}
-                                                            <div class="small muted">ObservaciÃ³n (subsanaciÃ³n):</div>
+                                                            <div class="small muted">Observacion (subsanacion):</div>
                                                             <div class="mt-1">
                                                                 {% if leg.subsanacion_motivo %}
                                                                     <div class="p-2 rounded"
@@ -454,11 +456,11 @@
                                                     <!-- Col 3: Archivos -->
                                                     <div class="col-lg-5">
                                                         {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
-                                                        <!-- Respuesta SubsanaciÃ³n Renaper -->
+                                                        <!-- Respuesta subsanacion Renaper -->
                                                         {% if leg.revision_tecnico == 'SUBSANAR' %}
                                                             <div class="file-row" style="background:rgba(255,193,7,.1);">
                                                                 <div class="d-flex align-items-center gap-2">
-                                                                    <span class="small muted">Respuesta subsanaciÃ³n:</span>
+                                                                    <span class="small muted">Respuesta subsanacion:</span>
                                                                     {% if leg.subsanacion_renaper_archivo %}
                                                                         <a href="{{ leg.subsanacion_renaper_archivo.url }}"
                                                                            target="_blank"
@@ -485,7 +487,7 @@
                                                         {% elif leg.revision_tecnico == 'SUBSANADO' %}
                                                             <div class="file-row" style="background:rgba(40,167,69,.1);">
                                                                 <div class="d-flex align-items-center gap-2">
-                                                                    <span class="small muted">Respuesta subsanaciÃ³n:</span>
+                                                                    <span class="small muted">Respuesta subsanacion:</span>
                                                                     {% if leg.subsanacion_renaper_archivo %}
                                                                         <a href="{{ leg.subsanacion_renaper_archivo.url }}"
                                                                            target="_blank"
@@ -507,7 +509,7 @@
                                                              aria-label="Acciones del legajo">
                                                             {% with estado=leg.revision_tecnico %}
                                                                 {% if estado == 'SUBSANADO' and leg.estado_validacion_renaper != 1 %}
-                                                                    <!-- Subsanado pero sin validaciÃ³n Renaper aprobada -->
+                                                                    <!-- Subsanado pero sin Validacion Renaper aprobada -->
                                                                     <div class="btn-group btn-group-sm" role="group">
                                                                         <button type="button"
                                                                                 class="btn btn-info btn-validar-renaper"
@@ -587,7 +589,7 @@
                                     <!-- Col 2: Observaciones -->
                                     <div class="col-lg-4 col-md-7">
                                     {% if is_prov %}
-                                        <div class="small muted">ObservaciÃ³n (subsanaciÃ³n):</div>
+                                        <div class="small muted">Observacion (subsanacion):</div>
                                         <div class="mt-1">
                                             {% if leg.subsanacion_motivo %}
                                                 <div class="p-2 rounded"
@@ -637,11 +639,11 @@
                                     <!-- Col 3: Archivos -->
                                     <div class="col-lg-5">
                                         {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
-                                        <!-- Respuesta SubsanaciÃ³n Renaper -->
+                                        <!-- Respuesta subsanacion Renaper -->
                                         {% if leg.revision_tecnico == 'SUBSANAR' %}
                                             <div class="file-row" style="background:rgba(255,193,7,.1);">
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="small muted">Respuesta subsanaciÃ³n:</span>
+                                                    <span class="small muted">Respuesta subsanacion:</span>
                                                     {% if leg.subsanacion_renaper_archivo %}
                                                         <a href="{{ leg.subsanacion_renaper_archivo.url }}"
                                                            target="_blank"
@@ -668,7 +670,7 @@
                                         {% elif leg.revision_tecnico == 'SUBSANADO' %}
                                             <div class="file-row" style="background:rgba(40,167,69,.1);">
                                                 <div class="d-flex align-items-center gap-2">
-                                                    <span class="small muted">Respuesta subsanaciÃ³n:</span>
+                                                    <span class="small muted">Respuesta subsanacion:</span>
                                                     {% if leg.subsanacion_renaper_archivo %}
                                                         <a href="{{ leg.subsanacion_renaper_archivo.url }}"
                                                            target="_blank"
@@ -690,7 +692,7 @@
                                              aria-label="Acciones del legajo">
                                             {% with estado=leg.revision_tecnico %}
                                                 {% if estado == 'SUBSANADO' and leg.estado_validacion_renaper != 1 %}
-                                                    <!-- Subsanado pero sin validaciÃ³n Renaper aprobada -->
+                                                    <!-- Subsanado pero sin Validacion Renaper aprobada -->
                                                     <div class="btn-group btn-group-sm" role="group">
                                                         <button type="button"
                                                                 class="btn btn-info btn-validar-renaper"
@@ -749,13 +751,13 @@
         <!-- Confirmar EnvÃ­o: solo Provincia en EN_ESPERA -->
         {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
             <div class="text-end mt-3">
-                <button id="btn-confirm" class="btn btn-success">Confirmar EnvÃ­o</button>
+                <button id="btn-confirm" class="btn btn-success">Confirmar Envi­o</button>
             </div>
         {% endif %}
-        <!-- Confirmar SubsanaciÃ³n: solo Provincia en ASIGNADO y si hay_subsanar -->
+        <!-- Confirmar subsanacion: solo Provincia en ASIGNADO y si hay_subsanar -->
         {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
             <div class="text-end mt-3">
-                <button id="btn-confirm-subs" class="btn btn-warning">Confirmar SubsanaciÃ³n</button>
+                <button id="btn-confirm-subs" class="btn btn-warning">Confirmar subsanacion</button>
             </div>
         {% endif %}
     </div>
@@ -763,14 +765,14 @@
     {% if expediente.estado.id == 2 and is_coord %}
         <div class="card mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0">Asignar TÃ©cnico</h5>
+                <h5 class="mb-0">Asignar Tecnico</h5>
             </div>
             <div class="card-body">
                 <form method="post"
                       action="{% url 'expediente_asignar_tecnico' expediente.pk %}">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="tecnico">Seleccionar TÃ©cnico:</label>
+                        <label for="tecnico">Seleccionar Tecnico:</label>
                         <select name="tecnico_id" id="tecnico" class="form-control">
                             {% for tecnico in tecnicos %}
                                 <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
@@ -805,7 +807,7 @@
                             <div class="col-12">
                                 <label class="form-label">Seleccionar archivo a actualizar</label>
                                 <select name="campo" id="campo-archivo" class="form-select" required>
-                                    <option value="archivo2">Biopsia positiva y/o constancia mÃ©dica</option>
+                                    <option value="archivo2">Biopsia positiva y/o constancia medica</option>
                                     <option value="archivo3">Negativa de ANSES</option>
                                 </select>
                             </div>
@@ -838,7 +840,7 @@
             <form class="modal-content" id="form-subsanar" method="post">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalSubsanarLabel">Solicitud de subsanaciÃ³n</h5>
+                    <h5 class="modal-title" id="modalSubsanarLabel">Solicitud de subsanacion</h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -857,7 +859,7 @@
                                   maxlength="500"></textarea>
                     </div>
                     <small class="text-muted d-block">
-                        El legajo quedarÃ¡ en estado <strong>SUBSANAR</strong> y la provincia podrÃ¡ actualizar los archivos.
+                        El legajo quedara en estado <strong>SUBSANAR</strong> y la provincia podra actualizar los archivos.
                     </small>
                 </div>
                 <div class="modal-footer">
@@ -897,7 +899,7 @@
                                    required
                                    accept=".xlsx,.xls,.csv" />
                             <small id="cruce-help" class="text-muted">
-                                Debe incluir encabezado; columna vÃ¡lida: <strong>documento</strong>.
+                                Debe incluir encabezado; columna valida: <strong>documento</strong>.
                             </small>
                         </div>
                     </div>
@@ -909,7 +911,7 @@
             </div>
         </div>
     </div>
-    <!-- Modal: Respuesta SubsanaciÃ³n Renaper -->
+    <!-- Modal: Respuesta subsanacion Renaper -->
     <div class="modal fade"
          id="modalRespuestaSubsanacionRenaper"
          tabindex="-1"
@@ -922,7 +924,7 @@
                       enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a SubsanaciÃ³n Renaper</h5>
+                        <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a subsanacion Renaper</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -959,7 +961,7 @@
             </div>
         </div>
     </div>
-    <!-- Modal: ValidaciÃ³n Renaper -->
+    <!-- Modal: Validacion Renaper -->
     <div class="modal fade"
          id="modalValidarRenaper"
          tabindex="-1"
@@ -968,7 +970,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalValidarRenaperLabel">ValidaciÃ³n Renaper</h5>
+                    <h5 class="modal-title" id="modalValidarRenaperLabel">Validacion Renaper</h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -984,7 +986,7 @@
                     </div>
                     <div id="renaper-comparacion" style="display: none;">
                         <h6 class="mb-3">
-                            ComparaciÃ³n de datos: <span id="ciudadano-nombre"></span>
+                            Comparacion de datos: <span id="ciudadano-nombre"></span>
                         </h6>
                         <div class="row">
                             <div class="col-md-6">
