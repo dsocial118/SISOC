@@ -6,8 +6,9 @@ from admisiones.models.admisiones import (
     FormularioProyectoDisposicion,
     FormularioProyectoDeConvenio,
     DocumentosExpediente,
-    ArchivoAdmision
+    ArchivoAdmision,
 )
+
 
 class AdmisionForm(forms.ModelForm):
     class Meta:
@@ -83,18 +84,36 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             self.fields["tipo_espacio"].initial = getattr(comedor, "tipocomedor", "")
             self.fields["total_acreditaciones"].initial = "6"
             self.fields["plazo_ejecucion"].initial = "6 meses"
-            self.fields["nota_gde_if"].initial = ArchivoAdmision.objects.filter(
-            admision=admision, documentacion__nombre="Nota de solicitud e Inclusión al Programa"
-            ).values_list("numero_gde", flat=True).first()
-            self.fields["constancia_subsidios_dnsa"].initial =ArchivoAdmision.objects.filter(
-            admision=admision, documentacion__nombre="Acta Solicitud de Subsidio"
-            ).values_list("numero_gde", flat=True).first()
-            self.fields["constancia_subsidios_pnud"].initial =ArchivoAdmision.objects.filter(
-            admision=admision, documentacion__nombre="Respuesta Memo PNUD"
-            ).values_list("numero_gde", flat=True).first()
-            self.fields["validacion_registro_nacional"].initial =ArchivoAdmision.objects.filter(
-            admision=admision, documentacion__nombre="Validación RENACOM"
-            ).values_list("numero_gde", flat=True).first()
+            self.fields["nota_gde_if"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__nombre="Nota de solicitud e Inclusión al Programa",
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["constancia_subsidios_dnsa"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__nombre="Acta Solicitud de Subsidio",
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["constancia_subsidios_pnud"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision, documentacion__nombre="Respuesta Memo PNUD"
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["validacion_registro_nacional"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision, documentacion__nombre="Validación RENACOM"
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
 
             if referente:
                 self.fields["representante_nombre"].initial = (
@@ -176,18 +195,36 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             self.fields["tipo_espacio"].initial = getattr(comedor, "tipocomedor", "")
             self.fields["total_acreditaciones"].initial = "6"
             self.fields["plazo_ejecucion"].initial = "6 meses"
-            self.fields["nota_gde_if"].initial = ArchivoAdmision.objects.filter(
-            admision=admision, documentacion__nombre="Nota de solicitud e Inclusión al Programa"
-            ).values_list("numero_gde", flat=True).first()
-            self.fields["constancia_subsidios_dnsa"].initial = ArchivoAdmision.objects.filter(
-            admision=admision, documentacion__nombre="Acta Solicitud de Subsidio"
-            ).values_list("numero_gde", flat=True).first()
-            self.fields["constancia_subsidios_pnud"].initial = ArchivoAdmision.objects.filter(
-            admision=admision, documentacion__nombre="Respuesta Memo PNUD"
-            ).values_list("numero_gde", flat=True).first()
-            self.fields["validacion_registro_nacional"].initial = ArchivoAdmision.objects.filter(
-            admision=admision, documentacion__nombre="Validación RENACOM"
-            ).values_list("numero_gde", flat=True).first()
+            self.fields["nota_gde_if"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__nombre="Nota de solicitud e Inclusión al Programa",
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["constancia_subsidios_dnsa"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__nombre="Acta Solicitud de Subsidio",
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["constancia_subsidios_pnud"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision, documentacion__nombre="Respuesta Memo PNUD"
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["validacion_registro_nacional"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision, documentacion__nombre="Validación RENACOM"
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
 
             if referente:
                 self.fields["representante_nombre"].initial = (
