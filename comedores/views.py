@@ -41,6 +41,7 @@ from comedores.services.filter_config import get_filters_ui_config
 from duplas.dupla_service import DuplaService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from relevamientos.service import RelevamientoService
+from ciudadanos.models import EstadoIntervencion
 
 logger = logging.getLogger("django")
 
@@ -160,8 +161,6 @@ class NominaCreateView(CreateView):
         return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
     def get_context_data(self, **kwargs):
-        from ciudadanos.models import EstadoIntervencion
-
         context = super().get_context_data(**kwargs)
         context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
 
