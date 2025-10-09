@@ -4,17 +4,26 @@
         <meta charset="utf-8" />
         <title>Informe Técnico Social</title>
         <style>
-    /* Estilos simples que soporta htmldocx */
-    body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.25; }
-    h2, h3, h4 { margin: 12px 0 6px 0; }
-    h4 { text-align: center; }
-    p { margin: 6px 0; text-align: justify; }
-    strong { font-weight: bold; }
-    ul { margin: 6px 0 6px 18px; }
-    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-    th, td { border: 1px solid #000; padding: 6px; vertical-align: top; }
-    .w-25 { width: 25%; }
-    .text-center { text-align: center; }
+        /* Soportado por htmldocx: mantener simple */
+        body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.25; }
+        
+        /* Títulos */
+        h2, h3, h4 { margin: 12px 0 6px 0; }
+        h4 { text-align: center; }
+        
+        /* Párrafos: justificar SIEMPRE */
+        p { margin: 6px 0; text-align: justify; }
+        
+        /* Listas: asegurar justificado envolviendo el texto en <p> dentro del <li> */
+        ul { margin: 6px 0 6px 18px; }
+        
+        /* Tablas básicas */
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #000; padding: 6px; vertical-align: top; }
+        
+        /* Utilidades */
+        .w-25 { width: 25%; }
+        .text-center { text-align: center; }
         </style>
     </head>
     <body>
@@ -27,7 +36,7 @@
             <strong>Expediente N°:</strong> {{ informe.expediente_nro }}
         </p>
         <p>
-            La {{ informe.nombre_organizacion }} solicita la incorporación del
+            La Organización "{{ informe.nombre_organizacion }}" solicita la incorporación del Comedor
             {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad con el fin de
             fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota
             identificada como {{ informe.nota_gde_if }}.
@@ -47,7 +56,7 @@
                 <td>{{ informe.localidad_organizacion }}</td>
             </tr>
             <tr>
-                <th>Partido</th>
+                <th>Partido/Departamento</th>
                 <td>{{ informe.partido_organizacion }}</td>
             </tr>
             <tr>
@@ -105,7 +114,7 @@
                 <td>{{ informe.localidad_espacio }}</td>
             </tr>
             <tr>
-                <th>Partido</th>
+                <th>Partido/Departamento</th>
                 <td>{{ informe.partido_espacio }}</td>
             </tr>
             <tr>
@@ -168,14 +177,14 @@
             A los efectos del cumplimiento de los requisitos de admisibilidad al Programa Alimentar Comunidad, se agrega:
             Las constancias de inexistencia de percepción por parte de la organización solicitante de otros subsidios nacionales para asistencia alimentaria:
             <br />
-            - En {{ informe.constancia_subsidios_dnsa }} se informó que el {{ informe.nombre_organizacion }} “no tiene convenios de otorgamiento de subsidios vigentes en el componente ’Fortalecimiento a Comedores y Merenderos Comunitarios’”
+            - En {{ informe.constancia_subsidios_dnsa }} se informó que la Organización "{{ informe.nombre_organizacion }}" no tiene convenios de otorgamiento de subsidios vigentes en el componente ’Fortalecimiento a Comedores y Merenderos Comunitarios’”
             <br />
-            - En nota {{ informe.constancia_subsidios_pnud }} se informó que el {{ informe.nombre_espacio }} – {{ informe.domicilio_espacio }} NO resulta beneficiario de complementos alimentarios otorgados por el Programa Abordaje Comunitario en el marco del Programa de las Naciones Unidas para el Desarrollo.
+            - En nota {{ informe.constancia_subsidios_pnud }} se informó que el {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" – {{ informe.domicilio_espacio }} NO resulta beneficiario de complementos alimentarios otorgados por el Programa Abordaje Comunitario en el marco del Programa de las Naciones Unidas para el Desarrollo.
         </p>
         <h4>EVALUACIÓN TÉCNICA</h4>
         <p>
-            La {{ informe.nombre_organizacion }}, solicita la incorporación del {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las familias en situación de vulnerabilidad.
-            La población destinataria se encuentra ubicada en el Partido {{ informe.partido_espacio }} de la provincia {{ informe.provincia_espacio }}. Es menester destacar que la asistencia alimentaria gratuita que brinda el mismo a personas en situación de vulnerabilidad, resulta necesaria y vital para alcanzar con mayor eficiencia la seguridad alimentaria.
+            La Organización "{{ informe.nombre_organizacion }}", solicita la incorporación del {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las familias en situación de vulnerabilidad.
+            La población destinataria se encuentra ubicada en el Partido/Departamento{{ informe.partido_espacio }} de la provincia {{ informe.provincia_espacio }}. Es menester destacar que la asistencia alimentaria gratuita que brinda el mismo a personas en situación de vulnerabilidad, resulta necesaria y vital para alcanzar con mayor eficiencia la seguridad alimentaria.
             Conforme al relevamiento del Programa identificado como {{ informe.IF_relevamiento_territorial }}, se ha constatado la existencia del {{ informe.tipo_espacio }} en el territorio, el cual brinda asistencia alimentaria a personas en situación de vulnerabilidad social.
             Se adecúan las prestaciones entre lo relevado en territorio y lo requerido por la institución solicitante según los criterios del Programa.
             A continuación, se resumen las cantidades aprobadas:
@@ -195,55 +204,57 @@
                 <td>
                     <strong>Desayuno</strong>
                 </td>
-                <td class="text-center">{{ anexo.desayuno_lunes }}</td>
-                <td class="text-center">{{ anexo.desayuno_martes }}</td>
-                <td class="text-center">{{ anexo.desayuno_miercoles }}</td>
-                <td class="text-center">{{ anexo.desayuno_jueves }}</td>
-                <td class="text-center">{{ anexo.desayuno_viernes }}</td>
-                <td class="text-center">{{ anexo.desayuno_sabado }}</td>
-                <td class="text-center">{{ anexo.desayuno_domingo }}</td>
+                <td class="text-center">{{ informe.aprobadas_desayuno_lunes }}</td>
+                <td class="text-center">{{ informe.aprobadas_desayuno_martes }}</td>
+                <td class="text-center">{{ informe.aprobadas_desayuno_miercoles }}</td>
+                <td class="text-center">{{ informe.aprobadas_desayuno_jueves }}</td>
+                <td class="text-center">{{ informe.aprobadas_desayuno_viernes }}</td>
+                <td class="text-center">{{ informe.aprobadas_desayuno_sabado }}</td>
+                <td class="text-center">{{ informe.aprobadas_desayuno_domingo }}</td>
             </tr>
             <tr>
                 <td>
                     <strong>Almuerzo</strong>
                 </td>
-                <td class="text-center">{{ anexo.almuerzo_lunes }}</td>
-                <td class="text-center">{{ anexo.almuerzo_martes }}</td>
-                <td class="text-center">{{ anexo.almuerzo_miercoles }}</td>
-                <td class="text-center">{{ anexo.almuerzo_jueves }}</td>
-                <td class="text-center">{{ anexo.almuerzo_viernes }}</td>
-                <td class="text-center">{{ anexo.almuerzo_sabado }}</td>
-                <td class="text-center">{{ anexo.almuerzo_domingo }}</td>
+                <td class="text-center">{{ informe.aprobadas_almuerzo_lunes }}</td>
+                <td class="text-center">{{ informe.aprobadas_almuerzo_martes }}</td>
+                <td class="text-center">{{ informe.aprobadas_almuerzo_miercoles }}</td>
+                <td class="text-center">{{ informe.aprobadas_almuerzo_jueves }}</td>
+                <td class="text-center">{{ informe.aprobadas_almuerzo_viernes }}</td>
+                <td class="text-center">{{ informe.aprobadas_almuerzo_sabado }}</td>
+                <td class="text-center">{{ informe.aprobadas_almuerzo_domingo }}</td>
             </tr>
             <tr>
                 <td>
                     <strong>Merienda</strong>
                 </td>
-                <td class="text-center">{{ anexo.merienda_lunes }}</td>
-                <td class="text-center">{{ anexo.merienda_martes }}</td>
-                <td class="text-center">{{ anexo.merienda_miercoles }}</td>
-                <td class="text-center">{{ anexo.merienda_jueves }}</td>
-                <td class="text-center">{{ anexo.merienda_viernes }}</td>
-                <td class="text-center">{{ anexo.merienda_sabado }}</td>
-                <td class="text-center">{{ anexo.merienda_domingo }}</td>
+                <td class="text-center">{{ informe.aprobadas_merienda_lunes }}</td>
+                <td class="text-center">{{ informe.aprobadas_merienda_martes }}</td>
+                <td class="text-center">{{ informe.aprobadas_merienda_miercoles }}</td>
+                <td class="text-center">{{ informe.aprobadas_merienda_jueves }}</td>
+                <td class="text-center">{{ informe.aprobadas_merienda_viernes }}</td>
+                <td class="text-center">{{ informe.aprobadas_merienda_sabado }}</td>
+                <td class="text-center">{{ informe.aprobadas_merienda_domingo }}</td>
             </tr>
             <tr>
                 <td>
                     <strong>Cena</strong>
                 </td>
-                <td class="text-center">{{ anexo.cena_lunes }}</td>
-                <td class="text-center">{{ anexo.cena_martes }}</td>
-                <td class="text-center">{{ anexo.cena_miercoles }}</td>
-                <td class="text-center">{{ anexo.cena_jueves }}</td>
-                <td class="text-center">{{ anexo.cena_viernes }}</td>
-                <td class="text-center">{{ anexo.cena_sabado }}</td>
-                <td class="text-center">{{ anexo.cena_domingo }}</td>
+                <td class="text-center">{{ informe.aprobadas_cena_lunes }}</td>
+                <td class="text-center">{{ informe.aprobadas_cena_martes }}</td>
+                <td class="text-center">{{ informe.aprobadas_cena_miercoles }}</td>
+                <td class="text-center">{{ informe.aprobadas_cena_jueves }}</td>
+                <td class="text-center">{{ informe.aprobadas_cena_viernes }}</td>
+                <td class="text-center">{{ informe.aprobadas_cena_sabado }}</td>
+                <td class="text-center">{{ informe.aprobadas_cena_domingo }}</td>
             </tr>
         </table>
         {% if informe.conclusiones %}
             <h3>Aplicación de criterios</h3>
             <p>{{ informe.conclusiones|linebreaksbr }}</p>
         {% endif %}
+
+        <h3>Descripción de criterios</h3>
         <p>
             Los criterios técnicos y programáticos establecidos para evaluar la solicitud de cada comedor implican una definición de la cantidad de prestaciones a partir de la comparación entre la información relevada en la visita en territorio y la cantidad solicitada para cada día y para cada tipo de prestación. Se considera como cantidad de prestaciones relevada en territorio a la suma de las prestaciones brindadas en la actualidad más las personas en lista de espera. En esa línea, los criterios se enmarcan en los siguientes parámetros:
         </p>
@@ -254,8 +265,7 @@
             B. Cuando la cantidad de prestaciones solicitadas mediante nota sean superiores a las identificadas en la visita (suma de prestaciones actuales más personas identificadas en la lista de espera) deberá prevalecer el número de prestaciones relevado en la visita.
         </p>
         <p>
-            Por todo lo expuesto se considera pertinente la solicitud realizada por la {{ informe.nombre_organizacion }} para adherir al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.
-            Todo lo resultante en este Informe Técnico se resume en Anexo identificado como (ALGUN IF-???).
+            Por todo lo expuesto se considera pertinente la solicitud realizada por la Organización {{ informe.nombre_organizacion }} para adherir al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.
         </p>
         <p>
             Cabe destacar que la tramitación de las presentes actuaciones mediante las cuales se aprueba el convenio de incorporación al Programa mencionado no implica en este acto erogación presupuestaria alguna.
