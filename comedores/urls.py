@@ -1,5 +1,5 @@
 from django.urls import path
-
+from django.contrib.auth.decorators import login_required
 from comedores.views import (
     ComedorCreateView,
     ComedorDeleteView,
@@ -129,7 +129,7 @@ urlpatterns = [
     ),
     path(
         "comedores/ajax/load-subestadosintervenciones/",
-        sub_estados_intervenciones_ajax,
+        login_required(sub_estados_intervenciones_ajax),
         name="ajax_load_subestadosintervenciones",
     ),
     path(
