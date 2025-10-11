@@ -545,9 +545,20 @@ class LegalesService:
             admision.intervencion_juridicos = None
             admision.rechazo_juridicos_motivo = None
             admision.dictamen_motivo = None
+            admision.complementario_solicitado = False
+            admision.observaciones_informe_tecnico_complementario = None
 
             admision.estado_legales = "Informe Complementario: Validado"
-            admision.save()
+            admision.save(
+                update_fields=[
+                    "intervencion_juridicos",
+                    "rechazo_juridicos_motivo",
+                    "dictamen_motivo",
+                    "complementario_solicitado",
+                    "observaciones_informe_tecnico_complementario",
+                    "estado_legales",
+                ]
+            )
 
         except Exception:
             logger.exception(
