@@ -118,5 +118,4 @@ urlpatterns = [
         admisiones_legales_ajax,
         name="admisiones_legales_ajax",
     ),
-
 ]

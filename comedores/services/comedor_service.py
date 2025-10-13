@@ -422,7 +422,6 @@ class ComedorService:
             ciudadano.delete()
         return ok, msg
 
-    
     @staticmethod
     def crear_admision_desde_comedor(request, comedor):
         """
