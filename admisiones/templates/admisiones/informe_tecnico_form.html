@@ -127,6 +127,9 @@
                         <div class="col-md-6 mb-3{% if 'provincia_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                             {{ form.provincia_espacio|as_crispy_field }}
                         </div>
+                        <div class="col-md-6 mb-3{% if 'domicilio_electronico_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.domicilio_electronico_espacio|as_crispy_field }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -141,8 +144,14 @@
                         <div class="col-md-6 mb-3{% if 'responsable_tarjeta_nombre' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                             {{ form.responsable_tarjeta_nombre|as_crispy_field }}
                         </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_mail' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_tarjeta_mail|as_crispy_field }}
+                        </div>
                         <div class="col-md-6 mb-3{% if 'responsable_tarjeta_dni' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                             {{ form.responsable_tarjeta_dni|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_cuit' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_tarjeta_cuit|as_crispy_field }}
                         </div>
                         <div class="col-md-6 mb-3{% if 'responsable_tarjeta_domicilio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                             {{ form.responsable_tarjeta_domicilio|as_crispy_field }}
@@ -156,35 +165,7 @@
                         <div class="col-md-6 mb-3{% if 'responsable_tarjeta_telefono' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                             {{ form.responsable_tarjeta_telefono|as_crispy_field }}
                         </div>
-                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_mail' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                            {{ form.responsable_tarjeta_mail|as_crispy_field }}
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Responsable Administrativo -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Responsable Administrativo</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3{% if 'responsable_admin_apellido' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                            {{ form.responsable_admin_apellido|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6 mb-3{% if 'responsable_admin_nombre' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                            {{ form.responsable_admin_nombre|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6 mb-3{% if 'responsable_admin_cuit' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                            {{ form.responsable_admin_cuit|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6 mb-3{% if 'responsable_admin_domicilio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                            {{ form.responsable_admin_domicilio|as_crispy_field }}
-                        </div>
-                        <div class="col-md-6 mb-3{% if 'responsable_admin_mail' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                            {{ form.responsable_admin_mail|as_crispy_field }}
-                        </div>
                     </div>
                 </div>
             </div>
@@ -402,6 +383,54 @@
                             </div>
                             <div class="col-md-6 mb-3{% if 'IF_relevamiento_territorial' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                                 {{ form.IF_relevamiento_territorial|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+                        <!-- Campos específicos según tipo -->
+            {% if admision.tipo == 'renovacion' %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Resolución de pago</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_1' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.resolucion_de_pago_1|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'monto_1' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.monto_1|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_2' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.resolucion_de_pago_2|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'monto_2' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.monto_2|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_3' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.resolucion_de_pago_3|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'monto_3' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.monto_3|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_4' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.resolucion_de_pago_4|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'monto_4' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.monto_4|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_5' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.resolucion_de_pago_5|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'monto_5' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.monto_5|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_6' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.resolucion_de_pago_6|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'monto_6' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.monto_6|as_crispy_field }}
                             </div>
                         </div>
                     </div>

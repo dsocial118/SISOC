@@ -1,0 +1,256 @@
+<!-- Template HTML para conversión a DOCX -->
+<!-- Este archivo es procesado por htmldocx como fallback -->
+<!-- Para templates DOCX nativos, usar archivos .docx en esta carpeta -->
+
+<div style="font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.25;">
+    <!-- Cabecera del documento -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <p style="font-weight: bold; font-size: 12pt; margin: 0;">PROGRAMA ALIMENTAR COMUNIDAD</p>
+        <p style="margin: 5px 0;">Secretaría de Niñez, Adolescencia y Familia – Ministerio de Capital Humano</p>
+        <p style="font-weight: bold; font-size: 14pt; margin: 15px 0;">INFORME TÉCNICO SOCIAL</p>
+        <p style="margin: 10px 0;"><strong>Expediente N°:</strong> {{ informe.expediente_nro }}</p>
+    </div>
+
+    <p style="text-align: justify; margin: 8px 0;">
+        La {{ informe.admision.comedor.organizacion.subtipo_entidad|default:"organizacion" }} "{{ informe.nombre_organizacion }}" solicita la incorporación del Comedor
+        {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" al Programa Alimentar Comunidad con el fin de
+        fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota
+        identificada como {{ informe.nota_gde_if }}.
+    </p>
+
+    <h3 style="font-size: 12pt; font-weight: bold; margin: 15px 0 8px 0;">Organización solicitante</h3>
+    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; width: 25%; background-color: #f5f5f5;">Nombre</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.nombre_organizacion }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Domicilio</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.domicilio_organizacion }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Localidad</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.localidad_organizacion }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Partido/Departamento</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.partido_organizacion }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Provincia</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.provincia_organizacion }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Teléfono</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.telefono_organizacion }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Correo electrónico</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.mail_organizacion }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">CUIT</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.cuit_organizacion }}</td>
+        </tr>
+    </table>
+
+    <h3 style="font-size: 12pt; font-weight: bold; margin: 15px 0 8px 0;">Representante de la organización</h3>
+    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; width: 25%; background-color: #f5f5f5;">Nombre y apellido</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.representante_nombre }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Cargo</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.representante_cargo }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">DNI</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.representante_dni }}</td>
+        </tr>
+    </table>
+
+    <h3 style="font-size: 12pt; font-weight: bold; margin: 15px 0 8px 0;">Datos del comedor o merendero</h3>
+    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; width: 25%; background-color: #f5f5f5;">Tipo</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.tipo_espacio }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Nombre</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.nombre_espacio }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Domicilio</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.domicilio_espacio }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Barrio</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.barrio_espacio }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Localidad</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.localidad_espacio }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Partido/Departamento</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.partido_espacio }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Provincia</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.provincia_espacio }}</td>
+        </tr>
+    </table>
+
+    <h3 style="font-size: 12pt; font-weight: bold; margin: 15px 0 8px 0;">Responsable administrador de la tarjeta</h3>
+    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; width: 25%; background-color: #f5f5f5;">Nombre</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.responsable_tarjeta_nombre }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">DNI</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.responsable_tarjeta_dni }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Domicilio</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.responsable_tarjeta_domicilio }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Localidad</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.responsable_tarjeta_localidad }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Provincia</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.responsable_tarjeta_provincia }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Teléfono</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.responsable_tarjeta_telefono }}</td>
+        </tr>
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Correo electrónico</th>
+            <td style="border: 1px solid #000; padding: 6px;">{{ informe.responsable_tarjeta_mail }}</td>
+        </tr>
+    </table>
+
+    <p style="text-align: justify; margin: 8px 0;">
+        Mediante la Resolución N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023, modificada por Resolución N.° RESOL-2025-151-APN-MCH del 31 de marzo de 2025 se creó el Programa "ALIMENTAR COMUNIDAD", a los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH.
+        Los lineamientos del Programa "Alimentar Comunidad" establecen que el mecanismo a utilizar para la asistencia a Comedores y/o Merenderos comunitarios sea mediante la utilización de una tarjeta prepaga física o virtual, otorgada a comedores/ merenderos para que con ella puedan efectuar la compra de alimentos, por un plazo de 6 (SEIS) meses contados a partir del primer fondeo.
+        En ese marco, es necesario realizar un trabajo conjunto y articulado con el fin de implementar dicho Programa para acompañar y consolidar la cobertura de las necesidades básicas de cada habitante.
+        La Institución solicitó la incorporación del {{ informe.tipo_espacio }} {{ informe.nombre_espacio }} al Programa Alimentar Comunidad, mediante Nota GDE {{ informe.nota_gde_if }}, con la siguiente solicitud:
+    </p>
+
+    <ul style="margin: 10px 0; padding-left: 20px;">
+        <li style="margin: 5px 0; text-align: justify;">
+            <strong>Desayuno:</strong> {{ texto_comidas.Desayunos|safe }}
+        </li>
+        <li style="margin: 5px 0; text-align: justify;">
+            <strong>Almuerzo:</strong> {{ texto_comidas.Almuerzos|safe }}
+        </li>
+        <li style="margin: 5px 0; text-align: justify;">
+            <strong>Merienda:</strong> {{ texto_comidas.Meriendas|safe }}
+        </li>
+        <li style="margin: 5px 0; text-align: justify;">
+            <strong>Cena:</strong> {{ texto_comidas.Cenas|safe }}
+        </li>
+    </ul>
+
+    <p style="text-align: justify; margin: 8px 0;">
+        A los efectos del cumplimiento de los requisitos de admisibilidad al Programa Alimentar Comunidad, se agrega:
+        Las constancias de inexistencia de percepción por parte de la organización solicitante de otros subsidios nacionales para asistencia alimentaria:
+        <br />
+        - En {{ informe.constancia_subsidios_dnsa }} se informó que la {{ informe.admision.comedor.organizacion.subtipo_entidad|default:"organizacion" }} "{{ informe.nombre_organizacion }}" no tiene convenios de otorgamiento de subsidios vigentes en el componente 'Fortalecimiento a Comedores y Merenderos Comunitarios'"
+        <br />
+        - En nota {{ informe.constancia_subsidios_pnud }} se informó que el {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" – {{ informe.domicilio_espacio }} NO resulta beneficiario de complementos alimentarios otorgados por el Programa Abordaje Comunitario en el marco del Programa de las Naciones Unidas para el Desarrollo.
+    </p>
+
+    <h4 style="font-size: 12pt; font-weight: bold; text-align: center; margin: 20px 0 10px 0;">EVALUACIÓN TÉCNICA</h4>
+    
+    <p style="text-align: justify; margin: 8px 0;">
+        La {{ informe.admision.comedor.organizacion.subtipo_entidad|default:"organizacion" }} "{{ informe.nombre_organizacion }}", solicita la incorporación del {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" al Programa "Alimentar Comunidad" con el fin de fortalecer la tarea realizada a favor de las familias en situación de vulnerabilidad.
+        La población destinataria se encuentra ubicada en el Partido/Departamento {{ informe.partido_espacio }} de la provincia {{ informe.provincia_espacio }}. Es menester destacar que la asistencia alimentaria gratuita que brinda el mismo a personas en situación de vulnerabilidad, resulta necesaria y vital para alcanzar con mayor eficiencia la seguridad alimentaria.
+        Conforme al relevamiento del Programa identificado como {{ informe.IF_relevamiento_territorial }}, se ha constatado la existencia del {{ informe.tipo_espacio }} en el territorio, el cual brinda asistencia alimentaria a personas en situación de vulnerabilidad social.
+        Se adecúan las prestaciones entre lo relevado en territorio y lo requerido por la institución solicitante según los criterios del Programa.
+        A continuación, se resumen las cantidades aprobadas:
+    </p>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+        <tr>
+            <th style="border: 1px solid #000; padding: 6px; background-color: #f5f5f5;">Comida / Día</th>
+            <th style="border: 1px solid #000; padding: 6px; text-align: center; background-color: #f5f5f5;">Lunes</th>
+            <th style="border: 1px solid #000; padding: 6px; text-align: center; background-color: #f5f5f5;">Martes</th>
+            <th style="border: 1px solid #000; padding: 6px; text-align: center; background-color: #f5f5f5;">Miércoles</th>
+            <th style="border: 1px solid #000; padding: 6px; text-align: center; background-color: #f5f5f5;">Jueves</th>
+            <th style="border: 1px solid #000; padding: 6px; text-align: center; background-color: #f5f5f5;">Viernes</th>
+            <th style="border: 1px solid #000; padding: 6px; text-align: center; background-color: #f5f5f5;">Sábado</th>
+            <th style="border: 1px solid #000; padding: 6px; text-align: center; background-color: #f5f5f5;">Domingo</th>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 6px;"><strong>Desayuno</strong></td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_desayuno_lunes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_desayuno_martes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_desayuno_miercoles }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_desayuno_jueves }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_desayuno_viernes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_desayuno_sabado }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_desayuno_domingo }}</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 6px;"><strong>Almuerzo</strong></td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_almuerzo_lunes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_almuerzo_martes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_almuerzo_miercoles }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_almuerzo_jueves }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_almuerzo_viernes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_almuerzo_sabado }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_almuerzo_domingo }}</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 6px;"><strong>Merienda</strong></td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_merienda_lunes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_merienda_martes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_merienda_miercoles }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_merienda_jueves }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_merienda_viernes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_merienda_sabado }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_merienda_domingo }}</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 6px;"><strong>Cena</strong></td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_cena_lunes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_cena_martes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_cena_miercoles }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_cena_jueves }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_cena_viernes }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_cena_sabado }}</td>
+            <td style="border: 1px solid #000; padding: 6px; text-align: center;">{{ informe.aprobadas_cena_domingo }}</td>
+        </tr>
+    </table>
+
+    {% if informe.conclusiones %}
+    <h3 style="font-size: 12pt; font-weight: bold; margin: 15px 0 8px 0;">Aplicación de criterios</h3>
+    <p style="text-align: justify; margin: 8px 0;">{{ informe.conclusiones|linebreaksbr }}</p>
+    {% endif %}
+
+    <h3 style="font-size: 12pt; font-weight: bold; margin: 15px 0 8px 0;">Descripción de criterios</h3>
+    <p style="text-align: justify; margin: 8px 0;">
+        Los criterios técnicos y programáticos establecidos para evaluar la solicitud de cada comedor implican una definición de la cantidad de prestaciones a partir de la comparación entre la información relevada en la visita en territorio y la cantidad solicitada para cada día y para cada tipo de prestación. Se considera como cantidad de prestaciones relevada en territorio a la suma de las prestaciones brindadas en la actualidad más las personas en lista de espera. En esa línea, los criterios se enmarcan en los siguientes parámetros:
+    </p>
+    <p style="text-align: justify; margin: 8px 0;">
+        A. Cuando la cantidad de prestaciones solicitadas mediante nota sean inferiores al número identificado en el relevamiento en territorio (suma de prestaciones actuales más personas identificadas en lista de espera), deberá prevalecer la cantidad solicitada por la institución entendiendo que la diferencia es cubierta con otro tipo de recursos.
+    </p>
+    <p style="text-align: justify; margin: 8px 0;">
+        B. Cuando la cantidad de prestaciones solicitadas mediante nota sean superiores a las identificadas en la visita (suma de prestaciones actuales más personas identificadas en la lista de espera) deberá prevalecer el número de prestaciones relevado en la visita.
+    </p>
+    <p style="text-align: justify; margin: 8px 0;">
+        Por todo lo expuesto se considera pertinente la solicitud realizada por la {{ informe.admision.comedor.organizacion.subtipo_entidad|default:"organizacion" }} "{{ informe.nombre_organizacion }}" para adherir al {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" al Programa Alimentar Comunidad.
+    </p>
+    <p style="text-align: justify; margin: 8px 0;">
+        Cabe destacar que la tramitación de las presentes actuaciones mediante las cuales se aprueba el convenio de incorporación al Programa mencionado no implica en este acto erogación presupuestaria alguna.
+    </p>
+    <p style="text-align: justify; margin: 8px 0;">
+        Dicha erogación será tramitada pertinentemente en expedientes de pago mensuales a fin de acreditar los fondos correspondientes a los comedores incorporados al Programa Alimentar Comunidad.
+    </p>
+    <p style="text-align: justify; margin: 8px 0;">Consecuentemente, se sugiere dar prosecución al trámite correspondiente.</p>
+</div>

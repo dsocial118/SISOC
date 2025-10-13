@@ -10,7 +10,11 @@
 {% block titulo-pagina %}
     {{ comedor.nombre }}
     {% if admision.enviada_a_archivo %}
-        <span class="ms-3 fs-5 bg-danger text-white">Rechazado: {{ admision.get_rechazo_juridicos_motivo_display }} / Enviado a Archivo</span>
+        {% if admision.estado.nombre == "Descartado" %}
+            <span class="ms-3 fs-5 bg-danger text-white px-2 py-1 rounded">DESCARTADO: {{ admision.motivo_descarte_expediente }}</span>
+        {% else %}
+            <span class="ms-3 fs-5 bg-danger text-white px-2 py-1 rounded">RECHAZADO: {{ admision.get_rechazo_juridicos_motivo_display }}</span>
+        {% endif %}
     {% endif %}
 {% endblock %}
 ;
@@ -36,7 +40,7 @@
                        class="btn btn-primary mr-1">Ver Informe Técnico</a>
                 {% endif %}
             {% endif %}
-            {% if request.user|has_group:"Tecnico Comedor" and not es_crear %}
+            {% if request.user|has_group:"Tecnico Comedor" %}
                 {% if admision.numero_disposicion and not admision.enviado_acompaniamiento %}
                     <button type="button"
                             class="btn btn-success mr-1"
@@ -99,7 +103,7 @@
             </div>
         </div>
     {% endif %}
-    {% if not admision.tipo_convenio %}
+    {% if not admision.tipo_convenio and not admision.enviada_a_archivo %}
         <!-- MODAL DE SELECCIÓN INICIAL -->
         <div class="modal fade"
              id="seleccionModal"
@@ -137,8 +141,7 @@
         </div>
     {% endif %}
     <div class="row mb-3">
-        {% if not es_crear %}
-            <div class="col-5">
+            <div class="col-6">
                 <div class="card card-primary card-outline h-100">
                     <div class="card-header">
                         <h2 class="card-title fw-bold fs-3">Admisión</h2>
@@ -257,12 +260,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                {% endif %}
-                                {% if es_crear %}
-                                    <div class="col-12">
-                                    {% else %}
-                                        <div class="col-7">
-                                        {% endif %}
+                                    <div class="col-6">
                                         <div class="card card-primary card-outline">
                                             <div class="card-header">
                                                 <h2 class="card-title fw-bold fs-3">Comedor</h2>
@@ -375,7 +373,7 @@
                                                             {% for doc in documentos_personalizados %}
                                                                 {% include "admisiones/includes/documento_row.html" %}
                                                             {% endfor %}
-                                                            {% if request.user|has_group:"Tecnico Comedor" and not es_crear and not admision.enviada_a_archivo %}
+                                                            {% if request.user|has_group:"Tecnico Comedor" and not admision.enviada_a_archivo and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
                                                                 <tr id="fila-agregar-documento"
                                                                     data-documentacion-id=""
                                                                     data-archivo-id="">
@@ -635,7 +633,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                {% if not es_crear %}
                                     <!-- MODAL CARATULACION -->
                                     <div class="modal fade"
                                          id="caratularExpediente"
@@ -679,11 +676,10 @@
                                             </div>
                                         </div>
                                     </div>
-                                {% endif %}
                             {% endblock %}
                             {% block customJS %}
                                 <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
-                                {% if not admision.tipo_convenio %}
+                                {% if not admision.tipo_convenio and not admision.enviada_a_archivo %}
                                     <script>
                                         document.addEventListener('DOMContentLoaded', function() {
                                             var modal = new bootstrap.Modal(document.getElementById('seleccionModal'));
@@ -695,17 +691,14 @@
                                         });
                                     </script>
                                 {% endif %}
-                                {% if es_crear %}
-                                    <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
-                                {% endif %}
+
                                 <script src="{% static 'custom/js/admisionestecnico.js' %}"></script>
                                 <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
+                                <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
                                 <script>window.URL_ACTUALIZAR_ESTADO = "{% url 'actualizar_estado_archivo' %}";</script>
                                 <script>window.URL_ACTUALIZAR_NUMERO_GDE = "{% url 'actualizar_numero_gde_archivo' %}";</script>
-                                {% if not es_crear %}
-                                    <script>window.ADMISION_ID = {{ admision.id }};</script>
-                                    <script>window.URL_CREAR_DOCUMENTO_PERSONALIZADO = "{% url 'documento_personalizado_crear' admision.id %}";</script>
-                                {% endif %}
+                                <script>window.ADMISION_ID = {{ admision.id }};</script>
+                                <script>window.URL_CREAR_DOCUMENTO_PERSONALIZADO = "{% url 'documento_personalizado_crear' admision.id %}";</script>
                                 <!-- Estilos para la UI de número GDE -->
                                 <style>
                                     .gde-display {
