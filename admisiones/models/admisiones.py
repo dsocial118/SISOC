@@ -57,7 +57,7 @@ class Admision(models.Model):
         ("validado", "Validado"),
         ("rechazado", "Rechazado"),
     ]
-        
+
     TIPO_ADMISION = [
         ("incorporacion", "Incorporación"),
         ("renovacion", "Renovación"),
