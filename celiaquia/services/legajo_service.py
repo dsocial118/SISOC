@@ -166,14 +166,12 @@ class LegajoService:
         expediente, limit: int | None = None, friendly_names: dict | None = None
     ):
         """
-        Devuelve una lista de dicts con legajos que NO tienen los 2 archivos requeridos.
-        - limit: corta la lista al llegar a N (útil para previsualización).
+        Devuelve una lista de dicts con legajos que no tienen los dos archivos requeridos.
+        - limit: corta la lista al llegar a N (util para previsualizacion).
         - friendly_names: mapping opcional para mostrar nombres legibles de cada archivo.
         """
-        friendly_names = friendly_names or {
-            "archivo2": "Biopsia / Constancia médica",
-            "archivo3": "Negativa ANSES",
-        }
+        if friendly_names is None:
+            friendly_names = {}
 
         qs = expediente.expediente_ciudadanos.select_related(
             "ciudadano", "estado"
@@ -191,6 +189,22 @@ class LegajoService:
         if hasattr(ExpedienteCiudadano, "archivos_ok"):
             qs = qs.filter(archivos_ok=False)
 
+        ciudadanos_ids = list(qs.values_list("ciudadano_id", flat=True))
+        responsables_ids = set()
+        if ciudadanos_ids:
+            try:
+                from celiaquia.services.familia_service import FamiliaService
+
+                responsables_ids = FamiliaService.obtener_ids_responsables(
+                    ciudadanos_ids
+                )
+            except Exception as exc:
+                logger.warning(
+                    "No se pudo determinar responsables en expediente %s: %s",
+                    expediente.id,
+                    exc,
+                )
+
         faltantes = []
         for leg in qs.iterator():
             miss = []
@@ -200,6 +214,14 @@ class LegajoService:
                 miss.append("archivo3")
 
             if miss:
+                es_responsable = LegajoService._es_responsable(
+                    leg.ciudadano, responsables_ids
+                )
+                archivos_requeridos = LegajoService.get_archivos_requeridos_por_legajo(
+                    leg, responsables_ids
+                )
+                nombres_archivos = friendly_names or archivos_requeridos
+
                 faltantes.append(
                     {
                         "legajo_id": leg.id,
@@ -210,10 +232,47 @@ class LegajoService:
                         "revision_tecnico": getattr(leg, "revision_tecnico", None),
                         "archivos_ok": getattr(leg, "archivos_ok", None),
                         "faltan": miss,
-                        "faltan_nombres": [friendly_names.get(m, m) for m in miss],
+                        "faltan_nombres": [nombres_archivos.get(m, m) for m in miss],
+                        "es_responsable": es_responsable,
+                        "tipo_legajo": "Responsable" if es_responsable else "Hijo",
                     }
                 )
                 if limit and len(faltantes) >= limit:
                     break
 
         return faltantes
+
+    @staticmethod
+    def _es_responsable(ciudadano, responsables_ids=None):
+        """Determina si un ciudadano es responsable segun las relaciones familiares."""
+        ciudadano_id = getattr(ciudadano, "id", ciudadano)
+
+        if responsables_ids is not None:
+            return ciudadano_id in responsables_ids
+
+        try:
+            from celiaquia.services.familia_service import FamiliaService
+
+            return FamiliaService.es_responsable(ciudadano_id)
+        except Exception:
+            return False
+
+    @staticmethod
+    def get_archivos_requeridos_por_legajo(legajo, responsables_ids=None):
+        """Retorna los archivos requeridos segun el tipo de legajo."""
+        es_responsable = LegajoService._es_responsable(
+            legajo.ciudadano, responsables_ids
+        )
+
+        if es_responsable:
+            return {
+                "archivo2": (
+                    "DNI (foto) o partida de nacimiento o certificacion de la justicia "
+                    "(tutor legal)",
+                ),
+                "archivo3": "Certificacion de ANSES",
+            }
+        return {
+            "archivo2": "Biopsia / Constancia medica",
+            "archivo3": "Negativa ANSES",
+        }

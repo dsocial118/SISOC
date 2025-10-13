@@ -1239,6 +1239,7 @@ class LegalesService:
                 "reso_form": reso_form,
                 "proyecto_form": proyecto_form,
                 "form_legales_num_if": legales_num_if_form,
+                "documentos_form": DocumentosExpedienteForm(),
                 "convenio_num_if": convenio_num_if_form,
                 "dispo_num_if": dispo_num_if_form,
                 "documentos_form": DocumentosExpedienteForm(),
