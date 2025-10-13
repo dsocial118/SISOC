@@ -379,6 +379,14 @@ class ComedorDetailView(DetailView):
             "presupuesto_cena": valor_cena,
         }
 
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        if "admision" in request.POST:
+            return ComedorService.crear_admision_desde_comedor(request, self.object)
+
+        return ComedorService.post_comedor_relevamiento(request, self.object)
+
     def get_relaciones_optimizadas(self):
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
         rendiciones_mensuales = (
@@ -451,10 +459,6 @@ class ComedorDetailView(DetailView):
         env_config = self._get_environment_config()
         context.update({**presupuestos_data, **relaciones_data, **env_config})
         return context
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        return ComedorService.post_comedor_relevamiento(request, self.object)
 
 
 # TODO: Sacar de la vista de comedores

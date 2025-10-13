@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -211,16 +212,21 @@ def crear_documento_personalizado(request, admision_id):
 class AdmisionesTecnicosListView(ListView):
     model = Admision
     template_name = "admisiones/admisiones_tecnicos_list.html"
-    context_object_name = "comedores"
+    context_object_name = "admisiones"
     paginate_by = 10
 
     def get_queryset(self):
-        return AdmisionService.get_comedores_filtrados(
+        return AdmisionService.get_admisiones_tecnicos_queryset(
             self.request.user, self.request.GET.get("busqueda", "")
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        table_items = AdmisionService.get_admisiones_tecnicos_table_data(
+            context["admisiones"], self.request.user
+        )
+
         context.update(
             {
                 "query": self.request.GET.get("busqueda", ""),
@@ -228,6 +234,14 @@ class AdmisionesTecnicosListView(ListView):
                     {"name": "Admisiones", "url": "admisiones_tecnicos_listar"},
                     {"name": "Listar", "active": True},
                 ],
+                "table_headers": [
+                    {"title": "Nombre"},
+                    {"title": "Tipo Comedor"},
+                    {"title": "Ubicación"},
+                    {"title": "Convenio"},
+                    {"title": "Tipo"},
+                ],
+                "table_items": table_items,
             }
         )
         return context
@@ -582,47 +596,6 @@ def admisiones_legales_ajax(request):
         html = render_to_string(
             "partials/admisiones_legales_rows.html",
             {"admisiones": page_obj, "request": request},
-            request=request,
-        )
-        pagination_html = render_to_string(
-            "components/pagination.html",
-            {"page_obj": page_obj, "is_paginated": page_obj.has_other_pages()},
-            request=request,
-        )
-
-        return JsonResponse(
-            {
-                "html": html,
-                "pagination_html": pagination_html,
-                "count": paginator.count,
-                "num_pages": paginator.num_pages,
-                "has_previous": page_obj.has_previous(),
-                "has_next": page_obj.has_next(),
-                "current_page": page_obj.number,
-            }
-        )
-
-    return _ajax_handler(request)
-
-
-def admisiones_tecnicos_ajax(request):
-    """Endpoint AJAX para búsqueda filtrada de admisiones técnicos"""
-    from django.template.loader import render_to_string
-    from django.core.paginator import Paginator
-    from core.decorators import group_required
-
-    @group_required(["Tecnico Comedor", "Abogado Dupla"])
-    def _ajax_handler(request):
-        query = request.GET.get("busqueda", "")
-        page = request.GET.get("page", 1)
-
-        comedores = AdmisionService.get_comedores_filtrados(request.user, query)
-        paginator = Paginator(comedores, 10)
-        page_obj = paginator.get_page(page)
-
-        html = render_to_string(
-            "partials/admisiones_tecnicos_rows.html",
-            {"comedores": page_obj, "request": request},
             request=request,
         )
         pagination_html = render_to_string(
