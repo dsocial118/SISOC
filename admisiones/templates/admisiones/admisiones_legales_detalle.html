@@ -440,7 +440,7 @@
             </div>
         </div>
     </div>
-    <!-- MODAL Form Reso -->
+    <!-- MODAL Formulario Disposición -->
     <div class="modal fade"
          id="modalFormReso"
          tabindex="-1"
@@ -458,11 +458,11 @@
                                 aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        {% for field in reso_form %}<div class="col-md-6 mb-3">{{ field|as_crispy_field }}</div>{% endfor %}
+                        Generará los archivos del Formulario Disposición de {{ admision.tipo|lower }}.
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" name="btnRESO" id="btnRESO_id">Guardar</button>
+                        <button type="submit" class="btn btn-primary" name="btnRESO" id="btnRESO_id">Aceptar</button>
                     </div>
                 </form>
             </div>
@@ -485,7 +485,7 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">Generará el PDF del Formulario Proyecto de Convenio.</div>
+                    <div class="modal-body">Generará los archivos del Formulario Proyecto de Convenio.</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit"

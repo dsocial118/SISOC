@@ -8,6 +8,7 @@ from django.core.files.base import ContentFile
 from io import BytesIO
 from docx import Document
 from htmldocx import HtmlToDocx
+from .docx_service import DocxTemplateService
 
 from django.db import transaction
 import logging
@@ -207,6 +208,41 @@ class InformeService:
             )
 
     @staticmethod
+    def generar_docx_con_template(informe, template_name=None):
+        """Genera DOCX usando template con docxtpl"""
+        try:
+            # Seleccionar template basado en tipo de admisión e informe
+            if not template_name:
+                admision_tipo = informe.admision.tipo.lower()
+                informe_tipo = informe.tipo
+                template_name = f"{admision_tipo}_docx_informe_tecnico_{informe_tipo}.docx"
+            
+            print(f"DEBUG: Usando template: {template_name}")
+            print(f"DEBUG: Informe ID: {informe.id}, Tipo: {informe.tipo}, Admisión: {informe.admision.tipo}")
+            
+            context = DocxTemplateService.preparar_contexto_informe_tecnico(informe)
+            print(f"DEBUG: Contexto preparado con {len(context)} variables")
+            
+            result = DocxTemplateService.generar_docx_desde_template(template_name, context)
+            
+            if result:
+                print("DEBUG: Template DOCX procesado exitosamente")
+            else:
+                print("DEBUG: Template DOCX retornó None")
+                
+            return result
+        except Exception as e:
+            print(f"DEBUG ERROR: {str(e)}")
+            # Fallback a template simple si falla
+            try:
+                print("DEBUG: Intentando fallback con template simple")
+                context = DocxTemplateService.preparar_contexto_informe_tecnico(informe)
+                return DocxTemplateService.generar_docx_desde_template("template_simple.docx", context)
+            except Exception as fallback_error:
+                print(f"DEBUG FALLBACK ERROR: {str(fallback_error)}")
+                return None
+    
+    @staticmethod
     def generar_y_guardar_pdf(informe, tipo):
         """
         Genera y guarda PDF y DOCX del informe técnico
@@ -217,19 +253,20 @@ class InformeService:
                 "texto_comidas": generar_texto_comidas(informe),
             }
 
-            html_pdf = render_to_string(
-                "admisiones/pdf/pdf_informe_tecnico.html", context
-            )
+            # Seleccionar templates basado en tipo de admisión e informe
+            admision_tipo = informe.admision.tipo.lower()
+            informe_tipo = informe.tipo
+            
+            pdf_template = f"admisiones/pdf/{admision_tipo}_pdf_informe_tecnico_{informe_tipo}.html"
+            docx_template = f"admisiones/docx/{admision_tipo}_docx_informe_tecnico_{informe_tipo}.html"
+            
+            html_pdf = render_to_string(pdf_template, context)
+            
             if not html_pdf.strip():
                 raise ValueError("Template PDF devolvió contenido vacío")
 
-            try:
-                html_docx = render_to_string(
-                    "admisiones/docx/docx_informe_tecnico.html", context
-                )
-                if not html_docx.strip():
-                    html_docx = html_pdf
-            except Exception:
+            html_docx = render_to_string(docx_template, context)
+            if not html_docx.strip():
                 html_docx = html_pdf
 
             pdf_bytes = HTML(
@@ -238,9 +275,23 @@ class InformeService:
             if not pdf_bytes:
                 raise ValueError("WeasyPrint no generó contenido PDF")
 
-            docx_content = InformeService._generate_docx_content(
-                html_docx, getattr(informe, "pk", None)
-            )
+            # Generar DOCX con template
+            try:
+                logger.info(f"Generando DOCX para informe {informe.id}, tipo: {informe.tipo}, admision tipo: {informe.admision.tipo}")
+                docx_buffer = InformeService.generar_docx_con_template(informe)
+                if docx_buffer:
+                    logger.info("DOCX generado exitosamente con template")
+                    docx_content = ContentFile(docx_buffer.getvalue(), name="tmp.docx")
+                else:
+                    logger.warning("Template DOCX falló, usando fallback HTML")
+                    docx_content = InformeService._generate_docx_content(
+                        html_docx, getattr(informe, "pk", None)
+                    )
+            except Exception as e:
+                logger.error(f"Error generando DOCX: {str(e)}")
+                docx_content = InformeService._generate_docx_content(
+                    html_docx, getattr(informe, "pk", None)
+                )
 
             base_filename = (
                 slugify(f"{tipo}-informe-{informe.id}") or f"informe-{informe.id}"
@@ -569,9 +620,13 @@ class InformeService:
                 "informe": informe,
                 "texto_comidas": generar_texto_comidas(informe),
             }
-            html_pdf = render_to_string(
-                "admisiones/pdf/pdf_informe_tecnico.html", context
-            )
+            
+            # Seleccionar template basado en tipo
+            admision_tipo = informe.admision.tipo.lower()
+            informe_tipo = informe.tipo
+            pdf_template = f"admisiones/pdf/{admision_tipo}_pdf_informe_tecnico_{informe_tipo}.html"
+            
+            html_pdf = render_to_string(pdf_template, context)
 
             if not html_pdf.strip():
                 return None
