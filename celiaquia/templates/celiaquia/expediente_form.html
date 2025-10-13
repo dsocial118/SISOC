@@ -25,9 +25,15 @@
                 <div class="card-body">
                     <form id="expediente-form" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <div class="mb-3">{{ form.numero_expediente|as_crispy_field }}</div>
-                        <div class="mb-3">{{ form.observaciones|as_crispy_field }}</div>
-                        <div class="mb-3">{{ form.excel_masivo|as_crispy_field }}</div>
+                        {% if form.numero_expediente %}
+                            <div class="mb-3">{{ form.numero_expediente|as_crispy_field }}</div>
+                        {% endif %}
+                        {% if form.observaciones %}
+                            <div class="mb-3">{{ form.observaciones|as_crispy_field }}</div>
+                        {% endif %}
+                        {% if form.excel_masivo %}
+                            <div class="mb-3">{{ form.excel_masivo|as_crispy_field }}</div>
+                        {% endif %}
                         <!-- Contenedor de error para la previsualización -->
                         <div id="preview-error" class="text-danger mt-2"></div>
                         <div class="d-flex justify-content-between mt-3">
