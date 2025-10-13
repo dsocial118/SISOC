@@ -141,16 +141,13 @@
         </div>
         <main>
             <h4>INFORME TÉCNICO SOCIAL</h4>
-            Expediente Nro.: {{ informe.expediente_nro }}
+            Expediente N°: {{ informe.expediente_nro }}
             <br />
-            La Organización "{{ informe.nombre_organizacion }}" solicita la incorporación del Comedor
-            {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad con el fin de
-            fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota
-            identificada como {{ informe.nota_gde_if }}.
+            La Organización {{ informe.admision.comedor.organizacion.subtipo_entidad|default:"organizacion" }} "{{ informe.nombre_organizacion }}" solicita la incorporación del {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad con el fin de fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota identificada como {{ informe.nota_gde_if }}.
             <table>
                 <tbody>
                     <tr>
-                        <th colspan="2" style="width: 100%;">Organización Solicitante</th>
+                        <th colspan="2" style="width: 100%;">Organización solicitante</th>
                     </tr>
                     <tr>
                         <th style="width: 25%;">Nombre:</th>
@@ -177,7 +174,7 @@
                         <td>{{ informe.telefono_organizacion }}</td>
                     </tr>
                     <tr>
-                        <th style="width: 25%;">Mail:</th>
+                        <th style="width: 25%;">Correo electrónico:</th>
                         <td>{{ informe.mail_organizacion }}</td>
                     </tr>
                     <tr>
@@ -190,7 +187,7 @@
             <table>
                 <tbody>
                     <tr>
-                        <th colspan="2" style="width: 100%;">Representante de la Organización Solicitante</th>
+                        <th colspan="2" style="width: 100%;">Representante de la organización</th>
                     </tr>
                     <tr>
                         <th style="width: 25%;">Nombre y apellido:</th>
@@ -210,7 +207,7 @@
             <table>
                 <tbody>
                     <tr>
-                        <th colspan="2" style="width: 100%;">Datos del Comedor y/o Merendero</th>
+                        <th colspan="2" style="width: 100%;">Datos del comedor o merendero</th>
                     </tr>
                     <tr>
                         <th style="width: 25%;">Tipo:</th>
@@ -246,7 +243,7 @@
             <table>
                 <tbody>
                     <tr>
-                        <th colspan="2" style="width: 100%;">Responsable de la Tarjeta</th>
+                        <th colspan="2" style="width: 100%;">Responsable administrador de la tarjeta</th>
                     </tr>
                     <tr>
                         <th style="width: 25%;">Nombre:</th>
@@ -280,10 +277,7 @@
             </table>
             <br />
             <p>
-                Mediante la Resolución N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023, modificada por Resolución N.° RESOL-2025-151-APN-MCH del 31 de marzo de 2025 se creó el Programa “ALIMENTAR COMUNIDAD”, a los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH.
-                Los lineamientos del Programa “Alimentar Comunidad” establecen que el mecanismo a utilizar para la asistencia a Comedores y/o Merenderos comunitarios sea mediante la utilización de una tarjeta prepaga física o virtual, otorgada a comedores/ merenderos para que con ella puedan efectuar la compra de alimentos, por un plazo de 6 (SEIS) meses contados a partir del primer fondeo.
-                En ese marco, es necesario realizar un trabajo conjunto y articulado con el fin de implementar dicho Programa para acompañar y consolidar la cobertura de las necesidades básicas de cada habitante.
-                La Institución solicitó la incorporación del {{ informe.tipo_espacio }} {{ informe.nombre_espacio }} al Programa Alimentar Comunidad, mediante Nota GDE {{ informe.nota_gde_if }}, con la siguiente solicitud:
+                Mediante la Resolución N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023, modificada por Resolución N.° RESOL-2025-151-APN-MCH del 31 de marzo de 2025 se creó el Programa “ALIMENTAR COMUNIDAD”, a los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH. Los lineamientos del Programa “Alimentar Comunidad” establecen que el mecanismo a utilizar para la asistencia a Comedores y/o Merenderos comunitarios sea mediante la utilización de una tarjeta prepaga física o virtual, otorgada a comedores/ merenderos para que con ella puedan efectuar la compra de alimentos, por un plazo de 6 (SEIS) meses contados a partir del primer fondeo. En ese marco, es necesario realizar un trabajo conjunto y articulado con el fin de implementar dicho Programa para acompañar y consolidar la cobertura de las necesidades básicas de cada habitante. La Institución solicitó la incorporación del {{ informe.tipo_espacio }} {{ informe.nombre_espacio }} al Programa Alimentar Comunidad, mediante Nota {{ informe.nota_gde_if }}, con la siguiente solicitud:
             </p>
             <ul>
                 <li>
@@ -304,20 +298,15 @@
                 </li>
             </ul>
             <p>
-                A los efectos del cumplimiento de los requisitos de admisibilidad al Programa Alimentar Comunidad, se agrega:
-                Las constancias de inexistencia de percepción por parte de la organización solicitante de otros subsidios nacionales para asistencia alimentaria:
+                A los efectos del cumplimiento de los requisitos de admisibilidad al Programa Alimentar Comunidad, se agrega: Las constancias de inexistencia de percepción por parte de la organización solicitante de otros subsidios nacionales para asistencia alimentaria:
                 <br />
-                - En {{ informe.constancia_subsidios_dnsa }} se informó que la Organización "{{ informe.nombre_organizacion }}" no tiene convenios de otorgamiento de subsidios vigentes en el componente ’Fortalecimiento a Comedores y Merenderos Comunitarios’”
+                - En {{ informe.constancia_subsidios_dnsa }} se informó que el {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” no tiene convenios de otorgamiento de subsidios vigentes en el componente “Fortalecimiento a Comedores y Merenderos Comunitarios”.
                 <br />
-                - En nota {{ informe.constancia_subsidios_pnud }} se informó que el {{ informe.nombre_espacio }} – {{ informe.domicilio_espacio }} NO resulta beneficiario de complementos alimentarios otorgados por el Programa Abordaje Comunitario en el marco del Programa de las Naciones Unidas para el Desarrollo.
+                - En nota {{ informe.constancia_subsidios_pnud }} se informó que el {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” - {{ informe.domicilio_espacio }} NO resulta beneficiario de complementos alimentarios otorgados por el Programa Abordaje Comunitario en el marco del Programa de las Naciones Unidas para el Desarrollo.
             </p>
             <h4>EVALUACIÓN TÉCNICA</h4>
             <p>
-                La Organización "{{ informe.nombre_organizacion }}", solicita la incorporación del {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las familias en situación de vulnerabilidad.
-                La población destinataria se encuentra ubicada en el Partido/Departamento{{ informe.partido_espacio }} de la provincia {{ informe.provincia_espacio }}. Es menester destacar que la asistencia alimentaria gratuita que brinda el mismo a personas en situación de vulnerabilidad, resulta necesaria y vital para alcanzar con mayor eficiencia la seguridad alimentaria.
-                Conforme al relevamiento del Programa identificado como {{ informe.IF_relevamiento_territorial }}, se ha constatado la existencia del {{ informe.tipo_espacio }} en el territorio, el cual brinda asistencia alimentaria a personas en situación de vulnerabilidad social.
-                Se adecúan las prestaciones entre lo relevado en territorio y lo requerido por la institución solicitante según los criterios del Programa.
-                A continuación, se resumen las cantidades aprobadas:
+                La {{ informe.admision.comedor.organizacion.subtipo_entidad|default:"organizacion" }} "{{ informe.nombre_organizacion }}", solicita la incorporación del {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las familias en situación de vulnerabilidad. La población destinataria se encuentra ubicada en el Partido/Departamento de {{ informe.partido_espacio }} de la provincia {{ informe.provincia_espacio }}. Es menester destacar que la asistencia alimentaria gratuita que brinda el mismo a personas en situación de vulnerabilidad, resulta necesaria y vital para alcanzar con mayor eficiencia la seguridad alimentaria. Conforme al relevamiento del Programa identificado como {{ informe.IF_relevamiento_territorial }}, se ha constatado la existencia del {{ informe.tipo_espacio }} en el territorio, el cual brinda asistencia alimentaria a personas en situación de vulnerabilidad social. Se adecúan las prestaciones entre lo relevado en territorio y lo requerido por la institución solicitante según los criterios del Programa. A continuación, se resumen las cantidades aprobadas:
             </p>
             <table class="table table-bordered text-center align-middle">
                 <thead>
@@ -380,7 +369,7 @@
                 <table>
                     <tbody>
                         <tr>
-                            <th colspan="2" style="width: 100%;">Aplicación de Criterios</th>
+                            <th colspan="2" style="width: 100%;">Aplicación de criterios</th>
                         </tr>
                         <tr>
                             <td colspan="2" style="padding: 10px;">{{ informe.conclusiones|linebreaks }}</td>
@@ -400,7 +389,7 @@
                 B. Cuando la cantidad de prestaciones solicitadas mediante nota sean superiores a las identificadas en la visita (suma de prestaciones actuales más personas identificadas en la lista de espera) deberá prevalecer el número de prestaciones relevado en la visita.
             </p>
             <p>
-                Por todo lo expuesto se considera pertinente la solicitud realizada por la Organización "{{ informe.nombre_organizacion }}" para adherir al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.
+                Por todo lo expuesto se considera pertinente la solicitud realizada por la {{ informe.admision.comedor.organizacion.subtipo_entidad|default:"organizacion" }} "{{ informe.nombre_organizacion }}" para adherir al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.
             </p>
             <p>
                 Cabe destacar que la tramitación de las presentes actuaciones mediante las cuales se aprueba el convenio de incorporación al Programa mencionado no implica en este acto erogación presupuestaria alguna.
@@ -409,7 +398,6 @@
                 Dicha erogación será tramitada pertinentemente en expedientes de pago mensuales a fin de acreditar los fondos correspondientes a los comedores incorporados al Programa Alimentar Comunidad.
             </p>
             <p>Consecuentemente, se sugiere dar prosecución al trámite correspondiente.</p>
-        </div>
-    </main>
-</body>
+        </main>
+    </body>
 </html>
