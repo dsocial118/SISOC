@@ -542,6 +542,7 @@ class ExpedienteDetailView(DetailView):
             {
                 "legajos": legajos_enriquecidos,
                 "confirm_form": ConfirmarEnvioForm(),
+                "is_prov": _is_provincial(user),
                 "preview": preview,
                 "preview_error": preview_error,
                 "preview_limit_actual": str(preview_limit_actual or "5").lower(),

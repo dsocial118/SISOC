@@ -87,7 +87,7 @@
             <ul class="nav nav-treeview">
                 <li class="nav-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
-                    class="nav-link nav-dot ms-2 {% if 'dashboard' in pagina_actual %}active{% endif %}">
+                       class="nav-link nav-dot ms-2 {% if 'dashboard' in pagina_actual %}active{% endif %}">
                         <p>
                             Centros de Familia
                             <i class="nav-arrow bi bi-chevron-right"></i>
@@ -96,7 +96,7 @@
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
                             <a href="{% url 'dashboard' %}"
-                            class="nav-link ms-4 {% if 'dashboard/listar' in pagina_actual %}active{% endif %}">
+                               class="nav-link ms-4 {% if 'dashboard/listar' in pagina_actual %}active{% endif %}">
                                 <i class="nav-icon bi bi-arrow-return-right"></i>
                                 <p>Buscar</p>
                             </a>
@@ -158,7 +158,7 @@
                             </li>
                         {% endif %}
                         <!-- ADMISION -->
-                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" %}
+                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" %}
                             <li class="nav-item ms-4 {% if 'admisiones' in pagina_actual %}menu-open{% endif %}">
                                 <a href="#" class="nav-link">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
@@ -168,18 +168,22 @@
                                     </p>
                                 </a>
                                 <ul class="nav nav-treeview">
-                                    <li class="nav-item">
-                                        <a href="{% url 'admisiones_tecnicos_listar' %}"
-                                           class="nav-link nav-dot ms-4 {% if 'admisiones_tecnicos' in pagina_actual %}active{% endif %}">
-                                            <p>Técnicos</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a href="{% url 'admisiones_legales_listar' %}"
-                                           class="nav-link nav-dot ms-4 {% if 'admisiones_legales' in pagina_actual %}active{% endif %}">
-                                            <p>Legales</p>
-                                        </a>
-                                    </li>
+                                    {% if request.user|has_group:"Abogado Dupla" or request.user|has_group:"Tecnico Comedor" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'admisiones_tecnicos_listar' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'admisiones_tecnicos' in pagina_actual %}active{% endif %}">
+                                                <p>Técnicos</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    {% if request.user|has_group:"Area Legales" %}
+                                        <li class="nav-item">
+                                            <a href="{% url 'admisiones_legales_listar' %}"
+                                               class="nav-link nav-dot ms-4 {% if 'admisiones_legales' in pagina_actual %}active{% endif %}">
+                                                <p>Legales</p>
+                                            </a>
+                                        </li>
+                                    {% endif %}
                                 </ul>
                             </li>
                         {% endif %}
@@ -292,30 +296,30 @@
             {% endif %}
             <!-- CELIAQUÍA -->
             {% if request.user|has_group:"TecnicoCeliaquia" or request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"ProvinciaCeliaquia" %}
-            <li class="nav-item">
-                <a href="#" class="nav-link nav-dot ms-2">
-                    <p>
-                        Celiaquía
-                        <i class="nav-arrow bi bi-chevron-right"></i>
-                    </p>
-                </a>
-                <ul class="nav nav-treeview">
-                    <li class="nav-item">
-                        <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
-                            <i class="nav-icon fas fa-folder-open"></i>
-                            <p>Expedientes</p>
-                        </a>
-                    </li>
-                    {% if request.user|has_group:"CoordinadorCeliaquia" %}
+                <li class="nav-item">
+                    <a href="#" class="nav-link nav-dot ms-2">
+                        <p>
+                            Celiaquía
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
-                                <i class="nav-icon fas fa-chart-bar"></i>
-                                <p>Dashboard Cupos</p>
+                            <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
+                                <i class="nav-icon fas fa-folder-open"></i>
+                                <p>Expedientes</p>
                             </a>
                         </li>
-                    {% endif %}
-                </ul>
-            </li>
+                        {% if request.user|has_group:"CoordinadorCeliaquia" %}
+                            <li class="nav-item">
+                                <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
+                                    <i class="nav-icon fas fa-chart-bar"></i>
+                                    <p>Dashboard Cupos</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </li>
             {% endif %}
         </ul>
     </li>

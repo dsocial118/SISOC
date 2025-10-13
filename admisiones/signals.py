@@ -27,6 +27,7 @@ def guardar_historial_admision(sender, instance, **kwargs):
         "numero_convenio",
         "archivo_convenio",
         "enviada_a_archivo",
+        "complementario_solicitado",
     ]
 
     for campo in campos_a_trackear:
