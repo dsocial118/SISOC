@@ -42,6 +42,7 @@ from admisiones.forms.admisiones_forms import (
     DisposicionForm,
     ReinicioExpedienteForm,
     SolicitarInformeComplementarioForm,
+    DocumentosExpedienteForm,
 )
 
 
@@ -545,9 +546,20 @@ class LegalesService:
             admision.intervencion_juridicos = None
             admision.rechazo_juridicos_motivo = None
             admision.dictamen_motivo = None
+            admision.complementario_solicitado = False
+            admision.observaciones_informe_tecnico_complementario = None
 
             admision.estado_legales = "Informe Complementario: Validado"
-            admision.save()
+            admision.save(
+                update_fields=[
+                    "intervencion_juridicos",
+                    "rechazo_juridicos_motivo",
+                    "dictamen_motivo",
+                    "complementario_solicitado",
+                    "observaciones_informe_tecnico_complementario",
+                    "estado_legales",
+                ]
+            )
 
         except Exception:
             logger.exception(
@@ -1225,6 +1237,7 @@ class LegalesService:
                 "reso_form": reso_form,
                 "proyecto_form": proyecto_form,
                 "form_legales_num_if": legales_num_if_form,
+                "documentos_form": DocumentosExpedienteForm(),
                 "convenio_num_if": convenio_num_if_form,
                 "dispo_num_if": dispo_num_if_form,
                 "form_intervencion_juridicos": IntervencionJuridicosForm(
