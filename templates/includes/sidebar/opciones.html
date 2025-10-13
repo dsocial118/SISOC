@@ -171,7 +171,7 @@
                                     {% if request.user|has_group:"Abogado Dupla" or request.user|has_group:"Tecnico Comedor" %}
                                         <li class="nav-item">
                                             <a href="{% url 'admisiones_tecnicos_listar' %}"
-                                            class="nav-link nav-dot ms-4 {% if 'admisiones_tecnicos' in pagina_actual %}active{% endif %}">
+                                               class="nav-link nav-dot ms-4 {% if 'admisiones_tecnicos' in pagina_actual %}active{% endif %}">
                                                 <p>Técnicos</p>
                                             </a>
                                         </li>
@@ -179,7 +179,7 @@
                                     {% if request.user|has_group:"Area Legales" %}
                                         <li class="nav-item">
                                             <a href="{% url 'admisiones_legales_listar' %}"
-                                            class="nav-link nav-dot ms-4 {% if 'admisiones_legales' in pagina_actual %}active{% endif %}">
+                                               class="nav-link nav-dot ms-4 {% if 'admisiones_legales' in pagina_actual %}active{% endif %}">
                                                 <p>Legales</p>
                                             </a>
                                         </li>
