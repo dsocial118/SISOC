@@ -1,0 +1,67 @@
+.familia-card {
+    transition: all 0.3s ease;
+}
+
+.familia-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+.legajo-bubble {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.legajo-bubble:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.btn-xs {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    border-radius: 0.2rem;
+}
+
+.archivos-mini .badge {
+    font-size: 0.65rem;
+    padding: 0.2em 0.4em;
+}
+
+.hijos-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.hijos-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.hijos-container::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+}
+
+.hijos-container::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+}
+
+.hijos-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.5);
+}
+
+@media (max-width: 768px) {
+    .familia-card .row {
+        flex-direction: column;
+    }
+    
+    .legajo-bubble {
+        margin-bottom: 1rem;
+    }
+    
+    .hijos-container {
+        max-height: none;
+    }
+}
