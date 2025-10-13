@@ -384,6 +384,38 @@ class ComedorDetailView(DetailView):
 
         if "admision" in request.POST:
             return ComedorService.crear_admision_desde_comedor(request, self.object)
+        
+        if request.POST.get("action") == "descartar_expediente":
+            if request.user.is_superuser:
+                from admisiones.models.admisiones import Admision, EstadoAdmision
+                from django.contrib import messages
+                
+                admision_id = request.POST.get("admision_id")
+                motivo_descarte = request.POST.get("motivo_descarte")
+                
+                if admision_id and motivo_descarte:
+                    try:
+                        from django.utils import timezone
+                        admision = Admision.objects.get(id=admision_id)
+                        
+                        # Obtener o crear estado "Descartado"
+                        estado_descartado, _ = EstadoAdmision.objects.get_or_create(nombre="Descartado")
+                        
+                        admision.enviada_a_archivo = True
+                        admision.motivo_descarte_expediente = motivo_descarte
+                        admision.fecha_descarte_expediente = timezone.now().date()
+                        admision.estado = estado_descartado
+                        admision.estado_legales = "Descartado"
+                        admision.save()
+                        messages.success(request, "Expediente descartado correctamente.")
+                    except Admision.DoesNotExist:
+                        messages.error(request, "Admisión no encontrada.")
+                else:
+                    messages.error(request, "Datos incompletos.")
+            else:
+                messages.error(request, "No tiene permisos para realizar esta acción.")
+            
+            return redirect("comedor_detalle", pk=self.object.pk)
 
         return ComedorService.post_comedor_relevamiento(request, self.object)
 
@@ -422,11 +454,45 @@ class ComedorDetailView(DetailView):
         )
 
         admision = (
-            self.object.admisiones_optimized[0]
+            self.object.admisiones_optimized
             if hasattr(self.object, "admisiones_optimized")
             and self.object.admisiones_optimized
             else None
         )
+        
+        # Preparar datos para la tabla de admisiones
+        admisiones_headers = [
+            {'title': 'Fecha'},
+            {'title': 'Tipo'},
+            {'title': 'Tipo Convenio'},
+            {'title': 'Estado'},
+            {'title': 'Enviado Legales'},
+            {'title': 'Estado Legales'},
+        ]
+        
+        admisiones_items = []
+        if admision:
+            for a in admision:
+                admisiones_items.append({
+                    'cells': [
+                        {'content': a.creado.strftime('%d/%m/%Y') if hasattr(a, 'creado') and a.creado else '-'},
+                        {'content': a.get_tipo_display() if hasattr(a, 'tipo') and a.tipo else '-'},
+                        {'content': a.tipo_convenio.nombre if hasattr(a, 'tipo_convenio') and a.tipo_convenio else '-'},
+                        {'content': a.estado.nombre if hasattr(a, 'estado') and a.estado else '-'},
+                        {'content': 'Sí' if hasattr(a, 'enviado_legales') and a.enviado_legales else 'No'},
+                        {'content': a.get_estado_legales_display() if hasattr(a, 'estado_legales') and a.estado_legales else '-'},
+                    ],
+                    'actions': [
+                        {
+                            'url': f'/comedores/admisiones/tecnicos/editar/{a.id}',
+                            'label': 'Ver',
+                            'type': 'primary'
+                        }
+                    ],
+                    'admision_id': a.id,
+                    'enviada_a_archivo': getattr(a, 'enviada_a_archivo', False),
+                    'enviado_acompaniamiento': getattr(a, 'enviado_acompaniamiento', False)
+                })
 
         # Optimización: Usar imágenes prefetched en lugar de .values()
         imagenes = (
@@ -443,6 +509,8 @@ class ComedorDetailView(DetailView):
             "comedor_categoria": comedor_categoria,
             "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
             "admision": admision,
+            "admisiones_headers": admisiones_headers,
+            "admisiones_items": admisiones_items,
         }
 
     def _get_environment_config(self):

@@ -7,7 +7,6 @@ from admisiones.views.web_views import (
     actualizar_numero_gde_archivo,
     crear_documento_personalizado,
     AdmisionesTecnicosListView,
-    AdmisionesTecnicosCreateView,
     AdmisionesTecnicosUpdateView,
     InformeTecnicosCreateView,
     InformeTecnicosUpdateView,
@@ -26,13 +25,6 @@ urlpatterns = [
             AdmisionesTecnicosListView.as_view()
         ),
         name="admisiones_tecnicos_listar",
-    ),
-    path(
-        "comedores/admisiones/tecnicos/crear/<int:pk>",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
-            AdmisionesTecnicosCreateView.as_view()
-        ),
-        name="admisiones_tecnicos_crear",
     ),
     path(
         "comedores/admisiones/tecnicos/editar/<int:pk>",

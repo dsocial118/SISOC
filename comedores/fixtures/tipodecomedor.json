@@ -19,5 +19,12 @@
         "fields": {
             "nombre": "Punto de Entrega"
         }
+    },
+    {
+        "model": "comedores.tipodecomedor",
+        "pk": 4,
+        "fields": {
+            "nombre": "Comedor y Merendero"
+        }
     }
 ]
