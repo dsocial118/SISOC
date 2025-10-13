@@ -1,5 +1,4 @@
 from django.contrib import messages
-from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.views.decorators.http import require_POST
@@ -245,27 +244,6 @@ class AdmisionesTecnicosListView(ListView):
             "table_items": table_items,
         })
         return context
-
-
-class AdmisionesTecnicosCreateView(CreateView):
-    model = Admision
-    template_name = "admisiones/admisiones_tecnicos_form.html"
-    form_class = AdmisionForm
-    context_object_name = "admision"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(AdmisionService.get_admision_create_context(self.kwargs["pk"]))
-        return context
-
-    def post(self, request, *args, **kwargs):
-        tipo_convenio_id = request.POST.get("tipo_convenio")
-        if tipo_convenio_id:
-            admision = AdmisionService.create_admision(
-                self.kwargs["pk"], tipo_convenio_id
-            )
-            return redirect("admisiones_tecnicos_editar", pk=admision.pk)
-        return self.get(request, *args, **kwargs)
 
 
 class AdmisionesTecnicosUpdateView(UpdateView):

@@ -55,6 +55,14 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         for field in self.fields.values():
             field.required = self.require_full
 
+        # Hacer obligatorios los campos de renovación si require_full es True y el tipo de admisión es 'renovacion'
+        if admision and admision.tipo == "renovacion" and self.require_full:
+            for i in range(1, 7):
+                if f"resolucion_de_pago_{i}" in self.fields:
+                    self.fields[f"resolucion_de_pago_{i}"].required = True
+                if f"monto_{i}" in self.fields:
+                    self.fields[f"monto_{i}"].required = True
+
         for name, field in self.fields.items():
             if name.startswith("solicitudes_") or name.startswith("aprobadas_"):
                 field.label = False
@@ -139,6 +147,14 @@ class InformeTecnicoBaseForm(forms.ModelForm):
         # Hacer campos obligatorios solo si require_full es True
         for field in self.fields.values():
             field.required = self.require_full
+
+        # Hacer obligatorios los campos de renovación si require_full es True y el tipo de admisión es 'renovacion'
+        if admision and admision.tipo == "renovacion" and self.require_full:
+            for i in range(1, 7):
+                if f"resolucion_de_pago_{i}" in self.fields:
+                    self.fields[f"resolucion_de_pago_{i}"].required = True
+                if f"monto_{i}" in self.fields:
+                    self.fields[f"monto_{i}"].required = True
 
         for name, field in self.fields.items():
             if name.startswith("solicitudes_") or name.startswith("aprobadas_"):

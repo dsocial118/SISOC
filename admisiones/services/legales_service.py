@@ -16,6 +16,7 @@ from django.utils.html import strip_tags
 from django.utils.text import slugify
 from docx import Document
 from htmldocx import HtmlToDocx
+from .docx_service import DocxTemplateService
 
 logger = logging.getLogger("django")
 
@@ -42,6 +43,7 @@ from admisiones.forms.admisiones_forms import (
     DisposicionForm,
     ReinicioExpedienteForm,
     SolicitarInformeComplementarioForm,
+    DocumentosExpedienteForm,
 )
 
 
@@ -678,6 +680,7 @@ class LegalesService:
 
             nuevo_formulario = form.save(commit=False)
             nuevo_formulario.admision = admision
+            nuevo_formulario.tipo = admision.tipo
             if request.user.is_authenticated:
                 nuevo_formulario.creado_por = request.user
             nuevo_formulario.save()
@@ -1238,6 +1241,7 @@ class LegalesService:
                 "form_legales_num_if": legales_num_if_form,
                 "convenio_num_if": convenio_num_if_form,
                 "dispo_num_if": dispo_num_if_form,
+                "documentos_form": DocumentosExpedienteForm(),
                 "form_intervencion_juridicos": IntervencionJuridicosForm(
                     instance=admision
                 ),
@@ -1274,5 +1278,43 @@ class LegalesService:
             logger.exception(
                 "Error en get_informe_por_tipo_convenio",
                 extra={"admision_pk": admision.pk},
+            )
+            return None
+
+    @staticmethod
+    def generar_documento_convenio(admision, template_name="proyecto_convenio.docx"):
+        """Genera documento DOCX de proyecto de convenio usando template"""
+        try:
+            context = DocxTemplateService.preparar_contexto_proyecto_convenio(admision)
+            docx_buffer = DocxTemplateService.generar_docx_desde_template(template_name, context)
+            
+            if docx_buffer:
+                filename = f"proyecto_convenio_{admision.id}.docx"
+                return ContentFile(docx_buffer.getvalue(), name=filename)
+            
+            return None
+        except Exception:
+            logger.exception(
+                "Error en generar_documento_convenio",
+                extra={"admision_id": admision.id, "template": template_name}
+            )
+            return None
+
+    @staticmethod
+    def generar_documento_disposicion(admision, template_name="proyecto_disposicion.docx"):
+        """Genera documento DOCX de proyecto de disposición usando template"""
+        try:
+            context = DocxTemplateService.preparar_contexto_proyecto_disposicion(admision)
+            docx_buffer = DocxTemplateService.generar_docx_desde_template(template_name, context)
+            
+            if docx_buffer:
+                filename = f"proyecto_disposicion_{admision.id}.docx"
+                return ContentFile(docx_buffer.getvalue(), name=filename)
+            
+            return None
+        except Exception:
+            logger.exception(
+                "Error en generar_documento_disposicion",
+                extra={"admision_id": admision.id, "template": template_name}
             )
             return None
