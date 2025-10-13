@@ -217,33 +217,33 @@ class AdmisionesTecnicosListView(ListView):
 
     def get_queryset(self):
         return AdmisionService.get_admisiones_tecnicos_queryset(
-            self.request.user, 
-            self.request.GET.get("busqueda", "")
+            self.request.user, self.request.GET.get("busqueda", "")
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         table_items = AdmisionService.get_admisiones_tecnicos_table_data(
-            context['admisiones'], 
-            self.request.user
+            context["admisiones"], self.request.user
         )
-        
-        context.update({
-            "query": self.request.GET.get("busqueda", ""),
-            "breadcrumb_items": [
-                {"name": "Admisiones", "url": "admisiones_tecnicos_listar"},
-                {"name": "Listar", "active": True},
-            ],
-            "table_headers": [
-                {'title': 'Nombre'},
-                {'title': 'Tipo Comedor'},
-                {'title': 'Ubicación'},
-                {'title': 'Convenio'},
-                {'title': 'Tipo'},
-            ],
-            "table_items": table_items,
-        })
+
+        context.update(
+            {
+                "query": self.request.GET.get("busqueda", ""),
+                "breadcrumb_items": [
+                    {"name": "Admisiones", "url": "admisiones_tecnicos_listar"},
+                    {"name": "Listar", "active": True},
+                ],
+                "table_headers": [
+                    {"title": "Nombre"},
+                    {"title": "Tipo Comedor"},
+                    {"title": "Ubicación"},
+                    {"title": "Convenio"},
+                    {"title": "Tipo"},
+                ],
+                "table_items": table_items,
+            }
+        )
         return context
 
 
@@ -617,6 +617,3 @@ def admisiones_legales_ajax(request):
         )
 
     return _ajax_handler(request)
-
-
-
