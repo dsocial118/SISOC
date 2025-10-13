@@ -8,7 +8,7 @@
         body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.25; }
         
         /* Títulos */
-        h2, h3, h4 { margin: 12px 0 6px 0; }
+        h2, h3, h4, h5 { margin: 12px 0 6px 0; }
         h4 { text-align: center; }
         
         /* Párrafos: justificar SIEMPRE */
@@ -24,6 +24,9 @@
         /* Utilidades */
         .w-25 { width: 25%; }
         .text-center { text-align: center; }
+        #header { display: flex; justify-content: space-between; align-items: center; }
+        .header-left { font-weight: bold; }
+        .header-right { text-align: right; }
         </style>
     </head>
     <body>
@@ -36,8 +39,7 @@
             </div>
             <div class="header-right">
                 <img src="https://www.casarosada.gob.ar/images/escudo_nacional_argentino.png"
-                     style="filter: grayscale(100%);
-                            max-height:40px" />
+                     style="filter: grayscale(100%); max-height:40px" />
                 <br />
                 Secretaría de Niñez, Adolescencia y Familia
                 <br />
@@ -49,98 +51,196 @@
                 CONVENIO ENTRE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO Y {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }} {{ informe.nombre_organizacion }} DE LA PROVINCIA DE {{ informe.provincia_organizacion }}
             </h4>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, representada en este acto por el Subsecretario de Promoción Humana Sr. Martín Domingo Lepera (DNI N° 30.957.827), con domicilio en Av. 9 de Julio N° 1925 - Piso 16, CABA, en adelante "LA SECRETARÍA"; y {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article|lower }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, CUIT {{ informe.cuit_organizacion }}, representada en este acto por {{ informe.representante_cargo }} {{ informe.representante_nombre }}, DNI N° {{ informe.representante_dni }}, (Secretario/a) DNI N° (DNI), y (Tesorero/a) DNI N° (DNI), con domicilio en {{ informe.domicilio_organizacion }}, Ciudad de {{ informe.localidad_organizacion }}, Provincia de {{ informe.provincia_organizacion }}, en adelante "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}", denominadas conjuntamente "LAS PARTES", convienen celebrar el presente convenio sujeto a las siguientes cláusulas:
+                Entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, representada en este acto por el Sr. Subsecretario de Promoción Humana, Sr. Martín Domingo Lepera, D.N.I. N° 30.957.827, con domicilio en Avenida 9 de Julio N° 1925, piso 16 de la Ciudad Autónoma de Buenos Aires, en adelante “LA SECRETARÍA”; y {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article|lower }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, C.U.I.T. N° {{ informe.cuit_organizacion }}, representada en este acto por {{ informe.representante_nombre }}, D.N.I. N° {{ informe.representante_dni }}, en su carácter de {{ informe.representante_cargo }}, con domicilio en {{ informe.domicilio_organizacion }}, Departamento/Localidad {{ informe.localidad_organizacion }}, de la Provincia de {{ informe.provincia_organizacion }}, en adelante “LA INSTITUCIÓN”, denominadas conjuntamente “LAS PARTES”, convienen celebrar el presente convenio, sujeto a las siguientes cláusulas:
             </p>
-            <h5>Cláusula Primera. Objeto</h5>
+            
+            <h5>Cláusula Primera. - Objeto</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                El presente Convenio tiene como objeto fortalecer el servicio alimentario de Comedores y/o Merenderos comunitarios, complementando las prestaciones brindadas a personas en situación de vulnerabilidad social y económica, según lo establecido en la Resolución N° RESOL-2025-151-APN-MCH y su Anexo - IF-2025-32668963-APN-SSPH#MCH.
+                El presente Acuerdo se suscribe con el objeto de fortalecer el servicio alimentario de Comedores y/o Merenderos comunitarios a fin de complementar las prestaciones alimentarias brindadas a personas que concurran a los mismos y que se encuentran en estado de vulnerabilidad social y económica; actividad encuadrada dentro de Lineamientos Técnicos y Operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH de la Resolución N° RESOL-2025-151-APN-MCH, del 31 de marzo de 2025, modificatoria de la Resolución N° RESOL-2023-230-APN-MDS del 17 de febrero de 2023.
             </p>
-            <h5>Cláusula Segunda. Financiamiento</h5>
+            
+            <h5>Cláusula Segunda. - Financiamiento</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" acepta que "LA SECRETARÍA" otorgue fondos en carácter de subsidio no reintegrable, sujeto a rendición de cuentas, para el {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" de la localidad de {{ informe.localidad_espacio }}, Provincia de {{ informe.provincia_espacio }}, tramitado por Expediente N° {{ informe.expediente_nro }}. Detalles en ANEXO IF {{ admision.legales_num_if }} (nombre anexo).
+                “LA INSTITUCIÓN” presta conformidad a fin que “LA SECRETARÍA” otorgue, por los mecanismos que ésta fije a dicho efecto, fondos en concepto de subsidio no reintegrable sujeto a rendición de cuentas, y a fin del cumplimiento del objeto al {{ informe.tipo_espacio|capfirst }} “{{ informe.nombre_espacio }}” de la Localidad de {{ informe.localidad_espacio }}, Provincia de {{ informe.provincia_espacio }}, en adelante “EL {{ informe.tipo_espacio|upper }}” conforme a detalle obrante en el ANEXO que forma parte integrante del presente convenio.
             </p>
-            <h5>Cláusula Tercera. Forma de Pago</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Los fondos serán acreditados mensualmente en una cuenta vinculada a una Tarjeta Electrónica a nombre del administrador designado. Se notificará por correo electrónico la acreditación, conforme al ANEXO.
+                Todo ello, con arreglo a las disponibilidades presupuestarias y financieras de la Secretaría Nacional de Niñez, Adolescencia y Familia.
             </p>
-            <h5>Cláusula Cuarta. Destino de Fondos</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Los fondos deben destinarse exclusivamente a la adquisición de alimentos para el servicio alimentario del Comedor/Merendero indicado. Se prohíbe su uso para otros fines y se deberá garantizar la intangibilidad de los fondos.
+                Se deja aclarado que el importe equivalente al Módulo de Fortalecimiento se pagará conforme a lo dispuesto en el respectivo acto administrativo autorizante del pago que se dicte al efecto.
             </p>
-            <h5>Cláusula Quinta. Asignación de Recursos</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                La tarjeta prepaga sólo podrá utilizarse para adquirir alimentos. Se prohíbe la compra a personas o empresas con vínculos con los responsables del comedor o de la entidad. También se prohíbe el uso con fines políticos.
+                El monto total mensual surgirá del resultado de la multiplicación de la cantidad total de prestaciones por el valor del Módulo de Fortalecimiento (Desayuno-Merienda y/o Almuerzo-Cena) vigente al momento de la liquidación. Dicho importe podrá estar sujeto a ajustes, de conformidad a lo que establezca “LA SECRETARÍA”.
             </p>
-            <h5>Cláusula Sexta. Carácter de los Alimentos</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Los alimentos deberán cumplir con el Código Alimentario Nacional y contar con fecha de vencimiento adecuada.
+                El importe total a pagar en forma mensual será notificado, con dicha periodicidad, a las direcciones de correos electrónicos de “LA INSTITUCIÓN” y del Administrador de recursos, según ANEXO.
             </p>
-            <h5>Cláusula Séptima. Prestación del Servicio</h5>
+            
+            <h5>Cláusula Tercera. - Forma de Pago</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Ante suspensión o modificación del servicio, deberá notificarse a "LA SECRETARÍA" en un plazo máximo de 10 días. En tal caso, la tarjeta debe devolverse. Toda modificación del comedor deberá comunicarse fehacientemente.
+                Los fondos citados precedentemente serán acreditados en forma mensual a una cuenta asociada a una Tarjeta Electrónica habilitada para la adquisición de alimentos secos y frescos para el fortalecimiento del servicio alimentario brindado por “EL {{ informe.tipo_espacio|upper }}” señalado en el Anexo.
             </p>
-            <h5>Cláusula Octava. Plazo de Utilización de Fondos - Cereo</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Los fondos deberán utilizarse en el mes de su acreditación. Vencido el plazo, los saldos serán restituidos a "LA SECRETARÍA" mediante cereo bancario.
+                La Tarjeta Electrónica se emitirá a nombre del responsable administrador de fondos designado oportunamente por “LA INSTITUCIÓN”, conforme al detalle obrante en el ANEXO del presente, y será entregada por retiro en sucursal bancaria; lo que será debidamente comunicado a su correo electrónico.
             </p>
-            <h5>Cláusula Novena. Plazo de Ejecución</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                El convenio tendrá una duración máxima de 6 meses desde la primera acreditación. "LA SECRETARÍA" podrá rescindirlo con 15 días de antelación.
+                “LA SECRETARÍA” comunicará la/s acreditaciones instruidas a las direcciones de correos electrónicos de “LA INSTITUCIÓN” y del Administrador de recursos, según ANEXO. El total máximo de meses objeto de cobertura del presente Convenio surge del ANEXO del mismo.
             </p>
-            <h5>Cláusula Décima. Registros Documentales</h5>
+            
+            <h5>Cláusula Cuarta. - Destino de fondos</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                El Comedor/Merendero deberá llevar registros de novedades, asistentes, colaboradores y prestaciones otorgadas, disponibles en sus instalaciones.
+                “LA INSTITUCIÓN” se compromete a invertir la suma citada a fines de complementar los servicios alimentarios del {{ informe.tipo_espacio|lower }} citado en el ANEXO del presente, al que asisten personas en situación de vulnerabilidad social y económica; con arreglo al tipo y modalidad de servicio, y cantidad de destinatarios allí consignados.
             </p>
-            <h5>Cláusula Décima Primera. Rendición de Cuentas</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" rendirá cuentas documentadas conforme a lo establecido en el ANEXO. La documentación deberá cumplir con normas de AFIP y conservarse por 10 años.
+                La tarjeta sólo podrá ser utilizada en comercios del rubro “Alimentos”. “LA INSTITUCIÓN” se compromete a garantizar la intangibilidad de los fondos acreditados a través de la tarjeta precargada; así como la sustentabilidad del objeto y fines del presente.
             </p>
-            <h5>Cláusula Décima Segunda. Carga de Comprobantes</h5>
+            
+            <h5>Cláusula Quinta. - Asignación de recursos</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Se deberá cargar los comprobantes de pago en una plataforma electrónica en un plazo de 7 días corridos desde el pago.
+                “LA INSTITUCIÓN” deberá asignar los fondos otorgados a través de la tarjeta prepaga a la adquisición de alimentos, no pudiendo alterar dicha finalidad sin la previa conformidad de “LA SECRETARÍA”. Los alimentos adquiridos serán exclusivamente asignados a la atención de las necesidades de las personas que asisten al mismo.
             </p>
-            <h5>Cláusula Décima Tercera. Informe de Gestión</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Se deberá presentar DDJJ de cumplimiento de objeto social a los 40 días de la acreditación, con datos de beneficiarios, viandas y artículos adquiridos. En caso de incumplimiento, podrá suspenderse el pago.
+                Se prohíbe la entrega de alimentos adquiridos mediante la tarjeta precargada con fondos derivados del presente Convenio a: familiares, destinatarios o asistentes al {{ informe.tipo_espacio|lower }}, o a terceros para cualquier fin que fuere; dejándose expresa constancia que la misma está destinada exclusivamente al funcionamiento del servicio alimentario del {{ informe.tipo_espacio|lower }} designado.
             </p>
-            <h5>Cláusula Décima Cuarta. Auditoría y Control</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                "LA SECRETARÍA" podrá auditar el comedor de manera presencial o virtual. Se podrá requerir exhibición de registros y documentación en cualquier momento.
+                “LA INSTITUCIÓN” se compromete a destinar la utilización de la tarjeta precargada a los fines específicos, sin obtención de rédito político alguno.
             </p>
-            <h5>Cláusula Décima Quinta. Sanciones</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                El incumplimiento habilita a "LA SECRETARÍA" a cancelar el convenio, exigir reintegros y aplicar sanciones legales.
+                “LA INSTITUCIÓN” se compromete por sí y por el responsable administrador de fondos designado a NO adquirir bienes a personas o empresas con las que puedan plantearse conflictos de intereses, tales como la existencia de vinculación de cualquier tipo entre los miembros de “LA INSTITUCIÓN” y/o responsables o colaboradores del {{ informe.tipo_espacio|lower }} objeto de financiamiento y una persona física o jurídica proveedora de bienes o servicios destinados a los mismos. Asimismo, dicha prohibición se aplicará en aquellos casos en que se verifique la existencia de relaciones de parentesco y/o amistad.
             </p>
-            <h5>Cláusula Décima Sexta. Responsabilidad</h5>
+            
+            <h5>Cláusula Sexta. - Carácter de los Alimentos – Funcionamiento de Depósitos</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" será responsable exclusiva por contrataciones, personal y actividades derivadas. "LA SECRETARÍA" queda exenta de cualquier responsabilidad legal o laboral.
+                Los alimentos adquiridos por “LA INSTITUCIÓN” deberán responder a las normas del Código Alimentario Nacional, tomándose los recaudos necesarios a fin que las fechas de vencimiento permitan el consumo de los productos con una antelación suficiente para su adecuado dispendio.
             </p>
-            <h5>Cláusula Décima Séptima. Integridad</h5>
+            
+            <h5>Cláusula Séptima. - Prestación del Servicio</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Se declara que no hubo prácticas corruptas. "LA SECRETARÍA" podrá sancionar si se detectan irregularidades o falta de integridad conforme la Ley Nº 27.401.
+                En caso de que la prestación del servicio brindado sea suspendida o modificada sustancialmente, “LA INSTITUCIÓN” deberá notificar en forma fehaciente y oportuna a “LA SECRETARÍA”. La notificación deberá realizarse en un plazo máximo de DIEZ (10) días de efectivizada la suspensión o modificación sustancial en la prestación del servicio.
             </p>
-            <h5>Cláusula Décima Octava. Controversias</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Las partes intentarán resolver diferencias de buena fe. En caso contrario, se someterán a los tribunales federales de CABA.
+                En caso de que se notifique una suspensión, la tarjeta entregada, hubiere o no fondos remanentes y/o excedentes en la misma, será restituida a “LA SECRETARÍA”. Asimismo, “LA INSTITUCIÓN” deberá notificar cualquier otro tipo de modificación inherente al funcionamiento del {{ informe.tipo_espacio|lower }}.
             </p>
-            <h5>Cláusula Décima Novena. Consentimiento Ley 25.326</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" autoriza la recolección y análisis de sus datos personales para fines exclusivos del Programa.
+                “LA INSTITUCIÓN” deberá comunicar a “LA SECRETARÍA”, mediante notificación fehaciente, todo cambio de domicilio del {{ informe.tipo_espacio|lower }} objeto de financiamiento. Si se realizara alguno de los cambios indicados, el mismo se considerará válido, una vez efectuada la notificación por parte de “LA INSTITUCIÓN” y la posterior evaluación y aprobación mediante evaluación técnica debidamente fundada. De la misma forma, en caso de desvincularse el {{ informe.tipo_espacio|lower }} objeto de financiamiento de la órbita de “LA INSTITUCIÓN” se cancelarán las transferencias pendientes; debiendo procederse a la ejecución y/o rendición de las operadas hasta dicha fecha.
             </p>
-            <h5>Cláusula Vigésima. Domicilios</h5>
+            
+            <h5>Cláusula Octava. - Plazo de Utilización de Fondos – Cereo</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Los domicilios físicos y electrónicos indicados se considerarán válidos para notificaciones, salvo comunicación fehaciente en contrario.
+                “LA INSTITUCIÓN” deberá utilizar los fondos desde su acreditación hasta el último día hábil del mes en que se ha realizado la acreditación. Una vez vencido el plazo de utilización de dichos fondos, los saldos existentes inherentes a la acreditación determinada por “LA SECRETARÍA”, se someten a un proceso de “cereo” (puesta a cero de la cuenta), y serán restituidos y/o puestos a disposición de “LA SECRETARÍA” por intermedio de la institución operadora del proceso de pago. Finalizado el plazo de ejecución del presente, y realizado el proceso anteriormente citado, no se efectuarán más transferencias de fondos.
             </p>
-            <h5>Cláusula Vigésima Primera. Entrada en Vigencia</h5>
+            
+            <h5>Cláusula Novena. - Plazo de Ejecución - Total de acreditaciones</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                El convenio entrará en vigencia al ser aprobado por acto administrativo de "LA SECRETARÍA" y notificado al correo informado en el Anexo.
+                El plazo de ejecución del presente Convenio será de hasta SEIS (6) meses (acreditaciones), contados a partir de la primera acreditación. Sin perjuicio de ello, “LA SECRETARÍA” podrá dar por finalizado el presente Convenio cuando así lo considere pertinente, sin necesidad de invocar causal alguna, y previa notificación a “LA INSTITUCIÓN” con una antelación no menor a QUINCE (15) días; pudiendo dejar sin efecto los pagos pendientes, e incluso retrotraer aquellos depositados en la cuenta.
             </p>
-            <h5>Cláusula Vigésima Segunda. Responsable Sustituto</h5>
+            
+            <h5>Cláusula Décima. - Registros Documentales</h5>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" podrá designar un responsable sustituto mediante nota comunicativa. El nuevo responsable asumirá las obligaciones del anterior.
+                “LA INSTITUCIÓN” deberá arbitrar los medios necesarios a los fines de que el {{ informe.tipo_espacio|lower }} designado lleve en su respectivo establecimiento los siguientes registros:
             </p>
+            <ul>
+                <li><p align="justify" style="text-align: justify; text-justify: inter-word">Cuaderno de Novedades, consignando modificaciones en el horario y tipo de prestación;</p></li>
+                <li><p align="justify" style="text-align: justify; text-justify: inter-word">Listado completo de asistentes o destinatarios (consignando: datos del tipo de composición familiar, menores, mayores, género, situación, incapacidad, etc.);</p></li>
+                <li><p align="justify" style="text-align: justify; text-justify: inter-word">Listado detallado de los colaboradores del {{ informe.tipo_espacio|lower }};</p></li>
+                <li><p align="justify" style="text-align: justify; text-justify: inter-word">Registro de las prestaciones otorgadas.</p></li>
+            </ul>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Dichos registros deberán obrar en dependencias del {{ informe.tipo_espacio|lower }}.
+            </p>
+            
+            <h5>Cláusula Décima Primera. - Rendición de Cuentas de Fondos</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                “LA INSTITUCIÓN” se compromete a rendir cuentas a “LA SECRETARÍA” de las inversiones producidas con los fondos acreditados, conforme al plan y plazo de pagos que surge del ANEXO, y a la modalidad allí fijada.
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Las formalidades vinculadas a la rendición de cuentas se someterán a las prescripciones impuestas en el Anexo III y IV del presente. Finalizado el plazo de ejecución del presente Convenio y realizado el cereo de la cuenta, no se efectuarán más transferencias de fondos, debiendo “LA INSTITUCIÓN” presentar la rendición documentada del gasto realizado por “EL {{ informe.tipo_espacio|upper }}” de la totalidad de los fondos recibidos, en un plazo de TREINTA (30) días posteriores al último cereo.
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                “LA INSTITUCIÓN” se compromete a rendir cuenta documentada de los fondos transferidos con arreglo a lo establecido en la Resolución ex MDS N° 2458 del 23 de agosto de 2004, la Ley Nº 24.156, su Decreto Reglamentario N° 1344/2007 y sus normas modificatorias y complementarias, y los artículos 858 y 859 del Código Civil y Comercial de la Nación.
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                La documentación respaldatoria deberá cumplir indefectiblemente los requisitos establecidos en la Resolución General Nº 1415/2003 de la AFIP. Los comprobantes podrán ser facturas “A”, “B” o “C” emitidas a nombre del titular y/o tickets emitidos por Controladora Fiscal homologada en AFIP con la debida observancia de los montos a rendir de conformidad con lo expuesto. “LA INSTITUCIÓN” será responsable de inhabilitar la documentación sujeta a rendición en el original de la misma, debiendo obtenerse fotocopia del comprobante luego de su inutilización a efectos de ser presentadas las mismas en la rendición técnica a ingresar en “LA SECRETARÍA”.
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Asimismo, “LA INSTITUCIÓN” será responsable ante futuras auditorías respecto de la veracidad en el cumplimiento de este requisito. “LA INSTITUCIÓN” se compromete a adoptar las medidas necesarias con relación a los sistemas contables, administrativos y financieros a fin de facilitar el control de su correspondiente rendición técnica y a conservar debidamente archivada por el término de DIEZ (10) años toda la documentación original respaldatoria correspondiente a la ejecución del presente Convenio.
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Se deja explicitado que de existir alguna contradicción entre la rendición que presentare “LA INSTITUCIÓN” con la que formulare el Agente de Pago respectivo (detalle de transacciones producidas), prevalecerá esta última, sometiéndose a realizar los ajustes y/o readecuaciones financieras y/o renditivas, según correspondiere. No será necesario que efectúe la devolución de aquellos fondos que no hubieren sido consumidos durante el mes correspondiente, dado que las cuentas contarán con cereo mensual efectuado por el agente de pago designado a dicho efecto. “LA SECRETARÍA” se reserva la facultad de modificar la modalidad de presentación de la rendición de cuentas impuesta, en cuyo caso notificará a “LA INSTITUCIÓN” de las nuevas prescripciones inherentes a ello.
+            </p>
+            
+            <h5>Cláusula Décima Segunda. - Carga de comprobantes</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Sin perjuicio de las prescripciones establecidas en la cláusula anterior, “LA INSTITUCIÓN” tendrá acceso a una plataforma electrónica que indique “LA SECRETARÍA”, asignando previamente un nombre de usuario a “LA INSTITUCIÓN”, en la que deberá efectuar la carga de los comprobantes de pago dentro de un plazo máximo de SIETE (7) días corridos de efectuado el pago.
+            </p>
+            
+            <h5>Cláusula Décima Tercera. - Informe de Aplicación de Fondos y de Gestión Social</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                “LA INSTITUCIÓN” se compromete a presentar una Declaración Jurada (DDJJ.) de Cumplimiento de Objeto Social, en un plazo de CUARENTA (40) días corridos desde la acreditación de los fondos de cada transferencia, con arreglo al modelo obrante como ANEXO I y II del presente. En la misma, se deberá dar cuenta de la cantidad de personas asistidas, viandas realizadas y listado de artículos adquiridos. Asimismo, se presentará en forma mensual y en carácter de información de gestión social, el detalle de prestaciones efectivamente brindadas en el período.
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Con la primera rendición mensual se presentará la nómina de personas efectivamente asistidas con las prestaciones citadas (consignando Apellido, Nombre y DNI). A partir del segundo mes se deberán presentar solamente las altas y bajas, manteniendo el número de prestaciones aprobadas. En caso de incumplimiento o inconsistencias, “LA SECRETARÍA” podrá determinar la suspensión de pago asignado al {{ informe.tipo_espacio|lower }} objeto de la infracción.
+            </p>
+            
+            <h5>Cláusula Décima Cuarta. - Auditoría y Control de Gestión</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                A los fines de acreditar la asignación específica del subsidio al destino previsto, “LA SECRETARÍA” podrá disponer, por sí o por la Entidad que designare a dicho efecto, la visita al {{ informe.tipo_espacio|lower }} por parte de un agente que supervise la aplicación de los fondos; pudiendo verificar ello asimismo por medios alternativos y/o complementarios (fotos, videollamadas, reuniones virtuales, etc.).
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Asimismo, “LA SECRETARÍA” dispondrá de los medios de Auditoría, Monitoreo y Evaluación que considere pertinentes, por sí o por quien en el futuro ésta disponga, para lo cual “LA INSTITUCIÓN” se compromete a exhibir y/o remitir oportunamente todos los registros, archivos de información relacionados con este Convenio y/o documentación complementaria, cuando le sean solicitados, independientemente de los controles de la AUDITORÍA SECTORIAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA de la UNIDAD DE AUDITORÍA INTERNA del MINISTERIO DE CAPITAL HUMANO, la SIGEN y la AGN.
+            </p>
+            
+            <h5>Cláusula Décima Quinta. - Sanciones por incumplimiento</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                La falta de cumplimiento de las obligaciones prescriptas en este Convenio, como así también la comprobación de falsedad u ocultamiento en la información que proporcione, o el incumplimiento de los objetivos de “EL PROGRAMA”, facultará a “LA SECRETARÍA” a declarar la resolución del presente Convenio en los términos del art. 21 de la Ley N° 19.549, pudiendo dejar sin efecto los pagos pendientes, retrotraer los acreditados y existentes en la cuenta y/o demandar el reintegro de las sumas entregadas, sin perjuicio de la facultad de iniciar las acciones legales correspondientes.
+            </p>
+            
+            <h5>Cláusula Décima Sexta. - Responsabilidad</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                “LA INSTITUCIÓN” asume la responsabilidad sobre las respectivas obligaciones que contraiga en el marco del presente Convenio, respecto de la contratación de personas, locación de servicios, adquisiciones y/o locaciones de bienes. “LA SECRETARÍA” no asumirá ningún tipo de responsabilidad frente a “LA INSTITUCIÓN”, sus dependientes o terceros por cualquier daño o perjuicio, por obligación laboral, ni por obligación alguna de cualquier especie, ya sea contractual o extracontractual, que pueda generarse por la actividad que éste desarrolle con motivo de la implementación y puesta en marcha de las actividades y/o prácticas objeto del presente. La presente obligación se mantendrá aún terminado el plazo de vigencia del presente.
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                A tal efecto, “LA SECRETARÍA” queda eximida de responder frente a reclamo alguno relacionado con ello. Asimismo, todos los efectos derivados de la ejecución de las acciones por parte de “LA INSTITUCIÓN” se atribuyen a ésta en forma exclusiva. “LA INSTITUCIÓN” reconoce que la relación laboral de las personas que designe para la ejecución de las acciones conjuntas que surjan a partir del presente será de exclusiva responsabilidad de ésta, sin que las circunstancias de tal vinculación generen obligación y/o responsabilidad alguna al Gobierno Nacional. Todos los actos que deba cumplir el responsable administrador de fondos designado en la ejecución del presente serán realizados por cuenta y orden de la “LA INSTITUCIÓN”. En ningún caso se podrá actuar en representación o por mandato de “LA SECRETARÍA”.
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                “LAS PARTES” se comprometen a mantenerse indemnes entre sí respecto de cualquier reclamo, demanda, acción legal y costos que pudieran surgir por daños ocasionados a terceros en el marco del cumplimiento del objeto del presente Convenio.
+            </p>
+            
+            <h5>Cláusula Décima Séptima. - Integridad</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                “LA INSTITUCIÓN” declara que el mismo y los miembros de su personal y/o personas vinculadas no han participado directa o indirectamente en prácticas corruptas, fraudulentas, colusorias, coercitivas u obstructivas para el acceso al Programa. “LA SECRETARÍA” podrá adoptar las medidas pertinentes en caso de determinar que “LA INSTITUCIÓN” y/o “EL {{ informe.tipo_espacio|upper }}” destinatarios de los fondos participaron en dichas prácticas durante el proceso de ingreso a “EL PROGRAMA” o durante la ejecución del presente.
+            </p>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                “LA SECRETARÍA” podrá sancionar en cuanto resulte pertinente el incumplimiento a las normas sobre integridad establecidas en la Ley Nº 27.401, requiriendo asimismo el máximo esfuerzo dentro de las disponibilidades razonables por parte de los receptores de fondos para la aplicación de programas de integridad en los casos alcanzados y que fuere facultativo.
+            </p>
+            
+            <h5>Cláusula Décima Octava. - Controversias</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                “LA INSTITUCIÓN” y “LA SECRETARÍA” se comprometen a solucionar de común acuerdo y de buena fe las controversias que se susciten entre ellas relacionadas con la interpretación y/o ejecución del presente Convenio. En caso de resultar ello imposible, se someterán a la jurisdicción de los Tribunales Federales con asiento en la Ciudad Autónoma de Buenos Aires, con renuncia expresa a cualquier otro fuero o jurisdicción que por cualquier motivo pudiera corresponderles.
+            </p>
+            
+            <h5>Cláusula Décima Novena. - Consentimiento - Ley 25.326</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Conforme lo normado por la ley 25.326, “LA INSTITUCIÓN” ratifica su consentimiento para la recolección y análisis por parte de “LA SECRETARÍA”, a los fines exclusivos del Programa, de sus datos personales obrantes en los archivos y registros de los Organismos con los que se cruce información, según así correspondiere.
+            </p>
+            
+            <h5>Cláusula Vigésima. - Domicilios</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Los respectivos domicilios físicos y electrónicos indicados en el presente se consideran constituidos para todos los efectos legales judiciales o extrajudiciales del presente, mientras no se comunique su modificación expresamente y por medio fehaciente.
+            </p>
+            
+            <h5>Cláusula Vigésima Primera. - Entrada en Vigencia</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                El presente Convenio entrará en vigencia una vez aprobado por acto administrativo en jurisdicción de “LA SECRETARÍA”, previo cumplimiento de los requisitos legales, administrativos y procedimentales internos vigentes, y debidamente comunicado al correo electrónico que consta en el Anexo. El presente Documento no contará con valor alguno hasta tanto se suscriba el acto citado.
+            </p>
+            
+            <h5>Cláusula Vigésima Segunda. - Responsable sustituto</h5>
+            <p align="justify" style="text-align: justify; text-justify: inter-word">
+                Ante la eventualidad de imposibilidad de proseguir la administración por parte del responsable titular citado en el ANEXO por la causal que fuere, “LA INSTITUCIÓN” podrá designar un sustituto, mediante Nota comunicativa indicativa de dicha situación. En ambos casos, se le asignará una tarjeta al sustituto quien se subrogará en las obligaciones asumidas por su antecesor.
+            </p>
+            
             <p style="margin-top: 2em;">
-                En prueba de conformidad, se suscriben dos ejemplares de igual tenor en la Ciudad Autónoma de Buenos Aires, en la fecha: ___________
+                En prueba de conformidad, se suscriben dos (2) ejemplares de un mismo tenor y a un solo efecto en la Ciudad Autónoma de Buenos Aires, en la siguiente fecha: ___________.
             </p>
         </main>
     </body>
