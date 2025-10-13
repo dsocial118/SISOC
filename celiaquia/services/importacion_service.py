@@ -5,7 +5,6 @@ import re
 
 import pandas as pd
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 from django.core.validators import EmailValidator
 from django.db import transaction
 from django.db.models import Q
@@ -15,20 +14,6 @@ from core.models import Provincia, Municipio, Localidad
 from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
 
 logger = logging.getLogger("django")
-
-
-def _safe_date_conversion(value):
-    """Convierte valores de fecha de pandas de forma segura, manejando NaT"""
-    if pd.isna(value):
-        return ""
-    
-    if hasattr(value, 'date'):
-        try:
-            return value.date()
-        except (ValueError, AttributeError):
-            return ""
-    
-    return str(value) if value else ""
 
 
 def _norm_col(col: str) -> str:
@@ -126,7 +111,7 @@ class ImportacionService:
         for c in df.columns:
             try:
                 if hasattr(df[c], "dt"):
-                    df[c] = df[c].apply(_safe_date_conversion)
+                    df[c] = df[c].apply(lambda x: x.date() if hasattr(x, "date") else x)
             except Exception:
                 pass
 
@@ -239,7 +224,9 @@ class ImportacionService:
         present = [c for c in df.columns if c in column_map]
         df = df[present].rename(columns={c: column_map[c] for c in present}).fillna("")
         if "fecha_nacimiento" in df.columns:
-            df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(_safe_date_conversion)
+            df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(
+                lambda x: x.date() if hasattr(x, "date") else x
+            )
 
         _tipo_doc_por_defecto()
         estado_id = _estado_doc_pendiente_id()
