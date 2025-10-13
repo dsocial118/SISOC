@@ -234,6 +234,15 @@ class ImportacionService:
             "codigo_postal": "codigo_postal",
             "calle": "calle",
             "altura": "altura",
+            "apellido_responsable": "apellido_responsable",
+            "nombre_responsable": "nombre_responsable",
+            "cuit_responsable": "cuit_responsable",
+            "fecha_de_nacimiento_responsable": "fecha_de_nacimiento_responsable",
+            "sexo_responsable": "sexo_responsable",
+            "domicilio_responsable": "domicilio_responsable",
+            "localidad_responsable": "localidad_responsable",
+            "celular_responsable": "celular_responsable",
+            "correo_responsable": "correo_responsable",
         }
 
         present = [c for c in df.columns if c in column_map]
@@ -308,6 +317,8 @@ class ImportacionService:
             "telefono",
             "telefono_alternativo",
             "codigo_postal",
+            "cuit_responsable",
+            "celular_responsable",
         }
 
         def add_warning(fila, campo, detalle):
