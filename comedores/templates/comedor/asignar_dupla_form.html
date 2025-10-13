@@ -62,9 +62,7 @@
                                         class="btn btn-primary btn-sm">Asignar</button>
                             </td>
                             <td style="width: 100px;">
-                                {% if dupla.id == comedor.dupla_id %}
-                                    <i class="bi bi-check-circle-fill text-success"></i>
-                                {% endif %}
+                                {% if dupla.id == comedor.dupla_id %}<i class="bi bi-check-circle-fill text-success"></i>{% endif %}
                             </td>
                         </tr>
                     {% empty %}

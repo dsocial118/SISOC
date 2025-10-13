@@ -174,74 +174,102 @@ class AdmisionService:
             "row_id": f"custom-{archivo.id}",
         }
 
-
-
     @staticmethod
     def get_admisiones_tecnicos_queryset(user, query=""):
         if user.is_superuser:
             queryset = Admision.objects.select_related(
-                'comedor', 'comedor__provincia', 'comedor__tipocomedor', 
-                'comedor__referente', 'estado'
+                "comedor",
+                "comedor__provincia",
+                "comedor__tipocomedor",
+                "comedor__referente",
+                "estado",
             )
         else:
             queryset = Admision.objects.filter(
                 Q(comedor__dupla__tecnico=user) | Q(comedor__dupla__abogado=user),
-                comedor__dupla__estado="Activo"
+                comedor__dupla__estado="Activo",
             ).select_related(
-                'comedor', 'comedor__provincia', 'comedor__tipocomedor', 
-                'comedor__referente', 'estado'
+                "comedor",
+                "comedor__provincia",
+                "comedor__tipocomedor",
+                "comedor__referente",
+                "estado",
             )
-        
+
         if query:
             query = query.strip().lower()
             queryset = queryset.filter(
-                Q(comedor__nombre__icontains=query) |
-                Q(comedor__provincia__nombre__icontains=query) |
-                Q(comedor__tipocomedor__nombre__icontains=query) |
-                Q(comedor__calle__icontains=query) |
-                Q(comedor__numero__icontains=query) |
-                Q(comedor__referente__nombre__icontains=query) |
-                Q(comedor__referente__apellido__icontains=query) |
-                Q(comedor__referente__celular__icontains=query)
+                Q(comedor__nombre__icontains=query)
+                | Q(comedor__provincia__nombre__icontains=query)
+                | Q(comedor__tipocomedor__nombre__icontains=query)
+                | Q(comedor__calle__icontains=query)
+                | Q(comedor__numero__icontains=query)
+                | Q(comedor__referente__nombre__icontains=query)
+                | Q(comedor__referente__apellido__icontains=query)
+                | Q(comedor__referente__celular__icontains=query)
             )
-        
-        return queryset.order_by('-creado')
+
+        return queryset.order_by("-creado")
 
     @staticmethod
     def get_admisiones_tecnicos_table_data(admisiones, user):
         table_items = []
         for admision in admisiones:
             comedor = admision.comedor
-            
-            badge_html = ''
-            if admision.estado_legales == 'A Rectificar':
+
+            badge_html = ""
+            if admision.estado_legales == "A Rectificar":
                 badge_html = '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Rectificar</span>'
-            elif admision.estado_legales == 'Archivado':
+            elif admision.estado_legales == "Archivado":
                 badge_html = '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Archivado</span>'
-            
-            actions = [{
-                'url': reverse("admisiones_tecnicos_editar", args=[admision.pk]),
-                'type': 'warning',
-                'label': 'Ver' + badge_html,
-                'class': 'position-relative'
-            }]
-            
-            table_items.append({
-                'cells': [
-                    {
-                        'content': comedor.nombre,
-                        'link_url': reverse("comedor_detalle", args=[comedor.id]),
-                        'link_class': 'font-weight-bold link-handler',
-                        'link_title': 'Ver detalles'
-                    },
-                    {'content': str(comedor.tipocomedor) if comedor.tipocomedor else '-'},
-                    {'content': str(comedor.provincia) if comedor.provincia else '-'},
-                    {'content': str(admision.tipo_convenio.nombre) if admision.tipo_convenio else '-'},
-                    {'content': str(admision.get_tipo_display()) if admision.tipo else '-'},
-                ],
-                'actions': actions
-            })
-        
+
+            actions = [
+                {
+                    "url": reverse("admisiones_tecnicos_editar", args=[admision.pk]),
+                    "type": "warning",
+                    "label": "Ver" + badge_html,
+                    "class": "position-relative",
+                }
+            ]
+
+            table_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": comedor.nombre,
+                            "link_url": reverse("comedor_detalle", args=[comedor.id]),
+                            "link_class": "font-weight-bold link-handler",
+                            "link_title": "Ver detalles",
+                        },
+                        {
+                            "content": (
+                                str(comedor.tipocomedor) if comedor.tipocomedor else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                str(comedor.provincia) if comedor.provincia else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                str(admision.tipo_convenio.nombre)
+                                if admision.tipo_convenio
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                str(admision.get_tipo_display())
+                                if admision.tipo
+                                else "-"
+                            )
+                        },
+                    ],
+                    "actions": actions,
+                }
+            )
+
         return table_items
 
 

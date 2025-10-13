@@ -29,13 +29,17 @@
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-primary me-1">Nomina</a>
             {% if comedor.estado == "Sin Ingreso" %}
-            <a href="{% url 'dupla_asignar' pk=comedor.id %}" class="btn btn-primary me-1">Asignar Dupla </a>
+                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                   class="btn btn-primary me-1">Asignar Dupla</a>
             {% else %}
-            <button type="button"
-            class="btn btn-warning text-white me-1 fw-bold"
-            data-bs-toggle="modal"
-            data-bs-target="#modalAdmision"><i class="bi bi-box-arrow-in-right me-1"></i> Comenzar Admisión</button>
-            <a href="{% url 'dupla_asignar' pk=comedor.id %}" class="btn btn-primary me-1">Modificar Dupla </a>
+                <button type="button"
+                        class="btn btn-warning text-white me-1 fw-bold"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalAdmision">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Comenzar Admisión
+                </button>
+                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                   class="btn btn-primary me-1">Modificar Dupla</a>
             {% endif %}
             <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
                class="btn btn-primary me-1">Intervenciones</a>
@@ -860,5 +864,7 @@
         <script src="{% static 'custom/js/galeria-imagenes.js' %}"></script>
         <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
         <script src="{% static 'custom/js/comedordetail.js' %}"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+                crossorigin="anonymous"></script>
     {% endblock %}
