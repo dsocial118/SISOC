@@ -2,28 +2,7 @@
 <html lang="es">
     <head>
         <meta charset="UTF-8" />
-        <style>
-        /* Soportado por htmldocx: mantener simple */
-        body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.25; }
-        
-        /* Títulos */
-        h2, h3, h4 { margin: 12px 0 6px 0; }
-        h4 { text-align: center; }
-        
-        /* Párrafos: justificar SIEMPRE */
-        p { margin: 6px 0; text-align: justify; }
-        
-        /* Listas: asegurar justificado envolviendo el texto en <p> dentro del <li> */
-        ul { margin: 6px 0 6px 18px; }
-        
-        /* Tablas básicas */
-        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-        th, td { border: 1px solid #000; padding: 6px; vertical-align: top; }
-        
-        /* Utilidades */
-        .w-25 { width: 25%; }
-        .text-center { text-align: center; }
-        </style>
+        <style> /* Soportado por htmldocx: mantener simple */ body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.25; } /* Títulos */ h2, h3, h4 { margin: 12px 0 6px 0; } h4 { text-align: center; } /* Párrafos: justificar SIEMPRE */ p { margin: 6px 0; text-align: justify; } /* Listas: asegurar justificado envolviendo el texto en <p> dentro del <li> */ ul { margin: 6px 0 6px 18px; } /* Tablas básicas */ table { width: 100%; border-collapse: collapse; margin: 10px 0; } th, td { border: 1px solid #000; padding: 6px; vertical-align: top; } /* Utilidades */ .w-25 { width: 25%; } .text-center { text-align: center; } </style>
     </head>
     <body>
         <div id="header">
@@ -75,13 +54,13 @@
                 Que por Resolución N.° RESOL-2025-238-APN-SNNAYF#MCH del 15 de abril de 2025, se le encomienda al Señor Subsecretario de Promoción Humana de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO la firma de todos los convenios y de los actos administrativos que resulten necesarios para la implementación de las políticas alimentarias de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA.
             </p>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Que, en dicho contexto, la organización {{ informe.nombre_organizacion }} de la provincia de {{ informe.provincia_organizacion }} ha solicitado la incorporación del {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” en el mencionado Programa.
+                Que, en dicho contexto, {{ informe.subtipo_entidad }} {{ informe.nombre_organizacion }} de la provincia de {{ informe.provincia_organizacion }} ha solicitado la incorporación del {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” en el mencionado Programa.
             </p>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
                 Que dicha solicitud no excede el límite establecido por los Lineamientos Técnicos y Operativos que surgen del Anexo IF-2025-32668963-APN-SSPH#MCH aprobado por la Resolución RESOL-2025-151-APN-MCH de fecha 31 de marzo de 2025.
             </p>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                Que la DIRECCIÓN DE ASISTENCIA INSTITUCIONAL ALIMENTARIA de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO ha evaluado favorablemente la petición efectuada por la organización {{ informe.nombre_organizacion }} de la provincia de {{ informe.provincia_organizacion }} y propicia el dictado de la presente medida.
+                Que la DIRECCIÓN DE ASISTENCIA INSTITUCIONAL ALIMENTARIA de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO ha evaluado favorablemente la petición efectuada por {{ informe.subtipo_entidad }} {{ informe.nombre_organizacion }} de la provincia de {{ informe.provincia_organizacion }} y propicia el dictado de la presente medida.
             </p>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
                 Que el Servicio Jurídico pertinente ha tomado la intervención de su competencia.
@@ -97,10 +76,10 @@
                 EL SEÑOR SUBSECRETARIO DE PROMOCIÓN HUMANA DE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO DISPONE:
             </p>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                <strong>ARTÍCULO 1°.-</strong> Apruébase el Convenio a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO y la organización {{ informe.nombre_organizacion }} de la provincia de {{ informe.provincia_organizacion }}, asociada al CUIT N.° {{ informe.cuit_organizacion }}, que, como Proyecto de Convenio identificado como {{ proyecto_convenio.numero_if }}, forma parte integrante de la presente Disposición.
+                <strong>ARTÍCULO 1°.-</strong> Apruébase el Convenio a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO y {{ informe.subtipo_entidad }} {{ informe.nombre_organizacion }} de la provincia de {{ informe.provincia_organizacion }}, asociada al CUIT N.° {{ informe.cuit_organizacion }}, que, como Proyecto de Convenio identificado como {{ proyecto_convenio.numero_if }}, forma parte integrante de la presente Disposición.
             </p>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
-                <strong>ARTÍCULO 2°.-</strong> Incorpórase al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” designado por la organización {{ informe.nombre_organizacion }} de la provincia de {{ informe.provincia_organizacion }}, al Programa “ALIMENTAR COMUNIDAD” para la adquisición de alimentos mediante una tarjeta prepaga física a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo. La carga de fondos se realizará conforme a las disponibilidades financieras y presupuestarias existentes y en los términos y condiciones establecidos en el Convenio referido en el presente acto.
+                <strong>ARTÍCULO 2°.-</strong> Incorpórase al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” designado por {{ informe.subtipo_entidad }} {{ informe.nombre_organizacion }} de la provincia de {{ informe.provincia_organizacion }}, al Programa “ALIMENTAR COMUNIDAD” para la adquisición de alimentos mediante una tarjeta prepaga física a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo. La carga de fondos se realizará conforme a las disponibilidades financieras y presupuestarias existentes y en los términos y condiciones establecidos en el Convenio referido en el presente acto.
             </p>
             <p align="justify" style="text-align: justify; text-justify: inter-word">
                 <strong>ARTÍCULO 3°.-</strong> Los fondos que se otorguen a través de la tarjeta prepaga física, mediante acto administrativo correspondiente, están sujetos a rendición de cuentas documentada, conforme a lo establecido en la Ley de Administración Financiera y de los Sistemas de Control del Sector Público Nacional N.° 24.156, su Decreto Reglamentario N.° 1344/2007 y normas modificatorias y complementarias; la Resolución del entonces Ministerio de Desarrollo Social N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, la Resolución del entonces Ministerio de Desarrollo Social N.° 2458 del 23 de agosto de 2004 y lo estipulado en el respectivo Convenio.
