@@ -335,6 +335,12 @@
                                                 <span class="username">{{ comedor.estado }}</span>
                                             </div>
                                         </div>
+                                        <div class="nav-item d-flex col-12">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Estado general
+                                                <span class="username">{{ comedor.get_estado_general_display|default_if_none:"---"|default:"---" }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

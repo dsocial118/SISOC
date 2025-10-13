@@ -11,6 +11,7 @@ FIELD_MAP: Dict[str, str] = {
     # Texto simples
     "nombre": "nombre",
     "estado": "estado",
+    "estado_general": "estado_general",
     "calle": "calle",
     "piso": "piso",
     "departamento": "departamento",
@@ -81,16 +82,28 @@ FIELD_TYPES: Dict[str, str] = {
             "longitud",
         ]
     },
+    # Selección
+    "estado_general": "choice",
 }
 
 # Operadores permitidos por tipo
 TEXT_OPS = ["contains", "ncontains", "eq", "ne", "empty"]
 NUM_OPS = ["eq", "ne", "gt", "lt", "empty"]
+CHOICE_OPS = ["eq", "ne", "empty"]
 
 # Configuración para la UI de filtros avanzados
 FILTER_FIELDS = [
     {"name": "nombre", "label": "Nombre", "type": "text"},
     {"name": "estado", "label": "Estado", "type": "text"},
+    {
+        "name": "estado_general",
+        "label": "Estado general",
+        "type": "choice",
+        "choices": [
+            {"value": "A", "label": "Activo"},
+            {"value": "I", "label": "Inactivo"},
+        ],
+    },
     {"name": "calle", "label": "Calle", "type": "text"},
     {"name": "piso", "label": "Piso", "type": "text"},
     {"name": "departamento", "label": "Departamento", "type": "text"},
@@ -143,6 +156,7 @@ def get_filters_ui_config() -> Dict[str, Any]:
         "operators": {
             "text": list(TEXT_OPS),
             "number": list(NUM_OPS),
+            "choice": list(CHOICE_OPS),
         },
     }
 
@@ -152,6 +166,7 @@ __all__ = [
     "FIELD_TYPES",
     "TEXT_OPS",
     "NUM_OPS",
+    "CHOICE_OPS",
     "FILTER_FIELDS",
     "DEFAULT_FIELD",
     "get_filters_ui_config",

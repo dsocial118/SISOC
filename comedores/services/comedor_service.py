@@ -29,7 +29,13 @@ from intervenciones.models.intervenciones import Intervencion
 logger = logging.getLogger("django")
 
 from core.services.advanced_filters import AdvancedFilterEngine
-from comedores.services.filter_config import FIELD_MAP, FIELD_TYPES, TEXT_OPS, NUM_OPS
+from comedores.services.filter_config import (
+    FIELD_MAP,
+    FIELD_TYPES,
+    TEXT_OPS,
+    NUM_OPS,
+    CHOICE_OPS,
+)
 
 
 COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -38,6 +44,7 @@ COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
     allowed_ops={
         "text": TEXT_OPS,
         "number": NUM_OPS,
+        "choice": CHOICE_OPS,
     },
     field_casts={
         "latitud": float,

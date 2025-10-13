@@ -103,6 +103,14 @@ class ComedorForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.popular_campos_ubicacion()
+        estado_general_field = self.fields.get("estado_general")
+        if estado_general_field:
+            estado_general_field.choices = [
+                ("", "---"),
+                ("A", "Activo"),
+                ("I", "Inactivo"),
+            ]
+            estado_general_field.required = False
 
     def popular_campos_ubicacion(self):
 

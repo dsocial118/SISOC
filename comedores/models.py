@@ -135,16 +135,27 @@ class Comedor(models.Model):
 
     # Se agrego el estado del comedor para poder filtrar los que no tienen ingreso
     # y los que tienen ingreso asignado a dupla tecnica
-    estadosComedor = [
+    ESTADOS_CHOICES = [
         ("Sin Ingreso", "Sin Ingreso"),
         ("Asignado a Dupla Técnica", "Asignado a Dupla Técnica"),
     ]
     estado = models.CharField(
-        choices=estadosComedor,
+        choices=ESTADOS_CHOICES,
         max_length=255,
         blank=True,
         null=True,
         default="Sin Ingreso",
+    )
+    ESTADO_GENERAL_CHOICES = [
+        ("A", "Activo"),
+        ("I", "Inactivo"),
+    ]
+    estado_general = models.CharField(
+        max_length=1,
+        choices=ESTADO_GENERAL_CHOICES,
+        default="A",
+        null=True,
+        blank=True,
     )
 
     direccion_validator = RegexValidator(
