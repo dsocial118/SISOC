@@ -1,3 +1,4 @@
+{% load admisiones_tags %}
 <!DOCTYPE html>
 <html lang="es">
     <head>
@@ -135,10 +136,10 @@
     </div>
     <main>
         <h4>
-            CONVENIO ENTRE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO Y LA (TIPO ENTIDAD) {{ informe.nombre_organizacion }} DE LA PROVINCIA DE {{ informe.provincia_organizacion }}
+            CONVENIO ENTRE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO Y {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }} {{ informe.nombre_organizacion }} DE LA PROVINCIA DE {{ informe.provincia_organizacion }}
         </h4>
         <p>
-            Entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, representada en este acto por el Subsecretario de Promoción Humana Sr. Martín Domingo Lepera (DNI N° 30.957.827), con domicilio en Av. 9 de Julio N° 1925 - Piso 16, CABA, en adelante "LA SECRETARÍA"; y la (tipo entidad) {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, CUIT {{ informe.cuit_organizacion }}, representada en este acto por {{ informe.representante_cargo }} {{ informe.representante_nombre }}, DNI N° {{ informe.representante_dni }}, (Secretario/a) DNI N° (DNI), y (Tesorero/a) DNI N° (DNI), con domicilio en {{ informe.domicilio_organizacion }}, Ciudad de {{ informe.localidad_organizacion }}, Provincia de {{ informe.provincia_organizacion }}, en adelante “(tipo entidad)”, denominadas conjuntamente “LAS PARTES”, convienen celebrar el presente convenio sujeto a las siguientes cláusulas:
+            Entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, representada en este acto por el Subsecretario de Promoción Humana Sr. Martín Domingo Lepera (DNI N° 30.957.827), con domicilio en Av. 9 de Julio N° 1925 - Piso 16, CABA, en adelante "LA SECRETARÍA"; y {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article|lower }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, CUIT {{ informe.cuit_organizacion }}, representada en este acto por {{ informe.representante_cargo }} {{ informe.representante_nombre }}, DNI N° {{ informe.representante_dni }}, (Secretario/a) DNI N° (DNI), y (Tesorero/a) DNI N° (DNI), con domicilio en {{ informe.domicilio_organizacion }}, Ciudad de {{ informe.localidad_organizacion }}, Provincia de {{ informe.provincia_organizacion }}, en adelante "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}", denominadas conjuntamente "LAS PARTES", convienen celebrar el presente convenio sujeto a las siguientes cláusulas:
         </p>
         <h5>Cláusula Primera. Objeto</h5>
         <p>
@@ -146,7 +147,7 @@
         </p>
         <h5>Cláusula Segunda. Financiamiento</h5>
         <p>
-            “(TIPO ENTIDAD)” acepta que "LA SECRETARÍA" otorgue fondos en carácter de subsidio no reintegrable, sujeto a rendición de cuentas, para el {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” de la localidad de {{ informe.localidad_espacio }}, Provincia de {{ informe.provincia_espacio }}, tramitado por Expediente N° {{ informe.expediente_nro }}. Detalles en ANEXO IF {{ admision.legales_num_if }} (nombre anexo).
+            "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" acepta que "LA SECRETARÍA" otorgue fondos en carácter de subsidio no reintegrable, sujeto a rendición de cuentas, para el {{ informe.tipo_espacio }} "{{ informe.nombre_espacio }}" de la localidad de {{ informe.localidad_espacio }}, Provincia de {{ informe.provincia_espacio }}, tramitado por Expediente N° {{ informe.expediente_nro }}. Detalles en ANEXO IF {{ admision.legales_num_if }} (nombre anexo).
         </p>
         <h5>Cláusula Tercera. Forma de Pago</h5>
         <p>
@@ -180,7 +181,7 @@
         </p>
         <h5>Cláusula Décima Primera. Rendición de Cuentas</h5>
         <p>
-            “(TIPO ENTIDAD)” rendirá cuentas documentadas conforme a lo establecido en el ANEXO. La documentación deberá cumplir con normas de AFIP y conservarse por 10 años.
+            "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" rendirá cuentas documentadas conforme a lo establecido en el ANEXO. La documentación deberá cumplir con normas de AFIP y conservarse por 10 años.
         </p>
         <h5>Cláusula Décima Segunda. Carga de Comprobantes</h5>
         <p>
@@ -200,7 +201,7 @@
         </p>
         <h5>Cláusula Décima Sexta. Responsabilidad</h5>
         <p>
-            “(TIPO ENTIDAD)” será responsable exclusiva por contrataciones, personal y actividades derivadas. "LA SECRETARÍA" queda exenta de cualquier responsabilidad legal o laboral.
+            "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" será responsable exclusiva por contrataciones, personal y actividades derivadas. "LA SECRETARÍA" queda exenta de cualquier responsabilidad legal o laboral.
         </p>
         <h5>Cláusula Décima Séptima. Integridad</h5>
         <p>
@@ -211,7 +212,9 @@
             Las partes intentarán resolver diferencias de buena fe. En caso contrario, se someterán a los tribunales federales de CABA.
         </p>
         <h5>Cláusula Décima Novena. Consentimiento Ley 25.326</h5>
-        <p>“(TIPO ENTIDAD)” autoriza la recolección y análisis de sus datos personales para fines exclusivos del Programa.</p>
+        <p>
+            "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" autoriza la recolección y análisis de sus datos personales para fines exclusivos del Programa.
+        </p>
         <h5>Cláusula Vigésima. Domicilios</h5>
         <p>
             Los domicilios físicos y electrónicos indicados se considerarán válidos para notificaciones, salvo comunicación fehaciente en contrario.
@@ -222,7 +225,7 @@
         </p>
         <h5>Cláusula Vigésima Segunda. Responsable Sustituto</h5>
         <p>
-            “(TIPO ENTIDAD)” podrá designar un responsable sustituto mediante nota comunicativa. El nuevo responsable asumirá las obligaciones del anterior.
+            "{{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|entity_article }} {{ informe.admision.comedor.organizacion.subtipo_entidad.nombre|upper }}" podrá designar un responsable sustituto mediante nota comunicativa. El nuevo responsable asumirá las obligaciones del anterior.
         </p>
         <p style="margin-top: 2em;">
             En prueba de conformidad, se suscriben dos ejemplares de igual tenor en la Ciudad Autónoma de Buenos Aires, en la fecha: ___________

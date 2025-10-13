@@ -1,0 +1,149 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Revisar Informe Complementario: {{ admision.comedor.nombre }}{% endblock %}
+{% block titulo-pagina %}Revisar Informe Complementario: {{ admision.comedor.nombre }}{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="row justify-content-between d-print-none mx-1 mb-3">
+            <div class="col-auto">
+                <a href="{% url 'admisiones_legales_ver' admision.id %}"
+                   class="btn btn-secondary mr-1">Volver</a>
+            </div>
+        </div>
+
+        {% if informe_complementario %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Cambios Realizados por el Técnico</h5>
+                            <small class="text-muted">Fecha: {{ informe_complementario.modificado|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <div class="card-body">
+                            {% if campos_modificados %}
+                                <div class="list-group">
+                                    {% for campo in campos_modificados %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">{{ campo.campo }}</h6>
+                                            </div>
+                                            <p class="mb-1">
+                                                <strong>Nuevo valor:</strong> {{ campo.value }}
+                                            </p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted">No se realizaron cambios específicos.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Información del Informe</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                <strong>Estado:</strong> {{ informe_complementario.get_estado_display }}
+                            </p>
+                            <p>
+                                <strong>Creado por:</strong> {{ informe_complementario.creado_por.username }}
+                            </p>
+                            <p>
+                                <strong>Fecha:</strong> {{ informe_complementario.modificado|date:"d/m/Y H:i" }}
+                            </p>
+                            <div class="alert alert-info">
+                                <small><i class="bi bi-info-circle"></i> Al validar, se actualizará el informe técnico original y se generarán los PDF/DOCX finales.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Decisión sobre el Informe Complementario</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Seleccione una acción:</label>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="accion_complementario"
+                                       id="validar"
+                                       value="validar"
+                                       required />
+                                <label class="form-check-label" for="validar">
+                                    <i class="fas fa-check text-success"></i> Validar - Continuar con el proceso
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="accion_complementario"
+                                       id="rectificar"
+                                       value="rectificar"
+                                       required />
+                                <label class="form-check-label" for="rectificar">
+                                    <i class="fas fa-times text-danger"></i> Rectificar - Solicitar nuevos cambios
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="observaciones-group" style="display: none;">
+                            <label for="observaciones_complementario">Observaciones para el técnico:</label>
+                            <textarea class="form-control"
+                                      name="observaciones_complementario"
+                                      id="observaciones_complementario"
+                                      rows="4"
+                                      placeholder="Escriba las observaciones que el técnico debe atender..."></textarea>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <button type="submit"
+                                    name="btnRevisarInformeComplementario"
+                                    class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar
+                            </button>
+                            <a href="{% url 'admisiones_legales_ver' admision.id %}"
+                               class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                No se encontró un informe complementario pendiente de revisión.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script>
+        document.querySelectorAll('input[name="accion_complementario"]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                const observacionesGroup = document.getElementById('observaciones-group');
+                const observacionesTextarea = document.getElementById('observaciones_complementario');
+                
+                if (this.value === 'rectificar') {
+                    observacionesGroup.style.display = 'block';
+                    observacionesTextarea.required = true;
+                } else {
+                    observacionesGroup.style.display = 'none';
+                    observacionesTextarea.required = false;
+                    observacionesTextarea.value = '';
+                }
+            });
+        });
+    </script>
+{% endblock %}

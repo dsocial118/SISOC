@@ -1,0 +1,9 @@
+{% if url %}
+    <a href="{% url 'revisar_informe_complementario' admision.id %}"
+       class="btn {{ clase }} mr-1">{{ texto }}</a>
+{% else %}
+    <button type="button"
+            class="btn {{ clase }} mr-1"
+            data-bs-toggle="modal"
+            data-bs-target="{{ modal }}">{{ texto }}</button>
+{% endif %}

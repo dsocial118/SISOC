@@ -3,8 +3,8 @@
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 {% block titulo-pagina %}
     {{ comedor.nombre }}
-    <span class="ml-2 h5">| {{ comedor.provincia.nombre | default_if_none:"-" }}, {{ comedor.municipio.nombre | default_if_none:"-" }}, {{ comedor.localidad.nombre | default_if_none:"-" }}</span>
-    <span class="ml-2 h5">- {{ comedor.programa.nombre }} - {{ comedor_categoria.categoria.nombre }}</span>
+    <span class="ms-2 h5">| {{ comedor.provincia.nombre | default_if_none:"-" }}, {{ comedor.municipio.nombre | default_if_none:"-" }}, {{ comedor.localidad.nombre | default_if_none:"-" }}</span>
+    <span class="ms-2 h5">- {{ comedor.programa.nombre }} - {{ comedor_categoria.categoria.nombre }}</span>
 {% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
@@ -19,28 +19,33 @@
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             <a href="{% url 'comedores' %}"
-               class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
+               class="btn btn-secondary me-1 backbutton-handler">Volver</a>
         </div>
         <div class="col-auto">
             {% if rendicion_cuentas_final_activo == True %}
                 <a href="{% url 'rendicion_cuentas_final' pk=comedor.id %}"
-                   class="btn btn-primary mr-1">Rendicion de Cuentas Final</a>
+                   class="btn btn-primary me-1">Rendicion de Cuentas Final</a>
             {% endif %}
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
-               class="btn btn-primary mr-1">Nomina</a>
-            <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-               class="btn btn-primary mr-1">
-                {% if comedor.estado == "Sin Ingreso" %}
-                    Asignar Dupla
-                {% else %}
-                    Modificar Dupla
-                {% endif %}
-            </a>
+               class="btn btn-primary me-1">Nomina</a>
+            {% if comedor.estado == "Sin Ingreso" %}
+                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                   class="btn btn-primary me-1">Asignar Dupla</a>
+            {% else %}
+                <button type="button"
+                        class="btn btn-warning text-white me-1 fw-bold"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalAdmision">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Comenzar Admisión
+                </button>
+                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                   class="btn btn-primary me-1">Modificar Dupla</a>
+            {% endif %}
             <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
-               class="btn btn-primary mr-1">Intervenciones</a>
+               class="btn btn-primary me-1">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
-               class="btn btn-primary mr-1">Editar</a>
-            <a href="#" class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
+               class="btn btn-primary me-1">Editar</a>
+            <a href="#" class="btn btn-secondary print me-1 d-none d-sm-inline">Imprimir</a>
             <a href="{% url 'comedor_eliminar' comedor.id %}" class="btn btn-danger">Eliminar</a>
         </div>
     </div>
@@ -142,7 +147,7 @@
                 <div class="col-12">
                     <div class="card card-informacion">
                         <div class="card-header">
-                            <h3 class="card-title font-weight-bold mr-3 pt-1">Información</h3>
+                            <h3 class="card-title fw-bold me-3 pt-1">Información</h3>
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                     <i class="fas fa-minus"></i>
@@ -367,7 +372,7 @@
             <div class="col-6">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title font-weight-bold mr-3 pt-1">Referente</h3>
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Referente</h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
@@ -407,10 +412,10 @@
             <div class="col-6">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title font-weight-bold mr-3 pt-1">Relevamientos</h3>
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Relevamientos</h3>
                         <div class="card-tools">
                             <a href="{% url 'relevamientos' comedor.id %}"
-                               class="btn btn-primary btn-sm mr-3">Ver mas</a>
+                               class="btn btn-primary btn-sm me-3">Ver mas</a>
                             <button type="button"
                                     class="btn btn-primary btn-sm"
                                     data-bs-toggle="modal"
@@ -517,10 +522,10 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title font-weight-bold mr-3 pt-1">Detalles Admisión</h3>
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Detalles Admisión</h3>
                         <div class="card-tools">
                             <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-                               class="btn btn-primary mr-1 btn-sm">
+                               class="btn btn-primary me-1 btn-sm">
                                 {% if comedor.estado == "Sin Ingreso" %}
                                     Asignar Dupla
                                 {% else %}
@@ -573,7 +578,7 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title font-weight-bold mr-3 pt-1">Observaciones</h3>
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Observaciones</h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
@@ -601,12 +606,12 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title font-weight-bold mr-3 pt-1">
-                            <i class="fas fa-images mr-2"></i>
+                        <h3 class="card-title font-weight-bold me-3 pt-1">
+                            <i class="fas fa-images me-2"></i>
                             Galería de Imágenes
                         </h3>
                         <div class="card-tools">
-                            <span class="badge badge-primary mr-2">{{ imagenes|length }} imagen{{ imagenes|length|pluralize:"es" }}</span>
+                            <span class="badge badge-primary me-2">{{ imagenes|length }} imagen{{ imagenes|length|pluralize:"es" }}</span>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                 <i class="fas fa-minus"></i>
                             </button>
@@ -664,7 +669,7 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title font-weight-bold mr-3 pt-1">Contactos Duplas</h3>
+                            <h3 class="card-title font-weight-bold me-3 pt-1">Contactos Duplas</h3>
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                     <i class="fas fa-minus"></i>
@@ -707,7 +712,7 @@
                 <div class="modal-content modal-imagen">
                     <div class="modal-header border-0">
                         <h5 class="modal-title" id="imagenModalLabel">
-                            <i class="fas fa-image mr-2"></i>
+                            <i class="fas fa-image me-2"></i>
                             Imagen del comedor
                         </h5>
                         <button type="button"
@@ -745,15 +750,50 @@
                             <button type="button"
                                     class="btn btn-outline-primary btn-sm"
                                     onclick="descargarImagen()">
-                                <i class="fas fa-download mr-1"></i>Descargar
+                                <i class="fas fa-download me-1"></i>Descargar
                             </button>
                             <button type="button"
                                     class="btn btn-secondary btn-sm"
                                     data-bs-dismiss="modal">
-                                <i class="fas fa-times mr-1"></i>Cerrar
+                                <i class="fas fa-times me-1"></i>Cerrar
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <!-- MODAL SELECCION ADMISION -->
+        <div class="modal fade"
+             id="modalAdmision"
+             tabindex="-1"
+             aria-labelledby="modalAdmisionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Seleccione el tipo de Admisión</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <select name="admision"
+                                    id="admisionID"
+                                    class="form-control form-select"
+                                    required>
+                                <option value="" disabled selected>-- Seleccione --</option>
+                                <option value="incorporacion">Incorporación</option>
+                                <option value="renovacion">Renovación</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="seleccionAdmision">Seleccionar</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -767,4 +807,7 @@
         <script src="{% static 'custom/js/galeria-imagenes.js' %}"></script>
         <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
         <script src="{% static 'custom/js/comedordetail.js' %}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+                crossorigin="anonymous"></script>
     {% endblock %}
