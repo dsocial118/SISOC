@@ -106,7 +106,7 @@ class ComedorForm(forms.ModelForm):
         estado_general_field = self.fields.get("estado_general")
         if estado_general_field:
             estado_general_field.choices = [
-                ("", "---"),
+                ("", "Sin definir"),
                 ("A", "Activo"),
                 ("I", "Inactivo"),
             ]
