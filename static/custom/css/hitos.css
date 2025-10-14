@@ -347,19 +347,18 @@
 .hitos-vacio {
     padding: 4rem;
     text-align: center;
-    color: var(--poncho-gris-intermedio);
-    background: var(--poncho-gris-niebla);
+    color: var(--poncho-blanco);
 }
 
 .hitos-vacio i {
     font-size: 3.5rem;
     margin-bottom: 1.5rem;
     opacity: 0.6;
-    color: var(--poncho-azul-cobalto);
+    color: var(--poncho-gris-niebla);
 }
 
 .hitos-vacio h4 {
-    color: var(--poncho-azul-principal);
+    color: var(--poncho-blanco);
     margin-bottom: 0.8rem;
     font-size: 1.3rem;
 }
