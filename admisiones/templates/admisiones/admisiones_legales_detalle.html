@@ -198,6 +198,18 @@
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
+                                Fecha de vencimiento de mandatos:
+                                <span class="fw-bold">
+                                    {% if informe and informe.fecha_vencimiento_mandatos %}
+                                        {{ informe.fecha_vencimiento_mandatos|date:'d/m/Y' }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
                                 Número de Expediente:
                                 <span class="fw-bold">{{ admision.num_expediente|default_if_none:"-" }}</span>
                             </div>
