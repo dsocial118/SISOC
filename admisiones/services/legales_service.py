@@ -675,7 +675,7 @@ class LegalesService:
             form = ProyectoDisposicionForm(request.POST, instance=formulario_existente)
 
             if not form.is_valid():
-                messages.error(request, "Error al guardar el formulario RESO.")
+                messages.error(request, "Error al guardar el Formulario Proyecto Disposición.")
                 return redirect("admisiones_legales_ver", pk=admision.pk)
 
             nuevo_formulario = form.save(commit=False)
@@ -748,7 +748,7 @@ class LegalesService:
                 docx_content = ContentFile(docx_bytes)
             except Exception as docx_exc:
                 logger.warning(
-                    "Falla al generar DOCX para formulario RESO",
+                    "Falla al generar DOCX para Formulario Proyecto Disposición",
                     exc_info=docx_exc,
                     extra={
                         "admision_pk": admision.pk,
@@ -771,7 +771,7 @@ class LegalesService:
                         docx_content = ContentFile(docx_bytes)
                     else:
                         logger.error(
-                            "El fallback de DOCX para formulario RESO devolvió contenido vacío.",
+                            "El fallback de DOCX para Formulario Proyecto Disposición devolvió contenido vacío.",
                             extra={
                                 "admision_pk": admision.pk,
                                 "formulario_pk": getattr(nuevo_formulario, "pk", None),
@@ -779,7 +779,7 @@ class LegalesService:
                         )
                 except Exception as fallback_exc:
                     logger.error(
-                        "No se pudo generar el fallback DOCX para formulario RESO",
+                        "No se pudo generar el fallback DOCX para Formulario Proyecto Disposición",
                         exc_info=fallback_exc,
                         extra={
                             "admision_pk": admision.pk,
@@ -826,7 +826,7 @@ class LegalesService:
                         html_dump_path = temp_file.name
             except Exception as dump_exc:
                 logger.error(
-                    "No se pudo escribir el HTML temporal para formulario RESO",
+                    "No se pudo escribir el HTML temporal para Formulario Proyecto Disposición.",
                     exc_info=dump_exc,
                     extra={"admision_pk": admision.pk},
                 )
@@ -838,7 +838,7 @@ class LegalesService:
                 extra["html_dump_path"] = html_dump_path
 
             logger.exception("Error en guardar_formulario_reso", extra=extra)
-            messages.error(request, "Error inesperado al guardar el formulario RESO.")
+            messages.error(request, "Error inesperado al guardar el Formulario Proyecto Disposición.")
             return redirect("admisiones_legales_ver", pk=admision.pk)
 
     @staticmethod

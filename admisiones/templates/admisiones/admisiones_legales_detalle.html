@@ -450,6 +450,7 @@
             <div class="modal-content">
                 <form method="POST" action="">
                     {% csrf_token %}
+                    <input type="hidden" name="tipo" value="{{ admision.tipo }}">
                     <div class="modal-header">
                         <h5 class="modal-title">Formulario Disposición</h5>
                         <button type="button"
