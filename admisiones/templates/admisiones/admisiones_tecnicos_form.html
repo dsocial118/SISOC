@@ -66,7 +66,7 @@
                         {% endif %}
                     {% endif %}
                 {% else %}
-                    {% if not admision.enviada_a_archivo %}
+                    {% if mostrar_informe_complementario %}
                         <a href="{% url 'informe_complementario_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
                            class="btn btn-primary mr-1">Informe Técnico Complementario</a>
                     {% endif %}
@@ -80,7 +80,26 @@
             {% endif %}
         </div>
     </div>
-    {% if es_crear %}
+    {% if mostrar_informe_complementario %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-warning" role="alert">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i> Informe Técnico Complementario Requerido
+                    </h5>
+                    {% if observaciones_complementario %}
+                        <p class="mb-0">
+                            <strong>Observaciones de Legales:</strong>
+                        </p>
+                        <p class="mb-0">{{ observaciones_complementario }}</p>
+                    {% else %}
+                        <p class="mb-0">Se requiere completar un informe técnico complementario.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% if not admision.tipo_convenio %}
         <!-- MODAL DE SELECCIÓN INICIAL -->
         <div class="modal fade"
              id="seleccionModal"
@@ -93,8 +112,7 @@
              aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form method="POST"
-                          action="{% url 'admisiones_tecnicos_crear' pk=comedor.pk %}">
+                    <form method="POST">
                         {% csrf_token %}
                         <div class="modal-header">
                             <h5 class="modal-title">Seleccione el tipo de convenio</h5>
@@ -140,6 +158,12 @@
                                             {% endif %}
                                         {% endif %}
                                     </span>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Tipo:
+                                    <span class="fw-bold">{{ admision.get_tipo_display| default_if_none:"-" }}</span>
                                 </div>
                             </li>
                             <li class="nav-item">
@@ -196,9 +220,21 @@
                                                     {% if pdf %}
                                                         <li class="nav-item">
                                                             <div class="comment-text">
-                                                                Informe Tecnico:
-                                                                <span class="fw-bold"><a href="{{ pdf.archivo.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i></a></span>
-                                                                <span class="fw-bold"><a href="{{ pdf.archivo_docx.url }}" target="_blank"><i class="bi bi-filetype-docx text-info h4 ms-3 text-bold"></i></a></span>
+                                                                Informe Técnico:
+                                                                {% if pdf.archivo %}
+                                                                    <span class="fw-bold">
+                                                                        <a href="{{ pdf.archivo.url }}" target="_blank">
+                                                                            <i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>
+                                                                        </a>
+                                                                    </span>
+                                                                {% endif %}
+                                                                {% if pdf.archivo_docx %}
+                                                                    <span class="fw-bold">
+                                                                        <a href="{{ pdf.archivo_docx.url }}" target="_blank">
+                                                                            <i class="bi bi-filetype-docx text-info h4 ms-3 text-bold"></i>
+                                                                        </a>
+                                                                    </span>
+                                                                {% endif %}
                                                             </div>
                                                         </li>
                                                     {% endif %}
@@ -207,7 +243,11 @@
                                                             <div class="comment-text">
                                                                 PDF Informes Complementarios:
                                                                 {% for i in informes_complementarios %}
-                                                                    <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado |date:'d/m/Y' }}</a></span>
+                                                                    {% if i.pdf %}
+                                                                        <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado |date:'d/m/Y' }}</a></span>
+                                                                    {% else %}
+                                                                        <span class="fw-bold">{{ i.creado |date:'d/m/Y' }} - {{ i.get_estado_display }}</span>
+                                                                    {% endif %}
                                                                     <br />
                                                                 {% endfor %}
                                                             </div>
@@ -232,7 +272,11 @@
                                                     <li class="nav-item">
                                                         <div class="comment-text ">
                                                             Nombre:
-                                                            <a href="{% url 'comedor_detalle' comedor.id %}"><span class="fw-bold">{{ comedor.nombre }}</span></a>
+                                                            {% if comedor and comedor.id %}
+                                                                <a href="{% url 'comedor_detalle' comedor.id %}"><span class="fw-bold">{{ comedor.nombre }}</span></a>
+                                                            {% else %}
+                                                                <span class="fw-bold">{{ comedor.nombre|default:"-" }}</span>
+                                                            {% endif %}
                                                         </div>
                                                     </li>
                                                     <li class="nav-item">
@@ -611,7 +655,17 @@
                                                     </div>
                                                     <div class="modal-body">
                                                         <div class="form-group row mb-2">
-                                                            <div class="col-sm-10">{{ caratular_form.num_expediente| as_crispy_field }}</div>
+                                                            <div class="col-sm-10">
+                                                                {% if caratular_form and caratular_form.num_expediente %}
+                                                                    {{ caratular_form.num_expediente| as_crispy_field }}
+                                                                {% else %}
+                                                                    <input type="text"
+                                                                           name="num_expediente"
+                                                                           class="form-control"
+                                                                           placeholder="Número de Expediente"
+                                                                           required />
+                                                                {% endif %}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div class="modal-footer">
@@ -629,6 +683,18 @@
                             {% endblock %}
                             {% block customJS %}
                                 <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
+                                {% if not admision.tipo_convenio %}
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            var modal = new bootstrap.Modal(document.getElementById('seleccionModal'));
+                                            modal.show();
+                                            
+                                            document.getElementById('tipoConvenio').addEventListener('change', function() {
+                                                document.getElementById('confirmarSeleccion').disabled = !this.value;
+                                            });
+                                        });
+                                    </script>
+                                {% endif %}
                                 {% if es_crear %}
                                     <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
                                 {% endif %}

@@ -3,115 +3,114 @@
     <head>
         <meta charset="UTF-8" />
         <style>
-        @page {
-            size: A4;
-            margin: 3.5cm 2cm 2.5cm 2cm; /* márgenes: top, right, bottom, left */
-            @top-center {
-                content: element(header);
-            }
-            @bottom-center {
-                content: "Página " counter(page) " de " counter(pages);
-                font-size: 10pt;
-                color: #666;
-            }
-        }
+@page {
+    size: A4;
+    margin: 3.5cm 2cm 2.5cm 2cm; /* márgenes: top, right, bottom, left */
+    @top-center {
+        content: element(header);
+    }
+    @bottom-center {
+        content: "Página " counter(page) " de " counter(pages);
+        font-size: 10pt;
+        color: #666;
+    }
+}
 
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 10pt;
-            margin: 0;
-        }
+body {
+    font-family: Arial, sans-serif;
+    font-size: 10pt;
+    margin: 0;
+    text-align: justify;   /* 👈 regla global de justificado */
+    line-height: 1.5;
+}
 
-        #header {
-            position: running(header);
-            height: 3cm;
-            padding: 0.5cm 1cm;
-            /*border-bottom: 1px solid #ccc;*/
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+#header {
+    position: running(header);
+    height: 3cm;
+    padding: 0.5cm 1cm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-        .header-left {
-            font-weight: bold;
-            padding-top: 15px;
-            padding-right: 30px;
-            font-size: 10pt;
-            text-align: left;
-            flex-direction: column; /* si hay varios elementos apilados verticalmente */
-            align-items: center;    /* centro horizontal */
-            justify-content: center; /* centro vertical */
-            text-align: center; /* para textos multilínea */
-        }
+.header-left {
+    font-weight: bold;
+    padding-top: 15px;
+    padding-right: 30px;
+    font-size: 10pt;
+    text-align: center;
+}
 
-        .header-right {
-            display: flex;
-            flex-direction: column; /* si hay varios elementos apilados verticalmente */
-            align-items: center;    /* centro horizontal */
-            justify-content: center; /* centro vertical */
-            font-size: 9pt;
-            text-align: center; /* para textos multilínea */
-            line-height: 0.5;
-            padding-left:30px;
-        }
+.header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 9pt;
+    text-align: center;
+    line-height: 0.5;
+    padding-left: 30px;
+}
 
-        .header-right img {
-            max-height: 40px;
-            height: auto;
-            width: auto;
-            margin-bottom: 0px;
-        }
-        main {
-            /* padding-top: 1cm; */
-            box-sizing: border-box;
-        }
+.header-right img {
+    max-height: 40px;
+    height: auto;
+    width: auto;
+    margin-bottom: 0px;
+}
 
-        h4 {
-            text-align: center;
-        }
+main {
+    box-sizing: border-box;
+}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            border: 2px solid black;
-        }
+h4 {
+    text-align: center; /* 👈 sobrescribe la regla global */
+}
 
-        th, td {
-            padding: 6px;
-            border: 1px solid #ccc;
-            vertical-align: top;
-        }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    border: 2px solid black;
+}
 
-        th[colspan="2"] {
-            text-align: center;
-            background-color: #f0f0f0;
-        }
+th, td {
+    padding: 6px;
+    border: 1px solid #ccc;
+    vertical-align: top;
+    text-align: justify; /* 👈 aseguramos justificado en tablas */
+}
 
-        .salto_pagina {
-            page-break-before: always;
-            /* También podés usar page-break-inside: avoid; para evitar quiebres dentro */
-        }
+th[colspan="2"] {
+    text-align: center; /* 👈 este sí centrado */
+    background-color: #f0f0f0;
+}
 
-        .table-bordered {
-            border: 1px solid #ccc;
-        }
+.salto_pagina {
+    page-break-before: always;
+}
 
-        .text-center {
-            text-align: center;
-        }
+.table-bordered {
+    border: 1px solid #ccc;
+}
 
-        .text-start {
-            text-align: left;
-        }
+.text-center {
+    text-align: center; /* 👈 utilidad para forzar centrado */
+}
 
-        .align-middle {
-            vertical-align: middle;
-        }
-        li {
-          line-height: 1.8;
-          margin-bottom: 0.5em;
-        }
+.text-start {
+    text-align: left;   /* 👈 utilidad para forzar alineación izquierda */
+}
+
+.align-middle {
+    vertical-align: middle;
+}
+
+li {
+    line-height: 1.8;
+    margin-bottom: 0.5em;
+    text-align: justify;
+}
         </style>
     </head>
     <body>
@@ -164,16 +163,13 @@
                 Que por Resolución N.° RESOL-2025-238-APN-SNNAYF#MCH del 15 de abril de 2025, se le encomienda al Señor Subsecretario de Promoción Humana de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO la firma de todos los convenios y de los actos administrativos que resulten necesarios para la implementación de las políticas alimentarias de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA.
             </p>
             <p>
-                Que por Resolución RESOL-202X-X(NOMBRE RESO ANTERIOR-Deberia ser manual))XX-APN-SNNAYF#MCH del Xdia_fecha_reso(Manual)x de Xxmes_reso(Manual)xxx de 2024 se incorporó al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.
+                Que, en dicho contexto, la organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }} ha solicitado la incorporación del {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” en el mencionado Programa.
             </p>
             <p>
-                Que, en dicho contexto, la Organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }} ha solicitado la continuidad del financiamiento al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo.
+                Que dicha solicitud no excede el límite establecido por los Lineamientos Técnicos y Operativos que surgen del Anexo IF-2025-32668963-APN-SSPH#MCH aprobado por la Resolución RESOL-2025-151-APN-MCH de fecha 31 de marzo de 2025.
             </p>
             <p>
-                Que, con el propósito de garantizar la continuidad de la asistencia alimentaria que dicho espacio venía recibiendo, corresponde destacar que lo establecido en la Resolución N.° RESOL-2025-151-APN-MCH de fecha 31 de marzo de 2025, en lo relativo al límite de incorporaciones por entidad requirente, no resulta aplicable a aquellas organizaciones que, al momento del dictado de la mencionada norma, ya contaban con efectores incorporados al Programa o recibían asistencia en el marco de otros programas alimentarios de similar naturaleza financiados por el Gobierno Nacional.
-            </p>
-            <p>
-                Que la DIRECCIÓN DE ASISTENCIA INSTITUCIONAL ALIMENTARIA de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO ha evaluado favorablemente la petición efectuada por la Organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}.
+                Que la DIRECCIÓN DE ASISTENCIA INSTITUCIONAL ALIMENTARIA de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO ha evaluado favorablemente la petición efectuada por la organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }} y propicia el dictado de la presente medida.
             </p>
             <p>Que el Servicio Jurídico pertinente ha tomado la intervención de su competencia.</p>
             <p>
@@ -187,13 +183,13 @@
                 <strong>EL SEÑOR SUBSECRETARIO DE PROMOCIÓN HUMANA DE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO DISPONE:</strong>
             </p>
             <p>
-                <strong>ARTÍCULO 1°.-</strong> Apruébase el Convenio a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO y la Organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}, asociada al CUIT N.° {{ informe.cuit_organizacion }}, que, como Proyecto de Convenio identificado como IF-2025-XX(Pconvenio)XXXX-APN-DNPA#MCH, forma parte integrante de la presente Disposición.
+                <strong>ARTÍCULO 1°.-</strong> Apruébase el Convenio a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO y la organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}, asociada al CUIT N.° {{ informe.cuit_organizacion }}, que, como Proyecto de Convenio identificado como {{ proyecto_convenio.numero_if }}, forma parte integrante de la presente Disposición.
             </p>
             <p>
-                <strong>ARTÍCULO 2°.-</strong> Otórgase el financiamiento, conforme a lo aprobado por Artículo 1°, al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” solicitado por la Organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}, del Programa “ALIMENTAR COMUNIDAD” para la adquisición de alimentos mediante una tarjeta prepaga física o virtual a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo. La carga de fondos se realizará conforme a las disponibilidades financieras y presupuestarias existentes y en los términos y condiciones establecidos en el Convenio referido en el presente acto.
+                <strong>ARTÍCULO 2°.-</strong> Incorpórase al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” designado por la organización {{ informe.nombre_organizacion }} de la provinicia de {{ informe.provincia_organizacion }}, al Programa “ALIMENTAR COMUNIDAD” para la adquisición de alimentos mediante una tarjeta prepaga física a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo. La carga de fondos se realizará conforme a las disponibilidades financieras y presupuestarias existentes y en los términos y condiciones establecidos en el Convenio referido en el presente acto.
             </p>
             <p>
-                <strong>ARTÍCULO 3°.-</strong> Los fondos otorgados a través de la tarjeta prepaga física o virtual, están sujetos a rendición de cuentas documentada, conforme a lo establecido en la Ley de Administración Financiera y de los Sistemas de Control del Sector Público Nacional N.° 24.156, su Decreto Reglamentario N.° 1344/2007 y normas modificatorias y complementarias; la Resolución del entonces Ministerio de Desarrollo Social N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, Resolución del entonces Ministerio de Desarrollo Social N.° 2458 del 23 de agosto de 2004 y lo estipulado en el respectivo Convenio.
+                <strong>ARTÍCULO 3°.-</strong> Los fondos que se otorguen a través de la tarjeta prepaga física, mediante acto administrativo correspondiente, están sujetos a rendición de cuentas documentada, conforme a lo establecido en la Ley de Administración Financiera y de los Sistemas de Control del Sector Público Nacional N.° 24.156, su Decreto Reglamentario N.° 1344/2007 y normas modificatorias y complementarias; la Resolución del entonces Ministerio de Desarrollo Social N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, la Resolución del entonces Ministerio de Desarrollo Social N.° 2458 del 23 de agosto de 2004 y lo estipulado en el respectivo Convenio.
             </p>
             <p>
                 <strong>ARTÍCULO 4°.-</strong> La AUDITORÍA SECTORIAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA de la UNIDAD DE AUDITORÍA INTERNA del MINISTERIO DE CAPITAL HUMANO, la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, y la SINDICATURA GENERAL DE LA NACIÓN (SIGEN) están facultadas para controlar la inversión de los fondos otorgados en el marco de la presente Disposición, en virtud de la normativa mencionada en el Artículo 3° y en el contexto de las acciones de gestión social responsable, monitoreo y seguimiento, ya sea de manera concomitante o posterior a la ejecución del subsidio.
