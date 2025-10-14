@@ -1,13 +1,10 @@
-{% extends "includes/main.html" %};
-{% load static %}
-{% load static crispy_forms_tags %}
-;
-{% load static custom_filters %}
-;
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags custom_filters %}
+
 {% block title %}Informe Técnico: {{ comedor.nombre }}{% endblock %}
-;
+
 {% block titulo-pagina %}Informe Técnico: {{ comedor.nombre }} - Estado: {{ informe_tecnico.estado }}{% endblock %}
-;
+
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item">
@@ -16,204 +13,423 @@
         <div class="breadcrumb-item active">Informe Técnico</div>
     </ol>
 {% endblock %}
+
 {% block content %}
-    <div class="row">
+    <div class="container-fluid">
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
+ 
+            <!-- Errores -->
             {% if form.non_field_errors %}
                 <div class="alert alert-danger">
                     {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
                 </div>
             {% endif %}
-            {% if anexof.non_field_errors %}
+
+            <!-- Campos a subsanar -->
+            {% if campos_a_subsanar %}
                 <div class="alert alert-danger">
-                    {% for error in anexof.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                    <h5>Campos para subsanar</h5>
                 </div>
             {% endif %}
-            <div class="container">
-                {% if campos_a_subsanar %}
-                    <div class="row mt-4">
-                        <h4 class="alert alert-danger" role="alert">Usted tiene campos para subsanar.</h4>
-                    </div>
-                {% endif %}
-                {% if observacion %}
-                    <div class="row mt-1 mb-2 alert alert-light">
-                        <h5>Observaciones:</h5>
-                        {{ observacion.texto }}
-                    </div>
-                {% endif %}
-                <div class="row mt-2">
-                    {% for field in form %}
-                        {% if field.name == "nombre_organizacion" or field.name == "representante_nombre" or field.name == "tipo_espacio" or field.name == "responsable_tarjeta_nombre" or field.name == "prestaciones_desayuno_numero" or field.name == "prestaciones_desayuno_letras" or field.name == "conclusiones" %}
-                        </div>
-                        <div class="row">
-                        {% endif %}
-                        {% if field.label in campos_a_subsanar %}
-                            <div class="col-md-6 mb-2 border border-2 rounded border-danger">{{ field|as_crispy_field }}</div>
-                        {% else %}
-                            {% if field.name == "conclusiones" %}
-                                <div class="col-md-12 mb-2">{{ field|as_crispy_field }}</div>
-                            {% else %}
-                                <div class="col-md-6 mb-2">{{ field|as_crispy_field }}</div>
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %}
+
+            <!-- Observaciones -->
+            {% if observacion %}
+                <div class="alert alert-info">
+                    <h6>Observaciones:</h6>
+                    {{ observacion.texto }}
                 </div>
-                <div class="row mt-3 px-5">
+            {% endif %}
+
+            <!-- Datos de la Organización -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Datos de la Organización</h5>
+                </div>
+                <div class="card-body">
                     <div class="row">
-                        <div class="col-md-12 mb-3 mt-2 h4">Responsable Administrador de los Fondos (titular de tarjeta)</div>
-                        <div class="col-md-6 mb-2">{{ anexof.responsable_apellido|as_crispy_field }}</div>
-                        <div class="col-md-6 mb-2">{{ anexof.responsable_nombre|as_crispy_field }}</div>
-                        <div class="col-md-6 mb-2">{{ anexof.responsable_cuit|as_crispy_field }}</div>
-                        <div class="col-md-6 mb-2">{{ anexof.responsable_domicilio|as_crispy_field }}</div>
-                        <div class="col-md-6 mb-2">{{ anexof.responsable_mail|as_crispy_field }}</div>
-                        <div class="col-md-12"></div>
-                        <div class="col-md-6 mb-2">{{ anexof.total_acreditaciones|as_crispy_field }}</div>
-                        <div class="col-md-6 mb-2">{{ anexof.plazo_ejecucion|as_crispy_field }}</div>
+                        <div class="col-md-6 mb-3{% if 'Número Expediente' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.expediente_nro|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'nombre_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.nombre_organizacion|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'domicilio_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.domicilio_organizacion|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'localidad_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.localidad_organizacion|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'partido_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.partido_organizacion|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'provincia_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.provincia_organizacion|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'telefono_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.telefono_organizacion|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'mail_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.mail_organizacion|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'cuit_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.cuit_organizacion|as_crispy_field }}
+                        </div>
                     </div>
-                    <table class="table table-bordered text-center align-middle mt-4 mb-3">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Comida / Día</th>
-                                <th>Lunes</th>
-                                <th>Martes</th>
-                                <th>Miércoles</th>
-                                <th>Jueves</th>
-                                <th>Viernes</th>
-                                <th>Sábado</th>
-                                <th>Domingo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <th class="text-start">Desayuno</th>
-                                <td>{{ anexof.desayuno_lunes }}</td>
-                                <td>{{ anexof.desayuno_martes }}</td>
-                                <td>{{ anexof.desayuno_miercoles }}</td>
-                                <td>{{ anexof.desayuno_jueves }}</td>
-                                <td>{{ anexof.desayuno_viernes }}</td>
-                                <td>{{ anexof.desayuno_sabado }}</td>
-                                <td>{{ anexof.desayuno_domingo }}</td>
-                            </tr>
-                            <tr>
-                                <th class="text-start">Almuerzo</th>
-                                <td>{{ anexof.almuerzo_lunes }}</td>
-                                <td>{{ anexof.almuerzo_martes }}</td>
-                                <td>{{ anexof.almuerzo_miercoles }}</td>
-                                <td>{{ anexof.almuerzo_jueves }}</td>
-                                <td>{{ anexof.almuerzo_viernes }}</td>
-                                <td>{{ anexof.almuerzo_sabado }}</td>
-                                <td>{{ anexof.almuerzo_domingo }}</td>
-                            </tr>
-                            <tr>
-                                <th class="text-start">Merienda</th>
-                                <td>{{ anexof.merienda_lunes }}</td>
-                                <td>{{ anexof.merienda_martes }}</td>
-                                <td>{{ anexof.merienda_miercoles }}</td>
-                                <td>{{ anexof.merienda_jueves }}</td>
-                                <td>{{ anexof.merienda_viernes }}</td>
-                                <td>{{ anexof.merienda_sabado }}</td>
-                                <td>{{ anexof.merienda_domingo }}</td>
-                            </tr>
-                            <tr>
-                                <th class="text-start">Cena</th>
-                                <td>{{ anexof.cena_lunes }}</td>
-                                <td>{{ anexof.cena_martes }}</td>
-                                <td>{{ anexof.cena_miercoles }}</td>
-                                <td>{{ anexof.cena_jueves }}</td>
-                                <td>{{ anexof.cena_viernes }}</td>
-                                <td>{{ anexof.cena_sabado }}</td>
-                                <td>{{ anexof.cena_domingo }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
-                <div class="mt-3">
-                    <a class="btn btn-secondary"
-                       href="{% url 'admisiones_tecnicos_editar' admision.id %}">Cancelar</a>
-                    <button type="submit" name="action" value="draft" class="btn btn-primary">Guardar borrador</button>
-                    <button type="submit" name="action" value="submit" class="btn btn-success">Finalizar</button>
+            </div>
+
+            <!-- Datos del Representante -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Datos del Representante</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3{% if 'representante_nombre' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.representante_nombre|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'representante_cargo' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.representante_cargo|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'representante_dni' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.representante_dni|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos del Espacio -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Datos del Comedor/Merendero</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3{% if 'tipo_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.tipo_espacio|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'nombre_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.nombre_espacio|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'domicilio_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.domicilio_espacio|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'barrio_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.barrio_espacio|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'localidad_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.localidad_espacio|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'partido_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.partido_espacio|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'provincia_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.provincia_espacio|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Responsable de Tarjeta -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Responsable de la Tarjeta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_nombre' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_tarjeta_nombre|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_dni' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_tarjeta_dni|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_domicilio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_tarjeta_domicilio|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_localidad' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_tarjeta_localidad|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_provincia' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_tarjeta_provincia|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_telefono' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_tarjeta_telefono|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_tarjeta_mail' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_tarjeta_mail|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Responsable Administrativo -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Responsable Administrativo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3{% if 'responsable_admin_apellido' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_admin_apellido|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_admin_nombre' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_admin_nombre|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_admin_cuit' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_admin_cuit|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_admin_domicilio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_admin_domicilio|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'responsable_admin_mail' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.responsable_admin_mail|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Solicitudes por Día -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Solicitudes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle text-center mb-0">
+                            <thead class="table-light">
+                                <tr class="text-uppercase small">
+                                    <th scope="col" class="fw-semibold">Comida</th>
+                                    <th scope="col">Lun</th>
+                                    <th scope="col">Mar</th>
+                                    <th scope="col">Mié</th>
+                                    <th scope="col">Jue</th>
+                                    <th scope="col">Vie</th>
+                                    <th scope="col">Sáb</th>
+                                    <th scope="col">Dom</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th scope="row" class="text-nowrap fw-semibold">Desayuno</th>
+                                    <td class="p-1">{{ form.solicitudes_desayuno_lunes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_desayuno_martes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_desayuno_miercoles }}</td>
+                                    <td class="p-1">{{ form.solicitudes_desayuno_jueves }}</td>
+                                    <td class="p-1">{{ form.solicitudes_desayuno_viernes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_desayuno_sabado }}</td>
+                                    <td class="p-1">{{ form.solicitudes_desayuno_domingo }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-nowrap fw-semibold">Almuerzo</th>
+                                    <td class="p-1">{{ form.solicitudes_almuerzo_lunes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_almuerzo_martes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_almuerzo_miercoles }}</td>
+                                    <td class="p-1">{{ form.solicitudes_almuerzo_jueves }}</td>
+                                    <td class="p-1">{{ form.solicitudes_almuerzo_viernes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_almuerzo_sabado }}</td>
+                                    <td class="p-1">{{ form.solicitudes_almuerzo_domingo }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-nowrap fw-semibold">Merienda</th>
+                                    <td class="p-1">{{ form.solicitudes_merienda_lunes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_merienda_martes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_merienda_miercoles }}</td>
+                                    <td class="p-1">{{ form.solicitudes_merienda_jueves }}</td>
+                                    <td class="p-1">{{ form.solicitudes_merienda_viernes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_merienda_sabado }}</td>
+                                    <td class="p-1">{{ form.solicitudes_merienda_domingo }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row" class="text-nowrap fw-semibold">Cena</th>
+                                    <td class="p-1">{{ form.solicitudes_cena_lunes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_cena_martes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_cena_miercoles }}</td>
+                                    <td class="p-1">{{ form.solicitudes_cena_jueves }}</td>
+                                    <td class="p-1">{{ form.solicitudes_cena_viernes }}</td>
+                                    <td class="p-1">{{ form.solicitudes_cena_sabado }}</td>
+                                    <td class="p-1">{{ form.solicitudes_cena_domingo }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prestaciones Aprobadas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Prestaciones Aprobadas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle text-center mb-0">
+                            <thead class="table-light">
+                                <tr class="text-uppercase small">
+                                    <th scope="col" class="fw-semibold">Comida</th>
+                                    <th scope="col">Lun</th>
+                                    <th scope="col">Mar</th>
+                                    <th scope="col">Mié</th>
+                                    <th scope="col">Jue</th>
+                                    <th scope="col">Vie</th>
+                                    <th scope="col">Sáb</th>
+                                    <th scope="col">Dom</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>Desayuno</th>
+                                    <td class="p-1">{{ form.aprobadas_desayuno_lunes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_desayuno_martes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_desayuno_miercoles }}</td>
+                                    <td class="p-1">{{ form.aprobadas_desayuno_jueves }}</td>
+                                    <td class="p-1">{{ form.aprobadas_desayuno_viernes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_desayuno_sabado }}</td>
+                                    <td class="p-1">{{ form.aprobadas_desayuno_domingo }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Almuerzo</th>
+                                    <td class="p-1">{{ form.aprobadas_almuerzo_lunes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_almuerzo_martes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_almuerzo_miercoles }}</td>
+                                    <td class="p-1">{{ form.aprobadas_almuerzo_jueves }}</td>
+                                    <td class="p-1">{{ form.aprobadas_almuerzo_viernes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_almuerzo_sabado }}</td>
+                                    <td class="p-1">{{ form.aprobadas_almuerzo_domingo }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Merienda</th>
+                                    <td class="p-1">{{ form.aprobadas_merienda_lunes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_merienda_martes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_merienda_miercoles }}</td>
+                                    <td class="p-1">{{ form.aprobadas_merienda_jueves }}</td>
+                                    <td class="p-1">{{ form.aprobadas_merienda_viernes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_merienda_sabado }}</td>
+                                    <td class="p-1">{{ form.aprobadas_merienda_domingo }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Cena</th>
+                                    <td class="p-1">{{ form.aprobadas_cena_lunes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_cena_martes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_cena_miercoles }}</td>
+                                    <td class="p-1">{{ form.aprobadas_cena_jueves }}</td>
+                                    <td class="p-1">{{ form.aprobadas_cena_viernes }}</td>
+                                    <td class="p-1">{{ form.aprobadas_cena_sabado }}</td>
+                                    <td class="p-1">{{ form.aprobadas_cena_domingo }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Información Adicional</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3{% if 'total_acreditaciones' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.total_acreditaciones|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'plazo_ejecucion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.plazo_ejecucion|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'nota_gde_if' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.nota_gde_if|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'constancia_subsidios_dnsa' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.constancia_subsidios_dnsa|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'constancia_subsidios_pnud' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.constancia_subsidios_pnud|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'partido_poblacion_destinataria' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.partido_poblacion_destinataria|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'provincia_poblacion_destinataria' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.provincia_poblacion_destinataria|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'if_relevamiento' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.if_relevamiento|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6 mb-3{% if 'fecha_vencimiento_mandatos' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.fecha_vencimiento_mandatos|as_crispy_field }}
+                        </div>
+                        <div class="col-12 mb-3{% if 'conclusiones' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.conclusiones|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campos específicos según tipo -->
+            {% if tipo == 'base' %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Campos Específicos - Organización de Base</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3{% if 'declaracion_jurada_recepcion_subsidios' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.declaracion_jurada_recepcion_subsidios|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'constancia_inexistencia_percepcion_otros_subsidios' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.constancia_inexistencia_percepcion_otros_subsidios|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'organizacion_avalista_1' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.organizacion_avalista_1|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'organizacion_avalista_2' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.organizacion_avalista_2|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'material_difusion_vinculado' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.material_difusion_vinculado|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% elif tipo == 'juridico' %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Campos Específicos - Organización Jurídica</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3{% if 'validacion_registro_nacional' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.validacion_registro_nacional|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3{% if 'IF_relevamiento_territorial' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.IF_relevamiento_territorial|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Botones -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'admisiones_tecnicos_editar' admision.id %}"
+                           class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                        <div>
+                            <button type="submit"
+                                    name="action"
+                                    value="draft"
+                                    class="btn btn-primary me-2">
+                                <i class="fas fa-save"></i> Guardar Borrador
+                            </button>
+                            <button type="submit" name="action" value="submit" class="btn btn-success">
+                                <i class="fas fa-paper-plane"></i> Finalizar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
     </div>
-{% endblock %}
-{% block customJS %}
-    <script>
-function numeroALetras(num) {
-    num = parseInt(num);
-    if (isNaN(num) || num < 0 || num > 999999) return "";
-
-    const unidades = ["", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve"];
-    const especiales = ["diez", "once", "doce", "trece", "catorce", "quince", 
-                        "dieciséis", "diecisiete", "dieciocho", "diecinueve"];
-    const decenas = ["", "", "veinte", "treinta", "cuarenta", "cincuenta", 
-                     "sesenta", "setenta", "ochenta", "noventa"];
-    const centenas = ["", "ciento", "doscientos", "trescientos", "cuatrocientos", 
-                      "quinientos", "seiscientos", "setecientos", "ochocientos", "novecientos"];
-
-    if (num === 0) return "Cero";
-
-    function convertirMenorAMil(n) {
-        let texto = "";
-        if (n === 100) return "cien";
-        if (n > 100) {
-            texto += centenas[Math.floor(n / 100)] + " ";
-            n %= 100;
-        }
-        if (n >= 20) {
-            texto += decenas[Math.floor(n / 10)];
-            if (n % 10 !== 0) texto += " y " + unidades[n % 10];
-        } else if (n >= 10) {
-            texto += especiales[n - 10];
-        } else if (n > 0) {
-            texto += unidades[n];
-        }
-        return texto.trim();
-    }
-
-    let miles = Math.floor(num / 1000);
-    let resto = num % 1000;
-    let resultado = "";
-
-    if (miles > 0) {
-        if (miles === 1) {
-            resultado += "mil";
-        } else {
-            resultado += convertirMenorAMil(miles) + " mil";
-        }
-    }
-
-    if (resto > 0) {
-        if (resultado !== "") resultado += " ";
-        resultado += convertirMenorAMil(resto);
-    }
-
-    return capitalizar(resultado.trim());
-}
-
-function capitalizar(texto) {
-    return texto.charAt(0).toUpperCase() + texto.slice(1);
-}
-
-
-const campos = [
-    ["prestaciones_desayuno_numero", "prestaciones_desayuno_letras"],
-    ["prestaciones_almuerzo_numero", "prestaciones_almuerzo_letras"],
-    ["prestaciones_merienda_numero", "prestaciones_merienda_letras"],
-    ["prestaciones_cena_numero", "prestaciones_cena_letras"],
-];
-
-campos.forEach(([campoNumero, campoLetras]) => {
-    const inputNum = document.getElementById("id_" + campoNumero);
-    const inputLetra = document.getElementById("id_" + campoLetras);
-
-    if (inputNum && inputLetra) {
-        inputNum.addEventListener("input", () => {
-            let valor = inputNum.value.trim();
-            inputLetra.value = numeroALetras(valor || "0");
-        });
-    }
-});
-    </script>
 {% endblock %}
