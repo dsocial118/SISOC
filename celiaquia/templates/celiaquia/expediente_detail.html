@@ -21,7 +21,7 @@
                 {% endif %}
             </div>
             <div class="d-flex gap-2">
-                <!-- Subir/Reprocesar Cruce: TÃ©cnico o Coordinador, no Provincia -->
+                <!-- Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia -->
                 {% if is_tec or is_coord %}
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
                         <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
@@ -119,7 +119,7 @@
                         <strong>Provincia:</strong> {{ expediente.usuario_provincia.profile.provincia|default:"-" }}
                     </p>
                     <p>
-                        <strong>Tecnicos asignados:</strong>
+                        <strong>Técnicos asignados:</strong>
                         {% if expediente.asignaciones_tecnicos.exists %}
                             {% for asignacion in expediente.asignaciones_tecnicos.all %}
                                 <span class="badge bg-info me-1">{{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}</span>
@@ -384,7 +384,7 @@
                                         <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
                                             <div class="card-body">
                                                 <div class="row gy-3 gx-3">
-                                                    <!-- Col 1: Datos bÃ¡sicos -->
+                                                    <!-- Col 1: Datos básicos -->
                                                     <div class="col-lg-3 col-md-5">
                                                         <h6 class="mb-2">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</h6>
                                                         <div class="small text-muted mb-2">DNI: {{ leg.ciudadano.documento }}</div>
@@ -406,7 +406,7 @@
                                                     <!-- Col 2: Observaciones -->
                                                     <div class="col-lg-4 col-md-7">
                                                         {% if is_prov %}
-                                                            <div class="small muted">Observacion (subsanacion):</div>
+                                                            <div class="small muted">Observación (subsanación):</div>
                                                             <div class="mt-1">
                                                                 {% if leg.subsanacion_motivo %}
                                                                     <div class="p-2 rounded"
@@ -415,7 +415,7 @@
                                                                         <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                                     </div>
                                                                 {% else %}
-                                                                    <span class="muted">â€”</span>
+                                                                    <span class="muted">-</span>
                                                                 {% endif %}
                                                             </div>
                                                             {% if leg.subsanacion_renaper_comentario %}
@@ -438,7 +438,7 @@
                                                                         <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                                     </div>
                                                                 {% else %}
-                                                                    <span class="muted">â€”</span>
+                                                                    <span class="muted">-</span>
                                                                 {% endif %}
                                                             </div>
                                                             {% if leg.subsanacion_renaper_comentario %}
@@ -456,11 +456,11 @@
                                                     <!-- Col 3: Archivos -->
                                                     <div class="col-lg-5">
                                                         {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
-                                                        <!-- Respuesta subsanacion Renaper -->
+                                                        <!-- Respuesta subsanación Renaper -->
                                                         {% if leg.revision_tecnico == 'SUBSANAR' %}
                                                             <div class="file-row" style="background:rgba(255,193,7,.1);">
                                                                 <div class="d-flex align-items-center gap-2">
-                                                                    <span class="small muted">Respuesta subsanacion:</span>
+                                                                    <span class="small muted">Respuesta subsanación:</span>
                                                                     {% if leg.subsanacion_renaper_archivo %}
                                                                         <a href="{{ leg.subsanacion_renaper_archivo.url }}"
                                                                            target="_blank"
@@ -487,7 +487,7 @@
                                                         {% elif leg.revision_tecnico == 'SUBSANADO' %}
                                                             <div class="file-row" style="background:rgba(40,167,69,.1);">
                                                                 <div class="d-flex align-items-center gap-2">
-                                                                    <span class="small muted">Respuesta subsanacion:</span>
+                                                                    <span class="small muted">Respuesta subsanación:</span>
                                                                     {% if leg.subsanacion_renaper_archivo %}
                                                                         <a href="{{ leg.subsanacion_renaper_archivo.url }}"
                                                                            target="_blank"
@@ -567,7 +567,7 @@
                         <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
                             <div class="card-body">
                                 <div class="row gy-3 gx-3">
-                                    <!-- Col 1: Datos bÃ¡sicos -->
+                                    <!-- Col 1: Datos básicos -->
                                     <div class="col-lg-3 col-md-5">
                                         <h6 class="mb-2">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</h6>
                                         <div class="small text-muted mb-2">DNI: {{ leg.ciudadano.documento }}</div>
@@ -589,7 +589,7 @@
                                     <!-- Col 2: Observaciones -->
                                     <div class="col-lg-4 col-md-7">
                                     {% if is_prov %}
-                                        <div class="small muted">Observacion (subsanacion):</div>
+                                        <div class="small muted">Observación (subsanación):</div>
                                         <div class="mt-1">
                                             {% if leg.subsanacion_motivo %}
                                                 <div class="p-2 rounded"
@@ -598,7 +598,7 @@
                                                     <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                 </div>
                                             {% else %}
-                                                <span class="muted">â€”</span>
+                                                <span class="muted">-</span>
                                             {% endif %}
                                         </div>
                                         {% if leg.subsanacion_renaper_comentario %}
@@ -621,7 +621,7 @@
                                                     <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                 </div>
                                             {% else %}
-                                                <span class="muted">â€”</span>
+                                                <span class="muted">-</span>
                                             {% endif %}
                                         </div>
                                         {% if leg.subsanacion_renaper_comentario %}
@@ -754,10 +754,10 @@
                 <button id="btn-confirm" class="btn btn-success">Confirmar Envi­o</button>
             </div>
         {% endif %}
-        <!-- Confirmar subsanacion: solo Provincia en ASIGNADO y si hay_subsanar -->
+        <!-- Confirmar subsanación: solo Provincia en ASIGNADO y si hay_subsanar -->
         {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
             <div class="text-end mt-3">
-                <button id="btn-confirm-subs" class="btn btn-warning">Confirmar subsanacion</button>
+                <button id="btn-confirm-subs" class="btn btn-warning">Confirmar subsanación</button>
             </div>
         {% endif %}
     </div>
@@ -765,14 +765,14 @@
     {% if expediente.estado.id == 2 and is_coord %}
         <div class="card mb-4">
             <div class="card-header bg-light">
-                <h5 class="mb-0">Asignar Tecnico</h5>
+                <h5 class="mb-0">Asignar Técnico</h5>
             </div>
             <div class="card-body">
                 <form method="post"
                       action="{% url 'expediente_asignar_tecnico' expediente.pk %}">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="tecnico">Seleccionar Tecnico:</label>
+                        <label for="tecnico">Seleccionar Técnico:</label>
                         <select name="tecnico_id" id="tecnico" class="form-control">
                             {% for tecnico in tecnicos %}
                                 <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
@@ -840,7 +840,7 @@
             <form class="modal-content" id="form-subsanar" method="post">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalSubsanarLabel">Solicitud de subsanacion</h5>
+                    <h5 class="modal-title" id="modalSubsanarLabel">Solicitud de subsanación</h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -859,7 +859,7 @@
                                   maxlength="500"></textarea>
                     </div>
                     <small class="text-muted d-block">
-                        El legajo quedara en estado <strong>SUBSANAR</strong> y la provincia podra actualizar los archivos.
+                        El legajo quedará en estado <strong>SUBSANAR</strong> y la provincia podrá actualizar los archivos.
                     </small>
                 </div>
                 <div class="modal-footer">
@@ -924,7 +924,7 @@
                       enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="modal-header">
-                        <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a subsanacion Renaper</h5>
+                        <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a subsanación Renaper</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -970,7 +970,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalValidarRenaperLabel">Validacion Renaper</h5>
+                    <h5 class="modal-title" id="modalValidarRenaperLabel">Validación Renaper</h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -986,7 +986,7 @@
                     </div>
                     <div id="renaper-comparacion" style="display: none;">
                         <h6 class="mb-3">
-                            Comparacion de datos: <span id="ciudadano-nombre"></span>
+                            Comparación de datos: <span id="ciudadano-nombre"></span>
                         </h6>
                         <div class="row">
                             <div class="col-md-6">
