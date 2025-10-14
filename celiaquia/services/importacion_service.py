@@ -117,7 +117,7 @@ class ImportacionService:
 
         # Normalizar nombres de columnas y manejar duplicados
         normalized_cols = [_norm_col(c) for c in df.columns]
-        
+
         # Resolver duplicados agregando sufijo numérico
         seen = {}
         unique_cols = []
@@ -128,13 +128,19 @@ class ImportacionService:
             else:
                 seen[col] = 0
                 unique_cols.append(col)
-        
+
         df.columns = unique_cols
         df = df.fillna("")
         for c in df.columns:
             try:
                 if hasattr(df[c], "dt"):
-                    df[c] = df[c].apply(lambda x: x.date() if hasattr(x, "date") and pd.notna(x) else ("" if pd.isna(x) else x))
+                    df[c] = df[c].apply(
+                        lambda x: (
+                            x.date()
+                            if hasattr(x, "date") and pd.notna(x)
+                            else ("" if pd.isna(x) else x)
+                        )
+                    )
             except Exception:
                 pass
 
@@ -157,7 +163,7 @@ class ImportacionService:
         # Verificar columnas únicas antes de convertir
         if len(set(sample_df.columns)) != len(sample_df.columns):
             logger.warning("Columnas duplicadas detectadas en preview")
-        
+
         sample = sample_df.to_dict(orient="records")
 
         # Agregar columna ID al inicio y convertir IDs a nombres
@@ -621,12 +627,14 @@ class ImportacionService:
                     continue
 
                 # Verificar si hay datos del responsable
-                tiene_responsable = any([
-                    payload.get("apellido_responsable"),
-                    payload.get("nombre_responsable"),
-                    payload.get("fecha_nacimiento_responsable")
-                ])
-                
+                tiene_responsable = any(
+                    [
+                        payload.get("apellido_responsable"),
+                        payload.get("nombre_responsable"),
+                        payload.get("fecha_nacimiento_responsable"),
+                    ]
+                )
+
                 # OK para crear legajo del hijo
                 legajos_crear.append(
                     ExpedienteCiudadano(
@@ -637,7 +645,7 @@ class ImportacionService:
                 )
                 existentes_ids.add(cid)
                 validos += 1
-                
+
                 # Si hay datos del responsable, crear también el legajo del responsable
                 if tiene_responsable:
                     try:
@@ -645,7 +653,9 @@ class ImportacionService:
                         responsable_payload = {
                             "apellido": payload.get("apellido_responsable"),
                             "nombre": payload.get("nombre_responsable"),
-                            "fecha_nacimiento": payload.get("fecha_nacimiento_responsable"),
+                            "fecha_nacimiento": payload.get(
+                                "fecha_nacimiento_responsable"
+                            ),
                             "sexo": payload.get("sexo_responsable"),
                             "telefono": payload.get("telefono_responsable"),
                             "email": payload.get("email_responsable"),
@@ -655,18 +665,20 @@ class ImportacionService:
                         doc_resp = payload.get("documento_responsable")
                         if doc_resp:
                             responsable_payload["documento"] = doc_resp
-                        
+
                         # Procesar domicilio del responsable
                         domicilio_resp = payload.get("domicilio_responsable", "")
                         if domicilio_resp:
                             # Intentar extraer calle y altura del domicilio
-                            match = re.match(r"^(.+?)\s+(\d+)\s*$", domicilio_resp.strip())
+                            match = re.match(
+                                r"^(.+?)\s+(\d+)\s*$", domicilio_resp.strip()
+                            )
                             if match:
                                 responsable_payload["calle"] = match.group(1).strip()
                                 responsable_payload["altura"] = match.group(2)
                             else:
                                 responsable_payload["calle"] = domicilio_resp
-                        
+
                         # Procesar localidad del responsable
                         localidad_resp = payload.get("localidad_responsable")
                         if localidad_resp:
@@ -674,38 +686,55 @@ class ImportacionService:
                             try:
                                 localidad_obj = Localidad.objects.filter(
                                     nombre__icontains=localidad_resp,
-                                    municipio__provincia_id=provincia_usuario_id
+                                    municipio__provincia_id=provincia_usuario_id,
                                 ).first()
                                 if localidad_obj:
                                     responsable_payload["localidad"] = localidad_obj.pk
-                                    responsable_payload["municipio"] = localidad_obj.municipio.pk
+                                    responsable_payload["municipio"] = (
+                                        localidad_obj.municipio.pk
+                                    )
                             except Exception as e:
-                                add_warning(offset, "localidad_responsable", f"No se pudo procesar: {e}")
-                        
+                                add_warning(
+                                    offset,
+                                    "localidad_responsable",
+                                    f"No se pudo procesar: {e}",
+                                )
+
                         # Generar documento ficticio para el responsable si no tiene
                         if not responsable_payload.get("documento"):
                             # Usar timestamp + offset para generar un documento único
                             import time
-                            responsable_payload["documento"] = f"99{int(time.time())}{offset:04d}"[-11:]
-                        
+
+                            responsable_payload["documento"] = (
+                                f"99{int(time.time())}{offset:04d}"[-11:]
+                            )
+
                         # Convertir fecha de nacimiento del responsable
                         if responsable_payload.get("fecha_nacimiento"):
                             try:
-                                responsable_payload["fecha_nacimiento"] = CiudadanoService._to_date(
-                                    responsable_payload["fecha_nacimiento"]
+                                responsable_payload["fecha_nacimiento"] = (
+                                    CiudadanoService._to_date(
+                                        responsable_payload["fecha_nacimiento"]
+                                    )
                                 )
                             except ValidationError:
-                                add_warning(offset, "fecha_nacimiento_responsable", "Fecha inválida")
+                                add_warning(
+                                    offset,
+                                    "fecha_nacimiento_responsable",
+                                    "Fecha inválida",
+                                )
                                 responsable_payload.pop("fecha_nacimiento", None)
-                        
+
                         # Crear ciudadano responsable
-                        ciudadano_responsable = CiudadanoService.get_or_create_ciudadano(
-                            datos=responsable_payload,
-                            usuario=usuario,
-                            expediente=expediente,
-                            programa_id=3,
+                        ciudadano_responsable = (
+                            CiudadanoService.get_or_create_ciudadano(
+                                datos=responsable_payload,
+                                usuario=usuario,
+                                expediente=expediente,
+                                programa_id=3,
+                            )
                         )
-                        
+
                         if ciudadano_responsable and ciudadano_responsable.pk:
                             cid_resp = ciudadano_responsable.pk
 
@@ -737,11 +766,21 @@ class ImportacionService:
                                 existentes_ids.add(cid_resp)
                                 validos += 1
                             else:
-                                add_warning(offset, "responsable", "Responsable duplicado o ya existe")
-                        
+                                add_warning(
+                                    offset,
+                                    "responsable",
+                                    "Responsable duplicado o ya existe",
+                                )
+
                     except Exception as e:
-                        add_warning(offset, "responsable", f"Error creando responsable: {str(e)}")
-                        logger.error("Error creando responsable en fila %s: %s", offset, e)
+                        add_warning(
+                            offset,
+                            "responsable",
+                            f"Error creando responsable: {str(e)}",
+                        )
+                        logger.error(
+                            "Error creando responsable en fila %s: %s", offset, e
+                        )
 
             except Exception as e:
                 errores += 1
@@ -756,7 +795,7 @@ class ImportacionService:
                     legajos_crear, batch_size=batch_size
                 )
                 logger.info("Legajos creados exitosamente")
-                
+
                 # Crear relaciones familiares
                 if relaciones_familiares:
                     try:
@@ -787,7 +826,11 @@ class ImportacionService:
                                     )
                                 )
                             except Exception as e:
-                                logger.error("Error preparando relacion familiar fila %s: %s", rel["fila"], e)
+                                logger.error(
+                                    "Error preparando relacion familiar fila %s: %s",
+                                    rel["fila"],
+                                    e,
+                                )
 
                         if relaciones_crear:
                             GrupoFamiliar.objects.bulk_create(
@@ -795,15 +838,20 @@ class ImportacionService:
                                 batch_size=batch_size,
                                 ignore_conflicts=True,  # Evitar errores por duplicados
                             )
-                            logger.info("Creadas %s relaciones familiares", len(relaciones_crear))
+                            logger.info(
+                                "Creadas %s relaciones familiares",
+                                len(relaciones_crear),
+                            )
                     except Exception as e:
                         logger.error("Error creando relaciones familiares: %s", e)
-                        warnings.append({
-                            "fila": "general", 
-                            "campo": "relaciones_familiares", 
-                            "detalle": f"Error creando relaciones: {str(e)}"
-                        })
-                        
+                        warnings.append(
+                            {
+                                "fila": "general",
+                                "campo": "relaciones_familiares",
+                                "detalle": f"Error creando relaciones: {str(e)}",
+                            }
+                        )
+
             except Exception as e:
                 logger.error("Error en bulk_create de legajos: %s", e)
         else:
