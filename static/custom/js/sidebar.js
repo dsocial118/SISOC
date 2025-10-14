@@ -30,9 +30,11 @@ function setupScrollListeners() {
     "scroll",
     () => {
       const visiblePx = getFooterVisiblePixels();
-      console.log(`Sidebar.js::Footer visible: ${visiblePx}px`);
       let sidebarHeight = `calc(100vh - ${visiblePx + 70}px)`;
       const sidebar = document.querySelector(".sidebar-wrapper");
+      if (!sidebar) {
+        return;
+      }
       sidebar.style.height = sidebarHeight;
     },
     { passive: true }
