@@ -31,7 +31,9 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                     data-bs-target="#modalSubirArchivo"
                     data-legajo-id="{{ legajo.pk }}"
                     data-expediente-id="{{ expediente.pk }}"
-                    data-file-field="archivo2">
+                    data-file-field="archivo2"
+                    data-archivo2-label="{{ legajo.archivos_requeridos.archivo2 }}"
+                    data-archivo3-label="{{ legajo.archivos_requeridos.archivo3 }}">
                 {% if legajo.archivo2 %}
                     Editar
                 {% else %}
@@ -64,7 +66,9 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                     data-bs-target="#modalSubirArchivo"
                     data-legajo-id="{{ legajo.pk }}"
                     data-expediente-id="{{ expediente.pk }}"
-                    data-file-field="archivo3">
+                    data-file-field="archivo3"
+                    data-archivo2-label="{{ legajo.archivos_requeridos.archivo2 }}"
+                    data-archivo3-label="{{ legajo.archivos_requeridos.archivo3 }}">
                 {% if legajo.archivo3 %}
                     Editar
                 {% else %}
