@@ -160,9 +160,7 @@ class FamiliaService:
         """
 
         try:
-            legajos = list(
-                expediente.expediente_ciudadanos.select_related("ciudadano")
-            )
+            legajos = list(expediente.expediente_ciudadanos.select_related("ciudadano"))
             ciudadanos_ids = [legajo.ciudadano_id for legajo in legajos]
 
             responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)
