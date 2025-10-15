@@ -1,5 +1,6 @@
-from django.http import HttpResponseRedirect, Http404
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponseRedirect, Http404
 from django.views.generic import (
     ListView,
     DetailView,
@@ -14,7 +15,7 @@ from expedientespagos.services import ExpedientesPagosService
 from comedores.models import Comedor
 
 
-class ExpedientesPagosListView(ListView):
+class ExpedientesPagosListView(LoginRequiredMixin, ListView):
     model = ExpedientePago
     template_name = "expedientespagos_list.html"
     context_object_name = "expedientespagos"
@@ -64,7 +65,7 @@ class ExpedientesPagosListView(ListView):
         return context
 
 
-class ExpedientesPagosDetailView(DetailView):
+class ExpedientesPagosDetailView(LoginRequiredMixin, DetailView):
     model = ExpedientePago
     template_name = "expedientespagos_detail.html"
     context_object_name = "expediente_pago"
@@ -77,7 +78,7 @@ class ExpedientesPagosDetailView(DetailView):
         return context
 
 
-class ExpedientesPagosCreateView(CreateView):
+class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
     model = ExpedientePago
     template_name = "expedientespagos_form.html"
     form_class = ExpedientePagoForm
@@ -120,7 +121,7 @@ class ExpedientesPagosCreateView(CreateView):
             return self.form_invalid(form)
 
 
-class ExpedientesPagosUpdateView(UpdateView):
+class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
     model = ExpedientePago
     template_name = "expedientespagos_form.html"
     form_class = ExpedientePagoForm
@@ -163,7 +164,7 @@ class ExpedientesPagosUpdateView(UpdateView):
             return self.form_invalid(form)
 
 
-class ExpedientesPagosDeleteView(DeleteView):
+class ExpedientesPagosDeleteView(LoginRequiredMixin, DeleteView):
     model = ExpedientePago
     template_name = "expedientespagos_confirm_delete.html"
 
