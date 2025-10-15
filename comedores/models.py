@@ -147,6 +147,19 @@ class Comedor(models.Model):
         default="Sin Ingreso",
     )
 
+    ESTADOS_GENERALES = [
+        ("Activo", "Activo"),
+        ("Inactivo", "Inactivo"),
+        ("Sin definir", "Sin definir"),
+    ]
+
+    estado_general = models.CharField(
+        max_length=32,
+        choices=ESTADOS_GENERALES,
+        default="Activo",
+        verbose_name="Estado general",
+    )
+
     direccion_validator = RegexValidator(
         regex=r"^[a-zA-Z0-9\s.,áéíóúÁÉÍÓÚñÑ-]*$",
         message="La dirección solo puede contener letras, números, espacios y los caracteres ., -",
