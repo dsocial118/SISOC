@@ -82569,14 +82569,6 @@
   },
   {
     "model": "core.localidad",
-    "pk": 10285,
-    "fields": {
-      "nombre": "Fortín Acha",
-      "municipio": 109
-    }
-  },
-  {
-    "model": "core.localidad",
     "pk": 10286,
     "fields": {
       "nombre": "Vedia",
@@ -82740,14 +82732,6 @@
     "pk": 10306,
     "fields": {
       "nombre": "Pigüé",
-      "municipio": 147
-    }
-  },
-  {
-    "model": "core.localidad",
-    "pk": 10307,
-    "fields": {
-      "nombre": "Colonia San Martín",
       "municipio": 147
     }
   },
@@ -83173,14 +83157,6 @@
     "fields": {
       "nombre": "Miramar de Ansenuza",
       "municipio": 412
-    }
-  },
-  {
-    "model": "core.localidad",
-    "pk": 10361,
-    "fields": {
-      "nombre": "Villa Concepción del Tío",
-      "municipio": 421
     }
   },
   {
