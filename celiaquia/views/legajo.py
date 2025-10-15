@@ -26,7 +26,10 @@ class LegajoArchivoUploadView(View):
         )
 
         # Validar permisos usando función centralizada
-        can_edit_legajo_files(request.user, self.exp_ciud.expediente, self.exp_ciud)
+        try:
+            can_edit_legajo_files(request.user, self.exp_ciud.expediente, self.exp_ciud)
+        except PermissionDenied as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=403)
 
         return super().dispatch(request, *args, **kwargs)
 
