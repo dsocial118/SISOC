@@ -14,7 +14,7 @@
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
-                   class="btn btn-outline-secondary btn-sm">â† Volver</a>
+                   class="btn btn-outline-secondary btn-sm">Volver</a>
                 {% if expediente.estado.nombre == 'CREADO' %}
                     <a href="{% url 'expediente_update' expediente.pk %}"
                        class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
@@ -231,7 +231,6 @@
                         <select id="preview-page-size"
                                 class="form-select form-select-sm"
                                 style="width: auto">
-                            <option value="5">5</option>
                             <option value="10" selected>10</option>
                             <option value="15">15</option>
                             <option value="25">25</option>
@@ -310,7 +309,7 @@
                     <table class="table table-hover" style="color: #e0e0e0;">
                         <thead style="background: #13212f;">
                             <tr>
-                                <th width="25%">Beneficiario</th>
+                                <th width="25%">Persona</th>
                                 <th width="15%">Estado</th>
                                 <th width="15%">Archivos</th>
                                 <th width="30%">Observaciones</th>
@@ -319,67 +318,395 @@
                         </thead>
                         <tbody>
                             {% for leg in legajos %}
-                                <tr class="{% if leg.revision_tecnico == 'RECHAZADO' %}table-danger{% elif leg.revision_tecnico == 'APROBADO' %}table-success{% endif %}" {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% endif %}>
-                                    <td>
-                                        <div>
-                                            <div class="fw-semibold">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
-                                            <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
-                                            {% if leg.es_responsable %}
-                                                <small class="badge bg-info mt-1">Responsable</small>
+                                {% if leg.es_responsable %}
+                                    {# Fila del Responsable #}
+                                    <tr class="{% if leg.revision_tecnico == 'RECHAZADO' %}table-danger{% elif leg.revision_tecnico == 'APROBADO' %}table-success{% endif %}" 
+                                        {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107; background-color: rgba(255,255,255,0.02);"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8; background-color: rgba(255,255,255,0.02);"{% else %}style="background-color: rgba(255,255,255,0.02);"{% endif %}>
+                                        <td>
+                                            <div>
+                                                <div class="fw-bold">👨👩👧👦 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
+                                                <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
+                                                <span class="badge bg-info ms-2">Responsable</span>
                                                 {% if leg.hijos_a_cargo %}
-                                                    <small class="text-muted d-block mt-1">A cargo de: 
-                                                        {% for hijo in leg.hijos_a_cargo %}
-                                                            {{ hijo.nombre }} {{ hijo.apellido }}{% if not forloop.last %}, {% endif %}
-                                                        {% endfor %}
-                                                    </small>
+                                                    <small class="text-muted d-block mt-1">Tiene {{ leg.hijos_a_cargo|length }} hijo{{ leg.hijos_a_cargo|length|pluralize }} a cargo</small>
                                                 {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if leg.revision_tecnico == 'APROBADO' %}
+                                                <span class="badge bg-success">Aprobado</span>
+                                            {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                                                <span class="badge bg-danger">Rechazado</span>
+                                            {% elif leg.revision_tecnico == 'SUBSANAR' %}
+                                                <span class="badge bg-warning text-dark">Subsanar</span>
+                                            {% elif leg.revision_tecnico == 'SUBSANADO' %}
+                                                <span class="badge bg-info text-dark">Subsanado</span>
                                             {% else %}
-                                                <small class="badge bg-success mt-1">Beneficiario</small>
-                                                {% for otro_leg in legajos %}
-                                                    {% if otro_leg.es_responsable %}
-                                                        {% for hijo in otro_leg.hijos_a_cargo %}
-                                                            {% if hijo.id == leg.ciudadano.id %}
-                                                                <small class="text-muted d-block mt-1">Responsable: {{ otro_leg.ciudadano.nombre }} {{ otro_leg.ciudadano.apellido }}</small>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    {% endif %}
-                                                {% endfor %}
+                                                <span class="badge bg-secondary">Pendiente</span>
                                             {% endif %}
-                                            <div class="mt-1">
-                                    </td>
-                                    <td>
-                                        {% if leg.revision_tecnico == 'APROBADO' %}
-                                            <span class="badge bg-success">Aprobado</span>
-                                        {% elif leg.revision_tecnico == 'RECHAZADO' %}
-                                            <span class="badge bg-danger">Rechazado</span>
-                                        {% elif leg.revision_tecnico == 'SUBSANAR' %}
-                                            <span class="badge bg-warning text-dark">Subsanar</span>
-                                        {% elif leg.revision_tecnico == 'SUBSANADO' %}
-                                            <span class="badge bg-info text-dark">Subsanado</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">Pendiente</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="d-flex gap-1">
-                                            <span class="badge {% if leg.archivo2 %}bg-success{% else %}bg-warning{% endif %}">Doc1</span>
-                                            <span class="badge {% if leg.archivo3 %}bg-success{% else %}bg-warning{% endif %}">Doc2</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {% if leg.subsanacion_motivo %}
-                                            <small class="text-break">{{ leg.subsanacion_motivo|truncatechars:80 }}</small>
-                                        {% else %}
-                                            <span class="text-muted"></span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <button class="btn btn-outline-light btn-sm" data-bs-toggle="collapse" data-bs-target="#detalle-{{ leg.pk }}-{{ forloop.counter }}">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr class="collapse" id="detalle-{{ leg.pk }}-{{ forloop.counter }}">
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                <span class="badge {% if leg.archivo2 %}bg-success{% else %}bg-warning{% endif %}">Doc1</span>
+                                                <span class="badge {% if leg.archivo3 %}bg-success{% else %}bg-warning{% endif %}">Doc2</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if leg.subsanacion_motivo %}
+                                                <small class="text-break">{{ leg.subsanacion_motivo|truncatechars:80 }}</small>
+                                            {% else %}
+                                                <span class="text-muted"></span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-outline-light btn-sm" data-bs-toggle="collapse" data-bs-target="#detalle-resp-{{ leg.pk }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="collapse" id="detalle-resp-{{ leg.pk }}">
+                                        <td colspan="5" class="p-0">
+                                            <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
+                                                <div class="card-body">
+                                                    <div class="row gy-3 gx-3">
+                                                        <div class="col-lg-3 col-md-5">
+                                                            <h6 class="mb-2">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</h6>
+                                                            <div class="small text-muted mb-2">DNI: {{ leg.ciudadano.documento }}</div>
+                                                            <div class="small">
+                                                                <span class="text-muted">Estado:</span>
+                                                                {% if leg.revision_tecnico == 'APROBADO' %}
+                                                                    <span class="badge bg-success">Aprobado</span>
+                                                                {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                                                                    <span class="badge bg-danger">Rechazado</span>
+                                                                {% elif leg.revision_tecnico == 'SUBSANAR' %}
+                                                                    <span class="badge bg-warning text-dark">Subsanar</span>
+                                                                {% elif leg.revision_tecnico == 'SUBSANADO' %}
+                                                                    <span class="badge bg-info text-dark">Subsanado</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-secondary">Pendiente</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-4 col-md-7">
+                                                            {% if is_prov %}
+                                                                <div class="small muted">Observación (subsanación):</div>
+                                                                <div class="mt-1">
+                                                                    {% if leg.subsanacion_motivo %}
+                                                                        <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
+                                                                            <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                                        </div>
+                                                                    {% else %}
+                                                                        <span class="muted">-</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                                {% if leg.subsanacion_renaper_comentario %}
+                                                                    <div class="small muted mt-2">Respuesta provincia:</div>
+                                                                    <div class="mt-1">
+                                                                        <div class="p-2 rounded" style="background:rgba(255,193,7,.1); border:1px solid rgba(255,193,7,.3)">
+                                                                            <span class="d-block text-break">{{ leg.subsanacion_renaper_comentario }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                {% endif %}
+                                                            {% else %}
+                                                                <div class="small muted">Comentario enviado a provincia:</div>
+                                                                <div class="mt-1">
+                                                                    {% if leg.subsanacion_motivo %}
+                                                                        <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
+                                                                            <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                                        </div>
+                                                                    {% else %}
+                                                                        <span class="muted">-</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                                {% if leg.subsanacion_renaper_comentario %}
+                                                                    <div class="small muted mt-2">Respuesta de provincia:</div>
+                                                                    <div class="mt-1">
+                                                                        <div class="p-2 rounded" style="background:rgba(40,167,69,.1); border:1px solid rgba(40,167,69,.3)">
+                                                                            <span class="d-block text-break">{{ leg.subsanacion_renaper_comentario }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                {% endif %}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="col-lg-5">
+                                                            {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
+                                                            {% if leg.revision_tecnico == 'SUBSANAR' %}
+                                                                <div class="file-row" style="background:rgba(255,193,7,.1);">
+                                                                    <div class="d-flex align-items-center gap-2">
+                                                                        <span class="small muted">Respuesta subsanación:</span>
+                                                                        {% if leg.subsanacion_renaper_archivo %}
+                                                                            <a href="{{ leg.subsanacion_renaper_archivo.url }}" target="_blank" class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
+                                                                        {% else %}
+                                                                            <span class="text-warning small">Pendiente de respuesta</span>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    {% if is_prov %}
+                                                                        <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalRespuestaSubsanacionRenaper" data-legajo-id="{{ leg.pk }}" data-expediente-id="{{ expediente.pk }}">
+                                                                            {% if leg.subsanacion_renaper_archivo %}Editar{% else %}Responder{% endif %}
+                                                                        </button>
+                                                                    {% endif %}
+                                                                </div>
+                                                            {% elif leg.revision_tecnico == 'SUBSANADO' %}
+                                                                <div class="file-row" style="background:rgba(40,167,69,.1);">
+                                                                    <div class="d-flex align-items-center gap-2">
+                                                                        <span class="small muted">Respuesta subsanación:</span>
+                                                                        {% if leg.subsanacion_renaper_archivo %}
+                                                                            <a href="{{ leg.subsanacion_renaper_archivo.url }}" target="_blank" class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
+                                                                        {% else %}
+                                                                            <span class="text-muted small">Sin archivo de respuesta</span>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    <div class="list-divider"></div>
+                                                    {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
+                                                        <div class="d-flex justify-content-end mt-2">
+                                                            <div class="btn-toolbar flex-wrap" role="toolbar" aria-label="Acciones del legajo">
+                                                                {% with estado=leg.revision_tecnico %}
+                                                                    {% if estado == 'SUBSANADO' and leg.estado_validacion_renaper != 1 %}
+                                                                        <div class="btn-group btn-group-sm" role="group">
+                                                                            <button type="button" class="btn btn-info btn-validar-renaper" data-legajo-id="{{ leg.pk }}" data-bs-toggle="modal" data-bs-target="#modalValidarRenaper">🔍 Validar Renaper</button>
+                                                                        </div>
+                                                                    {% elif leg.estado_validacion_renaper == 0 %}
+                                                                        <div class="btn-group btn-group-sm" role="group">
+                                                                            <button type="button" class="btn btn-info btn-validar-renaper" data-legajo-id="{{ leg.pk }}" data-bs-toggle="modal" data-bs-target="#modalValidarRenaper">🔍 Validar Renaper</button>
+                                                                        </div>
+                                                                    {% elif leg.estado_validacion_renaper == 1 %}
+                                                                        <div class="btn-group btn-group-sm me-2" role="group">
+                                                                            <button type="button" class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision" data-legajo-id="{{ leg.pk }}" data-accion="APROBAR">✅ Aprobar</button>
+                                                                            <button type="button" class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar" data-legajo-id="{{ leg.pk }}" data-bs-toggle="modal" data-bs-target="#modalSubsanar">📝 Subsanar</button>
+                                                                            <button type="button" class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision" data-legajo-id="{{ leg.pk }}" data-accion="RECHAZAR">❌ Rechazar</button>
+                                                                        </div>
+                                                                    {% endif %}
+                                                                {% endwith %}
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    
+                                    {# Filas de los hijos del responsable #}
+                                    {% if leg.hijos_a_cargo %}
+                                        {% for hijo in leg.hijos_a_cargo %}
+                                            {% for hijo_leg in legajos %}
+                                                {% if hijo_leg.ciudadano.id == hijo.id %}
+                                                    <tr class="{% if hijo_leg.revision_tecnico == 'RECHAZADO' %}table-danger{% elif hijo_leg.revision_tecnico == 'APROBADO' %}table-success{% endif %}" 
+                                                        {% if hijo_leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107; padding-left: 2rem;"{% elif hijo_leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8; padding-left: 2rem;"{% else %}style="padding-left: 2rem;"{% endif %}>
+                                                        <td style="padding-left: 2.5rem;">
+                                                            <div>
+                                                                <div class="fw-semibold">└─ 👶 {{ hijo_leg.ciudadano.nombre }} {{ hijo_leg.ciudadano.apellido }}</div>
+                                                                <small class="text-muted">DNI: {{ hijo_leg.ciudadano.documento }}</small>
+                                                                <span class="badge bg-success ms-2">Beneficiario</span>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            {% if hijo_leg.revision_tecnico == 'APROBADO' %}
+                                                                <span class="badge bg-success">Aprobado</span>
+                                                            {% elif hijo_leg.revision_tecnico == 'RECHAZADO' %}
+                                                                <span class="badge bg-danger">Rechazado</span>
+                                                            {% elif hijo_leg.revision_tecnico == 'SUBSANAR' %}
+                                                                <span class="badge bg-warning text-dark">Subsanar</span>
+                                                            {% elif hijo_leg.revision_tecnico == 'SUBSANADO' %}
+                                                                <span class="badge bg-info text-dark">Subsanado</span>
+                                                            {% else %}
+                                                                <span class="badge bg-secondary">Pendiente</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex gap-1">
+                                                                <span class="badge {% if hijo_leg.archivo2 %}bg-success{% else %}bg-warning{% endif %}">Doc1</span>
+                                                                <span class="badge {% if hijo_leg.archivo3 %}bg-success{% else %}bg-warning{% endif %}">Doc2</span>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            {% if hijo_leg.subsanacion_motivo %}
+                                                                <small class="text-break">{{ hijo_leg.subsanacion_motivo|truncatechars:80 }}</small>
+                                                            {% else %}
+                                                                <span class="text-muted"></span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            <button class="btn btn-outline-light btn-sm" data-bs-toggle="collapse" data-bs-target="#detalle-{{ hijo_leg.pk }}">
+                                                                <i class="fas fa-eye"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="collapse" id="detalle-{{ hijo_leg.pk }}">
+                                                        <td colspan="5" class="p-0">
+                                                            <div class="card mt-2" style="background: #2c3e50; border-color: #495057; margin-left: 2.5rem;">
+                                                                <div class="card-body">
+                                                                    <div class="row gy-3 gx-3">
+                                                                        <div class="col-lg-3 col-md-5">
+                                                                            <h6 class="mb-2">{{ hijo_leg.ciudadano.nombre }} {{ hijo_leg.ciudadano.apellido }}</h6>
+                                                                            <div class="small text-muted mb-2">DNI: {{ hijo_leg.ciudadano.documento }}</div>
+                                                                            <div class="small">
+                                                                                <span class="text-muted">Estado:</span>
+                                                                                {% if hijo_leg.revision_tecnico == 'APROBADO' %}
+                                                                                    <span class="badge bg-success">Aprobado</span>
+                                                                                {% elif hijo_leg.revision_tecnico == 'RECHAZADO' %}
+                                                                                    <span class="badge bg-danger">Rechazado</span>
+                                                                                {% elif hijo_leg.revision_tecnico == 'SUBSANAR' %}
+                                                                                    <span class="badge bg-warning text-dark">Subsanar</span>
+                                                                                {% elif hijo_leg.revision_tecnico == 'SUBSANADO' %}
+                                                                                    <span class="badge bg-info text-dark">Subsanado</span>
+                                                                                {% else %}
+                                                                                    <span class="badge bg-secondary">Pendiente</span>
+                                                                                {% endif %}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="col-lg-4 col-md-7">
+                                                                            {% if is_prov %}
+                                                                                <div class="small muted">Observación (subsanación):</div>
+                                                                                <div class="mt-1">
+                                                                                    {% if hijo_leg.subsanacion_motivo %}
+                                                                                        <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
+                                                                                            <span class="d-block text-break">{{ hijo_leg.subsanacion_motivo }}</span>
+                                                                                        </div>
+                                                                                    {% else %}
+                                                                                        <span class="muted">-</span>
+                                                                                    {% endif %}
+                                                                                </div>
+                                                                                {% if hijo_leg.subsanacion_renaper_comentario %}
+                                                                                    <div class="small muted mt-2">Respuesta provincia:</div>
+                                                                                    <div class="mt-1">
+                                                                                        <div class="p-2 rounded" style="background:rgba(255,193,7,.1); border:1px solid rgba(255,193,7,.3)">
+                                                                                            <span class="d-block text-break">{{ hijo_leg.subsanacion_renaper_comentario }}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                {% endif %}
+                                                                            {% else %}
+                                                                                <div class="small muted">Comentario enviado a provincia:</div>
+                                                                                <div class="mt-1">
+                                                                                    {% if hijo_leg.subsanacion_motivo %}
+                                                                                        <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
+                                                                                            <span class="d-block text-break">{{ hijo_leg.subsanacion_motivo }}</span>
+                                                                                        </div>
+                                                                                    {% else %}
+                                                                                        <span class="muted">-</span>
+                                                                                    {% endif %}
+                                                                                </div>
+                                                                                {% if hijo_leg.subsanacion_renaper_comentario %}
+                                                                                    <div class="small muted mt-2">Respuesta de provincia:</div>
+                                                                                    <div class="mt-1">
+                                                                                        <div class="p-2 rounded" style="background:rgba(40,167,69,.1); border:1px solid rgba(40,167,69,.3)">
+                                                                                            <span class="d-block text-break">{{ hijo_leg.subsanacion_renaper_comentario }}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                {% endif %}
+                                                                            {% endif %}
+                                                                        </div>
+                                                                        <div class="col-lg-5">
+                                                                            {% include 'components/legajo_archivos_requeridos.html' with legajo=hijo_leg is_prov=is_prov expediente=expediente %}
+                                                                            {% if hijo_leg.revision_tecnico == 'SUBSANAR' %}
+                                                                                <div class="file-row" style="background:rgba(255,193,7,.1);">
+                                                                                    <div class="d-flex align-items-center gap-2">
+                                                                                        <span class="small muted">Respuesta subsanación:</span>
+                                                                                        {% if hijo_leg.subsanacion_renaper_archivo %}
+                                                                                            <a href="{{ hijo_leg.subsanacion_renaper_archivo.url }}" target="_blank" class="file-name text-decoration-underline">{{ hijo_leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
+                                                                                        {% else %}
+                                                                                            <span class="text-warning small">Pendiente de respuesta</span>
+                                                                                        {% endif %}
+                                                                                    </div>
+                                                                                    {% if is_prov %}
+                                                                                        <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalRespuestaSubsanacionRenaper" data-legajo-id="{{ hijo_leg.pk }}" data-expediente-id="{{ expediente.pk }}">
+                                                                                            {% if hijo_leg.subsanacion_renaper_archivo %}Editar{% else %}Responder{% endif %}
+                                                                                        </button>
+                                                                                    {% endif %}
+                                                                                </div>
+                                                                            {% elif hijo_leg.revision_tecnico == 'SUBSANADO' %}
+                                                                                <div class="file-row" style="background:rgba(40,167,69,.1);">
+                                                                                    <div class="d-flex align-items-center gap-2">
+                                                                                        <span class="small muted">Respuesta subsanación:</span>
+                                                                                        {% if hijo_leg.subsanacion_renaper_archivo %}
+                                                                                            <a href="{{ hijo_leg.subsanacion_renaper_archivo.url }}" target="_blank" class="file-name text-decoration-underline">{{ hijo_leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
+                                                                                        {% else %}
+                                                                                            <span class="text-muted small">Sin archivo de respuesta</span>
+                                                                                        {% endif %}
+                                                                                    </div>
+                                                                                </div>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="list-divider"></div>
+                                                                    {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
+                                                                        <div class="d-flex justify-content-end mt-2">
+                                                                            <div class="btn-toolbar flex-wrap" role="toolbar" aria-label="Acciones del legajo">
+                                                                                {% with estado=hijo_leg.revision_tecnico %}
+                                                                                    {% if estado == 'SUBSANADO' and hijo_leg.estado_validacion_renaper != 1 %}
+                                                                                        <div class="btn-group btn-group-sm" role="group">
+                                                                                            <button type="button" class="btn btn-info btn-validar-renaper" data-legajo-id="{{ hijo_leg.pk }}" data-bs-toggle="modal" data-bs-target="#modalValidarRenaper">🔍 Validar Renaper</button>
+                                                                                        </div>
+                                                                                    {% elif hijo_leg.estado_validacion_renaper == 0 %}
+                                                                                        <div class="btn-group btn-group-sm" role="group">
+                                                                                            <button type="button" class="btn btn-info btn-validar-renaper" data-legajo-id="{{ hijo_leg.pk }}" data-bs-toggle="modal" data-bs-target="#modalValidarRenaper">🔍 Validar Renaper</button>
+                                                                                        </div>
+                                                                                    {% elif hijo_leg.estado_validacion_renaper == 1 %}
+                                                                                        <div class="btn-group btn-group-sm me-2" role="group">
+                                                                                            <button type="button" class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision" data-legajo-id="{{ hijo_leg.pk }}" data-accion="APROBAR">✅ Aprobar</button>
+                                                                                            <button type="button" class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar" data-legajo-id="{{ hijo_leg.pk }}" data-bs-toggle="modal" data-bs-target="#modalSubsanar">📝 Subsanar</button>
+                                                                                            <button type="button" class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision" data-legajo-id="{{ hijo_leg.pk }}" data-accion="RECHAZAR">❌ Rechazar</button>
+                                                                                        </div>
+                                                                                    {% endif %}
+                                                                                {% endwith %}
+                                                                            </div>
+                                                                        </div>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% elif not leg.responsable_id %}
+                                    {# Beneficiario sin responsable #}
+                                    <tr class="{% if leg.revision_tecnico == 'RECHAZADO' %}table-danger{% elif leg.revision_tecnico == 'APROBADO' %}table-success{% endif %}" 
+                                        {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% endif %}>
+                                        <td>
+                                            <div>
+                                                <div class="fw-semibold">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
+                                                <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
+                                                <span class="badge bg-success ms-2">Beneficiario</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if leg.revision_tecnico == 'APROBADO' %}
+                                                <span class="badge bg-success">Aprobado</span>
+                                            {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                                                <span class="badge bg-danger">Rechazado</span>
+                                            {% elif leg.revision_tecnico == 'SUBSANAR' %}
+                                                <span class="badge bg-warning text-dark">Subsanar</span>
+                                            {% elif leg.revision_tecnico == 'SUBSANADO' %}
+                                                <span class="badge bg-info text-dark">Subsanado</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Pendiente</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                <span class="badge {% if leg.archivo2 %}bg-success{% else %}bg-warning{% endif %}">Doc1</span>
+                                                <span class="badge {% if leg.archivo3 %}bg-success{% else %}bg-warning{% endif %}">Doc2</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if leg.subsanacion_motivo %}
+                                                <small class="text-break">{{ leg.subsanacion_motivo|truncatechars:80 }}</small>
+                                            {% else %}
+                                                <span class="text-muted"></span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-outline-light btn-sm" data-bs-toggle="collapse" data-bs-target="#detalle-benef-{{ leg.pk }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="collapse" id="detalle-benef-{{ leg.pk }}">
                                     <td colspan="5" class="p-0">
                                         <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
                                             <div class="card-body">
@@ -556,193 +883,13 @@
                                         </div>
                                     </td>
                                 </tr>
-                            {% endfor %}
+                            {% endif %}
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                
-                <!-- Detalles expandibles para cada legajo -->
-                {% for leg in legajos %}
-                    <div class="collapse" id="detalle-{{ leg.pk }}">
-                        <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
-                            <div class="card-body">
-                                <div class="row gy-3 gx-3">
-                                    <!-- Col 1: Datos básicos -->
-                                    <div class="col-lg-3 col-md-5">
-                                        <h6 class="mb-2">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</h6>
-                                        <div class="small text-muted mb-2">DNI: {{ leg.ciudadano.documento }}</div>
-                                        <div class="small">
-                                            <span class="text-muted">Estado:</span>
-                                            {% if leg.revision_tecnico == 'APROBADO' %}
-                                                <span class="badge bg-success">Aprobado</span>
-                                            {% elif leg.revision_tecnico == 'RECHAZADO' %}
-                                                <span class="badge bg-danger">Rechazado</span>
-                                            {% elif leg.revision_tecnico == 'SUBSANAR' %}
-                                                <span class="badge bg-warning text-dark">Subsanar</span>
-                                            {% elif leg.revision_tecnico == 'SUBSANADO' %}
-                                                <span class="badge bg-info text-dark">Subsanado</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Pendiente</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <!-- Col 2: Observaciones -->
-                                    <div class="col-lg-4 col-md-7">
-                                    {% if is_prov %}
-                                        <div class="small muted">Observación (subsanación):</div>
-                                        <div class="mt-1">
-                                            {% if leg.subsanacion_motivo %}
-                                                <div class="p-2 rounded"
-                                                     style="background:rgba(255,255,255,.04);
-                                                            border:1px solid rgba(255,255,255,.08)">
-                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
-                                                </div>
-                                            {% else %}
-                                                <span class="muted">-</span>
-                                            {% endif %}
-                                        </div>
-                                        {% if leg.subsanacion_renaper_comentario %}
-                                            <div class="small muted mt-2">Respuesta provincia:</div>
-                                            <div class="mt-1">
-                                                <div class="p-2 rounded"
-                                                     style="background:rgba(255,193,7,.1);
-                                                            border:1px solid rgba(255,193,7,.3)">
-                                                    <span class="d-block text-break">{{ leg.subsanacion_renaper_comentario }}</span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% else %}
-                                        <div class="small muted">Comentario enviado a provincia:</div>
-                                        <div class="mt-1">
-                                            {% if leg.subsanacion_motivo %}
-                                                <div class="p-2 rounded"
-                                                     style="background:rgba(255,255,255,.04);
-                                                            border:1px solid rgba(255,255,255,.08)">
-                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
-                                                </div>
-                                            {% else %}
-                                                <span class="muted">-</span>
-                                            {% endif %}
-                                        </div>
-                                        {% if leg.subsanacion_renaper_comentario %}
-                                            <div class="small muted mt-2">Respuesta de provincia:</div>
-                                            <div class="mt-1">
-                                                <div class="p-2 rounded"
-                                                     style="background:rgba(40,167,69,.1);
-                                                            border:1px solid rgba(40,167,69,.3)">
-                                                    <span class="d-block text-break">{{ leg.subsanacion_renaper_comentario }}</span>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    {% endif %}
-                                </div>
-                                    <!-- Col 3: Archivos -->
-                                    <div class="col-lg-5">
-                                        {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
-                                        <!-- Respuesta subsanacion Renaper -->
-                                        {% if leg.revision_tecnico == 'SUBSANAR' %}
-                                            <div class="file-row" style="background:rgba(255,193,7,.1);">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <span class="small muted">Respuesta subsanacion:</span>
-                                                    {% if leg.subsanacion_renaper_archivo %}
-                                                        <a href="{{ leg.subsanacion_renaper_archivo.url }}"
-                                                           target="_blank"
-                                                           class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
-                                                    {% else %}
-                                                        <span class="text-warning small">Pendiente de respuesta</span>
-                                                    {% endif %}
-                                                </div>
-                                                {% if is_prov %}
-                                                    <button type="button"
-                                                            class="btn btn-outline-warning btn-sm"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalRespuestaSubsanacionRenaper"
-                                                            data-legajo-id="{{ leg.pk }}"
-                                                            data-expediente-id="{{ expediente.pk }}">
-                                                        {% if leg.subsanacion_renaper_archivo %}
-                                                            Editar
-                                                        {% else %}
-                                                            Responder
-                                                        {% endif %}
-                                                    </button>
-                                                {% endif %}
-                                            </div>
-                                        {% elif leg.revision_tecnico == 'SUBSANADO' %}
-                                            <div class="file-row" style="background:rgba(40,167,69,.1);">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <span class="small muted">Respuesta subsanacion:</span>
-                                                    {% if leg.subsanacion_renaper_archivo %}
-                                                        <a href="{{ leg.subsanacion_renaper_archivo.url }}"
-                                                           target="_blank"
-                                                           class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
-                                                    {% else %}
-                                                        <span class="text-muted small">Sin archivo de respuesta</span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="list-divider"></div>
-                                <!-- Acciones -->
-                                {% if is_tec and expediente.estado.nombre in 'ASIGNADO,PROCESO_DE_CRUCE' %}
-                                    <div class="d-flex justify-content-end mt-2">
-                                        <div class="btn-toolbar flex-wrap"
-                                             role="toolbar"
-                                             aria-label="Acciones del legajo">
-                                            {% with estado=leg.revision_tecnico %}
-                                                {% if estado == 'SUBSANADO' and leg.estado_validacion_renaper != 1 %}
-                                                    <!-- Subsanado pero sin Validacion Renaper aprobada -->
-                                                    <div class="btn-group btn-group-sm" role="group">
-                                                        <button type="button"
-                                                                class="btn btn-info btn-validar-renaper"
-                                                                data-legajo-id="{{ leg.pk }}"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#modalValidarRenaper">
-                                                            ðŸ” Validar Renaper
-                                                        </button>
-                                                    </div>
-                                                {% elif leg.estado_validacion_renaper == 0 %}
-                                                    <!-- Sin validar Renaper -->
-                                                    <div class="btn-group btn-group-sm" role="group">
-                                                        <button type="button"
-                                                                class="btn btn-info btn-validar-renaper"
-                                                                data-legajo-id="{{ leg.pk }}"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#modalValidarRenaper">
-                                                            ðŸ” Validar Renaper
-                                                        </button>
-                                                    </div>
-                                                {% elif leg.estado_validacion_renaper == 1 %}
-                                                    <!-- Renaper aprobado: mostrar botones de revisiÃ³n -->
-                                                    <div class="btn-group btn-group-sm me-2" role="group">
-                                                        <button type="button"
-                                                                class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                                data-legajo-id="{{ leg.pk }}"
-                                                                data-accion="APROBAR">âœ… Aprobar</button>
-                                                        <button type="button"
-                                                                class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                                data-legajo-id="{{ leg.pk }}"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#modalSubsanar">ðŸ“ Subsanar</button>
-                                                        <button type="button"
-                                                                class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                                data-legajo-id="{{ leg.pk }}"
-                                                                data-accion="RECHAZAR">âŒ Rechazar</button>
-                                                    </div>
-                                                {% endif %}
-                                            {% endwith %}
-                                        </div>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
             <nav class="mt-3">
-                <ul id="legajos-pagination"
-                    class="pagination pagination-sm justify-content-center mb-0">
+                <ul id="legajos-pagination" class="pagination pagination-sm justify-content-center mb-0">
                 </ul>
             </nav>
         {% else %}
@@ -1195,6 +1342,7 @@
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
 {% endblock %}
+
 
 
 
