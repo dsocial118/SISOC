@@ -126,6 +126,9 @@ class CruceService:
 
         ciudadanos_ids = list(qs.values_list("ciudadano_id", flat=True))
         responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)
+        responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
+            ciudadanos_ids
+        )
 
         for legajo in qs:
             ciudadano = legajo.ciudadano
@@ -148,7 +151,7 @@ class CruceService:
                 )
             else:
                 # Es beneficiario, verificar si tiene responsable
-                responsables = FamiliaService.obtener_responsables(ciudadano.id)
+                responsables = responsables_por_hijo.get(ciudadano.id, [])
                 if not responsables:
                     # No tiene responsable, exportar
                     rows.append(
@@ -638,15 +641,14 @@ class CruceService:
             legajos_aprobados_qs.values_list("ciudadano_id", flat=True)
         )
         responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)
-
-        # Mapear legajos por ciudadano_id para acceso rápido
-        legajos_por_ciudadano = {leg.ciudadano_id: leg for leg in legajos_aprobados_qs}
+        responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
+            ciudadanos_ids
+        )
 
         matched_ids = []
         unmatched_ids = []
         detalle_match = []
         detalle_no_match = []
-        responsables_procesados = set()
 
         for leg in legajos_aprobados_qs.iterator():
             ciu = leg.ciudadano
@@ -654,7 +656,7 @@ class CruceService:
 
             # Si es beneficiario con responsable, validar al responsable
             if not es_responsable:
-                responsables = FamiliaService.obtener_responsables(ciu.id)
+                responsables = responsables_por_hijo.get(ciu.id, [])
                 if responsables:
                     # Tiene responsable, validar el CUIT del responsable
                     responsable = responsables[0]
@@ -698,8 +700,6 @@ class CruceService:
 
             # Si es responsable, NO asignarle cupo a él, solo validar para sus hijos
             if es_responsable:
-                # Marcar como procesado para no duplicar validación
-                responsables_procesados.add(ciu.id)
                 # NO agregar a matched_ids ni unmatched_ids
                 # El responsable no consume cupo
                 continue

@@ -501,9 +501,14 @@ class ExpedienteDetailView(DetailView):
         ctx["c_subsanar"] = counts["c_subsanar"]
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
+            raw_limit = self.request.GET.get("preview_limit")
+            max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
+            preview_limit_actual = (
+                raw_limit if raw_limit is not None else str(max_rows or "all")
+            )
             try:
                 preview = ImportacionService.preview_excel(
-                    expediente.excel_masivo, max_rows=None
+                    expediente.excel_masivo, max_rows=max_rows
                 )
             except Exception as e:
                 preview_error = str(e)
