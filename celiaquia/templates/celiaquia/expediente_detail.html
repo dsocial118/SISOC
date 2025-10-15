@@ -1,4 +1,4 @@
-﻿{% extends "includes/main.html" %}
+{% extends "includes/main.html" %}
 {% load static custom_filters dict_extras %}
 {% block title %}Expediente{% endblock %}
 {% block breadcrumb %}
@@ -14,14 +14,14 @@
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
-                   class="btn btn-outline-secondary btn-sm">â† Volver</a>
+                   class="btn btn-outline-secondary btn-sm">← Volver</a>
                 {% if expediente.estado.nombre == 'CREADO' %}
                     <a href="{% url 'expediente_update' expediente.pk %}"
                        class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
                 {% endif %}
             </div>
             <div class="d-flex gap-2">
-                <!-- Subir/Reprocesar Cruce: TÃ©cnico o Coordinador, no Provincia -->
+                <!-- Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia -->
                 {% if is_tec or is_coord %}
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
                         <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
@@ -119,7 +119,7 @@
                         <strong>Provincia:</strong> {{ expediente.usuario_provincia.profile.provincia|default:"-" }}
                     </p>
                     <p>
-                        <strong>Tecnicos asignados:</strong>
+                        <strong>Técnicos asignados:</strong>
                         {% if expediente.asignaciones_tecnicos.exists %}
                             {% for asignacion in expediente.asignaciones_tecnicos.all %}
                                 <span class="badge bg-info me-1">{{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}</span>
@@ -139,7 +139,7 @@
                         <div class="d-flex justify-content-between">
                             <div>
                                 <div class="fw-semibold">{{ h.fecha|date:"d/m/Y H:i" }}</div>
-                                <div class="small">{{ h.estado_anterior.display_name }} â†’ {{ h.estado_nuevo.display_name }}</div>
+                                <div class="small">{{ h.estado_anterior.display_name }} → {{ h.estado_nuevo.display_name }}</div>
                             </div>
                             <div class="text-end small">
                                 {% if h.usuario %}{{ h.usuario.get_full_name|default:h.usuario.username }}{% endif %}
@@ -388,7 +388,7 @@
                                             <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
                                                 <div class="card-body">
                                                     <div class="row gy-3 gx-3">
-                                                        <!-- Col 1: Datos bÃ¡sicos -->
+                                                        <!-- Col 1: Datos básicos -->
                                                         <div class="col-lg-3 col-md-5">
                                                             <h6 class="mb-2">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</h6>
                                                             <div class="small text-muted mb-2">DNI: {{ leg.ciudadano.documento }}</div>
@@ -419,7 +419,7 @@
                                                                             <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                                         </div>
                                                                     {% else %}
-                                                                        <span class="muted">â€”</span>
+                                                                        <span class="muted">—</span>
                                                                     {% endif %}
                                                                 </div>
                                                                 {% if leg.subsanacion_renaper_comentario %}
@@ -442,7 +442,7 @@
                                                                             <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                                         </div>
                                                                     {% else %}
-                                                                        <span class="muted">â€”</span>
+                                                                        <span class="muted">—</span>
                                                                     {% endif %}
                                                                 </div>
                                                                 {% if leg.subsanacion_renaper_comentario %}
@@ -520,7 +520,7 @@
                                                                                     data-legajo-id="{{ leg.pk }}"
                                                                                     data-bs-toggle="modal"
                                                                                     data-bs-target="#modalValidarRenaper">
-                                                                                ðŸ” Validar Renaper
+                                                                                🔍 Validar Renaper
                                                                             </button>
                                                                         </div>
                                                                     {% elif leg.estado_validacion_renaper == 0 %}
@@ -531,30 +531,30 @@
                                                                                     data-legajo-id="{{ leg.pk }}"
                                                                                     data-bs-toggle="modal"
                                                                                     data-bs-target="#modalValidarRenaper">
-                                                                                ðŸ” Validar Renaper
+                                                                                🔍 Validar Renaper
                                                                             </button>
                                                                         </div>
                                                                     {% elif leg.estado_validacion_renaper == 1 %}
-                                                                        <!-- Renaper aprobado: mostrar botones de revisiÃ³n -->
+                                                                        <!-- Renaper aprobado: mostrar botones de revisión -->
                                                                         <div class="btn-group btn-group-sm me-2" role="group">
                                                                             <button type="button"
                                                                                     class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
                                                                                     data-legajo-id="{{ leg.pk }}"
                                                                                     data-accion="APROBAR">
-                                                                                âœ… Aprobar
+                                                                                ✅ Aprobar
                                                                             </button>
                                                                             <button type="button"
                                                                                     class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
                                                                                     data-legajo-id="{{ leg.pk }}"
                                                                                     data-bs-toggle="modal"
                                                                                     data-bs-target="#modalSubsanar">
-                                                                                ðŸ“ Subsanar
+                                                                                📝 Subsanar
                                                                             </button>
                                                                             <button type="button"
                                                                                     class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
                                                                                     data-legajo-id="{{ leg.pk }}"
                                                                                     data-accion="RECHAZAR">
-                                                                                âŒ Rechazar
+                                                                                ❌ Rechazar
                                                                             </button>
                                                                         </div>
                                                                     {% endif %}
@@ -577,7 +577,7 @@
                             <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
                                 <div class="card-body">
                                     <div class="row gy-3 gx-3">
-                                        <!-- Col 1: Datos bÃ¡sicos -->
+                                        <!-- Col 1: Datos básicos -->
                                         <div class="col-lg-3 col-md-5">
                                             <h6 class="mb-2">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</h6>
                                             <div class="small text-muted mb-2">DNI: {{ leg.ciudadano.documento }}</div>
@@ -608,7 +608,7 @@
                                                             <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                         </div>
                                                     {% else %}
-                                                        <span class="muted">â€”</span>
+                                                        <span class="muted">—</span>
                                                     {% endif %}
                                                 </div>
                                                 {% if leg.subsanacion_renaper_comentario %}
@@ -631,7 +631,7 @@
                                                             <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
                                                         </div>
                                                     {% else %}
-                                                        <span class="muted">â€”</span>
+                                                        <span class="muted">—</span>
                                                     {% endif %}
                                                 </div>
                                                 {% if leg.subsanacion_renaper_comentario %}
@@ -709,7 +709,7 @@
                                                                     data-legajo-id="{{ leg.pk }}"
                                                                     data-bs-toggle="modal"
                                                                     data-bs-target="#modalValidarRenaper">
-                                                                ðŸ” Validar Renaper
+                                                                🔍 Validar Renaper
                                                             </button>
                                                         </div>
                                                     {% elif leg.estado_validacion_renaper == 0 %}
@@ -720,27 +720,27 @@
                                                                     data-legajo-id="{{ leg.pk }}"
                                                                     data-bs-toggle="modal"
                                                                     data-bs-target="#modalValidarRenaper">
-                                                                ðŸ” Validar Renaper
+                                                                🔍 Validar Renaper
                                                             </button>
                                                         </div>
                                                     {% elif leg.estado_validacion_renaper == 1 %}
-                                                        <!-- Renaper aprobado: mostrar botones de revisiÃ³n -->
+                                                        <!-- Renaper aprobado: mostrar botones de revisión -->
                                                         <div class="btn-group btn-group-sm me-2" role="group">
                                                             <button type="button"
                                                                     class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
                                                                     data-legajo-id="{{ leg.pk }}"
-                                                                    data-accion="APROBAR">âœ… Aprobar</button>
+                                                                    data-accion="APROBAR">✅ Aprobar</button>
                                                             <button type="button"
                                                                     class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
                                                                     data-legajo-id="{{ leg.pk }}"
                                                                     data-bs-toggle="modal"
                                                                     data-bs-target="#modalSubsanar">
-                                                                ðŸ“ Subsanar
+                                                                📝 Subsanar
                                                             </button>
                                                             <button type="button"
                                                                     class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
                                                                     data-legajo-id="{{ leg.pk }}"
-                                                                    data-accion="RECHAZAR">âŒ Rechazar</button>
+                                                                    data-accion="RECHAZAR">❌ Rechazar</button>
                                                         </div>
                                                     {% endif %}
                                                 {% endwith %}
@@ -760,10 +760,10 @@
             {% else %}
                 <p class="text-muted">No hay legajos cargados.</p>
             {% endif %}
-            <!-- Confirmar EnvÃ­o: solo Provincia en EN_ESPERA -->
+            <!-- Confirmar Envío: solo Provincia en EN_ESPERA -->
             {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
                 <div class="text-end mt-3">
-                    <button id="btn-confirm" class="btn btn-success">Confirmar Envi­o</button>
+                    <button id="btn-confirm" class="btn btn-success">Confirmar Envío</button>
                 </div>
             {% endif %}
             <!-- Confirmar subsanacion: solo Provincia en ASIGNADO y si hay_subsanar -->
@@ -773,7 +773,7 @@
                 </div>
             {% endif %}
         </div>
-        <!-- Asignar TÃ©cnico: solo Coordinador (segÃºn tu condiciÃ³n actual por id) -->
+        <!-- Asignar Técnico: solo Coordinador (según tu condición actual por id) -->
         {% if expediente.estado.id == 2 and is_coord %}
             <div class="card mb-4">
                 <div class="card-header bg-light">
@@ -842,7 +842,7 @@
                 </div>
             </div>
         </div>
-        <!-- Modal: pedir SUBSANACIÃ“N -->
+        <!-- Modal: pedir SUBSANACIÓN -->
         <div class="modal fade"
              id="modalSubsanar"
              tabindex="-1"
@@ -1190,7 +1190,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/familia_bubbles.css' %}" />
 {% endblock %}
 {% block customJS %}
-    <!-- Meta tags para configuraciÃ³n -->
+    <!-- Meta tags para configuración -->
     <meta name="process-url"
           content="{% url 'expediente_procesar' expediente.pk %}" />
     <meta name="confirm-url"
