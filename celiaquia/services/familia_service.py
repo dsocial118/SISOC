@@ -136,6 +136,19 @@ class FamiliaService:
             return []
 
     @staticmethod
+    def obtener_responsable_de_hijo(hijo_id: int):
+        """Devuelve el ID del responsable principal de un hijo, o None si no tiene."""
+        try:
+            relacion = GrupoFamiliar.objects.filter(
+                ciudadano_2_id=hijo_id,
+                cuidador_principal=True,
+            ).first()
+            return relacion.ciudadano_1_id if relacion else None
+        except Exception as exc:
+            logger.error("Error obteniendo responsable de hijo: %s", exc)
+            return None
+
+    @staticmethod
     def es_responsable(ciudadano_id: int) -> bool:
         """Indica si el ciudadano tiene hijos a su cargo."""
 
@@ -160,9 +173,7 @@ class FamiliaService:
         """
 
         try:
-            legajos = list(
-                expediente.expediente_ciudadanos.select_related("ciudadano")
-            )
+            legajos = list(expediente.expediente_ciudadanos.select_related("ciudadano"))
             ciudadanos_ids = [legajo.ciudadano_id for legajo in legajos]
 
             responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)

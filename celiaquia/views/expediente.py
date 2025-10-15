@@ -433,7 +433,7 @@ class ExpedienteDetailView(DetailView):
             revision_tecnico="APROBADO", resultado_sintys="NO_MATCH"
         )
         ctx["legajos_subsanar"] = q.filter(revision_tecnico=RevisionTecnico.SUBSANAR)
-        
+
         # Enriquecer legajos con informacion de tipo (hijo/responsable)
         from celiaquia.services.legajo_service import LegajoService
         from celiaquia.services.familia_service import FamiliaService
@@ -445,7 +445,9 @@ class ExpedienteDetailView(DetailView):
         responsables_ids = set()
         if ciudadanos_ids:
             try:
-                responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)
+                responsables_ids = FamiliaService.obtener_ids_responsables(
+                    ciudadanos_ids
+                )
             except Exception as exc:
                 logger.warning(
                     "No se pudo resolver responsables para expediente %s: %s",
@@ -458,24 +460,33 @@ class ExpedienteDetailView(DetailView):
                 legajo.ciudadano, responsables_ids
             )
             legajo.tipo_legajo = "Responsable" if legajo.es_responsable else "Hijo"
-            legajo.archivos_requeridos = LegajoService.get_archivos_requeridos_por_legajo(
-                legajo, responsables_ids
+            legajo.archivos_requeridos = (
+                LegajoService.get_archivos_requeridos_por_legajo(
+                    legajo, responsables_ids
+                )
             )
 
             if legajo.es_responsable:
                 legajo.hijos_a_cargo = FamiliaService.obtener_hijos_a_cargo(
                     legajo.ciudadano.id, expediente
                 )
+                legajo.responsable_id = None
             else:
                 legajo.hijos_a_cargo = []
+                # Obtener el responsable de este hijo
+                legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
+                    legajo.ciudadano.id
+                )
 
             legajos_enriquecidos.append(legajo)
             legajos_por_ciudadano[legajo.ciudadano_id] = legajo
-        
+
         faltantes_list = LegajoService.faltantes_archivos(expediente)
         # Obtener estructura familiar completa
-        estructura_familiar = FamiliaService.obtener_estructura_familiar_expediente(expediente)
-        
+        estructura_familiar = FamiliaService.obtener_estructura_familiar_expediente(
+            expediente
+        )
+
         # Enriquecer estructura familiar con referencia a legajos
         for info in estructura_familiar.get("responsables", {}).values():
             for hijo in info.get("hijos", []):
@@ -490,12 +501,9 @@ class ExpedienteDetailView(DetailView):
         ctx["c_subsanar"] = counts["c_subsanar"]
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
-            raw_limit = self.request.GET.get("preview_limit")
-            max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
-            preview_limit_actual = raw_limit if raw_limit is not None else "all"
             try:
                 preview = ImportacionService.preview_excel(
-                    expediente.excel_masivo, max_rows=max_rows
+                    expediente.excel_masivo, max_rows=None
                 )
             except Exception as e:
                 preview_error = str(e)
@@ -553,8 +561,10 @@ class ExpedienteDetailView(DetailView):
                 "cupo_metrics": cupo_metrics,  # compat si lo usas en JS/otros templates
                 "cupo_error": cupo_error,
                 "fuera_count": fuera_count,
-                "total_responsables": len(estructura_familiar.get('responsables', {})),
-                "total_hijos_sin_responsable": len(estructura_familiar.get('hijos_sin_responsable', [])),
+                "total_responsables": len(estructura_familiar.get("responsables", {})),
+                "total_hijos_sin_responsable": len(
+                    estructura_familiar.get("hijos_sin_responsable", [])
+                ),
             }
         )
         return ctx
@@ -581,8 +591,7 @@ class ExpedienteImportView(View):
             resumen = ""
             if detalles:
                 resumen = "; ".join(
-                    f"Fila {d.get('fila')}: {d.get('error')}"
-                    for d in detalles[:5]
+                    f"Fila {d.get('fila')}: {d.get('error')}" for d in detalles[:5]
                 )
                 if len(detalles) > 5:
                     resumen += " (ver logs para más detalles)"
