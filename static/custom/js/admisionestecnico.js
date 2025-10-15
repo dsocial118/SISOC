@@ -1,4 +1,4 @@
-﻿const PERSONALIZED_FLAG = "1";
+const PERSONALIZED_FLAG = "1";
 
 document.addEventListener("DOMContentLoaded", function () {
     const nombreInput = document.getElementById("nuevoDocumentoNombre");
