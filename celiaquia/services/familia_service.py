@@ -1,5 +1,5 @@
 import logging
-from typing import Iterable, List, Set
+from typing import Dict, Iterable, List, Set
 
 from django.db import transaction
 
@@ -164,6 +164,31 @@ class FamiliaService:
             cuidador_principal=True,
         ).values_list("ciudadano_1_id", flat=True)
         return set(relaciones)
+
+    @staticmethod
+    def obtener_responsables_por_hijo(
+        ciudadanos_ids: Iterable[int],
+    ) -> Dict[int, List]:
+        """Devuelve un diccionario hijo_id -> lista de responsables."""
+
+        if not ciudadanos_ids:
+            return {}
+
+        relaciones = (
+            GrupoFamiliar.objects.filter(
+                ciudadano_2_id__in=ciudadanos_ids,
+                cuidador_principal=True,
+            )
+            .select_related("ciudadano_1")
+            .order_by("ciudadano_1__apellido", "ciudadano_1__nombre")
+        )
+
+        responsables_por_hijo: Dict[int, List] = {}
+        for relacion in relaciones:
+            responsables_por_hijo.setdefault(relacion.ciudadano_2_id, []).append(
+                relacion.ciudadano_1
+            )
+        return responsables_por_hijo
 
     @staticmethod
     def obtener_estructura_familiar_expediente(expediente) -> dict:
