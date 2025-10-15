@@ -82571,7 +82571,7 @@
     "model": "core.localidad",
     "pk": 10285,
     "fields": {
-      "nombre": "Fortíi­n Acha",
+      "nombre": "Fortín Acha",
       "municipio": 109
     }
   },
@@ -82595,7 +82595,7 @@
     "model": "core.localidad",
     "pk": 10288,
     "fields": {
-      "nombre": "Salvador Marí­a",
+      "nombre": "Salvador María",
       "municipio": 113
     }
   },
@@ -82747,7 +82747,7 @@
     "model": "core.localidad",
     "pk": 10307,
     "fields": {
-      "nombre": "Colonia San Martíi­n",
+      "nombre": "Colonia San Martín",
       "municipio": 147
     }
   },
@@ -83179,7 +83179,7 @@
     "model": "core.localidad",
     "pk": 10361,
     "fields": {
-      "nombre": "Villa Concepcón del Tí­o",
+      "nombre": "Villa Concepción del Tío",
       "municipio": 421
     }
   },
@@ -83971,7 +83971,7 @@
     "model": "core.localidad",
     "pk": 10460,
     "fields": {
-      "nombre": "Barrio Santa Marí­a",
+      "nombre": "Barrio Santa María",
       "municipio": 211
     }
   },
@@ -85019,7 +85019,7 @@
     "model": "core.localidad",
     "pk": 10591,
     "fields": {
-      "nombre": "Santa Marí­a de Yariguarenda",
+      "nombre": "Santa María de Yariguarenda",
       "municipio": 1525
     }
   },
