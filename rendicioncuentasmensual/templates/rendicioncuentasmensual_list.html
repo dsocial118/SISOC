@@ -16,8 +16,8 @@
 {% endblock %}
 {% block content %}
     <div class="container mt-4">
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <h1 class="mb-0">Rendiciones de Cuenta - {{ comedor.nombre }}</h1>
+        <h1 class="mb-3">Rendiciones de Cuenta - {{ comedor.nombre }}</h1>
+        <div class="d-flex justify-content-end mb-4">
             <a href="{% url 'rendicioncuentasmensual_create' comedorid %}"
                class="btn btn-success">Crear Rendición de Cuenta</a>
         </div>
@@ -41,7 +41,7 @@
                                     <td>{{ rendicion.mes }}</td>
                                     <td>{{ rendicion.anio }}</td>
                                     <td>{{ rendicion.observaciones }}</td>
-                                    <td>
+                                    <td class="w-25">
                                         <a href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}"
                                            class="btn btn-info btn-sm">Ver Detalle</a>
                                         <a href="{% url 'rendicioncuentasmensual_update' rendicion.id %}"
