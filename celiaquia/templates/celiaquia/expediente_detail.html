@@ -319,33 +319,28 @@
                         </thead>
                         <tbody>
                             {% for leg in legajos %}
-                                <tr class="{% if leg.revision_tecnico == 'RECHAZADO' %}table-danger{% elif leg.revision_tecnico == 'APROBADO' %}table-success{% endif %}" {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% endif %}>
+                                <tr class="legajo-row {% if leg.revision_tecnico == 'RECHAZADO' %}table-danger{% elif leg.revision_tecnico == 'APROBADO' %}table-success{% endif %}" {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% endif %} data-estado="{{ leg.revision_tecnico|default:'PENDIENTE' }}">
                                     <td>
-                                        <div>
-                                            <div class="fw-semibold">{{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}</div>
+                                        <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 2rem;"{% endif %}>
+                                            <div class="fw-semibold">
+                                                {% if leg.es_responsable %}
+                                                    👨👩👧👦 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
+                                                {% elif leg.responsable_id %}
+                                                    └─ 👶 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
+                                                {% else %}
+                                                    👶 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
+                                                {% endif %}
+                                            </div>
                                             <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
                                             {% if leg.es_responsable %}
                                                 <small class="badge bg-info mt-1">Responsable</small>
                                                 {% if leg.hijos_a_cargo %}
-                                                    <small class="text-muted d-block mt-1">A cargo de: 
-                                                        {% for hijo in leg.hijos_a_cargo %}
-                                                            {{ hijo.nombre }} {{ hijo.apellido }}{% if not forloop.last %}, {% endif %}
-                                                        {% endfor %}
-                                                    </small>
+                                                    <small class="text-muted d-block mt-1">Tiene {{ leg.hijos_a_cargo|length }} hijo{{ leg.hijos_a_cargo|length|pluralize }} a cargo</small>
                                                 {% endif %}
                                             {% else %}
                                                 <small class="badge bg-success mt-1">Beneficiario</small>
-                                                {% for otro_leg in legajos %}
-                                                    {% if otro_leg.es_responsable %}
-                                                        {% for hijo in otro_leg.hijos_a_cargo %}
-                                                            {% if hijo.id == leg.ciudadano.id %}
-                                                                <small class="text-muted d-block mt-1">Responsable: {{ otro_leg.ciudadano.nombre }} {{ otro_leg.ciudadano.apellido }}</small>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    {% endif %}
-                                                {% endfor %}
                                             {% endif %}
-                                            <div class="mt-1">
+                                        </div>
                                     </td>
                                     <td>
                                         {% if leg.revision_tecnico == 'APROBADO' %}
