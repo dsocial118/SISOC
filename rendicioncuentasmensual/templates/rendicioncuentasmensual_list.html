@@ -16,10 +16,10 @@
 {% endblock %}
 {% block content %}
     <div class="container mt-4">
-        <h1 class="mb-3">Rendiciones de Cuenta - {{ comedor.nombre }}</h1>
+        <h1 class="mb-3">Seguimiento mensual - {{ comedor.nombre }}</h1>
         <div class="d-flex justify-content-end mb-4">
             <a href="{% url 'rendicioncuentasmensual_create' comedorid %}"
-               class="btn btn-success">Crear Rendición de Cuenta</a>
+               class="btn btn-success">Nuevo seguimiento mensual</a>
         </div>
         <div class="card shadow-sm">
             <div class="card-body">
