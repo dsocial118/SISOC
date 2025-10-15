@@ -180,3 +180,8 @@ aside .nav-link p {
 .max-width-100 {
     max-width: 100%;
 }
+
+.btn-warning {
+    background-color: #e7ba61;
+    border-color: #e7ba61;
+}
