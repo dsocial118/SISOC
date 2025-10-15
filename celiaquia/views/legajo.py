@@ -29,7 +29,16 @@ class LegajoArchivoUploadView(View):
         try:
             can_edit_legajo_files(request.user, self.exp_ciud.expediente, self.exp_ciud)
         except PermissionDenied as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=403)
+            logger.warning(
+                "Permission denied for user %s on legajo %s: %s",
+                request.user.id,
+                self.exp_ciud.pk,
+                str(e)
+            )
+            return JsonResponse(
+                {"success": False, "message": "No tenés permiso para realizar esta acción."},
+                status=403
+            )
 
         return super().dispatch(request, *args, **kwargs)
 
