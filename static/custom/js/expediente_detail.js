@@ -277,6 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const legajoId = button.getAttribute('data-legajo-id');
       const expedienteId = button.getAttribute('data-expediente-id');
       const defaultCampo = button?.getAttribute('data-file-field') || 'archivo1';
+      const archivo2Label = button?.getAttribute('data-archivo2-label') || 'Documento';
+      const archivo3Label = button?.getAttribute('data-archivo3-label') || 'Biopsia / Constancia médica';
       const uploadForm = modalArchivo.querySelector('#form-subir-archivo');
 
       const actionUrl = `/expedientes/${expedienteId}/ciudadanos/${legajoId}/archivo/`;
@@ -284,6 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const selCampo = modalArchivo.querySelector('#campo-archivo');
       if (selCampo) selCampo.value = defaultCampo;
+
+      // Actualizar labels dinámicamente
+      const optArchivo2 = document.getElementById('opt-archivo2');
+      const optArchivo3 = document.getElementById('opt-archivo3');
+      if (optArchivo2) optArchivo2.textContent = archivo2Label;
+      if (optArchivo3) optArchivo3.textContent = archivo3Label;
 
       const inputArchivo = uploadForm.querySelector('input[type="file"]');
       if (inputArchivo) inputArchivo.value = '';
@@ -1009,6 +1017,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const modalValidarRenaper = document.getElementById('modalValidarRenaper');
   if (modalValidarRenaper) {
+    // Limpiar backdrop cuando se cierra el modal
+    modalValidarRenaper.addEventListener('hidden.bs.modal', function () {
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('padding-right');
+    });
+
     const btnValidarRenaper = document.querySelectorAll('.btn-validar-renaper');
 
     btnValidarRenaper.forEach(btn => {
@@ -1294,44 +1311,85 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* ===== FILTRO POR ESTADO ===== */
+  const filtroEstado = document.getElementById('filtro-estado');
+  if (filtroEstado) {
+    filtroEstado.addEventListener('change', function() {
+      const estadoSeleccionado = this.value;
+      console.log('Filtro estado seleccionado:', estadoSeleccionado);
+      
+      // Obtener todas las filas de legajos (no las filas colapsables)
+      const filas = document.querySelectorAll('tbody tr:not(.collapse)');
+      console.log('Total filas encontradas:', filas.length);
+      
+      filas.forEach((fila, index) => {
+        if (!estadoSeleccionado) {
+          fila.style.display = '';
+          return;
+        }
+        
+        // Buscar el badge de estado en la fila
+        const badges = fila.querySelectorAll('.badge');
+        let estadoFila = '';
+        
+        // Buscar el badge que contiene el estado de revisión
+        badges.forEach(badge => {
+          const texto = badge.textContent.trim();
+          if (['Aprobado', 'Rechazado', 'Subsanar', 'Subsanado', 'Pendiente'].includes(texto)) {
+            if (texto === 'Aprobado') estadoFila = 'APROBADO';
+            else if (texto === 'Rechazado') estadoFila = 'RECHAZADO';
+            else if (texto === 'Subsanar') estadoFila = 'SUBSANAR';
+            else if (texto === 'Subsanado') estadoFila = 'SUBSANADO';
+            else if (texto === 'Pendiente') estadoFila = 'PENDIENTE';
+          }
+        });
+        
+        const mostrar = estadoFila === estadoSeleccionado;
+        fila.style.display = mostrar ? '' : 'none';
+        
+        if (index < 5) {
+          console.log(`Fila ${index}: estado="${estadoFila}", mostrar=${mostrar}`);
+        }
+      });
+    });
+  }
+
   /* ===== Inicializar paginación para LEGAJOS ===== */
   setTimeout(() => {
-    const list = document.getElementById('legajos-list');
     const pageSizeSel = document.getElementById('legajos-page-size');
     const pagUl = document.getElementById('legajos-pagination');
+    const tbody = document.querySelector('tbody');
 
-    console.log('DOM elements:', {
-      list: !!list,
-      pageSizeSel: !!pageSizeSel,
-      pagUl: !!pagUl,
-      listId: list?.id,
-      selectorId: pageSizeSel?.id
-    });
-
-    if (!list || !pageSizeSel || !pagUl) return;
-
-    const items = list.querySelectorAll('.legajo-item');
-    console.log('Legajo items found:', items.length);
-
-    if (items.length <= 10) {
-      console.log('Not enough items to paginate');
+    if (!pageSizeSel || !pagUl || !tbody) {
+      console.log('Elementos de paginación no encontrados');
       return;
     }
+
+    // Obtener todas las filas de legajos (excluyendo las colapsables)
+    const getVisibleRows = () => {
+      return Array.from(tbody.querySelectorAll('tr:not(.collapse)'));
+    };
 
     let currentPage = 1;
 
     function renderPage() {
+      const items = getVisibleRows();
       const pageSize = pageSizeSel.value === 'all' ? items.length : parseInt(pageSizeSel.value) || 10;
       const totalPages = Math.ceil(items.length / pageSize);
       const start = (currentPage - 1) * pageSize;
       const end = start + pageSize;
 
-      console.log('Rendering:', { pageSize, currentPage, totalPages, start, end });
+      console.log('Paginación legajos:', { totalItems: items.length, pageSize, currentPage, totalPages, start, end });
 
       items.forEach((item, i) => {
-        item.style.display = (i >= start && i < end) ? 'block' : 'none';
+        const shouldShow = (i >= start && i < end) && item.style.display !== 'none';
+        // Solo aplicar paginación si el elemento no está oculto por filtros
+        if (item.style.display !== 'none') {
+          item.style.display = shouldShow ? '' : 'none';
+        }
       });
 
+      // Generar paginación
       pagUl.innerHTML = '';
       if (totalPages > 1) {
         for (let i = 1; i <= totalPages; i++) {
@@ -1349,11 +1407,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     pageSizeSel.onchange = () => {
-      console.log('Page size changed to:', pageSizeSel.value);
+      console.log('Tamaño de página cambió a:', pageSizeSel.value);
       currentPage = 1;
       renderPage();
     };
 
+    // Renderizar inicialmente
     renderPage();
+
+    // Re-renderizar cuando cambie el filtro
+    if (filtroEstado) {
+      const originalChangeHandler = filtroEstado.onchange;
+      filtroEstado.addEventListener('change', () => {
+        setTimeout(() => {
+          currentPage = 1;
+          renderPage();
+        }, 10);
+      });
+    }
   }, 100);
 });

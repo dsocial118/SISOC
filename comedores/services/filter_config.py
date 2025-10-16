@@ -11,6 +11,7 @@ FIELD_MAP: Dict[str, str] = {
     # Texto simples
     "nombre": "nombre",
     "estado": "estado",
+    "estado_general": "estado_general",
     "calle": "calle",
     "piso": "piso",
     "departamento": "departamento",
@@ -48,6 +49,7 @@ FIELD_TYPES: Dict[str, str] = {
         for k in [
             "nombre",
             "estado",
+            "estado_general",
             "calle",
             "piso",
             "departamento",
@@ -91,6 +93,7 @@ NUM_OPS = ["eq", "ne", "gt", "lt", "empty"]
 FILTER_FIELDS = [
     {"name": "nombre", "label": "Nombre", "type": "text"},
     {"name": "estado", "label": "Estado", "type": "text"},
+    {"name": "estado_general", "label": "Estado general", "type": "text"},
     {"name": "calle", "label": "Calle", "type": "text"},
     {"name": "piso", "label": "Piso", "type": "text"},
     {"name": "departamento", "label": "Departamento", "type": "text"},

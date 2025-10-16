@@ -6,7 +6,7 @@ from admisiones.models.admisiones import (
     FormularioProyectoDisposicion,
     FormularioProyectoDeConvenio,
     DocumentosExpediente,
-    Anexo,
+    ArchivoAdmision,
 )
 
 
@@ -36,10 +36,11 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         }
         widgets = {
             "fecha_vencimiento_mandatos": forms.DateInput(
+                format="%Y-%m-%d",
                 attrs={
                     "type": "date",
                     "class": "form-control",
-                }
+                },
             )
         }
 
@@ -48,77 +49,106 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         self.require_full = kwargs.pop("require_full", False)
         super().__init__(*args, **kwargs)
 
-        if self.require_full:
-            for field in self.fields.values():
-                field.required = True
-        else:
-            for field in self.fields.values():
+        if "fecha_vencimiento_mandatos" in self.fields:
+            self.fields["fecha_vencimiento_mandatos"].input_formats = ["%Y-%m-%d"]
+
+        # Hacer campos obligatorios solo si require_full es True,
+        # dejando opcionales las resoluciones y montos (salvo renovaciones).
+        campos_pago_opcionales = {f"resolucion_de_pago_{i}" for i in range(1, 7)}
+        campos_pago_opcionales.update({f"monto_{i}" for i in range(1, 7)})
+
+        for name, field in self.fields.items():
+            if name in campos_pago_opcionales:
                 field.required = False
+            else:
+                field.required = self.require_full
 
-        letras_fields = [
-            "prestaciones_desayuno_letras",
-            "prestaciones_almuerzo_letras",
-            "prestaciones_merienda_letras",
-            "prestaciones_cena_letras",
-        ]
+        # Hacer obligatorios los campos de renovación si require_full es True y el tipo de admisión es 'renovacion'
+        if admision and admision.tipo == "renovacion" and self.require_full:
+            for i in range(1, 7):
+                if f"resolucion_de_pago_{i}" in self.fields:
+                    self.fields[f"resolucion_de_pago_{i}"].required = True
+                if f"monto_{i}" in self.fields:
+                    self.fields[f"monto_{i}"].required = True
 
-        for field_name in letras_fields:
-            if field_name in self.fields:
-                self.fields[field_name].widget.attrs["readonly"] = True
-                self.fields[field_name].initial = "Cero"
+        for name, field in self.fields.items():
+            if name.startswith("solicitudes_") or name.startswith("aprobadas_"):
+                field.label = False
+                field.widget.attrs["aria-label"] = ""
+                field.widget.attrs["placeholder"] = ""
+                field.widget.attrs["class"] = (
+                    field.widget.attrs.get("class", "")
+                    + " form-control form-control-sm text-center"
+                ).strip()
 
-            if admision:
-                anexo = Anexo.objects.filter(admision=admision).last()
-                comedor = admision.comedor
-                organizacion = comedor.organizacion if comedor else None
+        if admision:
+            comedor = admision.comedor
+            organizacion = comedor.organizacion if comedor else None
 
-                self.fields["expediente_nro"].initial = admision.num_expediente
-                calle = getattr(comedor, "calle", "")
-                numero = getattr(comedor, "numero", "")
+            self.fields["expediente_nro"].initial = admision.num_expediente
+            calle = getattr(comedor, "calle", "")
+            numero = getattr(comedor, "numero", "")
+            referente = getattr(comedor, "referente", None)
 
-                self.fields["nombre_espacio"].initial = comedor.nombre
-                self.fields["domicilio_espacio"].initial = f"{calle} {numero}".strip()
-                self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
-                self.fields["localidad_espacio"].initial = getattr(
-                    comedor, "localidad", ""
+            self.fields["nombre_espacio"].initial = comedor.nombre
+            self.fields["domicilio_espacio"].initial = f"{calle} {numero}".strip()
+            self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
+            self.fields["localidad_espacio"].initial = getattr(comedor, "localidad", "")
+            self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
+            self.fields["provincia_espacio"].initial = getattr(comedor, "provincia", "")
+            self.fields["tipo_espacio"].initial = getattr(comedor, "tipocomedor", "")
+            self.fields["total_acreditaciones"].initial = "6"
+            self.fields["plazo_ejecucion"].initial = "6 meses"
+            self.fields["nota_gde_if"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__nombre="Nota de solicitud e Inclusión al Programa",
                 )
-                self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
-                self.fields["provincia_espacio"].initial = getattr(
-                    comedor, "provincia", ""
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["constancia_subsidios_dnsa"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__nombre="Acta Solicitud de Subsidio",
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["constancia_subsidios_pnud"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision, documentacion__nombre="Respuesta Memo PNUD"
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            if "validacion_registro_nacional" in self.fields:
+                self.fields["validacion_registro_nacional"].initial = (
+                    ArchivoAdmision.objects.filter(
+                        admision=admision, documentacion__nombre="Validación RENACOM"
+                    )
+                    .values_list("numero_gde", flat=True)
+                    .first()
                 )
 
-                if anexo:
-                    nombre = anexo.responsable_nombre or ""
-                    apellido = anexo.responsable_apellido or ""
+            if referente:
+                self.fields["representante_nombre"].initial = (
+                    f"{referente.nombre or ''} {referente.apellido or ''}".strip()
+                )
+                self.fields["representante_dni"].initial = referente.documento or ""
+                self.fields["representante_cargo"].initial = referente.funcion or ""
 
-                    self.fields["nombre_espacio"].initial = anexo.efector
-                    self.fields["tipo_espacio"].initial = anexo.tipo_espacio
-                    self.fields["domicilio_espacio"].initial = anexo.domicilio
-                    self.fields["responsable_tarjeta_nombre"].initial = (
-                        f"{nombre} {apellido}".strip()
-                    )
-                    self.fields["responsable_tarjeta_domicilio"].initial = (
-                        anexo.responsable_domicilio
-                    )
-                    self.fields["responsable_tarjeta_mail"].initial = (
-                        anexo.responsable_mail
-                    )
+            if organizacion:
+                self.fields["nombre_organizacion"].initial = organizacion.nombre
+                self.fields["cuit_organizacion"].initial = organizacion.cuit
+                self.fields["mail_organizacion"].initial = organizacion.email
+                self.fields["telefono_organizacion"].initial = organizacion.telefono
+                self.fields["domicilio_organizacion"].initial = organizacion.domicilio
+                self.fields["localidad_organizacion"].initial = organizacion.localidad
+                self.fields["provincia_organizacion"].initial = organizacion.provincia
+                self.fields["partido_organizacion"].initial = organizacion.partido
 
-                if organizacion:
-                    self.fields["nombre_organizacion"].initial = organizacion.nombre
-                    self.fields["cuit_organizacion"].initial = organizacion.cuit
-                    self.fields["mail_organizacion"].initial = organizacion.email
-                    self.fields["telefono_organizacion"].initial = organizacion.telefono
-                    self.fields["domicilio_organizacion"].initial = (
-                        organizacion.domicilio
-                    )
-                    self.fields["localidad_organizacion"].initial = (
-                        organizacion.localidad
-                    )
-                    self.fields["provincia_organizacion"].initial = (
-                        organizacion.provincia
-                    )
-                    self.fields["partido_organizacion"].initial = organizacion.partido
+                if not self.instance.fecha_vencimiento_mandatos:
                     self.fields["fecha_vencimiento_mandatos"].initial = (
                         organizacion.fecha_vencimiento
                     )
@@ -137,10 +167,11 @@ class InformeTecnicoBaseForm(forms.ModelForm):
         ]
         widgets = {
             "fecha_vencimiento_mandatos": forms.DateInput(
+                format="%Y-%m-%d",
                 attrs={
                     "type": "date",
                     "class": "form-control",
-                }
+                },
             ),
         }
 
@@ -149,74 +180,102 @@ class InformeTecnicoBaseForm(forms.ModelForm):
         self.require_full = kwargs.pop("require_full", False)
         super().__init__(*args, **kwargs)
 
-        if self.require_full:
-            for field in self.fields.values():
-                field.required = True
-        else:
-            for field in self.fields.values():
+        if "fecha_vencimiento_mandatos" in self.fields:
+            self.fields["fecha_vencimiento_mandatos"].input_formats = ["%Y-%m-%d"]
+
+        # Hacer campos obligatorios solo si require_full es True,
+        # dejando opcionales las resoluciones y montos (salvo renovaciones).
+        campos_pago_opcionales = {f"resolucion_de_pago_{i}" for i in range(1, 7)}
+        campos_pago_opcionales.update({f"monto_{i}" for i in range(1, 7)})
+
+        for name, field in self.fields.items():
+            if name in campos_pago_opcionales:
                 field.required = False
+            else:
+                field.required = self.require_full
 
-        letras_fields = [
-            "prestaciones_desayuno_letras",
-            "prestaciones_almuerzo_letras",
-            "prestaciones_merienda_letras",
-            "prestaciones_cena_letras",
-        ]
+        # Hacer obligatorios los campos de renovación si require_full es True y el tipo de admisión es 'renovacion'
+        if admision and admision.tipo == "renovacion" and self.require_full:
+            for i in range(1, 7):
+                if f"resolucion_de_pago_{i}" in self.fields:
+                    self.fields[f"resolucion_de_pago_{i}"].required = True
+                if f"monto_{i}" in self.fields:
+                    self.fields[f"monto_{i}"].required = True
 
-        for field_name in letras_fields:
-            if field_name in self.fields:
-                self.fields[field_name].widget.attrs["readonly"] = True
-                self.fields[field_name].initial = "Cero"
+        for name, field in self.fields.items():
+            if name.startswith("solicitudes_") or name.startswith("aprobadas_"):
+                field.label = False
+                field.widget.attrs["aria-label"] = ""
+                field.widget.attrs["placeholder"] = ""
 
-            if admision:
-                anexo = Anexo.objects.filter(admision=admision).last()
-                comedor = admision.comedor
-                organizacion = comedor.organizacion if comedor else None
+        if admision:
+            comedor = admision.comedor
+            organizacion = comedor.organizacion if comedor else None
 
-                if anexo:
-                    nombre = anexo.responsable_nombre or ""
-                    apellido = anexo.responsable_apellido or ""
-                    self.fields["expediente_nro"].initial = anexo.expediente
-                    self.fields["nombre_espacio"].initial = anexo.efector
-                    self.fields["tipo_espacio"].initial = anexo.tipo_espacio
-                    self.fields["barrio_espacio"].initial = getattr(
-                        comedor, "barrio", ""
-                    )
-                    self.fields["localidad_espacio"].initial = getattr(
-                        comedor, "localidad", ""
-                    )
-                    self.fields["partido_espacio"].initial = getattr(
-                        comedor, "partido", ""
-                    )
-                    self.fields["provincia_espacio"].initial = getattr(
-                        comedor, "provincia", ""
-                    )
-                    self.fields["domicilio_espacio"].initial = anexo.domicilio
-                    self.fields["responsable_tarjeta_nombre"].initial = (
-                        f"{nombre} {apellido}".strip()
-                    )
-                    self.fields["responsable_tarjeta_domicilio"].initial = (
-                        anexo.responsable_domicilio
-                    )
-                    self.fields["responsable_tarjeta_mail"].initial = (
-                        anexo.responsable_mail
-                    )
+            self.fields["expediente_nro"].initial = admision.num_expediente
+            calle = getattr(comedor, "calle", "")
+            numero = getattr(comedor, "numero", "")
+            referente = getattr(comedor, "referente", None)
 
-                if organizacion:
-                    self.fields["nombre_organizacion"].initial = organizacion.nombre
-                    self.fields["cuit_organizacion"].initial = organizacion.cuit
-                    self.fields["mail_organizacion"].initial = organizacion.email
-                    self.fields["telefono_organizacion"].initial = organizacion.telefono
-                    self.fields["domicilio_organizacion"].initial = (
-                        organizacion.domicilio
+            self.fields["nombre_espacio"].initial = comedor.nombre
+            self.fields["domicilio_espacio"].initial = f"{calle} {numero}".strip()
+            self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
+            self.fields["localidad_espacio"].initial = getattr(comedor, "localidad", "")
+            self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
+            self.fields["provincia_espacio"].initial = getattr(comedor, "provincia", "")
+            self.fields["tipo_espacio"].initial = getattr(comedor, "tipocomedor", "")
+            self.fields["total_acreditaciones"].initial = "6"
+            self.fields["plazo_ejecucion"].initial = "6 meses"
+            self.fields["nota_gde_if"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__nombre="Nota de solicitud e Inclusión al Programa",
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["constancia_subsidios_dnsa"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__nombre="Acta Solicitud de Subsidio",
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            self.fields["constancia_subsidios_pnud"].initial = (
+                ArchivoAdmision.objects.filter(
+                    admision=admision, documentacion__nombre="Respuesta Memo PNUD"
+                )
+                .values_list("numero_gde", flat=True)
+                .first()
+            )
+            if "validacion_registro_nacional" in self.fields:
+                self.fields["validacion_registro_nacional"].initial = (
+                    ArchivoAdmision.objects.filter(
+                        admision=admision, documentacion__nombre="Validación RENACOM"
                     )
-                    self.fields["localidad_organizacion"].initial = (
-                        organizacion.localidad
-                    )
-                    self.fields["provincia_organizacion"].initial = (
-                        organizacion.provincia
-                    )
-                    self.fields["partido_organizacion"].initial = organizacion.partido
+                    .values_list("numero_gde", flat=True)
+                    .first()
+                )
+
+            if referente:
+                self.fields["representante_nombre"].initial = (
+                    f"{referente.nombre or ''} {referente.apellido or ''}".strip()
+                )
+                self.fields["representante_dni"].initial = referente.documento or ""
+                self.fields["representante_cargo"].initial = referente.funcion or ""
+
+            if organizacion:
+                self.fields["nombre_organizacion"].initial = organizacion.nombre
+                self.fields["cuit_organizacion"].initial = organizacion.cuit
+                self.fields["mail_organizacion"].initial = organizacion.email
+                self.fields["telefono_organizacion"].initial = organizacion.telefono
+                self.fields["domicilio_organizacion"].initial = organizacion.domicilio
+                self.fields["localidad_organizacion"].initial = organizacion.localidad
+                self.fields["provincia_organizacion"].initial = organizacion.provincia
+                self.fields["partido_organizacion"].initial = organizacion.partido
+
+                if not self.instance.fecha_vencimiento_mandatos:
                     self.fields["fecha_vencimiento_mandatos"].initial = (
                         organizacion.fecha_vencimiento
                     )
@@ -348,122 +407,6 @@ class DocumentosExpedienteForm(forms.ModelForm):
             field.required = True
 
 
-class AnexoForm(forms.ModelForm):
-    class Meta:
-        model = Anexo
-        exclude = [
-            "admision",
-            "expediente",
-            "efector",
-            "tipo_espacio",
-            "domicilio",
-            "barrio",
-            "mail",
-        ]
-        error_messages = {
-            "responsable_cuit": {
-                "max_value": "El CUIT/CUIL debe tener como máximo 11 dígitos.",
-                "invalid": "Ingresá solo números sin puntos ni guiones.",
-                "required": "El campo CUIT/CUIL es obligatorio.",
-            },
-        }
-        widgets = {
-            "desayuno_lunes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "desayuno_martes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "desayuno_miercoles": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "desayuno_jueves": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "desayuno_viernes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "desayuno_sabado": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "desayuno_domingo": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "almuerzo_lunes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "almuerzo_martes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "almuerzo_miercoles": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "almuerzo_jueves": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "almuerzo_viernes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "almuerzo_sabado": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "almuerzo_domingo": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "merienda_lunes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control", "value": 0}
-            ),
-            "merienda_martes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "merienda_miercoles": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "merienda_jueves": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "merienda_viernes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "merienda_sabado": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "merienda_domingo": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "cena_lunes": forms.NumberInput(attrs={"min": 0, "class": "form-control"}),
-            "cena_martes": forms.NumberInput(attrs={"min": 0, "class": "form-control"}),
-            "cena_miercoles": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "cena_jueves": forms.NumberInput(attrs={"min": 0, "class": "form-control"}),
-            "cena_viernes": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-            "cena_sabado": forms.NumberInput(attrs={"min": 0, "class": "form-control"}),
-            "cena_domingo": forms.NumberInput(
-                attrs={"min": 0, "class": "form-control"}
-            ),
-        }
-
-    def __init__(self, *args, **kwargs):
-        admision = kwargs.pop("admision", None)
-        self.require_full = kwargs.pop("require_full", False)
-        super().__init__(*args, **kwargs)
-
-        for field in self.fields.values():
-            field.required = self.require_full
-
-        for field_name, field in self.fields.items():
-            if isinstance(field.widget, forms.NumberInput):
-                if self.initial.get(field_name) is None:
-                    field.widget.attrs.setdefault("value", 0)
-
-        if not self.instance.pk:
-            self.fields["total_acreditaciones"].initial = "6"
-            self.fields["plazo_ejecucion"].initial = "6 meses"
-
-
 class ConvenioNumIFFORM(forms.ModelForm):
     class Meta:
         model = FormularioProyectoDeConvenio
@@ -565,6 +508,17 @@ class ReinicioExpedienteForm(forms.ModelForm):
     class Meta:
         model = Admision
         fields = ["observaciones_reinicio_expediente"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = True
+
+
+class SolicitarInformeComplementarioForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = ["observaciones_informe_tecnico_complementario"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

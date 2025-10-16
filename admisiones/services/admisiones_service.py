@@ -2,8 +2,11 @@ import os
 from django.conf import settings
 from django.db import models
 from django.db import transaction
-from django.shortcuts import get_object_or_404, redirect
-from django.db.models import OuterRef, Subquery
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.core.files.base import ContentFile
+from io import BytesIO
+
 from admisiones.models.admisiones import (
     Admision,
     EstadoAdmision,
@@ -12,14 +15,14 @@ from admisiones.models.admisiones import (
     ArchivoAdmision,
     InformeTecnico,
     InformeTecnicoPDF,
-    Anexo,
     InformeComplementario,
 )
 from admisiones.forms.admisiones_forms import (
     CaratularForm,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
-from comedores.models import Comedor
+from .docx_service import DocumentTemplateService, TextFormatterService
+
 from django.db.models import Q
 import logging
 
@@ -172,116 +175,107 @@ class AdmisionService:
         }
 
     @staticmethod
-    def get_comedores_with_admision(user):
-
-        try:
-
-            admision_subquery = Admision.objects.filter(comedor=OuterRef("pk"))
-
-            if user.is_superuser:
-
-                queryset = Comedor.objects.all()
-
-            else:
-
-                queryset = Comedor.objects.filter(
-                    Q(dupla__tecnico=user) | Q(dupla__abogado=user),
-                    dupla__estado="Activo",
-                )
-
-            return (
-                queryset.annotate(
-                    admision_id=Subquery(admision_subquery.values("id")[:1]),
-                    estado_legales=Subquery(
-                        admision_subquery.values("estado_legales")[:1]
-                    ),
-                )
-                .distinct()
-                .order_by("-id")
+    def get_admisiones_tecnicos_queryset(user, query=""):
+        if user.is_superuser:
+            queryset = Admision.objects.select_related(
+                "comedor",
+                "comedor__provincia",
+                "comedor__tipocomedor",
+                "comedor__referente",
+                "estado",
+            )
+        else:
+            queryset = Admision.objects.filter(
+                Q(comedor__dupla__tecnico=user) | Q(comedor__dupla__abogado=user),
+                comedor__dupla__estado="Activo",
+            ).select_related(
+                "comedor",
+                "comedor__provincia",
+                "comedor__tipocomedor",
+                "comedor__referente",
+                "estado",
             )
 
-        except Exception:
-
-            logger.exception("Error en get_comedores_with_admision")
-
-            return Comedor.objects.none()
-
-    @staticmethod
-    def get_comedores_filtrados(user, query=""):
-
-        try:
-
-            comedores = AdmisionService.get_comedores_with_admision(user)
-
-            if query:
-
-                query = query.strip().lower()
-
-                comedores = comedores.filter(
-                    Q(nombre__icontains=query)
-                    | Q(provincia__nombre__icontains=query)
-                    | Q(tipocomedor__nombre__icontains=query)
-                    | Q(calle__icontains=query)
-                    | Q(numero__icontains=query)
-                    | Q(referente__nombre__icontains=query)
-                    | Q(referente__apellido__icontains=query)
-                    | Q(referente__celular__icontains=query)
-                )
-
-            return comedores
-
-        except Exception:
-
-            logger.exception(
-                "Error en get_comedores_filtrados",
-                extra={"query": query},
+        if query:
+            query = query.strip().lower()
+            queryset = queryset.filter(
+                Q(comedor__nombre__icontains=query)
+                | Q(comedor__provincia__nombre__icontains=query)
+                | Q(comedor__tipocomedor__nombre__icontains=query)
+                | Q(comedor__calle__icontains=query)
+                | Q(comedor__numero__icontains=query)
+                | Q(comedor__referente__nombre__icontains=query)
+                | Q(comedor__referente__apellido__icontains=query)
+                | Q(comedor__referente__celular__icontains=query)
             )
 
-            return Comedor.objects.none()
+        return queryset.order_by("-creado")
 
     @staticmethod
-    def get_admision_create_context(pk):
+    def get_admisiones_tecnicos_table_data(admisiones, user):
+        table_items = []
+        for admision in admisiones:
+            comedor = admision.comedor
 
-        try:
+            badge_html = ""
+            if admision.estado_legales == "A Rectificar":
+                badge_html = '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Rectificar</span>'
+            elif admision.estado_legales == "Archivado":
+                badge_html = '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Archivado</span>'
 
-            comedor = get_object_or_404(Comedor, pk=pk)
+            actions = [
+                {
+                    "url": reverse("admisiones_tecnicos_editar", args=[admision.pk]),
+                    "type": "warning",
+                    "label": "Ver" + badge_html,
+                    "class": "position-relative",
+                }
+            ]
 
-            convenios = TipoConvenio.objects.all()
-
-            return {
-                "comedor": comedor,
-                "convenios": convenios,
-                "es_crear": True,
-                "documentos": [],
-                "documentos_personalizados": [],
-                "resumen_estados": AdmisionService._resumen_vacio(),
-                "obligatorios_totales": 0,
-                "obligatorios_completos": 0,
-                "stats": AdmisionService._stats_from_resumen(
-                    AdmisionService._resumen_vacio(), 0, 0
-                ),
-            }
-
-        except Exception:
-
-            logger.exception(
-                "Error en get_admision_create_context",
-                extra={"comedor_pk": pk},
+            table_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": comedor.nombre,
+                            "link_url": reverse("comedor_detalle", args=[comedor.id]),
+                            "link_class": "font-weight-bold link-handler",
+                            "link_title": "Ver detalles",
+                        },
+                        {
+                            "content": (
+                                str(comedor.tipocomedor) if comedor.tipocomedor else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                str(comedor.provincia) if comedor.provincia else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                str(admision.tipo_convenio.nombre)
+                                if admision.tipo_convenio
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                str(admision.get_tipo_display())
+                                if admision.tipo
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                str(admision.estado.nombre) if admision.estado else "-"
+                            )
+                        },
+                    ],
+                    "actions": actions,
+                }
             )
 
-            return {}
-
-    @staticmethod
-    def create_admision(comedor_pk, tipo_convenio_id):
-        comedor = get_object_or_404(Comedor, pk=comedor_pk)
-        tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
-        estado = get_object_or_404(EstadoAdmision, nombre__iexact="Pendiente")
-
-        return Admision.objects.create(
-            comedor=comedor,
-            tipo_convenio=tipo_convenio,
-            estado=estado,
-        )
+        return table_items
 
     @staticmethod
     def get_admision_update_context(admision):
@@ -331,14 +325,35 @@ class AdmisionService:
                 resumen_estados, obligatorios_totales, obligatorios_completos
             )
 
-            comedor = Comedor.objects.get(pk=admision.comedor_id)
+            comedor = admision.comedor
             convenios = TipoConvenio.objects.all()
-            caratular_form = CaratularForm(instance=admision)
+            caratular_form = CaratularForm(instance=admision) if admision else None
             informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
             informes_complementarios = InformeComplementario.objects.filter(
                 admision=admision
             )
-            anexo = Anexo.objects.filter(admision=admision).first()
+
+            # Información para informe complementario
+            informe_complementario_pendiente = informes_complementarios.filter(
+                estado__in=["rectificar", "borrador"]
+            ).first()
+
+            mostrar_informe_complementario = (
+                admision.estado_legales == "Informe Complementario Solicitado"
+                or (
+                    informe_complementario_pendiente
+                    and informe_complementario_pendiente.estado == "rectificar"
+                )
+            )
+
+            observaciones_complementario = None
+            if (
+                informe_complementario_pendiente
+                and informe_complementario_pendiente.observaciones_legales
+            ):
+                observaciones_complementario = (
+                    informe_complementario_pendiente.observaciones_legales
+                )
             pdf = InformeTecnicoPDF.objects.filter(admision=admision).first()
 
             return {
@@ -348,13 +363,14 @@ class AdmisionService:
                 "convenios": convenios,
                 "caratular_form": caratular_form,
                 "informe_tecnico": informe_tecnico,
-                "anexo": anexo,
                 "pdf": pdf,
                 "informes_complementarios": informes_complementarios,
                 "resumen_estados": resumen_estados,
                 "obligatorios_totales": obligatorios_totales,
                 "obligatorios_completos": obligatorios_completos,
                 "stats": stats,
+                "mostrar_informe_complementario": mostrar_informe_complementario,
+                "observaciones_complementario": observaciones_complementario,
             }
 
         except Exception:
@@ -444,6 +460,7 @@ class AdmisionService:
             nuevo_convenio = TipoConvenio.objects.get(pk=nuevo_convenio_id)
 
             admision.tipo_convenio = nuevo_convenio
+            admision.estado_id = 1
 
             admision.save()
 
@@ -776,7 +793,7 @@ class AdmisionService:
             if not admision.enviado_legales:
 
                 admision.enviado_legales = True
-
+                admision.estado_legales = "Enviado a Legales"
                 admision.save()
 
                 return True
@@ -800,7 +817,7 @@ class AdmisionService:
             if not admision.enviado_acompaniamiento:
 
                 admision.enviado_acompaniamiento = True
-
+                admision.estado_legales = "Acompañamiento Iniciado"
                 admision.save()
 
                 return True
@@ -924,6 +941,25 @@ class AdmisionService:
                 extra={"admision_id": admision_id},
             )
 
+            return None
+
+    @staticmethod
+    def generar_documento_admision(admision, template_name="admision_template.docx"):
+        """Genera documento DOCX de admisión usando template"""
+        try:
+            context = TextFormatterService.preparar_contexto_admision(admision)
+            docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
+
+            if docx_buffer:
+                filename = f"admision_{admision.id}_{admision.comedor.nombre.replace(' ', '_')}.docx"
+                return ContentFile(docx_buffer.getvalue(), name=filename)
+
+            return None
+        except Exception:
+            logger.exception(
+                "Error en generar_documento_admision",
+                extra={"admision_id": admision.id, "template": template_name},
+            )
             return None
 
     @staticmethod

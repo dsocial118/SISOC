@@ -5,8 +5,17 @@
     Nómina de {{ object.nombre }}
     <span class="ml-2 h5">
         |
-        {% if object.provincia %}{{ object.provincia.nombre }}{% else %}-{% endif %},
-        {% if object.municipio %}{{ object.municipio.nombre }}{% else %}-{% endif %}
+        {% if object.provincia %}
+            {{ object.provincia.nombre }}
+        {% else %}
+            -
+        {% endif %}
+        ,
+        {% if object.municipio %}
+            {{ object.municipio.nombre }}
+        {% else %}
+            -
+        {% endif %}
     </span>
 {% endblock %}
 {% block breadcrumb %}
