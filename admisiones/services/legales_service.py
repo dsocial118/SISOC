@@ -10,13 +10,17 @@ from django.db.models import Q
 import logging
 from io import BytesIO
 import tempfile
+from datetime import date
 
 from django.core.files.base import ContentFile
 from django.utils.html import strip_tags
 from django.utils.text import slugify
 from docx import Document
 from htmldocx import HtmlToDocx
-from .docx_service import DocxTemplateService
+from .docx_service import DocumentTemplateService, TextFormatterService
+from django.db import transaction
+import unicodedata
+import traceback
 
 logger = logging.getLogger("django")
 
@@ -46,6 +50,13 @@ from admisiones.forms.admisiones_forms import (
     DocumentosExpedienteForm,
 )
 
+def normalizar(texto):
+    """Quita acentos y convierte a minúsculas para comparación segura."""
+    if not texto:
+        return ""
+    texto = texto.strip().lower()
+    texto = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("utf-8")
+    return texto
 
 class LegalesService:
     @staticmethod
@@ -669,348 +680,242 @@ class LegalesService:
     @staticmethod
     def guardar_formulario_reso(request, admision):
         try:
-            formulario_existente = FormularioProyectoDisposicion.objects.filter(
-                admision=admision
-            ).first()
-            form = ProyectoDisposicionForm(request.POST, instance=formulario_existente)
+            with transaction.atomic():
+                formulario_existente = FormularioProyectoDisposicion.objects.filter(
+                    admision=admision
+                ).first()
+                form = ProyectoDisposicionForm(request.POST, instance=formulario_existente)
 
-            if not form.is_valid():
-                messages.error(request, "Error al guardar el Formulario Proyecto Disposición.")
+                if not form.is_valid():
+                    messages.error(request, "Error al guardar el Formulario Proyecto Disposición.")
+                    return redirect("admisiones_legales_ver", pk=admision.pk)
+
+                nuevo_formulario = form.save(commit=False)
+                nuevo_formulario.admision = admision
+                nuevo_formulario.tipo = admision.tipo
+                if request.user.is_authenticated:
+                    nuevo_formulario.creado_por = request.user
+                nuevo_formulario.save()
+
+                informe = (
+                    InformeTecnico.objects.filter(admision=admision)
+                    .order_by("-id")
+                    .first()
+                )
+
+                proyecto_convenio = admision.admisiones_proyecto_convenio.first()
+
+                context = {
+                    "admision": admision,
+                    "formulario": nuevo_formulario,
+                    "informe": informe,
+                    "proyecto_convenio": proyecto_convenio,
+                }
+
+                tipo_admision = admision.tipo or "incorporacion"
+
+                pdf_template_name = (
+                    f"admisiones/pdf/{tipo_admision}_pdf_proyecto_disposicion.html"
+                )
+                docx_template_name = (
+                    f"{tipo_admision}_docx_proyecto_disposicion.docx"
+                )
+
+                html_pdf = render_to_string(pdf_template_name, context)
+                if not html_pdf.strip():
+                    raise ValueError(
+                        f"El template {pdf_template_name} devolvió contenido vacío."
+                    )
+
+                base_url = str(
+                    getattr(settings, "STATIC_ROOT", "")
+                    or getattr(settings, "BASE_DIR", "")
+                    or "."
+                )
+                pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
+                if not pdf_bytes:
+                    raise ValueError("WeasyPrint no devolvió contenido para el PDF generado.")
+                pdf_content = ContentFile(pdf_bytes)
+
+                docx_content = DocumentTemplateService.generar_docx(
+                    template_name=docx_template_name,
+                    context=context,
+                    app_name="admisiones",
+                )
+
+                if not docx_content:
+                    raise ValueError("El servicio de generación de DOCX devolvió None.")
+
+                nombre_comedor = (
+                    admision.comedor.nombre
+                    if getattr(admision.comedor, "nombre", None)
+                    else "sin-nombre"
+                )
+                fecha_actual = date.today().strftime("%Y-%m-%d")
+                base_filename = (
+                    slugify(f"disposicion-{nombre_comedor}-{fecha_actual}")
+                    or f"disposicion-{fecha_actual}"
+                )
+
+                if nuevo_formulario.archivo:
+                    nuevo_formulario.archivo.delete(save=False)
+                nuevo_formulario.archivo.save(
+                    f"{base_filename}.pdf", pdf_content, save=False
+                )
+
+                if nuevo_formulario.archivo_docx:
+                    nuevo_formulario.archivo_docx.delete(save=False)
+                nuevo_formulario.archivo_docx.save(
+                    f"{base_filename}.docx", docx_content, save=False
+                )
+
+                nuevo_formulario.save(update_fields=["archivo", "archivo_docx"])
+
+                LegalesService.actualizar_estado_por_accion(admision, "formulario_disposicion")
+
+                messages.success(
+                    request, "Formulario guardado y documentos generados correctamente."
+                )
                 return redirect("admisiones_legales_ver", pk=admision.pk)
 
-            nuevo_formulario = form.save(commit=False)
-            nuevo_formulario.admision = admision
-            nuevo_formulario.tipo = admision.tipo
-            if request.user.is_authenticated:
-                nuevo_formulario.creado_por = request.user
-            nuevo_formulario.save()
-            LegalesService.actualizar_estado_por_accion(
-                admision, "formulario_disposicion"
-            )
-
-            informe = (
-                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
-            )
-
-            pdf_template_name = (
-                "admisiones/pdf/pdf_dispo_incorporacion.html"
-                if nuevo_formulario.tipo == "incorporacion"
-                else "admisiones/pdf/pdf_dispo_renovacion.html"
-            )
-            docx_template_name = pdf_template_name.replace("pdf/pdf_", "docx/docx_")
-
-            proyecto_convenio = admision.admisiones_proyecto_convenio.first()
-
-            context = {
-                "admision": admision,
-                "formulario": nuevo_formulario,
-                "informe": informe,
-                "proyecto_convenio": proyecto_convenio,
-            }
-
-            html_pdf = render_to_string(pdf_template_name, context)
-            if not html_pdf.strip():
-                raise ValueError(
-                    f"El template {pdf_template_name} devolvió contenido vacío."
-                )
-
-            html_docx = html_pdf
-            try:
-                get_template(docx_template_name)
-                html_docx_candidate = render_to_string(docx_template_name, context)
-                if html_docx_candidate.strip():
-                    html_docx = html_docx_candidate
-            except Exception:
-                pass
-
-            base_url = str(
-                getattr(settings, "STATIC_ROOT", "")
-                or getattr(settings, "BASE_DIR", "")
-                or "."
-            )
-            pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
-            if not pdf_bytes:
-                raise ValueError(
-                    "WeasyPrint no devolvió contenido para el PDF generado."
-                )
-            pdf_content = ContentFile(pdf_bytes)
-
-            docx_content = None
-            try:
-                doc = Document()
-                HtmlToDocx().add_html_to_document(html_docx, doc)
-                buffer = BytesIO()
-                doc.save(buffer)
-                buffer.seek(0)
-                docx_bytes = buffer.getvalue()
-                if not docx_bytes:
-                    raise ValueError("htmldocx devolvió contenido vacío.")
-                docx_content = ContentFile(docx_bytes)
-            except Exception as docx_exc:
-                logger.warning(
-                    "Falla al generar DOCX para Formulario Proyecto Disposición",
-                    exc_info=docx_exc,
-                    extra={
-                        "admision_pk": admision.pk,
-                        "formulario_pk": getattr(nuevo_formulario, "pk", None),
-                    },
-                )
-                try:
-                    fallback_doc = Document()
-                    fallback_text = strip_tags(html_docx)
-                    for line in filter(
-                        None,
-                        (segment.strip() for segment in fallback_text.splitlines()),
-                    ):
-                        fallback_doc.add_paragraph(line)
-                    buffer = BytesIO()
-                    fallback_doc.save(buffer)
-                    buffer.seek(0)
-                    docx_bytes = buffer.getvalue()
-                    if docx_bytes:
-                        docx_content = ContentFile(docx_bytes)
-                    else:
-                        logger.error(
-                            "El fallback de DOCX para Formulario Proyecto Disposición devolvió contenido vacío.",
-                            extra={
-                                "admision_pk": admision.pk,
-                                "formulario_pk": getattr(nuevo_formulario, "pk", None),
-                            },
-                        )
-                except Exception as fallback_exc:
-                    logger.error(
-                        "No se pudo generar el fallback DOCX para Formulario Proyecto Disposición",
-                        exc_info=fallback_exc,
-                        extra={
-                            "admision_pk": admision.pk,
-                            "formulario_pk": getattr(nuevo_formulario, "pk", None),
-                        },
-                    )
-
-            base_filename = (
-                slugify(
-                    f"{nuevo_formulario.tipo or 'disposicion'}-{admision.id}-{nuevo_formulario.id}"
-                )
-                or f"disposicion-{admision.id}-{nuevo_formulario.id}"
-            )
-
-            if nuevo_formulario.archivo:
-                nuevo_formulario.archivo.delete(save=False)
-            nuevo_formulario.archivo.save(
-                f"{base_filename}.pdf", pdf_content, save=False
-            )
-
-            update_fields = ["archivo"]
-            if docx_content:
-                if nuevo_formulario.archivo_docx:
-                    nuevo_formulario.archivo_docx.delete(save=False)
-                nuevo_formulario.archivo_docx.save(
-                    f"{base_filename}.docx", docx_content, save=False
-                )
-                update_fields.append("archivo_docx")
-
-            nuevo_formulario.save(update_fields=update_fields)
-
-            messages.success(
-                request, "Formulario guardado y documentos generados correctamente."
-            )
-            return redirect("admisiones_legales_ver", pk=admision.pk)
-        except Exception:
-            html_dump_path = None
-            try:
-                if "html_pdf" in locals() and html_pdf:
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", encoding="utf-8", suffix=".html", delete=False
-                    ) as temp_file:
-                        temp_file.write(html_pdf)
-                        html_dump_path = temp_file.name
-            except Exception as dump_exc:
-                logger.error(
-                    "No se pudo escribir el HTML temporal para Formulario Proyecto Disposición.",
-                    exc_info=dump_exc,
-                    extra={"admision_pk": admision.pk},
-                )
-
-            extra = {"admision_pk": admision.pk}
-            if "nuevo_formulario" in locals():
-                extra["formulario_pk"] = getattr(nuevo_formulario, "pk", None)
-            if html_dump_path:
-                extra["html_dump_path"] = html_dump_path
-
-            logger.exception("Error en guardar_formulario_reso", extra=extra)
-            messages.error(request, "Error inesperado al guardar el Formulario Proyecto Disposición.")
-            return redirect("admisiones_legales_ver", pk=admision.pk)
-
-    @staticmethod
-    def guardar_formulario_proyecto_convenio(request, admision):
-        try:
-            formulario_existente = FormularioProyectoDeConvenio.objects.filter(
-                admision=admision
-            ).first()
-            form = ProyectoConvenioForm(request.POST, instance=formulario_existente)
-
-            if not form.is_valid():
-                messages.error(
-                    request, "Error al guardar el formulario Proyecto de Convenio."
-                )
-                return redirect(request.path_info)
-
-            nuevo_formulario = form.save(commit=False)
-            nuevo_formulario.admision = admision
-            if request.user.is_authenticated:
-                nuevo_formulario.creado_por = request.user
-            nuevo_formulario.save()
-            LegalesService.actualizar_estado_por_accion(admision, "formulario_convenio")
-
-            informe = (
-                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
-            )
-
-            context = {
-                "admision": admision,
-                "formulario": nuevo_formulario,
-                "informe": informe,
-            }
-
-            pdf_template_name = "admisiones/pdf/pdf_convenio.html"
-            docx_template_name = "admisiones/docx/docx_convenio.html"
-
-            html_pdf = render_to_string(pdf_template_name, context)
-            if not html_pdf.strip():
-                raise ValueError(
-                    f"El template {pdf_template_name} devolvió contenido vacío."
-                )
-
-            html_docx = html_pdf
-            try:
-                get_template(docx_template_name)
-                html_docx_candidate = render_to_string(docx_template_name, context)
-                if html_docx_candidate.strip():
-                    html_docx = html_docx_candidate
-            except Exception:
-                pass
-
-            base_url = str(
-                getattr(settings, "STATIC_ROOT", "")
-                or getattr(settings, "BASE_DIR", "")
-                or "."
-            )
-            pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
-            if not pdf_bytes:
-                raise ValueError(
-                    "WeasyPrint no devolvió contenido para el PDF generado."
-                )
-            pdf_content = ContentFile(pdf_bytes)
-
-            docx_content = None
-            try:
-                doc = Document()
-                HtmlToDocx().add_html_to_document(html_docx, doc)
-                buffer = BytesIO()
-                doc.save(buffer)
-                buffer.seek(0)
-                docx_bytes = buffer.getvalue()
-                if not docx_bytes:
-                    raise ValueError("htmldocx devolvió contenido vacío.")
-                docx_content = ContentFile(docx_bytes)
-            except Exception as docx_exc:
-                logger.warning(
-                    "Falla al generar DOCX para formulario de Convenio",
-                    exc_info=docx_exc,
-                    extra={
-                        "admision_pk": admision.pk,
-                        "formulario_pk": getattr(nuevo_formulario, "pk", None),
-                    },
-                )
-                try:
-                    fallback_doc = Document()
-                    fallback_text = strip_tags(html_docx)
-                    for line in filter(
-                        None,
-                        (segment.strip() for segment in fallback_text.splitlines()),
-                    ):
-                        fallback_doc.add_paragraph(line)
-                    buffer = BytesIO()
-                    fallback_doc.save(buffer)
-                    buffer.seek(0)
-                    docx_bytes = buffer.getvalue()
-                    if docx_bytes:
-                        docx_content = ContentFile(docx_bytes)
-                    else:
-                        logger.error(
-                            "El fallback de DOCX para formulario de Convenio devolvió contenido vacío.",
-                            extra={
-                                "admision_pk": admision.pk,
-                                "formulario_pk": getattr(nuevo_formulario, "pk", None),
-                            },
-                        )
-                except Exception as fallback_exc:
-                    logger.error(
-                        "No se pudo generar el fallback DOCX para formulario de Convenio",
-                        exc_info=fallback_exc,
-                        extra={
-                            "admision_pk": admision.pk,
-                            "formulario_pk": getattr(nuevo_formulario, "pk", None),
-                        },
-                    )
-
-            base_filename = (
-                slugify(f"convenio-{admision.id}-{nuevo_formulario.id}")
-                or f"convenio-{admision.id}-{nuevo_formulario.id}"
-            )
-
-            if nuevo_formulario.archivo:
-                nuevo_formulario.archivo.delete(save=False)
-            nuevo_formulario.archivo.save(
-                f"{base_filename}.pdf", pdf_content, save=False
-            )
-
-            update_fields = ["archivo"]
-            if docx_content:
-                if nuevo_formulario.archivo_docx:
-                    nuevo_formulario.archivo_docx.delete(save=False)
-                nuevo_formulario.archivo_docx.save(
-                    f"{base_filename}.docx", docx_content, save=False
-                )
-                update_fields.append("archivo_docx")
-
-            nuevo_formulario.save(update_fields=update_fields)
-
-            messages.success(
-                request, "Formulario guardado y documentos generados correctamente."
-            )
-            return redirect(request.path_info)
-        except Exception:
-            html_dump_path = None
-            try:
-                if "html_pdf" in locals() and html_pdf:
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", encoding="utf-8", suffix=".html", delete=False
-                    ) as temp_file:
-                        temp_file.write(html_pdf)
-                        html_dump_path = temp_file.name
-            except Exception as dump_exc:
-                logger.error(
-                    "No se pudo escribir el HTML temporal para formulario de Convenio",
-                    exc_info=dump_exc,
-                    extra={"admision_pk": admision.pk},
-                )
-
-            extra = {"admision_pk": admision.pk}
-            if "nuevo_formulario" in locals():
-                extra["formulario_pk"] = getattr(nuevo_formulario, "pk", None)
-            if html_dump_path:
-                extra["html_dump_path"] = html_dump_path
-
+        except Exception as e:
             logger.exception(
-                "Error en guardar_formulario_proyecto_convenio", extra=extra
+                "Error en guardar_formulario_reso",
+                extra={"admision_pk": admision.pk, "error": str(e)},
             )
             messages.error(
                 request,
-                "Error inesperado al guardar el formulario Proyecto de Convenio.",
+                f"❌ Error inesperado al guardar el Formulario Proyecto Disposición: {str(e)}",
+            )
+            return redirect("admisiones_legales_ver", pk=admision.pk)
+
+        
+    @staticmethod
+    def guardar_formulario_proyecto_convenio(request, admision):
+        try:
+            with transaction.atomic():
+                formulario_existente = FormularioProyectoDeConvenio.objects.filter(
+                    admision=admision
+                ).first()
+                form = ProyectoConvenioForm(request.POST, instance=formulario_existente)
+
+                if not form.is_valid():
+                    messages.error(request, "Error al guardar el formulario Proyecto de Convenio.")
+                    return redirect(request.path_info)
+
+                nuevo_formulario = form.save(commit=False)
+                nuevo_formulario.admision = admision
+                if request.user.is_authenticated:
+                    nuevo_formulario.creado_por = request.user
+                nuevo_formulario.save()
+
+                informe = (
+                    InformeTecnico.objects.filter(admision=admision)
+                    .order_by("-id")
+                    .first()
+                )
+
+                context = {
+                    "admision": admision,
+                    "formulario": nuevo_formulario,
+                    "informe": informe,
+                }
+
+                tipo_admision = admision.tipo or "incorporacion"
+                tipo_convenio = normalizar(
+                    admision.tipo_convenio.nombre if admision.tipo_convenio else ""
+                )
+
+                if "base" in tipo_convenio:
+                    convenio_suffix = "base"
+                elif "eclesi" in tipo_convenio:
+                    convenio_suffix = "juridica_eclesiastica"
+                elif "juridica" in tipo_convenio:
+                    convenio_suffix = "juridica"
+                else:
+                    raise ValueError(
+                        f"Tipo de convenio no reconocido: '{admision.tipo_convenio.nombre}'"
+                    )
+
+                pdf_template_name = (
+                    f"admisiones/pdf/{tipo_admision}_pdf_proyecto_convenio_{convenio_suffix}.html"
+                )
+                docx_template_name = (
+                    f"{tipo_admision}_docx_proyecto_convenio_{convenio_suffix}.docx"
+                )
+
+                html_pdf = render_to_string(pdf_template_name, context)
+                if not html_pdf.strip():
+                    raise ValueError(
+                        f"El template {pdf_template_name} devolvió contenido vacío."
+                    )
+
+                base_url = str(
+                    getattr(settings, "STATIC_ROOT", "")
+                    or getattr(settings, "BASE_DIR", "")
+                    or "."
+                )
+                pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
+                if not pdf_bytes:
+                    raise ValueError("WeasyPrint no devolvió contenido para el PDF generado.")
+                pdf_content = ContentFile(pdf_bytes)
+
+                docx_content = DocumentTemplateService.generar_docx(
+                    template_name=docx_template_name,
+                    context=context,
+                    app_name="admisiones",
+                )
+
+                if not docx_content:
+                    raise ValueError("El servicio de generación de DOCX devolvió None.")
+
+                nombre_comedor = (
+                    admision.comedor.nombre
+                    if getattr(admision.comedor, "nombre", None)
+                    else "sin-nombre"
+                )
+                fecha_actual = date.today().strftime("%Y-%m-%d")
+                base_filename = (
+                    slugify(f"convenio-{nombre_comedor}-{fecha_actual}")
+                    or f"convenio-{fecha_actual}"
+                )
+
+                if nuevo_formulario.archivo:
+                    nuevo_formulario.archivo.delete(save=False)
+                nuevo_formulario.archivo.save(
+                    f"{base_filename}.pdf", pdf_content, save=False
+                )
+
+                if nuevo_formulario.archivo_docx:
+                    nuevo_formulario.archivo_docx.delete(save=False)
+                nuevo_formulario.archivo_docx.save(
+                    f"{base_filename}.docx", docx_content, save=False
+                )
+
+                nuevo_formulario.save(update_fields=["archivo", "archivo_docx"])
+
+                LegalesService.actualizar_estado_por_accion(
+                    admision, "formulario_convenio"
+                )
+
+                messages.success(
+                    request,
+                    "Formulario guardado y documentos generados correctamente.",
+                )
+                return redirect(request.path_info)
+
+        except Exception as e:
+            logger.exception(
+                "Error en guardar_formulario_proyecto_convenio",
+                extra={"admision_pk": admision.pk, "error": str(e)},
+            )
+            messages.error(
+                request,
+                f"❌ Error inesperado al guardar el formulario Proyecto de Convenio: {str(e)}",
             )
             return redirect(request.path_info)
 
+        
     @staticmethod
     def get_admisiones_legales_filtradas(query=""):
         try:
@@ -1286,8 +1191,8 @@ class LegalesService:
     def generar_documento_convenio(admision, template_name="proyecto_convenio.docx"):
         """Genera documento DOCX de proyecto de convenio usando template"""
         try:
-            context = DocxTemplateService.preparar_contexto_proyecto_convenio(admision)
-            docx_buffer = DocxTemplateService.generar_docx_desde_template(template_name, context)
+            context = TextFormatterService.preparar_contexto_proyecto_convenio(admision)
+            docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
             
             if docx_buffer:
                 filename = f"proyecto_convenio_{admision.id}.docx"
@@ -1305,8 +1210,8 @@ class LegalesService:
     def generar_documento_disposicion(admision, template_name="proyecto_disposicion.docx"):
         """Genera documento DOCX de proyecto de disposición usando template"""
         try:
-            context = DocxTemplateService.preparar_contexto_proyecto_disposicion(admision)
-            docx_buffer = DocxTemplateService.generar_docx_desde_template(template_name, context)
+            context = TextFormatterService.preparar_contexto_proyecto_disposicion(admision)
+            docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
             
             if docx_buffer:
                 filename = f"proyecto_disposicion_{admision.id}.docx"

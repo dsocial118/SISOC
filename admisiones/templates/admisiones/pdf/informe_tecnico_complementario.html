@@ -134,21 +134,22 @@
         </div>
         <main>
             <h4>Informe Complementario</h4>
-            <p>
-                <strong>Fecha:</strong> {{ informe.creado }}
-            </p>
-            <p>
-                <strong>Creado por:</strong> {{ informe.creado_por }}
-            </p>
-            <br />
-            <h4>Cambios realizados</h4>
+
+            <p><strong>Fecha:</strong> {{ fecha|date:"d/m/Y" }}</p>
+            <p><strong>Creado por:</strong> {{ creado_por }}</p>
+
+            {% if campos_actualizados %}
+            <h3>Campos actualizados:</h3>
             <ul>
-                {% for campo in campos %}
-                    <li>
-                        <strong>{{ campo.campo }}:</strong> {{ campo.value }}
-                    </li>
-                {% endfor %}
+              {% for campo in campos_actualizados %}
+              <li>
+                <strong>{{ campo.campo }}:</strong> de "{{ campo.valor_anterior|default:"-" }}" a "{{ campo.valor_nuevo|default:"-" }}"
+              </li>
+              {% endfor %}
             </ul>
+            {% else %}
+            <p><em>No se registraron modificaciones en este informe complementario.</em></p>
+            {% endif %}
         </main>
     </body>
 </html>
