@@ -10,82 +10,87 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
 
     <div class="mb-3">
         <label class="font-weight-bold d-block small text-uppercase mb-1">{{ legajo.archivos_requeridos.archivo2 }}</label>
+        <label class="font-weight-bold d-block small text-uppercase mb-1">{{ legajo.archivos_requeridos.archivo2 }}</label>
         {% if legajo.archivo2 %}
             <div class="alert alert-success py-2 mb-2">
                 <i class="fas fa-check mr-1"></i> Archivo cargado
                 <a href="{{ legajo.archivo2.url }}"
                    target="_blank"
                    class="btn btn-sm btn-outline-primary ml-2">
-                    <i class="fas fa-eye"></i> Ver
-                </a>
-            </div>
-        {% else %}
-            <div class="alert alert-warning py-2 mb-2">
-                <i class="fas fa-exclamation-triangle mr-1"></i> Pendiente de carga
-            </div>
-        {% endif %}
-        {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
-            <button type="button"
-                    class="btn btn-outline-info btn-sm"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalSubirArchivo"
-                    data-legajo-id="{{ legajo.pk }}"
-                    data-expediente-id="{{ expediente.pk }}"
-                    data-file-field="archivo2"
-                    data-archivo2-label="{{ legajo.archivos_requeridos.archivo2 }}"
-                    data-archivo3-label="{{ legajo.archivos_requeridos.archivo3 }}">
-                {% if legajo.archivo2 %}
-                    Editar
-                {% else %}
-                    Subir
-                {% endif %}
-            </button>
-        {% endif %}
-    </div>
-
-    <div class="mb-3">
-        <label class="font-weight-bold d-block small text-uppercase mb-1">{{ legajo.archivos_requeridos.archivo3 }}</label>
-        {% if legajo.archivo3 %}
-            <div class="alert alert-success py-2 mb-2">
-                <i class="fas fa-check mr-1"></i> Archivo cargado
-                <a href="{{ legajo.archivo3.url }}"
-                   target="_blank"
-                   class="btn btn-sm btn-outline-primary ml-2">
-                    <i class="fas fa-eye"></i> Ver
-                </a>
-            </div>
-        {% else %}
-            <div class="alert alert-warning py-2 mb-2">
-                <i class="fas fa-exclamation-triangle mr-1"></i> Pendiente de carga
-            </div>
-        {% endif %}
-        {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
-            <button type="button"
-                    class="btn btn-outline-info btn-sm"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalSubirArchivo"
-                    data-legajo-id="{{ legajo.pk }}"
-                    data-expediente-id="{{ expediente.pk }}"
-                    data-file-field="archivo3"
-                    data-archivo2-label="{{ legajo.archivos_requeridos.archivo2 }}"
-                    data-archivo3-label="{{ legajo.archivos_requeridos.archivo3 }}">
-                {% if legajo.archivo3 %}
-                    Editar
-                {% else %}
-                    Subir
-                {% endif %}
-            </button>
-        {% endif %}
-    </div>
-
-    {% if legajo.es_responsable %}
-        <div class="mt-3">
-            <span class="small text-muted d-block mb-2">Hijos a cargo en este expediente</span>
-            {% for hijo in legajo.hijos_a_cargo %}
-                <span class="badge badge-secondary mr-1">{{ hijo.apellido }}, {{ hijo.nombre }} ({{ hijo.documento }})</span>
-            {% empty %}
-                <small class="text-muted">No se registraron hijos en este expediente.</small>
-            {% endfor %}
+                    <a href="{{ legajo.archivo2.url }}"
+                       target="_blank"
+                       class="btn btn-sm btn-outline-primary ml-2">
+                        <i class="fas fa-eye"></i> Ver
+                    </a>
+                </div>
+            {% else %}
+                <div class="alert alert-warning py-2 mb-2">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> Pendiente de carga
+                </div>
+            {% endif %}
+            {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
+                <button type="button"
+                        class="btn btn-outline-info btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalSubirArchivo"
+                        data-legajo-id="{{ legajo.pk }}"
+                        data-expediente-id="{{ expediente.pk }}"
+                        data-file-field="archivo2">
+                    {% if legajo.archivo2 %}
+                        Editar
+                    {% else %}
+                        Subir
+                    {% endif %}
+                </button>
+            {% endif %}
         </div>
-    {% endif %}
-</div>
+
+        <div class="mb-3">
+            <label class="font-weight-bold d-block small text-uppercase mb-1">{{ legajo.archivos_requeridos.archivo3 }}</label>
+            <label class="font-weight-bold d-block small text-uppercase mb-1">{{ legajo.archivos_requeridos.archivo3 }}</label>
+            {% if legajo.archivo3 %}
+                <div class="alert alert-success py-2 mb-2">
+                    <i class="fas fa-check mr-1"></i> Archivo cargado
+                    <a href="{{ legajo.archivo3.url }}"
+                       target="_blank"
+                       class="btn btn-sm btn-outline-primary ml-2">
+                        <a href="{{ legajo.archivo3.url }}"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-primary ml-2">
+                            <i class="fas fa-eye"></i> Ver
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning py-2 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-1"></i> Pendiente de carga
+                    </div>
+                {% endif %}
+                {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
+                    <button type="button"
+                            class="btn btn-outline-info btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSubirArchivo"
+                            data-legajo-id="{{ legajo.pk }}"
+                            data-expediente-id="{{ expediente.pk }}"
+                            data-file-field="archivo3">
+                        {% if legajo.archivo3 %}
+                            Editar
+                        {% else %}
+                            Subir
+                        {% endif %}
+                    </button>
+                {% endif %}
+            </div>
+
+            {% if legajo.es_responsable %}
+                <div class="mt-3">
+                    <span class="small text-muted d-block mb-2">Hijos a cargo en este expediente</span>
+                    {% for hijo in legajo.hijos_a_cargo %}
+                        <span class="badge badge-secondary mr-1">{{ hijo.apellido }}, {{ hijo.nombre }} ({{ hijo.documento }})</span>
+                        <span class="badge badge-secondary mr-1">{{ hijo.apellido }}, {{ hijo.nombre }} ({{ hijo.documento }})</span>
+                    {% empty %}
+                        <small class="text-muted">No se registraron hijos en este expediente.</small>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>

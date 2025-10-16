@@ -50,6 +50,7 @@ class Admision(models.Model):
         ("Informe Complementario Enviado", "Informe Complementario Enviado"),
         ("Informe Complementario: Validado", "Informe Complementario: Validado"),
         ("Finalizado", "Finalizado"),
+        ("Descartado", "Descartado"),
     ]
 
     ESTADOS_INTERVENCION_JURIDICOS = [
@@ -155,6 +156,12 @@ class Admision(models.Model):
     )
     enviada_a_archivo = models.BooleanField(
         default=False, verbose_name="Enviada a Archivo"
+    )
+    motivo_descarte_expediente = models.TextField(
+        "Motivo de descarte del Expediente", null=True, blank=True
+    )
+    fecha_descarte_expediente = models.DateField(
+        "Fecha de descarte del Expediente", null=True, blank=True
     )
 
     @property
@@ -299,12 +306,16 @@ class InformeTecnico(models.Model):
         choices=[
             ("Comedor", "Comedor"),
             ("Merendero", "Merendero"),
+            ("Punto de Entrega", "Punto de Entrega"),
             ("Comedor y Merendero", "Comedor y Merendero"),
         ],
     )
     nombre_espacio = models.CharField("Nombre del Comedor/Merendero", max_length=255)
     domicilio_espacio = models.CharField(
         "Domicilio del Comedor/Merendero", max_length=255
+    )
+    domicilio_electronico_espacio = models.EmailField(
+        "Domicilio electronico constituido del Comedor/Merendero", null=True, blank=True
     )
     barrio_espacio = models.CharField("Barrio del Comedor/Merendero", max_length=255)
     localidad_espacio = models.CharField(
@@ -317,6 +328,9 @@ class InformeTecnico(models.Model):
 
     responsable_tarjeta_nombre = models.CharField(
         "Nombre del Responsable de la Tarjeta", max_length=255
+    )
+    responsable_tarjeta_cuit = models.CharField(
+        "CUIL/CUIT del Responsable de la Tarjeta", max_length=255, null=True, blank=True
     )
     responsable_tarjeta_dni = models.CharField(
         "DNI del Responsable de la Tarjeta", max_length=20
@@ -472,25 +486,6 @@ class InformeTecnico(models.Model):
         default=0, validators=[MinValueValidator(0)]
     )
 
-    # Campos del responsable administrador de fondos (antes en Anexo)
-    responsable_admin_apellido = models.CharField(
-        "Apellido del Responsable Administrador", max_length=150, null=True, blank=True
-    )
-    responsable_admin_nombre = models.CharField(
-        "Nombre del Responsable Administrador", max_length=150, null=True, blank=True
-    )
-    responsable_admin_cuit = models.BigIntegerField(
-        "CUIT / CUIL del Responsable Administrador",
-        validators=[MinValueValidator(10**10), MaxValueValidator(99999999999)],
-        null=True,
-        blank=True,
-    )
-    responsable_admin_domicilio = models.CharField(
-        "Domicilio del Responsable Administrador", max_length=150, null=True, blank=True
-    )
-    responsable_admin_mail = models.EmailField(
-        "Correo Electrónico del Responsable Administrador", null=True, blank=True
-    )
     total_acreditaciones = models.CharField(
         "Total de acreditaciones a Producir", max_length=150, null=True, blank=True
     )
@@ -586,6 +581,32 @@ class InformeTecnico(models.Model):
     aprobadas_cena_domingo = models.IntegerField(
         default=0, validators=[MinValueValidator(0)]
     )
+
+    # Campos exclusivos de Renovación.
+    resolucion_de_pago_1 = models.CharField(
+        "Resolución de pago 1", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_2 = models.CharField(
+        "Resolución de pago 2", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_3 = models.CharField(
+        "Resolución de pago 3", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_4 = models.CharField(
+        "Resolución de pago 4", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_5 = models.CharField(
+        "Resolución de pago 5", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_6 = models.CharField(
+        "Resolución de pago 6", max_length=150, null=True, blank=True
+    )
+    monto_1 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_2 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_3 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_4 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_5 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_6 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.nombre_organizacion} - {self.expediente_nro}"
