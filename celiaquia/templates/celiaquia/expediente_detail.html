@@ -775,6 +775,7 @@
             </div>
         {% endif %}
     </div>
+    {% endif %}
     <!-- Asignar TÃ©cnico: solo Coordinador (segÃºn tu condiciÃ³n actual por id) -->
     {% if expediente.estado.id == 2 and is_coord %}
         <div class="card mb-4">
@@ -1238,7 +1239,6 @@
         </div>
     </div>
 </div>
-{% endwith %}
 {% endblock %}
 {% block customCSS %}
     <link rel="stylesheet"
