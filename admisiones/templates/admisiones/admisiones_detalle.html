@@ -1,0 +1,566 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% load admisiones_tags %}
+
+{% block title %}Admision {{ admision.id }}{% endblock %}
+{% block titulo-pagina %}Detalle de Admision{% endblock %}
+
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Admision</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <div class="row mb-3">
+        <div class="col-12 d-flex flex-wrap gap-2">
+            <a href="{% url 'comedor_detalle' comedor.id %}"
+               class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver al comedor
+            </a>
+        </div>
+    </div>
+
+    <div class="card card-primary card-outline mb-4">
+        <div class="card-header">
+            <h3 class="card-title">Admision</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Fecha de creacion</dt>
+                        <dd class="col-sm-7">
+                            {{ admision.creado|date:"d/m/Y"|default:"-" }}
+                        </dd>
+                        <dt class="col-sm-5">Tipo</dt>
+                        <dd class="col-sm-7">
+                            {{ admision.get_tipo_display|default:"-" }}
+                        </dd>
+                        <dt class="col-sm-5">Tipo de convenio</dt>
+                        <dd class="col-sm-7">
+                            {{ admision.tipo_convenio.nombre|default:"-" }}
+                        </dd>
+                        <dt class="col-sm-5">Estado Admision</dt>
+                        <dd class="col-sm-7">
+                            {{ admision.estado.nombre|default:"-" }}
+                        </dd>
+                        <dt class="col-sm-5">Estado legales</dt>
+                        <dd class="col-sm-7">
+                            {{ admision.get_estado_legales_display|default:"-" }}
+                        </dd>
+                    </dl>
+                </div>
+                <div class="col-lg-6">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Enviado a legales</dt>
+                        <dd class="col-sm-7">
+                            {{ admision.enviado_legales|yesno:"Si,No" }}
+                        </dd>
+                        <dt class="col-sm-5">Enviado a acompanamiento</dt>
+                        <dd class="col-sm-7">
+                            {{ admision.enviado_acompaniamiento|yesno:"Si,No" }}
+                        </dd>
+                        <dt class="col-sm-5">Numero expediente</dt>
+                        <dd class="col-sm-7">
+                            {{ admision.num_expediente|default:"-" }}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <h5 class="mb-3">Dupla asignada</h5>
+            {% if dupla %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <strong>Nombre:</strong> {{ dupla.nombre }}
+                        </p>
+                        <p class="mb-1">
+                            <strong>Estado:</strong> {{ dupla.estado }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <strong>Abogado/a:</strong>
+                            {{ dupla_abogado.get_full_name|default:dupla_abogado.username|default:"-" }}
+                        </p>
+                        <p class="mb-0">
+                            <strong>Integrantes tecnicos:</strong>
+                            {% if dupla_tecnicos %}
+                                {{ dupla_tecnicos|join:", " }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-muted">No hay dupla asignada actualmente.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card card-outline card-secondary mb-4">
+        <div class="card-header">
+            <h3 class="card-title">Documentacion de admision</h3>
+        </div>
+        <div class="card-body table-responsive">
+            {% if documentos or documentos_personalizados %}
+                <table class="table table-striped table-bordered align-middle">
+                    <thead>
+                        <tr>
+                            <th>Documento</th>
+                            <th>Obligatorio</th>
+                            <th>Estado</th>
+                            <th>Numero IF / GDE</th>
+                            <th>Archivo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documentos %}
+                            <tr>
+                                <td>{{ doc.nombre }}</td>
+                                <td>{{ doc.obligatorio|yesno:"Si,No" }}</td>
+                                <td>{{ doc.estado|default:"-" }}</td>
+                                <td>{{ doc.numero_gde|default:"-" }}</td>
+                                <td class="text-center">
+                                    {% if doc.archivo_url %}
+                                        <a href="{{ doc.archivo_url }}"
+                                           class="btn btn-outline-primary btn-sm"
+                                           target="_blank"
+                                           rel="noopener">Descargar</a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        {% for doc in documentos_personalizados %}
+                            <tr>
+                                <td>{{ doc.nombre }}</td>
+                                <td>No</td>
+                                <td>{{ doc.estado|default:"-" }}</td>
+                                <td>{{ doc.numero_gde|default:"-" }}</td>
+                                <td class="text-center">
+                                    {% if doc.archivo_url %}
+                                        <a href="{{ doc.archivo_url }}"
+                                           class="btn btn-outline-primary btn-sm"
+                                           target="_blank"
+                                           rel="noopener">Descargar</a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted mb-0">No hay documentos cargados para esta admision.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card card-outline card-secondary mb-4">
+        <div class="card-header">
+            <h3 class="card-title">Informes tecnicos</h3>
+        </div>
+        <div class="card-body">
+            <h5>Informe tecnico principal</h5>
+            {% if informe_tecnico %}
+                <div class="row">
+                    <div class="col-lg-6">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Expediente</dt>
+                            <dd class="col-sm-7">
+                                {{ informe_tecnico.expediente_nro|default:"-" }}
+                            </dd>
+                            <dt class="col-sm-5">Nota GDE IF</dt>
+                            <dd class="col-sm-7">
+                                {{ informe_tecnico.nota_gde_if|default:"-" }}
+                            </dd>
+                            <dt class="col-sm-5">IF relevamiento</dt>
+                            <dd class="col-sm-7">
+                                {{ informe_tecnico.if_relevamiento|default:"-" }}
+                            </dd>
+                            <dt class="col-sm-5">Vencimiento mandatos</dt>
+                            <dd class="col-sm-7">
+                                {{ informe_tecnico.fecha_vencimiento_mandatos|date:"d/m/Y"|default:"-" }}
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-lg-6">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Estado formulario</dt>
+                            <dd class="col-sm-7">
+                                {{ informe_tecnico.estado_formulario|default:"-" }}
+                            </dd>
+                            <dt class="col-sm-5">Tipo</dt>
+                            <dd class="col-sm-7">
+                                {{ informe_tecnico.get_tipo_display|default:"-" }}
+                            </dd>
+                            <dt class="col-sm-5">Responsable tarjeta</dt>
+                            <dd class="col-sm-7">
+                                {{ informe_tecnico.responsable_tarjeta_nombre|default:"-" }}
+                            </dd>
+                            <dt class="col-sm-5">CUIT responsable</dt>
+                            <dd class="col-sm-7">
+                                {{ informe_tecnico.responsable_tarjeta_cuit|default:"-" }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    {% if informe_tecnico_pdf %}
+                        <a href="{{ informe_tecnico_pdf.archivo.url }}"
+                           class="btn btn-outline-primary btn-sm me-2"
+                           target="_blank"
+                           rel="noopener">Descargar PDF</a>
+                        {% if informe_tecnico_pdf.archivo_docx %}
+                            <a href="{{ informe_tecnico_pdf.archivo_docx.url }}"
+                               class="btn btn-outline-primary btn-sm"
+                               target="_blank"
+                               rel="noopener">Descargar Word</a>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">No hay archivos generados para el informe tecnico.</p>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p class="text-muted">No se registran informes tecnicos cargados.</p>
+            {% endif %}
+
+            <hr class="my-4" />
+
+            <h5>Informes tecnicos complementarios</h5>
+            {% if informes_complementarios %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                                <th>PDF</th>
+                                <th>PDF final</th>
+                                <th>Word final</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comp in informes_complementarios %}
+                                <tr>
+                                    <td>{{ comp.creado|date:"d/m/Y"|default:"-" }}</td>
+                                    <td>{{ comp.get_estado_display|default:"-" }}</td>
+                                    <td>{{ comp.observaciones_legales|default:"-" }}</td>
+                                    <td class="text-center">
+                                        {% if comp.pdf %}
+                                            <a href="{{ comp.pdf.url }}"
+                                               class="btn btn-outline-primary btn-sm"
+                                               target="_blank"
+                                               rel="noopener">Descargar</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if comp.pdf_final %}
+                                            <a href="{{ comp.pdf_final.archivo.url }}"
+                                               class="btn btn-outline-primary btn-sm"
+                                               target="_blank"
+                                               rel="noopener">Descargar</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if comp.pdf_final and comp.pdf_final.archivo_docx %}
+                                            <a href="{{ comp.pdf_final.archivo_docx.url }}"
+                                               class="btn btn-outline-primary btn-sm"
+                                               target="_blank"
+                                               rel="noopener">Descargar</a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No se registran informes complementarios.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card card-outline card-secondary mb-4">
+        <div class="card-header">
+            <h3 class="card-title">Historial legales</h3>
+        </div>
+        <div class="card-body">
+            {% include 'components/data_table.html' with headers=admision_historial_headers items=admision_historial_items custom_cells=True show_actions=False empty_message='No se registran eventos de historial.' include_pagination=True page_obj=admision_historial_page_obj is_paginated=admision_historial_is_paginated page_param=admision_historial_page_param %}
+        </div>
+    </div>
+
+    <div class="card card-outline card-success mb-4">
+        <div class="card-header">
+            <h3 class="card-title">Acompanamiento</h3>
+        </div>
+        <div class="card-body">
+            <h5>Informacion relevante</h5>
+            <div class="row">
+                <div class="col-lg-6">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6">Numero de expediente</dt>
+                        <dd class="col-sm-6">
+                            {% if acompanamiento_info %}
+                                {{ acompanamiento_info.expediente_nro|default:"-" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dd>
+                        <dt class="col-sm-6">Numero de disposicion</dt>
+                        <dd class="col-sm-6">
+                            {{ acompanamiento_numero_disposicion|default:"-" }}
+                        </dd>
+                        <dt class="col-sm-6">IF de relevamiento</dt>
+                        <dd class="col-sm-6">
+                            {% if acompanamiento_info %}
+                                {{ acompanamiento_info.if_relevamiento|default:"-" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+                <div class="col-lg-6">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6">Vencimiento de mandato</dt>
+                        <dd class="col-sm-6">
+                            {% if acompanamiento_info %}
+                                {{ acompanamiento_info.fecha_vencimiento_mandatos|date:"d/m/Y"|default:"-" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </dd>
+                        <dt class="col-sm-6">Codigo de proyecto</dt>
+                        <dd class="col-sm-6">
+                            {{ comedor.codigo_de_proyecto|default:"-" }}
+                        </dd>
+                        <dt class="col-sm-6">IF asociados</dt>
+                        <dd class="col-sm-6">
+                            {{ acompanamiento_numero_if|default:"-" }}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            {% if prestaciones_por_dia %}
+                <hr class="my-4" />
+                <h5>Prestaciones registradas</h5>
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm table-bordered text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tipo de comida</th>
+                                {% for dia in dias_semana %}<th>{{ dia }}</th>{% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prestacion in prestaciones_por_dia %}
+                                <tr>
+                                    <td class="text-start">{{ prestacion.tipo }}</td>
+                                    {% for dia in dias_semana %}
+                                        {% with dia_lower=dia|lower %}<td>{{ prestacion|get_item:dia_lower|default:"-" }}</td>{% endwith %}
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tipo de comida</th>
+                                <th>Total semanal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for total in prestaciones_dias %}
+                                <tr>
+                                    <td>{{ total.tipo }}</td>
+                                    <td>{{ total.cantidad|default:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+
+            <hr class="my-4" />
+
+            <h5>Expedientes de pago</h5>
+            {% if expedientes_pagos %}
+                <div class="table-responsive mb-3">
+                    <table class="table table-striped table-bordered align-middle">
+                        <thead>
+                            <tr>
+                                <th>Expediente</th>
+                                <th>Resolucion</th>
+                                <th>IF prestaciones</th>
+                                <th>Monto</th>
+                                <th>Orden de pago</th>
+                                <th>Fecha banco</th>
+                                <th>Fecha acreditacion</th>
+                                <th>Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expediente in expedientes_pagos %}
+                                <tr>
+                                    <td>{{ expediente.expediente_pago|default:"-" }}</td>
+                                    <td>{{ expediente.resolucion_pago|default:"-" }}</td>
+                                    <td>{{ expediente.if_cantidad_de_prestaciones|default:"-" }}</td>
+                                    <td>{{ expediente.monto|default:"-" }}</td>
+                                    <td>{{ expediente.numero_orden_pago|default:"-" }}</td>
+                                    <td>{{ expediente.fecha_pago_al_banco|date:"d/m/Y"|default:"-" }}</td>
+                                    <td>{{ expediente.fecha_acreditacion|date:"d/m/Y"|default:"-" }}</td>
+                                    <td class="text-center">
+                                        <a href="{% url 'expedientespagos_detail' expediente.id %}"
+                                           class="btn btn-outline-primary btn-sm">Ver</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No se registran expedientes de pago.</p>
+            {% endif %}
+
+            <h5 class="mt-4">Seguimientos mensuales</h5>
+            {% if rendiciones_mensuales %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered align-middle">
+                        <thead>
+                            <tr>
+                                <th>Mes</th>
+                                <th>Ano</th>
+                                <th>Documento adjunto</th>
+                                <th>Observaciones</th>
+                                <th>Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rendicion in rendiciones_mensuales %}
+                                <tr>
+                                    <td>{{ rendicion.get_mes_display|default:"-" }}</td>
+                                    <td>{{ rendicion.anio|default:"-" }}</td>
+                                    <td>{{ rendicion.documento_adjunto|yesno:"Si,No" }}</td>
+                                    <td>{{ rendicion.observaciones|default:"-" }}</td>
+                                    <td class="text-center">
+                                        <a href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}"
+                                           class="btn btn-outline-primary btn-sm">Ver</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No se registran seguimientos mensuales.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card card-outline card-info mb-4">
+        <div class="card-header">
+            <h3 class="card-title">Rendicion de cuenta final</h3>
+        </div>
+        <div class="card-body">
+            {% if rendicion_final %}
+                <p class="mb-3">
+                    <strong>Fisicamente presentada:</strong>
+                    {{ rendicion_final.fisicamente_presentada|yesno:"Si,No" }}
+                </p>
+
+                <h5>Documentos asociados</h5>
+                {% if rendicion_final_documentos %}
+                    <div class="table-responsive mb-3">
+                        <table class="table table-striped table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Observaciones</th>
+                                    <th>Ultima actualizacion</th>
+                                    <th>Archivo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in rendicion_final_documentos %}
+                                    <tr>
+                                        <td>{{ doc.tipo.nombre|default:"-" }}</td>
+                                        <td>{{ doc.estado.nombre|default:"-" }}</td>
+                                        <td>{{ doc.observaciones|default:"-" }}</td>
+                                        <td>{{ doc.fecha_modificacion|date:"d/m/Y H:i"|default:"-" }}</td>
+                                        <td class="text-center">
+                                            {% if doc.documento %}
+                                                <a href="{{ doc.documento.url }}"
+                                                   class="btn btn-outline-primary btn-sm"
+                                                   target="_blank"
+                                                   rel="noopener">Descargar</a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay documentos en la rendicion final.</p>
+                {% endif %}
+
+                <h5>Historial de rendicion</h5>
+                {% if rendicion_final_historial %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Accion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in rendicion_final_historial %}
+                                    <tr>
+                                        <td>{{ item.fecha|date:"d/m/Y H:i" }}</td>
+                                        <td>{{ item.usuario.get_full_name|default:item.usuario.username|default:"-" }}</td>
+                                        <td>{{ item.accion }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No hay movimientos registrados en la rendicion final.</p>
+                {% endif %}
+            {% else %}
+                <p class="text-muted mb-0">Todavia no se genero una rendicion de cuenta final para este comedor.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

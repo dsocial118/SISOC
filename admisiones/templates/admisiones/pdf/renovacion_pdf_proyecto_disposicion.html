@@ -1,9 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>renovacion_docx_proyecto_disposicion</title>
-    <style>
+    <head>
+        <meta charset="UTF-8" />
+        <title>renovacion_docx_proyecto_disposicion</title>
+        <style>
 @page {
     size: A4;
     margin: 3.5cm 2cm 2.5cm 2cm; /* top right bottom left */
@@ -100,9 +100,9 @@
   .text-center { text-align: center; }
   .text-start { text-align: left; }
   .align-middle { vertical-align: middle; }
-    </style>
-  </head>
-  <body>
+        </style>
+    </head>
+    <body>
         {% if informe.estado != 'Validado' %}<div class="watermark" aria-hidden="true">BORRADOR</div>{% endif %}
         <div id="header">
             <div class="header-left">
@@ -119,36 +119,78 @@
                 Ministerio de Capital Humano
             </div>
         </div>
-    <main>
-      <p>VISTO el Expediente N.º{{ informe.expediente_nro }}, la Resolución del entonces Ministerio de Desarrollo Social N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, y,</p>
-      <p>CONSIDERANDO: </p>
-      <p>Que por el artículo 87 de la Ley N.º 27.701 se prorrogó hasta el 31 de diciembre de 2025 la Emergencia Alimentaria Nacional dispuesta por el Decreto de Necesidad y Urgencia N.° 108 dictado el 15 de enero de 2002. </p>
-      <p>Que la Ley N.º 25.724 creó el Programa Nacional de Nutrición y Alimentación en cumplimiento del deber indelegable del Estado de garantizar el derecho a la alimentación de toda la ciudadanía. </p>
-      <p>Que mediante Resolución del entonces Ministerio de Desarrollo Social Resolución N° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, se creó el Programa ALIMENTAR COMUNIDAD, a  los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH.</p>
-      <p>Que mediante la Ley de Ministerios N.° 22.520 (t.o. por Decreto N.° 438 del 12 de marzo de 1992) y sus normas modificatorias y complementarias, se establecen las competencias del MINISTERIO DE CAPITAL HUMANO, el cual tiene a cargo los compromisos y obligaciones asumidos por el entonces MINISTERIO DE DESARROLLO SOCIAL DE LA NACIÓN. </p>
-      <p>Que por el Decreto N.° DCTO-2019-50-APN-PTE del 19 de diciembre de 2019 y sus normas modificatorias y complementarias, se aprobó la conformación organizativa del MINISTERIO DE CAPITAL HUMANO y se establecieron los objetivos de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO, entre los que se destaca el diseño e implementación de políticas sociales de seguridad alimentaria destinadas a la población en situación de vulnerabilidad social.</p>
-      <p>Que conforme el Decreto N.° DECTO-2025-151-APN-PTE de fecha 28 de febrero de 2025 corresponde a la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA </p>
-      <p>NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO entender en el diseño, gestión y evaluación de las políticas sociales tendientes a incluir, acompañar y proteger a la población en situación de vulnerabilidad social, a través de la implementación de programas de seguridad alimentaria, por lo cual la implementación del Programa “ALIMENTAR COMUNIDAD” es absorbida por ésta. </p>
-      <p>Que, a su vez, el citado Decreto establece como responsabilidad primaria de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO proponer, planificar y coordinar la ejecución de políticas sociales y acciones que propicien la seguridad alimentaria de la población con alta vulnerabilidad social, priorizando el fortalecimiento de la unidad doméstica en riesgo social.</p>
-      <p>Que por Resolución N.° RESOL-2025-238-APN-SNNAYF#MCH del 15 de abril de 2025, se le encomienda al Señor Subsecretario de Promoción Humana de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO la firma de todos los convenios y de los actos administrativos que resulten necesarios para la implementación de las políticas alimentarias de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA.</p>
-      <p>Que por Resolución de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO N.° xxxxxxx del XX de XXXXXXXXXXX de xxxx se incorporó al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.</p>
-      <p>Que, en dicho contexto,  {{ informe.admision.comedor.organizacion.subtipo_entidad }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }} ha solicitado la continuidad del financiamiento al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo.</p>
-      <p>Que, con el propósito de garantizar la continuidad de la asistencia alimentaria que dicho espacio venía recibiendo, corresponde destacar que lo establecido en la Resolución N.° RESOL-2025-151-APN-MCH de fecha 31 de marzo de 2025, en lo relativo al límite de </p>
-      <p>incorporaciones por entidad requirente, no resulta aplicable a aquellas organizaciones que, al momento del dictado de la mencionada norma, ya contaban con efectores incorporados al Programa o recibían asistencia en el marco de otros programas alimentarios de similar naturaleza financiados por el Gobierno Nacional.</p>
-      <p>Que la DIRECCIÓN DE ASISTENCIA INSTITUCIONAL ALIMENTARIA de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO ha evaluado favorablemente la petición efectuada {{ informe.admision.comedor.organizacion.subtipo_entidad }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}.</p>
-      <p>Que el Servicio Jurídico pertinente ha tomado la intervención de su competencia. </p>
-      <p>Que la SUBSECRETARÍA DE GESTIÓN ADMINISTRATIVA DE NIÑEZ, ADOLESCENCIA Y FAMILIA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO ha tomado la intervención de su competencia.  </p>
-      <p>Que la presente medida se dicta en virtud de lo dispuesto en la Ley de Ministerios N.° 22.520 (t.o. por Decreto N.° 438 del 12 de marzo de 1992) y sus normas modificatorias y complementarias, las Leyes N.° 27.701 y N.° 25.724, la Ley N° 24.156 de Administración Financiera y de los Sistemas de Control del Sector Público Nacional, su Decreto Reglamentario N.°1344/2007 y sus normas modificatorias y complementarias, el Decreto N.° DCTO-2019-50-APN-PTE del 19 de diciembre de 2019 y sus normas modificatorias y complementarias, el Decreto N.° DECTO-2025-170-APN-PTE del 6 de marzo de 2025 y las Resoluciones del entonces Ministerio de Desarrollo Social N.° RESOL-2020-8-APN-MDS del 8 de enero de 2020 y sus normas modificatorias y complementarias, N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias y Resolución de la Secretaría Nacional de Niñez, Adolescencia y Familia del Ministerio de Capital Humano N.° RESOL-2025-238-APN-SNNAYF#MCH del 15 de abril de 2025.</p>
-      <p>Por ello, </p>
-      <p>EL SEÑOR SUBSECRETARIO DE PROMOCIÓN HUMANA DE LA </p>
-      <p>SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA </p>
-      <p>DEL MINISTERIO DE CAPITAL HUMANO </p>
-      <p>DISPONE:</p>
-      <p>ARTÍCULO 1°.- Apruébase el Convenio a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO y  {{ informe.admision.comedor.organizacion.subtipo_entidad }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, asociada al CUIT N.° {{ informe.cuit_organizacion }}, que, como Proyecto de Convenio identificado como _IF PROYECTO CONVENIO_, forma parte integrante de la presente Disposición. </p>
-      <p>ARTÍCULO 2°.- Otórgase el financiamiento, conforme a lo aprobado por Artículo 1°, al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” solicitado por  {{ informe.admision.comedor.organizacion.subtipo_entidad }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, del Programa “ALIMENTAR COMUNIDAD” para la adquisición de alimentos mediante una tarjeta prepaga física o virtual a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo. La carga de fondos se realizará conforme a las disponibilidades financieras y presupuestarias existentes y en los términos y condiciones establecidos en el Convenio referido en el presente acto. </p>
-      <p>ARTÍCULO 3°.- Los fondos otorgados a través de la tarjeta prepaga física o virtual, están sujetos a rendición de cuentas documentada, conforme a lo establecido en la Ley de Administración Financiera y de los Sistemas de Control del Sector Público Nacional N.° 24.156, su Decreto Reglamentario N.° 1344/2007 y normas modificatorias y complementarias; la Resolución del entonces Ministerio de Desarrollo Social N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, Resolución del entonces Ministerio de Desarrollo Social N.° 2458 del 23 de agosto de 2004 y lo estipulado en el respectivo Convenio. </p>
-      <p>ARTÍCULO 4°.- La AUDITORÍA SECTORIAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA de la UNIDAD DE AUDITORÍA INTERNA del MINISTERIO DE CAPITAL HUMANO, la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, y la SINDICATURA GENERAL DE LA NACIÓN (SIGEN) están facultadas para controlar la inversión de los fondos otorgados en el marco de la presente Disposición, en virtud de la normativa mencionada en el Artículo 3° y en el contexto de las acciones de gestión social responsable, monitoreo y seguimiento, ya sea de manera concomitante o posterior a la ejecución del subsidio.  </p>
-      <p>ARTÍCULO 5°.- Comuníquese y oportunamente archívese.</p>
-    </main>
-  </body>
+        <main>
+            <p>
+                VISTO el Expediente N.º{{ informe.expediente_nro }}, la Resolución del entonces Ministerio de Desarrollo Social N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, y,
+            </p>
+            <p>CONSIDERANDO:</p>
+            <p>
+                Que por el artículo 87 de la Ley N.º 27.701 se prorrogó hasta el 31 de diciembre de 2025 la Emergencia Alimentaria Nacional dispuesta por el Decreto de Necesidad y Urgencia N.° 108 dictado el 15 de enero de 2002. 
+            </p>
+            <p>
+                Que la Ley N.º 25.724 creó el Programa Nacional de Nutrición y Alimentación en cumplimiento del deber indelegable del Estado de garantizar el derecho a la alimentación de toda la ciudadanía. 
+            </p>
+            <p>
+                Que mediante Resolución del entonces Ministerio de Desarrollo Social Resolución N° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, se creó el Programa ALIMENTAR COMUNIDAD, a  los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH.
+            </p>
+            <p>
+                Que mediante la Ley de Ministerios N.° 22.520 (t.o. por Decreto N.° 438 del 12 de marzo de 1992) y sus normas modificatorias y complementarias, se establecen las competencias del MINISTERIO DE CAPITAL HUMANO, el cual tiene a cargo los compromisos y obligaciones asumidos por el entonces MINISTERIO DE DESARROLLO SOCIAL DE LA NACIÓN. 
+            </p>
+            <p>
+                Que por el Decreto N.° DCTO-2019-50-APN-PTE del 19 de diciembre de 2019 y sus normas modificatorias y complementarias, se aprobó la conformación organizativa del MINISTERIO DE CAPITAL HUMANO y se establecieron los objetivos de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO, entre los que se destaca el diseño e implementación de políticas sociales de seguridad alimentaria destinadas a la población en situación de vulnerabilidad social.
+            </p>
+            <p>
+                Que conforme el Decreto N.° DECTO-2025-151-APN-PTE de fecha 28 de febrero de 2025 corresponde a la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA 
+            </p>
+            <p>
+                NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO entender en el diseño, gestión y evaluación de las políticas sociales tendientes a incluir, acompañar y proteger a la población en situación de vulnerabilidad social, a través de la implementación de programas de seguridad alimentaria, por lo cual la implementación del Programa “ALIMENTAR COMUNIDAD” es absorbida por ésta. 
+            </p>
+            <p>
+                Que, a su vez, el citado Decreto establece como responsabilidad primaria de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO proponer, planificar y coordinar la ejecución de políticas sociales y acciones que propicien la seguridad alimentaria de la población con alta vulnerabilidad social, priorizando el fortalecimiento de la unidad doméstica en riesgo social.
+            </p>
+            <p>
+                Que por Resolución N.° RESOL-2025-238-APN-SNNAYF#MCH del 15 de abril de 2025, se le encomienda al Señor Subsecretario de Promoción Humana de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO la firma de todos los convenios y de los actos administrativos que resulten necesarios para la implementación de las políticas alimentarias de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA.
+            </p>
+            <p>
+                Que por Resolución de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO N.° xxxxxxx del XX de XXXXXXXXXXX de xxxx se incorporó al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.
+            </p>
+            <p>
+                Que, en dicho contexto,  {{ informe.admision.comedor.organizacion.subtipo_entidad }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }} ha solicitado la continuidad del financiamiento al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo.
+            </p>
+            <p>
+                Que, con el propósito de garantizar la continuidad de la asistencia alimentaria que dicho espacio venía recibiendo, corresponde destacar que lo establecido en la Resolución N.° RESOL-2025-151-APN-MCH de fecha 31 de marzo de 2025, en lo relativo al límite de 
+            </p>
+            <p>
+                incorporaciones por entidad requirente, no resulta aplicable a aquellas organizaciones que, al momento del dictado de la mencionada norma, ya contaban con efectores incorporados al Programa o recibían asistencia en el marco de otros programas alimentarios de similar naturaleza financiados por el Gobierno Nacional.
+            </p>
+            <p>
+                Que la DIRECCIÓN DE ASISTENCIA INSTITUCIONAL ALIMENTARIA de la DIRECCIÓN NACIONAL DE PROGRAMAS ALIMENTARIOS de la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO ha evaluado favorablemente la petición efectuada {{ informe.admision.comedor.organizacion.subtipo_entidad }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}.
+            </p>
+            <p>Que el Servicio Jurídico pertinente ha tomado la intervención de su competencia.</p>
+            <p>
+                Que la SUBSECRETARÍA DE GESTIÓN ADMINISTRATIVA DE NIÑEZ, ADOLESCENCIA Y FAMILIA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO ha tomado la intervención de su competencia.  
+            </p>
+            <p>
+                Que la presente medida se dicta en virtud de lo dispuesto en la Ley de Ministerios N.° 22.520 (t.o. por Decreto N.° 438 del 12 de marzo de 1992) y sus normas modificatorias y complementarias, las Leyes N.° 27.701 y N.° 25.724, la Ley N° 24.156 de Administración Financiera y de los Sistemas de Control del Sector Público Nacional, su Decreto Reglamentario N.°1344/2007 y sus normas modificatorias y complementarias, el Decreto N.° DCTO-2019-50-APN-PTE del 19 de diciembre de 2019 y sus normas modificatorias y complementarias, el Decreto N.° DECTO-2025-170-APN-PTE del 6 de marzo de 2025 y las Resoluciones del entonces Ministerio de Desarrollo Social N.° RESOL-2020-8-APN-MDS del 8 de enero de 2020 y sus normas modificatorias y complementarias, N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias y Resolución de la Secretaría Nacional de Niñez, Adolescencia y Familia del Ministerio de Capital Humano N.° RESOL-2025-238-APN-SNNAYF#MCH del 15 de abril de 2025.
+            </p>
+            <p>Por ello,</p>
+            <p>EL SEÑOR SUBSECRETARIO DE PROMOCIÓN HUMANA DE LA</p>
+            <p>SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA</p>
+            <p>DEL MINISTERIO DE CAPITAL HUMANO</p>
+            <p>DISPONE:</p>
+            <p>
+                ARTÍCULO 1°.- Apruébase el Convenio a suscribirse entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO y  {{ informe.admision.comedor.organizacion.subtipo_entidad }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, asociada al CUIT N.° {{ informe.cuit_organizacion }}, que, como Proyecto de Convenio identificado como _IF PROYECTO CONVENIO_, forma parte integrante de la presente Disposición. 
+            </p>
+            <p>
+                ARTÍCULO 2°.- Otórgase el financiamiento, conforme a lo aprobado por Artículo 1°, al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” solicitado por  {{ informe.admision.comedor.organizacion.subtipo_entidad }} {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, del Programa “ALIMENTAR COMUNIDAD” para la adquisición de alimentos mediante una tarjeta prepaga física o virtual a fin de complementar las prestaciones alimentarias brindadas a personas que concurren al mismo. La carga de fondos se realizará conforme a las disponibilidades financieras y presupuestarias existentes y en los términos y condiciones establecidos en el Convenio referido en el presente acto. 
+            </p>
+            <p>
+                ARTÍCULO 3°.- Los fondos otorgados a través de la tarjeta prepaga física o virtual, están sujetos a rendición de cuentas documentada, conforme a lo establecido en la Ley de Administración Financiera y de los Sistemas de Control del Sector Público Nacional N.° 24.156, su Decreto Reglamentario N.° 1344/2007 y normas modificatorias y complementarias; la Resolución del entonces Ministerio de Desarrollo Social N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023 y sus normas modificatorias y complementarias, Resolución del entonces Ministerio de Desarrollo Social N.° 2458 del 23 de agosto de 2004 y lo estipulado en el respectivo Convenio. 
+            </p>
+            <p>
+                ARTÍCULO 4°.- La AUDITORÍA SECTORIAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA de la UNIDAD DE AUDITORÍA INTERNA del MINISTERIO DE CAPITAL HUMANO, la SUBSECRETARÍA DE PROMOCIÓN HUMANA de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, y la SINDICATURA GENERAL DE LA NACIÓN (SIGEN) están facultadas para controlar la inversión de los fondos otorgados en el marco de la presente Disposición, en virtud de la normativa mencionada en el Artículo 3° y en el contexto de las acciones de gestión social responsable, monitoreo y seguimiento, ya sea de manera concomitante o posterior a la ejecución del subsidio.  
+            </p>
+            <p>ARTÍCULO 5°.- Comuníquese y oportunamente archívese.</p>
+        </main>
+    </body>
 </html>

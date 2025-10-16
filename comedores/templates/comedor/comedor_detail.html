@@ -557,24 +557,25 @@
                                 <table class="table table-bordered table-striped table-sm table-compact">
                                     <thead>
                                         <tr>
-                                            {% for header in admisiones_headers %}
-                                                <th>{{ header.title }}</th>
-                                            {% endfor %}
+                                            {% for header in admisiones_headers %}<th>{{ header.title }}</th>{% endfor %}
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for item in admisiones_items %}
                                             <tr>
-                                                {% for cell in item.cells %}
-                                                    <td>{{ cell.content }}</td>
-                                                {% endfor %}
+                                                {% for cell in item.cells %}<td>{{ cell.content }}</td>{% endfor %}
                                                 <td>
                                                     {% for action in item.actions %}
                                                         <a href="{{ action.url }}" class="btn btn-{{ action.type }} btn-sm">{{ action.label }}</a>
                                                     {% endfor %}
                                                     {% if user.is_superuser and not item.enviada_a_archivo and not item.enviado_acompaniamiento %}
-                                                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#descartarModal" data-admision-id="{{ item.admision_id }}">Descartar Expediente</button>
+                                                        <button class="btn btn-danger btn-sm"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#descartarModal"
+                                                                data-admision-id="{{ item.admision_id }}">
+                                                            Descartar Expediente
+                                                        </button>
                                                     {% endif %}
                                                 </td>
                                             </tr>
@@ -592,23 +593,34 @@
                 </div>
             </div>
         </div>
-        
+ 
         <!-- Modal Descartar Expediente -->
-        <div class="modal fade" id="descartarModal" tabindex="-1" aria-labelledby="descartarModalLabel" aria-hidden="true">
+        <div class="modal fade"
+             id="descartarModal"
+             tabindex="-1"
+             aria-labelledby="descartarModalLabel"
+             aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="descartarModalLabel">Descartar Expediente</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                     </div>
                     <form method="post" action="{% url 'comedor_detalle' comedor.pk %}">
                         {% csrf_token %}
-                        <input type="hidden" name="action" value="descartar_expediente">
-                        <input type="hidden" name="admision_id" id="admisionId">
+                        <input type="hidden" name="action" value="descartar_expediente" />
+                        <input type="hidden" name="admision_id" id="admisionId" />
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label for="motivoDescarte" class="form-label">Motivo de descarte del expediente *</label>
-                                <textarea class="form-control" id="motivoDescarte" name="motivo_descarte" rows="4" required></textarea>
+                                <textarea class="form-control"
+                                          id="motivoDescarte"
+                                          name="motivo_descarte"
+                                          rows="4"
+                                          required></textarea>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -619,7 +631,7 @@
                 </div>
             </div>
         </div>
-        
+ 
         <script>
         document.addEventListener('DOMContentLoaded', function() {
             const descartarModal = document.getElementById('descartarModal');
@@ -630,7 +642,7 @@
             });
         });
         </script>
-        
+ 
         <div class="row relevamiento-container">
             <div class="col-12">
                 <div class="card">

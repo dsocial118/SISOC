@@ -1,9 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>incorporacion_pdf_informe_tecnico_base</title>
-    <style>
+    <head>
+        <meta charset="UTF-8" />
+        <title>incorporacion_pdf_informe_tecnico_base</title>
+        <style>
 @page {
     size: A4;
     margin: 3.5cm 2cm 2.5cm 2cm; /* top right bottom left */
@@ -123,9 +123,9 @@
   .text-center { text-align: center; }
   .text-start { text-align: left; }
   .align-middle { vertical-align: middle; }
-    </style>
-  </head>
-  <body>
+        </style>
+    </head>
+    <body>
         {% if informe.estado != 'Validado' %}<div class="watermark" aria-hidden="true">BORRADOR</div>{% endif %}
         <div id="header">
             <div class="header-left">
@@ -142,37 +142,226 @@
                 Ministerio de Capital Humano
             </div>
         </div>
-    <main>
-      <p>Informe Técnico Social</p>
-      <p>Expediente N°: {{ informe.expediente_nro }}</p>
-      <p>La Organización {{ informe.admision.comedor.organizacion.subtipo_entidad|default:"organizacion" }} &quot;{{ informe.nombre_organizacion }}&quot; solicita la incorporación del {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad con el fin de fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota identificada como {{ informe.nota_gde_if }}.</p>
-      <p>Organización solicitante.</p>
-      <table><tr><td>Nombre</td><td>{{ informe.nombre_organizacion }}</td></tr><tr><td>Domicilio</td><td>{{ informe.domicilio_organizacion }}</td></tr><tr><td>Localidad</td><td>{{ informe.localidad_organizacion }}</td></tr><tr><td>Partido / Departamento</td><td>{{ informe.partido_organizacion }}</td></tr><tr><td>Provincia</td><td>{{ informe.provincia_organizacion }}</td></tr><tr><td>Teléfono</td><td>{{ informe.telefono_organizacion }}</td></tr><tr><td>Correo electrónico</td><td>{{ informe.mail_organizacion }}</td></tr><tr><td>CUIT</td><td>{{ informe.cuit_organizacion }}</td></tr></table>
-      <table><tr><td>Nombre y Apellido</td><td>{{ informe.representante_nombre }}</td></tr><tr><td>Cargo</td><td>{{ informe.representante_cargo }}</td></tr><tr><td>DNI</td><td>{{ informe.representante_dni }}</td></tr></table>
-      <p>Representante de la Organización.</p>
-      <p>Datos del comedor o merendero.</p>
-      <table><tr><td>Tipo</td><td>{{ informe.tipo_espacio }}</td></tr><tr><td>Nombre</td><td>{{ informe.nombre_espacio }}</td></tr><tr><td>Domicilio</td><td>{{ informe.domicilio_espacio }}</td></tr><tr><td>Barrio</td><td>{{ informe.barrio_espacio }}</td></tr><tr><td>Localidad</td><td>{{ informe.localidad_espacio }}</td></tr><tr><td>Partido / Departamento</td><td>{{ informe.partido_espacio }}</td></tr><tr><td>Provincia</td><td>{{ informe.provincia_espacio }}</td></tr></table>
-      <p>Responsable administrador de la tarjeta.</p>
-      <table><tr><td>Nombre</td><td>{{ informe.responsable_tarjeta_nombre }}</td></tr><tr><td>DNI</td><td>{{ informe.responsable_tarjeta_dni }}</td></tr><tr><td>Domicilio</td><td>{{ informe.responsable_tarjeta_domicilio }}</td></tr><tr><td>Localidad</td><td>{{ informe.responsable_tarjeta_localidad }}</td></tr><tr><td>Provincia</td><td>{{ informe.responsable_tarjeta_provincia }}</td></tr><tr><td>Teléfono</td><td>{{ informe.responsable_tarjeta_telefono }}</td></tr><tr><td>Correo electronico</td><td>{{ informe.responsable_tarjeta_mail }}</td></tr></table>
-      <p>Mediante la Resolución N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023, modificada por Resolución N.° RESOL-2025-151-APN-MCH del 31 de marzo de 2025 se creó el Programa “ALIMENTAR COMUNIDAD”, a los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH. Los lineamientos del Programa “Alimentar Comunidad” establecen que el mecanismo a utilizar para la asistencia a Comedores y/o Merenderos comunitarios sea mediante la utilización de una tarjeta prepaga física o virtual, otorgada a comedores/ merenderos para que con ella puedan efectuar la compra de alimentos, por un plazo de 6 (SEIS) meses contados a partir del primer fondeo. En ese marco, es necesario realizar un trabajo conjunto y articulado con el fin de implementar dicho Programa para acompañar y consolidar la cobertura de las necesidades básicas de cada habitante. La Institución solicitó la incorporación del {{ informe.tipo_espacio }} {{ informe.nombre_espacio }} al Programa Alimentar Comunidad, mediante Nota {{ informe.nota_gde_if }}, con la siguiente solicitud:</p>
-      <p>DESAYUNO: {{ texto_comidas.Desayunos }}</p>
-      <p>ALMUERZO: {{ texto_comidas.Almuerzos }}</p>
-      <p>MERIENDA: {{ texto_comidas.Meriendas }}</p>
-      <p>CENA: {{ texto_comidas.Cenas }}</p>
-      <p>A los efectos del cumplimiento de los requisitos de admisibilidad al Programa Alimentar Comunidad, se agrega: Las constancias de inexistencia de percepción por parte de la organización solicitante de otros subsidios nacionales para asistencia alimentaria:</p>
-      <p>En {{ informe.constancia_subsidios_dnsa }} se informó que el {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” no tiene convenios de otorgamiento de subsidios vigentes en el componente “Fortalecimiento a Comedores y Merenderos Comunitarios”.</p>
-      <p>En nota {{ informe.constancia_subsidios_pnud }} se informó que el {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” - {{ informe.domicilio_espacio }} NO resulta beneficiario de complementos alimentarios otorgados por el Programa Abordaje Comunitario en el marco del Programa de las Naciones Unidas para el Desarrollo.</p>
-      <p>Evaluación Técnica</p>
-      <p>La {{ informe.admision.comedor.organizacion.subtipo_entidad }} &quot;{{ informe.nombre_organizacion }}&quot;, solicita la incorporación del {{ informe.tipo_espacio }} &quot;{{ informe.nombre_espacio }}&quot; al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las familias en situación de vulnerabilidad. La población destinataria se encuentra ubicada en el Partido/Departamento de {{ informe.partido_espacio }} de la provincia {{ informe.provincia_espacio }}. Es menester destacar que la asistencia alimentaria gratuita que brinda el mismo a personas en situación de vulnerabilidad, resulta necesaria y vital para alcanzar con mayor eficiencia la seguridad alimentaria. Conforme al relevamiento del Programa identificado como {{ informe.IF_relevamiento_territorial }}, se ha constatado la existencia del {{ informe.tipo_espacio }} en el territorio, el cual brinda asistencia alimentaria a personas en situación de vulnerabilidad social. Se adecúan las prestaciones entre lo relevado en territorio y lo requerido por la institución solicitante según los criterios del Programa. A continuación, se resumen las cantidades aprobadas:</p>
-      <table><tr><td>COMIDA / DIA</td><td>Desayuno</td><td>Almuerzo</td><td>Merienda</td><td>Cena</td></tr><tr><td>Lunes</td><td>{{ informe.aprobadas_desayuno_lunes }}</td><td>{{ informe.aprobadas_almuerzo_lunes }}</td><td>{{ informe.aprobadas_merienda_lunes }}</td><td>{{ informe.aprobadas_cena_lunes }}</td></tr><tr><td>Martes</td><td>{{ informe.aprobadas_desayuno_martes }}</td><td>{{ informe.aprobadas_almuerzo_martes }}</td><td>{{ informe.aprobadas_merienda_martes }}</td><td>{{ informe.aprobadas_cena_martes }}</td></tr><tr><td>Miercoles</td><td>{{ informe.aprobadas_desayuno_miercoles }}</td><td>{{ informe.aprobadas_almuerzo_miercoles }}</td><td>{{ informe.aprobadas_merienda_miercoles }}</td><td>{{ informe.aprobadas_cena_miercoles }}</td></tr><tr><td>Jueves</td><td>{{ informe.aprobadas_desayuno_jueves }}</td><td>{{ informe.aprobadas_almuerzo_jueves }}</td><td>{{ informe.aprobadas_merienda_jueves }}</td><td>{{ informe.aprobadas_cena_jueves }}</td></tr><tr><td>Viernes</td><td>{{ informe.aprobadas_desayuno_viernes }}</td><td>{{ informe.aprobadas_almuerzo_viernes }}</td><td>{{ informe.aprobadas_merienda_viernes }}</td><td>{{ informe.aprobadas_cena_viernes }}</td></tr><tr><td>Sábado</td><td>{{ informe.aprobadas_desayuno_sabado }}</td><td>{{ informe.aprobadas_almuerzo_sabado }}</td><td>{{ informe.aprobadas_merienda_sabado }}</td><td>{{ informe.aprobadas_cena_sabado }}</td></tr><tr><td>Domingo</td><td>{{ informe.aprobadas_desayuno_domingo }}</td><td>{{ informe.aprobadas_almuerzo_domingo }}</td><td>{{ informe.aprobadas_merienda_domingo }}</td><td>{{ informe.aprobadas_cena_domingo }}</td></tr></table>
-      <p>Aplicación de criterios</p>
-      <table><tr><td>{{ informe.conclusiones }}</td></tr></table>
-      <p>Descripción de criterios</p>
-      <table><tr><td>Los criterios técnicos y programáticos establecidos para evaluar la solicitud de cada comedor implican una definición de la cantidad de prestaciones a partir de la comparación entre la información relevada en la visita en territorio y la cantidad solicitada para cada día y para cada tipo de prestación. Se considera como cantidad de prestaciones relevada en territorio a la suma de las prestaciones brindadas en la actualidad más las personas en lista de espera. En esa línea, los criterios se enmarcan en los siguientes parámetros:A. Cuando la cantidad de prestaciones solicitadas mediante nota sean inferiores al número identificado en el relevamiento en territorio (suma de prestaciones actuales más personas identificadas en lista de espera), deberá prevalecer la cantidad solicitada por la institución entendiendo que la diferencia es cubierta con otro tipo de recursos.B. Cuando la cantidad de prestaciones solicitadas mediante nota sean superiores a las identificadas en la visita (suma de prestaciones actuales más personas identificadas en la lista de espera) deberá prevalecer el número de prestaciones relevado en la visita.</td></tr></table>
-      <p>Por todo lo expuesto se considera pertinente la solicitud realizada por la {{ informe.admision.comedor.organizacion.subtipo_entidad }} &quot;{{ informe.nombre_organizacion }}&quot;, para adherir al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.</p>
-      <p>Cabe destacar que la tramitación de las presentes actuaciones mediante las cuales se aprueba el convenio de incorporación al Programa mencionado no implica en este acto erogación presupuestaria alguna.</p>
-      <p>Dicha erogación será tramitada pertinentemente en expedientes de pago mensuales a fin de acreditar los fondos correspondientes a los comedores incorporados al Programa Alimentar Comunidad.</p>
-      <p>Consecuentemente, se sugiere dar prosecución al trámite correspondiente.</p>
-    </main>
-  </body>
+        <main>
+            <p>Informe Técnico Social</p>
+            <p>Expediente N°: {{ informe.expediente_nro }}</p>
+            <p>
+                La Organización {{ informe.admision.comedor.organizacion.subtipo_entidad|default:"organizacion" }} &quot;{{ informe.nombre_organizacion }}&quot; solicita la incorporación del {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad con el fin de fortalecer la tarea realizada a favor de las personas en situación de vulnerabilidad, conforme nota identificada como {{ informe.nota_gde_if }}.
+            </p>
+            <p>Organización solicitante.</p>
+            <table>
+                <tr>
+                    <td>Nombre</td>
+                    <td>{{ informe.nombre_organizacion }}</td>
+                </tr>
+                <tr>
+                    <td>Domicilio</td>
+                    <td>{{ informe.domicilio_organizacion }}</td>
+                </tr>
+                <tr>
+                    <td>Localidad</td>
+                    <td>{{ informe.localidad_organizacion }}</td>
+                </tr>
+                <tr>
+                    <td>Partido / Departamento</td>
+                    <td>{{ informe.partido_organizacion }}</td>
+                </tr>
+                <tr>
+                    <td>Provincia</td>
+                    <td>{{ informe.provincia_organizacion }}</td>
+                </tr>
+                <tr>
+                    <td>Teléfono</td>
+                    <td>{{ informe.telefono_organizacion }}</td>
+                </tr>
+                <tr>
+                    <td>Correo electrónico</td>
+                    <td>{{ informe.mail_organizacion }}</td>
+                </tr>
+                <tr>
+                    <td>CUIT</td>
+                    <td>{{ informe.cuit_organizacion }}</td>
+                </tr>
+            </table>
+            <table>
+                <tr>
+                    <td>Nombre y Apellido</td>
+                    <td>{{ informe.representante_nombre }}</td>
+                </tr>
+                <tr>
+                    <td>Cargo</td>
+                    <td>{{ informe.representante_cargo }}</td>
+                </tr>
+                <tr>
+                    <td>DNI</td>
+                    <td>{{ informe.representante_dni }}</td>
+                </tr>
+            </table>
+            <p>Representante de la Organización.</p>
+            <p>Datos del comedor o merendero.</p>
+            <table>
+                <tr>
+                    <td>Tipo</td>
+                    <td>{{ informe.tipo_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>Nombre</td>
+                    <td>{{ informe.nombre_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>Domicilio</td>
+                    <td>{{ informe.domicilio_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>Barrio</td>
+                    <td>{{ informe.barrio_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>Localidad</td>
+                    <td>{{ informe.localidad_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>Partido / Departamento</td>
+                    <td>{{ informe.partido_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>Provincia</td>
+                    <td>{{ informe.provincia_espacio }}</td>
+                </tr>
+            </table>
+            <p>Responsable administrador de la tarjeta.</p>
+            <table>
+                <tr>
+                    <td>Nombre</td>
+                    <td>{{ informe.responsable_tarjeta_nombre }}</td>
+                </tr>
+                <tr>
+                    <td>DNI</td>
+                    <td>{{ informe.responsable_tarjeta_dni }}</td>
+                </tr>
+                <tr>
+                    <td>Domicilio</td>
+                    <td>{{ informe.responsable_tarjeta_domicilio }}</td>
+                </tr>
+                <tr>
+                    <td>Localidad</td>
+                    <td>{{ informe.responsable_tarjeta_localidad }}</td>
+                </tr>
+                <tr>
+                    <td>Provincia</td>
+                    <td>{{ informe.responsable_tarjeta_provincia }}</td>
+                </tr>
+                <tr>
+                    <td>Teléfono</td>
+                    <td>{{ informe.responsable_tarjeta_telefono }}</td>
+                </tr>
+                <tr>
+                    <td>Correo electronico</td>
+                    <td>{{ informe.responsable_tarjeta_mail }}</td>
+                </tr>
+            </table>
+            <p>
+                Mediante la Resolución N.° RESOL-2023-230-APN-MDS del 17 de febrero de 2023, modificada por Resolución N.° RESOL-2025-151-APN-MCH del 31 de marzo de 2025 se creó el Programa “ALIMENTAR COMUNIDAD”, a los fines de otorgar una prestación económica para la asistencia a Comedores y Merenderos Comunitarios, conforme a los lineamientos técnicos y operativos fijados en el Anexo - IF-2025-32668963-APN-SSPH#MCH. Los lineamientos del Programa “Alimentar Comunidad” establecen que el mecanismo a utilizar para la asistencia a Comedores y/o Merenderos comunitarios sea mediante la utilización de una tarjeta prepaga física o virtual, otorgada a comedores/ merenderos para que con ella puedan efectuar la compra de alimentos, por un plazo de 6 (SEIS) meses contados a partir del primer fondeo. En ese marco, es necesario realizar un trabajo conjunto y articulado con el fin de implementar dicho Programa para acompañar y consolidar la cobertura de las necesidades básicas de cada habitante. La Institución solicitó la incorporación del {{ informe.tipo_espacio }} {{ informe.nombre_espacio }} al Programa Alimentar Comunidad, mediante Nota {{ informe.nota_gde_if }}, con la siguiente solicitud:
+            </p>
+            <p>DESAYUNO: {{ texto_comidas.Desayunos }}</p>
+            <p>ALMUERZO: {{ texto_comidas.Almuerzos }}</p>
+            <p>MERIENDA: {{ texto_comidas.Meriendas }}</p>
+            <p>CENA: {{ texto_comidas.Cenas }}</p>
+            <p>
+                A los efectos del cumplimiento de los requisitos de admisibilidad al Programa Alimentar Comunidad, se agrega: Las constancias de inexistencia de percepción por parte de la organización solicitante de otros subsidios nacionales para asistencia alimentaria:
+            </p>
+            <p>
+                En {{ informe.constancia_subsidios_dnsa }} se informó que el {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” no tiene convenios de otorgamiento de subsidios vigentes en el componente “Fortalecimiento a Comedores y Merenderos Comunitarios”.
+            </p>
+            <p>
+                En nota {{ informe.constancia_subsidios_pnud }} se informó que el {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” - {{ informe.domicilio_espacio }} NO resulta beneficiario de complementos alimentarios otorgados por el Programa Abordaje Comunitario en el marco del Programa de las Naciones Unidas para el Desarrollo.
+            </p>
+            <p>Evaluación Técnica</p>
+            <p>
+                La {{ informe.admision.comedor.organizacion.subtipo_entidad }} &quot;{{ informe.nombre_organizacion }}&quot;, solicita la incorporación del {{ informe.tipo_espacio }} &quot;{{ informe.nombre_espacio }}&quot; al Programa “Alimentar Comunidad” con el fin de fortalecer la tarea realizada a favor de las familias en situación de vulnerabilidad. La población destinataria se encuentra ubicada en el Partido/Departamento de {{ informe.partido_espacio }} de la provincia {{ informe.provincia_espacio }}. Es menester destacar que la asistencia alimentaria gratuita que brinda el mismo a personas en situación de vulnerabilidad, resulta necesaria y vital para alcanzar con mayor eficiencia la seguridad alimentaria. Conforme al relevamiento del Programa identificado como {{ informe.IF_relevamiento_territorial }}, se ha constatado la existencia del {{ informe.tipo_espacio }} en el territorio, el cual brinda asistencia alimentaria a personas en situación de vulnerabilidad social. Se adecúan las prestaciones entre lo relevado en territorio y lo requerido por la institución solicitante según los criterios del Programa. A continuación, se resumen las cantidades aprobadas:
+            </p>
+            <table>
+                <tr>
+                    <td>COMIDA / DIA</td>
+                    <td>Desayuno</td>
+                    <td>Almuerzo</td>
+                    <td>Merienda</td>
+                    <td>Cena</td>
+                </tr>
+                <tr>
+                    <td>Lunes</td>
+                    <td>{{ informe.aprobadas_desayuno_lunes }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_lunes }}</td>
+                    <td>{{ informe.aprobadas_merienda_lunes }}</td>
+                    <td>{{ informe.aprobadas_cena_lunes }}</td>
+                </tr>
+                <tr>
+                    <td>Martes</td>
+                    <td>{{ informe.aprobadas_desayuno_martes }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_martes }}</td>
+                    <td>{{ informe.aprobadas_merienda_martes }}</td>
+                    <td>{{ informe.aprobadas_cena_martes }}</td>
+                </tr>
+                <tr>
+                    <td>Miercoles</td>
+                    <td>{{ informe.aprobadas_desayuno_miercoles }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_miercoles }}</td>
+                    <td>{{ informe.aprobadas_merienda_miercoles }}</td>
+                    <td>{{ informe.aprobadas_cena_miercoles }}</td>
+                </tr>
+                <tr>
+                    <td>Jueves</td>
+                    <td>{{ informe.aprobadas_desayuno_jueves }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_jueves }}</td>
+                    <td>{{ informe.aprobadas_merienda_jueves }}</td>
+                    <td>{{ informe.aprobadas_cena_jueves }}</td>
+                </tr>
+                <tr>
+                    <td>Viernes</td>
+                    <td>{{ informe.aprobadas_desayuno_viernes }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_viernes }}</td>
+                    <td>{{ informe.aprobadas_merienda_viernes }}</td>
+                    <td>{{ informe.aprobadas_cena_viernes }}</td>
+                </tr>
+                <tr>
+                    <td>Sábado</td>
+                    <td>{{ informe.aprobadas_desayuno_sabado }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_sabado }}</td>
+                    <td>{{ informe.aprobadas_merienda_sabado }}</td>
+                    <td>{{ informe.aprobadas_cena_sabado }}</td>
+                </tr>
+                <tr>
+                    <td>Domingo</td>
+                    <td>{{ informe.aprobadas_desayuno_domingo }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_domingo }}</td>
+                    <td>{{ informe.aprobadas_merienda_domingo }}</td>
+                    <td>{{ informe.aprobadas_cena_domingo }}</td>
+                </tr>
+            </table>
+            <p>Aplicación de criterios</p>
+            <table>
+                <tr>
+                    <td>{{ informe.conclusiones }}</td>
+                </tr>
+            </table>
+            <p>Descripción de criterios</p>
+            <table>
+                <tr>
+                    <td>
+                        Los criterios técnicos y programáticos establecidos para evaluar la solicitud de cada comedor implican una definición de la cantidad de prestaciones a partir de la comparación entre la información relevada en la visita en territorio y la cantidad solicitada para cada día y para cada tipo de prestación. Se considera como cantidad de prestaciones relevada en territorio a la suma de las prestaciones brindadas en la actualidad más las personas en lista de espera. En esa línea, los criterios se enmarcan en los siguientes parámetros:A. Cuando la cantidad de prestaciones solicitadas mediante nota sean inferiores al número identificado en el relevamiento en territorio (suma de prestaciones actuales más personas identificadas en lista de espera), deberá prevalecer la cantidad solicitada por la institución entendiendo que la diferencia es cubierta con otro tipo de recursos.B. Cuando la cantidad de prestaciones solicitadas mediante nota sean superiores a las identificadas en la visita (suma de prestaciones actuales más personas identificadas en la lista de espera) deberá prevalecer el número de prestaciones relevado en la visita.
+                    </td>
+                </tr>
+            </table>
+            <p>
+                Por todo lo expuesto se considera pertinente la solicitud realizada por la {{ informe.admision.comedor.organizacion.subtipo_entidad }} &quot;{{ informe.nombre_organizacion }}&quot;, para adherir al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” al Programa Alimentar Comunidad.
+            </p>
+            <p>
+                Cabe destacar que la tramitación de las presentes actuaciones mediante las cuales se aprueba el convenio de incorporación al Programa mencionado no implica en este acto erogación presupuestaria alguna.
+            </p>
+            <p>
+                Dicha erogación será tramitada pertinentemente en expedientes de pago mensuales a fin de acreditar los fondos correspondientes a los comedores incorporados al Programa Alimentar Comunidad.
+            </p>
+            <p>Consecuentemente, se sugiere dar prosecución al trámite correspondiente.</p>
+        </main>
+    </body>
 </html>

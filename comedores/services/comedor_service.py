@@ -178,7 +178,9 @@ class ComedorService:
             ),
             Prefetch(
                 "admision_set",
-                queryset=Admision.objects.select_related("tipo_convenio", "estado").order_by("-id")[:5],
+                queryset=Admision.objects.select_related(
+                    "tipo_convenio", "estado"
+                ).order_by("-id")[:5],
                 to_attr="admisiones_optimized",
             ),
             Prefetch(
@@ -447,14 +449,14 @@ class ComedorService:
                     "Ya existe una admisión de tipo Incorporación para este comedor. Solo puede crear admisiones de tipo Renovación.",
                 )
                 return redirect(request.path)
-        
+
         # Verificar si existe una admisión del mismo tipo que no esté archivada
         if Admision.objects.filter(
-            comedor=comedor, 
-            tipo=tipo_admision, 
-            enviada_a_archivo=False
+            comedor=comedor, tipo=tipo_admision, enviada_a_archivo=False
         ).exists():
-            tipo_display = "Incorporación" if tipo_admision == "incorporacion" else "Renovación"
+            tipo_display = (
+                "Incorporación" if tipo_admision == "incorporacion" else "Renovación"
+            )
             messages.warning(
                 request,
                 f"Ya existe una admisión del tipo {tipo_display} en proceso.",

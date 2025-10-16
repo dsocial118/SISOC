@@ -251,7 +251,6 @@ class AdmisionService:
                                 str(comedor.provincia) if comedor.provincia else "-"
                             )
                         },
-
                         {
                             "content": (
                                 str(admision.tipo_convenio.nombre)
@@ -277,7 +276,6 @@ class AdmisionService:
             )
 
         return table_items
-
 
     @staticmethod
     def get_admision_update_context(admision):
@@ -951,16 +949,16 @@ class AdmisionService:
         try:
             context = TextFormatterService.preparar_contexto_admision(admision)
             docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
-            
+
             if docx_buffer:
                 filename = f"admision_{admision.id}_{admision.comedor.nombre.replace(' ', '_')}.docx"
                 return ContentFile(docx_buffer.getvalue(), name=filename)
-            
+
             return None
         except Exception:
             logger.exception(
                 "Error en generar_documento_admision",
-                extra={"admision_id": admision.id, "template": template_name}
+                extra={"admision_id": admision.id, "template": template_name},
             )
             return None
 
