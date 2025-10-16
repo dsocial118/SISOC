@@ -493,7 +493,9 @@ class InformeTecnicosCreateView(CreateView):
         action = (
             self.request.POST.get("action") if self.request.method == "POST" else None
         )
-        kwargs.update({"admision": self.admision_obj, "require_full": action == "submit"})
+        kwargs.update(
+            {"admision": self.admision_obj, "require_full": action == "submit"}
+        )
         return kwargs
 
     def get_context_data(self, **kwargs):
