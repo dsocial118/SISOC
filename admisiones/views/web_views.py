@@ -462,50 +462,94 @@ class AdmisionDetailView(DetailView):
 class InformeTecnicosCreateView(CreateView):
     template_name = "admisiones/informe_tecnico_form.html"
     context_object_name = "informe_tecnico"
+    tipos_permitidos = {"base", "juridico"}
+
+    def dispatch(self, request, *args, **kwargs):
+        self.admision_obj, self.tipo = InformeService.get_admision_y_tipo_from_kwargs(
+            self.kwargs
+        )
+        if not self.admision_obj:
+            raise Http404("La admisión indicada no existe.")
+
+        if self.tipo not in self.tipos_permitidos:
+            messages.error(
+                request,
+                "El tipo de informe seleccionado no está disponible para carga online.",
+            )
+            return HttpResponseRedirect(
+                reverse("admisiones_tecnicos_editar", args=[self.admision_obj.id])
+            )
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_class(self):
-        return InformeService.get_form_class_por_tipo(self.kwargs.get("tipo", "base"))
+        return InformeService.get_form_class_por_tipo(self.tipo)
 
     def get_queryset(self):
-        return InformeService.get_queryset_informe_por_tipo(
-            self.kwargs.get("tipo", "base")
-        )
+        return InformeService.get_queryset_informe_por_tipo(self.tipo)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        admision, _ = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
         action = (
             self.request.POST.get("action") if self.request.method == "POST" else None
         )
-        kwargs.update({"admision": admision, "require_full": action == "submit"})
+        kwargs.update(
+            {"admision": self.admision_obj, "require_full": action == "submit"}
+        )
         return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        admision, tipo = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
         context.update(
             {
-                "admision": admision,
-                "tipo": tipo,
-                "comedor": getattr(admision, "comedor", None),
+                "admision": self.admision_obj,
+                "tipo": self.tipo,
+                "comedor": getattr(self.admision_obj, "comedor", None),
             }
         )
         return context
 
     def form_valid(self, form):
-        admision, tipo = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
-        form.instance.tipo = tipo
+        form.instance.tipo = self.tipo
         action = self.request.POST.get("action")
 
         resultado = InformeService.guardar_informe(
-            form, admision, es_creacion=True, action=action
+            form, self.admision_obj, es_creacion=True, action=action
         )
 
         if not resultado.get("success"):
+            error_message = resultado.get(
+                "error", "No se pudo guardar el informe técnico."
+            )
+            messages.error(self.request, error_message)
             return self.render_to_response(self.get_context_data(form=form))
 
         self.object = resultado.get("informe")
         return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        errores = []
+        for field_name, field_errors in form.errors.items():
+            if field_name == "__all__":
+                errores.extend(field_errors)
+                continue
+            field = form.fields.get(field_name)
+            etiqueta_base = field.label if field and field.label else field_name
+            etiqueta = str(etiqueta_base).strip()
+            errores.append(f"{etiqueta}: {', '.join(field_errors)}")
+
+        if errores:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Revisá los campos: "
+                + " | ".join(errores),
+            )
+        else:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.",
+            )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
@@ -514,6 +558,19 @@ class InformeTecnicosCreateView(CreateView):
 class InformeTecnicosUpdateView(UpdateView):
     template_name = "admisiones/informe_tecnico_form.html"
     context_object_name = "informe_tecnico"
+    tipos_permitidos = {"base", "juridico"}
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.tipo not in self.tipos_permitidos:
+            messages.error(
+                request,
+                "El tipo de informe seleccionado no está disponible para carga online.",
+            )
+            return HttpResponseRedirect(
+                reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return InformeService.get_queryset_informe_por_tipo(
@@ -550,10 +607,38 @@ class InformeTecnicosUpdateView(UpdateView):
         )
 
         if not resultado.get("success"):
+            error_message = resultado.get(
+                "error", "No se pudo guardar el informe técnico."
+            )
+            messages.error(self.request, error_message)
             return self.render_to_response(self.get_context_data(form=form))
 
         self.object = resultado.get("informe")
         return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        errores = []
+        for field_name, field_errors in form.errors.items():
+            if field_name == "__all__":
+                errores.extend(field_errors)
+                continue
+            field = form.fields.get(field_name)
+            etiqueta_base = field.label if field and field.label else field_name
+            etiqueta = str(etiqueta_base).strip()
+            errores.append(f"{etiqueta}: {', '.join(field_errors)}")
+
+        if errores:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Revisá los campos: "
+                + " | ".join(errores),
+            )
+        else:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.",
+            )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
