@@ -21,7 +21,7 @@ from admisiones.forms.admisiones_forms import (
     CaratularForm,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
-from .docx_service import DocxTemplateService
+from .docx_service import DocumentTemplateService, TextFormatterService
 
 from django.db.models import Q
 import logging
@@ -251,6 +251,7 @@ class AdmisionService:
                                 str(comedor.provincia) if comedor.provincia else "-"
                             )
                         },
+
                         {
                             "content": (
                                 str(admision.tipo_convenio.nombre)
@@ -263,6 +264,11 @@ class AdmisionService:
                                 str(admision.get_tipo_display())
                                 if admision.tipo
                                 else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                str(admision.estado.nombre) if admision.estado else "-"
                             )
                         },
                     ],
@@ -943,8 +949,8 @@ class AdmisionService:
     def generar_documento_admision(admision, template_name="admision_template.docx"):
         """Genera documento DOCX de admisión usando template"""
         try:
-            context = DocxTemplateService.preparar_contexto_admision(admision)
-            docx_buffer = DocxTemplateService.generar_docx_desde_template(template_name, context)
+            context = TextFormatterService.preparar_contexto_admision(admision)
+            docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
             
             if docx_buffer:
                 filename = f"admision_{admision.id}_{admision.comedor.nombre.replace(' ', '_')}.docx"

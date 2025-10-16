@@ -239,6 +239,7 @@ class AdmisionesTecnicosListView(ListView):
                     {"title": "Ubicación"},
                     {"title": "Convenio"},
                     {"title": "Tipo"},
+                    {"title": "Estado"},
                 ],
                 "table_items": table_items,
             }
