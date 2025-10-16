@@ -423,14 +423,6 @@ class ComedorDetailView(DetailView):
 
     def get_relaciones_optimizadas(self):
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
-        rendiciones_mensuales = (
-            len(self.object.rendiciones_optimized)
-            if hasattr(self.object, "rendiciones_optimized")
-            else RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales(
-                self.object
-            )
-        )
-
         relevamientos = (
             self.object.relevamientos_optimized[:1]
             if hasattr(self.object, "relevamientos_optimized")

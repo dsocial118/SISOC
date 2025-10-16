@@ -272,11 +272,15 @@ class LegajoService:
                 ),
                 "archivo3": "Certificacion de ANSES",
             }
-        
+
         # Calcular edad para beneficiarios
         from datetime import date
+
         edad = None
-        if hasattr(legajo.ciudadano, 'fecha_nacimiento') and legajo.ciudadano.fecha_nacimiento:
+        if (
+            hasattr(legajo.ciudadano, "fecha_nacimiento")
+            and legajo.ciudadano.fecha_nacimiento
+        ):
             today = date.today()
             edad = today.year - legajo.ciudadano.fecha_nacimiento.year
             if today.month < legajo.ciudadano.fecha_nacimiento.month or (
@@ -284,7 +288,7 @@ class LegajoService:
                 and today.day < legajo.ciudadano.fecha_nacimiento.day
             ):
                 edad -= 1
-        
+
         # archivo2 siempre es Biopsia
         # archivo3 varia: Menor de 18 = Foto DNI, Mayor de 18 = Negativa ANSES
         if edad is not None and edad < 18:
@@ -292,7 +296,7 @@ class LegajoService:
                 "archivo2": "Biopsia / Constancia medica",
                 "archivo3": "Foto DNI",
             }
-        
+
         return {
             "archivo2": "Biopsia / Constancia medica",
             "archivo3": "Negativa ANSES",
