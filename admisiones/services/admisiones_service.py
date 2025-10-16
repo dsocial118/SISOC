@@ -217,6 +217,21 @@ class AdmisionService:
         for admision in admisiones:
             comedor = admision.comedor
 
+            comedor_nombre = comedor.nombre if comedor else "-"
+            comedor_link_url = (
+                reverse("comedor_detalle", args=[comedor.id]) if comedor else None
+            )
+            tipocomedor_display = (
+                str(comedor.tipocomedor)
+                if comedor and getattr(comedor, "tipocomedor", None)
+                else "-"
+            )
+            provincia_display = (
+                str(comedor.provincia)
+                if comedor and getattr(comedor, "provincia", None)
+                else "-"
+            )
+
             badge_html = ""
             if admision.estado_legales == "A Rectificar":
                 badge_html = '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Rectificar</span>'
@@ -236,20 +251,16 @@ class AdmisionService:
                 {
                     "cells": [
                         {
-                            "content": comedor.nombre,
-                            "link_url": reverse("comedor_detalle", args=[comedor.id]),
+                            "content": comedor_nombre,
+                            "link_url": comedor_link_url,
                             "link_class": "font-weight-bold link-handler",
                             "link_title": "Ver detalles",
                         },
                         {
-                            "content": (
-                                str(comedor.tipocomedor) if comedor.tipocomedor else "-"
-                            )
+                            "content": tipocomedor_display
                         },
                         {
-                            "content": (
-                                str(comedor.provincia) if comedor.provincia else "-"
-                            )
+                            "content": provincia_display
                         },
                         {
                             "content": (
