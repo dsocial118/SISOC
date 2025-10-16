@@ -738,7 +738,7 @@ class ImportacionService:
                         if ciudadano_responsable and ciudadano_responsable.pk:
                             cid_resp = ciudadano_responsable.pk
 
-                            # Guardar relacion familiar aun si el legajo ya existe
+                            # Guardar relacion familiar SIEMPRE
                             pair = (cid_resp, cid)
                             if pair not in relaciones_familiares_pairs:
                                 relaciones_familiares_pairs.add(pair)
@@ -751,26 +751,25 @@ class ImportacionService:
                                 )
 
                             # Validar duplicados del responsable antes de crear el legajo
-                            if (
-                                cid_resp not in existentes_ids
-                                and cid_resp not in en_programa
-                                and cid_resp not in abiertos
-                            ):
-                                legajos_crear.append(
-                                    ExpedienteCiudadano(
-                                        expediente=expediente,
-                                        ciudadano=ciudadano_responsable,
-                                        estado_id=estado_id,
+                            if cid_resp not in existentes_ids:
+                                # Verificar si ya está en otro expediente
+                                if cid_resp not in en_programa and cid_resp not in abiertos:
+                                    legajos_crear.append(
+                                        ExpedienteCiudadano(
+                                            expediente=expediente,
+                                            ciudadano=ciudadano_responsable,
+                                            estado_id=estado_id,
+                                        )
                                     )
-                                )
-                                existentes_ids.add(cid_resp)
-                                validos += 1
-                            else:
-                                add_warning(
-                                    offset,
-                                    "responsable",
-                                    "Responsable duplicado o ya existe",
-                                )
+                                    existentes_ids.add(cid_resp)
+                                    validos += 1
+                                else:
+                                    add_warning(
+                                        offset,
+                                        "responsable",
+                                        "Responsable ya existe en otro expediente",
+                                    )
+                            # Si ya existe en este expediente, no hacer nada (la relación se guardará igual)
 
                     except Exception as e:
                         add_warning(
@@ -833,11 +832,23 @@ class ImportacionService:
                                 )
 
                         if relaciones_crear:
-                            GrupoFamiliar.objects.bulk_create(
-                                relaciones_crear,
-                                batch_size=batch_size,
-                                ignore_conflicts=True,  # Evitar errores por duplicados
+                            # Eliminar duplicados existentes antes de crear
+                            existing_pairs = set(
+                                GrupoFamiliar.objects.filter(
+                                    ciudadano_1_id__in=[r.ciudadano_1_id for r in relaciones_crear],
+                                    ciudadano_2_id__in=[r.ciudadano_2_id for r in relaciones_crear],
+                                ).values_list('ciudadano_1_id', 'ciudadano_2_id')
                             )
+                            relaciones_crear = [
+                                r for r in relaciones_crear 
+                                if (r.ciudadano_1_id, r.ciudadano_2_id) not in existing_pairs
+                            ]
+                            if relaciones_crear:
+                                GrupoFamiliar.objects.bulk_create(
+                                    relaciones_crear,
+                                    batch_size=batch_size,
+                                    ignore_conflicts=True,
+                                )
                             logger.info(
                                 "Creadas %s relaciones familiares",
                                 len(relaciones_crear),
