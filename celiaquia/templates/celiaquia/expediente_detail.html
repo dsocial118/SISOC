@@ -14,7 +14,7 @@
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
-                   class="btn btn-outline-secondary btn-sm">Volver</a>
+                   class="btn btn-outline-secondary btn-sm">Volver </a>
                 {% if expediente.estado.nombre == 'CREADO' %}
                     <a href="{% url 'expediente_update' expediente.pk %}"
                        class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
