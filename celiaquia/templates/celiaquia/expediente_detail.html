@@ -782,20 +782,52 @@
         <div class="card-header bg-light">
             <h5 class="mb-0">Asignar Tecnico</h5>
         </div>
-        <div class="card-body">
-            <form method="post"
-                  action="{% url 'expediente_asignar_tecnico' expediente.pk %}">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="tecnico">Seleccionar Tecnico:</label>
-                    <select name="tecnico_id" id="tecnico" class="form-control">
-                        {% for tecnico in tecnicos %}
-                            <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary mt-2">Asignar</button>
-            </form>
+    {% endif %}
+    <!-- Modal: subir/editar archivo de legajo (individual por campo) -->
+    <div class="modal fade"
+         id="modalSubirArchivo"
+         tabindex="-1"
+         aria-labelledby="modalSubirArchivoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="form-subir-archivo" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalSubirArchivoLabel">Subir/Editar archivo del legajo</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="modal-alertas" class="mb-2"></div>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label">Seleccionar archivo a actualizar</label>
+                                <select name="campo" id="campo-archivo" class="form-select" required>
+                                    <option value="archivo2">Biopsia positiva y/o constancia medica</option>
+                                    <option value="archivo3">Negativa de ANSES</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="id_archivo" class="form-label">PDF o imagen</label>
+                                <input type="file"
+                                       name="archivo"
+                                       id="id_archivo"
+                                       class="form-control"
+                                       required
+                                       accept=".pdf,.jpg,.jpeg,.png" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+
         </div>
     </div>
 {% endif %}
