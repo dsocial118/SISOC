@@ -502,10 +502,38 @@ class InformeTecnicosCreateView(CreateView):
         )
 
         if not resultado.get("success"):
+            error_message = resultado.get(
+                "error", "No se pudo guardar el informe técnico."
+            )
+            messages.error(self.request, error_message)
             return self.render_to_response(self.get_context_data(form=form))
 
         self.object = resultado.get("informe")
         return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        errores = []
+        for field_name, field_errors in form.errors.items():
+            if field_name == "__all__":
+                errores.extend(field_errors)
+                continue
+            field = form.fields.get(field_name)
+            etiqueta_base = field.label if field and field.label else field_name
+            etiqueta = str(etiqueta_base).strip()
+            errores.append(f"{etiqueta}: {', '.join(field_errors)}")
+
+        if errores:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Revisá los campos: "
+                + " | ".join(errores),
+            )
+        else:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.",
+            )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
@@ -550,10 +578,38 @@ class InformeTecnicosUpdateView(UpdateView):
         )
 
         if not resultado.get("success"):
+            error_message = resultado.get(
+                "error", "No se pudo guardar el informe técnico."
+            )
+            messages.error(self.request, error_message)
             return self.render_to_response(self.get_context_data(form=form))
 
         self.object = resultado.get("informe")
         return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        errores = []
+        for field_name, field_errors in form.errors.items():
+            if field_name == "__all__":
+                errores.extend(field_errors)
+                continue
+            field = form.fields.get(field_name)
+            etiqueta_base = field.label if field and field.label else field_name
+            etiqueta = str(etiqueta_base).strip()
+            errores.append(f"{etiqueta}: {', '.join(field_errors)}")
+
+        if errores:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Revisá los campos: "
+                + " | ".join(errores),
+            )
+        else:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.",
+            )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
