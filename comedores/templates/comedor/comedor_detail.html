@@ -528,7 +528,7 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title font-weight-bold me-3 pt-1">Detalles Admisión</h3>
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Detalles Admisiónes</h3>
                         <div class="card-tools">
                             <a href="{% url 'dupla_asignar' pk=comedor.id %}"
                                class="btn btn-primary me-1 btn-sm">
@@ -543,43 +543,112 @@
                             </button>
                         </div>
                     </div>
-                    <div class="card-body card-comments p-0 pb-1">
-                        <div class="nav nav-pills row my-3">
-                            <div class="nav-item col-4 d-flex mb-3">
-                                <div class="comment-text comment-text d-flex flex-column">
-                                    Dupla
-                                    <span class="username">{{ comedor.dupla.nombre |default_if_none:"-" }}</span>
-                                </div>
+                    <div class="card-body p-1 m-1">
+                        <style>
+                        .table-compact {
+                            font-size: 0.85rem;
+                        }
+                        .table-compact th,
+                        .table-compact td {
+                            padding: 0.3rem 0.5rem;
+                            vertical-align: middle;
+                        }
+                        .table-compact .btn {
+                            padding: 0.2rem 0.5rem;
+                            font-size: 0.8rem;
+                        }
+                        </style>
+                        {% if admisiones_items %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-sm table-compact">
+                                    <thead>
+                                        <tr>
+                                            {% for header in admisiones_headers %}<th>{{ header.title }}</th>{% endfor %}
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in admisiones_items %}
+                                            <tr>
+                                                {% for cell in item.cells %}<td>{{ cell.content }}</td>{% endfor %}
+                                                <td>
+                                                    {% for action in item.actions %}
+                                                        <a href="{{ action.url }}" class="btn btn-{{ action.type }} btn-sm">{{ action.label }}</a>
+                                                    {% endfor %}
+                                                    {% if user.is_superuser and not item.enviada_a_archivo and not item.enviado_acompaniamiento %}
+                                                        <button class="btn btn-danger btn-sm"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#descartarModal"
+                                                                data-admision-id="{{ item.admision_id }}">
+                                                            Descartar Expediente
+                                                        </button>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="nav-item col-4 d-flex mb-3">
-                                <div class="comment-text comment-text d-flex flex-column">
-                                    Número de Expediente
-                                    <span class="username">{{ admision.num_expediente |default_if_none:"-" }}</span>
-                                </div>
+                        {% else %}
+                            <div class="p-3 text-center text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>No hay admisiones registradas</p>
                             </div>
-                            <div class="nav-item col-4 d-flex mb-3">
-                                <div class="comment-text comment-text d-flex flex-column">
-                                    Tipo de convenio
-                                    <span class="username">{{ admision.tipo_convenio.nombre |default_if_none:"-" }}</span>
-                                </div>
-                            </div>
-                            <div class="nav-item col-4 d-flex mb-3">
-                                <div class="comment-text comment-text d-flex flex-column">
-                                    Fecha
-                                    <span class="username">{{ admision.creado |date:'d/m/Y' |default_if_none:"-" }}</span>
-                                </div>
-                            </div>
-                            <div class="nav-item col-4 d-flex mb-3">
-                                <div class="comment-text comment-text d-flex flex-column">
-                                    Estado
-                                    <span class="username">{{ admision.estado.nombre |default_if_none:"-" }}</span>
-                                </div>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+ 
+        <!-- Modal Descartar Expediente -->
+        <div class="modal fade"
+             id="descartarModal"
+             tabindex="-1"
+             aria-labelledby="descartarModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="descartarModalLabel">Descartar Expediente</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form method="post" action="{% url 'comedor_detalle' comedor.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="descartar_expediente" />
+                        <input type="hidden" name="admision_id" id="admisionId" />
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="motivoDescarte" class="form-label">Motivo de descarte del expediente *</label>
+                                <textarea class="form-control"
+                                          id="motivoDescarte"
+                                          name="motivo_descarte"
+                                          rows="4"
+                                          required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Descartar Expediente</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+ 
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const descartarModal = document.getElementById('descartarModal');
+            descartarModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const admisionId = button.getAttribute('data-admision-id');
+                document.getElementById('admisionId').value = admisionId;
+            });
+        });
+        </script>
+ 
         <div class="row relevamiento-container">
             <div class="col-12">
                 <div class="card">

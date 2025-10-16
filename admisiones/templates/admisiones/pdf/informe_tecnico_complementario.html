@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <style>
+        @page {
+            size: A4;
+            margin: 3.5cm 2cm 2.5cm 2cm; /* márgenes: top, right, bottom, left */
+            @top-center {
+                content: element(header);
+            }
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 10pt;
+                color: #666;
+            }
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            margin: 0;
+        }
+
+        #header {
+            position: running(header);
+            height: 3cm;
+            padding: 0.5cm 1cm;
+            /*border-bottom: 1px solid #ccc;*/
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            font-weight: bold;
+            padding-top: 15px;
+            padding-right: 30px;
+            font-size: 10pt;
+            text-align: left;
+            flex-direction: column; /* si hay varios elementos apilados verticalmente */
+            align-items: center;    /* centro horizontal */
+            justify-content: center; /* centro vertical */
+            text-align: center; /* para textos multilínea */
+        }
+
+        .header-right {
+            display: flex;
+            flex-direction: column; /* si hay varios elementos apilados verticalmente */
+            align-items: center;    /* centro horizontal */
+            justify-content: center; /* centro vertical */
+            font-size: 9pt;
+            text-align: center; /* para textos multilínea */
+            line-height: 0.5;
+            padding-left:30px;
+        }
+
+        .header-right img {
+            max-height: 40px;
+            height: auto;
+            width: auto;
+            margin-bottom: 0px;
+        }
+        main {
+            /* padding-top: 1cm; */
+            box-sizing: border-box;
+        }
+
+        h4 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 2px solid black;
+        }
+
+        th, td {
+            padding: 6px;
+            border: 1px solid #ccc;
+            vertical-align: top;
+        }
+
+        th[colspan="2"] {
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+
+        .salto_pagina {
+            page-break-before: always;
+            /* También podés usar page-break-inside: avoid; para evitar quiebres dentro */
+        }
+
+        .table-bordered {
+            border: 1px solid #ccc;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-start {
+            text-align: left;
+        }
+
+        .align-middle {
+            vertical-align: middle;
+        }
+        li {
+          line-height: 1.8;
+          margin-bottom: 0.5em;
+        }
+        </style>
+    </head>
+    <body>
+        <div id="header">
+            <div class="header-left">
+                <br />
+                PROGRAMA ALIMENTAR
+                <br />
+                COMUNIDAD
+            </div>
+            <div class="header-right">
+                <img src="https://www.casarosada.gob.ar/images/escudo_nacional_argentino.png"
+                     style="filter: grayscale(100%);
+                            max-height:40px" />
+                <br />
+                Secretaría de Niñez, Adolescencia y Familia
+                <br />
+                Ministerio de Capital Humano
+            </div>
+        </div>
+        <main>
+            <h4>Informe Complementario</h4>
+
+            <p>
+                <strong>Fecha:</strong> {{ fecha|date:"d/m/Y" }}
+            </p>
+            <p>
+                <strong>Creado por:</strong> {{ creado_por }}
+            </p>
+
+            {% if campos_actualizados %}
+                <h3>Campos actualizados:</h3>
+                <ul>
+                    {% for campo in campos_actualizados %}
+                        <li>
+                            <strong>{{ campo.campo }}:</strong> de "{{ campo.valor_anterior|default:"-" }}" a "{{ campo.valor_nuevo|default:"-" }}"
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>
+                    <em>No se registraron modificaciones en este informe complementario.</em>
+                </p>
+            {% endif %}
+        </main>
+    </body>
+</html>

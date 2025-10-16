@@ -139,8 +139,8 @@ class ExpedienteListView(ListView):
     paginate_by = 20
 
     def get_paginate_by(self, queryset):
-        page_size = self.request.GET.get('page_size', '20')
-        if page_size.lower() in ('all', 'todos'):
+        page_size = self.request.GET.get("page_size", "20")
+        if page_size.lower() in ("all", "todos"):
             return None
         try:
             return int(page_size)
@@ -489,28 +489,6 @@ class ExpedienteDetailView(DetailView):
 
             legajos_enriquecidos.append(legajo)
             legajos_por_ciudadano[legajo.ciudadano_id] = legajo
-
-        # Ordenar: responsables primero, luego sus hijos, luego beneficiarios sin responsable
-        legajos_ordenados = []
-        procesados = set()
-        
-        for legajo in legajos_enriquecidos:
-            if legajo.es_responsable and legajo.ciudadano_id not in procesados:
-                legajos_ordenados.append(legajo)
-                procesados.add(legajo.ciudadano_id)
-                # Agregar hijos inmediatamente después
-                for hijo in legajo.hijos_a_cargo:
-                    if hijo.id in legajos_por_ciudadano and hijo.id not in procesados:
-                        legajos_ordenados.append(legajos_por_ciudadano[hijo.id])
-                        procesados.add(hijo.id)
-        
-        # Agregar beneficiarios sin responsable al final
-        for legajo in legajos_enriquecidos:
-            if legajo.ciudadano_id not in procesados:
-                legajos_ordenados.append(legajo)
-                procesados.add(legajo.ciudadano_id)
-        
-        legajos_enriquecidos = legajos_ordenados
 
         faltantes_list = LegajoService.faltantes_archivos(expediente)
         # Obtener estructura familiar completa

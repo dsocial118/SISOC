@@ -65,7 +65,7 @@
             <a href="{{ doc.archivo_url }}"
                target="_blank"
                class="btn btn-primary btn-sm">Ver Archivo</a>
-            {% if request.user|has_group:"Tecnico Comedor" and admision.estado.nombre != "Finalizada" %}
+            {% if request.user|has_group:"Tecnico Comedor" and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
                 {% if doc.estado != "Aceptado" and doc.estado != "A Validar Abogado" %}
                     <button class="btn btn-sm btn-danger px-3 ms-2"
                             onclick="confirmarEliminar({{ admision.id }}, {{ doc.documentacion_id|default:'null' }}, {{ doc.archivo_id|default:'null' }})">
@@ -74,7 +74,7 @@
                 {% endif %}
             {% endif %}
         {% else %}
-            {% if request.user|has_group:"Tecnico Comedor" and not doc.es_personalizado and not admision.enviada_a_archivo %}
+            {% if request.user|has_group:"Tecnico Comedor" and not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
                 <input type="file"
                        id="file-{{ doc.documentacion_id }}"
                        class="d-none"

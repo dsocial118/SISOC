@@ -4,6 +4,8 @@ from django.db import models
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.core.files.base import ContentFile
+from io import BytesIO
 
 from admisiones.models.admisiones import (
     Admision,
@@ -19,6 +21,7 @@ from admisiones.forms.admisiones_forms import (
     CaratularForm,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
+from .docx_service import DocumentTemplateService, TextFormatterService
 
 from django.db.models import Q
 import logging
@@ -262,56 +265,17 @@ class AdmisionService:
                                 else "-"
                             )
                         },
+                        {
+                            "content": (
+                                str(admision.estado.nombre) if admision.estado else "-"
+                            )
+                        },
                     ],
                     "actions": actions,
                 }
             )
 
         return table_items
-
-    @staticmethod
-    def get_admision_create_context(pk):
-
-        try:
-
-            comedor = get_object_or_404(Comedor, pk=pk)
-
-            convenios = TipoConvenio.objects.all()
-
-            return {
-                "comedor": comedor,
-                "convenios": convenios,
-                "es_crear": True,
-                "documentos": [],
-                "documentos_personalizados": [],
-                "resumen_estados": AdmisionService._resumen_vacio(),
-                "obligatorios_totales": 0,
-                "obligatorios_completos": 0,
-                "stats": AdmisionService._stats_from_resumen(
-                    AdmisionService._resumen_vacio(), 0, 0
-                ),
-            }
-
-        except Exception:
-
-            logger.exception(
-                "Error en get_admision_create_context",
-                extra={"comedor_pk": pk},
-            )
-
-            return {}
-
-    @staticmethod
-    def create_admision(comedor_pk, tipo_convenio_id):
-        comedor = get_object_or_404(Comedor, pk=comedor_pk)
-        tipo_convenio = get_object_or_404(TipoConvenio, pk=tipo_convenio_id)
-        estado = get_object_or_404(EstadoAdmision, nombre__iexact="Pendiente")
-
-        return Admision.objects.create(
-            comedor=comedor,
-            tipo_convenio=tipo_convenio,
-            estado=estado,
-        )
 
     @staticmethod
     def get_admision_update_context(admision):
@@ -496,6 +460,7 @@ class AdmisionService:
             nuevo_convenio = TipoConvenio.objects.get(pk=nuevo_convenio_id)
 
             admision.tipo_convenio = nuevo_convenio
+            admision.estado_id = 1
 
             admision.save()
 
@@ -976,6 +941,25 @@ class AdmisionService:
                 extra={"admision_id": admision_id},
             )
 
+            return None
+
+    @staticmethod
+    def generar_documento_admision(admision, template_name="admision_template.docx"):
+        """Genera documento DOCX de admisión usando template"""
+        try:
+            context = TextFormatterService.preparar_contexto_admision(admision)
+            docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
+
+            if docx_buffer:
+                filename = f"admision_{admision.id}_{admision.comedor.nombre.replace(' ', '_')}.docx"
+                return ContentFile(docx_buffer.getvalue(), name=filename)
+
+            return None
+        except Exception:
+            logger.exception(
+                "Error en generar_documento_admision",
+                extra={"admision_id": admision.id, "template": template_name},
+            )
             return None
 
     @staticmethod
