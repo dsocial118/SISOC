@@ -210,23 +210,20 @@ class InformeService:
                     pdf_obj = InformeService.generar_y_guardar_pdf(informe, tipo)
                     if pdf_obj:
                         logger.info(
-                            f"Archivos generados exitosamente para informe {informe.id}"
-                        )
-                        print(
-                            f"SUCCESS: Archivos PDF/DOCX generados para informe {informe.id}"
+                            "Archivos generados exitosamente para informe %s",
+                            informe.id,
                         )
                     else:
                         logger.error(
-                            f"No se pudieron generar archivos para informe {informe.id}"
-                        )
-                        print(
-                            f"ERROR: No se pudieron generar archivos para informe {informe.id}"
+                            "No se pudieron generar archivos para informe %s",
+                            informe.id,
                         )
                 except Exception as e:
                     logger.error(
-                        f"Error generando archivos para informe {informe.id}: {str(e)}"
+                        "Error generando archivos para informe %s: %s",
+                        informe.id,
+                        str(e),
                     )
-                    print(f"ERROR: Fallo generación de archivos: {str(e)}")
                     # No re-lanzar la excepción para que el estado se mantenga como Validado
         except Exception as e:
             logger.exception(
@@ -236,37 +233,42 @@ class InformeService:
             raise
 
     @staticmethod
+    def _normalizar_tipo_admision(admision):
+        tipo = getattr(admision, "tipo", None)
+        normalizado = (tipo or "").strip().lower()
+        return normalizado or "incorporacion"
+
+    @staticmethod
     def generar_docx_con_template(informe, template_name=None):
         """Genera DOCX usando template con docxtpl"""
         try:
             # Seleccionar template basado en tipo de admisión e informe
             if not template_name:
-                admision_tipo = informe.admision.tipo.lower()
+                admision_tipo = InformeService._normalizar_tipo_admision(
+                    informe.admision
+                )
                 informe_tipo = informe.tipo
                 template_name = (
                     f"{admision_tipo}_docx_informe_tecnico_{informe_tipo}.docx"
                 )
 
-            print(f"DEBUG: Usando template: {template_name}")
-            print(
-                f"DEBUG: Informe ID: {informe.id}, Tipo: {informe.tipo}, Admisión: {informe.admision.tipo}"
-            )
-
             context = AdmisionesContextService.preparar_contexto_informe_tecnico(
                 informe
             )
-            print(f"DEBUG: Contexto preparado con {len(context)} variables")
+            logger.debug(
+                "Generando DOCX para informe %s con template %s (tipo %s)",
+                informe.id,
+                template_name,
+                informe.tipo,
+            )
 
-            result = DocumentTemplateService.generar_docx(template_name, context)
-
-            if result:
-                print("DEBUG: Template DOCX procesado exitosamente")
-            else:
-                print("DEBUG: Template DOCX retornó None")
-
-            return result
+            return DocumentTemplateService.generar_docx(template_name, context)
         except Exception as e:
-            print(f"DEBUG ERROR: No se pudo procesar template DOCX: {str(e)}")
+            logger.exception(
+                "No se pudo procesar template DOCX para informe %s: %s",
+                getattr(informe, "pk", None),
+                str(e),
+            )
             return None
 
     @staticmethod
@@ -281,7 +283,7 @@ class InformeService:
             }
 
             # Mapear tipos de informe para templates
-            admision_tipo = informe.admision.tipo.lower()
+            admision_tipo = InformeService._normalizar_tipo_admision(informe.admision)
             informe_tipo_map = {
                 "base": "base",
                 "juridico": "juridico",
@@ -292,9 +294,12 @@ class InformeService:
             pdf_template = f"admisiones/pdf/{admision_tipo}_pdf_informe_tecnico_{informe_tipo}.html"
             docx_template = f"admisiones/docx/{admision_tipo}_docx_informe_tecnico_{informe_tipo}.html"
 
-            print(f"DEBUG: Generando archivos para informe {informe.id}")
-            print(f"DEBUG: PDF template: {pdf_template}")
-            print(f"DEBUG: DOCX template: {docx_template}")
+            logger.debug(
+                "Generando archivos para informe %s (PDF: %s, DOCX: %s)",
+                informe.id,
+                pdf_template,
+                docx_template,
+            )
 
             # Generar PDF
             try:
@@ -308,10 +313,8 @@ class InformeService:
                 if not pdf_bytes:
                     raise ValueError("WeasyPrint no generó contenido PDF")
 
-                print(f"DEBUG: PDF generado exitosamente")
             except Exception as e:
-                logger.error(f"Error generando PDF: {str(e)}")
-                print(f"DEBUG ERROR PDF: {str(e)}")
+                logger.error("Error generando PDF: %s", str(e))
                 raise
 
             # Generar DOCX HTML template
@@ -319,9 +322,8 @@ class InformeService:
                 html_docx = render_to_string(docx_template, context)
                 if not html_docx.strip():
                     html_docx = html_pdf
-                print(f"DEBUG: HTML DOCX template procesado")
             except Exception as e:
-                logger.warning(f"Error con template DOCX HTML: {str(e)}")
+                logger.warning("Error con template DOCX HTML: %s", str(e))
                 html_docx = html_pdf
 
             # Generar DOCX con docxtpl
@@ -333,13 +335,11 @@ class InformeService:
                 docx_buffer = InformeService.generar_docx_con_template(informe)
                 if docx_buffer:
                     logger.info("DOCX generado exitosamente con template docxtpl")
-                    print("DEBUG: DOCX template procesado exitosamente")
                     docx_content = ContentFile(docx_buffer.getvalue(), name="tmp.docx")
                 else:
                     raise ValueError("Template DOCX retornó None")
             except Exception as e:
-                logger.warning(f"Template DOCX falló: {str(e)}, usando fallback HTML")
-                print(f"DEBUG: Template DOCX falló, usando HTML fallback: {str(e)}")
+                logger.warning("Template DOCX falló: %s, usando fallback HTML", str(e))
                 docx_content = InformeService._generate_docx_content(
                     html_docx, getattr(informe, "pk", None)
                 )
@@ -360,9 +360,15 @@ class InformeService:
             if docx_content:
                 docx_content.name = f"{base_filename}.docx"
                 defaults["archivo_docx"] = docx_content
-                print(f"DEBUG: Archivos PDF y DOCX preparados para guardar")
+                logger.debug(
+                    "Archivos PDF y DOCX preparados para guardar para informe %s",
+                    informe.id,
+                )
             else:
-                print(f"DEBUG WARNING: Solo se guardará PDF, DOCX falló")
+                logger.debug(
+                    "Solo se guardará PDF para informe %s, generación DOCX falló",
+                    informe.id,
+                )
 
             pdf_obj, created = InformeTecnicoPDF.objects.update_or_create(
                 admision=informe.admision, defaults=defaults
@@ -370,9 +376,10 @@ class InformeService:
 
             action = "creado" if created else "actualizado"
             logger.info(
-                f"InformeTecnicoPDF {action} exitosamente para informe {informe.id}"
+                "InformeTecnicoPDF %s exitosamente para informe %s",
+                action,
+                informe.id,
             )
-            print(f"DEBUG: InformeTecnicoPDF {action} exitosamente")
 
             return pdf_obj
 
@@ -381,7 +388,6 @@ class InformeService:
                 f"Error crítico en generar_y_guardar_pdf: {str(e)}",
                 extra={"informe_pk": getattr(informe, "pk", None), "tipo": tipo},
             )
-            print(f"DEBUG ERROR CRÍTICO: {str(e)}")
             raise
 
     @staticmethod
