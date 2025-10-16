@@ -48,7 +48,7 @@ def _tipo_doc_cuit():
         raise ValidationError("Falta configurar el TipoDocumento CUIT") from exc
 
 
-# Estados de expediente considerados "abiertos / pre-cupo" para evitar duplicados inter-expedientes
+# Estados de expediente considerados "abiertos / pre-cupo" para evitar duplicados inter-expediente s
 ESTADOS_PRE_CUPO = [
     "CREADO",
     "PROCESADO",
