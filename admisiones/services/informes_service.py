@@ -29,7 +29,7 @@ from admisiones.models.admisiones import (
     Admision,
     InformeComplementario,
     InformeComplementarioCampos,
-    InformeTecnicoComplementarioPDF
+    InformeTecnicoComplementarioPDF,
 )
 from admisiones.forms.admisiones_forms import (
     InformeTecnicoJuridicoForm,
@@ -209,13 +209,23 @@ class InformeService:
                 try:
                     pdf_obj = InformeService.generar_y_guardar_pdf(informe, tipo)
                     if pdf_obj:
-                        logger.info(f"Archivos generados exitosamente para informe {informe.id}")
-                        print(f"SUCCESS: Archivos PDF/DOCX generados para informe {informe.id}")
+                        logger.info(
+                            f"Archivos generados exitosamente para informe {informe.id}"
+                        )
+                        print(
+                            f"SUCCESS: Archivos PDF/DOCX generados para informe {informe.id}"
+                        )
                     else:
-                        logger.error(f"No se pudieron generar archivos para informe {informe.id}")
-                        print(f"ERROR: No se pudieron generar archivos para informe {informe.id}")
+                        logger.error(
+                            f"No se pudieron generar archivos para informe {informe.id}"
+                        )
+                        print(
+                            f"ERROR: No se pudieron generar archivos para informe {informe.id}"
+                        )
                 except Exception as e:
-                    logger.error(f"Error generando archivos para informe {informe.id}: {str(e)}")
+                    logger.error(
+                        f"Error generando archivos para informe {informe.id}: {str(e)}"
+                    )
                     print(f"ERROR: Fallo generación de archivos: {str(e)}")
                     # No re-lanzar la excepción para que el estado se mantenga como Validado
         except Exception as e:
@@ -233,26 +243,32 @@ class InformeService:
             if not template_name:
                 admision_tipo = informe.admision.tipo.lower()
                 informe_tipo = informe.tipo
-                template_name = f"{admision_tipo}_docx_informe_tecnico_{informe_tipo}.docx"
-            
+                template_name = (
+                    f"{admision_tipo}_docx_informe_tecnico_{informe_tipo}.docx"
+                )
+
             print(f"DEBUG: Usando template: {template_name}")
-            print(f"DEBUG: Informe ID: {informe.id}, Tipo: {informe.tipo}, Admisión: {informe.admision.tipo}")
-            
-            context = AdmisionesContextService.preparar_contexto_informe_tecnico(informe)
+            print(
+                f"DEBUG: Informe ID: {informe.id}, Tipo: {informe.tipo}, Admisión: {informe.admision.tipo}"
+            )
+
+            context = AdmisionesContextService.preparar_contexto_informe_tecnico(
+                informe
+            )
             print(f"DEBUG: Contexto preparado con {len(context)} variables")
-            
+
             result = DocumentTemplateService.generar_docx(template_name, context)
-            
+
             if result:
                 print("DEBUG: Template DOCX procesado exitosamente")
             else:
                 print("DEBUG: Template DOCX retornó None")
-                
+
             return result
         except Exception as e:
             print(f"DEBUG ERROR: No se pudo procesar template DOCX: {str(e)}")
             return None
-    
+
     @staticmethod
     def generar_y_guardar_pdf(informe, tipo):
         """
@@ -268,30 +284,30 @@ class InformeService:
             admision_tipo = informe.admision.tipo.lower()
             informe_tipo_map = {
                 "base": "base",
-                "juridico": "juridico", 
-                "juridico eclesiastico": "juridico"
+                "juridico": "juridico",
+                "juridico eclesiastico": "juridico",
             }
             informe_tipo = informe_tipo_map.get(informe.tipo, "base")
-            
+
             pdf_template = f"admisiones/pdf/{admision_tipo}_pdf_informe_tecnico_{informe_tipo}.html"
             docx_template = f"admisiones/docx/{admision_tipo}_docx_informe_tecnico_{informe_tipo}.html"
-            
+
             print(f"DEBUG: Generando archivos para informe {informe.id}")
             print(f"DEBUG: PDF template: {pdf_template}")
             print(f"DEBUG: DOCX template: {docx_template}")
-            
+
             # Generar PDF
             try:
                 html_pdf = render_to_string(pdf_template, context)
                 if not html_pdf.strip():
                     raise ValueError(f"Template PDF vacío: {pdf_template}")
-                    
+
                 pdf_bytes = HTML(
                     string=html_pdf, base_url=InformeService._get_base_url()
                 ).write_pdf()
                 if not pdf_bytes:
                     raise ValueError("WeasyPrint no generó contenido PDF")
-                    
+
                 print(f"DEBUG: PDF generado exitosamente")
             except Exception as e:
                 logger.error(f"Error generando PDF: {str(e)}")
@@ -311,7 +327,9 @@ class InformeService:
             # Generar DOCX con docxtpl
             docx_content = None
             try:
-                logger.info(f"Intentando generar DOCX con template para informe {informe.id}")
+                logger.info(
+                    f"Intentando generar DOCX con template para informe {informe.id}"
+                )
                 docx_buffer = InformeService.generar_docx_con_template(informe)
                 if docx_buffer:
                     logger.info("DOCX generado exitosamente con template docxtpl")
@@ -349,11 +367,13 @@ class InformeService:
             pdf_obj, created = InformeTecnicoPDF.objects.update_or_create(
                 admision=informe.admision, defaults=defaults
             )
-            
+
             action = "creado" if created else "actualizado"
-            logger.info(f"InformeTecnicoPDF {action} exitosamente para informe {informe.id}")
+            logger.info(
+                f"InformeTecnicoPDF {action} exitosamente para informe {informe.id}"
+            )
             print(f"DEBUG: InformeTecnicoPDF {action} exitosamente")
-            
+
             return pdf_obj
 
         except Exception as e:
@@ -544,7 +564,6 @@ class InformeService:
             )
             return None
 
-    
     @staticmethod
     def generar_y_guardar_pdf_complementario(informe_complementario):
         try:
@@ -564,7 +583,8 @@ class InformeService:
                 for c in campos_modificados:
                     key = c.campo.lower().strip()
                     field_name = (
-                        c.campo if hasattr(informe, c.campo)
+                        c.campo
+                        if hasattr(informe, c.campo)
                         else verbose_to_field.get(key)
                     )
                     if not field_name:
@@ -574,23 +594,29 @@ class InformeService:
                     valor_original = getattr(informe, field_name, None)
                     nuevo_valor = c.value
 
-                    if field.get_internal_type() in ["IntegerField", "PositiveIntegerField"]:
+                    if field.get_internal_type() in [
+                        "IntegerField",
+                        "PositiveIntegerField",
+                    ]:
                         try:
                             nuevo_valor = int(nuevo_valor) if nuevo_valor else 0
                         except ValueError:
                             nuevo_valor = None
                     elif field.get_internal_type() == "DateField":
                         from django.utils.dateparse import parse_date
+
                         parsed = parse_date(str(nuevo_valor))
                         if parsed:
                             nuevo_valor = parsed
 
                     setattr(informe, field_name, nuevo_valor)
-                    campos_actualizados_detalle.append({
-                        "campo": field.verbose_name or field.name,
-                        "valor_anterior": valor_original,
-                        "valor_nuevo": nuevo_valor,
-                    })
+                    campos_actualizados_detalle.append(
+                        {
+                            "campo": field.verbose_name or field.name,
+                            "valor_anterior": valor_original,
+                            "valor_nuevo": nuevo_valor,
+                        }
+                    )
 
                 if campos_actualizados_detalle:
                     informe.save()
@@ -609,8 +635,7 @@ class InformeService:
                 pdf_template = "admisiones/pdf/informe_tecnico_complementario.html"
                 html_pdf = render_to_string(pdf_template, context)
                 pdf_bytes = HTML(
-                    string=html_pdf,
-                    base_url=InformeService._get_base_url()
+                    string=html_pdf, base_url=InformeService._get_base_url()
                 ).write_pdf()
 
                 docx_content = DocumentTemplateService.generar_docx(
@@ -642,9 +667,9 @@ class InformeService:
 
                 return True
 
-
         except Exception:
             import logging
+
             logging.exception("Error en generar_y_guardar_pdf_complementario")
             return None
 
@@ -656,12 +681,12 @@ class InformeService:
                 "informe": informe,
                 "texto_comidas": generar_texto_comidas(informe),
             }
-            
+
             # Seleccionar template basado en tipo
             admision_tipo = informe.admision.tipo.lower()
             informe_tipo = informe.tipo
             pdf_template = f"admisiones/pdf/{admision_tipo}_pdf_informe_tecnico_{informe_tipo}.html"
-            
+
             html_pdf = render_to_string(pdf_template, context)
 
             if not html_pdf.strip():

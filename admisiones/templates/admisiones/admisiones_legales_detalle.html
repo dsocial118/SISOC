@@ -468,7 +468,7 @@
             <div class="modal-content">
                 <form method="POST" action="">
                     {% csrf_token %}
-                    <input type="hidden" name="tipo" value="{{ admision.tipo }}">
+                    <input type="hidden" name="tipo" value="{{ admision.tipo }}" />
                     <div class="modal-header">
                         <h5 class="modal-title">Formulario Disposición</h5>
                         <button type="button"
@@ -476,9 +476,7 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        Generará los archivos del Formulario Disposición de {{ admision.tipo|lower }}.
-                    </div>
+                    <div class="modal-body">Generará los archivos del Formulario Disposición de {{ admision.tipo|lower }}.</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary" name="btnRESO" id="btnRESO_id">Aceptar</button>

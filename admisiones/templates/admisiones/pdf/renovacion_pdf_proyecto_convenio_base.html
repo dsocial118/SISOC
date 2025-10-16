@@ -1,9 +1,9 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>renovacion_docx_proyecto_convenio_base</title>
-    <style>
+    <head>
+        <meta charset="UTF-8" />
+        <title>renovacion_docx_proyecto_convenio_base</title>
+        <style>
 @page {
     size: A4;
     margin: 3.5cm 2cm 2.5cm 2cm; /* top right bottom left */
@@ -100,9 +100,9 @@
   .text-center { text-align: center; }
   .text-start { text-align: left; }
   .align-middle { vertical-align: middle; }
-    </style>
-  </head>
-  <body>
+        </style>
+    </head>
+    <body>
         {% if informe.estado != 'Validado' %}<div class="watermark" aria-hidden="true">BORRADOR</div>{% endif %}
         <div id="header">
             <div class="header-left">
@@ -119,121 +119,411 @@
                 Ministerio de Capital Humano
             </div>
         </div>
-    <main>
-      <p>CONVENIO ENTRE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO Y LA ASOCIACIÓN DE HECHO {{ informe.nombre_organizacion }} DE LA PROVINCIA DE {{ informe.provincia_organizacion }}</p>
-      <p>Entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, representada en este acto por el Subsecretario de Promoción Humana Sr. Martín Domingo Lepera, (DNI N° 30.957.827), con domicilio físico en Avenida 9 de Julio N° 1925 - Piso 16 de la Ciudad Autónoma de Buenos Aires, en adelante &quot;LA SECRETARÍA&quot;; y la Asociación de Hecho {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, representada en este acto por el/la Sr/Sra. {{ informe.responsable_tarjeta_nombre }} DNI N° XXXX y el/la Sr/Sra. {{ informe.responsable_tarjeta_suplente_nombre }} DNI N° xxxxxx, con domicilio en {{ informe.responsable_tarjeta_suplente_nombre }} de la Localidad de xxxxxx, Partido de xxxxx de la Provincia de xxxxxx, en adelante “LA ASOCIACIÓN DE HECHO”, denominadas conjuntamente “LAS PARTES”, convienen celebrar el presente convenio, sujeto a las siguientes cláusulas:</p>
-      <p>Cláusula Primera.- Objeto: El presente Convenio se suscribe con el objeto de fortalecer el servicio alimentario de Comedores y/o Merenderos comunitarios, a fin de complementar las prestaciones alimentarias brindadas a personas que concurran a los mismos y que se encuentran en estado de vulnerabilidad social y económica; actividad encuadrada dentro de los Lineamientos Técnicos y Operativos fijados en el Anexo - IF-2025-32668963-APN- SSPH#MCH de la Resolución N° RESOL-2025-151-APN-MCH, del 31 de marzo de 2025 modificatoria de la Resolución N° RESOL-2023-230-APN-MDS del 17 de febrero de 2023.</p>
-      <p>Cláusula Segunda.- Financiamiento: “LA ASOCIACIÓN DE HECHO” presta conformidad a que &quot;LA SECRETARÍA&quot; le otorgue, por los mecanismos que ésta fije a dicho efecto, fondos en concepto de subsidio no reintegrable, sujeto a rendición de cuentas, y a fin del cumplimiento del objeto, al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” de la Localidad de {{ informe.localidad_espacio }} de la Provincia de {{ informe.provincia_espacio }}, en adelante “EL {{ informe.tipo_espacio }}”, que tramita por Expediente {{ informe.expediente_nro }}; conforme a detalle obrante en el ANEXO que forma parte integrante del presente convenio.</p>
-      <p>Todo ello, con arreglo a las disponibilidades presupuestarias y financieras de la Secretaría Nacional de Niñez, Adolescencia y Familia.</p>
-      <p>Se deja aclarado que el importe equivalente al Módulo de Fortalecimiento se pagará conforme a lo dispuesto en el respectivo acto administrativo autorizante del pago que se dicte al efecto.</p>
-      <p>El monto total mensual surgirá del resultado de la multiplicación de la cantidad total de prestaciones por el valor del Módulo de Fortalecimiento (Almuerzo-Cena) vigente al momento de la liquidación.</p>
-      <p>Dicho importe podrá estar sujeto a ajustes, de conformidad a lo que establezca &quot;LA SECRETARÍA&quot;.</p>
-      <p>El importe total a pagar en forma mensual, será notificado, con dicha periodicidad, a las direcciones de correos electrónicos de “LA ASOCIACIÓN DE HECHO” y del Administrador de recursos, según ANEXO.</p>
-      <p>Cláusula Tercera.- Forma de Pago: Los fondos citados precedentemente serán acreditados en forma mensual a una cuenta asociada a una Tarjeta Electrónica habilitada para la Adquisición de alimentos secos y frescos para el fortalecimiento del servicio alimentario brindado por “EL {{ informe.tipo_espacio }}” señalado en el Anexo.</p>
-      <p>La Tarjeta Electrónica se emitirá a nombre del responsable administrador de fondos designado oportunamente por “LA ASOCIACIÓN DE HECHO”, conforme al detalle obrante en el ANEXO del presente, y será entregada por retiro en sucursal bancaria; lo que será debidamente comunicado a su correo electrónico.</p>
-      <p>&quot;LA SECRETARÍA&quot; comunicará la/s acreditaciones instruidas, direcciones de correos electrónicos de “LA ASOCIACIÓN DE HECHO” y del Administrador de recursos, según ANEXO.</p>
-      <p>El total máximo de meses objeto de cobertura del presente Convenio surge del ANEXO del mismo.</p>
-      <p>Cláusula Cuarta.- Destino de fondos: “LA ASOCIACIÓN DE HECHO” se compromete a invertir la suma citada a fines de complementar los servicios alimentarios del {{ informe.tipo_espacio }} citado en el ANEXO del presente, al que asisten personas en situación de vulnerabilidad social y económica; con arreglo al tipo y modalidad de servicio, y cantidad de destinatarios allí consignados.</p>
-      <p>La tarjeta sólo podrá ser utilizada en comercios del rubro “Alimentos”.</p>
-      <p>“LA ASOCIACIÓN DE HECHO” se compromete a garantizar la intangibilidad de los fondos acreditados a través de la tarjeta precargada; así como la sustentabilidad del objeto y fines del presente.</p>
-      <p>Cláusula Quinta.- Asignación de recursos: “LA ASOCIACIÓN DE HECHO” deberá asignar los fondos otorgados a través de la tarjeta prepaga a la adquisición de alimentos, no pudiendo alterar dicha finalidad sin la previa conformidad de &quot;LA SECRETARÍA&quot;.</p>
-      <p>Los alimentos adquiridos serán exclusivamente asignados a la atención de las necesidades de las personas que asisten al mismo.</p>
-      <p>Se prohíbe la entrega de alimentos adquiridos mediante la tarjeta precargada con fondos derivados del presente Convenio a: familiares, destinatarios o asistentes al {{ informe.tipo_espacio }}, o a terceros para cualquier fin que fuere; dejándose expresa constancia que la misma está destinada exclusivamente al funcionamiento del servicio alimentario del {{ informe.tipo_espacio }} designado.</p>
-      <p>“LA ASOCIACIÓN DE HECHO” se compromete a destinar la utilización de la tarjeta precargada a los fines específicos, sin obtención de rédito político alguno.</p>
-      <p>“LA ASOCIACIÓN DE HECHO” se compromete por sí y por el responsable administrador de fondos designado a NO adquirir bienes a personas o empresas con las que puedan plantearse conflictos de intereses, tales como la existencia de vinculación de cualquier tipo entre los miembros de “LA ASOCIACIÓN DE HECHO” y/o responsables o colaboradores del {{ informe.tipo_espacio }} objeto de financiamiento y una persona física o jurídica proveedora de bienes o servicios destinados a los mismos. Asimismo, dicha prohibición se aplicará en aquellos casos en que se verifique la existencia de relaciones de parentesco y/o amistad.</p>
-      <p>Cláusula Sexta.- Carácter de los Alimentos – Funcionamiento de Depósitos: Los alimentos adquiridos por “LA ASOCIACIÓN DE HECHO” deberán responder a las normas del Código Alimentario Nacional, tomándose los recaudos necesarios a fin que las fechas de vencimiento permitan el consumo de los productos con una antelación suficiente para su adecuado dispendio.</p>
-      <p>Cláusula Séptima.- Prestación del Servicio: En caso de que la prestación del servicio brindado sea suspendida o modificada sustancialmente, “LA ASOCIACIÓN DE HECHO” deberá notificar en forma fehaciente y oportuna a &quot;LA SECRETARÍA&quot;.</p>
-      <p>La notificación deberá realizarse en un plazo máximo de DIEZ (10) días de efectivizada la suspensión o modificación sustancial en la prestación del servicio.</p>
-      <p>En caso de que se notifique una suspensión, la tarjeta entregada, hubiere o no fondos remanentes y/o excedentes en la misma, será restituida a &quot;LA SECRETARÍA&quot;.</p>
-      <p>Asimismo, “LA ASOCIACIÓN DE HECHO” deberá notificar cualquier otro tipo de modificación inherente al funcionamiento del {{ informe.tipo_espacio }}.</p>
-      <p>“LA ASOCIACIÓN DE HECHO” deberá comunicar a &quot;LA SECRETARÍA&quot;, mediante notificación fehaciente, todo cambio de domicilio del {{ informe.tipo_espacio }} objeto de financiamiento. Si se realizara alguno de los cambios indicados, el mismo se considerará válido, una vez efectuada la notificación por parte de “LA ASOCIACIÓN DE HECHO” y la posterior evaluación y aprobación mediante evaluación técnica debidamente fundada.</p>
-      <p>De la misma forma, en caso de desvincularse el {{ informe.tipo_espacio }} objeto de financiamiento de la órbita de “LA ASOCIACIÓN DE HECHO” se cancelarán las transferencias pendientes; debiendo procederse a la ejecución y/o rendición de las operadas hasta dicha fecha.</p>
-      <p>Cláusula Octava.- Plazo de Utilización de Fondos – Cereo: “LA ASOCIACIÓN DE HECHO” deberá utilizar los fondos desde su acreditación hasta el último día hábil del mes en que se ha realizado la acreditación.</p>
-      <p>Una vez vencido el plazo de utilización de dichos fondos, los saldos existentes inherentes a la acreditación determinada por &quot;LA SECRETARÍA&quot;, se someten a un proceso de “cereo” (puesta a cero de la cuenta), y serán restituidos y/o puestos a disposición de &quot;LA SECRETARÍA&quot; por intermedio de la institución operadora del proceso de pago.</p>
-      <p>Finalizado el plazo de ejecución del presente, y realizado el proceso anteriormente citado, no se efectuarán más transferencias de fondos.</p>
-      <p>Cláusula Novena.- Plazo de Ejecución - Total de acreditaciones: El plazo de ejecución del presente Convenio será de hasta SEIS (6) meses (acreditaciones), contados a partir de la primera acreditación.</p>
-      <p>Sin perjuicio de ello, &quot;LA SECRETARÍA&quot; podrá dar por finalizado el presente Convenio cuando así lo considere pertinente, sin necesidad de invocar causal alguna, y previa notificación a “LA ASOCIACIÓN DE HECHO” con una antelación no menor a QUINCE (15) días; pudiendo dejar sin efecto los pagos pendientes, e incluso retrotraer aquellos depositados en la cuenta.</p>
-      <p>Cláusula Décima.- Registros Documentales: “LA ASOCIACIÓN DE HECHO” deberá arbitrar los medios necesarios a los fines de que el {{ informe.tipo_espacio }} designado lleve en su respectivo establecimiento los siguientes registros:</p>
-      <p>Cuaderno de Novedades, consignando modificaciones en el horario y tipo de prestación;</p>
-      <p>Listado completo de asistentes o destinatarios (consignando: datos del tipo de composición familiar, menores, mayores, género, situación, incapacidad, etc.);</p>
-      <p>Listado Detallado de los colaboradores del {{ informe.tipo_espacio }};</p>
-      <p>Registro, de las prestaciones otorgadas.</p>
-      <p>Dichos registros deberán obrar en dependencias del {{ informe.tipo_espacio }}.</p>
-      <p>Cláusula Décima Primera.- Rendición de Cuentas de Fondos: “LA ASOCIACIÓN DE HECHO” se compromete a rendir cuentas a &quot;LA SECRETARÍA&quot; de las inversiones producidas con los fondos acreditados, conforme al plan y plazo de pagos que surge del ANEXO, y a la modalidad allí fijada.</p>
-      <p>Las formalidades vinculadas a la rendición de cuentas se someterán a las prescripciones impuestas en el Anexo III y IV del presente.</p>
-      <p>Finalizado el plazo de ejecución del presente Convenio y realizado el cereo de la cuenta, no se efectuarán más transferencias de fondos, debiendo “LA ASOCIACIÓN DE HECHO” presentar la rendición documentada del gasto realizado por “EL {{ informe.tipo_espacio|upper }}” de la totalidad de los fondos recibidos, en un plazo de TREINTA (30) días posteriores al último cereo.</p>
-      <p>“LA ASOCIACIÓN DE HECHO” se compromete a rendir cuenta documentada de los fondos transferidos con arreglo a lo establecido en la Resolución ex MDS N° 2458 del 23 de agosto de 2004, la Ley Nº 24.156 de Administración Financiera y de los Sistemas de Control del Sector Público Nacional, su Decreto Reglamentario N° 1344/2007 y sus normas modificatorias y complementarias, y los artículos 858 y 859 del Código Civil y Comercial de la Nación.</p>
-      <p>La documentación respaldatoria deberá cumplir indefectiblemente los requisitos establecidos en la Resolución General Nº 1415/2003 de la AFIP. Los comprobantes podrán ser facturas “A”, “B” o “C” emitidas a nombre del titular y/o tickets emitidos por Controladora Fiscal homologada en AFIP con la debida observancia de los montos a rendir de conformidad con lo expuesto.</p>
-      <p>“LA ASOCIACIÓN DE HECHO” será responsable de inhabilitar la documentación sujeta a rendición en el original de la misma, conforme a lo expuesto en el párrafo anterior, debiendo obtenerse fotocopia del comprobante luego de su inutilización a efectos de ser presentadas las mismas en la rendición técnica a ingresar en &quot;LA SECRETARÍA&quot;.</p>
-      <p>Asimismo, “LA ASOCIACIÓN DE HECHO” será responsable ante futuras auditorías respecto de la veracidad en el cumplimiento de este requisito.</p>
-      <p>“LA ASOCIACIÓN DE HECHO” se compromete a adoptar las medidas necesarias con relación a los sistemas contables, administrativos y financieros a fin de facilitar el control de su correspondiente rendición técnica y a conservar debidamente archivada por el término de DIEZ (10) años toda la documentación original respaldatoria correspondiente a la ejecución del presente Convenio.</p>
-      <p>Se deja explicitado que de existir alguna contradicción entre la rendición que presentare “LA ASOCIACIÓN DE HECHO” con la que formulare el Agente de Pago respectivo (detalle de transacciones producidas), prevalecerá esta última, sometiéndose a realizar los ajustes y/o readecuaciones financieras y/o renditivas, según correspondiere.</p>
-      <p>No será necesario que efectúe la devolución de aquellos fondos que no hubieren sido consumidos durante el mes correspondiente, dado que las cuentas contarán con cereo mensual efectuado por el agente de pago designado a dicho efecto.</p>
-      <p>&quot;LA SECRETARÍA&quot; se reserva la facultad de modificar la modalidad de presentación de la rendición de cuentas impuesta, en cuyo caso notificará a “LA ASOCIACIÓN DE HECHO” de las nuevas prescripciones inherentes a ello.</p>
-      <p>Cláusula Décima Segunda.- Carga de comprobantes: Sin perjuicio de las prescripciones establecidas en la cláusula anterior, “LA ASOCIACIÓN DE HECHO” tendrá acceso a una plataforma electrónica que indique &quot;LA SECRETARÍA&quot;, asignando previamente un nombre de usuario a “LA ASOCIACIÓN DE HECHO”, en la que deberá efectuar la carga de los comprobantes de pago.</p>
-      <p>Los respectivos comprobantes de pago serán cargados en un plazo máximo de 7 días corridos de efectuado el pago del mismo.</p>
-      <p>Cláusula Décima Tercera.- Informe de Aplicación de Fondos y de Gestión Social: “LA ASOCIACIÓN DE HECHO” se compromete a presentar una Declaración Jurada (DDJJ.) de Cumplimiento de Objeto Social, en un plazo de CUARENTA (40) días corridos desde la acreditación de los fondos de cada transferencia, con arreglo al modelo obrante como ANEXO I y II del presente.</p>
-      <p>En la misma, se deberá dar cuenta de la cantidad de personas asistidas, viandas realizadas y listado de artículos adquiridos.</p>
-      <p>Asimismo, se presentará en forma mensual y en carácter de información de gestión social, el detalle de prestaciones efectivamente brindadas en el período.</p>
-      <p>Con la primera rendición mensual se presentará la nómina de personas efectivamente asistidas con las prestaciones citadas (consignando Apellido, Nombre, y DNI), a partir del segundo mes se deberán presentar solamente las altas por bajas manteniendo el número de prestaciones aprobadas.</p>
-      <p>En caso de incumplimiento o inconsistencias en la presentación de alguna de las obligaciones mencionadas previamente, &quot;LA SECRETARÍA&quot; podrá determinar la suspensión de pago asignado al {{ informe.tipo_espacio }} objeto de la infracción.</p>
-      <p>Cláusula Décima Cuarta.- Auditoría y Control de Gestión: A los fines de acreditar la asignación específica del subsidio al destino previsto, &quot;LA SECRETARÍA&quot; podrá disponer, por sí o por la Entidad que designare a dicho efecto, la visita al {{ informe.tipo_espacio }} por parte de un agente que supervise la aplicación de los fondos; pudiendo verificar ello asimismo por medios alternativos y/o complementarios (fotos, videollamadas, reuniones virtuales, etc).</p>
-      <p>Asimismo, &quot;LA SECRETARÍA&quot; dispondrá de los medios de Auditoría, Monitoreo y Evaluación que considere pertinentes, por sí o por quien en el futuro ésta disponga, para lo cual “LA ASOCIACIÓN DE HECHO” se compromete a exhibir y/o remitir oportunamente todos los registros, archivos de información relacionados con este Convenio y/o documentación complementaria, cuando le sean solicitados, esto independientemente del control y las auditorías que le competen a la Auditoría Interna de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO, la SINDICATURA GENERAL DE LA NACIÓN (SIGEN) y la AUDITORÍA GENERAL DE LA NACIÓN (AGN),</p>
-      <p>resultando de aplicación lo establecido en el artículo 8° “in fine” de la Ley N° 24.156 de Administración Financiera y de los Sistemas de Control del Sector Público Nacional.</p>
-      <p>Cláusula Décima Quinta.- Sanciones por incumplimiento: La falta de cumplimiento de las obligaciones prescriptas en este Convenio, como así también la comprobación de falsedad u ocultamiento en la información que proporcione, o el incumplimiento de los objetivos de “EL PROGRAMA”, facultará a &quot;LA SECRETARÍA&quot; a declarar la resolución del presente Convenio en los términos del art. 21 de la Ley N° 19.549, pudiendo dejar sin efecto los pagos pendientes, retrotraer los acreditados y existentes en la cuenta y/o demandar el reintegro de las sumas entregadas, sin perjuicio de la facultad de iniciar las acciones legales correspondientes, pudiendo inhabilitar asimismo la percepción de cualquier beneficio que otorgue el MINISTERIO DE CAPITAL HUMANO; sin perjuicio del inicio de otras acciones judiciales que pudieren corresponder.</p>
-      <p>Cláusula Décima Sexta.- Responsabilidad: “LA ASOCIACIÓN DE HECHO” asume la responsabilidad sobre las respectivas obligaciones que contraiga en el marco del presente Convenio, respecto de la contratación de personas, locación de servicios, adquisiciones y/o locaciones de bienes.</p>
-      <p>&quot;LA SECRETARÍA&quot; no asumirá ningún tipo de responsabilidad frente a “LA ASOCIACIÓN DE HECHO”, sus dependientes o terceros por cualquier daño o perjuicio, por obligación laboral, ni por obligación alguna de cualquier especie, ya sea contractual o extracontractual, que pueda generarse por la actividad que ésta desarrolle con motivo de la implementación y puesta en marcha de las actividades y/o prácticas objeto del presente. La presente obligación se mantendrá aún terminado el plazo de vigencia del presente.</p>
-      <p>A tal efecto, &quot;LA SECRETARÍA&quot; queda eximida de responder frente a reclamo alguno relacionado con ello. Asimismo, todos los efectos derivados de la ejecución de las acciones por parte de “LA ASOCIACIÓN DE HECHO” se atribuyen a ésta en forma exclusiva.</p>
-      <p>“LA ASOCIACIÓN DE HECHO” reconoce que la relación laboral de las personas que designe para la ejecución de las acciones conjuntas que surjan a partir del presente será de exclusiva responsabilidad de ésta, sin que las circunstancias de tal vinculación generen obligación y/o responsabilidad alguna al Gobierno Nacional.</p>
-      <p>Todos los actos que deba cumplir el responsable administrador de fondos designado en la ejecución del presente serán realizados por cuenta y orden de “LA ASOCIACIÓN DE HECHO”.</p>
-      <p>En ningún caso se podrá actuar en representación o por mandato de &quot;LA SECRETARÍA&quot;.</p>
-      <p>“LAS PARTES” se comprometen a mantenerse indemnes entre sí respecto de cualquier reclamo, demanda, acción legal y costos que pudieran surgir por daños ocasionados a terceros en el marco del cumplimiento del objeto del presente Convenio.</p>
-      <p>Cláusula Décima Séptima.- Integridad: “LA ASOCIACIÓN DE HECHO” declara que la misma y los miembros de su personal y/o personas vinculadas no han participado directa o</p>
-      <p>indirectamente en prácticas corruptas, fraudulentas, colusorias, coercitivas u obstructivas para el acceso al Programa.</p>
-      <p>&quot;LA SECRETARÍA&quot; podrá adoptar las medidas pertinentes en caso de determinar que “LA ASOCIACIÓN DE HECHO” y/o “El {{ informe.tipo_espacio }}” destinatarios de los fondos participaron en prácticas corruptas, fraudulentas, colusorias, coercitivas u obstructivas durante el proceso de ingreso a “EL PROGRAMA” o durante la ejecución del presente; y cuando se constate que el receptor de los fondos no tomó las medidas oportunas y adecuadas.</p>
-      <p>&quot;LA SECRETARÍA&quot; podrá sancionar en cuanto resulte pertinente el incumplimiento a las normas sobre integridad establecidas en la Ley Nº 27.401, requiriendo asimismo el máximo esfuerzo dentro de las disponibilidades razonables por parte de los receptores de fondos para la aplicación de programas de integridad en los casos alcanzados y que fuere facultativo.</p>
-      <p>Cláusula Décima Octava.- Controversias: “LA ASOCIACIÓN DE HECHO” y &quot;LA SECRETARÍA&quot; se comprometen a solucionar de común acuerdo y de buena fe las controversias que se susciten entre ellas relacionadas con la interpretación y/o ejecución del presente Convenio.</p>
-      <p>En caso de resultar ello imposible, se someterán a la jurisdicción de los Tribunales Federales con asiento en la Ciudad Autónoma de Buenos Aires, con renuncia expresa a cualquier otro fuero o jurisdicción que por cualquier motivo pudiera corresponderles.</p>
-      <p>Cláusula Décima Novena.- Consentimiento - Ley 25.326: Conforme lo normado por la ley 25.326, “LA ASOCIACIÓN DE HECHO” ratifica su consentimiento para la recolección y análisis por parte de &quot;LA SECRETARÍA&quot;, a los fines exclusivos del Programa, de sus datos personales obrantes en los archivos y registros de los Organismos con los que se cruce información, según así correspondiere.</p>
-      <p>Cláusula Vigésima.- Domicilios: Los respectivos domicilios físicos y electrónicos indicados en el presente se consideran constituidos para todos los efectos legales judiciales o extrajudiciales del presente, mientras no se comunique su modificación expresamente y por medio fehaciente.</p>
-      <p>Cláusula Vigésima Primera.- Entrada en Vigencia: El presente Convenio entrará en vigencia una vez aprobado por acto administrativo en jurisdicción de &quot;LA SECRETARÍA&quot;, previo cumplimiento de los requisitos legales, administrativos y procedimentales internos vigentes, y debidamente comunicado al correo electrónico que consta en el Anexo.</p>
-      <p>El presente Documento no contará con valor alguno hasta tanto se suscriba el acto citado.</p>
-      <p>Cláusula Vigésima Segunda.- Responsable sustituto: Ante la eventualidad de imposibilidad de proseguir la administración por parte del responsable titular citado en el ANEXO por el causal que fuere, “LA ASOCIACIÓN DE HECHO” podrá designar un sustituto, mediante Nota comunicativa indicativa de dicha situación.</p>
-      <p>En ambos casos, se le asignará una tarjeta al sustituto quien se subrogará en las obligaciones asumidas por su antecesor.</p>
-      <p>En prueba de conformidad, se suscriben dos (2) ejemplares de un mismo tenor y a un solo efecto en la Ciudad Autónoma de Buenos Aires, en la siguiente fecha:</p>
-      <table><tr><td>C</td><td>{{ informe.expediente_nro }}</td></tr><tr><td>EFECTOR</td><td>{{ informe.nombre_espacio }}</td></tr><tr><td>Tipo (Merendero / Comedor)</td><td>{{ informe.tipo_espacio }}</td></tr><tr><td>Domicilio</td><td>{{ informe.domicilio_espacio }}</td></tr><tr><td>Correo Electrónico</td><td>{{ informe.domicilio_electronico_espacio }}</td></tr><tr><td>RESPONSABLE ADMINISTRADOR DE FONDOS</td></tr><tr><td>Nombre/s y Apellido/s</td><td>{{ informe.responsable_tarjeta_nombre }}</td></tr><tr><td>CUIT / CUIL</td><td>{{ informe.responsable_tarjeta_cuit }}</td></tr><tr><td>Domicilio</td><td>{{ informe.responsable_tarjeta_domicilio }}</td></tr><tr><td>Correo Electrónico</td><td>{{ informe.responsable_tarjeta_mail }}</td></tr><tr><td>TOTAL DE ACREDITACIONES A PRODUCIR</td><td>{{ informe.total_acreditaciones }}</td></tr><tr><td>PLAZO DE EJECUCIÓN</td><td>{{ informe.plazo_ejecucion }}</td></tr></table>
-      <p>Anexo:</p>
-      <p>Detalle de prestaciones aprobadas por semana:</p>
-      <table><tr><td>COMIDA / DIA</td><td>Desayuno</td><td>Almuerzo</td><td>Merienda</td><td>Cena</td></tr><tr><td>Lunes</td><td>{{ informe.aprobadas_desayuno_lunes }}</td><td>{{ informe.aprobadas_almuerzo_lunes }}</td><td>{{ informe.aprobadas_merienda_lunes }}</td><td>{{ informe.aprobadas_cena_lunes }}</td></tr><tr><td>Martes</td><td>{{ informe.aprobadas_desayuno_martes }}</td><td>{{ informe.aprobadas_almuerzo_martes }}</td><td>{{ informe.aprobadas_merienda_martes }}</td><td>{{ informe.aprobadas_cena_martes }}</td></tr><tr><td>Miercoles</td><td>{{ informe.aprobadas_desayuno_miercoles }}</td><td>{{ informe.aprobadas_almuerzo_miercoles }}</td><td>{{ informe.aprobadas_merienda_miercoles }}</td><td>{{ informe.aprobadas_cena_miercoles }}</td></tr><tr><td>Jueves</td><td>{{ informe.aprobadas_desayuno_jueves }}</td><td>{{ informe.aprobadas_almuerzo_jueves }}</td><td>{{ informe.aprobadas_merienda_jueves }}</td><td>{{ informe.aprobadas_cena_jueves }}</td></tr><tr><td>Viernes</td><td>{{ informe.aprobadas_desayuno_viernes }}</td><td>{{ informe.aprobadas_almuerzo_viernes }}</td><td>{{ informe.aprobadas_merienda_viernes }}</td><td>{{ informe.aprobadas_cena_viernes }}</td></tr><tr><td>Sábado</td><td>{{ informe.aprobadas_desayuno_sabado }}</td><td>{{ informe.aprobadas_almuerzo_sabado }}</td><td>{{ informe.aprobadas_merienda_sabado }}</td><td>{{ informe.aprobadas_cena_sabado }}</td></tr><tr><td>Domingo</td><td>{{ informe.aprobadas_desayuno_domingo }}</td><td>{{ informe.aprobadas_almuerzo_domingo }}</td><td>{{ informe.aprobadas_merienda_domingo }}</td><td>{{ informe.aprobadas_cena_domingo }}</td></tr></table>
-      <p>ANEXO I – INFORME DE MÓDULOS Y BENEFICIARIOS</p>
-      <p>Cuadro de personas asistidas y módulos de fortalecimiento suministrados.</p>
-      <p>*Suma de desayunos y meriendas suministrados por día **Suma de almuerzos y cenas suministrados por día</p>
-      <p>La cantidad de Módulos de Fortalecimiento suministrados a los beneficiarios alcanzó la totalidad de   (A)   para desayuno/merienda y de   (B)para almuerzo/cena por semana, dando cumplimiento a lo oportunamente informado en el Convenio de referencia.</p>
-      <p>Se adjunta la PLANILLA DE BENEFICIARIOS, en la que se informan los datos de los asistentes al comedor.</p>
-      <p>Se declara que los datos consignados en el presente formulario son fidedignos y los mismos tienen la validez de una Declaración Jurada.</p>
-      <p>Firma del Titular de la TarjetaFirma de los Representantes de la Institución Nombre y Apellido del Titular de la TarjetaNombre de los Representantes de la Institución</p>
-      <p>ANEXO II - PLANILLA DE DESTINATARIOS NOMBRE DEL COMEDOR:</p>
-      <p>DIRECCIÓN:LOCALIDAD:</p>
-      <p>MES:AÑO:</p>
-      <p>Este formulario tiene carácter de declaración jurada y debe estar firmado al menos por el responsable de la tarjeta y un representante de la Organización solicitante.</p>
-      <p>ANEXO III - DECLARACIÓN JURADA SOBRE APLICACIÓN DE LOS FONDOS DEL SUBSIDIO</p>
-      <p>(Lugar y Fecha de emisión) SEÑOR</p>
-      <p>DIRECTOR GENERAL DE ADMINISTRACIÓN DPTO. RENDICIÓN DE CUENTAS</p>
-      <p>Los que suscriben (Nombre/s y Apellido/s) en mi carácter de presidente y  (Nombre/s y Apellido/s) en mi carácter de tesorero de (nombre de la organización que firmó el Convenio), con domicilio real/legal en de la Localidad de de la Provincia de , manifestamos con carácter de Declaración Jurada, que hemos aplicado los fondos del subsidio recibido para el Comedor  (Nombre del Comedor que ejecutó los fondos) oportunamente otorgado mediante Resolución N.° , tramitado bajo Expediente N.° , conforme el detalle que se expone seguidamente:</p>
-      <table><tr><td>Suma Otorgada (Mes/Período): Total a la fecha:</td><td>$ </td></tr><tr><td>Inversión Documentada rendida en la presente:</td><td>$ </td></tr><tr><td>Inversión Documentada acumulada total rendida:</td><td>$ </td></tr><tr><td>Saldo a Invertir:</td><td>$ </td></tr></table>
-      <p>Asimismo, cumplimos en adjuntar un detalle de los respectivos comprobantes respaldatorios de la inversión documentada con arreglo al detalle que de fecha, tipo y N.° de comprobante, proveedor, concepto e importe total, debidamente firmado por Presidente y Tesorero de la institución beneficiaria.</p>
-      <p>Adicionalmente, también con carácter de declaración jurada, manifestamos que:</p>
-      <p>Los fondos recibidos en concepto de subsidio fueron empleados para el objeto solicitado y/o tenido en cuenta para su otorgamiento.</p>
-      <p>La totalidad de la documentación original respaldatoria de los fondos del subsidio, cumple con las formalidades y requisitos establecidos por la Resolución N.° 1415/03 y complementarias y modificatorias de la Agencia de Regulación y Control Aduanero (ex- AFIP), salvo los casos de excepción que expresamente se detallan. La documentación ORIGINAL se encuentra debidamente archivada en el domicilio de  (sede de la institución), a disposición de la DIRECCIÓN GENERAL DE ADMINISTRACIÓN . DPTO. DE RENDICIÓN DE CUENTAS, para su análisis y</p>
-      <p>verificación en el momento que se considere oportuno y sometidas a las competencias de control previstas en la Ley N.° 24.156.</p>
-      <p>En los casos de adquisición, refacción, ampliación o habilitación de inmuebles, que se ha efectuado la atestación marginal en título de propiedad, reglada por el artículo 1° del Decreto N.° 23.871/44.</p>
-      <p>PresidenteTesorero</p>
-      <p>ANEXO IV - DOCUMENTACIÓN RESPALDATORIA DE LA INVERSIÓN DE LOS FONDOS DEL SUBSIDIO</p>
-      <p>EXPTE. N.º:</p>
-      <p>RESOLUCIÓN N.º:</p>
-      <p>La totalidad de la información indicada fue realizada sin omitir o falsear dato alguno</p>
-      <p>Firma, aclaración y DNI del beneficiario personal o del Presidente y Contador o Tesorero de la organización no gubernamental, o de la autoridad máxima administrativa del organismo público, en su caso.</p>
-      <p>(1) Fecha de emisión del comprobante; (2) Indicar si es Factura; (3) Numeración correspondiente al tipo de comprobante (los 12 dígitos que la componen); (4) Código de autorización de impresión que se encuentra impreso en facturas B; (5) Clave única de identificación tributaria del proveedor; (6) Individualización de la persona física jurídica que emite el comprobante; (7) Descripción del bien o servicio objeto de la contratación y (8) Importe de la Factura.</p>
-    </main>
-  </body>
+        <main>
+            <p>
+                CONVENIO ENTRE LA SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO Y LA ASOCIACIÓN DE HECHO {{ informe.nombre_organizacion }} DE LA PROVINCIA DE {{ informe.provincia_organizacion }}
+            </p>
+            <p>
+                Entre la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA del MINISTERIO DE CAPITAL HUMANO, representada en este acto por el Subsecretario de Promoción Humana Sr. Martín Domingo Lepera, (DNI N° 30.957.827), con domicilio físico en Avenida 9 de Julio N° 1925 - Piso 16 de la Ciudad Autónoma de Buenos Aires, en adelante &quot;LA SECRETARÍA&quot;; y la Asociación de Hecho {{ informe.nombre_organizacion }} de la Provincia de {{ informe.provincia_organizacion }}, representada en este acto por el/la Sr/Sra. {{ informe.responsable_tarjeta_nombre }} DNI N° XXXX y el/la Sr/Sra. {{ informe.responsable_tarjeta_suplente_nombre }} DNI N° xxxxxx, con domicilio en {{ informe.responsable_tarjeta_suplente_nombre }} de la Localidad de xxxxxx, Partido de xxxxx de la Provincia de xxxxxx, en adelante “LA ASOCIACIÓN DE HECHO”, denominadas conjuntamente “LAS PARTES”, convienen celebrar el presente convenio, sujeto a las siguientes cláusulas:
+            </p>
+            <p>
+                Cláusula Primera.- Objeto: El presente Convenio se suscribe con el objeto de fortalecer el servicio alimentario de Comedores y/o Merenderos comunitarios, a fin de complementar las prestaciones alimentarias brindadas a personas que concurran a los mismos y que se encuentran en estado de vulnerabilidad social y económica; actividad encuadrada dentro de los Lineamientos Técnicos y Operativos fijados en el Anexo - IF-2025-32668963-APN- SSPH#MCH de la Resolución N° RESOL-2025-151-APN-MCH, del 31 de marzo de 2025 modificatoria de la Resolución N° RESOL-2023-230-APN-MDS del 17 de febrero de 2023.
+            </p>
+            <p>
+                Cláusula Segunda.- Financiamiento: “LA ASOCIACIÓN DE HECHO” presta conformidad a que &quot;LA SECRETARÍA&quot; le otorgue, por los mecanismos que ésta fije a dicho efecto, fondos en concepto de subsidio no reintegrable, sujeto a rendición de cuentas, y a fin del cumplimiento del objeto, al {{ informe.tipo_espacio }} “{{ informe.nombre_espacio }}” de la Localidad de {{ informe.localidad_espacio }} de la Provincia de {{ informe.provincia_espacio }}, en adelante “EL {{ informe.tipo_espacio }}”, que tramita por Expediente {{ informe.expediente_nro }}; conforme a detalle obrante en el ANEXO que forma parte integrante del presente convenio.
+            </p>
+            <p>
+                Todo ello, con arreglo a las disponibilidades presupuestarias y financieras de la Secretaría Nacional de Niñez, Adolescencia y Familia.
+            </p>
+            <p>
+                Se deja aclarado que el importe equivalente al Módulo de Fortalecimiento se pagará conforme a lo dispuesto en el respectivo acto administrativo autorizante del pago que se dicte al efecto.
+            </p>
+            <p>
+                El monto total mensual surgirá del resultado de la multiplicación de la cantidad total de prestaciones por el valor del Módulo de Fortalecimiento (Almuerzo-Cena) vigente al momento de la liquidación.
+            </p>
+            <p>Dicho importe podrá estar sujeto a ajustes, de conformidad a lo que establezca &quot;LA SECRETARÍA&quot;.</p>
+            <p>
+                El importe total a pagar en forma mensual, será notificado, con dicha periodicidad, a las direcciones de correos electrónicos de “LA ASOCIACIÓN DE HECHO” y del Administrador de recursos, según ANEXO.
+            </p>
+            <p>
+                Cláusula Tercera.- Forma de Pago: Los fondos citados precedentemente serán acreditados en forma mensual a una cuenta asociada a una Tarjeta Electrónica habilitada para la Adquisición de alimentos secos y frescos para el fortalecimiento del servicio alimentario brindado por “EL {{ informe.tipo_espacio }}” señalado en el Anexo.
+            </p>
+            <p>
+                La Tarjeta Electrónica se emitirá a nombre del responsable administrador de fondos designado oportunamente por “LA ASOCIACIÓN DE HECHO”, conforme al detalle obrante en el ANEXO del presente, y será entregada por retiro en sucursal bancaria; lo que será debidamente comunicado a su correo electrónico.
+            </p>
+            <p>
+                &quot;LA SECRETARÍA&quot; comunicará la/s acreditaciones instruidas, direcciones de correos electrónicos de “LA ASOCIACIÓN DE HECHO” y del Administrador de recursos, según ANEXO.
+            </p>
+            <p>El total máximo de meses objeto de cobertura del presente Convenio surge del ANEXO del mismo.</p>
+            <p>
+                Cláusula Cuarta.- Destino de fondos: “LA ASOCIACIÓN DE HECHO” se compromete a invertir la suma citada a fines de complementar los servicios alimentarios del {{ informe.tipo_espacio }} citado en el ANEXO del presente, al que asisten personas en situación de vulnerabilidad social y económica; con arreglo al tipo y modalidad de servicio, y cantidad de destinatarios allí consignados.
+            </p>
+            <p>La tarjeta sólo podrá ser utilizada en comercios del rubro “Alimentos”.</p>
+            <p>
+                “LA ASOCIACIÓN DE HECHO” se compromete a garantizar la intangibilidad de los fondos acreditados a través de la tarjeta precargada; así como la sustentabilidad del objeto y fines del presente.
+            </p>
+            <p>
+                Cláusula Quinta.- Asignación de recursos: “LA ASOCIACIÓN DE HECHO” deberá asignar los fondos otorgados a través de la tarjeta prepaga a la adquisición de alimentos, no pudiendo alterar dicha finalidad sin la previa conformidad de &quot;LA SECRETARÍA&quot;.
+            </p>
+            <p>
+                Los alimentos adquiridos serán exclusivamente asignados a la atención de las necesidades de las personas que asisten al mismo.
+            </p>
+            <p>
+                Se prohíbe la entrega de alimentos adquiridos mediante la tarjeta precargada con fondos derivados del presente Convenio a: familiares, destinatarios o asistentes al {{ informe.tipo_espacio }}, o a terceros para cualquier fin que fuere; dejándose expresa constancia que la misma está destinada exclusivamente al funcionamiento del servicio alimentario del {{ informe.tipo_espacio }} designado.
+            </p>
+            <p>
+                “LA ASOCIACIÓN DE HECHO” se compromete a destinar la utilización de la tarjeta precargada a los fines específicos, sin obtención de rédito político alguno.
+            </p>
+            <p>
+                “LA ASOCIACIÓN DE HECHO” se compromete por sí y por el responsable administrador de fondos designado a NO adquirir bienes a personas o empresas con las que puedan plantearse conflictos de intereses, tales como la existencia de vinculación de cualquier tipo entre los miembros de “LA ASOCIACIÓN DE HECHO” y/o responsables o colaboradores del {{ informe.tipo_espacio }} objeto de financiamiento y una persona física o jurídica proveedora de bienes o servicios destinados a los mismos. Asimismo, dicha prohibición se aplicará en aquellos casos en que se verifique la existencia de relaciones de parentesco y/o amistad.
+            </p>
+            <p>
+                Cláusula Sexta.- Carácter de los Alimentos – Funcionamiento de Depósitos: Los alimentos adquiridos por “LA ASOCIACIÓN DE HECHO” deberán responder a las normas del Código Alimentario Nacional, tomándose los recaudos necesarios a fin que las fechas de vencimiento permitan el consumo de los productos con una antelación suficiente para su adecuado dispendio.
+            </p>
+            <p>
+                Cláusula Séptima.- Prestación del Servicio: En caso de que la prestación del servicio brindado sea suspendida o modificada sustancialmente, “LA ASOCIACIÓN DE HECHO” deberá notificar en forma fehaciente y oportuna a &quot;LA SECRETARÍA&quot;.
+            </p>
+            <p>
+                La notificación deberá realizarse en un plazo máximo de DIEZ (10) días de efectivizada la suspensión o modificación sustancial en la prestación del servicio.
+            </p>
+            <p>
+                En caso de que se notifique una suspensión, la tarjeta entregada, hubiere o no fondos remanentes y/o excedentes en la misma, será restituida a &quot;LA SECRETARÍA&quot;.
+            </p>
+            <p>
+                Asimismo, “LA ASOCIACIÓN DE HECHO” deberá notificar cualquier otro tipo de modificación inherente al funcionamiento del {{ informe.tipo_espacio }}.
+            </p>
+            <p>
+                “LA ASOCIACIÓN DE HECHO” deberá comunicar a &quot;LA SECRETARÍA&quot;, mediante notificación fehaciente, todo cambio de domicilio del {{ informe.tipo_espacio }} objeto de financiamiento. Si se realizara alguno de los cambios indicados, el mismo se considerará válido, una vez efectuada la notificación por parte de “LA ASOCIACIÓN DE HECHO” y la posterior evaluación y aprobación mediante evaluación técnica debidamente fundada.
+            </p>
+            <p>
+                De la misma forma, en caso de desvincularse el {{ informe.tipo_espacio }} objeto de financiamiento de la órbita de “LA ASOCIACIÓN DE HECHO” se cancelarán las transferencias pendientes; debiendo procederse a la ejecución y/o rendición de las operadas hasta dicha fecha.
+            </p>
+            <p>
+                Cláusula Octava.- Plazo de Utilización de Fondos – Cereo: “LA ASOCIACIÓN DE HECHO” deberá utilizar los fondos desde su acreditación hasta el último día hábil del mes en que se ha realizado la acreditación.
+            </p>
+            <p>
+                Una vez vencido el plazo de utilización de dichos fondos, los saldos existentes inherentes a la acreditación determinada por &quot;LA SECRETARÍA&quot;, se someten a un proceso de “cereo” (puesta a cero de la cuenta), y serán restituidos y/o puestos a disposición de &quot;LA SECRETARÍA&quot; por intermedio de la institución operadora del proceso de pago.
+            </p>
+            <p>
+                Finalizado el plazo de ejecución del presente, y realizado el proceso anteriormente citado, no se efectuarán más transferencias de fondos.
+            </p>
+            <p>
+                Cláusula Novena.- Plazo de Ejecución - Total de acreditaciones: El plazo de ejecución del presente Convenio será de hasta SEIS (6) meses (acreditaciones), contados a partir de la primera acreditación.
+            </p>
+            <p>
+                Sin perjuicio de ello, &quot;LA SECRETARÍA&quot; podrá dar por finalizado el presente Convenio cuando así lo considere pertinente, sin necesidad de invocar causal alguna, y previa notificación a “LA ASOCIACIÓN DE HECHO” con una antelación no menor a QUINCE (15) días; pudiendo dejar sin efecto los pagos pendientes, e incluso retrotraer aquellos depositados en la cuenta.
+            </p>
+            <p>
+                Cláusula Décima.- Registros Documentales: “LA ASOCIACIÓN DE HECHO” deberá arbitrar los medios necesarios a los fines de que el {{ informe.tipo_espacio }} designado lleve en su respectivo establecimiento los siguientes registros:
+            </p>
+            <p>Cuaderno de Novedades, consignando modificaciones en el horario y tipo de prestación;</p>
+            <p>
+                Listado completo de asistentes o destinatarios (consignando: datos del tipo de composición familiar, menores, mayores, género, situación, incapacidad, etc.);
+            </p>
+            <p>Listado Detallado de los colaboradores del {{ informe.tipo_espacio }};</p>
+            <p>Registro, de las prestaciones otorgadas.</p>
+            <p>Dichos registros deberán obrar en dependencias del {{ informe.tipo_espacio }}.</p>
+            <p>
+                Cláusula Décima Primera.- Rendición de Cuentas de Fondos: “LA ASOCIACIÓN DE HECHO” se compromete a rendir cuentas a &quot;LA SECRETARÍA&quot; de las inversiones producidas con los fondos acreditados, conforme al plan y plazo de pagos que surge del ANEXO, y a la modalidad allí fijada.
+            </p>
+            <p>
+                Las formalidades vinculadas a la rendición de cuentas se someterán a las prescripciones impuestas en el Anexo III y IV del presente.
+            </p>
+            <p>
+                Finalizado el plazo de ejecución del presente Convenio y realizado el cereo de la cuenta, no se efectuarán más transferencias de fondos, debiendo “LA ASOCIACIÓN DE HECHO” presentar la rendición documentada del gasto realizado por “EL {{ informe.tipo_espacio|upper }}” de la totalidad de los fondos recibidos, en un plazo de TREINTA (30) días posteriores al último cereo.
+            </p>
+            <p>
+                “LA ASOCIACIÓN DE HECHO” se compromete a rendir cuenta documentada de los fondos transferidos con arreglo a lo establecido en la Resolución ex MDS N° 2458 del 23 de agosto de 2004, la Ley Nº 24.156 de Administración Financiera y de los Sistemas de Control del Sector Público Nacional, su Decreto Reglamentario N° 1344/2007 y sus normas modificatorias y complementarias, y los artículos 858 y 859 del Código Civil y Comercial de la Nación.
+            </p>
+            <p>
+                La documentación respaldatoria deberá cumplir indefectiblemente los requisitos establecidos en la Resolución General Nº 1415/2003 de la AFIP. Los comprobantes podrán ser facturas “A”, “B” o “C” emitidas a nombre del titular y/o tickets emitidos por Controladora Fiscal homologada en AFIP con la debida observancia de los montos a rendir de conformidad con lo expuesto.
+            </p>
+            <p>
+                “LA ASOCIACIÓN DE HECHO” será responsable de inhabilitar la documentación sujeta a rendición en el original de la misma, conforme a lo expuesto en el párrafo anterior, debiendo obtenerse fotocopia del comprobante luego de su inutilización a efectos de ser presentadas las mismas en la rendición técnica a ingresar en &quot;LA SECRETARÍA&quot;.
+            </p>
+            <p>
+                Asimismo, “LA ASOCIACIÓN DE HECHO” será responsable ante futuras auditorías respecto de la veracidad en el cumplimiento de este requisito.
+            </p>
+            <p>
+                “LA ASOCIACIÓN DE HECHO” se compromete a adoptar las medidas necesarias con relación a los sistemas contables, administrativos y financieros a fin de facilitar el control de su correspondiente rendición técnica y a conservar debidamente archivada por el término de DIEZ (10) años toda la documentación original respaldatoria correspondiente a la ejecución del presente Convenio.
+            </p>
+            <p>
+                Se deja explicitado que de existir alguna contradicción entre la rendición que presentare “LA ASOCIACIÓN DE HECHO” con la que formulare el Agente de Pago respectivo (detalle de transacciones producidas), prevalecerá esta última, sometiéndose a realizar los ajustes y/o readecuaciones financieras y/o renditivas, según correspondiere.
+            </p>
+            <p>
+                No será necesario que efectúe la devolución de aquellos fondos que no hubieren sido consumidos durante el mes correspondiente, dado que las cuentas contarán con cereo mensual efectuado por el agente de pago designado a dicho efecto.
+            </p>
+            <p>
+                &quot;LA SECRETARÍA&quot; se reserva la facultad de modificar la modalidad de presentación de la rendición de cuentas impuesta, en cuyo caso notificará a “LA ASOCIACIÓN DE HECHO” de las nuevas prescripciones inherentes a ello.
+            </p>
+            <p>
+                Cláusula Décima Segunda.- Carga de comprobantes: Sin perjuicio de las prescripciones establecidas en la cláusula anterior, “LA ASOCIACIÓN DE HECHO” tendrá acceso a una plataforma electrónica que indique &quot;LA SECRETARÍA&quot;, asignando previamente un nombre de usuario a “LA ASOCIACIÓN DE HECHO”, en la que deberá efectuar la carga de los comprobantes de pago.
+            </p>
+            <p>
+                Los respectivos comprobantes de pago serán cargados en un plazo máximo de 7 días corridos de efectuado el pago del mismo.
+            </p>
+            <p>
+                Cláusula Décima Tercera.- Informe de Aplicación de Fondos y de Gestión Social: “LA ASOCIACIÓN DE HECHO” se compromete a presentar una Declaración Jurada (DDJJ.) de Cumplimiento de Objeto Social, en un plazo de CUARENTA (40) días corridos desde la acreditación de los fondos de cada transferencia, con arreglo al modelo obrante como ANEXO I y II del presente.
+            </p>
+            <p>
+                En la misma, se deberá dar cuenta de la cantidad de personas asistidas, viandas realizadas y listado de artículos adquiridos.
+            </p>
+            <p>
+                Asimismo, se presentará en forma mensual y en carácter de información de gestión social, el detalle de prestaciones efectivamente brindadas en el período.
+            </p>
+            <p>
+                Con la primera rendición mensual se presentará la nómina de personas efectivamente asistidas con las prestaciones citadas (consignando Apellido, Nombre, y DNI), a partir del segundo mes se deberán presentar solamente las altas por bajas manteniendo el número de prestaciones aprobadas.
+            </p>
+            <p>
+                En caso de incumplimiento o inconsistencias en la presentación de alguna de las obligaciones mencionadas previamente, &quot;LA SECRETARÍA&quot; podrá determinar la suspensión de pago asignado al {{ informe.tipo_espacio }} objeto de la infracción.
+            </p>
+            <p>
+                Cláusula Décima Cuarta.- Auditoría y Control de Gestión: A los fines de acreditar la asignación específica del subsidio al destino previsto, &quot;LA SECRETARÍA&quot; podrá disponer, por sí o por la Entidad que designare a dicho efecto, la visita al {{ informe.tipo_espacio }} por parte de un agente que supervise la aplicación de los fondos; pudiendo verificar ello asimismo por medios alternativos y/o complementarios (fotos, videollamadas, reuniones virtuales, etc).
+            </p>
+            <p>
+                Asimismo, &quot;LA SECRETARÍA&quot; dispondrá de los medios de Auditoría, Monitoreo y Evaluación que considere pertinentes, por sí o por quien en el futuro ésta disponga, para lo cual “LA ASOCIACIÓN DE HECHO” se compromete a exhibir y/o remitir oportunamente todos los registros, archivos de información relacionados con este Convenio y/o documentación complementaria, cuando le sean solicitados, esto independientemente del control y las auditorías que le competen a la Auditoría Interna de la SECRETARÍA NACIONAL DE NIÑEZ, ADOLESCENCIA Y FAMILIA DEL MINISTERIO DE CAPITAL HUMANO, la SINDICATURA GENERAL DE LA NACIÓN (SIGEN) y la AUDITORÍA GENERAL DE LA NACIÓN (AGN),
+            </p>
+            <p>
+                resultando de aplicación lo establecido en el artículo 8° “in fine” de la Ley N° 24.156 de Administración Financiera y de los Sistemas de Control del Sector Público Nacional.
+            </p>
+            <p>
+                Cláusula Décima Quinta.- Sanciones por incumplimiento: La falta de cumplimiento de las obligaciones prescriptas en este Convenio, como así también la comprobación de falsedad u ocultamiento en la información que proporcione, o el incumplimiento de los objetivos de “EL PROGRAMA”, facultará a &quot;LA SECRETARÍA&quot; a declarar la resolución del presente Convenio en los términos del art. 21 de la Ley N° 19.549, pudiendo dejar sin efecto los pagos pendientes, retrotraer los acreditados y existentes en la cuenta y/o demandar el reintegro de las sumas entregadas, sin perjuicio de la facultad de iniciar las acciones legales correspondientes, pudiendo inhabilitar asimismo la percepción de cualquier beneficio que otorgue el MINISTERIO DE CAPITAL HUMANO; sin perjuicio del inicio de otras acciones judiciales que pudieren corresponder.
+            </p>
+            <p>
+                Cláusula Décima Sexta.- Responsabilidad: “LA ASOCIACIÓN DE HECHO” asume la responsabilidad sobre las respectivas obligaciones que contraiga en el marco del presente Convenio, respecto de la contratación de personas, locación de servicios, adquisiciones y/o locaciones de bienes.
+            </p>
+            <p>
+                &quot;LA SECRETARÍA&quot; no asumirá ningún tipo de responsabilidad frente a “LA ASOCIACIÓN DE HECHO”, sus dependientes o terceros por cualquier daño o perjuicio, por obligación laboral, ni por obligación alguna de cualquier especie, ya sea contractual o extracontractual, que pueda generarse por la actividad que ésta desarrolle con motivo de la implementación y puesta en marcha de las actividades y/o prácticas objeto del presente. La presente obligación se mantendrá aún terminado el plazo de vigencia del presente.
+            </p>
+            <p>
+                A tal efecto, &quot;LA SECRETARÍA&quot; queda eximida de responder frente a reclamo alguno relacionado con ello. Asimismo, todos los efectos derivados de la ejecución de las acciones por parte de “LA ASOCIACIÓN DE HECHO” se atribuyen a ésta en forma exclusiva.
+            </p>
+            <p>
+                “LA ASOCIACIÓN DE HECHO” reconoce que la relación laboral de las personas que designe para la ejecución de las acciones conjuntas que surjan a partir del presente será de exclusiva responsabilidad de ésta, sin que las circunstancias de tal vinculación generen obligación y/o responsabilidad alguna al Gobierno Nacional.
+            </p>
+            <p>
+                Todos los actos que deba cumplir el responsable administrador de fondos designado en la ejecución del presente serán realizados por cuenta y orden de “LA ASOCIACIÓN DE HECHO”.
+            </p>
+            <p>En ningún caso se podrá actuar en representación o por mandato de &quot;LA SECRETARÍA&quot;.</p>
+            <p>
+                “LAS PARTES” se comprometen a mantenerse indemnes entre sí respecto de cualquier reclamo, demanda, acción legal y costos que pudieran surgir por daños ocasionados a terceros en el marco del cumplimiento del objeto del presente Convenio.
+            </p>
+            <p>
+                Cláusula Décima Séptima.- Integridad: “LA ASOCIACIÓN DE HECHO” declara que la misma y los miembros de su personal y/o personas vinculadas no han participado directa o
+            </p>
+            <p>
+                indirectamente en prácticas corruptas, fraudulentas, colusorias, coercitivas u obstructivas para el acceso al Programa.
+            </p>
+            <p>
+                &quot;LA SECRETARÍA&quot; podrá adoptar las medidas pertinentes en caso de determinar que “LA ASOCIACIÓN DE HECHO” y/o “El {{ informe.tipo_espacio }}” destinatarios de los fondos participaron en prácticas corruptas, fraudulentas, colusorias, coercitivas u obstructivas durante el proceso de ingreso a “EL PROGRAMA” o durante la ejecución del presente; y cuando se constate que el receptor de los fondos no tomó las medidas oportunas y adecuadas.
+            </p>
+            <p>
+                &quot;LA SECRETARÍA&quot; podrá sancionar en cuanto resulte pertinente el incumplimiento a las normas sobre integridad establecidas en la Ley Nº 27.401, requiriendo asimismo el máximo esfuerzo dentro de las disponibilidades razonables por parte de los receptores de fondos para la aplicación de programas de integridad en los casos alcanzados y que fuere facultativo.
+            </p>
+            <p>
+                Cláusula Décima Octava.- Controversias: “LA ASOCIACIÓN DE HECHO” y &quot;LA SECRETARÍA&quot; se comprometen a solucionar de común acuerdo y de buena fe las controversias que se susciten entre ellas relacionadas con la interpretación y/o ejecución del presente Convenio.
+            </p>
+            <p>
+                En caso de resultar ello imposible, se someterán a la jurisdicción de los Tribunales Federales con asiento en la Ciudad Autónoma de Buenos Aires, con renuncia expresa a cualquier otro fuero o jurisdicción que por cualquier motivo pudiera corresponderles.
+            </p>
+            <p>
+                Cláusula Décima Novena.- Consentimiento - Ley 25.326: Conforme lo normado por la ley 25.326, “LA ASOCIACIÓN DE HECHO” ratifica su consentimiento para la recolección y análisis por parte de &quot;LA SECRETARÍA&quot;, a los fines exclusivos del Programa, de sus datos personales obrantes en los archivos y registros de los Organismos con los que se cruce información, según así correspondiere.
+            </p>
+            <p>
+                Cláusula Vigésima.- Domicilios: Los respectivos domicilios físicos y electrónicos indicados en el presente se consideran constituidos para todos los efectos legales judiciales o extrajudiciales del presente, mientras no se comunique su modificación expresamente y por medio fehaciente.
+            </p>
+            <p>
+                Cláusula Vigésima Primera.- Entrada en Vigencia: El presente Convenio entrará en vigencia una vez aprobado por acto administrativo en jurisdicción de &quot;LA SECRETARÍA&quot;, previo cumplimiento de los requisitos legales, administrativos y procedimentales internos vigentes, y debidamente comunicado al correo electrónico que consta en el Anexo.
+            </p>
+            <p>El presente Documento no contará con valor alguno hasta tanto se suscriba el acto citado.</p>
+            <p>
+                Cláusula Vigésima Segunda.- Responsable sustituto: Ante la eventualidad de imposibilidad de proseguir la administración por parte del responsable titular citado en el ANEXO por el causal que fuere, “LA ASOCIACIÓN DE HECHO” podrá designar un sustituto, mediante Nota comunicativa indicativa de dicha situación.
+            </p>
+            <p>
+                En ambos casos, se le asignará una tarjeta al sustituto quien se subrogará en las obligaciones asumidas por su antecesor.
+            </p>
+            <p>
+                En prueba de conformidad, se suscriben dos (2) ejemplares de un mismo tenor y a un solo efecto en la Ciudad Autónoma de Buenos Aires, en la siguiente fecha:
+            </p>
+            <table>
+                <tr>
+                    <td>C</td>
+                    <td>{{ informe.expediente_nro }}</td>
+                </tr>
+                <tr>
+                    <td>EFECTOR</td>
+                    <td>{{ informe.nombre_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>Tipo (Merendero / Comedor)</td>
+                    <td>{{ informe.tipo_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>Domicilio</td>
+                    <td>{{ informe.domicilio_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>Correo Electrónico</td>
+                    <td>{{ informe.domicilio_electronico_espacio }}</td>
+                </tr>
+                <tr>
+                    <td>RESPONSABLE ADMINISTRADOR DE FONDOS</td>
+                </tr>
+                <tr>
+                    <td>Nombre/s y Apellido/s</td>
+                    <td>{{ informe.responsable_tarjeta_nombre }}</td>
+                </tr>
+                <tr>
+                    <td>CUIT / CUIL</td>
+                    <td>{{ informe.responsable_tarjeta_cuit }}</td>
+                </tr>
+                <tr>
+                    <td>Domicilio</td>
+                    <td>{{ informe.responsable_tarjeta_domicilio }}</td>
+                </tr>
+                <tr>
+                    <td>Correo Electrónico</td>
+                    <td>{{ informe.responsable_tarjeta_mail }}</td>
+                </tr>
+                <tr>
+                    <td>TOTAL DE ACREDITACIONES A PRODUCIR</td>
+                    <td>{{ informe.total_acreditaciones }}</td>
+                </tr>
+                <tr>
+                    <td>PLAZO DE EJECUCIÓN</td>
+                    <td>{{ informe.plazo_ejecucion }}</td>
+                </tr>
+            </table>
+            <p>Anexo:</p>
+            <p>Detalle de prestaciones aprobadas por semana:</p>
+            <table>
+                <tr>
+                    <td>COMIDA / DIA</td>
+                    <td>Desayuno</td>
+                    <td>Almuerzo</td>
+                    <td>Merienda</td>
+                    <td>Cena</td>
+                </tr>
+                <tr>
+                    <td>Lunes</td>
+                    <td>{{ informe.aprobadas_desayuno_lunes }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_lunes }}</td>
+                    <td>{{ informe.aprobadas_merienda_lunes }}</td>
+                    <td>{{ informe.aprobadas_cena_lunes }}</td>
+                </tr>
+                <tr>
+                    <td>Martes</td>
+                    <td>{{ informe.aprobadas_desayuno_martes }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_martes }}</td>
+                    <td>{{ informe.aprobadas_merienda_martes }}</td>
+                    <td>{{ informe.aprobadas_cena_martes }}</td>
+                </tr>
+                <tr>
+                    <td>Miercoles</td>
+                    <td>{{ informe.aprobadas_desayuno_miercoles }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_miercoles }}</td>
+                    <td>{{ informe.aprobadas_merienda_miercoles }}</td>
+                    <td>{{ informe.aprobadas_cena_miercoles }}</td>
+                </tr>
+                <tr>
+                    <td>Jueves</td>
+                    <td>{{ informe.aprobadas_desayuno_jueves }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_jueves }}</td>
+                    <td>{{ informe.aprobadas_merienda_jueves }}</td>
+                    <td>{{ informe.aprobadas_cena_jueves }}</td>
+                </tr>
+                <tr>
+                    <td>Viernes</td>
+                    <td>{{ informe.aprobadas_desayuno_viernes }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_viernes }}</td>
+                    <td>{{ informe.aprobadas_merienda_viernes }}</td>
+                    <td>{{ informe.aprobadas_cena_viernes }}</td>
+                </tr>
+                <tr>
+                    <td>Sábado</td>
+                    <td>{{ informe.aprobadas_desayuno_sabado }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_sabado }}</td>
+                    <td>{{ informe.aprobadas_merienda_sabado }}</td>
+                    <td>{{ informe.aprobadas_cena_sabado }}</td>
+                </tr>
+                <tr>
+                    <td>Domingo</td>
+                    <td>{{ informe.aprobadas_desayuno_domingo }}</td>
+                    <td>{{ informe.aprobadas_almuerzo_domingo }}</td>
+                    <td>{{ informe.aprobadas_merienda_domingo }}</td>
+                    <td>{{ informe.aprobadas_cena_domingo }}</td>
+                </tr>
+            </table>
+            <p>ANEXO I – INFORME DE MÓDULOS Y BENEFICIARIOS</p>
+            <p>Cuadro de personas asistidas y módulos de fortalecimiento suministrados.</p>
+            <p>*Suma de desayunos y meriendas suministrados por día **Suma de almuerzos y cenas suministrados por día</p>
+            <p>
+                La cantidad de Módulos de Fortalecimiento suministrados a los beneficiarios alcanzó la totalidad de   (A)   para desayuno/merienda y de   (B)para almuerzo/cena por semana, dando cumplimiento a lo oportunamente informado en el Convenio de referencia.
+            </p>
+            <p>Se adjunta la PLANILLA DE BENEFICIARIOS, en la que se informan los datos de los asistentes al comedor.</p>
+            <p>
+                Se declara que los datos consignados en el presente formulario son fidedignos y los mismos tienen la validez de una Declaración Jurada.
+            </p>
+            <p>
+                Firma del Titular de la TarjetaFirma de los Representantes de la Institución Nombre y Apellido del Titular de la TarjetaNombre de los Representantes de la Institución
+            </p>
+            <p>ANEXO II - PLANILLA DE DESTINATARIOS NOMBRE DEL COMEDOR:</p>
+            <p>DIRECCIÓN:LOCALIDAD:</p>
+            <p>MES:AÑO:</p>
+            <p>
+                Este formulario tiene carácter de declaración jurada y debe estar firmado al menos por el responsable de la tarjeta y un representante de la Organización solicitante.
+            </p>
+            <p>ANEXO III - DECLARACIÓN JURADA SOBRE APLICACIÓN DE LOS FONDOS DEL SUBSIDIO</p>
+            <p>(Lugar y Fecha de emisión) SEÑOR</p>
+            <p>DIRECTOR GENERAL DE ADMINISTRACIÓN DPTO. RENDICIÓN DE CUENTAS</p>
+            <p>
+                Los que suscriben (Nombre/s y Apellido/s) en mi carácter de presidente y  (Nombre/s y Apellido/s) en mi carácter de tesorero de (nombre de la organización que firmó el Convenio), con domicilio real/legal en de la Localidad de de la Provincia de , manifestamos con carácter de Declaración Jurada, que hemos aplicado los fondos del subsidio recibido para el Comedor  (Nombre del Comedor que ejecutó los fondos) oportunamente otorgado mediante Resolución N.° , tramitado bajo Expediente N.° , conforme el detalle que se expone seguidamente:
+            </p>
+            <table>
+                <tr>
+                    <td>Suma Otorgada (Mes/Período): Total a la fecha:</td>
+                    <td>$</td>
+                </tr>
+                <tr>
+                    <td>Inversión Documentada rendida en la presente:</td>
+                    <td>$</td>
+                </tr>
+                <tr>
+                    <td>Inversión Documentada acumulada total rendida:</td>
+                    <td>$</td>
+                </tr>
+                <tr>
+                    <td>Saldo a Invertir:</td>
+                    <td>$</td>
+                </tr>
+            </table>
+            <p>
+                Asimismo, cumplimos en adjuntar un detalle de los respectivos comprobantes respaldatorios de la inversión documentada con arreglo al detalle que de fecha, tipo y N.° de comprobante, proveedor, concepto e importe total, debidamente firmado por Presidente y Tesorero de la institución beneficiaria.
+            </p>
+            <p>Adicionalmente, también con carácter de declaración jurada, manifestamos que:</p>
+            <p>
+                Los fondos recibidos en concepto de subsidio fueron empleados para el objeto solicitado y/o tenido en cuenta para su otorgamiento.
+            </p>
+            <p>
+                La totalidad de la documentación original respaldatoria de los fondos del subsidio, cumple con las formalidades y requisitos establecidos por la Resolución N.° 1415/03 y complementarias y modificatorias de la Agencia de Regulación y Control Aduanero (ex- AFIP), salvo los casos de excepción que expresamente se detallan. La documentación ORIGINAL se encuentra debidamente archivada en el domicilio de  (sede de la institución), a disposición de la DIRECCIÓN GENERAL DE ADMINISTRACIÓN . DPTO. DE RENDICIÓN DE CUENTAS, para su análisis y
+            </p>
+            <p>
+                verificación en el momento que se considere oportuno y sometidas a las competencias de control previstas en la Ley N.° 24.156.
+            </p>
+            <p>
+                En los casos de adquisición, refacción, ampliación o habilitación de inmuebles, que se ha efectuado la atestación marginal en título de propiedad, reglada por el artículo 1° del Decreto N.° 23.871/44.
+            </p>
+            <p>PresidenteTesorero</p>
+            <p>ANEXO IV - DOCUMENTACIÓN RESPALDATORIA DE LA INVERSIÓN DE LOS FONDOS DEL SUBSIDIO</p>
+            <p>EXPTE. N.º:</p>
+            <p>RESOLUCIÓN N.º:</p>
+            <p>La totalidad de la información indicada fue realizada sin omitir o falsear dato alguno</p>
+            <p>
+                Firma, aclaración y DNI del beneficiario personal o del Presidente y Contador o Tesorero de la organización no gubernamental, o de la autoridad máxima administrativa del organismo público, en su caso.
+            </p>
+            <p>
+                (1) Fecha de emisión del comprobante; (2) Indicar si es Factura; (3) Numeración correspondiente al tipo de comprobante (los 12 dígitos que la componen); (4) Código de autorización de impresión que se encuentra impreso en facturas B; (5) Clave única de identificación tributaria del proveedor; (6) Individualización de la persona física jurídica que emite el comprobante; (7) Descripción del bien o servicio objeto de la contratación y (8) Importe de la Factura.
+            </p>
+        </main>
+    </body>
 </html>

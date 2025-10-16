@@ -50,13 +50,17 @@ from admisiones.forms.admisiones_forms import (
     DocumentosExpedienteForm,
 )
 
+
 def normalizar(texto):
     """Quita acentos y convierte a minúsculas para comparación segura."""
     if not texto:
         return ""
     texto = texto.strip().lower()
-    texto = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("utf-8")
+    texto = (
+        unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("utf-8")
+    )
     return texto
+
 
 class LegalesService:
     @staticmethod
@@ -684,10 +688,14 @@ class LegalesService:
                 formulario_existente = FormularioProyectoDisposicion.objects.filter(
                     admision=admision
                 ).first()
-                form = ProyectoDisposicionForm(request.POST, instance=formulario_existente)
+                form = ProyectoDisposicionForm(
+                    request.POST, instance=formulario_existente
+                )
 
                 if not form.is_valid():
-                    messages.error(request, "Error al guardar el Formulario Proyecto Disposición.")
+                    messages.error(
+                        request, "Error al guardar el Formulario Proyecto Disposición."
+                    )
                     return redirect("admisiones_legales_ver", pk=admision.pk)
 
                 nuevo_formulario = form.save(commit=False)
@@ -717,9 +725,7 @@ class LegalesService:
                 pdf_template_name = (
                     f"admisiones/pdf/{tipo_admision}_pdf_proyecto_disposicion.html"
                 )
-                docx_template_name = (
-                    f"{tipo_admision}_docx_proyecto_disposicion.docx"
-                )
+                docx_template_name = f"{tipo_admision}_docx_proyecto_disposicion.docx"
 
                 html_pdf = render_to_string(pdf_template_name, context)
                 if not html_pdf.strip():
@@ -734,7 +740,9 @@ class LegalesService:
                 )
                 pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
                 if not pdf_bytes:
-                    raise ValueError("WeasyPrint no devolvió contenido para el PDF generado.")
+                    raise ValueError(
+                        "WeasyPrint no devolvió contenido para el PDF generado."
+                    )
                 pdf_content = ContentFile(pdf_bytes)
 
                 docx_content = DocumentTemplateService.generar_docx(
@@ -771,7 +779,9 @@ class LegalesService:
 
                 nuevo_formulario.save(update_fields=["archivo", "archivo_docx"])
 
-                LegalesService.actualizar_estado_por_accion(admision, "formulario_disposicion")
+                LegalesService.actualizar_estado_por_accion(
+                    admision, "formulario_disposicion"
+                )
 
                 messages.success(
                     request, "Formulario guardado y documentos generados correctamente."
@@ -789,7 +799,6 @@ class LegalesService:
             )
             return redirect("admisiones_legales_ver", pk=admision.pk)
 
-        
     @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
         try:
@@ -800,7 +809,9 @@ class LegalesService:
                 form = ProyectoConvenioForm(request.POST, instance=formulario_existente)
 
                 if not form.is_valid():
-                    messages.error(request, "Error al guardar el formulario Proyecto de Convenio.")
+                    messages.error(
+                        request, "Error al guardar el formulario Proyecto de Convenio."
+                    )
                     return redirect(request.path_info)
 
                 nuevo_formulario = form.save(commit=False)
@@ -837,9 +848,7 @@ class LegalesService:
                         f"Tipo de convenio no reconocido: '{admision.tipo_convenio.nombre}'"
                     )
 
-                pdf_template_name = (
-                    f"admisiones/pdf/{tipo_admision}_pdf_proyecto_convenio_{convenio_suffix}.html"
-                )
+                pdf_template_name = f"admisiones/pdf/{tipo_admision}_pdf_proyecto_convenio_{convenio_suffix}.html"
                 docx_template_name = (
                     f"{tipo_admision}_docx_proyecto_convenio_{convenio_suffix}.docx"
                 )
@@ -857,7 +866,9 @@ class LegalesService:
                 )
                 pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
                 if not pdf_bytes:
-                    raise ValueError("WeasyPrint no devolvió contenido para el PDF generado.")
+                    raise ValueError(
+                        "WeasyPrint no devolvió contenido para el PDF generado."
+                    )
                 pdf_content = ContentFile(pdf_bytes)
 
                 docx_content = DocumentTemplateService.generar_docx(
@@ -915,7 +926,6 @@ class LegalesService:
             )
             return redirect(request.path_info)
 
-        
     @staticmethod
     def get_admisiones_legales_filtradas(query=""):
         try:
@@ -1193,34 +1203,38 @@ class LegalesService:
         try:
             context = TextFormatterService.preparar_contexto_proyecto_convenio(admision)
             docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
-            
+
             if docx_buffer:
                 filename = f"proyecto_convenio_{admision.id}.docx"
                 return ContentFile(docx_buffer.getvalue(), name=filename)
-            
+
             return None
         except Exception:
             logger.exception(
                 "Error en generar_documento_convenio",
-                extra={"admision_id": admision.id, "template": template_name}
+                extra={"admision_id": admision.id, "template": template_name},
             )
             return None
 
     @staticmethod
-    def generar_documento_disposicion(admision, template_name="proyecto_disposicion.docx"):
+    def generar_documento_disposicion(
+        admision, template_name="proyecto_disposicion.docx"
+    ):
         """Genera documento DOCX de proyecto de disposición usando template"""
         try:
-            context = TextFormatterService.preparar_contexto_proyecto_disposicion(admision)
+            context = TextFormatterService.preparar_contexto_proyecto_disposicion(
+                admision
+            )
             docx_buffer = DocumentTemplateService.generar_docx(template_name, context)
-            
+
             if docx_buffer:
                 filename = f"proyecto_disposicion_{admision.id}.docx"
                 return ContentFile(docx_buffer.getvalue(), name=filename)
-            
+
             return None
         except Exception:
             logger.exception(
                 "Error en generar_documento_disposicion",
-                extra={"admision_id": admision.id, "template": template_name}
+                extra={"admision_id": admision.id, "template": template_name},
             )
             return None

@@ -157,8 +157,13 @@ class Admision(models.Model):
     enviada_a_archivo = models.BooleanField(
         default=False, verbose_name="Enviada a Archivo"
     )
-    motivo_descarte_expediente = models.TextField("Motivo de descarte del Expediente", null=True, blank=True)
-    fecha_descarte_expediente = models.DateField("Fecha de descarte del Expediente", null=True, blank=True)
+    motivo_descarte_expediente = models.TextField(
+        "Motivo de descarte del Expediente", null=True, blank=True
+    )
+    fecha_descarte_expediente = models.DateField(
+        "Fecha de descarte del Expediente", null=True, blank=True
+    )
+
     @property
     def tipo_informe(self):
         if self.tipo_convenio_id == 1:
@@ -309,7 +314,9 @@ class InformeTecnico(models.Model):
     domicilio_espacio = models.CharField(
         "Domicilio del Comedor/Merendero", max_length=255
     )
-    domicilio_electronico_espacio = models.EmailField("Domicilio electronico constituido del Comedor/Merendero", null=True, blank=True)
+    domicilio_electronico_espacio = models.EmailField(
+        "Domicilio electronico constituido del Comedor/Merendero", null=True, blank=True
+    )
     barrio_espacio = models.CharField("Barrio del Comedor/Merendero", max_length=255)
     localidad_espacio = models.CharField(
         "Localidad del Comedor/Merendero", max_length=255
@@ -594,24 +601,12 @@ class InformeTecnico(models.Model):
     resolucion_de_pago_6 = models.CharField(
         "Resolución de pago 6", max_length=150, null=True, blank=True
     )
-    monto_1 = models.IntegerField(
-        default=0, validators=[MinValueValidator(0)]
-    )
-    monto_2 = models.IntegerField(
-        default=0, validators=[MinValueValidator(0)]
-    )
-    monto_3 = models.IntegerField(
-        default=0, validators=[MinValueValidator(0)]
-    )
-    monto_4 = models.IntegerField(
-        default=0, validators=[MinValueValidator(0)]
-    )
-    monto_5 = models.IntegerField(
-        default=0, validators=[MinValueValidator(0)]
-    )
-    monto_6 = models.IntegerField(
-        default=0, validators=[MinValueValidator(0)]
-    )
+    monto_1 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_2 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_3 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_4 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_5 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_6 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.nombre_organizacion} - {self.expediente_nro}"
