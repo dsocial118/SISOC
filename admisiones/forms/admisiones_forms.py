@@ -54,9 +54,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
 
         # Hacer campos obligatorios solo si require_full es True,
         # dejando opcionales las resoluciones y montos (salvo renovaciones).
-        campos_pago_opcionales = {
-            f"resolucion_de_pago_{i}" for i in range(1, 7)
-        }
+        campos_pago_opcionales = {f"resolucion_de_pago_{i}" for i in range(1, 7)}
         campos_pago_opcionales.update({f"monto_{i}" for i in range(1, 7)})
 
         for name, field in self.fields.items():
