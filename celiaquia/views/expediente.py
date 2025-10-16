@@ -138,6 +138,15 @@ class ExpedienteListView(ListView):
     context_object_name = "expedientes"
     paginate_by = 20
 
+    def get_paginate_by(self, queryset):
+        page_size = self.request.GET.get("page_size", "20")
+        if page_size.lower() in ("all", "todos"):
+            return None
+        try:
+            return int(page_size)
+        except (ValueError, TypeError):
+            return 20
+
     def get_queryset(self):
         user = self.request.user
         qs = (
@@ -332,7 +341,7 @@ class ExpedientePreviewExcelView(View):
             return JsonResponse({"error": "No se recibió ningún archivo."}, status=400)
 
         raw_limit = request.POST.get("limit") or request.GET.get("limit")
-        max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
+        max_rows = _parse_limit(raw_limit, default=None, max_cap=5000)
 
         try:
             preview = ImportacionService.preview_excel(archivo, max_rows=max_rows)
@@ -434,6 +443,67 @@ class ExpedienteDetailView(DetailView):
         )
         ctx["legajos_subsanar"] = q.filter(revision_tecnico=RevisionTecnico.SUBSANAR)
 
+        # Enriquecer legajos con informacion de tipo (hijo/responsable)
+        from celiaquia.services.legajo_service import LegajoService
+        from celiaquia.services.familia_service import FamiliaService
+
+        legajos_enriquecidos = []
+        legajos_list = list(q.all())
+        legajos_por_ciudadano = {}
+        ciudadanos_ids = [leg.ciudadano_id for leg in legajos_list]
+        responsables_ids = set()
+        if ciudadanos_ids:
+            try:
+                responsables_ids = FamiliaService.obtener_ids_responsables(
+                    ciudadanos_ids
+                )
+            except Exception as exc:
+                logger.warning(
+                    "No se pudo resolver responsables para expediente %s: %s",
+                    expediente.id,
+                    exc,
+                )
+
+        for legajo in legajos_list:
+            legajo.es_responsable = LegajoService._es_responsable(
+                legajo.ciudadano, responsables_ids
+            )
+            legajo.tipo_legajo = "Responsable" if legajo.es_responsable else "Hijo"
+            legajo.archivos_requeridos = (
+                LegajoService.get_archivos_requeridos_por_legajo(
+                    legajo, responsables_ids
+                )
+            )
+
+            if legajo.es_responsable:
+                legajo.hijos_a_cargo = FamiliaService.obtener_hijos_a_cargo(
+                    legajo.ciudadano.id, expediente
+                )
+                legajo.responsable_id = None
+            else:
+                legajo.hijos_a_cargo = []
+                # Obtener el responsable de este hijo
+                legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
+                    legajo.ciudadano.id
+                )
+
+            legajos_enriquecidos.append(legajo)
+            legajos_por_ciudadano[legajo.ciudadano_id] = legajo
+
+        faltantes_list = LegajoService.faltantes_archivos(expediente)
+        # Obtener estructura familiar completa
+        estructura_familiar = FamiliaService.obtener_estructura_familiar_expediente(
+            expediente
+        )
+
+        # Enriquecer estructura familiar con referencia a legajos
+        for info in estructura_familiar.get("responsables", {}).values():
+            for hijo in info.get("hijos", []):
+                hijo.legajo_relacionado = legajos_por_ciudadano.get(hijo.id)
+
+        ctx["legajos_enriquecidos"] = legajos_enriquecidos
+        ctx["estructura_familiar"] = estructura_familiar
+
         ctx["c_aceptados"] = counts["c_aceptados"]
         ctx["c_rech_tecnico"] = counts["c_rech_tecnico"]
         ctx["c_rech_sintys"] = counts["c_rech_sintys"]
@@ -441,8 +511,10 @@ class ExpedienteDetailView(DetailView):
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
             raw_limit = self.request.GET.get("preview_limit")
-            max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
-            preview_limit_actual = raw_limit if raw_limit is not None else "all"
+            max_rows = _parse_limit(raw_limit, default=None, max_cap=5000)
+            preview_limit_actual = (
+                raw_limit if raw_limit is not None else str(max_rows or "all")
+            )
             try:
                 preview = ImportacionService.preview_excel(
                     expediente.excel_masivo, max_rows=max_rows
@@ -490,7 +562,7 @@ class ExpedienteDetailView(DetailView):
 
         ctx.update(
             {
-                "legajos": expediente.expediente_ciudadanos.all(),
+                "legajos": legajos_enriquecidos,
                 "confirm_form": ConfirmarEnvioForm(),
                 "preview": preview,
                 "preview_error": preview_error,
@@ -498,10 +570,15 @@ class ExpedienteDetailView(DetailView):
                 "preview_limit_opciones": preview_limit_opciones,
                 "tecnicos": tecnicos,
                 "faltan_archivos": faltan_archivos,
+                "faltantes_archivos_detalle": faltantes_list,
                 "cupo": cupo,  # para el template actual
-                "cupo_metrics": cupo_metrics,  # compat si lo usás en JS/otros templates
+                "cupo_metrics": cupo_metrics,  # compat si lo usas en JS/otros templates
                 "cupo_error": cupo_error,
                 "fuera_count": fuera_count,
+                "total_responsables": len(estructura_familiar.get("responsables", {})),
+                "total_hijos_sin_responsable": len(
+                    estructura_familiar.get("hijos_sin_responsable", [])
+                ),
             }
         )
         return ctx
@@ -524,10 +601,32 @@ class ExpedienteImportView(View):
             result = ImportacionService.importar_legajos_desde_excel(
                 expediente, expediente.excel_masivo, user
             )
-            messages.success(
-                request,
-                f"Importación: {result['validos']} válidos, {result['errores']} errores.",
-            )
+            detalles = result.get("detalles_errores") or []
+            resumen = ""
+            if detalles:
+                resumen = "; ".join(
+                    f"Fila {d.get('fila')}: {d.get('error')}" for d in detalles[:5]
+                )
+                if len(detalles) > 5:
+                    resumen += " (ver logs para más detalles)"
+
+            mensaje_principal = f"Importación: {result['validos']} válidos, {result['errores']} errores."
+            if resumen:
+                mensaje_principal += f" Detalles: {resumen}"
+            messages.success(request, mensaje_principal)
+
+            if detalles:
+                messages.error(request, f"Errores detectados: {resumen}")
+
+            advertencias = result.get("warnings") or []
+            if advertencias:
+                resumen_warn = "; ".join(
+                    f"Fila {w.get('fila')}: {w.get('detalle')}"
+                    for w in advertencias[:5]
+                )
+                if len(advertencias) > 5:
+                    resumen_warn += " (se muestran las primeras 5)"
+                messages.warning(request, f"Advertencias: {resumen_warn}")
         except ValidationError as ve:
             messages.error(request, f"Error de validación: {ve.message}")
         except Exception as e:

@@ -27,7 +27,7 @@
             </a>
             <a href="{% url 'rendicioncuentasmensual_list' comedor.id %}"
                class="btn btn-primary mb-3">
-                <i class="fas fa-plus me-2"></i>Rendicion de Cuenta Mensual
+                <i class="fas fa-plus me-2"></i>Seguimiento Mensual
             </a>
         </div>
     </div>
@@ -57,8 +57,7 @@
                             <div class="info-item">
                                 <div class="info-label">Vencimiento de Mandato</div>
                                 <div class="info-value fecha-valor">
-                                    {{ info_relevante.fecha_vencimiento_mandatos|date:'d/m/Y'
-                                    |default_if_none:"—" }}
+                                    {{ info_relevante.fecha_vencimiento_mandatos|date:'d/m/Y'|default_if_none:"—" }}
                                 </div>
                             </div>
                             <div class="info-item">
@@ -310,9 +309,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.notificacion_acreditacion_1|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.notificacion_acreditacion_1|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{
-                                        hitos.notificacion_acreditacion_1|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.notificacion_acreditacion_1|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -347,9 +344,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.notificacion_acreditacion_2|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.notificacion_acreditacion_2|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{
-                                        hitos.notificacion_acreditacion_2|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.notificacion_acreditacion_2|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -384,9 +379,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.notificacion_acreditacion_3|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.notificacion_acreditacion_3|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{
-                                        hitos.notificacion_acreditacion_3|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.notificacion_acreditacion_3|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -421,9 +414,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.notificacion_acreditacion_4|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.notificacion_acreditacion_4|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{
-                                        hitos.notificacion_acreditacion_4|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.notificacion_acreditacion_4|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -458,9 +449,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.notificacion_acreditacion_5|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.notificacion_acreditacion_5|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{
-                                        hitos.notificacion_acreditacion_5|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.notificacion_acreditacion_5|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -495,9 +484,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.notificacion_acreditacion_6|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.notificacion_acreditacion_6|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{
-                                        hitos.notificacion_acreditacion_6|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.notificacion_acreditacion_6|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -532,8 +519,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.nomina_entregada_inicial|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.nomina_entregada_inicial|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{ hitos.nomina_entregada_inicial|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.nomina_entregada_inicial|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -743,8 +729,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.certificado_prestaciones_1|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.certificado_prestaciones_1|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{ hitos.certificado_prestaciones_1|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.certificado_prestaciones_1|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -779,8 +764,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.certificado_prestaciones_2|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.certificado_prestaciones_2|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{ hitos.certificado_prestaciones_2|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.certificado_prestaciones_2|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -815,8 +799,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.certificado_prestaciones_3|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.certificado_prestaciones_3|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{ hitos.certificado_prestaciones_3|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.certificado_prestaciones_3|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -851,8 +834,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.certificado_prestaciones_4|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.certificado_prestaciones_4|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{ hitos.certificado_prestaciones_4|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.certificado_prestaciones_4|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -887,8 +869,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.certificado_prestaciones_5|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.certificado_prestaciones_5|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{ hitos.certificado_prestaciones_5|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.certificado_prestaciones_5|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">
@@ -923,8 +904,7 @@
                                 <div class="hito-cell" data-label="Estado">
                                     <span class="estado-badge {{ hitos.certificado_prestaciones_6|yesno:'estado-completado,estado-pendiente' }}">
                                         <i class="fas {{ hitos.certificado_prestaciones_6|yesno:'fa-check-circle,fa-clock' }}"></i>
-                                        {{ hitos.certificado_prestaciones_6|yesno:"Completado,Pendiente"
-                                        }}
+                                        {{ hitos.certificado_prestaciones_6|yesno:"Completado,Pendiente" }}
                                     </span>
                                 </div>
                                 <div class="hito-cell" data-label="Fecha Completado">

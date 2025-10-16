@@ -2,6 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% load static custom_filters %}
+{% load admisiones_tags %}
 ;
 {% block title %}Expediente: {{ admision.num_expediente }}{% endblock %}
 ;
@@ -30,80 +31,9 @@
                class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            {% if admision.estado_legales == "Rectificado" or admision.estado_legales == None %}
-                {% if not admision.intervencion_juridicos and formulario_proyecto.numero_if and formulario_reso.numero_if %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalIntervencionJuridicos">Intervención Jurídicos</button>
-                {% endif %}
-                {% if not admision.legales_num_if %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalLegalesNumIF">Agregar Número de expediente</button>
-                {% endif %}
-                {% if not formulario_proyecto_completo and admision.legales_num_if %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalFormConvenio">Formulario Proyecto de Convenio</button>
-                {% endif %}
-                {% if not formulario_proyecto.numero_if and formulario_proyecto_completo and admision.legales_num_if %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalConvenioNumIF">IF Proyecto de Convenio</button>
-                {% endif %}
-                {% if not formulario_reso_completo and formulario_proyecto.numero_if %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalFormReso">Formulario Proyecto Disposición</button>
-                {% endif %}
-                {% if not formulario_reso.numero_if and formulario_reso_completo and admision.legales_num_if %}
-                    <button type="button"
-                            class="btn btn-primary mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalDispoNumIF">IF Proyecto Disposición</button>
-                {% endif %}
-                {% if not formulario_proyecto_completo and not formulario_reso_completo and not admision.legales_num_if %}
-                    <button type="button"
-                            class="btn btn-warning mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalRectificar">Rectificar</button>
-                {% endif %}
-            {% endif %}
-            {% if not admision.informe_sga and admision.intervencion_juridicos == "validado" %}
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalInformeSGA">Informe SGA</button>
-            {% endif %}
-            {% if not admision.numero_disposicion and  admision.numero_convenio %}
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalDisposicion">Disposición</button>
-            {% endif %}
-            {% if not admision.numero_convenio and  admision.informe_sga %}
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalConvenio">Convenio</button>
-            {% endif %}
-            {% if not admision.enviada_a_archivo and not admision.dictamen_motivo and admision.rechazo_juridicos_motivo %}
-                <button type="button"
-                        class="btn btn-danger mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalReinicioExpediente">Reinicio de Expediente</button>
-            {% endif %}
-            {% if admision.dictamen_motivo == "observacion en informe técnico" %}
-                <button type="button"
-                        class="btn btn-primary mr-1"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalConvenio">Solicitar Informe Técnico Complementario</button>
-            {% endif %}
+            {% for boton in botones_disponibles %}
+                {% render_boton_legales boton admision %}
+            {% endfor %}
         </div>
     </div>
     <div class="row mb-3">
@@ -128,30 +58,6 @@
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
-                                Formulario Proyecto Disposición:
-                                {% if formulario_reso_completo %}
-                                    <a href="{{ formulario_reso.archivo.url }}" target="_blank">
-                                        <i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i>
-                                    </a>
-                                    {% if formulario_reso.archivo_docx %}
-                                        <a href="{{ formulario_reso.archivo_docx.url }}" target="_blank">
-                                            <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
-                                        </a>
-                                    {% endif %}
-                                    {% if formulario_reso.numero_if %}
-                                        <br />
-                                        {{ formulario_reso.numero_if }}
-                                        <i class="bi bi-check-circle-fill text-success"></i>
-                                    {% else %}
-                                        <i class="bi bi-exclamation-circle-fill text-warning"></i>
-                                    {% endif %}
-                                {% else %}
-                                    <i class="bi bi-x-circle-fill text-danger"></i>
-                                {% endif %}
-                            </div>
-                        </li>
-                        <li class="nav-item">
-                            <div class="comment-text">
                                 Formulario Proyecto de Convenio:
                                 {% if formulario_proyecto_completo %}
                                     {% if formulario_proyecto.archivo %}
@@ -167,6 +73,30 @@
                                     {% if formulario_proyecto.numero_if %}
                                         <br />
                                         {{ formulario_proyecto.numero_if }}
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    {% else %}
+                                        <i class="bi bi-exclamation-circle-fill text-warning"></i>
+                                    {% endif %}
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Formulario Proyecto Disposición:
+                                {% if formulario_reso_completo %}
+                                    <a href="{{ formulario_reso.archivo.url }}" target="_blank">
+                                        <i class="bi bi-filetype-pdf text-info h5 mx-2 text-bold"></i>
+                                    </a>
+                                    {% if formulario_reso.archivo_docx %}
+                                        <a href="{{ formulario_reso.archivo_docx.url }}" target="_blank">
+                                            <i class="bi bi-filetype-docx text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if formulario_reso.numero_if %}
+                                        <br />
+                                        {{ formulario_reso.numero_if }}
                                         <i class="bi bi-check-circle-fill text-success"></i>
                                     {% else %}
                                         <i class="bi bi-exclamation-circle-fill text-warning"></i>
@@ -250,6 +180,12 @@
                     <ul class="nav nav-pills flex-column">
                         <li class="nav-item">
                             <div class="comment-text">
+                                Tipo:
+                                <span class="fw-bold">{{ admision.get_tipo_display|default_if_none:"-" }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
                                 Tipo Convenio:
                                 <span class="fw-bold">{{ admision.tipo_convenio.nombre|default_if_none:"-" }}</span>
                             </div>
@@ -264,6 +200,18 @@
                             <div class="comment-text">
                                 Fecha:
                                 <span class="fw-bold">{{ admision.creado|date:'d/m/Y' }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Fecha de vencimiento de mandatos:
+                                <span class="fw-bold">
+                                    {% if informe and informe.fecha_vencimiento_mandatos %}
+                                        {{ informe.fecha_vencimiento_mandatos|date:'d/m/Y' }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </span>
                             </div>
                         </li>
                         <li class="nav-item">
@@ -285,9 +233,34 @@
                                 <div class="comment-text">
                                     Informes Complementarios:
                                     {% for i in informes_complementarios %}
-                                        <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado|date:'d/m/Y' }}</a></span>
-                                        <br />
+                                        {% if i.pdf %}
+                                            <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado|date:'d/m/Y' }} ({{ i.get_estado_display }})</a></span>
+                                            <br />
+                                        {% else %}
+                                            <span class="fw-bold">{{ i.creado|date:'d/m/Y' }} - {{ i.get_estado_display }}</span>
+                                            <br />
+                                        {% endif %}
                                     {% endfor %}
+                                </div>
+                            </li>
+                        {% endif %}
+                        {% if pdf_complementario_final %}
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Informe Técnico Complementario Final:
+                                    <a href="{{ pdf_complementario_final.archivo.url }}" target="_blank">
+                                        <i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>
+                                    </a>
+                                    {% if pdf_complementario_final.archivo_docx %}
+                                        <a href="{{ pdf_complementario_final.archivo_docx.url }}"
+                                           target="_blank">
+                                            <i class="bi bi-filetype-docx text-info h4 ms-3 text-bold"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if pdf_complementario_final.numero_if %}
+                                        <br />
+                                        IF: {{ pdf_complementario_final.numero_if }}
+                                    {% endif %}
                                 </div>
                             </li>
                         {% endif %}
@@ -382,38 +355,8 @@
                 <div class="card-header">
                     <h2 class="card-title fw-bold fs-3">Historial de movimientos</h2>
                 </div>
-                <div class="card-body card-comments p-0 pb-1">
-                    <div class="container mt-2 table-responsive">
-                        <table class="table table-striped table-bordered table-hover table-sm"
-                               id="tablaDocumentos">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Campo</th>
-                                    <th></th>
-                                    <th>Usuario</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for cambio in historial_cambios %}
-                                    <tr id="fila-{{ doc.id }}">
-                                        <td class="ps-3">{{ cambio.fecha|date:'d/m/Y H:i' }}</td>
-                                        <td class="ps-3">{{ cambio.campo }}</td>
-                                        <td class="ps-3">
-                                            {% if cambio.valor_nuevo == "True" %}
-                                                Si
-                                            {% elif cambio.valor_nuevo == "False" %}
-                                                No
-                                            {% else %}
-                                                {{ cambio.valor_nuevo|default_if_none:"-" }}
-                                            {% endif %}
-                                        </td>
-                                        <td class="ps-3">{{ cambio.usuario.username }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="card-body p-0">
+                    {% include 'components/data_table.html' with headers=historial_headers items=historial_cambios custom_cells=True show_actions=False empty_message='No hay movimientos registrados' include_pagination=True page_obj=historial_page_obj is_paginated=historial_is_paginated page_param=historial_page_param %}
                 </div>
             </div>
         </div>
@@ -515,7 +458,7 @@
             </div>
         </div>
     </div>
-    <!-- MODAL Form Reso -->
+    <!-- MODAL Formulario Disposición -->
     <div class="modal fade"
          id="modalFormReso"
          tabindex="-1"
@@ -525,6 +468,7 @@
             <div class="modal-content">
                 <form method="POST" action="">
                     {% csrf_token %}
+                    <input type="hidden" name="tipo" value="{{ admision.tipo }}" />
                     <div class="modal-header">
                         <h5 class="modal-title">Formulario Disposición</h5>
                         <button type="button"
@@ -532,12 +476,10 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
-                        {% for field in reso_form %}<div class="col-md-6 mb-3">{{ field|as_crispy_field }}</div>{% endfor %}
-                    </div>
+                    <div class="modal-body">Generará los archivos del Formulario Disposición de {{ admision.tipo|lower }}.</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" name="btnRESO" id="btnRESO_id">Guardar</button>
+                        <button type="submit" class="btn btn-primary" name="btnRESO" id="btnRESO_id">Aceptar</button>
                     </div>
                 </form>
             </div>
@@ -560,7 +502,7 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">Generará el PDF del Formulario Proyecto de Convenio.</div>
+                    <div class="modal-body">Generará los archivos del Formulario Proyecto de Convenio.</div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit"
@@ -599,6 +541,37 @@
                                 class="btn btn-danger"
                                 name="btnReinicioExpediente"
                                 id="btnReinicioExpedienteID">Aceptar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL Solicitar Informe Complementario -->
+    <div class="modal fade"
+         id="modalSolicitarInformeComplementario"
+         tabindex="-1"
+         aria-labelledby="modalSolicitarInformeComplementario"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Solicitar Informe Técnico Complementario</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {{ form_solicitar_informe_complementario.observaciones_informe_tecnico_complementario|as_crispy_field }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-primary"
+                                name="btnInformeComplementario"
+                                id="btnInformeComplementarioID">Aceptar</button>
                     </div>
                 </form>
             </div>
@@ -783,6 +756,44 @@
                                 class="btn btn-primary"
                                 name="btnDocumentoExpediente"
                                 id="btnDocumentoExpediente_id">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL IF Informe Complementario -->
+    <div class="modal fade"
+         id="modalIFInformeComplementario"
+         tabindex="-1"
+         aria-labelledby="modalIFInformeComplementarioLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">IF Informe Técnico Complementario</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="numero_if_complementario">Número IF:</label>
+                            <input type="text"
+                                   class="form-control"
+                                   name="numero_if_complementario"
+                                   id="numero_if_complementario"
+                                   required />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-success"
+                                name="btnIFInformeComplementario"
+                                id="btnIFInformeComplementario_id">Guardar</button>
                     </div>
                 </form>
             </div>

@@ -31,18 +31,36 @@ class TipoConvenio(models.Model):
 
 class Admision(models.Model):
     ESTADOS_LEGALES = [
+        ("Enviado a Legales", "Enviado a Legales"),
         ("A Rectificar", "A Rectificar"),
         ("Rectificado", "Rectificado"),
         ("Pendiente de Validacion", "Pendiente de Validacion"),
+        ("Expediente Agregado", "Expediente Agregado"),
+        ("Formulario Convenio Creado", "Formulario Convenio Creado"),
+        ("IF Convenio Asignado", "IF Convenio Asignado"),
+        ("Formulario Disposición Creado", "Formulario Disposición Creado"),
+        ("IF Disposición Asignado", "IF Disposición Asignado"),
+        ("Juridicos: Validado", "Juridicos: Validado"),
+        ("Juridicos: Rechazado", "Juridicos: Rechazado"),
         ("Informe SGA Generado", "Informe SGA Generado"),
-        ("Resolucion Generada", "Resolucion Generada"),
         ("Convenio Firmado", "Convenio Firmado"),
+        ("Acompañamiento Pendiente", "Acompañamiento Pendiente"),
+        ("Archivado", "Archivado"),
+        ("Informe Complementario Solicitado", "Informe Complementario Solicitado"),
+        ("Informe Complementario Enviado", "Informe Complementario Enviado"),
+        ("Informe Complementario: Validado", "Informe Complementario: Validado"),
         ("Finalizado", "Finalizado"),
+        ("Descartado", "Descartado"),
     ]
 
     ESTADOS_INTERVENCION_JURIDICOS = [
         ("validado", "Validado"),
         ("rechazado", "Rechazado"),
+    ]
+
+    TIPO_ADMISION = [
+        ("incorporacion", "Incorporación"),
+        ("renovacion", "Renovación"),
     ]
 
     MOTIVO_RECHAZO_JURIDICOS = [
@@ -64,6 +82,13 @@ class Admision(models.Model):
         null=True,
     )
     estado = models.ForeignKey(EstadoAdmision, on_delete=models.SET_NULL, null=True)
+    tipo = models.CharField(
+        max_length=20,
+        choices=TIPO_ADMISION,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de Admisión",
+    )
     tipo_convenio = models.ForeignKey(
         TipoConvenio, on_delete=models.SET_NULL, null=True
     )
@@ -121,6 +146,9 @@ class Admision(models.Model):
     observaciones_reinicio_expediente = models.TextField(
         blank=True, null=True, verbose_name="Observaciones reinicio de expediente"
     )
+    complementario_solicitado = models.BooleanField(
+        default=False, verbose_name="Complementario Solicitado"
+    )
     observaciones_informe_tecnico_complementario = models.TextField(
         blank=True,
         null=True,
@@ -128,6 +156,12 @@ class Admision(models.Model):
     )
     enviada_a_archivo = models.BooleanField(
         default=False, verbose_name="Enviada a Archivo"
+    )
+    motivo_descarte_expediente = models.TextField(
+        "Motivo de descarte del Expediente", null=True, blank=True
+    )
+    fecha_descarte_expediente = models.DateField(
+        "Fecha de descarte del Expediente", null=True, blank=True
     )
 
     @property
@@ -272,12 +306,16 @@ class InformeTecnico(models.Model):
         choices=[
             ("Comedor", "Comedor"),
             ("Merendero", "Merendero"),
+            ("Punto de Entrega", "Punto de Entrega"),
             ("Comedor y Merendero", "Comedor y Merendero"),
         ],
     )
     nombre_espacio = models.CharField("Nombre del Comedor/Merendero", max_length=255)
     domicilio_espacio = models.CharField(
         "Domicilio del Comedor/Merendero", max_length=255
+    )
+    domicilio_electronico_espacio = models.EmailField(
+        "Domicilio electronico constituido del Comedor/Merendero", null=True, blank=True
     )
     barrio_espacio = models.CharField("Barrio del Comedor/Merendero", max_length=255)
     localidad_espacio = models.CharField(
@@ -290,6 +328,9 @@ class InformeTecnico(models.Model):
 
     responsable_tarjeta_nombre = models.CharField(
         "Nombre del Responsable de la Tarjeta", max_length=255
+    )
+    responsable_tarjeta_cuit = models.CharField(
+        "CUIL/CUIT del Responsable de la Tarjeta", max_length=255, null=True, blank=True
     )
     responsable_tarjeta_dni = models.CharField(
         "DNI del Responsable de la Tarjeta", max_length=20
@@ -320,38 +361,7 @@ class InformeTecnico(models.Model):
     provincia_poblacion_destinataria = models.CharField(
         "Provincia donde se ubica la población destinataria", max_length=255
     )
-    prestaciones_desayuno_numero = models.IntegerField(
-        "Cantidad de Prestaciones Semanales Desayuno - En números (Solicitante)",
-        default=0,
-    )
-    prestaciones_almuerzo_numero = models.IntegerField(
-        "Cantidad de Prestaciones Semanales Almuerzo - En números (Solicitante)",
-        default=0,
-    )
-    prestaciones_merienda_numero = models.IntegerField(
-        "Cantidad de Prestaciones Semanales Merienda - En números (Solicitante)",
-        default=0,
-    )
-    prestaciones_cena_numero = models.IntegerField(
-        "Cantidad de Prestaciones Semanales Cena - En números (Solicitante)", default=0
-    )
 
-    prestaciones_desayuno_letras = models.CharField(
-        "Cantidad de Prestaciones Semanales Desayuno - En números (Solicitante)",
-        max_length=255,
-    )
-    prestaciones_almuerzo_letras = models.CharField(
-        "Cantidad de Prestaciones Semanales Almuerzo - En números (Solicitante)",
-        max_length=255,
-    )
-    prestaciones_merienda_letras = models.CharField(
-        "Cantidad de Prestaciones Semanales Merienda - En números (Solicitante)",
-        max_length=255,
-    )
-    prestaciones_cena_letras = models.CharField(
-        "Cantidad de Prestaciones Semanales Cena - En números (Solicitante)",
-        max_length=255,
-    )
     if_relevamiento = models.CharField("IF de relevamiento territorial", max_length=255)
     fecha_vencimiento_mandatos = models.DateField(
         "Fecha de vencimiento de mandatos", null=True, blank=True
@@ -388,6 +398,215 @@ class InformeTecnico(models.Model):
         choices=ESTADOS,
         verbose_name="Estado del Informe",
     )
+    solicitudes_desayuno_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_desayuno_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_desayuno_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_desayuno_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_desayuno_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_desayuno_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_desayuno_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    solicitudes_almuerzo_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_almuerzo_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_almuerzo_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_almuerzo_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_almuerzo_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_almuerzo_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_almuerzo_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    solicitudes_merienda_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_merienda_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_merienda_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_merienda_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_merienda_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_merienda_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_merienda_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    solicitudes_cena_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_cena_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_cena_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_cena_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_cena_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_cena_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    solicitudes_cena_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    total_acreditaciones = models.CharField(
+        "Total de acreditaciones a Producir", max_length=150, null=True, blank=True
+    )
+    plazo_ejecucion = models.CharField(
+        "Plazo de Ejecución", max_length=150, null=True, blank=True
+    )
+
+    # Prestaciones aprobadas (antes en Anexo)
+    aprobadas_desayuno_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    aprobadas_almuerzo_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    aprobadas_merienda_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    aprobadas_cena_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    # Campos exclusivos de Renovación.
+    resolucion_de_pago_1 = models.CharField(
+        "Resolución de pago 1", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_2 = models.CharField(
+        "Resolución de pago 2", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_3 = models.CharField(
+        "Resolución de pago 3", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_4 = models.CharField(
+        "Resolución de pago 4", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_5 = models.CharField(
+        "Resolución de pago 5", max_length=150, null=True, blank=True
+    )
+    resolucion_de_pago_6 = models.CharField(
+        "Resolución de pago 6", max_length=150, null=True, blank=True
+    )
+    monto_1 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_2 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_3 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_4 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_5 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_6 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f"{self.nombre_organizacion} - {self.expediente_nro}"
@@ -606,10 +825,22 @@ class DocumentosExpediente(models.Model):
 
 
 class InformeComplementario(models.Model):
+    ESTADOS = [
+        ("borrador", "Borrador"),
+        ("enviado_validacion", "Enviado a Validación"),
+        ("validado", "Validado"),
+        ("rectificar", "A Rectificar"),
+    ]
+
     admision = models.ForeignKey(Admision, on_delete=models.CASCADE)
     informe_tecnico = models.ForeignKey(InformeTecnico, on_delete=models.CASCADE)
     pdf = models.FileField(upload_to="admisiones/informes_complementarios/", null=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default="borrador")
+    observaciones_legales = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones de Legales"
+    )
     creado = models.DateField(auto_now_add=True, null=True, blank=True)
+    modificado = models.DateTimeField(auto_now=True)
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -624,3 +855,26 @@ class InformeComplementarioCampos(models.Model):
     informe_complementario = models.ForeignKey(
         InformeComplementario, on_delete=models.CASCADE
     )
+
+
+class InformeTecnicoComplementarioPDF(models.Model):
+    admision = models.ForeignKey(Admision, on_delete=models.CASCADE)
+    informe_complementario = models.OneToOneField(
+        InformeComplementario, on_delete=models.CASCADE, related_name="pdf_final"
+    )
+    tipo = models.CharField(
+        max_length=20, choices=[("base", "Base"), ("juridico", "Jurídico")]
+    )
+    archivo = models.FileField(
+        upload_to="admisiones/informes_complementarios_final/pdf"
+    )
+    archivo_docx = models.FileField(
+        upload_to="admisiones/informes_complementarios_final/docx",
+        null=True,
+        blank=True,
+    )
+    numero_if = models.CharField(max_length=100, blank=True, null=True)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"PDF Complementario Final - Admision #{self.admision_id}"
