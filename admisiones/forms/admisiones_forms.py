@@ -150,10 +150,10 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 self.fields["provincia_organizacion"].initial = organizacion.provincia
                 self.fields["partido_organizacion"].initial = organizacion.partido
 
-            if not self.instance.fecha_vencimiento_mandatos:
-                self.fields["fecha_vencimiento_mandatos"].initial = (
-                    organizacion.fecha_vencimiento
-                )
+                if not self.instance.fecha_vencimiento_mandatos:
+                    self.fields["fecha_vencimiento_mandatos"].initial = (
+                        organizacion.fecha_vencimiento
+                    )
 
 
 class InformeTecnicoBaseForm(forms.ModelForm):
@@ -277,10 +277,10 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 self.fields["provincia_organizacion"].initial = organizacion.provincia
                 self.fields["partido_organizacion"].initial = organizacion.partido
 
-            if not self.instance.fecha_vencimiento_mandatos:
-                self.fields["fecha_vencimiento_mandatos"].initial = (
-                    organizacion.fecha_vencimiento
-                )
+                if not self.instance.fecha_vencimiento_mandatos:
+                    self.fields["fecha_vencimiento_mandatos"].initial = (
+                        organizacion.fecha_vencimiento
+                    )
 
 
 class InformeTecnicoEstadoForm(forms.Form):
