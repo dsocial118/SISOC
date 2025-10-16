@@ -1,4 +1,4 @@
-﻿{% extends "includes/main.html" %}
+{% extends "includes/main.html" %}
 {% load static custom_filters dict_extras %}
 {% block title %}Expediente{% endblock %}
 {% block breadcrumb %}
@@ -14,14 +14,14 @@
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"
-                   class="btn btn-outline-secondary btn-sm">â† Volver</a>
+                   class="btn btn-outline-secondary btn-sm">Volver</a>
                 {% if expediente.estado.nombre == 'CREADO' %}
                     <a href="{% url 'expediente_update' expediente.pk %}"
                        class="btn btn-outline-primary btn-sm ms-2">Editar Metadatos</a>
                 {% endif %}
             </div>
             <div class="d-flex gap-2">
-                <!-- Subir/Reprocesar Cruce: TÃ©cnico o Coordinador, no Provincia -->
+                <!-- Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia -->
                 {% if is_tec or is_coord %}
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
                         <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
@@ -119,7 +119,7 @@
                         <strong>Provincia:</strong> {{ expediente.usuario_provincia.profile.provincia|default:"-" }}
                     </p>
                     <p>
-                        <strong>Tecnicos asignados:</strong>
+                        <strong>Técnicos asignados:</strong>
                         {% if expediente.asignaciones_tecnicos.exists %}
                             {% for asignacion in expediente.asignaciones_tecnicos.all %}
                                 <span class="badge bg-info me-1">{{ asignacion.tecnico.get_full_name|default:asignacion.tecnico.username }}</span>
@@ -303,7 +303,11 @@
                 </div>
             </div>
         </div>
+                </div>
+            </div>
+        </div>
 
+        {% if legajos %}
         {% if legajos %}
 
             <div class="table-responsive">
@@ -1183,14 +1187,69 @@
             </div>
         </div>
     {% endwith %}
+        <!-- Modal: Historial de Estados -->
+        <div class="modal fade"
+             id="modalHistorial"
+             tabindex="-1"
+             aria-labelledby="modalHistorialLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalHistorialLabel">
+                            <i class="fas fa-history"></i> Historial de Estados
+                        </h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Estado Anterior</th>
+                                        <th>Estado Nuevo</th>
+                                        <th>Usuario</th>
+                                        <th>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for h in historial_page_obj %}
+                                        <tr>
+                                            <td>{{ h.fecha|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ h.estado_anterior.display_name }}</td>
+                                            <td>{{ h.estado_nuevo.display_name }}</td>
+                                            <td>{{ h.usuario.get_full_name|default:h.usuario.username|default:"-" }}</td>
+                                            <td>{{ h.observaciones|default:"-" }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted">Sin cambios de estado</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endwith %}
 {% endblock %}
 {% block customCSS %}
     <link rel="stylesheet"
           href="{% static 'custom/css/expediente_detail.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/familia_bubbles.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/familia_bubbles.css' %}" />
 {% endblock %}
 {% block customJS %}
-    <!-- Meta tags para configuraciÃ³n -->
+    <!-- Meta tags para configuración -->
     <meta name="process-url"
           content="{% url 'expediente_procesar' expediente.pk %}" />
     <meta name="confirm-url"

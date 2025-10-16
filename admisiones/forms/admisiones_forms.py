@@ -115,13 +115,14 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 .values_list("numero_gde", flat=True)
                 .first()
             )
-            self.fields["validacion_registro_nacional"].initial = (
-                ArchivoAdmision.objects.filter(
-                    admision=admision, documentacion__nombre="Validación RENACOM"
+            if "validacion_registro_nacional" in self.fields:
+                self.fields["validacion_registro_nacional"].initial = (
+                    ArchivoAdmision.objects.filter(
+                        admision=admision, documentacion__nombre="Validación RENACOM"
+                    )
+                    .values_list("numero_gde", flat=True)
+                    .first()
                 )
-                .values_list("numero_gde", flat=True)
-                .first()
-            )
 
             if referente:
                 self.fields["representante_nombre"].initial = (
@@ -234,13 +235,14 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 .values_list("numero_gde", flat=True)
                 .first()
             )
-            self.fields["validacion_registro_nacional"].initial = (
-                ArchivoAdmision.objects.filter(
-                    admision=admision, documentacion__nombre="Validación RENACOM"
+            if "validacion_registro_nacional" in self.fields:
+                self.fields["validacion_registro_nacional"].initial = (
+                    ArchivoAdmision.objects.filter(
+                        admision=admision, documentacion__nombre="Validación RENACOM"
+                    )
+                    .values_list("numero_gde", flat=True)
+                    .first()
                 )
-                .values_list("numero_gde", flat=True)
-                .first()
-            )
 
             if referente:
                 self.fields["representante_nombre"].initial = (

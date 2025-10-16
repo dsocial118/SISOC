@@ -15,46 +15,54 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <div class="container mt-5">
-        <h1 class="mb-4">Rendiciones de Cuenta - {{ comedor.nombre }}</h1>
-        <a href="{% url 'rendicioncuentasmensual_create' comedorid %}"
-           class="btn btn-success">Crear Rendición de Cuenta</a>
-        <table class="table table-bordered table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>#</th>
-                    <th>Mes</th>
-                    <th>Año</th>
-                    <th>Observaciones</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for rendicion in rendiciones_cuentas_mensuales %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{{ rendicion.mes }}</td>
-                        <td>{{ rendicion.anio }}</td>
-                        <td>{{ rendicion.observaciones }}</td>
-                        <td>
-                            <a href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}"
-                               class="btn btn-info btn-sm">Ver Detalle</a>
-                            <a href="{% url 'rendicioncuentasmensual_update' rendicion.id %}"
-                               class="btn btn-warning btn-sm">Editar</a>
-                            <form method="post"
-                                  action="{% url 'rendicioncuentasmensual_delete' rendicion.id %}"
-                                  style="display: inline">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="btn btn-danger btn-sm"
-                                        onclick="return confirm('¿Estás seguro de que deseas eliminar esta rendición y todos los archivos adjuntos?');">
-                                    Eliminar
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="container mt-4">
+        <h1 class="mb-3">Seguimiento mensual - {{ comedor.nombre }}</h1>
+        <div class="d-flex justify-content-end mb-4">
+            <a href="{% url 'rendicioncuentasmensual_create' comedorid %}"
+               class="btn btn-success">Nuevo seguimiento mensual</a>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Mes</th>
+                                <th>Año</th>
+                                <th>Observaciones</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rendicion in rendiciones_cuentas_mensuales %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ rendicion.mes }}</td>
+                                    <td>{{ rendicion.anio }}</td>
+                                    <td>{{ rendicion.observaciones }}</td>
+                                    <td class="w-25">
+                                        <a href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}"
+                                           class="btn btn-info btn-sm">Ver Detalle</a>
+                                        <a href="{% url 'rendicioncuentasmensual_update' rendicion.id %}"
+                                           class="btn btn-warning btn-sm">Editar</a>
+                                        <form method="post"
+                                              action="{% url 'rendicioncuentasmensual_delete' rendicion.id %}"
+                                              style="display: inline">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-danger btn-sm"
+                                                    onclick="return confirm('¿Estás seguro de que deseas eliminar esta rendición y todos los archivos adjuntos?');">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock content %}
