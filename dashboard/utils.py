@@ -22,7 +22,9 @@ def table_exists(table_name):
     try:
         vendor = connection.vendor
     except ImproperlyConfigured:
-        logger.debug("Base de datos no configurada; omitiendo chequeo de %s", table_name)
+        logger.debug(
+            "Base de datos no configurada; omitiendo chequeo de %s", table_name
+        )
         return False
 
     try:

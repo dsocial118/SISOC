@@ -33,11 +33,14 @@ class LegajoArchivoUploadView(View):
                 "Permission denied for user %s on legajo %s: %s",
                 request.user.id,
                 self.exp_ciud.pk,
-                str(e)
+                str(e),
             )
             return JsonResponse(
-                {"success": False, "message": "No tenés permiso para realizar esta acción."},
-                status=403
+                {
+                    "success": False,
+                    "message": "No tenés permiso para realizar esta acción.",
+                },
+                status=403,
             )
 
         return super().dispatch(request, *args, **kwargs)
