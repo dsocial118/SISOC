@@ -52,9 +52,18 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         if "fecha_vencimiento_mandatos" in self.fields:
             self.fields["fecha_vencimiento_mandatos"].input_formats = ["%Y-%m-%d"]
 
-        # Hacer campos obligatorios solo si require_full es True
-        for field in self.fields.values():
-            field.required = self.require_full
+        # Hacer campos obligatorios solo si require_full es True,
+        # dejando opcionales las resoluciones y montos (salvo renovaciones).
+        campos_pago_opcionales = {
+            f"resolucion_de_pago_{i}" for i in range(1, 7)
+        }
+        campos_pago_opcionales.update({f"monto_{i}" for i in range(1, 7)})
+
+        for name, field in self.fields.items():
+            if name in campos_pago_opcionales:
+                field.required = False
+            else:
+                field.required = self.require_full
 
         # Hacer obligatorios los campos de renovación si require_full es True y el tipo de admisión es 'renovacion'
         if admision and admision.tipo == "renovacion" and self.require_full:
@@ -176,9 +185,16 @@ class InformeTecnicoBaseForm(forms.ModelForm):
         if "fecha_vencimiento_mandatos" in self.fields:
             self.fields["fecha_vencimiento_mandatos"].input_formats = ["%Y-%m-%d"]
 
-        # Hacer campos obligatorios solo si require_full es True
-        for field in self.fields.values():
-            field.required = self.require_full
+        # Hacer campos obligatorios solo si require_full es True,
+        # dejando opcionales las resoluciones y montos (salvo renovaciones).
+        campos_pago_opcionales = {f"resolucion_de_pago_{i}" for i in range(1, 7)}
+        campos_pago_opcionales.update({f"monto_{i}" for i in range(1, 7)})
+
+        for name, field in self.fields.items():
+            if name in campos_pago_opcionales:
+                field.required = False
+            else:
+                field.required = self.require_full
 
         # Hacer obligatorios los campos de renovación si require_full es True y el tipo de admisión es 'renovacion'
         if admision and admision.tipo == "renovacion" and self.require_full:
