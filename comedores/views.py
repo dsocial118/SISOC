@@ -553,7 +553,7 @@ class ComedorDetailView(DetailView):
             "count_relevamientos": count_relevamientos,
             "imagenes": imagenes,
             "comedor_categoria": comedor_categoria,
-            "rendicion_cuentas_final_activo": rendiciones_mensuales >= 5,
+            "rendicion_cuentas_final_activo": True,  # rendiciones_mensuales >= 5, (esta validación se saca temporalmente)
             "admision": admision,
             "admisiones_headers": admisiones_headers,
             "admisiones_items": admisiones_items,

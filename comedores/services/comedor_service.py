@@ -121,6 +121,7 @@ class ComedorService:
             .values(
                 "id",
                 "nombre",
+                "estado_general",
                 "tipocomedor__nombre",
                 "provincia__nombre",
                 "municipio__nombre",
