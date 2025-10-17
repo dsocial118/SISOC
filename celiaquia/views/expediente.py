@@ -506,7 +506,7 @@ class ExpedienteDetailView(DetailView):
             # Agregar hijos de este responsable inmediatamente después
             hijos = hijos_por_responsable.get(responsable.ciudadano_id, [])
             legajos_enriquecidos.extend(hijos)
-        
+
         # Agregar hijos sin responsable al final
         legajos_enriquecidos.extend(hijos_sin_responsable)
 

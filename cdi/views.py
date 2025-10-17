@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
@@ -16,7 +17,7 @@ from cdi.models import CentroDesarrolloInfantil
 from core.decorators import group_required
 
 
-class CDIListView(ListView):
+class CDIListView(LoginRequiredMixin, ListView):
     model = CentroDesarrolloInfantil
     template_name = "centrodesarrolloinfantil_list.html"
     context_object_name = "centrodesarrolloinfantiles"
@@ -85,7 +86,7 @@ class CDIListView(ListView):
         return context
 
 
-class CDICreateView(CreateView):
+class CDICreateView(LoginRequiredMixin, CreateView):
     model = CentroDesarrolloInfantil
     form_class = CentroDesarrolloInfantilForm
     template_name = "centrodesarrolloinfantil_form.html"
@@ -94,13 +95,13 @@ class CDICreateView(CreateView):
         return reverse("cdi")
 
 
-class CDIDetailView(DetailView):
+class CDIDetailView(LoginRequiredMixin, DetailView):
     model = CentroDesarrolloInfantil
     template_name = "centrodesarrolloinfantil_detail.html"
     context_object_name = "centrodesarrolloinfantiles"
 
 
-class CDIUpdateView(UpdateView):
+class CDIUpdateView(LoginRequiredMixin, UpdateView):
     model = CentroDesarrolloInfantil
     form_class = CentroDesarrolloInfantilForm
     template_name = "centrodesarrolloinfantil_form.html"
@@ -109,7 +110,7 @@ class CDIUpdateView(UpdateView):
         return reverse("cdi_detalle", kwargs={"pk": self.object.pk})
 
 
-class CDIDeleteView(DeleteView):
+class CDIDeleteView(LoginRequiredMixin, DeleteView):
     model = CentroDesarrolloInfantil
     template_name = "centrodesarrolloinfantil_confirm_delete.html"
     context_object_name = "centrodesarrolloinfantiles"

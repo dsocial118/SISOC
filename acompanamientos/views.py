@@ -1,5 +1,7 @@
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
@@ -11,6 +13,7 @@ from acompanamientos.models.hitos import Hitos
 from comedores.models import Comedor
 
 
+@login_required
 @require_POST
 def restaurar_hito(request, comedor_id):
     campo = request.POST.get("campo")
@@ -30,7 +33,7 @@ def restaurar_hito(request, comedor_id):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
-class AcompanamientoDetailView(DetailView):
+class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
     model = Comedor
     template_name = "acompañamiento_detail.html"
     context_object_name = "comedor"
@@ -143,7 +146,7 @@ class AcompanamientoDetailView(DetailView):
         return context
 
 
-class ComedoresAcompanamientoListView(ListView):
+class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
     model = Comedor
     template_name = "lista_comedores.html"
     context_object_name = "comedores"
@@ -161,6 +164,7 @@ class ComedoresAcompanamientoListView(ListView):
         return context
 
 
+@login_required
 def comedores_acompanamiento_ajax(request):
     """
     Vista AJAX para búsqueda dinámica de comedores en acompañamiento
