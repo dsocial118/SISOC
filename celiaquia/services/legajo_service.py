@@ -276,7 +276,8 @@ class LegajoService:
         # Calcular edad para beneficiarios
         from datetime import date
 
-        edad = None
+        # Por defecto asumir mayor de edad si no hay fecha_nacimiento
+        es_menor = False
         if (
             hasattr(legajo.ciudadano, "fecha_nacimiento")
             and legajo.ciudadano.fecha_nacimiento
@@ -288,16 +289,25 @@ class LegajoService:
                 and today.day < legajo.ciudadano.fecha_nacimiento.day
             ):
                 edad -= 1
+            es_menor = edad < 18
+            logger.debug(
+                "Legajo %s - DNI: %s, Fecha nacimiento: %s, Edad calculada: %s, Es menor: %s",
+                legajo.pk,
+                legajo.ciudadano.documento,
+                legajo.ciudadano.fecha_nacimiento,
+                edad,
+                es_menor
+            )
 
         # archivo2 siempre es Biopsia
         # archivo3 varia: Menor de 18 = Foto DNI, Mayor de 18 = Negativa ANSES
-        if edad is not None and edad < 18:
-            return {
-                "archivo2": "Biopsia / Constancia medica",
-                "archivo3": "Foto DNI",
-            }
-
-        return {
+        resultado = {
             "archivo2": "Biopsia / Constancia medica",
-            "archivo3": "Negativa ANSES",
+            "archivo3": "Foto DNI" if es_menor else "Negativa ANSES",
         }
+        logger.debug(
+            "Legajo %s - Archivos requeridos: %s",
+            legajo.pk,
+            resultado
+        )
+        return resultado
