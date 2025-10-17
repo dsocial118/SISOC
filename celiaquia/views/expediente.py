@@ -138,6 +138,15 @@ class ExpedienteListView(ListView):
     context_object_name = "expedientes"
     paginate_by = 20
 
+    def get_paginate_by(self, queryset):
+        page_size = self.request.GET.get("page_size", "20")
+        if page_size.lower() in ("all", "todos"):
+            return None
+        try:
+            return int(page_size)
+        except (ValueError, TypeError):
+            return 20
+
     def get_queryset(self):
         user = self.request.user
         qs = (
@@ -332,7 +341,7 @@ class ExpedientePreviewExcelView(View):
             return JsonResponse({"error": "No se recibió ningún archivo."}, status=400)
 
         raw_limit = request.POST.get("limit") or request.GET.get("limit")
-        max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
+        max_rows = _parse_limit(raw_limit, default=None, max_cap=5000)
 
         try:
             preview = ImportacionService.preview_excel(archivo, max_rows=max_rows)
@@ -455,6 +464,11 @@ class ExpedienteDetailView(DetailView):
                     exc,
                 )
 
+        # Enriquecer legajos con información de responsable/hijo
+        responsables_legajos = []
+        hijos_por_responsable = {}
+        hijos_sin_responsable = []
+
         for legajo in legajos_list:
             legajo.es_responsable = LegajoService._es_responsable(
                 legajo.ciudadano, responsables_ids
@@ -470,11 +484,31 @@ class ExpedienteDetailView(DetailView):
                 legajo.hijos_a_cargo = FamiliaService.obtener_hijos_a_cargo(
                     legajo.ciudadano.id, expediente
                 )
+                legajo.responsable_id = None
+                responsables_legajos.append(legajo)
             else:
                 legajo.hijos_a_cargo = []
+                legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
+                    legajo.ciudadano.id
+                )
+                if legajo.responsable_id:
+                    if legajo.responsable_id not in hijos_por_responsable:
+                        hijos_por_responsable[legajo.responsable_id] = []
+                    hijos_por_responsable[legajo.responsable_id].append(legajo)
+                else:
+                    hijos_sin_responsable.append(legajo)
 
-            legajos_enriquecidos.append(legajo)
             legajos_por_ciudadano[legajo.ciudadano_id] = legajo
+
+        # Ordenar: responsables primero, luego sus hijos, luego hijos sin responsable
+        for responsable in responsables_legajos:
+            legajos_enriquecidos.append(responsable)
+            # Agregar hijos de este responsable inmediatamente después
+            hijos = hijos_por_responsable.get(responsable.ciudadano_id, [])
+            legajos_enriquecidos.extend(hijos)
+        
+        # Agregar hijos sin responsable al final
+        legajos_enriquecidos.extend(hijos_sin_responsable)
 
         faltantes_list = LegajoService.faltantes_archivos(expediente)
         # Obtener estructura familiar completa
@@ -497,8 +531,10 @@ class ExpedienteDetailView(DetailView):
 
         if expediente.estado.nombre == "CREADO" and expediente.excel_masivo:
             raw_limit = self.request.GET.get("preview_limit")
-            max_rows = _parse_limit(raw_limit, default=5, max_cap=5000)
-            preview_limit_actual = raw_limit if raw_limit is not None else "all"
+            max_rows = _parse_limit(raw_limit, default=None, max_cap=5000)
+            preview_limit_actual = (
+                raw_limit if raw_limit is not None else str(max_rows or "all")
+            )
             try:
                 preview = ImportacionService.preview_excel(
                     expediente.excel_masivo, max_rows=max_rows

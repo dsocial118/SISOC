@@ -113,27 +113,59 @@ class CruceService:
     def generar_nomina_sintys_excel(expediente: Expediente) -> bytes:
         """Genera un archivo Excel con la nómina del expediente.
 
-        El formato es compatible con la carga de datos en Sintys e incluye
-        las columnas: Numero_documento, TipoDocumento, nombre y apellido.
+        Solo exporta:
+        - Responsables (si el beneficiario tiene responsable)
+        - Beneficiarios sin responsable (casos independientes)
         """
+        from celiaquia.services.familia_service import FamiliaService
+
         rows = []
         qs = expediente.expediente_ciudadanos.select_related(
             "ciudadano", "ciudadano__tipo_documento"
         )
+
+        ciudadanos_ids = list(qs.values_list("ciudadano_id", flat=True))
+        responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)
+        responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
+            ciudadanos_ids
+        )
+
         for legajo in qs:
             ciudadano = legajo.ciudadano
-            rows.append(
-                {
-                    "Numero_documento": CruceService.normalize_dni_str(
-                        getattr(ciudadano, "documento", "")
-                    ),
-                    "TipoDocumento": getattr(
-                        getattr(ciudadano, "tipo_documento", None), "tipo", ""
-                    ),
-                    "nombre": getattr(ciudadano, "nombre", "") or "",
-                    "apellido": getattr(ciudadano, "apellido", "") or "",
-                }
-            )
+            es_responsable = ciudadano.id in responsables_ids
+
+            # Solo exportar responsables o beneficiarios sin responsable
+            if es_responsable:
+                # Es responsable, exportar
+                rows.append(
+                    {
+                        "Numero_documento": CruceService.normalize_dni_str(
+                            getattr(ciudadano, "documento", "")
+                        ),
+                        "TipoDocumento": getattr(
+                            getattr(ciudadano, "tipo_documento", None), "tipo", ""
+                        ),
+                        "nombre": getattr(ciudadano, "nombre", "") or "",
+                        "apellido": getattr(ciudadano, "apellido", "") or "",
+                    }
+                )
+            else:
+                # Es beneficiario, verificar si tiene responsable
+                responsables = responsables_por_hijo.get(ciudadano.id, [])
+                if not responsables:
+                    # No tiene responsable, exportar
+                    rows.append(
+                        {
+                            "Numero_documento": CruceService.normalize_dni_str(
+                                getattr(ciudadano, "documento", "")
+                            ),
+                            "TipoDocumento": getattr(
+                                getattr(ciudadano, "tipo_documento", None), "tipo", ""
+                            ),
+                            "nombre": getattr(ciudadano, "nombre", "") or "",
+                            "apellido": getattr(ciudadano, "apellido", "") or "",
+                        }
+                    )
 
         out = io.BytesIO()
         df = pd.DataFrame(
@@ -603,6 +635,16 @@ class CruceService:
                 "No hay legajos APROBADOS por el técnico para cruzar con Syntys."
             )
 
+        from celiaquia.services.familia_service import FamiliaService
+
+        ciudadanos_ids = list(
+            legajos_aprobados_qs.values_list("ciudadano_id", flat=True)
+        )
+        responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)
+        responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
+            ciudadanos_ids
+        )
+
         matched_ids = []
         unmatched_ids = []
         detalle_match = []
@@ -610,6 +652,59 @@ class CruceService:
 
         for leg in legajos_aprobados_qs.iterator():
             ciu = leg.ciudadano
+            es_responsable = ciu.id in responsables_ids
+
+            # Si es beneficiario con responsable, validar al responsable
+            if not es_responsable:
+                responsables = responsables_por_hijo.get(ciu.id, [])
+                if responsables:
+                    # Tiene responsable, validar el CUIT del responsable
+                    responsable = responsables[0]
+                    cuit_resp = CruceService.resolver_cuit_ciudadano(responsable)
+                    dni_resp = CruceService.normalize_dni_str(
+                        getattr(responsable, "documento", "")
+                    )
+
+                    by = None
+                    if cuit_resp and cuit_resp in set_cuits:
+                        match = True
+                        by = "CUIT Responsable"
+                    elif dni_resp and dni_resp in set_dnis_norm:
+                        match = True
+                        by = "DNI Responsable"
+                    else:
+                        match = False
+
+                    if match:
+                        # Asignar cupo al BENEFICIARIO (hijo), no al responsable
+                        matched_ids.append(leg.pk)
+                        detalle_match.append(
+                            {
+                                "dni": getattr(ciu, "documento", "") or "",
+                                "cuit": CruceService.resolver_cuit_ciudadano(ciu) or "",
+                                "por": by or "",
+                                "nombre": getattr(ciu, "nombre", "") or "",
+                                "apellido": getattr(ciu, "apellido", "") or "",
+                            }
+                        )
+                    else:
+                        unmatched_ids.append(leg.pk)
+                        detalle_no_match.append(
+                            {
+                                "dni": getattr(ciu, "documento", "") or "",
+                                "cuit": cuit_resp or "",
+                                "observacion": f"Responsable no está en archivo de Syntys",
+                            }
+                        )
+                    continue
+
+            # Si es responsable, NO asignarle cupo a él, solo validar para sus hijos
+            if es_responsable:
+                # NO agregar a matched_ids ni unmatched_ids
+                # El responsable no consume cupo
+                continue
+
+            # Caso: beneficiario sin responsable
             cuit_ciud = CruceService.resolver_cuit_ciudadano(ciu)
             dni_ciud = CruceService.normalize_dni_str(getattr(ciu, "documento", ""))
 

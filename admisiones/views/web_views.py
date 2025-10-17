@@ -1,8 +1,8 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
@@ -17,6 +17,7 @@ from admisiones.forms.admisiones_forms import (
 from admisiones.models.admisiones import (
     Admision,
     ArchivoAdmision,
+    InformeComplementario,
 )
 from admisiones.services.admisiones_service import AdmisionService
 from admisiones.services.informes_service import InformeService
@@ -25,6 +26,14 @@ from django.views.generic.edit import FormMixin
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.http import HttpResponseRedirect
+from acompanamientos.acompanamiento_service import AcompanamientoService
+from expedientespagos.services import ExpedientesPagosService
+from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasfinal.models import RendicionCuentasFinal
+from rendicioncuentasfinal.rendicion_cuentas_final_service import (
+    RendicionCuentasFinalService,
+)
+from historial.services.historial_service import HistorialService
 
 
 @login_required
@@ -247,6 +256,7 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
                     {"title": "Ubicación"},
                     {"title": "Convenio"},
                     {"title": "Tipo"},
+                    {"title": "Estado"},
                 ],
                 "table_items": table_items,
             }
@@ -300,53 +310,451 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         return super().post(request, *args, **kwargs)
 
 
+class AdmisionDetailView(LoginRequiredMixin, DetailView):
+    model = Admision
+    template_name = "admisiones/admisiones_detalle.html"
+    context_object_name = "admision"
+
+    def get_queryset(self):
+        queryset = (
+            super()
+            .get_queryset()
+            .select_related(
+                "comedor",
+                "comedor__provincia",
+                "comedor__municipio",
+                "comedor__localidad",
+                "comedor__dupla",
+                "comedor__dupla__abogado",
+                "estado",
+                "tipo_convenio",
+            )
+            .prefetch_related("comedor__dupla__tecnico", "historial__usuario")
+        )
+        return queryset
+
+    def get_object(self, queryset=None):
+        admision = super().get_object(queryset)
+        comedor_pk = self.kwargs.get("comedor_pk")
+        if comedor_pk and admision.comedor_id != comedor_pk:
+            raise Http404("La admisiA3n no pertenece al comedor solicitado.")
+        return admision
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        admision = self.object
+        comedor = admision.comedor
+
+        dupla = getattr(comedor, "dupla", None)
+        if dupla:
+            tecnicos_dupla = [
+                (usuario.get_full_name() or usuario.username or str(usuario))
+                for usuario in dupla.tecnico.all()
+            ]
+        else:
+            tecnicos_dupla = []
+
+        admision_context = AdmisionService.get_admision_update_context(admision) or {}
+
+        informes_complementarios_queryset = (
+            InformeComplementario.objects.filter(admision=admision)
+            .select_related("informe_tecnico", "creado_por")
+            .prefetch_related("pdf_final")
+        )
+        informes_complementarios = list(informes_complementarios_queryset)
+
+        acompanamiento_data = (
+            AcompanamientoService.obtener_datos_admision(comedor) if comedor else {}
+        )
+        prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
+            acompanamiento_data.get("anexo")
+        )
+
+        expedientes_pagos = []
+        if comedor:
+            expedientes_pagos = list(
+                ExpedientesPagosService.obtener_expedientes_pagos(comedor)
+            )
+
+        rendiciones_mensuales = []
+        if comedor:
+            rendiciones_mensuales = list(
+                RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
+                    comedor
+                )
+            )
+
+        rendicion_final = (
+            RendicionCuentasFinal.objects.filter(comedor=comedor)
+            .prefetch_related("documentos__tipo", "documentos__estado")
+            .first()
+            if comedor
+            else None
+        )
+
+        rendicion_final_documentos = []
+        rendicion_final_historial = []
+        if rendicion_final:
+            rendicion_final_documentos = list(
+                RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final(
+                    rendicion_final
+                )
+            )
+            rendicion_final_historial = list(
+                HistorialService.get_historial_documentos_by_rendicion_cuentas_final(
+                    rendicion_final
+                )
+            )
+
+        historial_records = list(
+            admision.historial.select_related("usuario").order_by("-fecha")
+        )
+        historial_page_param = "historial_page"
+        historial_page_number = self.request.GET.get(historial_page_param) or 1
+        historial_paginator = Paginator(historial_records, 10)
+        historial_page = historial_paginator.get_page(historial_page_number)
+
+        historial_headers = [
+            {"title": "Fecha"},
+            {"title": "Usuario"},
+            {"title": "Campo"},
+            {"title": "Valor nuevo"},
+            {"title": "Valor anterior"},
+        ]
+        historial_items = []
+        for record in historial_page.object_list:
+            usuario = record.usuario
+            usuario_display = (
+                getattr(usuario, "get_full_name", lambda: "")()
+                or getattr(usuario, "username", None)
+                if usuario
+                else "-"
+            )
+            historial_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": (
+                                record.fecha.strftime("%d/%m/%Y %H:%M")
+                                if record.fecha
+                                else "-"
+                            )
+                        },
+                        {"content": usuario_display or "-"},
+                        {"content": record.campo or "-"},
+                        {"content": record.valor_nuevo or "-"},
+                        {"content": record.valor_anterior or "-"},
+                    ]
+                }
+            )
+
+        context.update(
+            {
+                "comedor": comedor,
+                "dupla": dupla,
+                "dupla_tecnicos": tecnicos_dupla,
+                "dupla_abogado": getattr(dupla, "abogado", None),
+                "documentos": admision_context.get("documentos", []),
+                "documentos_personalizados": admision_context.get(
+                    "documentos_personalizados", []
+                ),
+                "informe_tecnico": admision_context.get("informe_tecnico"),
+                "informe_tecnico_pdf": admision_context.get("pdf"),
+                "informes_complementarios": informes_complementarios,
+                "acompanamiento_info": acompanamiento_data.get("info_relevante"),
+                "acompanamiento_numero_if": acompanamiento_data.get("numero_if"),
+                "acompanamiento_numero_disposicion": acompanamiento_data.get(
+                    "numero_disposicion"
+                ),
+                "prestaciones_por_dia": prestaciones_detalle.get(
+                    "prestaciones_por_dia", []
+                ),
+                "prestaciones_dias": prestaciones_detalle.get("prestaciones_dias", []),
+                "dias_semana": prestaciones_detalle.get("dias_semana", []),
+                "expedientes_pagos": expedientes_pagos,
+                "rendiciones_mensuales": rendiciones_mensuales,
+                "rendicion_final": rendicion_final,
+                "rendicion_final_documentos": rendicion_final_documentos,
+                "rendicion_final_historial": rendicion_final_historial,
+                "admision_historial_headers": historial_headers,
+                "admision_historial_items": historial_items,
+                "admision_historial_page_obj": historial_page,
+                "admision_historial_is_paginated": historial_page.has_other_pages(),
+                "admision_historial_page_param": historial_page_param,
+            }
+        )
+
+        return context
+
+
+class AdmisionDetailView(DetailView):
+    model = Admision
+    template_name = "admisiones/admisiones_detalle.html"
+    context_object_name = "admision"
+
+    def get_queryset(self):
+        queryset = (
+            super()
+            .get_queryset()
+            .select_related(
+                "comedor",
+                "comedor__provincia",
+                "comedor__municipio",
+                "comedor__localidad",
+                "comedor__dupla",
+                "comedor__dupla__abogado",
+                "estado",
+                "tipo_convenio",
+            )
+            .prefetch_related("comedor__dupla__tecnico", "historial__usuario")
+        )
+        return queryset
+
+    def get_object(self, queryset=None):
+        admision = super().get_object(queryset)
+        comedor_pk = self.kwargs.get("comedor_pk")
+        if comedor_pk and admision.comedor_id != comedor_pk:
+            raise Http404("La admisiA3n no pertenece al comedor solicitado.")
+        return admision
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        admision = self.object
+        comedor = admision.comedor
+
+        dupla = getattr(comedor, "dupla", None)
+        if dupla:
+            tecnicos_dupla = [
+                (usuario.get_full_name() or usuario.username or str(usuario))
+                for usuario in dupla.tecnico.all()
+            ]
+        else:
+            tecnicos_dupla = []
+
+        admision_context = AdmisionService.get_admision_update_context(admision) or {}
+
+        informes_complementarios_queryset = (
+            InformeComplementario.objects.filter(admision=admision)
+            .select_related("informe_tecnico", "creado_por")
+            .prefetch_related("pdf_final")
+        )
+        informes_complementarios = list(informes_complementarios_queryset)
+
+        acompanamiento_data = (
+            AcompanamientoService.obtener_datos_admision(comedor) if comedor else {}
+        )
+        prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
+            acompanamiento_data.get("anexo")
+        )
+
+        expedientes_pagos = []
+        if comedor:
+            expedientes_pagos = list(
+                ExpedientesPagosService.obtener_expedientes_pagos(comedor)
+            )
+
+        rendiciones_mensuales = []
+        if comedor:
+            rendiciones_mensuales = list(
+                RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
+                    comedor
+                )
+            )
+
+        rendicion_final = (
+            RendicionCuentasFinal.objects.filter(comedor=comedor)
+            .prefetch_related("documentos__tipo", "documentos__estado")
+            .first()
+            if comedor
+            else None
+        )
+
+        rendicion_final_documentos = []
+        rendicion_final_historial = []
+        if rendicion_final:
+            rendicion_final_documentos = list(
+                RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final(
+                    rendicion_final
+                )
+            )
+            rendicion_final_historial = list(
+                HistorialService.get_historial_documentos_by_rendicion_cuentas_final(
+                    rendicion_final
+                )
+            )
+
+        historial_records = list(
+            admision.historial.select_related("usuario").order_by("-fecha")
+        )
+        historial_page_param = "historial_page"
+        historial_page_number = self.request.GET.get(historial_page_param) or 1
+        historial_paginator = Paginator(historial_records, 10)
+        historial_page = historial_paginator.get_page(historial_page_number)
+
+        historial_headers = [
+            {"title": "Fecha"},
+            {"title": "Usuario"},
+            {"title": "Campo"},
+            {"title": "Valor nuevo"},
+            {"title": "Valor anterior"},
+        ]
+        historial_items = []
+        for record in historial_page.object_list:
+            usuario = record.usuario
+            usuario_display = (
+                getattr(usuario, "get_full_name", lambda: "")()
+                or getattr(usuario, "username", None)
+                if usuario
+                else "-"
+            )
+            historial_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": (
+                                record.fecha.strftime("%d/%m/%Y %H:%M")
+                                if record.fecha
+                                else "-"
+                            )
+                        },
+                        {"content": usuario_display or "-"},
+                        {"content": record.campo or "-"},
+                        {"content": record.valor_nuevo or "-"},
+                        {"content": record.valor_anterior or "-"},
+                    ]
+                }
+            )
+
+        context.update(
+            {
+                "comedor": comedor,
+                "dupla": dupla,
+                "dupla_tecnicos": tecnicos_dupla,
+                "dupla_abogado": getattr(dupla, "abogado", None),
+                "documentos": admision_context.get("documentos", []),
+                "documentos_personalizados": admision_context.get(
+                    "documentos_personalizados", []
+                ),
+                "informe_tecnico": admision_context.get("informe_tecnico"),
+                "informe_tecnico_pdf": admision_context.get("pdf"),
+                "informes_complementarios": informes_complementarios,
+                "acompanamiento_info": acompanamiento_data.get("info_relevante"),
+                "acompanamiento_numero_if": acompanamiento_data.get("numero_if"),
+                "acompanamiento_numero_disposicion": acompanamiento_data.get(
+                    "numero_disposicion"
+                ),
+                "prestaciones_por_dia": prestaciones_detalle.get(
+                    "prestaciones_por_dia", []
+                ),
+                "prestaciones_dias": prestaciones_detalle.get("prestaciones_dias", []),
+                "dias_semana": prestaciones_detalle.get("dias_semana", []),
+                "expedientes_pagos": expedientes_pagos,
+                "rendiciones_mensuales": rendiciones_mensuales,
+                "rendicion_final": rendicion_final,
+                "rendicion_final_documentos": rendicion_final_documentos,
+                "rendicion_final_historial": rendicion_final_historial,
+                "admision_historial_headers": historial_headers,
+                "admision_historial_items": historial_items,
+                "admision_historial_page_obj": historial_page,
+                "admision_historial_is_paginated": historial_page.has_other_pages(),
+                "admision_historial_page_param": historial_page_param,
+            }
+        )
+
+        return context
+
+
 class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
     template_name = "admisiones/informe_tecnico_form.html"
     context_object_name = "informe_tecnico"
+    tipos_permitidos = {"base", "juridico"}
+
+    def dispatch(self, request, *args, **kwargs):
+        self.admision_obj, self.tipo = InformeService.get_admision_y_tipo_from_kwargs(
+            self.kwargs
+        )
+        if not self.admision_obj:
+            raise Http404("La admisión indicada no existe.")
+
+        if self.tipo not in self.tipos_permitidos:
+            messages.error(
+                request,
+                "El tipo de informe seleccionado no está disponible para carga online.",
+            )
+            return HttpResponseRedirect(
+                reverse("admisiones_tecnicos_editar", args=[self.admision_obj.id])
+            )
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_form_class(self):
-        return InformeService.get_form_class_por_tipo(self.kwargs.get("tipo", "base"))
+        return InformeService.get_form_class_por_tipo(self.tipo)
 
     def get_queryset(self):
-        return InformeService.get_queryset_informe_por_tipo(
-            self.kwargs.get("tipo", "base")
-        )
+        return InformeService.get_queryset_informe_por_tipo(self.tipo)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        admision, _ = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
         action = (
             self.request.POST.get("action") if self.request.method == "POST" else None
         )
-        kwargs.update({"admision": admision, "require_full": action == "submit"})
+        kwargs.update(
+            {"admision": self.admision_obj, "require_full": action == "submit"}
+        )
         return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        admision, tipo = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
         context.update(
             {
-                "admision": admision,
-                "tipo": tipo,
-                "comedor": getattr(admision, "comedor", None),
+                "admision": self.admision_obj,
+                "tipo": self.tipo,
+                "comedor": getattr(self.admision_obj, "comedor", None),
             }
         )
         return context
 
     def form_valid(self, form):
-        admision, tipo = InformeService.get_admision_y_tipo_from_kwargs(self.kwargs)
-        form.instance.tipo = tipo
+        form.instance.tipo = self.tipo
         action = self.request.POST.get("action")
 
         resultado = InformeService.guardar_informe(
-            form, admision, es_creacion=True, action=action
+            form, self.admision_obj, es_creacion=True, action=action
         )
 
         if not resultado.get("success"):
+            error_message = resultado.get(
+                "error", "No se pudo guardar el informe técnico."
+            )
+            messages.error(self.request, error_message)
             return self.render_to_response(self.get_context_data(form=form))
 
         self.object = resultado.get("informe")
         return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        errores = []
+        for field_name, field_errors in form.errors.items():
+            if field_name == "__all__":
+                errores.extend(field_errors)
+                continue
+            field = form.fields.get(field_name)
+            etiqueta_base = field.label if field and field.label else field_name
+            etiqueta = str(etiqueta_base).strip()
+            errores.append(f"{etiqueta}: {', '.join(field_errors)}")
+
+        if errores:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Revisá los campos: "
+                + " | ".join(errores),
+            )
+        else:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.",
+            )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
@@ -355,6 +763,19 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
 class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "admisiones/informe_tecnico_form.html"
     context_object_name = "informe_tecnico"
+    tipos_permitidos = {"base", "juridico"}
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if self.object.tipo not in self.tipos_permitidos:
+            messages.error(
+                request,
+                "El tipo de informe seleccionado no está disponible para carga online.",
+            )
+            return HttpResponseRedirect(
+                reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
+            )
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return InformeService.get_queryset_informe_por_tipo(
@@ -391,10 +812,38 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         )
 
         if not resultado.get("success"):
+            error_message = resultado.get(
+                "error", "No se pudo guardar el informe técnico."
+            )
+            messages.error(self.request, error_message)
             return self.render_to_response(self.get_context_data(form=form))
 
         self.object = resultado.get("informe")
         return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        errores = []
+        for field_name, field_errors in form.errors.items():
+            if field_name == "__all__":
+                errores.extend(field_errors)
+                continue
+            field = form.fields.get(field_name)
+            etiqueta_base = field.label if field and field.label else field_name
+            etiqueta = str(etiqueta_base).strip()
+            errores.append(f"{etiqueta}: {', '.join(field_errors)}")
+
+        if errores:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Revisá los campos: "
+                + " | ".join(errores),
+            )
+        else:
+            messages.error(
+                self.request,
+                "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.",
+            )
+        return super().form_invalid(form)
 
     def get_success_url(self):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
