@@ -574,29 +574,29 @@
   "model": "admisiones.documentacion",
   "pk": 51,
   "fields": {
-    "nombre": "Preinscripción RENACOM",
+    "nombre": "Aval 1",
     "convenios": [
       1
     ],
-    "obligatorio": false
+    "obligatorio": true
   }
 },
 {
   "model": "admisiones.documentacion",
   "pk": 52,
   "fields": {
-    "nombre": "Validación RENACOM",
+    "nombre": "Aval 2",
     "convenios": [
       1
     ],
-    "obligatorio": false
+    "obligatorio": true
   }
 },
 {
   "model": "admisiones.documentacion",
   "pk": 53,
   "fields": {
-    "nombre": "Inscripción RENACOM",
+    "nombre": "Preinscripción RENACOM",
     "convenios": [
       1
     ],
@@ -607,18 +607,18 @@
   "model": "admisiones.documentacion",
   "pk": 54,
   "fields": {
-    "nombre": "Relevamiento Programa PAC",
+    "nombre": "Validación RENACOM",
     "convenios": [
       1
     ],
-    "obligatorio": true
+    "obligatorio": false
   }
 },
 {
   "model": "admisiones.documentacion",
   "pk": 55,
   "fields": {
-    "nombre": "DNI Responsable comedor",
+    "nombre": "Inscripción RENACOM",
     "convenios": [
       1
     ],
@@ -629,7 +629,7 @@
   "model": "admisiones.documentacion",
   "pk": 56,
   "fields": {
-    "nombre": "DNI Titular tarjeta",
+    "nombre": "Relevamiento Programa PAC",
     "convenios": [
       1
     ],
@@ -640,18 +640,18 @@
   "model": "admisiones.documentacion",
   "pk": 57,
   "fields": {
-    "nombre": "Informe Comedores y Merenderos",
+    "nombre": "DNI Responsable comedor",
     "convenios": [
       1
     ],
-    "obligatorio": true
+    "obligatorio": false
   }
 },
 {
   "model": "admisiones.documentacion",
   "pk": 58,
   "fields": {
-    "nombre": "Memo PNUD",
+    "nombre": "DNI Titular tarjeta",
     "convenios": [
       1
     ],
@@ -662,7 +662,7 @@
   "model": "admisiones.documentacion",
   "pk": 59,
   "fields": {
-    "nombre": "Respuesta Memo PNUD",
+    "nombre": "Informe Comedores y Merenderos",
     "convenios": [
       1
     ],
@@ -673,6 +673,28 @@
   "model": "admisiones.documentacion",
   "pk": 60,
   "fields": {
+    "nombre": "Memo PNUD",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 61,
+  "fields": {
+    "nombre": "Respuesta Memo PNUD",
+    "convenios": [
+      1
+    ],
+    "obligatorio": true
+  }
+},
+{
+  "model": "admisiones.documentacion",
+  "pk": 62,
+  "fields": {
     "nombre": "Material de Difusión",
     "convenios": [
       1
@@ -682,7 +704,7 @@
 },
 {
   "model": "admisiones.documentacion",
-  "pk": 61,
+  "pk": 63,
   "fields": {
     "nombre": "Otro/s Documento/s",
     "convenios": [
