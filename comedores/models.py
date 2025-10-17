@@ -150,6 +150,8 @@ class Comedor(models.Model):
     ESTADOS_GENERALES = [
         ("Activo", "Activo"),
         ("Inactivo", "Inactivo"),
+        ("En proceso - Incorporación", "En proceso - Incorporación"),
+        ("En proceso - Renovación", "En proceso - Renovación"),
         ("Sin definir", "Sin definir"),
     ]
 
