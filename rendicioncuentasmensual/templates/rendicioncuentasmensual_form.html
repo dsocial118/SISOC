@@ -13,19 +13,18 @@
 {% endblock %}
 {% block content %}
     <div class="container mt-4">
-        <h2 class="mb-4">{{ form.instance.id|default:"Crear" }} Rendición de Cuenta</h2>
+        <h2 class="mb-4">{{ form.instance.id|default:"Crear" }} Seguimiento mensual</h2>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="row">
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header bg-primary text-white">
-                            <h5>Datos de la Rendición</h5>
+                            <h5>Datos asociados</h5>
                         </div>
                         <div class="card-body">
                             {{ form.mes|as_crispy_field }}
                             {{ form.anio|as_crispy_field }}
-                            {{ form.documento_adjunto|as_crispy_field }}
                             {{ form.observaciones|as_crispy_field }}
                         </div>
                     </div>

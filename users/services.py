@@ -46,7 +46,7 @@ class UsuariosService:
         return {
             "table_headers": [
                 {"title": "Nombre", "width": "12%"},
-                {"title": "Apellido y Nombre", "width": "20%"},
+                {"title": "Apellido", "width": "20%"},
                 {"title": "Username", "width": "10%"},
                 {"title": "Email", "width": "8%"},
                 {"title": "Rol", "width": "20%"},

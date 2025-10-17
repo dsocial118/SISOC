@@ -277,6 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const legajoId = button.getAttribute('data-legajo-id');
       const expedienteId = button.getAttribute('data-expediente-id');
       const defaultCampo = button?.getAttribute('data-file-field') || 'archivo1';
+      const archivo2Label = button?.getAttribute('data-archivo2-label') || 'Documento';
+      const archivo3Label = button?.getAttribute('data-archivo3-label') || 'Biopsia / Constancia médica';
       const uploadForm = modalArchivo.querySelector('#form-subir-archivo');
 
       const actionUrl = `/expedientes/${expedienteId}/ciudadanos/${legajoId}/archivo/`;
@@ -284,6 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const selCampo = modalArchivo.querySelector('#campo-archivo');
       if (selCampo) selCampo.value = defaultCampo;
+
+      // Actualizar labels dinámicamente
+      const optArchivo2 = document.getElementById('opt-archivo2');
+      const optArchivo3 = document.getElementById('opt-archivo3');
+      if (optArchivo2) optArchivo2.textContent = archivo2Label;
+      if (optArchivo3) optArchivo3.textContent = archivo3Label;
 
       const inputArchivo = uploadForm.querySelector('input[type="file"]');
       if (inputArchivo) inputArchivo.value = '';

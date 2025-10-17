@@ -259,7 +259,7 @@ class LegajoService:
 
     @staticmethod
     def get_archivos_requeridos_por_legajo(legajo, responsables_ids=None):
-        """Retorna los archivos requeridos segun el tipo de legajo."""
+        """Retorna los archivos requeridos segun el tipo de legajo y edad."""
         es_responsable = LegajoService._es_responsable(
             legajo.ciudadano, responsables_ids
         )
@@ -272,7 +272,42 @@ class LegajoService:
                 ),
                 "archivo3": "Certificacion de ANSES",
             }
-        return {
+
+        # Calcular edad para beneficiarios
+        from datetime import date
+
+        # Por defecto asumir mayor de edad si no hay fecha_nacimiento
+        es_menor = False
+        if (
+            hasattr(legajo.ciudadano, "fecha_nacimiento")
+            and legajo.ciudadano.fecha_nacimiento
+        ):
+            today = date.today()
+            edad = today.year - legajo.ciudadano.fecha_nacimiento.year
+            if today.month < legajo.ciudadano.fecha_nacimiento.month or (
+                today.month == legajo.ciudadano.fecha_nacimiento.month
+                and today.day < legajo.ciudadano.fecha_nacimiento.day
+            ):
+                edad -= 1
+            es_menor = edad < 18
+            logger.debug(
+                "Legajo %s - DNI: %s, Fecha nacimiento: %s, Edad calculada: %s, Es menor: %s",
+                legajo.pk,
+                legajo.ciudadano.documento,
+                legajo.ciudadano.fecha_nacimiento,
+                edad,
+                es_menor
+            )
+
+        # archivo2 siempre es Biopsia
+        # archivo3 varia: Menor de 18 = Foto DNI, Mayor de 18 = Negativa ANSES
+        resultado = {
             "archivo2": "Biopsia / Constancia medica",
-            "archivo3": "Negativa ANSES",
+            "archivo3": "Foto DNI" if es_menor else "Negativa ANSES",
         }
+        logger.debug(
+            "Legajo %s - Archivos requeridos: %s",
+            legajo.pk,
+            resultado
+        )
+        return resultado
