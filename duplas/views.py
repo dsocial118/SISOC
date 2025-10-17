@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
@@ -15,7 +16,7 @@ from duplas.forms import DuplaForm
 from comedores.services.comedor_service import ComedorService
 
 
-class DuplaListView(ListView):
+class DuplaListView(LoginRequiredMixin, ListView):
     model = Dupla
     template_name = "dupla_list.html"
     context_object_name = "duplas"
@@ -52,7 +53,7 @@ class DuplaListView(ListView):
         return context
 
 
-class DuplaCreateView(CreateView):
+class DuplaCreateView(LoginRequiredMixin, CreateView):
     model = Dupla
     template_name = "dupla_form.html"
     form_class = DuplaForm
@@ -83,7 +84,7 @@ class DuplaCreateView(CreateView):
         return reverse("dupla_list")
 
 
-class DuplaUpdateView(UpdateView):
+class DuplaUpdateView(LoginRequiredMixin, UpdateView):
     model = Dupla
     template_name = "dupla_form.html"
     form_class = DuplaForm
@@ -106,7 +107,7 @@ class DuplaUpdateView(UpdateView):
         return reverse("dupla_list")
 
 
-class DuplaDetailView(DetailView):
+class DuplaDetailView(LoginRequiredMixin, DetailView):
     model = Dupla
     template_name = "dupla_detail.html"
     context_object_name = "dupla"
@@ -121,7 +122,7 @@ class DuplaDetailView(DetailView):
         return context
 
 
-class DuplaDeleteView(DeleteView):
+class DuplaDeleteView(LoginRequiredMixin, DeleteView):
     model = Dupla
     template_name = "dupla_confirm_delete.html"
     success_url = reverse_lazy("dupla_list")
