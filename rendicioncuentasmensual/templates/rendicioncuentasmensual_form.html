@@ -13,7 +13,7 @@
 {% endblock %}
 {% block content %}
     <div class="container mt-4">
-        <h2 class="mb-4">{{ form.instance.id|default:"Crear" }} Rendición de Cuenta</h2>
+        <h2 class="mb-4">{{ form.instance.id|default:"Crear" }} Seguimiento mensual</h2>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="row">
