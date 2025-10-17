@@ -464,6 +464,11 @@ class ExpedienteDetailView(DetailView):
                     exc,
                 )
 
+        # Enriquecer legajos con información de responsable/hijo
+        responsables_legajos = []
+        hijos_por_responsable = {}
+        hijos_sin_responsable = []
+
         for legajo in legajos_list:
             legajo.es_responsable = LegajoService._es_responsable(
                 legajo.ciudadano, responsables_ids
@@ -480,15 +485,30 @@ class ExpedienteDetailView(DetailView):
                     legajo.ciudadano.id, expediente
                 )
                 legajo.responsable_id = None
+                responsables_legajos.append(legajo)
             else:
                 legajo.hijos_a_cargo = []
-                # Obtener el responsable de este hijo
                 legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
                     legajo.ciudadano.id
                 )
+                if legajo.responsable_id:
+                    if legajo.responsable_id not in hijos_por_responsable:
+                        hijos_por_responsable[legajo.responsable_id] = []
+                    hijos_por_responsable[legajo.responsable_id].append(legajo)
+                else:
+                    hijos_sin_responsable.append(legajo)
 
-            legajos_enriquecidos.append(legajo)
             legajos_por_ciudadano[legajo.ciudadano_id] = legajo
+
+        # Ordenar: responsables primero, luego sus hijos, luego hijos sin responsable
+        for responsable in responsables_legajos:
+            legajos_enriquecidos.append(responsable)
+            # Agregar hijos de este responsable inmediatamente después
+            hijos = hijos_por_responsable.get(responsable.ciudadano_id, [])
+            legajos_enriquecidos.extend(hijos)
+        
+        # Agregar hijos sin responsable al final
+        legajos_enriquecidos.extend(hijos_sin_responsable)
 
         faltantes_list = LegajoService.faltantes_archivos(expediente)
         # Obtener estructura familiar completa
