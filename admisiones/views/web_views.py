@@ -1,4 +1,6 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, get_object_or_404
@@ -25,6 +27,7 @@ from django.urls import reverse
 from django.http import HttpResponseRedirect
 
 
+@login_required
 @require_POST
 def subir_archivo_admision(request, admision_id, documentacion_id):
     archivo = request.FILES.get("archivo")
@@ -63,6 +66,7 @@ def subir_archivo_admision(request, admision_id, documentacion_id):
     )
 
 
+@login_required
 def eliminar_archivo_admision(request, admision_id, documentacion_id):
     if request.method != "DELETE":
         return JsonResponse(
@@ -144,6 +148,7 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
     return JsonResponse(response_data)
 
 
+@login_required
 def actualizar_estado_archivo(request):
     resultado = AdmisionService.actualizar_estado_ajax(request)
 
@@ -164,6 +169,7 @@ def actualizar_estado_archivo(request):
         )
 
 
+@login_required
 @require_POST
 def actualizar_numero_gde_archivo(request):
     resultado = AdmisionService.actualizar_numero_gde_ajax(request)
@@ -181,6 +187,7 @@ def actualizar_numero_gde_archivo(request):
     return JsonResponse(response_data)
 
 
+@login_required
 @require_POST
 def crear_documento_personalizado(request, admision_id):
     archivo = request.FILES.get("archivo")
@@ -209,7 +216,7 @@ def crear_documento_personalizado(request, admision_id):
     )
 
 
-class AdmisionesTecnicosListView(ListView):
+class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
     model = Admision
     template_name = "admisiones/admisiones_tecnicos_list.html"
     context_object_name = "admisiones"
@@ -247,7 +254,7 @@ class AdmisionesTecnicosListView(ListView):
         return context
 
 
-class AdmisionesTecnicosCreateView(CreateView):
+class AdmisionesTecnicosCreateView(LoginRequiredMixin, CreateView):
     model = Admision
     template_name = "admisiones/admisiones_tecnicos_form.html"
     form_class = AdmisionForm
@@ -268,7 +275,7 @@ class AdmisionesTecnicosCreateView(CreateView):
         return self.get(request, *args, **kwargs)
 
 
-class AdmisionesTecnicosUpdateView(UpdateView):
+class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
     model = Admision
     template_name = "admisiones/admisiones_tecnicos_form.html"
     form_class = AdmisionForm
@@ -293,7 +300,7 @@ class AdmisionesTecnicosUpdateView(UpdateView):
         return super().post(request, *args, **kwargs)
 
 
-class InformeTecnicosCreateView(CreateView):
+class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
     template_name = "admisiones/informe_tecnico_form.html"
     context_object_name = "informe_tecnico"
 
@@ -345,7 +352,7 @@ class InformeTecnicosCreateView(CreateView):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
 
 
-class InformeTecnicosUpdateView(UpdateView):
+class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "admisiones/informe_tecnico_form.html"
     context_object_name = "informe_tecnico"
 
@@ -393,7 +400,7 @@ class InformeTecnicosUpdateView(UpdateView):
         return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
 
 
-class InformeTecnicoDetailView(DetailView):
+class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
     template_name = "admisiones/informe_tecnico_detalle.html"
     context_object_name = "informe_tecnico"
 
@@ -420,7 +427,7 @@ class InformeTecnicoDetailView(DetailView):
         return context
 
 
-class AdmisionesLegalesListView(ListView):
+class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
     model = Admision
     template_name = "admisiones/admisiones_legales_list.html"
     context_object_name = "admisiones"
@@ -445,7 +452,7 @@ class AdmisionesLegalesListView(ListView):
         return context
 
 
-class AdmisionesLegalesDetailView(FormMixin, DetailView):
+class AdmisionesLegalesDetailView(LoginRequiredMixin, FormMixin, DetailView):
     model = Admision
     template_name = "admisiones/admisiones_legales_detalle.html"
     context_object_name = "admision"
@@ -469,7 +476,7 @@ class AdmisionesLegalesDetailView(FormMixin, DetailView):
         return LegalesService.procesar_post_legales(request, self.get_object())
 
 
-class InformeTecnicoComplementarioReviewView(DetailView):
+class InformeTecnicoComplementarioReviewView(LoginRequiredMixin, DetailView):
     model = Admision
     template_name = "admisiones/revisar_informe_complementario.html"
     context_object_name = "admision"
@@ -501,7 +508,7 @@ class InformeTecnicoComplementarioReviewView(DetailView):
         return LegalesService.revisar_informe_complementario(request, self.get_object())
 
 
-class InformeTecnicoComplementarioDetailView(DetailView):
+class InformeTecnicoComplementarioDetailView(LoginRequiredMixin, DetailView):
     template_name = "admisiones/informe_tecnico_complementario_detalle.html"
     context_object_name = "informe_tecnico"
 

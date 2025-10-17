@@ -1,4 +1,6 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.forms import ValidationError
@@ -23,7 +25,7 @@ from organizaciones.models import (
 )
 
 
-class OrganizacionListView(ListView):
+class OrganizacionListView(LoginRequiredMixin, ListView):
     model = Organizacion
     template_name = "organizacion_list.html"
     context_object_name = "organizaciones"
@@ -75,7 +77,7 @@ class OrganizacionListView(ListView):
         return context
 
 
-class FirmanteCreateView(CreateView):
+class FirmanteCreateView(LoginRequiredMixin, CreateView):
     model = Firmante
     form_class = FirmanteForm
     template_name = "firmante_form.html"
@@ -193,7 +195,7 @@ class FirmanteCreateView(CreateView):
         )
 
 
-class AvalCreateView(CreateView):
+class AvalCreateView(LoginRequiredMixin, CreateView):
     model = Aval
     form_class = AvalForm
     template_name = "aval_form.html"
@@ -250,7 +252,7 @@ class AvalCreateView(CreateView):
         )
 
 
-class OrganizacionCreateView(CreateView):
+class OrganizacionCreateView(LoginRequiredMixin, CreateView):
     model = Organizacion
     form_class = OrganizacionForm
     template_name = "organizacion_form.html"
@@ -270,7 +272,7 @@ class OrganizacionCreateView(CreateView):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
 
 
-class FirmanteUpdateView(UpdateView):
+class FirmanteUpdateView(LoginRequiredMixin, UpdateView):
     model = Firmante
     form_class = FirmanteForm
     template_name = "firmante_form.html"
@@ -316,7 +318,7 @@ class FirmanteUpdateView(UpdateView):
         )
 
 
-class AvalUpdateView(UpdateView):
+class AvalUpdateView(LoginRequiredMixin, UpdateView):
     model = Aval
     form_class = AvalForm
     template_name = "aval_form.html"
@@ -339,7 +341,7 @@ class AvalUpdateView(UpdateView):
         )
 
 
-class FirmanteDeleteView(DeleteView):
+class FirmanteDeleteView(LoginRequiredMixin, DeleteView):
     model = Firmante
     template_name = "firmante_confirm_delete.html"
     context_object_name = "firmante"
@@ -369,7 +371,7 @@ class FirmanteDeleteView(DeleteView):
         )
 
 
-class AvalDeleteView(DeleteView):
+class AvalDeleteView(LoginRequiredMixin, DeleteView):
     model = Aval
     template_name = "aval_confirm_delete.html"
     context_object_name = "aval"
@@ -399,7 +401,7 @@ class AvalDeleteView(DeleteView):
         )
 
 
-class OrganizacionUpdateView(UpdateView):
+class OrganizacionUpdateView(LoginRequiredMixin, UpdateView):
     model = Organizacion
     form_class = OrganizacionForm
     template_name = "organizacion_form.html"
@@ -419,7 +421,7 @@ class OrganizacionUpdateView(UpdateView):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
 
 
-class OrganizacionDetailView(DetailView):
+class OrganizacionDetailView(LoginRequiredMixin, DetailView):
     model = Organizacion
     template_name = "organizacion_detail.html"
     context_object_name = "organizacion"
@@ -501,7 +503,7 @@ class OrganizacionDetailView(DetailView):
         return context
 
 
-class OrganizacionDeleteView(DeleteView):
+class OrganizacionDeleteView(LoginRequiredMixin, DeleteView):
     model = Organizacion
     template_name = "organizacion_confirm_delete.html"
     context_object_name = "organizacion"
@@ -521,6 +523,7 @@ class OrganizacionDeleteView(DeleteView):
             return self.render_to_response(self.get_context_data(object=self.object))
 
 
+@login_required
 def sub_tipo_entidad_ajax(request):
     tipo_entidad_id = request.GET.get("tipo_entidad")
     if tipo_entidad_id:
@@ -534,6 +537,7 @@ def sub_tipo_entidad_ajax(request):
     return JsonResponse(data, safe=False)
 
 
+@login_required
 def organizaciones_ajax(request):
     """
     Vista AJAX para filtrar organizaciones en tiempo real.

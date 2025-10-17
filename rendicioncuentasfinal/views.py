@@ -1,4 +1,6 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models.base import Model
 from django.http import JsonResponse
@@ -23,17 +25,7 @@ from rendicioncuentasfinal.rendicion_cuentas_final_service import (
 )
 
 
-@require_POST
-def switch_rendicion_final_fisicamente_presentrendicionada(request, rendicion_id):
-    rendicion_final = get_object_or_404(RendicionCuentasFinal, id=rendicion_id)
-    rendicion_final.fisicamente_presentada = not rendicion_final.fisicamente_presentada
-    rendicion_final.save()
-
-    messages.success(request, "Estado de revisión actualizado.")
-
-    return redirect(request.META.get("HTTP_REFERER", "/"))
-
-
+@login_required
 @require_POST
 def subsanar_documento_rendicion_cuentas_final(request, documento_id):
     documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
@@ -53,7 +45,7 @@ def subsanar_documento_rendicion_cuentas_final(request, documento_id):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
-class DocumentosRendicionCuentasFinalListView(ListView):
+class DocumentosRendicionCuentasFinalListView(LoginRequiredMixin, ListView):
     model = DocumentoRendicionFinal
     template_name = "comedor/rendicion_cuentas_final_list.html"
     context_object_name = "documentos"
@@ -76,6 +68,7 @@ class DocumentosRendicionCuentasFinalListView(ListView):
         return context
 
 
+@login_required
 @require_POST
 def validar_documento_rendicion_cuentas_final(request, documento_id):
     documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
@@ -96,6 +89,7 @@ def validar_documento_rendicion_cuentas_final(request, documento_id):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
+@login_required
 @require_POST
 def eliminar_documento_rendicion_cuentas_final(request, documento_id):
     documento = get_object_or_404(DocumentoRendicionFinal, id=documento_id)
@@ -120,6 +114,7 @@ def eliminar_documento_rendicion_cuentas_final(request, documento_id):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
+@login_required
 @require_POST
 def crear_documento_rendicion_cuentas_final(request, rendicion_id):
     rendicion = get_object_or_404(RendicionCuentasFinal, id=rendicion_id)
@@ -141,6 +136,7 @@ def crear_documento_rendicion_cuentas_final(request, rendicion_id):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
+@login_required
 @require_POST
 def adjuntar_documento_rendicion_cuenta_final(request):
     doc_id = request.POST.get("documento_id")
@@ -158,7 +154,7 @@ def adjuntar_documento_rendicion_cuenta_final(request):
     return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
-class RendicionCuentasFinalDetailView(DetailView):
+class RendicionCuentasFinalDetailView(LoginRequiredMixin, DetailView):
     model = RendicionCuentasFinal
     context_object_name = "rendicion"
     template_name = "comedor/rendicion_cuentas_final_detail.html"
@@ -197,6 +193,7 @@ class RendicionCuentasFinalDetailView(DetailView):
         return context
 
 
+@login_required
 @require_POST
 def switch_rendicion_final_fisicamente_presentada(request, rendicion_id):
     rendicion_final = get_object_or_404(RendicionCuentasFinal, id=rendicion_id)
