@@ -296,7 +296,7 @@ class LegajoService:
                 legajo.ciudadano.documento,
                 legajo.ciudadano.fecha_nacimiento,
                 edad,
-                es_menor
+                es_menor,
             )
 
         # archivo2 siempre es Biopsia
@@ -305,9 +305,5 @@ class LegajoService:
             "archivo2": "Biopsia / Constancia medica",
             "archivo3": "Foto DNI" if es_menor else "Negativa ANSES",
         }
-        logger.debug(
-            "Legajo %s - Archivos requeridos: %s",
-            legajo.pk,
-            resultado
-        )
+        logger.debug("Legajo %s - Archivos requeridos: %s", legajo.pk, resultado)
         return resultado
