@@ -3,6 +3,8 @@ import os
 from typing import Any
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.conf import settings
 from django.db.models.base import Model
@@ -46,6 +48,7 @@ from ciudadanos.models import EstadoIntervencion
 logger = logging.getLogger("django")
 
 
+@login_required
 @require_POST
 def relevamiento_crear_editar_ajax(request, pk):
     is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
@@ -108,6 +111,7 @@ def relevamiento_crear_editar_ajax(request, pk):
     return response
 
 
+@login_required
 def nomina_editar_ajax(request, pk):
     nomina = get_object_or_404(Nomina, pk=pk)
     if request.method == "POST":
@@ -125,7 +129,7 @@ def nomina_editar_ajax(request, pk):
         return render(request, "comedor/nomina_editar_ajax.html", {"form": form})
 
 
-class NominaDetailView(TemplateView):
+class NominaDetailView(LoginRequiredMixin, TemplateView):
     template_name = "comedor/nomina_detail.html"
 
     def get_context_data(self, **kwargs):
@@ -152,7 +156,7 @@ class NominaDetailView(TemplateView):
         return context
 
 
-class NominaCreateView(CreateView):
+class NominaCreateView(LoginRequiredMixin, CreateView):
     model = Nomina
     form_class = NominaForm
     template_name = "comedor/nomina_form.html"
@@ -250,7 +254,7 @@ class NominaCreateView(CreateView):
             return self.render_to_response(context)
 
 
-class NominaDeleteView(DeleteView):
+class NominaDeleteView(LoginRequiredMixin, DeleteView):
     model = Nomina
     template_name = "comedor/nomina_confirm_delete.html"
     pk_url_kwarg = "pk2"
@@ -263,7 +267,7 @@ class NominaDeleteView(DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
-class ComedorListView(ListView):
+class ComedorListView(LoginRequiredMixin, ListView):
     model = Comedor
     template_name = "comedor/comedor_list.html"
     context_object_name = "comedores"
@@ -296,7 +300,7 @@ class ComedorListView(ListView):
         return context
 
 
-class ComedorCreateView(CreateView):
+class ComedorCreateView(LoginRequiredMixin, CreateView):
     model = Comedor
     form_class = ComedorForm
     template_name = "comedor/comedor_form.html"
@@ -331,7 +335,7 @@ class ComedorCreateView(CreateView):
             return self.form_invalid(form)
 
 
-class ComedorDetailView(DetailView):
+class ComedorDetailView(LoginRequiredMixin, DetailView):
     model = Comedor
     template_name = "comedor/comedor_detail.html"
     context_object_name = "comedor"
@@ -462,7 +466,7 @@ class ComedorDetailView(DetailView):
 
 
 # TODO: Sacar de la vista de comedores
-class AsignarDuplaListView(ListView):
+class AsignarDuplaListView(LoginRequiredMixin, ListView):
     model = Comedor
     template_name = "comedor/asignar_dupla_form.html"
 
@@ -490,7 +494,7 @@ class AsignarDuplaListView(ListView):
         return redirect("comedor_detalle", pk=comedor_id)
 
 
-class ComedorUpdateView(UpdateView):
+class ComedorUpdateView(LoginRequiredMixin, UpdateView):
     model = Comedor
     form_class = ComedorForm
     template_name = "comedor/comedor_form.html"
@@ -537,14 +541,14 @@ class ComedorUpdateView(UpdateView):
             return self.form_invalid(form)
 
 
-class ComedorDeleteView(DeleteView):
+class ComedorDeleteView(LoginRequiredMixin, DeleteView):
     model = Comedor
     template_name = "comedor/comedor_confirm_delete.html"
     context_object_name = "comedor"
     success_url = reverse_lazy("comedores")
 
 
-class ObservacionCreateView(CreateView):
+class ObservacionCreateView(LoginRequiredMixin, CreateView):
     model = Observacion
     form_class = ObservacionForm
     template_name = "observacion/observacion_form.html"
@@ -576,7 +580,7 @@ class ObservacionCreateView(CreateView):
         )
 
 
-class ObservacionDetailView(DetailView):
+class ObservacionDetailView(LoginRequiredMixin, DetailView):
     model = Observacion
     template_name = "observacion/observacion_detail.html"
     context_object_name = "observacion"
@@ -596,7 +600,7 @@ class ObservacionDetailView(DetailView):
         )
 
 
-class ObservacionUpdateView(UpdateView):
+class ObservacionUpdateView(LoginRequiredMixin, UpdateView):
     model = Observacion
     form_class = ObservacionForm
     template_name = "observacion/observacion_form.html"
@@ -626,7 +630,7 @@ class ObservacionUpdateView(UpdateView):
         )
 
 
-class ObservacionDeleteView(DeleteView):
+class ObservacionDeleteView(LoginRequiredMixin, DeleteView):
     model = Observacion
     template_name = "observacion/observacion_confirm_delete.html"
     context_object_name = "observacion"
