@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
@@ -18,6 +20,7 @@ from rendicioncuentasmensual.forms import (
 )
 
 
+@login_required
 @require_POST
 def eliminar_archivo(request, archivo_id):
     archivo = get_object_or_404(DocumentacionAdjunta, id=archivo_id)
@@ -27,7 +30,7 @@ def eliminar_archivo(request, archivo_id):
     )
 
 
-class RendicionCuentaMensualListView(ListView):
+class RendicionCuentaMensualListView(LoginRequiredMixin, ListView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_list.html"
     context_object_name = "rendiciones_cuentas_mensuales"
@@ -49,7 +52,7 @@ class RendicionCuentaMensualListView(ListView):
         return context
 
 
-class RendicionCuentaMensualDetailView(DetailView):
+class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_detail.html"
     context_object_name = "rendicion_cuenta_mensual"
@@ -64,7 +67,7 @@ class RendicionCuentaMensualDetailView(DetailView):
         return context
 
 
-class RendicionCuentaMensualCreateView(CreateView):
+class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_form.html"
     form_class = RendicionCuentaMensualForm
@@ -102,7 +105,7 @@ class RendicionCuentaMensualCreateView(CreateView):
         return context
 
 
-class RendicionCuentaMensualUpdateView(UpdateView):
+class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_form.html"
     form_class = RendicionCuentaMensualForm
@@ -140,7 +143,7 @@ class RendicionCuentaMensualUpdateView(UpdateView):
         return context
 
 
-class RendicionCuentaMensualDeleteView(DeleteView):
+class RendicionCuentaMensualDeleteView(LoginRequiredMixin, DeleteView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_confirm_delete.html"
 

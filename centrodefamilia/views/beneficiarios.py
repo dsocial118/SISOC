@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.generic import ListView, DetailView, View
@@ -26,19 +27,19 @@ from centrodefamilia.services.responsables_filter_config import (
 )
 
 
-class BuscarCUILView(View):
+class BuscarCUILView(LoginRequiredMixin, View):
     def get(self, request):
         return buscar_cuil_beneficiario(request, request.GET.get("cuil"))
 
 
-class BuscarResponsableView(View):
+class BuscarResponsableView(LoginRequiredMixin, View):
     def get(self, request):
         return buscar_responsable_renaper(
             request, request.GET.get("dni"), request.GET.get("sexo")
         )
 
 
-class BeneficiariosListView(ListView):
+class BeneficiariosListView(LoginRequiredMixin, ListView):
     model = Beneficiario
     template_name = "beneficiarios/beneficiarios_list.html"
     context_object_name = "beneficiarios"
@@ -69,7 +70,7 @@ class BeneficiariosListView(ListView):
         return context
 
 
-class ResponsableListView(ListView):
+class ResponsableListView(LoginRequiredMixin, ListView):
     model = Responsable
     template_name = "beneficiarios/responsable_list.html"
     context_object_name = "responsables"
@@ -99,7 +100,7 @@ class ResponsableListView(ListView):
         return context
 
 
-class ResponsableDetailView(DetailView):
+class ResponsableDetailView(LoginRequiredMixin, DetailView):
     model = Responsable
     template_name = "beneficiarios/responsable_detail.html"
     context_object_name = "responsable"
@@ -110,7 +111,7 @@ class ResponsableDetailView(DetailView):
         return context
 
 
-class BeneficiariosDetailView(DetailView):
+class BeneficiariosDetailView(LoginRequiredMixin, DetailView):
     model = Beneficiario
     template_name = "beneficiarios/beneficiarios_detail.html"
     context_object_name = "beneficiario"
@@ -119,7 +120,7 @@ class BeneficiariosDetailView(DetailView):
         return get_beneficiario_detail_queryset()
 
 
-class BeneficiariosCreateView(View):
+class BeneficiariosCreateView(LoginRequiredMixin, View):
     template_name = "beneficiarios/beneficiarios_form.html"
 
     def get(self, request):
