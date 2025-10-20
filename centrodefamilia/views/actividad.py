@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
@@ -16,7 +18,7 @@ from core.decorators import group_required
 from centrodefamilia.services.participante import ParticipanteService
 
 
-class ActividadCentroListView(ListView):
+class ActividadCentroListView(LoginRequiredMixin, ListView):
     model = ActividadCentro
     template_name = "centros/actividadcentro_list.html"
     context_object_name = "actividades"
@@ -33,7 +35,7 @@ class ActividadCentroListView(ListView):
         return queryset
 
 
-class ActividadCentroCreateView(CreateView):
+class ActividadCentroCreateView(LoginRequiredMixin, CreateView):
     model = ActividadCentro
     form_class = ActividadCentroForm
     template_name = "centros/actividadcentro_form.html"
@@ -62,7 +64,7 @@ class ActividadCentroCreateView(CreateView):
         return reverse("centro_detail", kwargs={"pk": self.centro.pk})
 
 
-class ActividadCentroDetailView(DetailView):
+class ActividadCentroDetailView(LoginRequiredMixin, DetailView):
     model = ActividadCentro
     template_name = "centros/actividadcentro_detail.html"
     context_object_name = "actividad"
@@ -90,7 +92,7 @@ class ActividadCentroDetailView(DetailView):
         return context
 
 
-class ActividadCentroUpdateView(UpdateView):
+class ActividadCentroUpdateView(LoginRequiredMixin, UpdateView):
     model = ActividadCentro
     form_class = ActividadCentroForm
     template_name = "centros/actividadcentro_form.html"
@@ -113,6 +115,7 @@ class ActividadCentroUpdateView(UpdateView):
         return context
 
 
+@login_required
 def cargar_actividades_por_categoria(request):
     categoria_id = request.GET.get("categoria_id")
     actividades = Actividad.objects.filter(categoria_id=categoria_id).values(
@@ -121,7 +124,7 @@ def cargar_actividades_por_categoria(request):
     return JsonResponse(list(actividades), safe=False)
 
 
-class ActividadCreateView(CreateView):
+class ActividadCreateView(LoginRequiredMixin, CreateView):
     model = Actividad
     form_class = ActividadForm
     template_name = "centros/actividad_form.html"

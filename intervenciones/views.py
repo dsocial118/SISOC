@@ -1,9 +1,11 @@
-from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 from django.core.cache import cache
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.decorators.http import require_GET
-from django.contrib import messages
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import CreateView, UpdateView, DeleteView, TemplateView
 
 from comedores.services.comedor_service import ComedorService
@@ -16,6 +18,7 @@ from intervenciones.models.intervenciones import (
 from intervenciones.forms import IntervencionForm
 
 
+@login_required
 @require_GET
 def sub_estados_intervenciones_ajax(request):
     """Devolver sub estados disponibles para un tipo de intervención.
@@ -40,7 +43,7 @@ def sub_estados_intervenciones_ajax(request):
     return JsonResponse(data, safe=False)
 
 
-class IntervencionDetailView(TemplateView):
+class IntervencionDetailView(LoginRequiredMixin, TemplateView):
     """Mostrar el detalle de intervenciones asociadas a un comedor."""
 
     template_name = "intervencion_detail.html"
@@ -81,7 +84,7 @@ class IntervencionDetailView(TemplateView):
         return context
 
 
-class IntervencionCreateView(CreateView):
+class IntervencionCreateView(LoginRequiredMixin, CreateView):
     """Crear una nueva intervención para un comedor."""
 
     model = Intervencion
@@ -146,7 +149,7 @@ class IntervencionCreateView(CreateView):
         return reverse("comedor_intervencion_ver", kwargs={"pk": self.object.pk})
 
 
-class IntervencionUpdateView(UpdateView):
+class IntervencionUpdateView(LoginRequiredMixin, UpdateView):
     """Actualizar una intervención existente."""
 
     model = Intervencion
@@ -170,7 +173,7 @@ class IntervencionUpdateView(UpdateView):
         return context
 
 
-class IntervencionDeleteView(DeleteView):
+class IntervencionDeleteView(LoginRequiredMixin, DeleteView):
     """Eliminar una intervención existente."""
 
     model = Intervencion
@@ -189,6 +192,8 @@ class IntervencionDeleteView(DeleteView):
         )
 
 
+@login_required
+@require_POST
 def subir_archivo_intervencion(request, intervencion_id):
     """Guardar un archivo adjunto a la intervención.
 
@@ -212,6 +217,8 @@ def subir_archivo_intervencion(request, intervencion_id):
     return JsonResponse({"success": False, "message": "No se proporcionó un archivo."})
 
 
+@login_required
+@require_POST
 def eliminar_archivo_intervencion(request, intervencion_id):
     """Eliminar el archivo asociado a una intervención.
 
@@ -235,7 +242,7 @@ def eliminar_archivo_intervencion(request, intervencion_id):
     return redirect("intervencion_detalle", pk=intervencion.id)
 
 
-class IntervencionDetailIndividualView(TemplateView):
+class IntervencionDetailIndividualView(LoginRequiredMixin, TemplateView):
     """Mostrar el detalle de una intervención puntual."""
 
     template_name = "intervencion_detail_view.html"

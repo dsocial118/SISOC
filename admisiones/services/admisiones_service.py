@@ -256,12 +256,8 @@ class AdmisionService:
                             "link_class": "font-weight-bold link-handler",
                             "link_title": "Ver detalles",
                         },
-                        {
-                            "content": tipocomedor_display
-                        },
-                        {
-                            "content": provincia_display
-                        },
+                        {"content": tipocomedor_display},
+                        {"content": provincia_display},
                         {
                             "content": (
                                 str(admision.tipo_convenio.nombre)

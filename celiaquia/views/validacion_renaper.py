@@ -241,16 +241,17 @@ class ValidacionRenaperView(View):
                     }
                 )
 
-            if not ciudadano.sexo:
+            # Mapear sexo del ciudadano
+            sexo_renaper = None
+            if ciudadano.sexo:
+                sexo_map = {"Masculino": "M", "Femenino": "F", "X": "X"}
+                sexo_valor = (getattr(ciudadano.sexo, "sexo", "") or "").strip()
+                sexo_renaper = sexo_map.get(sexo_valor)
+
+            if not sexo_renaper:
                 logger.warning(
                     "renaper.validation.missing_sexo",
                     extra={"data": _build_log_data(user, legajo, ciudadano)},
-                )
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": "El ciudadano no tiene sexo configurado",
-                    }
                 )
 
             # Convertir CUIT (11 dígitos) a DNI (8 dígitos) para Renaper
@@ -306,14 +307,10 @@ class ValidacionRenaperView(View):
                 ),
             }
 
-            # Consultar Renaper
-            sexo_map = {"Masculino": "M", "Femenino": "F", "X": "X"}
-            sexo_valor = (getattr(ciudadano.sexo, "sexo", "") or "").strip()
-            sexo_renaper = sexo_map.get(sexo_valor)
-
+            # Si no se pudo determinar sexo, intentar con ambos
             if not sexo_renaper:
-                logger.warning(
-                    "renaper.validation.unsupported_sexo",
+                logger.info(
+                    "renaper.validation.trying_both_sexes",
                     extra={
                         "data": _build_log_data(
                             user,
@@ -321,16 +318,25 @@ class ValidacionRenaperView(View):
                             ciudadano,
                             documento_original=documento_original,
                             documento_consulta=documento_consulta,
-                            sexo_valor=sexo_valor,
                         )
                     },
                 )
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": f"Sexo {sexo_valor or 'desconocido'} no soportado para Renaper",
-                    }
-                )
+                # Intentar primero con M, luego con F
+                for sexo_test in ["M", "F"]:
+                    resultado_test = consultar_datos_renaper(
+                        documento_consulta, sexo_test
+                    )
+                    if resultado_test.get("success"):
+                        sexo_renaper = sexo_test
+                        break
+
+                if not sexo_renaper:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": "No se pudo determinar el sexo del ciudadano. Configure el sexo manualmente.",
+                        }
+                    )
 
             log_data = _build_log_data(
                 user,
