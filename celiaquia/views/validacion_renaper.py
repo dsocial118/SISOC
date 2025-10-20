@@ -247,7 +247,7 @@ class ValidacionRenaperView(View):
                 sexo_map = {"Masculino": "M", "Femenino": "F", "X": "X"}
                 sexo_valor = (getattr(ciudadano.sexo, "sexo", "") or "").strip()
                 sexo_renaper = sexo_map.get(sexo_valor)
-            
+
             if not sexo_renaper:
                 logger.warning(
                     "renaper.validation.missing_sexo",
@@ -329,7 +329,7 @@ class ValidacionRenaperView(View):
                     if resultado_test.get("success"):
                         sexo_renaper = sexo_test
                         break
-                
+
                 if not sexo_renaper:
                     return JsonResponse(
                         {
