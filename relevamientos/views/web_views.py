@@ -1,6 +1,7 @@
 from typing import Any
 
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 
@@ -36,7 +37,7 @@ from relevamientos.models import Relevamiento
 from relevamientos.service import RelevamientoService
 
 
-class RelevamientoCreateView(CreateView):
+class RelevamientoCreateView(LoginRequiredMixin, CreateView):
     model = Relevamiento
     form_class = RelevamientoForm
     template_name = "relevamiento_form.html"
@@ -84,79 +85,7 @@ class RelevamientoCreateView(CreateView):
                 )
 
 
-class RelevamientoCreateView(CreateView):
-    model = Relevamiento
-    form_class = RelevamientoForm
-    template_name = "relevamiento_form.html"
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["comedor_pk"] = self.kwargs["comedor_pk"]
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        forms = {
-            "funcionamiento_form": FuncionamientoPrestacionForm,
-            "espacio_form": EspacioForm,
-            "espacio_cocina_form": EspacioCocinaForm,
-            "espacio_prestacion_form": EspacioPrestacionForm,
-            "colaboradores_form": ColaboradoresForm,
-            "recursos_form": FuenteRecursosForm,
-            "compras_form": FuenteComprasForm,
-            "prestacion_form": PrestacionForm,
-            "referente_form": ReferenteForm,
-            "anexo_form": AnexoForm,
-            "punto_entregas_form": PuntosEntregaForm,
-        }
-
-        for form_name, form_class in forms.items():
-            data[form_name] = form_class(
-                self.request.POST if self.request.POST else None
-            )
-
-        data["comedor"] = Comedor.objects.values("id", "nombre").get(
-            pk=self.kwargs["comedor_pk"]
-        )
-
-        return data
-
-    def form_valid(self, form):
-        context = self.get_context_data()
-        forms = {
-            "funcionamiento_form": context["funcionamiento_form"],
-            "espacio_form": context["espacio_form"],
-            "espacio_cocina_form": context["espacio_cocina_form"],
-            "espacio_prestacion_form": context["espacio_prestacion_form"],
-            "colaboradores_form": context["colaboradores_form"],
-            "recursos_form": context["recursos_form"],
-            "compras_form": context["compras_form"],
-            "prestacion_form": context["prestacion_form"],
-            "referente_form": context["referente_form"],
-            "anexo_form": context["anexo_form"],
-        }
-
-        if all(form.is_valid() for form in forms.values()):
-            self.object = RelevamientoService.populate_relevamiento(form, forms)
-
-            return redirect(
-                "relevamiento_detalle",
-                comedor_pk=int(self.object.comedor.id),
-                pk=int(self.object.id),
-            )
-        else:
-            self.error_message(forms)
-            return self.form_invalid(form)
-
-    def error_message(self, forms):
-        for form_name, form_instance in forms.items():
-            if not form_instance.is_valid():
-                messages.error(
-                    self.request, f"Errores en {form_name}: {form_instance.errors}"
-                )
-
-
-class RelevamientoListView(ListView):
+class RelevamientoListView(LoginRequiredMixin, ListView):
     model = Relevamiento
     template_name = "relevamiento_list.html"
     context_object_name = "relevamientos"
@@ -182,7 +111,7 @@ class RelevamientoListView(ListView):
         return context
 
 
-class RelevamientoDetailView(DetailView):
+class RelevamientoDetailView(LoginRequiredMixin, DetailView):
     model = Relevamiento
     template_name = "relevamiento_detail.html"
     context_object_name = "relevamiento"
@@ -312,7 +241,7 @@ class RelevamientoDetailView(DetailView):
         )
 
 
-class RelevamientoUpdateView(UpdateView):
+class RelevamientoUpdateView(LoginRequiredMixin, UpdateView):
     model = Relevamiento
     form_class = RelevamientoForm
     template_name = "relevamiento_form.html"
@@ -375,7 +304,7 @@ class RelevamientoUpdateView(UpdateView):
                 )
 
 
-class RelevamientoDeleteView(DeleteView):
+class RelevamientoDeleteView(LoginRequiredMixin, DeleteView):
     model = Relevamiento
     template_name = "relevamiento_confirm_delete.html"
     context_object_name = "relevamiento"
