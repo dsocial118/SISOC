@@ -474,9 +474,7 @@ class ComedorService:
                 "El comedor ya tiene hitos registrados.",
             )
         else:
-            Hitos.objects.create(
-                comedor=comedor
-            )
+            Hitos.objects.create(comedor=comedor)
         messages.success(
             request,
             f"Se creó una nueva admisión de tipo '{nueva_admision.get_tipo_display()}' correctamente.",
