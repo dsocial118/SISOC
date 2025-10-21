@@ -25,21 +25,21 @@
         <div class="login-container">
             <div class="container">
                 <div class="row vh-100 align-items-center">
-                    <div class="col-9 mx-auto">
+                    <div class="col-lg-9 col-12 mx-auto">
                         <div class="row align-items-center">
-                            <div class="col-5">
+                            <div class="col-md-5 col-12">
                                 <div class="card">
                                     <div class="card-body text-center">
                                         <img src="{% static 'custom/img/presidencia_logo.svg' %}"
-                                             class="mb-2"
+                                             class="mb-2 presidencia-logo"
                                              alt="" />
                                         <img src="{% static 'custom/img/sisoc_azul.png' %}"
                                              alt=""
-                                             class="img-fluid" />
+                                             class="img-fluid sisoc-logo" />
                                         <p class="mt-3 mb-3">Ingresa al Sistema con Usuario y Contraseña</p>
                                         <form method="post" id="form-login" class="mb-3">
                                             {% csrf_token %}
-                                            <div class="input-group">
+                                            <div class="input-group mb-3">
                                                 <span class="input-group-text">
                                                     <div class="icon-box">
                                                         <i class="bi bi-person"></i>
@@ -52,7 +52,7 @@
                                                        placeholder="Usuario"
                                                        aria-label="Username" />
                                             </div>
-                                            <div class="input-group mb-2">
+                                            <div class="input-group mb-3">
                                                 <span class="input-group-text">
                                                     <div class="icon-box">
                                                         <i class="bi bi-key"></i>
@@ -71,7 +71,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-7">
+                            <div class="col-md-7 d-none d-md-block">
                                 <img src="{% static 'custom/img/loginPresentacion.svg' %}"
                                      alt="logoPresentacion"
                                      class="img-fluid" />
