@@ -656,7 +656,6 @@ class Ciudadano(models.Model):
         blank=True,
     )
     documento = models.PositiveBigIntegerField(
-        validators=[MinValueValidator(3000000), MaxValueValidator(99999999999)],
         null=True,
         blank=True,
     )

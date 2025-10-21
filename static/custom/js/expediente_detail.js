@@ -1277,6 +1277,14 @@ document.addEventListener('DOMContentLoaded', () => {
       btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando...';
 
       try {
+        console.log('=== ENVIANDO RESPUESTA RENAPER ===');
+        console.log('URL:', url);
+        console.log('FormData entries:');
+        for (let pair of formData.entries()) {
+          console.log(pair[0], ':', pair[1]);
+        }
+        console.log('==================================');
+
         const resp = await fetch(url, {
           method: 'POST',
           body: formData,
@@ -1287,10 +1295,31 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
 
-        const data = await resp.json();
+        console.log('=== RESPUESTA RECIBIDA ===');
+        console.log('Status:', resp.status);
+        console.log('OK:', resp.ok);
+        console.log('==========================');
+
+        const responseText = await resp.text();
+        console.log('Response text:', responseText);
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Error parseando JSON:', e);
+          throw new Error('Respuesta inválida del servidor: ' + responseText.substring(0, 200));
+        }
+
+        console.log('Data parseada:', data);
 
         if (!resp.ok || !data.success) {
-          throw new Error(data.message || 'Error al enviar respuesta');
+          const errorMsg = data.error || data.message || data.detail || 
+                          (data.non_field_errors && data.non_field_errors[0]) ||
+                          (data.errors && JSON.stringify(data.errors)) ||
+                          responseText.substring(0, 200) ||
+                          'Error al enviar respuesta';
+          throw new Error(errorMsg);
         }
 
         renderModalAlert('success', data.message || 'Respuesta enviada correctamente.');
@@ -1302,8 +1331,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 800);
 
       } catch (err) {
+        console.error('=== ERROR COMPLETO ===');
+        console.error('Error:', err);
+        console.error('Message:', err.message);
+        console.error('Stack:', err.stack);
+        console.error('=====================');
         renderModalAlert('danger', err.message || 'Error al enviar respuesta');
-        console.error('Error al enviar respuesta:', err);
       } finally {
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = originalHTML;
