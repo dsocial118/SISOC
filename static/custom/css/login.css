@@ -126,3 +126,65 @@ footer.app-footer {
 .card p {
     color: #828282;
 }
+
+/* Media queries para responsive mobile */
+@media (max-width: 767px) {
+    /* Ajustar padding del card en mobile */
+    .card {
+        padding: 1.5rem 1rem;
+        margin: 1rem 0;
+    }
+
+    /* Reducir margen negativo del texto en mobile */
+    .card p {
+        margin: 0 -1rem;
+    }
+
+    /* Ajustar tamaño del logo presidencia en mobile */
+    .presidencia-logo {
+        max-width: 80px;
+        height: auto;
+    }
+
+    /* Ajustar tamaño del logo SISOC en mobile */
+    .sisoc-logo {
+        max-width: 180px;
+        height: auto;
+    }
+
+    /* Mejorar espaciado vertical entre elementos en mobile */
+    .card .mb-2 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .card .mt-3 {
+        margin-top: 1rem !important;
+    }
+
+    .card .mb-3 {
+        margin-bottom: 1rem !important;
+    }
+
+    /* Ajustar altura de inputs en mobile */
+    .input-group .input-group-text,
+    .input-group .form-control {
+        height: 45px;
+    }
+
+    /* Ajustar tamaño del botón en mobile */
+    .btn-primary {
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+
+    /* Reducir altura del contenedor en mobile */
+    .login-container .row.vh-100 {
+        min-height: 100vh;
+        padding: 1rem 0;
+    }
+
+    /* Ajustar tamaño de fuente del enlace en mobile */
+    .card a {
+        font-size: 0.9rem;
+    }
+}
