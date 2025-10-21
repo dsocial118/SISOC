@@ -24,22 +24,24 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                 <i class="fas fa-exclamation-triangle mr-1"></i> Pendiente de carga
             </div>
         {% endif %}
-        {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
-            <button type="button"
-                    class="btn btn-outline-info btn-sm"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalSubirArchivo"
-                    data-legajo-id="{{ legajo.pk }}"
-                    data-expediente-id="{{ expediente.pk }}"
-                    data-file-field="archivo2"
-                    data-archivo2-label="{{ legajo.archivos_requeridos.archivo2 }}"
-                    data-archivo3-label="{{ legajo.archivos_requeridos.archivo3 }}">
-                {% if legajo.archivo2 %}
-                    Editar
-                {% else %}
-                    Subir
-                {% endif %}
-            </button>
+        {% if is_prov %}
+            {% if expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
+                <button type="button"
+                        class="btn btn-outline-info btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalSubirArchivo"
+                        data-legajo-id="{{ legajo.pk }}"
+                        data-expediente-id="{{ expediente.pk }}"
+                        data-file-field="archivo2"
+                        data-archivo2-label="{{ legajo.archivos_requeridos.archivo2 }}"
+                        data-archivo3-label="{{ legajo.archivos_requeridos.archivo3 }}">
+                    {% if legajo.archivo2 %}
+                        Editar
+                    {% else %}
+                        Subir
+                    {% endif %}
+                </button>
+            {% endif %}
         {% endif %}
     </div>
 
@@ -59,22 +61,24 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                 <i class="fas fa-exclamation-triangle mr-1"></i> Pendiente de carga
             </div>
         {% endif %}
-        {% if is_prov and expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
-            <button type="button"
-                    class="btn btn-outline-info btn-sm"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalSubirArchivo"
-                    data-legajo-id="{{ legajo.pk }}"
-                    data-expediente-id="{{ expediente.pk }}"
-                    data-file-field="archivo3"
-                    data-archivo2-label="{{ legajo.archivos_requeridos.archivo2 }}"
-                    data-archivo3-label="{{ legajo.archivos_requeridos.archivo3 }}">
-                {% if legajo.archivo3 %}
-                    Editar
-                {% else %}
-                    Subir
-                {% endif %}
-            </button>
+        {% if is_prov %}
+            {% if expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
+                <button type="button"
+                        class="btn btn-outline-info btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalSubirArchivo"
+                        data-legajo-id="{{ legajo.pk }}"
+                        data-expediente-id="{{ expediente.pk }}"
+                        data-file-field="archivo3"
+                        data-archivo2-label="{{ legajo.archivos_requeridos.archivo2 }}"
+                        data-archivo3-label="{{ legajo.archivos_requeridos.archivo3 }}">
+                    {% if legajo.archivo3 %}
+                        Editar
+                    {% else %}
+                        Subir
+                    {% endif %}
+                </button>
+            {% endif %}
         {% endif %}
     </div>
 

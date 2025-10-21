@@ -535,19 +535,19 @@
                                                                     <button type="button"
                                                                             class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
                                                                             data-legajo-id="{{ leg.pk }}"
-                                                                            data-accion="APROBAR">âœ… Aprobar</button>
+                                                                            data-accion="APROBAR">Aprobar</button>
                                                                     <button type="button"
                                                                             class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
                                                                             data-legajo-id="{{ leg.pk }}"
                                                                             data-bs-toggle="modal"
                                                                             data-bs-target="#modalSubsanar">
-                                                                        ðŸ“ Subsanar
+                                                                        Subsanar
                                                                     </button>
                                                                     <button type="button"
                                                                             class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
                                                                             data-legajo-id="{{ leg.pk }}"
                                                                             data-accion="RECHAZAR">
-                                                                        âŒ Rechazar
+                                                                       Rechazar
                                                                     </button>
                                                                 </div>
                                                             {% endif %}
@@ -927,7 +927,7 @@
                   enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a subsanación Renaper</h5>
+                    <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a subsanación </h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
