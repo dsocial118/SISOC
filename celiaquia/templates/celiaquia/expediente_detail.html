@@ -240,6 +240,18 @@
                     </select>
                 </div>
             </div>
+            {% if preview.errores %}
+                <div class="alert alert-danger mb-3">
+                    <h6 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Errores de validación detectados</h6>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        {% for error in preview.errores %}
+                            <div class="mb-1">
+                                <strong>⚠️ Registro {{ error.fila }}, columna "{{ error.columna }}":</strong> {{ error.mensaje }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
             <div id="preview-error-detail" class="text-danger mb-2"></div>
             <div class="table-responsive">
                 <table id="preview-table" class="table table-bordered table-sm">
