@@ -21,7 +21,7 @@ from comedores.utils import (
     normalize_field,
     preload_valores_comida_cache,
 )
-
+from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
@@ -468,10 +468,17 @@ class ComedorService:
             comedor=comedor,
             tipo=tipo_admision,
         )
-
+        Hitos.objects.create(
+            comedor=comedor
+        )
         messages.success(
             request,
             f"Se creó una nueva admisión de tipo '{nueva_admision.get_tipo_display()}' correctamente.",
+        )
+
+        messages.success(
+            request,
+            f"Se creó una nuevo hito correctamente.",
         )
 
         # 🔁 Redirigir al mismo comedor
