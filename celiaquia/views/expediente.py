@@ -206,18 +206,28 @@ class ExpedienteListView(ListView):
 class ProcesarExpedienteView(View):
     def post(self, request, pk):
         user = self.request.user
+        logger.info("=" * 80)
+        logger.info("INICIANDO PROCESAMIENTO DE EXPEDIENTE %s", pk)
+        logger.info("Usuario: %s (ID: %s)", user.username, user.id)
+        
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         elif _is_provincial(user):
             prov = _user_provincia(user)
+            logger.info("Usuario provincial - Provincia: %s", prov)
             expediente = get_object_or_404(
                 Expediente, pk=pk, usuario_provincia__profile__provincia=prov
             )
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+        
+        logger.info("Expediente encontrado: ID=%s, Estado=%s", expediente.id, expediente.estado.nombre)
+        logger.info("Archivo Excel: %s", expediente.excel_masivo.name if expediente.excel_masivo else "NO HAY ARCHIVO")
 
         try:
+            logger.info("Llamando a ExpedienteService.procesar_expediente...")
             result = ExpedienteService.procesar_expediente(expediente, user)
+            logger.info("Resultado del procesamiento: %s", result)
 
             if _is_ajax(request):
                 return JsonResponse(
@@ -230,10 +240,29 @@ class ProcesarExpedienteView(View):
                     }
                 )
 
-            messages.success(
-                request,
-                f"Importación completada. Creados: {result.get('creados', 0)} — Errores: {result.get('errores', 0)}.",
-            )
+            creados = result.get('creados', 0)
+            errores_count = result.get('errores', 0)
+            detalles = result.get('detalles_errores', [])
+            
+            logger.info("Creados: %s, Errores: %s", creados, errores_count)
+            if detalles:
+                logger.error("DETALLES DE ERRORES:")
+                for det in detalles:
+                    logger.error("  - Fila %s: %s", det.get('fila'), det.get('error'))
+            
+            mensaje_principal = f"¡Listo! Se crearon {creados} legajos y el expediente pasó a EN ESPERA."
+            
+            if errores_count > 0:
+                mensaje_principal += f" Hubo {errores_count} errores."
+                if detalles:
+                    errores_html = "<br><strong>Detalles de errores:</strong><br>"
+                    errores_html += "<br>".join([f"• Fila {d.get('fila')}: {escape(d.get('error'))}" for d in detalles[:15]])
+                    if len(detalles) > 15:
+                        errores_html += f"<br>... y {len(detalles) - 15} errores más (revisa los logs)"
+                    messages.error(request, errores_html)
+            
+            messages.success(request, mensaje_principal)
+            logger.info("Mensajes agregados correctamente")
 
             excluidos_count = result.get("excluidos", 0)
             if excluidos_count:
@@ -263,20 +292,29 @@ class ProcesarExpedienteView(View):
             return redirect("expediente_detail", pk=pk)
 
         except ValidationError as ve:
+            logger.error("ValidationError en expediente %s: %s", pk, str(ve))
             if _is_ajax(request):
                 return JsonResponse(
                     {"success": False, "error": escape(str(ve))}, status=400
                 )
             messages.error(request, f"Error de validación: {escape(str(ve))}")
+            logger.info("Redirigiendo a expediente_detail después de ValidationError")
             return redirect("expediente_detail", pk=pk)
         except Exception as e:
             tb = traceback.format_exc()
-            logging.error("Error al procesar expediente %s:\n%s", pk, tb)
+            logger.error("="*80)
+            logger.error("EXCEPCIÓN CAPTURADA en expediente %s", pk)
+            logger.error("Tipo de error: %s", type(e).__name__)
+            logger.error("Mensaje: %s", str(e))
+            logger.error("Traceback completo:\n%s", tb)
+            logger.error("="*80)
+            error_msg = f"Error al procesar: {escape(str(e))}"
             if _is_ajax(request):
                 return JsonResponse(
-                    {"success": False, "error": escape(str(e))}, status=500
+                    {"success": False, "error": error_msg}, status=500
                 )
-            messages.error(request, "Error inesperado al procesar el expediente.")
+            messages.error(request, error_msg)
+            logger.info("Redirigiendo a expediente_detail después de Exception")
             return redirect("expediente_detail", pk=pk)
 
 
@@ -376,10 +414,47 @@ class ExpedienteCreateView(CreateView):
         return ctx
 
     def form_valid(self, form):
+        # Verificar si hay datos editados desde el frontend
+        datos_editados_json = self.request.POST.get('datos_editados')
+        excel_file = form.cleaned_data["excel_masivo"]
+        
+        if datos_editados_json:
+            try:
+                import json
+                from io import BytesIO
+                import pandas as pd
+                
+                datos_editados = json.loads(datos_editados_json)
+                
+                # Crear nuevo Excel con datos editados
+                df = pd.DataFrame(datos_editados)
+                # Remover columna ID si existe
+                if 'ID' in df.columns:
+                    df = df.drop('ID', axis=1)
+                
+                output = BytesIO()
+                df.to_excel(output, index=False, engine='openpyxl')
+                output.seek(0)
+                
+                # Crear archivo temporal con datos editados
+                from django.core.files.uploadedfile import InMemoryUploadedFile
+                excel_file = InMemoryUploadedFile(
+                    output,
+                    'excel_masivo',
+                    'expediente_editado.xlsx',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    output.getbuffer().nbytes,
+                    None
+                )
+            except Exception as e:
+                logger.error(f"Error procesando datos editados: {e}")
+                messages.error(self.request, "Error al procesar los datos editados.")
+                return redirect("expediente_list")
+        
         expediente = ExpedienteService.create_expediente(
             usuario_provincia=self.request.user,
             datos_metadatos=form.cleaned_data,
-            excel_masivo=form.cleaned_data["excel_masivo"],
+            excel_masivo=excel_file,
         )
         messages.success(self.request, "Expediente creado correctamente.")
         return redirect("expediente_detail", pk=expediente.pk)

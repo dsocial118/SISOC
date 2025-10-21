@@ -62,6 +62,86 @@ ESTADOS_PRE_CUPO = [
 
 class ImportacionService:
     @staticmethod
+    def _validar_fila(row, fila_num):
+        """Valida una fila del Excel y retorna lista de errores."""
+        errores = []
+        
+        # Validar documento
+        doc = str(row.get("documento", "")).strip()
+        if doc and doc != "nan":
+            if not re.match(r'^\d+$', doc):
+                errores.append({
+                    "fila": fila_num,
+                    "columna": "documento",
+                    "mensaje": "Debe contener solo dígitos"
+                })
+        else:
+            errores.append({
+                "fila": fila_num,
+                "columna": "documento",
+                "mensaje": "Campo obligatorio vacío"
+            })
+        
+        # Validar email
+        email = str(row.get("email", "")).strip()
+        if email and email != "nan":
+            try:
+                EmailValidator()(email)
+            except ValidationError:
+                errores.append({
+                    "fila": fila_num,
+                    "columna": "email",
+                    "mensaje": "Formato de email inválido"
+                })
+        
+        # Validar fecha_nacimiento
+        fecha = str(row.get("fecha_nacimiento", "")).strip()
+        if fecha and fecha != "nan":
+            try:
+                from celiaquia.services.ciudadano_service import CiudadanoService
+                CiudadanoService._to_date(fecha)
+            except:
+                errores.append({
+                    "fila": fila_num,
+                    "columna": "fecha_nacimiento",
+                    "mensaje": "Formato de fecha inválido (debe ser DD/MM/AAAA o AAAA-MM-DD)"
+                })
+        else:
+            errores.append({
+                "fila": fila_num,
+                "columna": "fecha_nacimiento",
+                "mensaje": "Campo obligatorio vacío"
+            })
+        
+        # Validar apellido
+        if not str(row.get("apellido", "")).strip() or str(row.get("apellido", "")).strip() == "nan":
+            errores.append({
+                "fila": fila_num,
+                "columna": "apellido",
+                "mensaje": "Campo obligatorio vacío"
+            })
+        
+        # Validar nombre
+        if not str(row.get("nombre", "")).strip() or str(row.get("nombre", "")).strip() == "nan":
+            errores.append({
+                "fila": fila_num,
+                "columna": "nombre",
+                "mensaje": "Campo obligatorio vacío"
+            })
+        
+        # Validar campos numéricos
+        for campo in ["telefono", "altura", "codigo_postal"]:
+            valor = str(row.get(campo, "")).strip()
+            if valor and valor != "nan":
+                if not re.match(r'^\d+$', valor):
+                    errores.append({
+                        "fila": fila_num,
+                        "columna": campo,
+                        "mensaje": "Debe contener solo dígitos"
+                    })
+        
+        return errores
+    @staticmethod
     def generar_plantilla_excel() -> bytes:
         """Genera y devuelve un archivo de Excel vacío para importar expedientes."""
         columnas = [
@@ -166,6 +246,14 @@ class ImportacionService:
 
         sample = sample_df.to_dict(orient="records")
 
+        # Validar datos y recopilar errores
+        errores = []
+        for i, row in enumerate(sample, start=1):
+            errores_fila = ImportacionService._validar_fila(row, i)
+            errores.extend(errores_fila)
+        
+        logger.info(f"Preview: {len(sample)} filas, {len(errores)} errores detectados")
+
         # Agregar columna ID al inicio y convertir IDs a nombres
         headers = ["ID"] + list(df.columns)
         rows_with_id = []
@@ -209,6 +297,7 @@ class ImportacionService:
             "rows": rows_with_id,
             "total_rows": total_rows,
             "shown_rows": len(sample),
+            "errores": errores,
         }
 
     @staticmethod
@@ -217,17 +306,24 @@ class ImportacionService:
         expediente, archivo_excel, usuario, batch_size=1000
     ):
         """Importa legajos desde un archivo Excel al expediente indicado."""
+        logger.info(">>> INICIO importar_legajos_desde_excel")
+        logger.info("Expediente ID: %s", expediente.id)
+        logger.info("Usuario: %s", usuario.username)
+        logger.info("Archivo: %s", archivo_excel.name if hasattr(archivo_excel, 'name') else 'sin nombre')
 
         try:
             archivo_excel.open()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("No se pudo abrir archivo (puede estar ya abierto): %s", e)
         archivo_excel.seek(0)
         data = archivo_excel.read()
+        logger.info("Archivo leído: %s bytes", len(data))
 
         try:
             df = pd.read_excel(BytesIO(data), engine="openpyxl", dtype=str)
+            logger.info("Excel parseado correctamente: %s filas, %s columnas", len(df), len(df.columns))
         except Exception as e:
+            logger.error("Error al leer Excel: %s", e)
             raise ValidationError(f"No se pudo leer Excel: {e}")
 
         df.columns = [_norm_col(col) for col in df.columns]
@@ -300,20 +396,28 @@ class ImportacionService:
 
         # Obtener provincia del usuario
         provincia_usuario_id = None
+        logger.info("Verificando provincia del usuario...")
         try:
-            if (
-                hasattr(usuario, "profile")
-                and usuario.profile
-                and usuario.profile.provincia_id
-            ):
-                provincia_usuario_id = usuario.profile.provincia_id
+            if hasattr(usuario, "profile"):
+                logger.info("Usuario tiene profile")
+                if usuario.profile:
+                    logger.info("Profile existe")
+                    if usuario.profile.provincia_id:
+                        provincia_usuario_id = usuario.profile.provincia_id
+                        logger.info("Provincia del usuario: %s", provincia_usuario_id)
+                    else:
+                        logger.error("Profile.provincia_id es None")
+                else:
+                    logger.error("usuario.profile es None")
+            else:
+                logger.error("Usuario NO tiene atributo 'profile'")
         except Exception as e:
-            logger.warning("No se pudo obtener provincia del usuario: %s", e)
+            logger.error("Excepción al obtener provincia del usuario: %s", e, exc_info=True)
 
         if not provincia_usuario_id:
-            raise ValidationError(
-                "El usuario debe tener una provincia configurada para importar legajos"
-            )
+            error_msg = "El usuario debe tener una provincia configurada para importar legajos"
+            logger.error("ERROR FATAL: %s", error_msg)
+            raise ValidationError(error_msg)
 
         validos = errores = 0
         detalles_errores = []
@@ -784,8 +888,11 @@ class ImportacionService:
 
             except Exception as e:
                 errores += 1
-                detalles_errores.append({"fila": offset, "error": str(e)})
-                logger.error("Error fila %s: %s", offset, e)
+                error_msg = str(e)
+                detalles_errores.append({"fila": offset, "error": error_msg})
+                logger.error("Error fila %s: %s", offset, error_msg)
+                import traceback
+                logger.error("Traceback: %s", traceback.format_exc())
 
         # Bulk create de legajos
         if legajos_crear:
@@ -863,8 +970,14 @@ class ImportacionService:
             errores,
             len(excluidos),
         )
-
-        return {
+        
+        # Log detallado de errores
+        if detalles_errores:
+            logger.error("Detalles de errores en importación:")
+            for detalle in detalles_errores:
+                logger.error(f"  Fila {detalle.get('fila')}: {detalle.get('error')}")
+        
+        resultado = {
             "validos": validos,
             "errores": errores,
             "detalles_errores": detalles_errores,
@@ -873,3 +986,5 @@ class ImportacionService:
             "warnings": warnings,
             "relaciones_familiares_creadas": len(relaciones_familiares),
         }
+        logger.info("<<< FIN importar_legajos_desde_excel - Retornando: %s", resultado)
+        return resultado

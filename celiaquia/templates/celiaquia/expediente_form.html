@@ -10,9 +10,9 @@
 {% endblock %}
 {% block content %}
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-11">
             <div class="card shadow-sm">
-                <!-- Header separado evita que el label del primer campo se “pegue” al título -->
+                <!-- Header separado evita que el label del primer campo se "pegue" al título -->
                 <div class="card-header">
                     <h3 class="mb-0 text-center">
                         {% if view.object %}
@@ -43,16 +43,26 @@
                             <div class="d-flex gap-2">
                                 <a class="btn btn-outline-primary"
                                    href="{% url 'expediente_plantilla_excel' %}">Descargar plantilla</a>
-                                <button type="submit" class="btn btn-success">Guardar</button>
+                                <button type="submit" id="btn-submit" class="btn btn-success" disabled title="Debe previsualizar el Excel antes de crear el expediente">Guardar</button>
                                 <a href="{% url 'expediente_list' %}" class="btn btn-secondary">Cancelar</a>
                             </div>
                         </div>
                     </form>
+                    <!-- Contenedor de errores de validación -->
+                    <div id="validation-errors" class="mt-4 d-none">
+                        <div class="alert alert-danger">
+                            <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Errores de validación</h5>
+                            <div id="errors-list"></div>
+                        </div>
+                    </div>
                     <!-- Contenedor para la tabla de preview, oculto por defecto -->
                     <div id="preview-container" class="mt-4 d-none">
-                        <h5>Vista previa del Excel</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0"><i class="bi bi-table"></i> Vista previa del Excel</h5>
+                            <span class="badge bg-light text-dark" id="preview-count"></span>
+                        </div>
                         <div class="table-responsive">
-                            <table id="preview-table" class="table table-bordered mb-0">
+                            <table id="preview-table" class="table mb-0">
                                 <thead>
                                     <tr id="preview-headers"></tr>
                                 </thead>
@@ -124,6 +134,103 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block customCSS %}
+<style>
+#preview-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+#preview-container h5 {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+#preview-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+#preview-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+#preview-table thead th {
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    padding: 15px 10px;
+    border: none;
+    white-space: nowrap;
+}
+#preview-table tbody tr {
+    transition: all 0.2s ease;
+}
+#preview-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+#preview-table tbody td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
+}
+.editable-cell {
+    cursor: text;
+    position: relative;
+    transition: all 0.2s ease;
+}
+.editable-cell:hover {
+    background-color: #e3f2fd !important;
+    outline: 2px solid #2196f3;
+    outline-offset: -2px;
+}
+.editable-cell:focus {
+    background-color: #fff !important;
+    outline: 3px solid #2196f3;
+    outline-offset: -3px;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+.editable-cell.table-danger {
+    background-color: #ffebee !important;
+    position: relative;
+}
+.editable-cell.table-danger::before {
+    content: '⚠️';
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+}
+.editable-cell.table-danger:hover {
+    background-color: #ffcdd2 !important;
+}
+.table-responsive {
+    border-radius: 8px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+</style>
 {% endblock %}
 {% block customJS %}
     <!-- Datos de provincias para el buscador -->
