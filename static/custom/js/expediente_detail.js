@@ -1460,3 +1460,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 100);
 });
+
+  /* ===== CONFIRMAR SUBSANACIÓN INDIVIDUAL ===== */
+  const botonesConfirmarSubsanacion = document.querySelectorAll('.btn-confirmar-subsanacion-individual');
+  botonesConfirmarSubsanacion.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const legajoId = btn.getAttribute('data-legajo-id');
+      const expedienteId = btn.getAttribute('data-expediente-id');
+      
+      if (!legajoId || !expedienteId) {
+        showAlert('danger', 'Error: No se pudo identificar el legajo.');
+        return;
+      }
+
+      if (!window.CONFIRM_SUBS_URL) {
+        showAlert('danger', 'Error: URL de confirmación no configurada.');
+        return;
+      }
+
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Confirmando...';
+
+      try {
+        const url = window.CONFIRM_SUBS_URL;
+        const formData = new FormData();
+        formData.append('legajo_id', legajoId);
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) {
+          throw new Error(data.error || data.message || `HTTP ${resp.status}`);
+        }
+
+        showAlert('success', data.message || 'Subsanación confirmada correctamente.');
+        setTimeout(() => window.location.reload(), 800);
+
+      } catch (err) {
+        console.error('Error confirmar subsanación:', err);
+        showAlert('danger', 'Error al confirmar subsanación: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  });
