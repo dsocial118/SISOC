@@ -38,44 +38,79 @@ class ExpedienteConfirmSubsanacionView(View):
         # Validar permisos usando función centralizada
         can_confirm_subsanacion(request.user, exp)
 
-        # Legajos en SUBSANAR con faltantes (solo archivo2 y archivo3 son obligatorios)
-        query_archivos_faltantes = (
-            Q(archivo2__isnull=True)
-            | Q(archivo2="")
-            | Q(archivo3__isnull=True)
-            | Q(archivo3="")
-        )
-        legajos_sin_archivos = ExpedienteCiudadano.objects.filter(
-            expediente=exp, revision_tecnico=RevisionTecnico.SUBSANAR
-        ).filter(query_archivos_faltantes)
-
-        if legajos_sin_archivos.exists():
-            dnis = list(
-                legajos_sin_archivos.values_list("ciudadano__documento", flat=True)[:10]
+        # Verificar si es confirmación individual o masiva
+        legajo_id = request.POST.get('legajo_id')
+        
+        if legajo_id:
+            # Confirmación individual
+            legajo = get_object_or_404(
+                ExpedienteCiudadano,
+                pk=legajo_id,
+                expediente=exp,
+                revision_tecnico=RevisionTecnico.SUBSANAR
             )
-            return error_response(
-                "Hay legajos en SUBSANAR que aún no tienen los archivos obligatorios (archivo2 y archivo3).",
-                status=400,
-                extra_data={"ejemplo_dnis": dnis},
+            
+            # Verificar que tenga los archivos obligatorios
+            if not legajo.archivo2 or not legajo.archivo3:
+                return error_response(
+                    "El legajo no tiene los archivos obligatorios (archivo2 y archivo3).",
+                    status=400
+                )
+            
+            # Cambiar a SUBSANADO
+            legajo.revision_tecnico = RevisionTecnico.SUBSANADO
+            legajo.modificado_en = timezone.now()
+            legajo.subsanacion_enviada_en = timezone.now()
+            legajo.subsanacion_usuario = request.user
+            legajo.save()
+            
+            logger.info(
+                "Subsanación individual confirmada - Legajo: %s, Usuario: %s",
+                legajo.pk,
+                request.user.id,
+            )
+            
+            return success_response("Subsanación confirmada correctamente.")
+        
+        else:
+            # Confirmación masiva (todos los legajos en SUBSANAR)
+            query_archivos_faltantes = (
+                Q(archivo2__isnull=True)
+                | Q(archivo2="")
+                | Q(archivo3__isnull=True)
+                | Q(archivo3="")
+            )
+            legajos_sin_archivos = ExpedienteCiudadano.objects.filter(
+                expediente=exp, revision_tecnico=RevisionTecnico.SUBSANAR
+            ).filter(query_archivos_faltantes)
+
+            if legajos_sin_archivos.exists():
+                dnis = list(
+                    legajos_sin_archivos.values_list("ciudadano__documento", flat=True)[:10]
+                )
+                return error_response(
+                    "Hay legajos en SUBSANAR que aún no tienen los archivos obligatorios (archivo2 y archivo3).",
+                    status=400,
+                    extra_data={"ejemplo_dnis": dnis},
+                )
+
+            # Cambiar SUBSANAR → SUBSANADO
+            actualizados = ExpedienteCiudadano.objects.filter(
+                expediente=exp, revision_tecnico=RevisionTecnico.SUBSANAR
+            ).update(
+                revision_tecnico=RevisionTecnico.SUBSANADO,
+                modificado_en=timezone.now(),
+                subsanacion_enviada_en=timezone.now(),
+                subsanacion_usuario=request.user,
             )
 
-        # Cambiar SUBSANAR → SUBSANADO
-        actualizados = ExpedienteCiudadano.objects.filter(
-            expediente=exp, revision_tecnico=RevisionTecnico.SUBSANAR
-        ).update(
-            revision_tecnico=RevisionTecnico.SUBSANADO,
-            modificado_en=timezone.now(),
-            subsanacion_enviada_en=timezone.now(),
-            subsanacion_usuario=request.user,
-        )
+            logger.info(
+                "Subsanación masiva confirmada - Expediente: %s, Usuario: %s, Legajos actualizados: %s",
+                exp.pk,
+                request.user.id,
+                actualizados,
+            )
 
-        logger.info(
-            "Subsanación confirmada - Expediente: %s, Usuario: %s, Legajos actualizados: %s",
-            exp.pk,
-            request.user.id,
-            actualizados,
-        )
-
-        return success_response(
-            f"Se confirmaron {actualizados} legajos como SUBSANADO."
-        )
+            return success_response(
+                f"Se confirmaron {actualizados} legajos como SUBSANADO."
+            )

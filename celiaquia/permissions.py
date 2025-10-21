@@ -103,9 +103,17 @@ def can_confirm_subsanacion(user, expediente):
             "No tenés permiso para confirmar la subsanación de este expediente."
         )
 
-    # Verificar ownership para provincia
+    # Verificar que pertenezca a la misma provincia
     if is_prov and not is_admin:
-        if expediente.usuario_provincia_id != user.id:
+        owner = getattr(expediente, "usuario_provincia", None)
+        up = getattr(user, "profile", None)
+        op = getattr(owner, "profile", None)
+        if (
+            not owner
+            or not up
+            or not op
+            or getattr(up, "provincia_id", None) != getattr(op, "provincia_id", None)
+        ):
             raise PermissionDenied(
                 "No tenés permiso para confirmar la subsanación de este expediente."
             )
