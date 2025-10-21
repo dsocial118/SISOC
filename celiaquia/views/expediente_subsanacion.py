@@ -1,10 +1,9 @@
 import logging
 from django.views import View
-from django.http import JsonResponse, HttpResponseNotAllowed
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
-from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.utils import timezone
 
@@ -39,39 +38,39 @@ class ExpedienteConfirmSubsanacionView(View):
         can_confirm_subsanacion(request.user, exp)
 
         # Verificar si es confirmación individual o masiva
-        legajo_id = request.POST.get('legajo_id')
-        
+        legajo_id = request.POST.get("legajo_id")
+
         if legajo_id:
             # Confirmación individual
             legajo = get_object_or_404(
                 ExpedienteCiudadano,
                 pk=legajo_id,
                 expediente=exp,
-                revision_tecnico=RevisionTecnico.SUBSANAR
+                revision_tecnico=RevisionTecnico.SUBSANAR,
             )
-            
+
             # Verificar que tenga los archivos obligatorios
             if not legajo.archivo2 or not legajo.archivo3:
                 return error_response(
                     "El legajo no tiene los archivos obligatorios (archivo2 y archivo3).",
-                    status=400
+                    status=400,
                 )
-            
+
             # Cambiar a SUBSANADO
             legajo.revision_tecnico = RevisionTecnico.SUBSANADO
             legajo.modificado_en = timezone.now()
             legajo.subsanacion_enviada_en = timezone.now()
             legajo.subsanacion_usuario = request.user
             legajo.save()
-            
+
             logger.info(
                 "Subsanación individual confirmada - Legajo: %s, Usuario: %s",
                 legajo.pk,
                 request.user.id,
             )
-            
+
             return success_response("Subsanación confirmada correctamente.")
-        
+
         else:
             # Confirmación masiva (todos los legajos en SUBSANAR)
             query_archivos_faltantes = (
@@ -86,7 +85,9 @@ class ExpedienteConfirmSubsanacionView(View):
 
             if legajos_sin_archivos.exists():
                 dnis = list(
-                    legajos_sin_archivos.values_list("ciudadano__documento", flat=True)[:10]
+                    legajos_sin_archivos.values_list("ciudadano__documento", flat=True)[
+                        :10
+                    ]
                 )
                 return error_response(
                     "Hay legajos en SUBSANAR que aún no tienen los archivos obligatorios (archivo2 y archivo3).",

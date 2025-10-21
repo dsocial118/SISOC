@@ -1,7 +1,7 @@
 from datetime import date
 
 from django import forms
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MinValueValidator
 
 from ciudadanos.models import (
     Archivo,
@@ -227,12 +227,16 @@ class CiudadanoUpdateForm(forms.ModelForm):
         # Validación de campo unico, combinación de DNI + Tipo DNI
         if tipo_documento and documento:
             # Solo validar si cambió el tipo o el documento
-            if tipo_documento != instance.tipo_documento or documento != instance.documento:
+            if (
+                tipo_documento != instance.tipo_documento
+                or documento != instance.documento
+            ):
                 if Ciudadano.objects.filter(
                     tipo_documento=tipo_documento, documento=documento
                 ).exists():
                     self.add_error(
-                        "documento", "Ya existe otro objeto con el mismo tipo y documento"
+                        "documento",
+                        "Ya existe otro objeto con el mismo tipo y documento",
                     )
 
         # validación de fecha de nacimiento

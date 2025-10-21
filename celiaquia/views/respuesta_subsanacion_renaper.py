@@ -40,7 +40,7 @@ class RespuestaSubsanacionRenaperView(View):
             logger.info(f"pk={pk}, legajo_id={legajo_id}")
             logger.info(f"POST data: {request.POST}")
             logger.info(f"FILES: {request.FILES}")
-            
+
             # Obtener el legajo
             legajo = get_object_or_404(
                 ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk
@@ -53,7 +53,9 @@ class RespuestaSubsanacionRenaperView(View):
 
             # Verificar que el legajo esté en estado de subsanación
             if legajo.revision_tecnico != "SUBSANAR":
-                logger.warning(f"Estado revision_tecnico incorrecto: {legajo.revision_tecnico}")
+                logger.warning(
+                    f"Estado revision_tecnico incorrecto: {legajo.revision_tecnico}"
+                )
                 return JsonResponse(
                     {
                         "success": False,
@@ -70,18 +72,18 @@ class RespuestaSubsanacionRenaperView(View):
                 logger.warning("Comentario vacio")
                 return JsonResponse(
                     {"success": False, "error": "El comentario es obligatorio"},
-                    status=400
+                    status=400,
                 )
 
             # Guardar respuesta
             logger.info("Guardando respuesta...")
             legajo.subsanacion_renaper_comentario = comentario
             legajo.revision_tecnico = "SUBSANADO"
-            
+
             if archivo:
                 logger.info(f"Guardando archivo: {archivo.name}")
                 legajo.subsanacion_renaper_archivo = archivo
-            
+
             legajo.save()
             logger.info("Legajo guardado exitosamente")
 
