@@ -644,6 +644,13 @@ class ImportacionService:
                     )
                 )
                 existentes_ids.add(cid)
+                abiertos[cid] = {
+                    "ciudadano_id": cid,
+                    "estado_cupo": EstadoCupo.NO_EVAL,
+                    "es_titular_activo": False,
+                    "expediente_id": expediente.id,
+                    "expediente__estado__nombre": expediente.estado.nombre,
+                }
                 validos += 1
 
                 # Si hay datos del responsable, crear también el legajo del responsable
@@ -750,12 +757,8 @@ class ImportacionService:
                                     }
                                 )
 
-                            # Validar duplicados del responsable antes de crear el legajo
-                            if (
-                                cid_resp not in existentes_ids
-                                and cid_resp not in en_programa
-                                and cid_resp not in abiertos
-                            ):
+                            # Responsables pueden estar en múltiples expedientes, solo validar si ya está en ESTE expediente
+                            if cid_resp not in existentes_ids:
                                 legajos_crear.append(
                                     ExpedienteCiudadano(
                                         expediente=expediente,
@@ -765,12 +768,6 @@ class ImportacionService:
                                 )
                                 existentes_ids.add(cid_resp)
                                 validos += 1
-                            else:
-                                add_warning(
-                                    offset,
-                                    "responsable",
-                                    "Responsable duplicado o ya existe",
-                                )
 
                     except Exception as e:
                         add_warning(
