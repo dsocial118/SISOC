@@ -378,6 +378,7 @@ class AdmisionService:
                 "stats": stats,
                 "mostrar_informe_complementario": mostrar_informe_complementario,
                 "observaciones_complementario": observaciones_complementario,
+                "observaciones_informe_tecnico_complementario": admision.observaciones_informe_tecnico_complementario,
             }
 
         except Exception:
