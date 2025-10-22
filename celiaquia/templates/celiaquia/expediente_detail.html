@@ -319,8 +319,8 @@
                     </thead>
                     <tbody>
                         {% for leg in legajos %}
-                            <tr class="legajo-row {% if leg.revision_tecnico == 'RECHAZADO' %}table-danger{% elif leg.revision_tecnico == 'APROBADO' %}table-success{% endif %}"
-                                {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% endif %}
+                            <tr class="legajo-row"
+                                {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}style="border-left: 4px solid #dc3545;"{% elif leg.revision_tecnico == 'APROBADO' %}style="border-left: 4px solid #28a745;"{% endif %}
                                 data-estado="{{ leg.revision_tecnico|default:'PENDIENTE' }}">
                                 <td>
                                     <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 2rem;"{% endif %}>
@@ -347,7 +347,7 @@
                                 <td>
                                     {% if leg.revision_tecnico == 'APROBADO' %}
                                         <span class="badge bg-success">Aprobado</span>
-                                    {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                                    {% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}
                                         <span class="badge bg-danger">Rechazado</span>
                                     {% elif leg.revision_tecnico == 'SUBSANAR' %}
                                         <span class="badge bg-warning text-dark">Subsanar</span>
@@ -391,7 +391,7 @@
                                                         <span class="text-muted">Estado:</span>
                                                         {% if leg.revision_tecnico == 'APROBADO' %}
                                                             <span class="badge bg-success">Aprobado</span>
-                                                        {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                                                        {% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}
                                                             <span class="badge bg-danger">Rechazado</span>
                                                         {% elif leg.revision_tecnico == 'SUBSANAR' %}
                                                             <span class="badge bg-warning text-dark">Subsanar</span>
@@ -455,46 +455,59 @@
                                                 <!-- Col 3: Archivos -->
                                                 <div class="col-lg-5">
                                                     {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
-                                                    <!-- Respuesta subsanación Renaper -->
-                                                    {% if leg.revision_tecnico == 'SUBSANAR' %}
-                                                        <div class="file-row" style="background:rgba(255,193,7,.1);">
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <span class="small muted">Respuesta subsanación:</span>
-                                                                {% if leg.subsanacion_renaper_archivo %}
-                                                                    <a href="{{ leg.subsanacion_renaper_archivo.url }}"
-                                                                       target="_blank"
-                                                                       class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
-                                                                {% else %}
-                                                                    <span class="text-warning small">Pendiente de respuesta</span>
-                                                                {% endif %}
-                                                            </div>
-                                                            {% if is_prov %}
+                                                    <!-- Botón confirmar subsanación individual (solo para subsanación técnica, no Renaper) -->
+                                                    {% if is_prov and leg.revision_tecnico == 'SUBSANAR' and leg.estado_validacion_renaper != 3 and leg.archivo2 and leg.archivo3 %}
+                                                        <div class="mt-3">
+                                                            <button type="button"
+                                                                    class="btn btn-warning btn-sm w-100 btn-confirmar-subsanacion-individual"
+                                                                    data-legajo-id="{{ leg.pk }}"
+                                                                    data-expediente-id="{{ expediente.pk }}">
+                                                                <i class="fas fa-check"></i> Confirmar subsanación
+                                                            </button>
+                                                        </div>
+                                                    {% endif %}
+                                                    
+                                                    <!-- Archivo subsanación Renaper -->
+                                                    {% if leg.subsanacion_renaper_comentario or leg.subsanacion_renaper_archivo %}
+                                                        <div class="mt-3 p-2 rounded" style="background:rgba(255,193,7,.1);">
+                                                            <div class="small muted mb-1">Respuesta subsanación Renaper</div>
+                                                            {% if leg.subsanacion_renaper_comentario %}
+                                                                <div class="small mb-2">
+                                                                    <strong>Comentario:</strong> {{ leg.subsanacion_renaper_comentario }}
+                                                                </div>
+                                                            {% endif %}
+                                                            {% if leg.subsanacion_renaper_archivo %}
+                                                                <a href="{{ leg.subsanacion_renaper_archivo.url }}"
+                                                                   target="_blank"
+                                                                   class="btn btn-sm btn-outline-warning mb-2">
+                                                                    <i class="fas fa-file"></i> Ver archivo
+                                                                </a>
+                                                            {% endif %}
+                                                            {% if is_prov and leg.revision_tecnico != 'SUBSANADO' and leg.estado_validacion_renaper == 3 %}
                                                                 <button type="button"
-                                                                        class="btn btn-outline-warning btn-sm"
+                                                                        class="btn btn-warning btn-sm w-100"
                                                                         data-bs-toggle="modal"
                                                                         data-bs-target="#modalRespuestaSubsanacionRenaper"
                                                                         data-legajo-id="{{ leg.pk }}"
                                                                         data-expediente-id="{{ expediente.pk }}">
-                                                                    {% if leg.subsanacion_renaper_archivo %}
-                                                                        Editar
-                                                                    {% else %}
-                                                                        Responder
-                                                                    {% endif %}
+                                                                    <i class="fas fa-edit"></i> Editar respuesta
                                                                 </button>
                                                             {% endif %}
                                                         </div>
-                                                    {% elif leg.revision_tecnico == 'SUBSANADO' %}
-                                                        <div class="file-row" style="background:rgba(40,167,69,.1);">
-                                                            <div class="d-flex align-items-center gap-2">
-                                                                <span class="small muted">Respuesta subsanación:</span>
-                                                                {% if leg.subsanacion_renaper_archivo %}
-                                                                    <a href="{{ leg.subsanacion_renaper_archivo.url }}"
-                                                                       target="_blank"
-                                                                       class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
-                                                                {% else %}
-                                                                    <span class="text-muted small">Sin archivo de respuesta</span>
-                                                                {% endif %}
-                                                            </div>
+                                                    {% elif leg.estado_validacion_renaper == 3 %}
+                                                        <div class="mt-3 p-2 rounded" style="background:rgba(255,193,7,.1);">
+                                                            <div class="small muted mb-1">Subsanación Renaper solicitada</div>
+                                                            <div class="small text-warning mb-2">Pendiente de respuesta</div>
+                                                            {% if is_prov and leg.revision_tecnico != 'SUBSANADO' %}
+                                                                <button type="button"
+                                                                        class="btn btn-warning btn-sm w-100"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalRespuestaSubsanacionRenaper"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-expediente-id="{{ expediente.pk }}">
+                                                                    <i class="fas fa-upload"></i> Responder
+                                                                </button>
+                                                            {% endif %}
                                                         </div>
                                                     {% endif %}
                                                 </div>
@@ -535,19 +548,19 @@
                                                                     <button type="button"
                                                                             class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
                                                                             data-legajo-id="{{ leg.pk }}"
-                                                                            data-accion="APROBAR">âœ… Aprobar</button>
+                                                                            data-accion="APROBAR">Aprobar</button>
                                                                     <button type="button"
                                                                             class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
                                                                             data-legajo-id="{{ leg.pk }}"
                                                                             data-bs-toggle="modal"
                                                                             data-bs-target="#modalSubsanar">
-                                                                        ðŸ“ Subsanar
+                                                                        Subsanar
                                                                     </button>
                                                                     <button type="button"
                                                                             class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
                                                                             data-legajo-id="{{ leg.pk }}"
                                                                             data-accion="RECHAZAR">
-                                                                        âŒ Rechazar
+                                                                       Rechazar
                                                                     </button>
                                                                 </div>
                                                             {% endif %}
@@ -578,7 +591,7 @@
                                         <span class="text-muted">Estado:</span>
                                         {% if leg.revision_tecnico == 'APROBADO' %}
                                             <span class="badge bg-success">Aprobado</span>
-                                        {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                                        {% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}
                                             <span class="badge bg-danger">Rechazado</span>
                                         {% elif leg.revision_tecnico == 'SUBSANAR' %}
                                             <span class="badge bg-warning text-dark">Subsanar</span>
@@ -642,46 +655,59 @@
                                 <!-- Col 3: Archivos -->
                                 <div class="col-lg-5">
                                     {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
-                                    <!-- Respuesta subsanacion Renaper -->
-                                    {% if leg.revision_tecnico == 'SUBSANAR' %}
-                                        <div class="file-row" style="background:rgba(255,193,7,.1);">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="small muted">Respuesta subsanacion:</span>
-                                                {% if leg.subsanacion_renaper_archivo %}
-                                                    <a href="{{ leg.subsanacion_renaper_archivo.url }}"
-                                                       target="_blank"
-                                                       class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
-                                                {% else %}
-                                                    <span class="text-warning small">Pendiente de respuesta</span>
-                                                {% endif %}
-                                            </div>
-                                            {% if is_prov %}
+                                    <!-- Botón confirmar subsanación individual (solo para subsanación técnica, no Renaper) -->
+                                    {% if is_prov and leg.revision_tecnico == 'SUBSANAR' and leg.estado_validacion_renaper != 3 and leg.archivo2 and leg.archivo3 %}
+                                        <div class="mt-3">
+                                            <button type="button"
+                                                    class="btn btn-warning btn-sm w-100 btn-confirmar-subsanacion-individual"
+                                                    data-legajo-id="{{ leg.pk }}"
+                                                    data-expediente-id="{{ expediente.pk }}">
+                                                <i class="fas fa-check"></i> Confirmar subsanación
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <!-- Archivo subsanación Renaper -->
+                                    {% if leg.subsanacion_renaper_comentario or leg.subsanacion_renaper_archivo %}
+                                        <div class="mt-3 p-2 rounded" style="background:rgba(255,193,7,.1);">
+                                            <div class="small muted mb-1">Respuesta subsanación Renaper</div>
+                                            {% if leg.subsanacion_renaper_comentario %}
+                                                <div class="small mb-2">
+                                                    <strong>Comentario:</strong> {{ leg.subsanacion_renaper_comentario }}
+                                                </div>
+                                            {% endif %}
+                                            {% if leg.subsanacion_renaper_archivo %}
+                                                <a href="{{ leg.subsanacion_renaper_archivo.url }}"
+                                                   target="_blank"
+                                                   class="btn btn-sm btn-outline-warning mb-2">
+                                                    <i class="fas fa-file"></i> Ver archivo
+                                                </a>
+                                            {% endif %}
+                                            {% if is_prov and leg.revision_tecnico != 'SUBSANADO' and leg.estado_validacion_renaper == 3 %}
                                                 <button type="button"
-                                                        class="btn btn-outline-warning btn-sm"
+                                                        class="btn btn-warning btn-sm w-100"
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#modalRespuestaSubsanacionRenaper"
                                                         data-legajo-id="{{ leg.pk }}"
                                                         data-expediente-id="{{ expediente.pk }}">
-                                                    {% if leg.subsanacion_renaper_archivo %}
-                                                        Editar
-                                                    {% else %}
-                                                        Responder
-                                                    {% endif %}
+                                                    <i class="fas fa-edit"></i> Editar respuesta
                                                 </button>
                                             {% endif %}
                                         </div>
-                                    {% elif leg.revision_tecnico == 'SUBSANADO' %}
-                                        <div class="file-row" style="background:rgba(40,167,69,.1);">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="small muted">Respuesta subsanacion:</span>
-                                                {% if leg.subsanacion_renaper_archivo %}
-                                                    <a href="{{ leg.subsanacion_renaper_archivo.url }}"
-                                                       target="_blank"
-                                                       class="file-name text-decoration-underline">{{ leg.subsanacion_renaper_archivo.name|default:"respuesta" }}</a>
-                                                {% else %}
-                                                    <span class="text-muted small">Sin archivo de respuesta</span>
-                                                {% endif %}
-                                            </div>
+                                    {% elif leg.estado_validacion_renaper == 3 %}
+                                        <div class="mt-3 p-2 rounded" style="background:rgba(255,193,7,.1);">
+                                            <div class="small muted mb-1">Subsanación Renaper solicitada</div>
+                                            <div class="small text-warning mb-2">Pendiente de respuesta</div>
+                                            {% if is_prov and leg.revision_tecnico != 'SUBSANADO' %}
+                                                <button type="button"
+                                                        class="btn btn-warning btn-sm w-100"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalRespuestaSubsanacionRenaper"
+                                                        data-legajo-id="{{ leg.pk }}"
+                                                        data-expediente-id="{{ expediente.pk }}">
+                                                    <i class="fas fa-upload"></i> Responder
+                                                </button>
+                                            {% endif %}
                                         </div>
                                     {% endif %}
                                 </div>
@@ -757,12 +783,12 @@
             <button id="btn-confirm" class="btn btn-success">Confirmar Envi­o</button>
         </div>
     {% endif %}
-    <!-- Confirmar subsanación: solo Provincia en ASIGNADO y si hay_subsanar -->
     {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
         <div class="text-end mt-3">
             <button id="btn-confirm-subs" class="btn btn-warning">Confirmar subsanación</button>
         </div>
     {% endif %}
+
 </div>
 <!-- Asignar TÃ©cnico: solo Coordinador (segÃºn tu condiciÃ³n actual por id) -->
 {% if expediente.estado.id == 2 and is_coord %}
@@ -927,7 +953,7 @@
                   enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a subsanación Renaper</h5>
+                    <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a subsanación </h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -1097,7 +1123,7 @@
                                     <td>
                                         {% if leg.revision_tecnico == 'APROBADO' %}
                                             <span class="badge bg-success">Aprobado</span>
-                                        {% elif leg.revision_tecnico == 'RECHAZADO' %}
+                                        {% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}
                                             <span class="badge bg-danger">Rechazado</span>
                                         {% elif leg.revision_tecnico == 'SUBSANAR' %}
                                             <span class="badge bg-warning text-dark">Subsanar</span>

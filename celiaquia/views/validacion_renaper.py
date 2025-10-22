@@ -440,7 +440,7 @@ class ValidacionRenaperView(View):
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": "Ocurrió un error inesperado al consultar Renaper.",
+                        "error": "Ocurrió un error El Cuit o el Sexo no coincide con esos datos.",
                     }
                 )
 

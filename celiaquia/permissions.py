@@ -2,13 +2,23 @@
 Módulo centralizado para validaciones de permisos en celiaquia.
 """
 
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from celiaquia.models import RevisionTecnico
 
 
 def _in_group(user, name: str) -> bool:
     """Verifica si el usuario pertenece a un grupo específico."""
     return user.is_authenticated and user.groups.filter(name=name).exists()
+
+
+def _safe_profile(user):
+    """Retorna el perfil del usuario o None si no existe."""
+    if not user:
+        return None
+    try:
+        return user.profile
+    except ObjectDoesNotExist:
+        return None
 
 
 def can_edit_legajo_files(user, expediente, legajo=None):
@@ -41,8 +51,8 @@ def can_edit_legajo_files(user, expediente, legajo=None):
     if is_prov and not (is_admin or is_coord):
         # Verificar misma provincia
         owner = getattr(expediente, "usuario_provincia", None)
-        up = getattr(user, "profile", None)
-        op = getattr(owner, "profile", None)
+        up = _safe_profile(user)
+        op = _safe_profile(owner) if owner else None
         if (
             not owner
             or not up
@@ -103,9 +113,17 @@ def can_confirm_subsanacion(user, expediente):
             "No tenés permiso para confirmar la subsanación de este expediente."
         )
 
-    # Verificar ownership para provincia
+    # Verificar que pertenezca a la misma provincia
     if is_prov and not is_admin:
-        if expediente.usuario_provincia_id != user.id:
+        owner = getattr(expediente, "usuario_provincia", None)
+        up = _safe_profile(user)
+        op = _safe_profile(owner) if owner else None
+        if (
+            not owner
+            or not up
+            or not op
+            or getattr(up, "provincia_id", None) != getattr(op, "provincia_id", None)
+        ):
             raise PermissionDenied(
                 "No tenés permiso para confirmar la subsanación de este expediente."
             )
