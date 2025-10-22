@@ -1,7 +1,7 @@
 from datetime import date  # pylint: disable=too-many-lines
 
 from django.core.exceptions import ValidationError
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
@@ -656,7 +656,7 @@ class Ciudadano(models.Model):
         blank=True,
     )
     documento = models.PositiveBigIntegerField(
-        validators=[MinValueValidator(3000000), MaxValueValidator(99999999999)],
+        validators=[MinValueValidator(3000000)],
         null=True,
         blank=True,
     )
