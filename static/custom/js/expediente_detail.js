@@ -249,7 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
             data.message ||
             `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a EN ESPERA.`;
           const errorExtra = data.errores ? ` ${data.errores} errores.` : '';
-          showAlert('success', '¡Listo! ', baseMsg, errorExtra);
+          const alertType = data.errores > 0 ? 'warning' : 'success';
+          showAlert(alertType, '¡Listo! ', baseMsg, errorExtra);
 
           setTimeout(() => window.location.reload(), 1000);
         }, 800);

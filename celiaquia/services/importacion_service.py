@@ -560,16 +560,19 @@ class ImportacionService:
 
                     if not ciudadano or not ciudadano.pk:
                         errores += 1
+                        datos_para_guardar = {k: v for k, v in payload.items() if v is not None}
                         detalles_errores.append(
-                            {"fila": offset, "error": "No se pudo crear el ciudadano"}
+                            {"fila": offset, "error": "No se pudo crear el ciudadano", "datos": datos_para_guardar}
                         )
                         continue
 
                 except Exception as e:
                     logger.error("Error creando ciudadano en fila %s: %s", offset, e)
                     errores += 1
+                    # Guardar payload procesado con los datos que se intentaron usar
+                    datos_para_guardar = {k: v for k, v in payload.items() if v is not None}
                     detalles_errores.append(
-                        {"fila": offset, "error": f"Error creando ciudadano: {str(e)}"}
+                        {"fila": offset, "error": f"Error creando ciudadano: {str(e)}", "datos": datos_para_guardar}
                     )
                     continue
 
@@ -781,7 +784,10 @@ class ImportacionService:
 
             except Exception as e:
                 errores += 1
-                detalles_errores.append({"fila": offset, "error": str(e)})
+                error_msg = str(e)
+                # Guardar datos originales del row antes de cualquier procesamiento
+                datos_originales = {k: v for k, v in row.items() if v and str(v).strip() and str(v).lower() not in ['nan', 'nat', 'none']}
+                detalles_errores.append({"fila": offset, "error": error_msg, "datos": datos_originales})
                 logger.error("Error fila %s: %s", offset, e)
 
         # Bulk create de legajos
@@ -853,6 +859,36 @@ class ImportacionService:
                 logger.error("Error en bulk_create de legajos: %s", e)
         else:
             logger.warning("No hay legajos para crear - lista vacía")
+
+        # Guardar registros erróneos en la base de datos
+        if detalles_errores:
+            from celiaquia.models import RegistroErroneo
+            import datetime
+            
+            def serializar_datos(datos):
+                """Convierte objetos date/datetime a strings para JSON"""
+                resultado = {}
+                for key, value in datos.items():
+                    if isinstance(value, (datetime.date, datetime.datetime)):
+                        resultado[key] = value.strftime('%d/%m/%Y')
+                    else:
+                        resultado[key] = value
+                return resultado
+            
+            registros_erroneos = []
+            for detalle in detalles_errores:
+                datos_serializados = serializar_datos(detalle.get("datos", {}))
+                registros_erroneos.append(
+                    RegistroErroneo(
+                        expediente=expediente,
+                        fila_excel=detalle.get("fila", 0),
+                        datos_raw=datos_serializados,
+                        mensaje_error=detalle.get("error", ""),
+                    )
+                )
+            if registros_erroneos:
+                RegistroErroneo.objects.bulk_create(registros_erroneos, batch_size=batch_size)
+                logger.info("Guardados %s registros erróneos", len(registros_erroneos))
 
         logger.info(
             "Import completo: %s válidos, %s errores, %s excluidos.",
