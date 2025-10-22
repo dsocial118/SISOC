@@ -49,6 +49,12 @@ class ExpedienteConfirmSubsanacionView(View):
                 revision_tecnico=RevisionTecnico.SUBSANAR,
             )
 
+            if legajo.estado_validacion_renaper == 3:
+                return error_response(
+                    "El legajo tiene una subsanación Renaper pendiente.",
+                    status=400,
+                )
+
             # Verificar que tenga los archivos obligatorios
             if not legajo.archivo2 or not legajo.archivo3:
                 return error_response(

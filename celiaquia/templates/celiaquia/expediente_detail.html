@@ -783,6 +783,11 @@
             <button id="btn-confirm" class="btn btn-success">Confirmar Envi­o</button>
         </div>
     {% endif %}
+    {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
+        <div class="text-end mt-3">
+            <button id="btn-confirm-subs" class="btn btn-warning">Confirmar subsanación</button>
+        </div>
+    {% endif %}
 
 </div>
 <!-- Asignar TÃ©cnico: solo Coordinador (segÃºn tu condiciÃ³n actual por id) -->
