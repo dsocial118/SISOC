@@ -36,48 +36,56 @@ class RespuestaSubsanacionRenaperView(View):
     @method_decorator(csrf_protect)
     def post(self, request, pk, legajo_id):
         try:
+            logger.info("=== INICIO RESPUESTA SUBSANACION RENAPER ===")
+            logger.info(f"pk={pk}, legajo_id={legajo_id}")
+            logger.info(f"POST data: {request.POST}")
+            logger.info(f"FILES: {request.FILES}")
+
             # Obtener el legajo
             legajo = get_object_or_404(
                 ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk
             )
+            logger.info(f"Legajo encontrado: {legajo.pk}")
 
             # Verificar permisos sobre el expediente asociado
             can_confirm_subsanacion(request.user, legajo.expediente)
+            logger.info("Permisos verificados")
 
-            # Verificar que el legajo esté en estado de subsanación Renaper
-            if legajo.estado_validacion_renaper != 3:
+            # Verificar que el legajo esté en estado de subsanación
+            if legajo.revision_tecnico != "SUBSANAR":
+                logger.warning(
+                    f"Estado revision_tecnico incorrecto: {legajo.revision_tecnico}"
+                )
                 return JsonResponse(
                     {
                         "success": False,
-                        "error": "El legajo no está en estado de subsanación Renaper",
+                        "error": "El legajo no está en estado de subsanación",
                     }
                 )
 
             comentario = request.POST.get("comentario", "").strip()
             archivo = request.FILES.get("archivo")
+            logger.info(f"Comentario: {comentario[:50] if comentario else 'VACIO'}")
+            logger.info(f"Archivo: {archivo.name if archivo else 'NO ENVIADO'}")
 
             if not comentario:
+                logger.warning("Comentario vacio")
                 return JsonResponse(
-                    {"success": False, "error": "El comentario es obligatorio"}
+                    {"success": False, "error": "El comentario es obligatorio"},
+                    status=400,
                 )
 
             # Guardar respuesta
+            logger.info("Guardando respuesta...")
             legajo.subsanacion_renaper_comentario = comentario
-            if archivo:
-                legajo.subsanacion_renaper_archivo = archivo
-
-            # Mantener estado de subsanación Renaper (3) hasta que técnico valide nuevamente
-            # legajo.estado_validacion_renaper = 3  # Ya está en 3, no cambiar
             legajo.revision_tecnico = "SUBSANADO"
 
-            legajo.save(
-                update_fields=[
-                    "subsanacion_renaper_comentario",
-                    "subsanacion_renaper_archivo",
-                    "revision_tecnico",
-                    "modificado_en",
-                ]
-            )
+            if archivo:
+                logger.info(f"Guardando archivo: {archivo.name}")
+                legajo.subsanacion_renaper_archivo = archivo
+
+            legajo.save()
+            logger.info("Legajo guardado exitosamente")
 
             return JsonResponse(
                 {

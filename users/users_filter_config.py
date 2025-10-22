@@ -29,8 +29,8 @@ NUM_OPS = ["eq", "ne", "gt", "lt", "empty"]
 # --- Frontend ----------------------------------------------------------------
 
 FILTER_FIELDS = [
-    {"name": "first_name", "label": "Apellido", "type": "text"},
-    {"name": "last_name", "label": "Nombre", "type": "text"},
+    {"name": "first_name", "label": "Nombre", "type": "text"},
+    {"name": "last_name", "label": "Apellido", "type": "text"},
     {"name": "username", "label": "Usuario", "type": "text"},
     {"name": "email", "label": "Email", "type": "text"},
     {"name": "rol", "label": "Rol", "type": "text"},
