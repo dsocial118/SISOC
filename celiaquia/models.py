@@ -451,3 +451,27 @@ class PagoNomina(models.Model):
 
     def __str__(self):
         return f"{self.documento} - {self.nombre} {self.apellido} ({self.estado})"
+
+
+class RegistroErroneo(models.Model):
+    expediente = models.ForeignKey(
+        Expediente, on_delete=models.CASCADE, related_name="registros_erroneos"
+    )
+    fila_excel = models.PositiveIntegerField()
+    datos_raw = models.JSONField()
+    campo_error = models.CharField(max_length=100, blank=True)
+    mensaje_error = models.TextField()
+    procesado = models.BooleanField(default=False, db_index=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    procesado_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Registro Erróneo"
+        verbose_name_plural = "Registros Erróneos"
+        ordering = ("fila_excel",)
+        indexes = [
+            models.Index(fields=["expediente", "procesado"], name="reg_err_exp_proc_idx"),
+        ]
+
+    def __str__(self):
+        return f"Fila {self.fila_excel} - {self.mensaje_error[:50]}"
