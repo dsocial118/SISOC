@@ -59,6 +59,21 @@
               href="https://cdn.jsdelivr.net/npm/@fontsource/source-sans-3@5.0.12/index.css"
               integrity="sha256-tXJfXfp6Ewt1ilPzLDtQnJV4hclT9XuaZUKyUvmyr+Q="
               crossorigin="anonymous" />
+        <script>
+            (function() {
+                const root = document.documentElement;
+                try {
+                    if (root.getAttribute("data-bs-theme") !== "dark") {
+                        root.setAttribute("data-bs-theme", "dark");
+                    }
+                    if (localStorage.getItem("theme") !== "dark") {
+                        localStorage.setItem("theme", "dark");
+                    }
+                } catch (err) {
+                    root.setAttribute("data-bs-theme", "dark");
+                }
+            })();
+        </script>
         <!--end::Fonts--><!--begin::Third Party Plugin(OverlayScrollbars)-->
         <link rel="stylesheet" href="{% static 'dist/css/adminlte.css' %}" />
         <link rel="stylesheet"
