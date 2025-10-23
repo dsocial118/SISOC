@@ -1262,11 +1262,15 @@ class ReprocesarRegistrosErroneosView(View):
             except Exception as e:
                 logger.error("Error creando relaciones familiares al reprocesar: %s", e, exc_info=True)
         
+        # Verificar registros restantes
+        registros_restantes = expediente.registros_erroneos.filter(procesado=False).count()
+        
         return JsonResponse({
             "success": True,
             "creados": creados,
             "errores": errores,
             "errores_detalle": errores_detalle,
+            "registros_restantes": registros_restantes,
         })
 
 
