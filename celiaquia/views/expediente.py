@@ -43,13 +43,15 @@ from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
+from django.db import transaction
 from core.models import Provincia, Localidad
 
 logger = logging.getLogger("django")
 
 
 def _user_in_group(user, group_name: str) -> bool:
-    return user.is_authenticated and user.groups.filter(name=group_name).exists()
+    return user.is_authenticated and user.groups.filter(
+        name=group_name).exists()
 
 
 def _is_admin(user) -> bool:
@@ -64,7 +66,8 @@ def _is_provincial(user) -> bool:
     if not user.is_authenticated:
         return False
     try:
-        return bool(user.profile.es_usuario_provincial and user.profile.provincia_id)
+        return bool(
+            user.profile.es_usuario_provincial and user.profile.provincia_id)
     except ObjectDoesNotExist:
         return False
 
@@ -108,7 +111,8 @@ class LocalidadesLookupView(View):
                 localidades = localidades.filter(municipio__provincia=prov)
 
         if provincia_id:
-            localidades = localidades.filter(municipio__provincia_id=provincia_id)
+            localidades = localidades.filter(
+                municipio__provincia_id=provincia_id)
         if municipio_id:
             localidades = localidades.filter(municipio_id=municipio_id)
 
@@ -153,15 +157,12 @@ class ExpedienteListView(ListView):
             Expediente.objects.select_related(
                 "estado",
                 "usuario_provincia__profile__provincia",
-            )
-            .prefetch_related("asignaciones_tecnicos__tecnico")
-            .annotate(
+            ) .prefetch_related("asignaciones_tecnicos__tecnico") .annotate(
                 legajos_subsanar_count=Count(
                     "expediente_ciudadanos",
-                    filter=Q(expediente_ciudadanos__revision_tecnico="SUBSANAR"),
-                )
-            )
-            .only(
+                    filter=Q(
+                        expediente_ciudadanos__revision_tecnico="SUBSANAR"),
+                )) .only(
                 "id",
                 "fecha_creacion",
                 "estado__nombre",
@@ -170,14 +171,15 @@ class ExpedienteListView(ListView):
                 "usuario_provincia__profile__provincia_id",
                 "usuario_provincia__profile__provincia__id",
                 "usuario_provincia__profile__provincia__nombre",
-            )
-        )
+            ))
         if _is_admin(user):
             return qs.order_by("-fecha_creacion")
         if _user_in_group(user, "CoordinadorCeliaquia"):
             return qs.filter(
-                estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
-            ).order_by("-fecha_creacion")
+                estado__nombre__in=[
+                    "CONFIRMACION_DE_ENVIO",
+                    "RECEPCIONADO",
+                    "ASIGNADO"]).order_by("-fecha_creacion")
         if _user_in_group(user, "TecnicoCeliaquia"):
             return (
                 qs.filter(asignaciones_tecnicos__tecnico=user)
@@ -186,9 +188,8 @@ class ExpedienteListView(ListView):
             )
         if _is_provincial(user):
             prov = _user_provincia(user)
-            return qs.filter(usuario_provincia__profile__provincia=prov).order_by(
-                "-fecha_creacion"
-            )
+            return qs.filter(
+                usuario_provincia__profile__provincia=prov).order_by("-fecha_creacion")
         return qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
 
     def get_context_data(self, **kwargs):
@@ -214,7 +215,8 @@ class ProcesarExpedienteView(View):
                 Expediente, pk=pk, usuario_provincia__profile__provincia=prov
             )
         else:
-            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+            expediente = get_object_or_404(
+                Expediente, pk=pk, usuario_provincia=user)
 
         try:
             result = ExpedienteService.procesar_expediente(expediente, user)
@@ -222,13 +224,11 @@ class ProcesarExpedienteView(View):
             if _is_ajax(request):
                 return JsonResponse(
                     {
-                        "success": True,
-                        "creados": result.get("creados", 0),
-                        "errores": result.get("errores", 0),
-                        "excluidos": result.get("excluidos", 0),
-                        "excluidos_detalle": result.get("excluidos_detalle", []),
-                    }
-                )
+                        "success": True, "creados": result.get(
+                            "creados", 0), "errores": result.get(
+                            "errores", 0), "excluidos": result.get(
+                            "excluidos", 0), "excluidos_detalle": result.get(
+                            "excluidos_detalle", []), })
 
             messages.success(
                 request,
@@ -245,7 +245,8 @@ class ProcesarExpedienteView(View):
                     nom = d.get("nombre", "")
                     estado = d.get("estado_programa") or d.get("motivo") or "-"
                     expid = d.get("expediente_origen_id", "-")
-                    preview.append(f"• {doc} — {ape}, {nom} ({estado}) — Exp #{expid}")
+                    preview.append(
+                        f"• {doc} — {ape}, {nom} ({estado}) — Exp #{expid}")
 
                 extra = ""
                 if len(det) > 10:
@@ -256,8 +257,7 @@ class ProcesarExpedienteView(View):
                 extra_escaped = escape(extra) if extra else ""
                 html = (
                     f"Se excluyeron {excluidos_count} registros porque ya están en otro expediente:"
-                    f"<br>{'<br>'.join(preview_escaped)}{extra_escaped}"
-                )
+                    f"<br>{'<br>'.join(preview_escaped)}{extra_escaped}")
                 messages.warning(request, html)
 
             return redirect("expediente_detail", pk=pk)
@@ -276,7 +276,8 @@ class ProcesarExpedienteView(View):
                 return JsonResponse(
                     {"success": False, "error": escape(str(e))}, status=500
                 )
-            messages.error(request, "Error inesperado al procesar el expediente.")
+            messages.error(
+                request, "Error inesperado al procesar el expediente.")
             return redirect("expediente_detail", pk=pk)
 
 
@@ -291,7 +292,8 @@ class CrearLegajosView(View):
                 Expediente, pk=pk, usuario_provincia__profile__provincia=prov
             )
         else:
-            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+            expediente = get_object_or_404(
+                Expediente, pk=pk, usuario_provincia=user)
 
         try:
             payload = json.loads(request.body)
@@ -338,20 +340,23 @@ class ExpedientePreviewExcelView(View):
         logger.debug("PREVIEW: %s %s", request.method, request.path)
         archivo = request.FILES.get("excel_masivo")
         if not archivo:
-            return JsonResponse({"error": "No se recibió ningún archivo."}, status=400)
+            return JsonResponse(
+                {"error": "No se recibió ningún archivo."}, status=400)
 
         raw_limit = request.POST.get("limit") or request.GET.get("limit")
         max_rows = _parse_limit(raw_limit, default=None, max_cap=5000)
 
         try:
-            preview = ImportacionService.preview_excel(archivo, max_rows=max_rows)
+            preview = ImportacionService.preview_excel(
+                archivo, max_rows=max_rows)
             return JsonResponse(preview)
         except ValidationError as e:
             return JsonResponse({"error": str(e)}, status=400)
         except Exception:
             tb = traceback.format_exc()
             logger.error("PREVIEW error:\n%s", tb)
-            return JsonResponse({"error": "Error inesperado al procesar."}, status=500)
+            return JsonResponse(
+                {"error": "Error inesperado al procesar."}, status=500)
 
 
 class ExpedienteCreateView(CreateView):
@@ -420,7 +425,8 @@ class ExpedienteDetailView(DetailView):
         preview = preview_error = None
         preview_limit_actual = None
 
-        q = expediente.expediente_ciudadanos.select_related("ciudadano", "estado")
+        q = expediente.expediente_ciudadanos.select_related(
+            "ciudadano", "estado")
         counts = q.aggregate(
             c_aceptados=Count(
                 "id",
@@ -441,7 +447,8 @@ class ExpedienteDetailView(DetailView):
         ctx["legajos_rech_sintys"] = q.filter(
             revision_tecnico="APROBADO", resultado_sintys="NO_MATCH"
         )
-        ctx["legajos_subsanar"] = q.filter(revision_tecnico=RevisionTecnico.SUBSANAR)
+        ctx["legajos_subsanar"] = q.filter(
+            revision_tecnico=RevisionTecnico.SUBSANAR)
 
         # Enriquecer legajos con informacion de tipo (hijo/responsable)
         from celiaquia.services.legajo_service import LegajoService
@@ -489,8 +496,7 @@ class ExpedienteDetailView(DetailView):
             else:
                 legajo.hijos_a_cargo = []
                 legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
-                    legajo.ciudadano.id
-                )
+                    legajo.ciudadano.id)
                 if legajo.responsable_id:
                     if legajo.responsable_id not in hijos_por_responsable:
                         hijos_por_responsable[legajo.responsable_id] = []
@@ -500,7 +506,8 @@ class ExpedienteDetailView(DetailView):
 
             legajos_por_ciudadano[legajo.ciudadano_id] = legajo
 
-        # Ordenar: responsables primero, luego sus hijos, luego hijos sin responsable
+        # Ordenar: responsables primero, luego sus hijos, luego hijos sin
+        # responsable
         for responsable in responsables_legajos:
             legajos_enriquecidos.append(responsable)
             # Agregar hijos de este responsable inmediatamente después
@@ -513,8 +520,7 @@ class ExpedienteDetailView(DetailView):
         faltantes_list = LegajoService.faltantes_archivos(expediente)
         # Obtener estructura familiar completa
         estructura_familiar = FamiliaService.obtener_estructura_familiar_expediente(
-            expediente
-        )
+            expediente)
 
         # Enriquecer estructura familiar con referencia a legajos
         for info in estructura_familiar.get("responsables", {}).values():
@@ -546,9 +552,9 @@ class ExpedienteDetailView(DetailView):
 
         tecnicos = []
         if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
-            tecnicos = User.objects.filter(groups__name="TecnicoCeliaquia").order_by(
-                "last_name", "first_name"
-            )
+            tecnicos = User.objects.filter(
+                groups__name="TecnicoCeliaquia").order_by(
+                "last_name", "first_name")
 
         faltan_archivos = expediente.expediente_ciudadanos.filter(
             Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
@@ -580,9 +586,37 @@ class ExpedienteDetailView(DetailView):
             self.request.GET.get("historial_page")
         )
 
+        # Obtener registros erróneos
+        registros_erroneos = expediente.registros_erroneos.filter(
+            procesado=False
+        ).order_by("fila_excel")
+
+        # Datos para desplegables en registros erróneos
+        from ciudadanos.models import Sexo, Nacionalidad
+        from core.models import Municipio, Localidad
+
+        sexos = Sexo.objects.all()
+        nacionalidades = Nacionalidad.objects.all()
+        municipios = []
+        localidades = []
+
+        if prov:
+            municipios = Municipio.objects.filter(
+                provincia=prov).order_by("nombre")
+            localidades = (
+                Localidad.objects.filter(municipio__provincia=prov)
+                .select_related("municipio")
+                .order_by("municipio__nombre", "nombre")
+            )
+
         ctx.update(
             {
                 "legajos": legajos_enriquecidos,
+                "registros_erroneos": registros_erroneos,
+                "sexos": sexos,
+                "nacionalidades": nacionalidades,
+                "municipios": municipios,
+                "localidades": localidades,
                 "confirm_form": ConfirmarEnvioForm(),
                 "preview": preview,
                 "preview_error": preview_error,
@@ -615,7 +649,8 @@ class ExpedienteImportView(View):
                 Expediente, pk=pk, usuario_provincia__profile__provincia=prov
             )
         else:
-            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+            expediente = get_object_or_404(
+                Expediente, pk=pk, usuario_provincia=user)
 
         try:
             result = ImportacionService.importar_legajos_desde_excel(
@@ -665,7 +700,22 @@ class ExpedienteConfirmView(View):
                 Expediente, pk=pk, usuario_provincia__profile__provincia=prov
             )
         else:
-            expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
+            expediente = get_object_or_404(
+                Expediente, pk=pk, usuario_provincia=user)
+
+        # Validar que no haya registros erróneos pendientes
+        from celiaquia.models import RegistroErroneo
+
+        registros_erroneos = RegistroErroneo.objects.filter(
+            expediente=expediente, procesado=False
+        )
+        if registros_erroneos.exists():
+            msg = f"No se puede enviar: hay {registros_erroneos.count()} registros con errores pendientes de corrección."
+            if _is_ajax(request):
+                return JsonResponse(
+                    {"success": False, "error": msg}, status=400)
+            messages.error(request, msg)
+            return redirect("expediente_detail", pk=pk)
 
         faltantes_qs = expediente.expediente_ciudadanos.filter(
             Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
@@ -673,7 +723,8 @@ class ExpedienteConfirmView(View):
         if faltantes_qs.exists():
             msg = "No se puede enviar: hay legajos sin los 2 archivos requeridos."
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": msg}, status=400)
+                return JsonResponse(
+                    {"success": False, "error": msg}, status=400)
             messages.error(request, msg)
             return redirect("expediente_detail", pk=pk)
 
@@ -699,7 +750,10 @@ class ExpedienteConfirmView(View):
                 )
             messages.error(request, f"Error al confirmar: {escape(str(ve))}")
         except Exception as e:
-            logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
+            logger.error(
+                "Error inesperado al confirmar envío: %s",
+                e,
+                exc_info=True)
             if _is_ajax(request):
                 return JsonResponse(
                     {"success": False, "error": escape(str(e))}, status=500
@@ -720,7 +774,10 @@ class ExpedienteUpdateView(UpdateView):
 class RecepcionarExpedienteView(View):
     def post(self, request, pk):
         user = self.request.user
-        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+        if not (
+            _is_admin(user) or _user_in_group(
+                user,
+                "CoordinadorCeliaquia")):
             if _is_ajax(request):
                 return JsonResponse(
                     {"success": False, "error": "Permiso denegado."}, status=403
@@ -733,7 +790,8 @@ class RecepcionarExpedienteView(View):
         if expediente.estado.nombre != "CONFIRMACION_DE_ENVIO":
             msg = "El expediente no está pendiente de recepción."
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": msg}, status=400)
+                return JsonResponse(
+                    {"success": False, "error": msg}, status=400)
             messages.warning(request, msg)
             return redirect("expediente_detail", pk=pk)
 
@@ -756,7 +814,10 @@ class RecepcionarExpedienteView(View):
 class AsignarTecnicoView(View):
     def post(self, request, pk):
         user = self.request.user
-        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+        if not (
+            _is_admin(user) or _user_in_group(
+                user,
+                "CoordinadorCeliaquia")):
             if _is_ajax(request):
                 return JsonResponse(
                     {"success": False, "error": "Permiso denegado."}, status=403
@@ -769,7 +830,8 @@ class AsignarTecnicoView(View):
         if not tecnico_id:
             msg = "No se seleccionó ningún técnico."
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": msg}, status=400)
+                return JsonResponse(
+                    {"success": False, "error": msg}, status=400)
             messages.error(request, msg)
             return redirect("expediente_detail", pk=pk)
 
@@ -780,7 +842,8 @@ class AsignarTecnicoView(View):
         if estado_actual not in ("RECEPCIONADO", "ASIGNADO"):
             msg = "Primero debe recepcionar el expediente."
             if _is_ajax(request):
-                return JsonResponse({"success": False, "error": msg}, status=400)
+                return JsonResponse(
+                    {"success": False, "error": msg}, status=400)
             messages.error(request, msg)
             return redirect("expediente_detail", pk=pk)
 
@@ -806,7 +869,10 @@ class AsignarTecnicoView(View):
 
     def delete(self, request, pk):
         user = self.request.user
-        if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+        if not (
+            _is_admin(user) or _user_in_group(
+                user,
+                "CoordinadorCeliaquia")):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
@@ -840,7 +906,10 @@ class ExpedienteNominaSintysExportView(View):
         expediente = get_object_or_404(Expediente, pk=pk)
         content = CruceService.generar_nomina_sintys_excel(expediente)
         filename = f"nomina_sintys_{expediente.pk}.xlsx"
-        return FileResponse(io.BytesIO(content), as_attachment=True, filename=filename)
+        return FileResponse(
+            io.BytesIO(content),
+            as_attachment=True,
+            filename=filename)
 
 
 class SubirCruceExcelView(View):
@@ -879,21 +948,22 @@ class SubirCruceExcelView(View):
             )
 
         try:
-            resumen = CruceService.procesar_cruce_por_cuit(expediente, archivo, user)
+            resumen = CruceService.procesar_cruce_por_cuit(
+                expediente, archivo, user)
             return JsonResponse(
                 {
                     "success": True,
                     "message": "Cruce finalizado. Se generó el PRD del expediente.",
                     "resumen": resumen,
-                }
-            )
+                })
         except ValidationError as ve:
             return JsonResponse(
                 {"success": False, "error": escape(str(ve))}, status=400
             )
         except Exception as e:
             logger.error("Error en cruce por CUIT: %s", e, exc_info=True)
-            return JsonResponse({"success": False, "error": escape(str(e))}, status=500)
+            return JsonResponse(
+                {"success": False, "error": escape(str(e))}, status=500)
 
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])
@@ -945,8 +1015,10 @@ class RevisarLegajoView(View):
                 leg.es_titular_activo = False
             except Exception as e:
                 logger.error(
-                    "Error al liberar cupo para legajo %s: %s", leg.pk, e, exc_info=True
-                )
+                    "Error al liberar cupo para legajo %s: %s",
+                    leg.pk,
+                    e,
+                    exc_info=True)
 
         if accion == "APROBAR":
             leg.revision_tecnico = "APROBADO"
@@ -1010,4 +1082,324 @@ class RevisarLegajoView(View):
                 "estado": str(RevisionTecnico.SUBSANAR),
                 "cupo_liberado": True,
             }
+        )
+
+
+class ActualizarRegistroErroneoView(View):
+    def post(self, request, pk, registro_id):
+        user = request.user
+        expediente = get_object_or_404(Expediente, pk=pk)
+
+        if not (_is_admin(user) or _is_provincial(user)):
+            return JsonResponse(
+                {"success": False, "error": "Permiso denegado."}, status=403
+            )
+
+        from celiaquia.models import RegistroErroneo
+
+        registro = get_object_or_404(
+            RegistroErroneo, pk=registro_id, expediente=expediente
+        )
+
+        try:
+            datos_actualizados = json.loads(request.body)
+            # Limpiar valores vacíos
+            datos_limpios = {k: v for k, v in datos_actualizados.items() if v}
+            registro.datos_raw = datos_limpios
+            registro.save(update_fields=["datos_raw"])
+
+            return JsonResponse(
+                {"success": True, "message": "Registro actualizado correctamente."}
+            )
+        except Exception as e:
+            logger.error(
+                "Error actualizando registro erróneo: %s",
+                e,
+                exc_info=True)
+            return JsonResponse(
+                {"success": False, "error": "Ocurrió un error interno al actualizar el registro."}, status=500)
+
+
+class ReprocesarRegistrosErroneosView(View):
+    @transaction.atomic
+    def post(self, request, pk):
+        user = request.user
+        expediente = get_object_or_404(Expediente, pk=pk)
+
+        if not (_is_admin(user) or _is_provincial(user)):
+            return JsonResponse(
+                {"success": False, "error": "Permiso denegado."}, status=403
+            )
+
+        from celiaquia.models import RegistroErroneo, EstadoLegajo
+        from celiaquia.services.ciudadano_service import CiudadanoService
+
+        registros = expediente.registros_erroneos.filter(procesado=False)
+
+        if not registros.exists():
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "No hay registros erróneos para reprocesar.",
+                },
+                status=400,
+            )
+
+        creados = 0
+        errores = 0
+        errores_detalle = []
+        relaciones_crear = []
+
+        estado_inicial = EstadoLegajo.objects.get(nombre="DOCUMENTO_PENDIENTE")
+
+        from celiaquia.services.importacion_service import _tipo_doc_cuit
+
+        tipo_doc_cuit_id = _tipo_doc_cuit()
+
+        # Obtener provincia del usuario
+        provincia_id = None
+        try:
+            if user.profile and user.profile.provincia_id:
+                provincia_id = user.profile.provincia_id
+        except Exception:
+            pass
+
+        if not provincia_id:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "No se pudo determinar la provincia del usuario.",
+                },
+                status=400,
+            )
+
+        for registro in registros:
+            try:
+                datos = registro.datos_raw.copy()
+
+                # Agregar provincia del usuario
+                datos["provincia"] = provincia_id
+
+                # Convertir fecha de DD/MM/YYYY a objeto date si es necesario
+                if "fecha_nacimiento" in datos and isinstance(
+                    datos["fecha_nacimiento"], str
+                ):
+                    from datetime import datetime
+
+                    try:
+                        # Intentar formato DD/MM/YYYY
+                        fecha_obj = datetime.strptime(
+                            datos["fecha_nacimiento"], "%d/%m/%Y"
+                        ).date()
+                        datos["fecha_nacimiento"] = fecha_obj
+                    except ValueError:
+                        try:
+                            # Intentar formato YYYY-MM-DD
+                            fecha_obj = datetime.strptime(
+                                datos["fecha_nacimiento"], "%Y-%m-%d"
+                            ).date()
+                            datos["fecha_nacimiento"] = fecha_obj
+                        except ValueError:
+                            pass
+
+                # Intentar crear el ciudadano y legajo
+                ciudadano = CiudadanoService.get_or_create_ciudadano(
+                    datos=datos,
+                    usuario=user,
+                    expediente=expediente,
+                    programa_id=3,
+                )
+
+                if ciudadano and ciudadano.pk:
+                    # Crear legajo del hijo/beneficiario
+                    _, created = ExpedienteCiudadano.objects.get_or_create(
+                        expediente=expediente,
+                        ciudadano=ciudadano,
+                        defaults={"estado": estado_inicial},
+                    )
+
+                    if created:
+                        creados += 1
+
+                        # Verificar si hay datos del responsable
+                        tiene_responsable = any(
+                            [
+                                datos.get("apellido_responsable"),
+                                datos.get("nombre_responsable"),
+                                datos.get("documento_responsable"),
+                            ]
+                        )
+
+                        if tiene_responsable:
+                            try:
+                                # Crear responsable
+                                datos_resp = {
+                                    "apellido": datos.get("apellido_responsable"),
+                                    "nombre": datos.get("nombre_responsable"),
+                                    "documento": datos.get("documento_responsable"),
+                                    "fecha_nacimiento": datos.get("fecha_nacimiento_responsable"),
+                                    "sexo": datos.get("sexo_responsable"),
+                                    "telefono": datos.get("telefono_responsable"),
+                                    "email": datos.get("email_responsable"),
+                                    "provincia": provincia_id,
+                                    "tipo_documento": tipo_doc_cuit_id,
+                                }
+
+                                # Limpiar valores None
+                                datos_resp = {
+                                    k: v for k, v in datos_resp.items() if v}
+
+                                # Convertir fecha del responsable si existe
+                                if "fecha_nacimiento" in datos_resp and isinstance(
+                                        datos_resp["fecha_nacimiento"], str):
+                                    from datetime import datetime
+
+                                    try:
+                                        fecha_obj = datetime.strptime(
+                                            datos_resp["fecha_nacimiento"], "%d/%m/%Y").date()
+                                        datos_resp["fecha_nacimiento"] = fecha_obj
+                                    except ValueError:
+                                        try:
+                                            fecha_obj = datetime.strptime(
+                                                datos_resp["fecha_nacimiento"],
+                                                "%Y-%m-%d",
+                                            ).date()
+                                            datos_resp["fecha_nacimiento"] = fecha_obj
+                                        except ValueError:
+                                            pass
+
+                                responsable = CiudadanoService.get_or_create_ciudadano(
+                                    datos=datos_resp, usuario=user, expediente=expediente, programa_id=3, )
+
+                                if responsable and responsable.pk:
+                                    # Crear legajo del responsable
+                                    _, created_resp = (
+                                        ExpedienteCiudadano.objects.get_or_create(
+                                            expediente=expediente, ciudadano=responsable, defaults={
+                                                "estado": estado_inicial}, ))
+
+                                    if created_resp:
+                                        creados += 1
+
+                                    # Guardar relación para crear después
+                                    relaciones_crear.append(
+                                        {
+                                            "responsable_id": responsable.pk,
+                                            "hijo_id": ciudadano.pk,
+                                        }
+                                    )
+                            except Exception as e:
+                                logger.warning(
+                                    "Error creando responsable para fila %s: %s", registro.fila_excel, e, )
+
+                        registro.procesado = True
+                        registro.procesado_en = timezone.now()
+                        registro.save(
+                            update_fields=[
+                                "procesado",
+                                "procesado_en"])
+                    else:
+                        errores += 1
+                        errores_detalle.append(
+                            f"Fila {registro.fila_excel}: Ya existe en el expediente"
+                        )
+                else:
+                    errores += 1
+                    errores_detalle.append(
+                        f"Fila {registro.fila_excel}: No se pudo crear el ciudadano"
+                    )
+
+            except Exception as e:
+                errores += 1
+                error_msg = "Ocurrió un error al reprocesar este registro."
+                errores_detalle.append(
+                    f"Fila {registro.fila_excel}: {error_msg}")
+                logger.error(
+                    "Error reprocesando registro %s: %s - Datos: %s",
+                    registro.pk,
+                    e,
+                    datos,
+                    exc_info=True,
+                )
+                # Actualizar mensaje de error solo con texto genérico
+                registro.mensaje_error = f"Error al reprocesar: {error_msg}"
+                registro.save(update_fields=["mensaje_error"])
+
+        # Crear relaciones familiares
+        if relaciones_crear:
+            try:
+                from ciudadanos.models import GrupoFamiliar, VinculoFamiliar
+
+                vinculo_hijo = VinculoFamiliar.objects.filter(
+                    vinculo__icontains="hijo"
+                ).first()
+                if not vinculo_hijo:
+                    vinculo_hijo = VinculoFamiliar.objects.create(
+                        vinculo="Hijo/a",
+                        inverso="Padre/Madre",
+                    )
+
+                relaciones_obj = []
+                for rel in relaciones_crear:
+                    relaciones_obj.append(
+                        GrupoFamiliar(
+                            ciudadano_1_id=rel["responsable_id"],
+                            ciudadano_2_id=rel["hijo_id"],
+                            vinculo=vinculo_hijo,
+                            vinculo_inverso=vinculo_hijo.inverso,
+                            conviven=True,
+                            cuidador_principal=True,
+                        )
+                    )
+
+                if relaciones_obj:
+                    GrupoFamiliar.objects.bulk_create(
+                        relaciones_obj, ignore_conflicts=True
+                    )
+                    logger.info(
+                        "Creadas %s relaciones familiares al reprocesar",
+                        len(relaciones_obj),
+                    )
+            except Exception as e:
+                logger.error(
+                    "Error creando relaciones familiares al reprocesar: %s",
+                    e,
+                    exc_info=True,
+                )
+
+        # Verificar registros restantes
+        registros_restantes = expediente.registros_erroneos.filter(
+            procesado=False
+        ).count()
+
+        return JsonResponse(
+            {
+                "success": True,
+                "creados": creados,
+                "errores": errores,
+                "errores_detalle": errores_detalle,
+                "registros_restantes": registros_restantes,
+            }
+        )
+
+
+class EliminarRegistroErroneoView(View):
+    def post(self, request, pk, registro_id):
+        user = request.user
+        expediente = get_object_or_404(Expediente, pk=pk)
+
+        if not (_is_admin(user) or _is_provincial(user)):
+            return JsonResponse(
+                {"success": False, "error": "Permiso denegado."}, status=403
+            )
+
+        from celiaquia.models import RegistroErroneo
+
+        registro = get_object_or_404(
+            RegistroErroneo, pk=registro_id, expediente=expediente
+        )
+
+        registro.delete()
+        return JsonResponse(
+            {"success": True, "message": "Registro eliminado correctamente."}
         )
