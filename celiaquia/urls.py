@@ -27,6 +27,9 @@ from celiaquia.views.expediente import (
     ExpedienteNominaSintysExportView,
     SubirCruceExcelView,
     LocalidadesLookupView,
+    ActualizarRegistroErroneoView,
+    ReprocesarRegistrosErroneosView,
+    EliminarRegistroErroneoView,
 )
 from celiaquia.views.confirm_envio import ExpedienteConfirmView
 from celiaquia.views.legajo import (
@@ -217,5 +220,22 @@ urlpatterns = [
         "pagos/expediente/<int:pago_id>/exportar-nomina-actual/",
         PagoNominaExportActualView.as_view(),
         name="pago_nomina_export_actual",
+    ),
+    path(
+        "expedientes/<int:pk>/registros-erroneos/<int:registro_id>/actualizar/",
+        group_required(["ProvinciaCeliaquia"])(ActualizarRegistroErroneoView.as_view()),
+        name="registro_erroneo_actualizar",
+    ),
+    path(
+        "expedientes/<int:pk>/registros-erroneos/reprocesar/",
+        group_required(["ProvinciaCeliaquia"])(
+            ReprocesarRegistrosErroneosView.as_view()
+        ),
+        name="registros_erroneos_reprocesar",
+    ),
+    path(
+        "expedientes/<int:pk>/registros-erroneos/<int:registro_id>/eliminar/",
+        group_required(["ProvinciaCeliaquia"])(EliminarRegistroErroneoView.as_view()),
+        name="registro_erroneo_eliminar",
     ),
 ]

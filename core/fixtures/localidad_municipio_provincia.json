@@ -17016,6 +17016,30 @@
     }
   },
   {
+    "model": "core.municipio",
+    "pk": 2131,
+    "fields": {
+      "nombre": "Coronel Moldes",
+      "provincia": 17
+    }
+  },
+  {
+    "model": "core.municipio",
+    "pk": 2132,
+    "fields": {
+      "nombre": "Colonia Santa Rosa",
+      "provincia": 17
+    }
+  },
+  {
+    "model": "core.municipio",
+    "pk": 2133,
+    "fields": {
+      "nombre": "San Carlos",
+      "provincia": 17
+    }
+  },
+  {
     "model": "core.localidad",
     "pk": 2091,
     "fields": {
@@ -87093,6 +87117,158 @@
     "fields": {
       "nombre": "Pampa Moreno",
       "municipio": 2130
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10855,
+    "fields": {
+      "nombre": "Coronel Moldes",
+      "municipio": 2131
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10856,
+    "fields": {
+      "nombre": "Colonia Santa Rosa",
+      "municipio": 2132
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10857,
+    "fields": {
+      "nombre": "San Carlos",
+      "municipio": 2133
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10858,
+    "fields": {
+      "nombre": "La Ranchería",
+      "municipio": 1507
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10859,
+    "fields": {
+      "nombre": "Aguas Blancas",
+      "municipio": 1520
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10860,
+    "fields": {
+      "nombre": "El Cruce",
+      "municipio": 1520
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10861,
+    "fields": {
+      "nombre": "El Tabique",
+      "municipio": 1521
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10862,
+    "fields": {
+      "nombre": "Matadero",
+      "municipio": 1521
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10863,
+    "fields": {
+      "nombre": "Misión San Francisco",
+      "municipio": 1521
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10864,
+    "fields": {
+      "nombre": "Paraje El Charro",
+      "municipio": 1524
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10865,
+    "fields": {
+      "nombre": "Paraje El Sauzal",
+      "municipio": 1524
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10866,
+    "fields": {
+      "nombre": "Comunidad Crespin",
+      "municipio": 1525
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10867,
+    "fields": {
+      "nombre": "Mision Cherenta",
+      "municipio": 1525
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10868,
+    "fields": {
+      "nombre": "Mision Chorote",
+      "municipio": 1525
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10869,
+    "fields": {
+      "nombre": "Mision San Francisco",
+      "municipio": 1539
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10870,
+    "fields": {
+      "nombre": "Mision La Cortada",
+      "municipio": 1542
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10871,
+    "fields": {
+      "nombre": "Mision Wichi",
+      "municipio": 1543
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10872,
+    "fields": {
+      "nombre": "Paraje Campo Largo",
+      "municipio": 1544
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10873,
+    "fields": {
+      "nombre": "Paraje Santa Maria",
+      "municipio": 1544
     }
   }
 ]
