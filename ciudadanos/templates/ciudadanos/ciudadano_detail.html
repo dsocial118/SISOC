@@ -390,7 +390,7 @@
                     {% endif %}
                 </div>
                 <!-- Formulario para agregar programa -->
-                <div id="form-programas" class="card-footer bg-light d-none">
+                <div id="form-programas" class="card-footer bg-body-tertiary d-none">
                     <form id="ProgramaForm"
                           method="POST"
                           action="{% url 'actualizar_programas' object.id %}">
@@ -404,7 +404,7 @@
                         </div>
                     </form>
                 </div>
-                <div class="card-footer bg-light text-start">
+                <div class="card-footer bg-body-tertiary text-start">
                     <a href="{% url 'programas_intervencion' object.id %}"
                        class="btn btn-sm btn-outline-primary me-2">Ver más</a>
                     {% if perms.Usuarios.rol_admin %}<a id="agregar-programa-btn" class="btn btn-sm btn-primary">+ Agregar</a>{% endif %}
@@ -456,7 +456,7 @@
                             </table>
                         </div>
                     </div>
-                    <div class="card-footer bg-light text-start">
+                    <div class="card-footer bg-body-tertiary text-start">
                         <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
                            class="btn btn-sm btn-outline-primary me-2">Ver más</a>
                         {% if perms.Usuarios.rol_admin %}
@@ -504,7 +504,7 @@
                             </table>
                         </div>
                     </div>
-                    <div class="card-footer bg-light text-start">
+                    <div class="card-footer bg-body-tertiary text-start">
                         <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
                            class="btn btn-sm btn-outline-primary me-2">Ver más</a>
                         {% if perms.Usuarios.rol_admin %}
