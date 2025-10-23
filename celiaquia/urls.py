@@ -228,7 +228,9 @@ urlpatterns = [
     ),
     path(
         "expedientes/<int:pk>/registros-erroneos/reprocesar/",
-        group_required(["ProvinciaCeliaquia"])(ReprocesarRegistrosErroneosView.as_view()),
+        group_required(["ProvinciaCeliaquia"])(
+            ReprocesarRegistrosErroneosView.as_view()
+        ),
         name="registros_erroneos_reprocesar",
     ),
     path(
