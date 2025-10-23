@@ -15,7 +15,7 @@ from ..models.admisiones import (
     FormularioProyectoDeConvenio,
     FormularioProyectoDisposicion,
 )
-from admisiones.templatetags.admisiones_extras import entity_article
+from admisiones.templatetags.admisiones_tags import entity_article
 
 class DocumentTemplateService:
 
