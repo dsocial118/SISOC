@@ -249,7 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
             data.message ||
             `Se crearon ${data.creados ?? '-'} legajos y el expediente pasó a EN ESPERA.`;
           const errorExtra = data.errores ? ` ${data.errores} errores.` : '';
-          showAlert('success', '¡Listo! ', baseMsg, errorExtra);
+          const alertType = data.errores > 0 ? 'warning' : 'success';
+          showAlert(alertType, '¡Listo! ', baseMsg, errorExtra);
 
           setTimeout(() => window.location.reload(), 1000);
         }, 800);
@@ -791,6 +792,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnConfirm = document.getElementById('btn-confirm');
   if (btnConfirm) {
     btnConfirm.addEventListener('click', async () => {
+      // Verificar si el botón está deshabilitado
+      if (btnConfirm.disabled) {
+        showAlert('warning', 'No se puede confirmar el envío mientras haya registros con errores pendientes.');
+        return;
+      }
+
       const original = btnConfirm.innerHTML;
       btnConfirm.disabled = true;
       btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando…';
