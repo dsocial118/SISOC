@@ -1311,7 +1311,18 @@ class ReprocesarRegistrosErroneosView(View):
 
             except Exception as e:
                 errores += 1
-                error_msg = "Ocurrió un error al reprocesar este registro."
+                # Usar el error específico para el usuario, pero sin información sensible del sistema
+                if "Field" in str(e) and "expected" in str(e):
+                    # Error de validación de campo - es seguro mostrarlo
+                    error_msg = str(e)
+                elif "IntegrityError" in str(type(e).__name__):
+                    error_msg = "Error de integridad: registro duplicado o datos inconsistentes"
+                elif "ValidationError" in str(type(e).__name__):
+                    error_msg = str(e)
+                else:
+                    # Para otros errores, mantener el mensaje original si existe, sino usar genérico
+                    error_msg = registro.mensaje_error if registro.mensaje_error else "Error interno al procesar registro"
+                
                 errores_detalle.append(
                     f"Fila {registro.fila_excel}: {error_msg}")
                 logger.error(
@@ -1321,7 +1332,7 @@ class ReprocesarRegistrosErroneosView(View):
                     datos,
                     exc_info=True,
                 )
-                # Actualizar mensaje de error solo con texto genérico
+                # Actualizar con el mensaje más específico
                 registro.mensaje_error = f"Error al reprocesar: {error_msg}"
                 registro.save(update_fields=["mensaje_error"])
 
