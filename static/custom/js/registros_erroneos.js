@@ -220,7 +220,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     location.reload();
                 } else {
-                    const titulo = document.querySelector('h5:contains("Registros con Errores")');
+                    const titulos = document.querySelectorAll('h5');
+                    const titulo = Array.from(titulos).find(h => h.textContent.includes('Registros con Errores'));
                     if (titulo) {
                         titulo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Registros con Errores (${registrosRestantes})`;
                     }

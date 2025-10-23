@@ -1117,7 +1117,7 @@ class ActualizarRegistroErroneoView(View):
                 e,
                 exc_info=True)
             return JsonResponse(
-                {"success": False, "error": str(e)}, status=500)
+                {"success": False, "error": "Ocurrió un error interno al actualizar el registro."}, status=500)
 
 
 class ReprocesarRegistrosErroneosView(View):
@@ -1311,7 +1311,7 @@ class ReprocesarRegistrosErroneosView(View):
 
             except Exception as e:
                 errores += 1
-                error_msg = str(e)
+                error_msg = "Ocurrió un error al reprocesar este registro."
                 errores_detalle.append(
                     f"Fila {registro.fila_excel}: {error_msg}")
                 logger.error(
@@ -1321,7 +1321,7 @@ class ReprocesarRegistrosErroneosView(View):
                     datos,
                     exc_info=True,
                 )
-                # Actualizar mensaje de error
+                # Actualizar mensaje de error solo con texto genérico
                 registro.mensaje_error = f"Error al reprocesar: {error_msg}"
                 registro.save(update_fields=["mensaje_error"])
 
