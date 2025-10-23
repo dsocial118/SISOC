@@ -44,7 +44,7 @@
         {% endif %}
     </div>
     {% if footer_content or footer_buttons %}
-        <div class="card-footer {% if footer_class %}{{ footer_class }}{% else %}bg-light{% endif %}">
+        <div class="card-footer {% if footer_class %}{{ footer_class }}{% else %}bg-body-tertiary{% endif %}">
             {% if footer_content %}{{ footer_content|safe }}{% endif %}
             {% if footer_buttons %}
                 {% for button in footer_buttons %}
