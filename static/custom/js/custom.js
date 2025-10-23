@@ -206,7 +206,6 @@ $('.badge-gb-color').addClass(function () {
 	} else if (dato == 'Muy urgente') {
 		$(this).addClass('bg-danger');
 	} else {
-		$(this).addClass('bg-light');
+		$(this).addClass('bg-body-tertiary text-body');
 	}
 });
-
