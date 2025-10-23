@@ -466,7 +466,7 @@
                                                             </button>
                                                         </div>
                                                     {% endif %}
-                                                    
+ 
                                                     <!-- Archivo subsanación Renaper -->
                                                     {% if leg.subsanacion_renaper_comentario or leg.subsanacion_renaper_archivo %}
                                                         <div class="mt-3 p-2 rounded" style="background:rgba(255,193,7,.1);">
@@ -559,9 +559,7 @@
                                                                     <button type="button"
                                                                             class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
                                                                             data-legajo-id="{{ leg.pk }}"
-                                                                            data-accion="RECHAZAR">
-                                                                       Rechazar
-                                                                    </button>
+                                                                            data-accion="RECHAZAR">Rechazar</button>
                                                                 </div>
                                                             {% endif %}
                                                         {% endwith %}
@@ -666,7 +664,7 @@
                                             </button>
                                         </div>
                                     {% endif %}
-                                    
+ 
                                     <!-- Archivo subsanación Renaper -->
                                     {% if leg.subsanacion_renaper_comentario or leg.subsanacion_renaper_archivo %}
                                         <div class="mt-3 p-2 rounded" style="background:rgba(255,193,7,.1);">
@@ -780,9 +778,306 @@
     <!-- Confirmar EnvÃ­o: solo Provincia en EN_ESPERA -->
     {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
         <div class="text-end mt-3">
-            <button id="btn-confirm" class="btn btn-success">Confirmar Envi­o</button>
+            {% if registros_erroneos.count > 0 %}
+                <button id="btn-confirm"
+                        class="btn btn-secondary btn-confirm-disabled btn-confirm-tooltip"
+                        disabled
+                        title="No se puede enviar mientras haya registros con errores">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Envi­o ({{ registros_erroneos.count }} errores)
+                </button>
+            {% else %}
+                <button id="btn-confirm" class="btn btn-success">Confirmar Envi­o</button>
+            {% endif %}
         </div>
     {% endif %}
+</div>
+
+<!-- Registros Erróneos -->
+{% if registros_erroneos %}
+    <div class="p-3 rounded shadow mb-4 registros-erroneos-section"
+         style="background-color: #1c2a3a;
+                color: #e0e0e0">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0 registros-erroneos-title">
+                <i class="fas fa-exclamation-triangle"></i> Registros con Errores ({{ registros_erroneos.count }})
+            </h5>
+            {% if is_prov %}
+                <button id="btn-reprocesar-errores" class="btn btn-warning btn-sm">
+                    <i class="fas fa-sync"></i> Reprocesar Todos
+                </button>
+            {% endif %}
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover" style="color: #e0e0e0;">
+                <thead style="background: #13212f;">
+                    <tr>
+                        <th width="5%">Fila</th>
+                        <th width="30%">Datos</th>
+                        <th width="40%">Error</th>
+                        <th width="15%">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros_erroneos %}
+                        <tr class="registro-erroneo-row"
+                            data-registro-id="{{ registro.pk }}"
+                            style="border-left: 4px solid #dc3545">
+                            <td>{{ registro.fila_excel }}</td>
+                            <td>
+                                <small>
+                                    {% if registro.datos_raw.apellido %}
+                                        <strong>Apellido:</strong> {{ registro.datos_raw.apellido }}
+                                        <br />
+                                    {% endif %}
+                                    {% if registro.datos_raw.nombre %}
+                                        <strong>Nombre:</strong> {{ registro.datos_raw.nombre }}
+                                        <br />
+                                    {% endif %}
+                                    {% if registro.datos_raw.documento %}
+                                        <strong>DNI:</strong> {{ registro.datos_raw.documento }}
+                                        <br />
+                                    {% endif %}
+                                    {% if registro.datos_raw.fecha_nacimiento %}
+                                        <strong>F.Nac:</strong> {{ registro.datos_raw.fecha_nacimiento }}
+                                        <br />
+                                    {% endif %}
+                                    {% if registro.datos_raw.apellido_responsable or registro.datos_raw.nombre_responsable %}
+                                        <span class="badge bg-info mt-1">Con Responsable</span>
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td>
+                                <small class="text-danger">{{ registro.mensaje_error }}</small>
+                            </td>
+                            <td>
+                                <button class="btn btn-outline-light btn-sm"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#error-detalle-{{ registro.pk }}">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm btn-eliminar-error"
+                                        data-registro-id="{{ registro.pk }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr class="collapse" id="error-detalle-{{ registro.pk }}">
+                            <td colspan="4" class="p-0">
+                                <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
+                                    <div class="card-body">
+                                        <h6 class="mb-3">Editar Datos - Fila {{ registro.fila_excel }}</h6>
+                                        <form class="form-editar-error" data-registro-id="{{ registro.pk }}">
+                                            <!-- DATOS DEL BENEFICIARIO -->
+                                            <h6 class="text-primary mt-2 mb-2">
+                                                <i class="fas fa-child"></i> Beneficiario
+                                            </h6>
+                                            <div class="row g-2">
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Apellido *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="apellido"
+                                                           value="{{ registro.datos_raw.apellido|default:'' }}"
+                                                           required />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Nombre *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="nombre"
+                                                           value="{{ registro.datos_raw.nombre|default:'' }}"
+                                                           required />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Documento *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="documento"
+                                                           value="{{ registro.datos_raw.documento|default:'' }}"
+                                                           required />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Fecha Nacimiento *</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="fecha_nacimiento"
+                                                           value="{{ registro.datos_raw.fecha_nacimiento|default:'' }}"
+                                                           placeholder="DD/MM/YYYY"
+                                                           required />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Sexo</label>
+                                                    <select class="form-select" name="sexo">
+                                                        <option value="">Seleccionar...</option>
+                                                        {% for sexo in sexos %}
+                                                            <option value="{{ sexo.id }}"
+                                                                    {% if registro.datos_raw.sexo|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo|lower == sexo.sexo|lower %}selected{% endif %}>
+                                                                {{ sexo.sexo }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Nacionalidad</label>
+                                                    <select class="form-select" name="nacionalidad">
+                                                        <option value="">Seleccionar...</option>
+                                                        {% for nac in nacionalidades %}
+                                                            <option value="{{ nac.id }}"
+                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nacionalidad|lower %}selected{% endif %}>
+                                                                {{ nac.nacionalidad }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Municipio</label>
+                                                    <select class="form-select select-municipio"
+                                                            name="municipio"
+                                                            data-registro-id="{{ registro.pk }}">
+                                                        <option value="">Seleccionar...</option>
+                                                        {% for mun in municipios %}
+                                                            <option value="{{ mun.id }}"
+                                                                    {% if registro.datos_raw.municipio|stringformat:"s" == mun.id|stringformat:"s" %}selected{% endif %}>
+                                                                {{ mun.nombre }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Localidad</label>
+                                                    <select class="form-select select-localidad"
+                                                            name="localidad"
+                                                            data-registro-id="{{ registro.pk }}">
+                                                        <option value="">Seleccionar...</option>
+                                                        {% for loc in localidades %}
+                                                            <option value="{{ loc.id }}"
+                                                                    data-municipio="{{ loc.municipio_id }}"
+                                                                    {% if registro.datos_raw.localidad|stringformat:"s" == loc.id|stringformat:"s" %}selected{% endif %}>
+                                                                {{ loc.nombre }} ({{ loc.municipio.nombre }})
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Teléfono</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="telefono"
+                                                           value="{{ registro.datos_raw.telefono|default:'' }}" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Email</label>
+                                                    <input type="email"
+                                                           class="form-control"
+                                                           name="email"
+                                                           value="{{ registro.datos_raw.email|default:'' }}" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Calle</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="calle"
+                                                           value="{{ registro.datos_raw.calle|default:'' }}" />
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Altura</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           name="altura"
+                                                           value="{{ registro.datos_raw.altura|default:'' }}" />
+                                                </div>
+                                            </div>
+ 
+                                            <!-- DATOS DEL RESPONSABLE -->
+                                            {% if registro.datos_raw.apellido_responsable or registro.datos_raw.nombre_responsable or registro.datos_raw.documento_responsable %}
+                                                <hr class="my-3" />
+                                                <h6 class="text-info mt-2 mb-2">
+                                                    <i class="fas fa-user-tie"></i> Responsable
+                                                </h6>
+                                                <div class="row g-2">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Apellido Responsable</label>
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               name="apellido_responsable"
+                                                               value="{{ registro.datos_raw.apellido_responsable|default:'' }}" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Nombre Responsable</label>
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               name="nombre_responsable"
+                                                               value="{{ registro.datos_raw.nombre_responsable|default:'' }}" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">CUIT/Documento Responsable</label>
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               name="documento_responsable"
+                                                               value="{{ registro.datos_raw.documento_responsable|default:'' }}" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Fecha Nac. Responsable</label>
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               name="fecha_nacimiento_responsable"
+                                                               value="{{ registro.datos_raw.fecha_nacimiento_responsable|default:'' }}"
+                                                               placeholder="DD/MM/YYYY" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Sexo Responsable</label>
+                                                        <select class="form-select" name="sexo_responsable">
+                                                            <option value="">Seleccionar...</option>
+                                                            {% for sexo in sexos %}
+                                                                <option value="{{ sexo.id }}"
+                                                                        {% if registro.datos_raw.sexo_responsable|stringformat:"s" == sexo.id|stringformat:"s" or registro.datos_raw.sexo_responsable|lower == sexo.sexo|lower %}selected{% endif %}>
+                                                                    {{ sexo.sexo }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Teléfono Responsable</label>
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               name="telefono_responsable"
+                                                               value="{{ registro.datos_raw.telefono_responsable|default:'' }}" />
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Email Responsable</label>
+                                                        <input type="email"
+                                                               class="form-control"
+                                                               name="email_responsable"
+                                                               value="{{ registro.datos_raw.email_responsable|default:'' }}" />
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">Domicilio Responsable</label>
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               name="domicilio_responsable"
+                                                               value="{{ registro.datos_raw.domicilio_responsable|default:'' }}" />
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+ 
+                                            <div class="alert alert-info mt-3 mb-0">
+                                                <small><strong>Nota:</strong> Los campos se guardan automáticamente al cambiar. Luego usa "Reprocesar Todos" para crear los legajos.</small>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+<div class="p-3 rounded shadow mb-4"
+     style="background-color: #1c2a3a;
+            color: #e0e0e0">
     {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
         <div class="text-end mt-3">
             <button id="btn-confirm-subs" class="btn btn-warning">Confirmar subsanación</button>
@@ -953,7 +1248,7 @@
                   enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a subsanación </h5>
+                    <h5 class="modal-title" id="modalRespuestaSubsanacionRenaperLabel">Respuesta a subsanación</h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
@@ -1146,6 +1441,37 @@
     </div>
 </div>
 
+<!-- Modal: Confirmar Reprocesar Errores -->
+<div class="modal fade"
+     id="modalConfirmarReprocesar"
+     tabindex="-1"
+     aria-labelledby="modalConfirmarReprocesarLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConfirmarReprocesarLabel">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> Confirmar Reprocesamiento
+                </h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de reprocesar todos los registros erróneos?</p>
+                <p class="text-muted mb-0">Esta acción intentará crear los legajos con los datos corregidos.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="btn-confirmar-reprocesar">
+                    <i class="fas fa-sync"></i> Reprocesar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Historial de Estados -->
 <div class="modal fade"
      id="modalHistorial"
@@ -1205,6 +1531,8 @@
     <link rel="stylesheet"
           href="{% static 'custom/css/expediente_detail.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/familia_bubbles.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/registros_erroneos.css' %}" />
 {% endblock %}
 {% block customJS %}
     <!-- Meta tags para configuración -->
@@ -1221,7 +1549,14 @@
           content="{% url 'expediente_confirm_subsanacion' expediente.pk %}" />
     <meta name="validar-renaper-url-template"
           content="{% url 'legajo_validar_renaper' expediente.pk 0 %}" />
+    <meta name="reprocesar-errores-url"
+          content="{% url 'registros_erroneos_reprocesar' expediente.pk %}" />
+    <meta name="actualizar-error-url-template"
+          content="{% url 'registro_erroneo_actualizar' expediente.pk 0 %}" />
+    <meta name="eliminar-error-url-template"
+          content="{% url 'registro_erroneo_eliminar' expediente.pk 0 %}" />
     <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
+    <script src="{% static 'custom/js/registros_erroneos.js' %}"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
