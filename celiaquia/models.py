@@ -470,7 +470,9 @@ class RegistroErroneo(models.Model):
         verbose_name_plural = "Registros Erróneos"
         ordering = ("fila_excel",)
         indexes = [
-            models.Index(fields=["expediente", "procesado"], name="reg_err_exp_proc_idx"),
+            models.Index(
+                fields=["expediente", "procesado"], name="reg_err_exp_proc_idx"
+            ),
         ]
 
     def __str__(self):
