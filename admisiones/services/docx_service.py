@@ -15,7 +15,7 @@ from ..models.admisiones import (
     FormularioProyectoDeConvenio,
     FormularioProyectoDisposicion,
 )
-
+from admisiones.templatetags.admisiones_extras import entity_article
 
 class DocumentTemplateService:
 
@@ -286,10 +286,14 @@ class TextFormatterService:
 
     @staticmethod
     def preparar_contexto_proyecto_convenio(admision):
-        formulario = FormularioProyectoDeConvenio.objects.filter(
-            admision=admision
-        ).first()
+        formulario = FormularioProyectoDeConvenio.objects.filter(admision=admision).first()
         informe = InformeTecnico.objects.filter(admision=admision).first()
+
+        tipo_entidad_nombre = getattr(
+            getattr(admision.comedor, "tipo_entidad", None), "nombre", None
+        )
+
+        articulo_entidad = entity_article(tipo_entidad_nombre)
 
         return {
             "admision": admision,
@@ -298,6 +302,9 @@ class TextFormatterService:
             "informe": informe,
             "fecha_actual": admision.creado.strftime("%d/%m/%Y"),
             "fecha_generacion": admision.creado.strftime("%d/%m/%Y %H:%M"),
+            # 👉 Nuevo campo para usar en templates
+            "articulo_entidad": articulo_entidad,
+            "tipo_entidad_nombre": tipo_entidad_nombre,
         }
 
     @staticmethod
