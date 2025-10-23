@@ -792,6 +792,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnConfirm = document.getElementById('btn-confirm');
   if (btnConfirm) {
     btnConfirm.addEventListener('click', async () => {
+      // Verificar si el botón está deshabilitado
+      if (btnConfirm.disabled) {
+        showAlert('warning', 'No se puede confirmar el envío mientras haya registros con errores pendientes.');
+        return;
+      }
+
       const original = btnConfirm.innerHTML;
       btnConfirm.disabled = true;
       btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Enviando…';

@@ -780,16 +780,24 @@
     <!-- Confirmar EnvÃ­o: solo Provincia en EN_ESPERA -->
     {% if legajos and is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
         <div class="text-end mt-3">
-            <button id="btn-confirm" class="btn btn-success">Confirmar Envi­o</button>
+            {% if registros_erroneos.count > 0 %}
+                <button id="btn-confirm" class="btn btn-secondary btn-confirm-disabled btn-confirm-tooltip" disabled title="No se puede enviar mientras haya registros con errores">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Envi­o ({{ registros_erroneos.count }} errores)
+                </button>
+            {% else %}
+                <button id="btn-confirm" class="btn btn-success">Confirmar Envi­o</button>
+            {% endif %}
         </div>
     {% endif %}
 </div>
 
 <!-- Registros Erróneos -->
 {% if registros_erroneos %}
-    <div class="p-3 rounded shadow mb-4" style="background-color: #1c2a3a; color: #e0e0e0">
+    <div class="p-3 rounded shadow mb-4 registros-erroneos-section" style="background-color: #1c2a3a; color: #e0e0e0;">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Registros con Errores ({{ registros_erroneos.count }})</h5>
+            <h5 class="mb-0 registros-erroneos-title">
+                <i class="fas fa-exclamation-triangle"></i> Registros con Errores ({{ registros_erroneos.count }})
+            </h5>
             {% if is_prov %}
                 <button id="btn-reprocesar-errores" class="btn btn-warning btn-sm">
                     <i class="fas fa-sync"></i> Reprocesar Todos
@@ -1426,6 +1434,7 @@
     <link rel="stylesheet"
           href="{% static 'custom/css/expediente_detail.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/familia_bubbles.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/registros_erroneos.css' %}" />
 {% endblock %}
 {% block customJS %}
     <!-- Meta tags para configuración -->
