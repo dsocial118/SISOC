@@ -17,7 +17,10 @@
                 <!-- Paso 2 -->
                 <div id="step-2" class="d-none">
                     <h3>Paso 2 - Datos de Contacto</h3>
-                    <div class="form-group">{{ form.fecha|as_crispy_field }}</div>
+                    <div class="form-group">
+                        {{ form.fecha|as_crispy_field }}
+                        <div id="fecha-error" class="invalid-feedback" style="display: none;"></div>
+                    </div>
                     <div class="form-group">{{ form.forma_contacto|as_crispy_field }}</div>
                     <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
                     <div class="form-group">{{ form.tiene_documentacion|as_crispy_field }}</div>
@@ -41,6 +44,46 @@
         const documentacionField = document.getElementById("documentacion-field");
         const tipoIntervencionSelect = document.getElementById("id_tipo_intervencion");
         const subIntervencionSelect = document.getElementById("id_subintervencion");
+        const fechaInput = document.getElementById("id_fecha");
+        const fechaError = document.getElementById("fecha-error");
+
+        // Configurar atributos min y max para el campo fecha
+        if (fechaInput) {
+            fechaInput.setAttribute("min", "2000-01-01");
+            fechaInput.setAttribute("max", "2100-12-31");
+        }
+
+        // Función para validar el año de la fecha
+        function validarFecha() {
+            if (!fechaInput.value) {
+                return true; // Si está vacío, dejamos que la validación required lo maneje
+            }
+
+            const fechaSeleccionada = new Date(fechaInput.value);
+            const año = fechaSeleccionada.getFullYear();
+
+            if (año < 2000) {
+                fechaInput.classList.add("is-invalid");
+                fechaError.textContent = "El año de la fecha debe ser mayor o igual a 2000.";
+                fechaError.style.display = "block";
+                return false;
+            } else if (año > 2100) {
+                fechaInput.classList.add("is-invalid");
+                fechaError.textContent = "El año de la fecha debe ser menor o igual a 2100.";
+                fechaError.style.display = "block";
+                return false;
+            } else {
+                fechaInput.classList.remove("is-invalid");
+                fechaError.style.display = "none";
+                return true;
+            }
+        }
+
+        // Validar fecha al cambiar
+        if (fechaInput) {
+            fechaInput.addEventListener("change", validarFecha);
+            fechaInput.addEventListener("blur", validarFecha);
+        }
 
         nextStep.addEventListener("click", function () {
             let formStep1 = Array.from(step1.querySelectorAll("select[required]"));
@@ -113,6 +156,17 @@
         }
 
         cargarTipoIntervencion.call(tipoIntervencionSelect);
+
+        // Validar fecha antes de enviar el formulario
+        const form = document.querySelector("form");
+        if (form) {
+            form.addEventListener("submit", function (event) {
+                if (!validarFecha()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
+        }
     });
     </script>
 {% endblock %}
