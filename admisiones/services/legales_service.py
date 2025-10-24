@@ -2,25 +2,19 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.db import models
-from django.template.loader import render_to_string, get_template
+from django.template.loader import render_to_string
 from weasyprint import HTML
 import os
 from django.conf import settings
 from django.db.models import Q
 import logging
-from io import BytesIO
-import tempfile
 from datetime import date
 
 from django.core.files.base import ContentFile
-from django.utils.html import strip_tags
 from django.utils.text import slugify
-from docx import Document
-from htmldocx import HtmlToDocx
 from .docx_service import DocumentTemplateService, TextFormatterService
 from django.db import transaction
 import unicodedata
-import traceback
 
 logger = logging.getLogger("django")
 
@@ -681,6 +675,7 @@ class LegalesService:
             messages.error(request, "Error inesperado al validar jurídicos.")
             return LegalesService._safe_redirect(request, admision)
 
+
     @staticmethod
     def guardar_formulario_reso(request, admision):
         try:
@@ -722,29 +717,18 @@ class LegalesService:
 
                 tipo_admision = admision.tipo or "incorporacion"
 
-                pdf_template_name = (
-                    f"admisiones/pdf/{tipo_admision}_pdf_proyecto_disposicion.html"
-                )
+                pdf_template_name = f"{tipo_admision}_pdf_proyecto_disposicion.html"
                 docx_template_name = f"{tipo_admision}_docx_proyecto_disposicion.docx"
 
-                html_pdf = render_to_string(pdf_template_name, context)
-                if not html_pdf.strip():
-                    raise ValueError(
-                        f"El template {pdf_template_name} devolvió contenido vacío."
-                    )
-
-                base_url = str(
-                    getattr(settings, "STATIC_ROOT", "")
-                    or getattr(settings, "BASE_DIR", "")
-                    or "."
+                # ✅ Usar servicio centralizado para PDF
+                pdf_buffer = DocumentTemplateService.generar_pdf(
+                    template_name=pdf_template_name,
+                    context=context,
+                    app_name="admisiones",
                 )
-                pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
-                if not pdf_bytes:
-                    raise ValueError(
-                        "WeasyPrint no devolvió contenido para el PDF generado."
-                    )
-                pdf_content = ContentFile(pdf_bytes)
+                pdf_content = ContentFile(pdf_buffer.getvalue())
 
+                # ✅ DOCX igual que antes
                 docx_content = DocumentTemplateService.generar_docx(
                     template_name=docx_template_name,
                     context=context,
@@ -754,11 +738,7 @@ class LegalesService:
                 if not docx_content:
                     raise ValueError("El servicio de generación de DOCX devolvió None.")
 
-                nombre_comedor = (
-                    admision.comedor.nombre
-                    if getattr(admision.comedor, "nombre", None)
-                    else "sin-nombre"
-                )
+                nombre_comedor = getattr(admision.comedor, "nombre", "sin-nombre")
                 fecha_actual = date.today().strftime("%Y-%m-%d")
                 base_filename = (
                     slugify(f"disposicion-{nombre_comedor}-{fecha_actual}")
@@ -798,6 +778,7 @@ class LegalesService:
                 f"❌ Error inesperado al guardar el Formulario Proyecto Disposición: {str(e)}",
             )
             return redirect("admisiones_legales_ver", pk=admision.pk)
+        
 
     @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
@@ -848,29 +829,20 @@ class LegalesService:
                         f"Tipo de convenio no reconocido: '{admision.tipo_convenio.nombre}'"
                     )
 
-                pdf_template_name = f"admisiones/pdf/{tipo_admision}_pdf_proyecto_convenio_{convenio_suffix}.html"
+                pdf_template_name = f"{tipo_admision}_pdf_proyecto_convenio_{convenio_suffix}.html"
                 docx_template_name = (
                     f"{tipo_admision}_docx_proyecto_convenio_{convenio_suffix}.docx"
                 )
 
-                html_pdf = render_to_string(pdf_template_name, context)
-                if not html_pdf.strip():
-                    raise ValueError(
-                        f"El template {pdf_template_name} devolvió contenido vacío."
-                    )
-
-                base_url = str(
-                    getattr(settings, "STATIC_ROOT", "")
-                    or getattr(settings, "BASE_DIR", "")
-                    or "."
+                # ✅ Usar servicio centralizado para PDF
+                pdf_buffer = DocumentTemplateService.generar_pdf(
+                    template_name=pdf_template_name,
+                    context=context,
+                    app_name="admisiones",
                 )
-                pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
-                if not pdf_bytes:
-                    raise ValueError(
-                        "WeasyPrint no devolvió contenido para el PDF generado."
-                    )
-                pdf_content = ContentFile(pdf_bytes)
+                pdf_content = ContentFile(pdf_buffer.getvalue())
 
+                # ✅ DOCX igual que antes
                 docx_content = DocumentTemplateService.generar_docx(
                     template_name=docx_template_name,
                     context=context,
@@ -880,11 +852,7 @@ class LegalesService:
                 if not docx_content:
                     raise ValueError("El servicio de generación de DOCX devolvió None.")
 
-                nombre_comedor = (
-                    admision.comedor.nombre
-                    if getattr(admision.comedor, "nombre", None)
-                    else "sin-nombre"
-                )
+                nombre_comedor = getattr(admision.comedor, "nombre", "sin-nombre")
                 fecha_actual = date.today().strftime("%Y-%m-%d")
                 base_filename = (
                     slugify(f"convenio-{nombre_comedor}-{fecha_actual}")
@@ -925,6 +893,7 @@ class LegalesService:
                 f"❌ Error inesperado al guardar el formulario Proyecto de Convenio: {str(e)}",
             )
             return redirect(request.path_info)
+        
 
     @staticmethod
     def get_admisiones_legales_filtradas(query=""):
