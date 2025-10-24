@@ -10,6 +10,23 @@ from admisiones.models.admisiones import (
 )
 
 
+def _ultimo_numero_gde(admision, documentacion_nombre):
+    if not admision:
+        return None
+
+    return (
+        ArchivoAdmision.objects.filter(
+            admision=admision,
+            documentacion__nombre=documentacion_nombre,
+        )
+        .exclude(numero_gde__isnull=True)
+        .exclude(numero_gde="")
+        .order_by("-modificado", "-id")
+        .values_list("numero_gde", flat=True)
+        .first()
+    )
+
+
 class AdmisionForm(forms.ModelForm):
     class Meta:
         model = Admision
@@ -131,13 +148,9 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     .first()
                 )
             if "if_relevamiento" in self.fields:
-                self.fields["if_relevamiento"].initial = (
-                    ArchivoAdmision.objects.filter(
-                        admision=admision,
-                        documentacion__nombre="Relevamiento al Programa PAC",
-                    )
-                    .values_list("numero_gde", flat=True)
-                    .first()
+                self.fields["if_relevamiento"].initial = _ultimo_numero_gde(
+                    admision,
+                    "Relevamiento al Programa PAC",
                 )
             if referente:
                 self.fields["representante_nombre"].initial = (
@@ -266,13 +279,9 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     .first()
                 )
             if "if_relevamiento" in self.fields:
-                self.fields["if_relevamiento"].initial = (
-                    ArchivoAdmision.objects.filter(
-                        admision=admision,
-                        documentacion__nombre="Relevamiento al Programa PAC",
-                    )
-                    .values_list("numero_gde", flat=True)
-                    .first()
+                self.fields["if_relevamiento"].initial = _ultimo_numero_gde(
+                    admision,
+                    "Relevamiento al Programa PAC",
                 )
             if referente:
                 self.fields["representante_nombre"].initial = (
