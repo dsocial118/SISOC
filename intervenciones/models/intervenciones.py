@@ -1,5 +1,20 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+
+
+def validar_rango_anio_fecha(value):
+    """Validar que la fecha esté entre los años 2000 y 2100."""
+    if value:
+        anio = value.year
+        if anio < 2000:
+            raise ValidationError(
+                "El año de la fecha debe ser mayor o igual a 2000."
+            )
+        if anio > 2100:
+            raise ValidationError(
+                "El año de la fecha debe ser menor o igual a 2100."
+            )
 
 
 class TipoIntervencion(models.Model):
@@ -100,7 +115,9 @@ class Intervencion(models.Model):
         verbose_name="Tipo de intervención",
     )
     fecha = models.DateTimeField(
-        default=timezone.now, verbose_name="Fecha y hora de intervención"
+        default=timezone.now,
+        verbose_name="Fecha y hora de intervención",
+        validators=[validar_rango_anio_fecha],
     )
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
