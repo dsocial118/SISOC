@@ -15,7 +15,7 @@ from ..models.admisiones import (
     FormularioProyectoDeConvenio,
     FormularioProyectoDisposicion,
 )
-from admisiones.templatetags.admisiones_extras import entity_article
+from admisiones.templatetags.admisiones_tags import entity_article
 
 class DocumentTemplateService:
 
@@ -38,27 +38,80 @@ class DocumentTemplateService:
 
         return DocumentTemplateService._reparar_docx_para_office(buffer)
 
+
     @staticmethod
     def generar_pdf(template_name, context, app_name="admisiones"):
         template_path = f"{app_name}/pdf/{template_name}"
         template = get_template(template_path)
-
+    
+        # 🔹 Ajuste: enriquecer subtipo de entidad con artículo ANTES de limpiar el contexto
+        admision = context.get("admision")
+        try:
+            if (
+                admision
+                and hasattr(admision, "comedor")
+                and hasattr(admision.comedor, "organizacion")
+            ):
+                subtipo = getattr(admision.comedor.organizacion, "subtipo_entidad", None)
+                subtipo_nombre = getattr(subtipo, "nombre", None)
+                if subtipo_nombre:
+                    articulo = entity_article(subtipo_nombre)
+                    context["subtipo_entidad_nombre"] = f"{articulo} {subtipo_nombre}"
+                else:
+                    context["subtipo_entidad_nombre"] = ""
+        except Exception:
+            context["subtipo_entidad_nombre"] = ""
+    
+        # 🔹 Sanitización
         clean_context = DocumentTemplateService._sanear_contexto(
             context, campos_sin_escape=["informe", "texto_comidas", "html_content"]
         )
         html_content = template.render(clean_context)
-
+    
         pdf_buffer = io.BytesIO()
         HTML(string=html_content).write_pdf(pdf_buffer)
         pdf_buffer.seek(0)
-
+    
         return pdf_buffer
+
 
     @staticmethod
     def _sanear_contexto(context, campos_sin_escape=None):
         if campos_sin_escape is None:
             campos_sin_escape = ["informe", "texto_comidas"]
 
+        def _aplicar_articulo_en_admision(obj_admision):
+            """Modifica en memoria el nombre del subtipo_entidad para incluir el artículo,
+            evitando duplicaciones si ya está incluido."""
+            try:
+                if not obj_admision:
+                    return
+
+                comedor = getattr(obj_admision, "comedor", None)
+                organizacion = getattr(comedor, "organizacion", None)
+                subtipo = getattr(organizacion, "subtipo_entidad", None)
+                subtipo_nombre = getattr(subtipo, "nombre", None)
+
+                if subtipo and subtipo_nombre:
+                    articulo = entity_article(subtipo_nombre)
+                    prefijado = f"{articulo} {subtipo_nombre}".strip()
+
+                    # 🔹 Evitar duplicar si ya empieza con artículo
+                    if not subtipo_nombre.lower().startswith(("la ", "el ", "los ", "las ")):
+                        setattr(subtipo, "nombre", prefijado)
+
+            except Exception:
+                # Evitar errores por relaciones faltantes
+                pass
+
+        # 🔹 Aplicar sobre la admisión principal
+        _aplicar_articulo_en_admision(context.get("admision"))
+
+        # 🔹 Aplicar también sobre la admisión del informe (si existe)
+        informe = context.get("informe")
+        _aplicar_articulo_en_admision(getattr(informe, "admision", None))
+
+        # 🔹 Sanitización normal
         clean_context = {}
         for k, v in context.items():
             if k in campos_sin_escape or isinstance(v, (list, dict)):
@@ -69,6 +122,7 @@ class DocumentTemplateService:
                 clean_context[k] = escape(v)
             else:
                 clean_context[k] = v
+
         return clean_context
 
     @staticmethod
