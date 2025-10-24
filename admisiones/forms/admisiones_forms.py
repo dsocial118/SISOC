@@ -134,7 +134,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 self.fields["if_relevamiento"].initial = (
                     ArchivoAdmision.objects.filter(
                         admision=admision,
-                        documentacion__nombre="Relevamiento al Programa (PAC)",
+                        documentacion__nombre="Relevamiento al Programa PAC",
                     )
                     .values_list("numero_gde", flat=True)
                     .first()
@@ -269,7 +269,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 self.fields["if_relevamiento"].initial = (
                     ArchivoAdmision.objects.filter(
                         admision=admision,
-                        documentacion__nombre="Relevamiento al Programa (PAC)",
+                        documentacion__nombre="Relevamiento al Programa PAC",
                     )
                     .values_list("numero_gde", flat=True)
                     .first()
