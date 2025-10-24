@@ -8,13 +8,9 @@ def validar_rango_anio_fecha(value):
     if value:
         anio = value.year
         if anio < 2000:
-            raise ValidationError(
-                "El año de la fecha debe ser mayor o igual a 2000."
-            )
+            raise ValidationError("El año de la fecha debe ser mayor o igual a 2000.")
         if anio > 2100:
-            raise ValidationError(
-                "El año de la fecha debe ser menor o igual a 2100."
-            )
+            raise ValidationError("El año de la fecha debe ser menor o igual a 2100.")
 
 
 class TipoIntervencion(models.Model):
