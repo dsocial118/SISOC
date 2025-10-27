@@ -126,7 +126,6 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
 
         admision = datos_admision.get("admision")
         info_relevante = datos_admision.get("info_relevante")
-        anexo = datos_admision.get("anexo")
 
         context["admision"] = admision
         context["info_relevante"] = info_relevante
@@ -134,7 +133,7 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
         context["numero_disposicion"] = datos_admision.get("numero_disposicion")
 
         prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
-            anexo
+            info_relevante
         )
 
         context["prestaciones_por_dia"] = prestaciones_detalle.get(
