@@ -298,7 +298,8 @@ class AcompanamientoService:
             }
         except Exception:
             logger.exception(
-                f"Error en AcompanamientoService.obtener_prestaciones_detalladas para informe_tecnico: {informe_tecnico.pk if informe_tecnico else 'None'}",
+                f"Error en AcompanamientoService.obtener_prestaciones_detalladas "
+                f"para informe_tecnico: {informe_tecnico.pk if informe_tecnico else 'None'}",
             )
             raise
 
