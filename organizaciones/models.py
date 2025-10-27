@@ -142,6 +142,7 @@ class Organizacion(models.Model):
     fecha_vencimiento = models.DateTimeField(
         default=timezone.now, verbose_name="Fecha de vencimiento"
     )
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
         return str(self.nombre)
