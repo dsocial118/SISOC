@@ -220,6 +220,7 @@ class Comedor(models.Model):
         to=Referente, on_delete=models.SET_NULL, null=True, blank=True
     )
     foto_legajo = models.ImageField(upload_to="comedor/", blank=True, null=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self) -> str:
         return str(self.nombre)
