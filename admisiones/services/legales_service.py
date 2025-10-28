@@ -712,12 +712,16 @@ class LegalesService:
                 )
 
                 proyecto_convenio = admision.admisiones_proyecto_convenio.first()
+                proyecto_disposicion_if = FormularioProyectoDeConvenio.objects.filter(
+                    admision=admision
+                ).first()
 
                 context = {
                     "admision": admision,
                     "formulario": nuevo_formulario,
                     "informe": informe,
                     "proyecto_convenio": proyecto_convenio,
+                    "proyecto_disposicion_if": proyecto_disposicion_if.numero_if,
                 }
 
                 tipo_admision = admision.tipo or "incorporacion"
