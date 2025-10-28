@@ -5,8 +5,6 @@ from django.db import transaction
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
-    DocumentosExpediente,
-    Anexo,
 )
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
 from acompanamientos.models.acompanamiento import InformacionRelevante, Prestacion
@@ -219,8 +217,6 @@ class AcompanamientoService:
             )
 
             info_relevante = None
-            anexo = None
-            resolucion = None
 
             if admision:
                 info_relevante = (
@@ -228,26 +224,14 @@ class AcompanamientoService:
                     .order_by("-id")
                     .first()
                 )
-                anexo = Anexo.objects.filter(admision=admision).first()
                 comedor = Comedor.objects.filter(id=admision.comedor_id).first()
-
-                doc_resolucion = (
-                    DocumentosExpediente.objects.filter(
-                        admision=admision, tipo="Disposición"
-                    )
-                    .order_by("-creado")
-                    .first()
-                )
-                if doc_resolucion:
-                    resolucion = doc_resolucion.value or doc_resolucion.nombre
 
             return {
                 "admision": admision,
                 "comedor": comedor,
                 "info_relevante": info_relevante,
-                "anexo": anexo,
                 "numero_if": admision.legales_num_if if admision else None,
-                "numero_disposicion": resolucion,
+                "numero_disposicion": admision.numero_disposicion if admision else None,
             }
         except Exception:
             logger.exception(
@@ -256,17 +240,17 @@ class AcompanamientoService:
             raise
 
     @staticmethod
-    def obtener_prestaciones_detalladas(anexo):
-        """Procesar los datos del anexo para generar las prestaciones por día y totales.
+    def obtener_prestaciones_detalladas(informe_tecnico):
+        """Procesar los datos del informe técnico para generar las prestaciones aprobadas por día y totales.
 
         Args:
-            anexo: Anexo con los datos de prestaciones.
+            informe_tecnico: InformeTecnico con los datos de prestaciones aprobadas.
 
         Returns:
             dict: Diccionario con prestaciones_por_dia, prestaciones_dias y dias_semana.
         """
         try:
-            if not anexo:
+            if not informe_tecnico:
                 return {
                     "prestaciones_por_dia": [],
                     "prestaciones_dias": [],
@@ -297,8 +281,8 @@ class AcompanamientoService:
                 total_semanal = 0
 
                 for dia in dias:
-                    campo_nombre = f"{tipo}_{dia}"
-                    cantidad = getattr(anexo, campo_nombre, 0)
+                    campo_nombre = f"aprobadas_{tipo}_{dia}"
+                    cantidad = getattr(informe_tecnico, campo_nombre, 0)
                     fila[dia] = cantidad
                     total_semanal += cantidad or 0
 
@@ -314,7 +298,8 @@ class AcompanamientoService:
             }
         except Exception:
             logger.exception(
-                f"Error en AcompanamientoService.ontener_prestaciones_detalladas para anexo: {anexo.pk}",
+                f"Error en AcompanamientoService.obtener_prestaciones_detalladas "
+                f"para informe_tecnico: {informe_tecnico.pk if informe_tecnico else 'None'}",
             )
             raise
 
