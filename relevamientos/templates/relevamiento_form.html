@@ -13,7 +13,7 @@
         </li>
         {% if request.resolver_match.url_name == "relevamiento_editar" %}
             <li class="breadcrumb-item">
-                <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">Relevamiento {{ relevamiento.fecha_visita | default_if_none:"-" }}</a>
+                <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">Relevamiento {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}</a>
             </li>
             <li class="breadcrumb-item active">Editar</li>
         {% else %}

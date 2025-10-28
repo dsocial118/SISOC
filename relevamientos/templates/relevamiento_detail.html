@@ -6,10 +6,10 @@
 {% block titulo-pagina %}
     {{ relevamiento.comedor.nombre }}
     <span class="ml-2 h5">| Relevamiento</span>
-    <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"-" }} |</span>
+    <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"Sin información" }} |</span>
     <span class="ml-2 h5"
           {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
-        {{ relevamiento.estado | default_if_none:"-" }}
+        {{ relevamiento.estado | default_if_none:"Sin información" }}
     </span>
 {% endblock %}
 ;
@@ -21,7 +21,9 @@
         <div class="breadcrumb-item">
             <a href="{% url 'comedor_detalle' relevamiento.comedor.id %}">{{ relevamiento.comedor.nombre }}</a>
         </div>
-        <div class="breadcrumb-item active">Relevamiento {{ relevamiento.fecha_visita | default_if_none:"-" }}</div>
+        <div class="breadcrumb-item active">
+            Relevamiento {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}
+        </div>
     </ol>
 {% endblock %}
 ;
@@ -60,7 +62,7 @@
                         <div class="nav-item col-12 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Territorial
-                                <span class="username fw-bold fs-5">{{ relevamiento.territorial_nombre | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.territorial_nombre | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                     </div>
@@ -68,7 +70,7 @@
                         <div class="nav-item col-12 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Fecha y horario de la visita
-                                <span class="username fw-bold fs-5">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.fecha_visita | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                     </div>
@@ -90,13 +92,13 @@
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Nombre del Comedor/Merendero
-                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.nombre | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.nombre | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 ¿En qué año comenzó a funcionar?
-                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.comienzo | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.comienzo | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                     </div>
@@ -104,7 +106,7 @@
                         <div class="nav-item col-4 d-flex ">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Modalidad de prestación
-                                <span class="username fw-bold fs-5">{{ relevamiento.funcionamiento.modalidad_prestacion.nombre | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.funcionamiento.modalidad_prestacion.nombre | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                     </div>
@@ -118,7 +120,7 @@
                         <div class="nav-item col-6 d-flex ">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Cantidad de turnos
-                                <span class="username fw-bold fs-5">{{ relevamiento.funcionamiento.cantidad_turnos | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.funcionamiento.cantidad_turnos | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                     </div>
@@ -140,13 +142,13 @@
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Nombre y Apellido
-                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.nombre | default_if_none:"-" }} {{ relevamiento.comedor.referente.apellido | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.nombre | default_if_none:"Sin información" }} {{ relevamiento.comedor.referente.apellido | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 DNI de referente/responsable
-                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.documento | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.documento | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                     </div>
@@ -154,19 +156,19 @@
                         <div class="nav-item col-6 d-flex">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Mail de referente/responsable
-                                <span class="username fw-bold fs-5"><a href="mailto:{{ relevamiento.comedor.referente.mail }}">{{ relevamiento.comedor.referente.mail | default_if_none:"-" }}</a></span>
+                                <span class="username fw-bold fs-5"><a href="mailto:{{ relevamiento.comedor.referente.mail }}">{{ relevamiento.comedor.referente.mail | default_if_none:"Sin información" }}</a></span>
                             </div>
                         </div>
                         <div class="nav-item col-6 d-flex ">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Numero de referente/responsable
-                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.celular | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.celular | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                         <div class="nav-item col-6 d-flex ">
                             <div class="comment-text comment-text d-flex flex-column text-sm">
                                 Función
-                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.funcion | default_if_none:"-" }}</span>
+                                <span class="username fw-bold fs-5">{{ relevamiento.comedor.referente.funcion | default_if_none:"Sin información" }}</span>
                             </div>
                         </div>
                     </div>
@@ -189,61 +191,61 @@
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Calle
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.calle | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.calle | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Número
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.numero | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.numero | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Entre calle 1
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.entre_calle_1 | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.entre_calle_1 | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Entre calle 2
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.entre_calle_2 | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.entre_calle_2 | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Provincia
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.provincia.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.provincia.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Municipio
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.municipio.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.municipio.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Localidad
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.localida.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.localida.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Partido
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.partido | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.partido | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Barrio
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.barrio | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.barrio | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-1 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Código postal
-                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.codigo_postal | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.comedor.codigo_postal | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -269,31 +271,31 @@
                     <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Nombre completo
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.nombre | default_if_none:"-" }}, {{ relevamiento.responsable_relevamiento.apellido | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.nombre | default_if_none:"Sin información" }}, {{ relevamiento.responsable_relevamiento.apellido | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Mail
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.mail | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.mail | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Celular
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.celular | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.celular | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Documento
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.documento | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.documento | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-2 d-flex justify-content-center">
                         <div class="comment-text comment-text d-flex flex-column align-items-center text-center text-sm">
                             Funcion
-                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.funcion | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.responsable_relevamiento.funcion | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -315,13 +317,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿En qué tipo de espacio físico funciona el comedor?
-                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.tipo_espacio_fisico.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.tipo_espacio_fisico.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Si eligió 'Otro', especificar
-                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.espacio_fisico_otro | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.espacio_fisico_otro | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -375,19 +377,19 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Para cocinar utiliza:
-                            <span class="username fw-bold fs-5">{{ relevamiento_data.gas | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento_data.gas | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex ">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             El abastecimiento del agua es con:
-                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.cocina.abastecimiento_agua.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.cocina.abastecimiento_agua.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             En caso de ser otro abastecimiento de agua:
-                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.cocina.abastecimiento_agua_otro | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.cocina.abastecimiento_agua_otro | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -455,13 +457,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Si hay sanitarios, ¿cómo es el desagüe del hinodoro?
-                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.prestacion.desague_hinodoro.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.prestacion.desague_hinodoro.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿El Comedor/Merendero cuenta con alguna forma de registro de los reclamos sobre la prestacion alimentaria?
-                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.prestacion.gestion_quejas.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.prestacion.gestion_quejas.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -475,7 +477,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Con qué frecuencia se realiza la limpieza de las instalaciones?
-                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.prestacion.frecuencia_limpieza.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.espacio.prestacion.frecuencia_limpieza.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -497,7 +499,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué cantidad de personas realizan tareas en el Comedor?
-                            <span class="username fw-bold fs-5">{{ relevamiento.colaboradores.cantidad_colaboradores.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.colaboradores.cantidad_colaboradores.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -553,13 +555,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Si recibe, ¿Con qué frecuencia recibe donaciones particulares?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_donaciones_particulares.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_donaciones_particulares.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué tipo de recursos recibe de donaciones particulares?
-                            <span class="username fw-bold fs-5">{{ relevamiento_data.donaciones | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento_data.donaciones | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -571,13 +573,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Si recibe, ¿Con qué frecuencia recibe del estado nacional?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_estado_nacional.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_estado_nacional.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué tipo de recursos recibe del estado nacional?
-                            <span class="username fw-bold fs-5">{{ relevamiento_data.nacional | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento_data.nacional | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -589,13 +591,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Si recibe, ¿Con qué frecuencia recibe del estado provincial?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_estado_provincial.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_estado_provincial.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué tipo de recursos recibe del estado provincial?
-                            <span class="username fw-bold fs-5">{{ relevamiento_data.provincial | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento_data.provincial | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -607,13 +609,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Si recibe, ¿Con qué frecuencia recibe del estado municipal?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_estado_municipal.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_estado_municipal.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Qué tipo de recursos recibe del estado municipal?
-                            <span class="username fw-bold fs-5">{{ relevamiento_data.municipal | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento_data.municipal | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -625,13 +627,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Si recibe, ¿Con qué frecuencia recibe de otras fuentes?
-                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_otros.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.recursos.frecuencia_otros.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué tipo de recursos recibe de otras fuentes?
-                            <span class="username fw-bold fs-5">{{ relevamiento_data.otras | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento_data.otras | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -759,89 +761,89 @@
                         <tbody>
                             <tr>
                                 <td>DESAYUNO</td>
-                                <td>{{ prestacion.lunes_desayuno_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.lunes_desayuno_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.martes_desayuno_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.martes_desayuno_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.miercoles_desayuno_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.miercoles_desayuno_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.jueves_desayuno_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.jueves_desayuno_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.viernes_desayuno_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.viernes_desayuno_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.sabado_desayuno_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.sabado_desayuno_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.domingo_desayuno_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.domingo_desayuno_espera | default_if_none:"-" }}</td>
+                                <td>{{ prestacion.lunes_desayuno_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.lunes_desayuno_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.martes_desayuno_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.martes_desayuno_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.miercoles_desayuno_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.miercoles_desayuno_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.jueves_desayuno_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.jueves_desayuno_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.viernes_desayuno_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.viernes_desayuno_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.sabado_desayuno_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.sabado_desayuno_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.domingo_desayuno_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.domingo_desayuno_espera | default_if_none:"Sin información" }}</td>
                             </tr>
                             <tr>
                                 <td>ALMUERZO</td>
-                                <td>{{ prestacion.lunes_almuerzo_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.lunes_almuerzo_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.martes_almuerzo_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.martes_almuerzo_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.miercoles_almuerzo_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.miercoles_almuerzo_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.jueves_almuerzo_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.jueves_almuerzo_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.viernes_almuerzo_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.viernes_almuerzo_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.sabado_almuerzo_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.sabado_almuerzo_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.domingo_almuerzo_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.domingo_almuerzo_espera | default_if_none:"-" }}</td>
+                                <td>{{ prestacion.lunes_almuerzo_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.lunes_almuerzo_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.martes_almuerzo_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.martes_almuerzo_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.miercoles_almuerzo_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.miercoles_almuerzo_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.jueves_almuerzo_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.jueves_almuerzo_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.viernes_almuerzo_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.viernes_almuerzo_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.sabado_almuerzo_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.sabado_almuerzo_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.domingo_almuerzo_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.domingo_almuerzo_espera | default_if_none:"Sin información" }}</td>
                             </tr>
                             <tr>
                                 <td>MERIENDA</td>
-                                <td>{{ prestacion.lunes_merienda_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.lunes_merienda_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.martes_merienda_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.martes_merienda_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.miercoles_merienda_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.miercoles_merienda_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.jueves_merienda_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.jueves_merienda_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.viernes_merienda_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.viernes_merienda_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.sabado_merienda_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.sabado_merienda_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.domingo_merienda_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.domingo_merienda_espera | default_if_none:"-" }}</td>
+                                <td>{{ prestacion.lunes_merienda_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.lunes_merienda_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.martes_merienda_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.martes_merienda_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.miercoles_merienda_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.miercoles_merienda_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.jueves_merienda_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.jueves_merienda_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.viernes_merienda_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.viernes_merienda_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.sabado_merienda_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.sabado_merienda_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.domingo_merienda_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.domingo_merienda_espera | default_if_none:"Sin información" }}</td>
                             </tr>
                             <tr>
                                 <td>CENA</td>
-                                <td>{{ prestacion.lunes_cena_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.lunes_cena_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.martes_cena_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.martes_cena_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.miercoles_cena_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.miercoles_cena_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.jueves_cena_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.jueves_cena_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.viernes_cena_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.viernes_cena_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.sabado_cena_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.sabado_cena_espera | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.domingo_cena_actual | default_if_none:"-" }}</td>
-                                <td>{{ prestacion.domingo_cena_espera | default_if_none:"-" }}</td>
+                                <td>{{ prestacion.lunes_cena_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.lunes_cena_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.martes_cena_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.martes_cena_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.miercoles_cena_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.miercoles_cena_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.jueves_cena_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.jueves_cena_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.viernes_cena_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.viernes_cena_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.sabado_cena_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.sabado_cena_espera | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.domingo_cena_actual | default_if_none:"Sin información" }}</td>
+                                <td>{{ prestacion.domingo_cena_espera | default_if_none:"Sin información" }}</td>
                             </tr>
                             {% if relevamiento.comedor.programa.nombre == "Abordaje comunitario - Línea Tradicional" %}
                                 <tr>
                                     <td>MERIENDA REFORZADA</td>
-                                    <td>{{ prestacion.lunes_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.lunes_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.martes_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.martes_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.miercoles_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.miercoles_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.jueves_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.jueves_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.viernes_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.viernes_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.sabado_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.sabado_merienda_reforzada_espera | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.domingo_merienda_reforzada_actual | default_if_none:"-" }}</td>
-                                    <td>{{ prestacion.domingo_merienda_reforzada_espera | default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.lunes_merienda_reforzada_actual | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.lunes_merienda_reforzada_espera | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.martes_merienda_reforzada_actual | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.martes_merienda_reforzada_espera | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.miercoles_merienda_reforzada_actual | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.miercoles_merienda_reforzada_espera | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.jueves_merienda_reforzada_actual | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.jueves_merienda_reforzada_espera | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.viernes_merienda_reforzada_actual | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.viernes_merienda_reforzada_espera | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.sabado_merienda_reforzada_actual | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.sabado_merienda_reforzada_espera | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.domingo_merienda_reforzada_actual | default_if_none:"Sin información" }}</td>
+                                    <td>{{ prestacion.domingo_merienda_reforzada_espera | default_if_none:"Sin información" }}</td>
                                 </tr>
                             {% endif %}
                         </tbody>
@@ -863,19 +865,19 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué tipo de insumo recibió?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.tipo_insumo.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.tipo_insumo.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Con qué frecuencia recibió estos insumos?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.frecuencia_insumo.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.frecuencia_insumo.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Cuántas veces recibió estos insumos en el año 2024?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.veces_recibio_insumos_2024 | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.veces_recibio_insumos_2024 | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -883,7 +885,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿El espacio comunitario cuenta con?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.tecnologia.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.tecnologia.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -895,7 +897,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Al comedor se accede por...?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.acceso_comedor.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.acceso_comedor.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -903,7 +905,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Qué distancia hay desde el comedor al transporte público más cercano?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.distancia_transporte.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.distancia_transporte.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -1015,7 +1017,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Cuáles otras actividades se realizan en el comedor?
-                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.cuales_otras_actividades | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.anexo.cuales_otras_actividades | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -1035,7 +1037,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Tipo de comedor
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.tipo_comedor.nombre| default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.tipo_comedor.nombre| default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -1081,13 +1083,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Otro
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.reciben_otros_recepcion | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.reciben_otros_recepcion | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Frecuencia recepción mercadería
-                            <span class="username fw-bold fs-5">{{ relevamiento_data.Entregas | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento_data.Entregas | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -1095,13 +1097,13 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Frecuencia de entrega de bolsones
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.frecuencia_entrega_bolsones.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.frecuencia_entrega_bolsones.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Tipo de módulo/bolsones de alimento que entregan
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.tipo_modulo_bolsones.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.tipo_modulo_bolsones.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
@@ -1115,7 +1117,7 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Otros (Especificar en el punto 6- Observaciones)
-                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.otros_punto_entregas | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.punto_entregas.otros_punto_entregas | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>
@@ -1154,19 +1156,19 @@
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Motivo
-                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion.motivo.nombre | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion.motivo.nombre | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Longitud
-                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion.longitud | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion.longitud | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                     <div class="nav-item col-4 d-flex">
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             Latitud
-                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion.latitud | default_if_none:"-" }}</span>
+                            <span class="username fw-bold fs-5">{{ relevamiento.excepcion.latitud | default_if_none:"Sin información" }}</span>
                         </div>
                     </div>
                 </div>

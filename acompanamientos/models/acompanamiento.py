@@ -8,6 +8,7 @@ class InformacionRelevante(models.Model):
     numero_resolucion = models.CharField(max_length=255)
     vencimiento_mandato = models.DateField()
     if_relevamiento = models.CharField(max_length=255)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
         return f"Información Relevante - {self.comedor.nombre}"
