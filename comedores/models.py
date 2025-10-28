@@ -272,7 +272,9 @@ class AuditComedorPrograma(models.Model):
         ]
 
     def __str__(self):
-        from_programa = self.from_programa.nombre if self.from_programa else "Sin programa"
+        from_programa = (
+            self.from_programa.nombre if self.from_programa else "Sin programa"
+        )
         to_programa = self.to_programa.nombre if self.to_programa else "Sin programa"
         return f"{self.comedor.nombre}: {from_programa} -> {to_programa}"
 
