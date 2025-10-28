@@ -27,8 +27,12 @@
                                 <td>
                                     {{ comedor.provincia__nombre | default_if_none:"Sin información" }}, {{ comedor.municipio__nombre | default_if_none:"Sin información" }}, {{ comedor.localidad__nombre | default_if_none:"Sin información" }}, {{ comedor.barrio | default_if_none:"Sin información" }}
                                 </td>
-                                <td>{{ comedor.calle | default_if_none:"Sin información" }} {{ comedor.numero | default_if_none:"Sin información" }}</td>
-                                <td>{{ comedor.referente__nombre | default_if_none:"Sin información" }}, {{ comedor.referente__apellido | default_if_none:"Sin información" }}</td>
+                                <td>
+                                    {{ comedor.calle | default_if_none:"Sin información" }} {{ comedor.numero | default_if_none:"Sin información" }}
+                                </td>
+                                <td>
+                                    {{ comedor.referente__nombre | default_if_none:"Sin información" }}, {{ comedor.referente__apellido | default_if_none:"Sin información" }}
+                                </td>
                                 <td>{{ comedor.referente__celular | default_if_none:"Sin información" }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
