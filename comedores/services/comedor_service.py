@@ -14,7 +14,14 @@ from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
 from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
 from comedores.forms.comedor_form import ImagenComedorForm
-from comedores.models import Comedor, ImagenComedor, Nomina, Observacion, Referente
+from comedores.models import (
+    Comedor,
+    AuditComedorPrograma,
+    ImagenComedor,
+    Nomina,
+    Observacion,
+    Referente,
+)
 from comedores.utils import (
     get_object_by_filter,
     get_id_by_nombre,
@@ -188,6 +195,13 @@ class ComedorService:
                 "rendiciones_cuentas_mensuales",
                 queryset=RendicionCuentaMensual.objects.only("id"),
                 to_attr="rendiciones_optimized",
+            ),
+            Prefetch(
+                "programa_changes",
+                queryset=AuditComedorPrograma.objects.select_related(
+                    "from_programa", "to_programa", "changed_by"
+                ).order_by("-changed_at", "-id"),
+                to_attr="programa_changes_optimized",
             ),
         )
         return get_object_or_404(qs, pk=comedor_id)

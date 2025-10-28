@@ -541,6 +541,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             if hasattr(self.object, "imagenes_optimized")
             else list(self.object.imagenes.values("imagen"))
         )
+        programa_history = (
+            self.object.programa_changes_optimized
+            if hasattr(self.object, "programa_changes_optimized")
+            else list(
+                self.object.programa_changes.select_related(
+                    "from_programa", "to_programa", "changed_by"
+                ).order_by("-changed_at", "-id")
+            )
+        )
 
         return {
             "relevamientos": relevamientos,
@@ -552,6 +561,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "admision": admision,
             "admisiones_headers": admisiones_headers,
             "admisiones_items": admisiones_items,
+            "programa_history": programa_history,
         }
 
     def _get_environment_config(self):
