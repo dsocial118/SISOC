@@ -682,7 +682,8 @@ class LegalesService:
             return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
-    def guardar_formulario_reso(request, admision):
+    def     guardar_formulario_reso(request, admision):
+        # Guardar el formulario de proyecto de disposición y generar documentos PDF y DOCX
         try:
             with transaction.atomic():
                 formulario_existente = FormularioProyectoDisposicion.objects.filter(
