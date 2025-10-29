@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
+from django.core.paginator import Paginator
 import logging
 
 logger = logging.getLogger(__name__)
