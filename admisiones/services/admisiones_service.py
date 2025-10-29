@@ -19,6 +19,7 @@ from admisiones.models.admisiones import (
 )
 from admisiones.forms.admisiones_forms import (
     CaratularForm,
+    IFInformeTecnicoForm,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from .docx_service import DocumentTemplateService, TextFormatterService
@@ -335,6 +336,7 @@ class AdmisionService:
             comedor = admision.comedor
             convenios = TipoConvenio.objects.all()
             caratular_form = CaratularForm(instance=admision) if admision else None
+            form_if_informe_tecnico = IFInformeTecnicoForm(instance=admision) if admision else None
             informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
             informes_complementarios = InformeComplementario.objects.filter(
                 admision=admision
@@ -369,6 +371,7 @@ class AdmisionService:
                 "comedor": comedor,
                 "convenios": convenios,
                 "caratular_form": caratular_form,
+                "form_if_informe_tecnico": form_if_informe_tecnico,
                 "informe_tecnico": informe_tecnico,
                 "pdf": pdf,
                 "informes_complementarios": informes_complementarios,
@@ -404,6 +407,10 @@ class AdmisionService:
                     return True, "La admisión fue enviada a legales correctamente."
 
                 return False, "La admisión ya estaba marcada como enviada a legales."
+
+            if "btnIFInformeTecnico" in request.POST:
+
+                return AdmisionService.guardar_if_informe_tecnico(request, admision)
 
             if "btnDisponibilizarAcomp" in request.POST:
 
@@ -816,6 +823,30 @@ class AdmisionService:
             )
 
             return False
+
+    @staticmethod
+    def guardar_if_informe_tecnico(request, admision):
+
+        try:
+
+            form = IFInformeTecnicoForm(request.POST, instance=admision)
+
+            if form.is_valid():
+
+                form.save()
+
+                return True, "Número IF del Informe Técnico guardado correctamente."
+
+            return False, "Error en el formulario. Verifique los datos."
+
+        except Exception:
+
+            logger.exception(
+                "Error en guardar_if_informe_tecnico",
+                extra={"admision_pk": admision.pk},
+            )
+
+            return False, "Error al guardar el número IF del Informe Técnico."
 
     @staticmethod
     def marcar_como_enviado_a_acompaniamiento(admision, usuario=None):
