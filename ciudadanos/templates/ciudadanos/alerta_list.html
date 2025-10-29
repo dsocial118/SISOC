@@ -33,7 +33,7 @@
                                     </td>
                                     <td>{{ a.creada_por }}</td>
                                     <td>{{ a.fecha_inicio|date:"d/m/Y" }}</td>
-                                    <td>{{ a.eliminada_por|default_if_none:"-" }}</td>
+                                    <td>{{ a.eliminada_por|default_if_none:"Sin información" }}</td>
                                     <td>{{ a.fecha_fin|date:"d/m/Y" }}</td>
                                 </tr>
                             {% empty %}

@@ -4,6 +4,7 @@ $.widget.bridge("uibutton", $.ui.button);
     "use strict";
 
     const THEME_STORAGE_KEY = "theme";
+    const FORCED_THEME = "dark";
     const DARK_CLASS = "dark-mode";
     let updatingThemeAttr = false;
 
@@ -17,7 +18,7 @@ $.widget.bridge("uibutton", $.ui.button);
 
     function storeTheme(value) {
         try {
-            localStorage.setItem(THEME_STORAGE_KEY, value);
+            localStorage.setItem(THEME_STORAGE_KEY, FORCED_THEME);
         } catch (error) {
             // Sin almacenamiento disponible, no persistimos la preferencia.
         }
@@ -31,13 +32,7 @@ $.widget.bridge("uibutton", $.ui.button);
     }
 
     function resolveTheme(theme) {
-        if (theme === "dark") {
-            return "dark";
-        }
-        if (theme === "auto") {
-            return prefersDark() ? "dark" : "light";
-        }
-        return "light";
+        return FORCED_THEME;
     }
 
     function updateDarkModeIcon(isDark) {
@@ -45,9 +40,9 @@ $.widget.bridge("uibutton", $.ui.button);
         if (!icon.length) {
             return;
         }
-        icon.toggleClass("fas", isDark)
-            .toggleClass("far", !isDark)
-            .attr("title", isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
+        icon.addClass("fas")
+            .removeClass("far")
+            .attr("title", "Modo oscuro activo");
     }
 
     function setBodyThemeClass(theme) {
@@ -86,41 +81,26 @@ $.widget.bridge("uibutton", $.ui.button);
         setBodyThemeClass(resolved);
 
         if (settings.persist) {
-            storeTheme(theme);
+            storeTheme(resolved);
         }
 
         if (settings.notify) {
-            sendThemePreference(resolved === "dark");
+            sendThemePreference(true);
         }
     }
 
     function synchronizeFromRootAttr() {
-        const rootTheme = document.documentElement.getAttribute("data-bs-theme") || "light";
-        setBodyThemeClass(rootTheme);
-        if (getStoredTheme() !== "auto") {
-            storeTheme(rootTheme);
+        const rootTheme = document.documentElement.getAttribute("data-bs-theme") || FORCED_THEME;
+        if (rootTheme !== FORCED_THEME) {
+            applyTheme(FORCED_THEME, {persist: true, notify: false});
+            return;
         }
+        setBodyThemeClass(FORCED_THEME);
+        storeTheme(FORCED_THEME);
     }
 
     function initializeTheme() {
-        const storedTheme = getStoredTheme();
-        const rootTheme = document.documentElement.getAttribute("data-bs-theme");
-
-        if (storedTheme && storedTheme !== rootTheme) {
-            applyTheme(storedTheme, {persist: true, notify: false});
-            return;
-        }
-
-        if (rootTheme) {
-            setBodyThemeClass(rootTheme);
-            if (!storedTheme) {
-                storeTheme(rootTheme);
-            }
-            return;
-        }
-
-        const preferred = storedTheme || (prefersDark() ? "dark" : "light");
-        applyTheme(preferred, {persist: !storedTheme, notify: false});
+        applyTheme(FORCED_THEME, {persist: true, notify: false});
     }
 
     initializeTheme();
@@ -142,17 +122,15 @@ $.widget.bridge("uibutton", $.ui.button);
     });
 
     window.addEventListener("storage", function(event) {
-        if (event.key === THEME_STORAGE_KEY && event.newValue) {
-            applyTheme(event.newValue, {persist: false, notify: false});
+        if (event.key === THEME_STORAGE_KEY) {
+            applyTheme(FORCED_THEME, {persist: true, notify: false});
         }
     });
 
     if (typeof window.matchMedia === "function") {
         const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
         const handleColorSchemeChange = function() {
-            if (getStoredTheme() === "auto") {
-                applyTheme("auto", {persist: false, notify: false});
-            }
+            applyTheme(FORCED_THEME, {persist: true, notify: false});
         };
 
         if (typeof colorSchemeQuery.addEventListener === "function") {
@@ -179,9 +157,7 @@ $.widget.bridge("uibutton", $.ui.button);
         if (darkModeToggle.length) {
             darkModeToggle.on("click", function(event) {
                 event.preventDefault();
-                const currentTheme = document.documentElement.getAttribute("data-bs-theme") === "dark" ? "dark" : "light";
-                const nextTheme = currentTheme === "dark" ? "light" : "dark";
-                applyTheme(nextTheme, {persist: true, notify: true});
+                applyTheme(FORCED_THEME, {persist: true, notify: true});
             });
         } else {
             updateDarkModeIcon(document.body.classList.contains(DARK_CLASS));
