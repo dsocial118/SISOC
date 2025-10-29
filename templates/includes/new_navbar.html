@@ -31,21 +31,11 @@
                         <li>
                             <button type="button"
                                     class="dropdown-item d-flex align-items-center active"
-                                    data-bs-theme-value="light"
-                                    aria-pressed="false">
-                                <i class="bi bi-sun-fill me-2"></i>
-                                Claro
-                                <i class="bi bi-check-lg ms-auto d-none"></i>
-                            </button>
-                        </li>
-                        <li>
-                            <button type="button"
-                                    class="dropdown-item d-flex align-items-center"
                                     data-bs-theme-value="dark"
-                                    aria-pressed="false">
+                                    aria-pressed="true">
                                 <i class="bi bi-moon-fill me-2"></i>
                                 Oscuro
-                                <i class="bi bi-check-lg ms-auto d-none"></i>
+                                <i class="bi bi-check-lg ms-auto"></i>
                             </button>
                         </li>
                     </ul>
@@ -70,69 +60,54 @@
     (() => {
         "use strict";
 
-        const storedTheme = localStorage.getItem("theme");
-
-        const getPreferredTheme = () => {
-            if (storedTheme) {
-                return storedTheme;
+        const setDarkTheme = (focus = false) => {
+            document.documentElement.setAttribute("data-bs-theme", "dark");
+            try {
+                localStorage.setItem("theme", "dark");
+            } catch (err) {
+                console.warn("No se pudo persistir el tema oscuro:", err);
             }
-            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        };
 
-        const setTheme = function(theme) {
-            if (theme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-                document.documentElement.setAttribute("data-bs-theme", "dark");
-            } else {
-                document.documentElement.setAttribute("data-bs-theme", theme);
-            }
-        };
-
-        const showActiveTheme = (theme, focus = false) => {
             const themeSwitcher = document.querySelector("#bd-theme");
-            if (!themeSwitcher) return;
-
             const themeSwitcherText = document.querySelector("#bd-theme-text");
             const activeThemeIcon = document.querySelector(".theme-icon-active i");
-            const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`);
-            if (!btnToActive || !activeThemeIcon) return;
+            const darkButton = document.querySelector('[data-bs-theme-value="dark"]');
 
-            const iconClass = btnToActive.querySelector("i")?.getAttribute("class");
-            if (!iconClass) return;
-
-            document.querySelectorAll("[data-bs-theme-value]").forEach(el => {
-                el.classList.remove("active");
-                el.setAttribute("aria-pressed", "false");
-            });
-
-            btnToActive.classList.add("active");
-            btnToActive.setAttribute("aria-pressed", "true");
-            activeThemeIcon.setAttribute("class", iconClass);
-
-            if (themeSwitcherText) {
-                const themeLabel = `${themeSwitcherText.textContent} (${btnToActive.dataset.bsThemeValue})`;
-                themeSwitcher.setAttribute("aria-label", themeLabel);
+            if (activeThemeIcon) {
+                activeThemeIcon.setAttribute("class", "bi bi-moon-fill me-2");
             }
 
-            if (focus) themeSwitcher.focus();
+            if (darkButton) {
+                darkButton.classList.add("active");
+                darkButton.setAttribute("aria-pressed", "true");
+            }
+
+            if (themeSwitcherText && themeSwitcher) {
+                themeSwitcher.setAttribute("aria-label", `${themeSwitcherText.textContent} (dark)`);
+            }
+
+            if (focus && themeSwitcher) {
+                themeSwitcher.focus();
+            }
         };
 
-        setTheme(getPreferredTheme());
+        setDarkTheme();
 
-        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-            if (storedTheme !== "light" && storedTheme !== "dark") {
-                setTheme(getPreferredTheme());
+        if (window.matchMedia) {
+            try {
+                window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => setDarkTheme());
+            } catch (err) {
+                console.warn("No se pudo registrar el listener de tema oscuro:", err);
             }
-        });
+        }
 
         window.addEventListener("DOMContentLoaded", () => {
-            showActiveTheme(getPreferredTheme());
+            setDarkTheme();
 
             document.querySelectorAll("[data-bs-theme-value]").forEach(toggle => {
-                toggle.addEventListener("click", () => {
-                    const theme = toggle.getAttribute("data-bs-theme-value");
-                    localStorage.setItem("theme", theme);
-                    setTheme(theme);
-                    showActiveTheme(theme, true);
+                toggle.addEventListener("click", event => {
+                    event.preventDefault();
+                    setDarkTheme(true);
                 });
             });
         });
