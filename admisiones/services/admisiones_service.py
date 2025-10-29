@@ -208,7 +208,7 @@ class AdmisionService:
                 | Q(comedor__referente__apellido__icontains=query)
                 | Q(comedor__referente__celular__icontains=query)
             )
-        
+
         queryset = queryset.exclude(
             Q(enviado_acompaniamiento=True) | Q(enviada_a_archivo=True)
         )
