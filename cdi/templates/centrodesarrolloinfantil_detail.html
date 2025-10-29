@@ -3,7 +3,7 @@
 {% block title %}Centro de Desarrollo Infantil: {{ centrodesarrolloinfantiles.nombre }}{% endblock %}
 {% block titulo-pagina %}
     {{ centrodesarrolloinfantiles.nombre }}
-    <span class="ml-2 h5">| {{ centrodesarrolloinfantiles.provincia.nombre | default_if_none:"-" }}, {{ centrodesarrolloinfantiles.municipio.nombre | default_if_none:"-" }}, {{ centrodesarrolloinfantiles.localidad.nombre | default_if_none:"-" }}</span>
+    <span class="ml-2 h5">| {{ centrodesarrolloinfantiles.provincia.nombre | default_if_none:"Sin información" }}, {{ centrodesarrolloinfantiles.municipio.nombre | default_if_none:"Sin información" }}, {{ centrodesarrolloinfantiles.localidad.nombre | default_if_none:"Sin información" }}</span>
 {% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -28,7 +28,7 @@
                         <i class="fa fa-child fa-2x"></i>
                     </div>
                     <div class="col-9 text-start">
-                        <p>{{ centrodesarrolloinfantiles.cantidad_ninos | default_if_none:"-" }}</p>
+                        <p>{{ centrodesarrolloinfantiles.cantidad_ninos | default_if_none:"Sin información" }}</p>
                     </div>
                 </div>
                 <div class="row info-card-label">
@@ -43,7 +43,7 @@
                         <i class="fa fa-user-tie fa-2x"></i>
                     </div>
                     <div class="col-9 text-start">
-                        <p>{{ centrodesarrolloinfantiles.cantidad_trabajadores | default_if_none:"-" }}</p>
+                        <p>{{ centrodesarrolloinfantiles.cantidad_trabajadores | default_if_none:"Sin información" }}</p>
                     </div>
                 </div>
                 <div class="row info-card-label">
@@ -58,7 +58,7 @@
                         <i class="fa fa-dollar-sign fa-2x"></i>
                     </div>
                     <div class="col-9 text-start">
-                        <p>{{ centrodesarrolloinfantiles.cobro_arancel | default_if_none:"-" }}</p>
+                        <p>{{ centrodesarrolloinfantiles.cobro_arancel | default_if_none:"Sin información" }}</p>
                     </div>
                 </div>
                 <div class="row info-card-label">
@@ -125,28 +125,28 @@
                         <strong>Numero de Repi:</strong> {{ centrodesarrolloinfantiles.numrepo }}
                     </p>
                     <p>
-                        <strong>Organización:</strong> {{ centrodesarrolloinfantiles.organizacion.nombre | default_if_none:"-" }}
+                        <strong>Organización:</strong> {{ centrodesarrolloinfantiles.organizacion.nombre | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Año de inicio:</strong> {{ centrodesarrolloinfantiles.comienzo | default_if_none:"-" }}
+                        <strong>Año de inicio:</strong> {{ centrodesarrolloinfantiles.comienzo | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Modalidad de gestión:</strong> {{ centrodesarrolloinfantiles.modalidad_gestion | default_if_none:"-" }}
+                        <strong>Modalidad de gestión:</strong> {{ centrodesarrolloinfantiles.modalidad_gestion | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Dirección:</strong> {{ centrodesarrolloinfantiles.direccion | default_if_none:"-" }}
+                        <strong>Dirección:</strong> {{ centrodesarrolloinfantiles.direccion | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Teléfono:</strong> {{ centrodesarrolloinfantiles.telefono | default_if_none:"-" }}
+                        <strong>Teléfono:</strong> {{ centrodesarrolloinfantiles.telefono | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Email:</strong> <a href="mailto:{{ centrodesarrolloinfantiles.email }}">{{ centrodesarrolloinfantiles.email | default_if_none:"-" }}</a>
+                        <strong>Email:</strong> <a href="mailto:{{ centrodesarrolloinfantiles.email }}">{{ centrodesarrolloinfantiles.email | default_if_none:"Sin información" }}</a>
                     </p>
                     <p>
-                        <strong>Barrio:</strong> {{ centrodesarrolloinfantiles.barrio | default_if_none:"-" }}
+                        <strong>Barrio:</strong> {{ centrodesarrolloinfantiles.barrio | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Código postal:</strong> {{ centrodesarrolloinfantiles.codigo_postal | default_if_none:"-" }}
+                        <strong>Código postal:</strong> {{ centrodesarrolloinfantiles.codigo_postal | default_if_none:"Sin información" }}
                     </p>
                 </div>
             </div>
@@ -160,13 +160,13 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        <strong>Provincia:</strong> {{ centrodesarrolloinfantiles.provincia.nombre | default_if_none:"-" }}
+                        <strong>Provincia:</strong> {{ centrodesarrolloinfantiles.provincia.nombre | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Municipio:</strong> {{ centrodesarrolloinfantiles.municipio.nombre | default_if_none:"-" }}
+                        <strong>Municipio:</strong> {{ centrodesarrolloinfantiles.municipio.nombre | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Localidad:</strong> {{ centrodesarrolloinfantiles.localidad.nombre | default_if_none:"-" }}
+                        <strong>Localidad:</strong> {{ centrodesarrolloinfantiles.localidad.nombre | default_if_none:"Sin información" }}
                     </p>
                 </div>
             </div>
@@ -207,7 +207,7 @@
                         {% endfor %}
                     </p>
                     <p>
-                        <strong>Horario:</strong> {{ centrodesarrolloinfantiles.horario_inicio | default_if_none:"-" }} - {{ centrodesarrolloinfantiles.horario_fin | default_if_none:"-" }}
+                        <strong>Horario:</strong> {{ centrodesarrolloinfantiles.horario_inicio | default_if_none:"Sin información" }} - {{ centrodesarrolloinfantiles.horario_fin | default_if_none:"Sin información" }}
                     </p>
                 </div>
             </div>
@@ -219,13 +219,13 @@
                 </div>
                 <div class="card-body">
                     <p>
-                        <strong>Cantidad de niños:</strong> {{ centrodesarrolloinfantiles.cantidad_ninos | default_if_none:"-" }}
+                        <strong>Cantidad de niños:</strong> {{ centrodesarrolloinfantiles.cantidad_ninos | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Cantidad de trabajadores:</strong> {{ centrodesarrolloinfantiles.cantidad_trabajadores | default_if_none:"-" }}
+                        <strong>Cantidad de trabajadores:</strong> {{ centrodesarrolloinfantiles.cantidad_trabajadores | default_if_none:"Sin información" }}
                     </p>
                     <p>
-                        <strong>Arancel:</strong> {{ centrodesarrolloinfantiles.cobro_arancel | default_if_none:"-" }}
+                        <strong>Arancel:</strong> {{ centrodesarrolloinfantiles.cobro_arancel | default_if_none:"Sin información" }}
                     </p>
                     <p>
                         <strong>Estabilidad de matrícula:</strong>
