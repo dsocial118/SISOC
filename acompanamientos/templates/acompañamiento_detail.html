@@ -98,13 +98,13 @@
                                     {% for prestacion in prestaciones_por_dia %}
                                         <tr>
                                             <td class="text-start fw-bold">{{ prestacion.tipo|upper }}</td>
-                                            <td>{{ prestacion.lunes|default_if_none:"-" }}</td>
-                                            <td>{{ prestacion.martes|default_if_none:"-" }}</td>
-                                            <td>{{ prestacion.miercoles|default_if_none:"-" }}</td>
-                                            <td>{{ prestacion.jueves|default_if_none:"-" }}</td>
-                                            <td>{{ prestacion.viernes|default_if_none:"-" }}</td>
-                                            <td>{{ prestacion.sabado|default_if_none:"-" }}</td>
-                                            <td>{{ prestacion.domingo|default_if_none:"-" }}</td>
+                                            <td>{{ prestacion.lunes|default_if_none:"Sin información" }}</td>
+                                            <td>{{ prestacion.martes|default_if_none:"Sin información" }}</td>
+                                            <td>{{ prestacion.miercoles|default_if_none:"Sin información" }}</td>
+                                            <td>{{ prestacion.jueves|default_if_none:"Sin información" }}</td>
+                                            <td>{{ prestacion.viernes|default_if_none:"Sin información" }}</td>
+                                            <td>{{ prestacion.sabado|default_if_none:"Sin información" }}</td>
+                                            <td>{{ prestacion.domingo|default_if_none:"Sin información" }}</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
