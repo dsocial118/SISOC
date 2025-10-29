@@ -6,9 +6,9 @@
                class="font-weight-bold link-handler"
                title="Ver detalles">{{ organizacion.nombre }}</a>
         </td>
-        <td>{{ organizacion.cuit |default_if_none:"-" }}</td>
-        <td>{{ organizacion.telefono | default_if_none:"-" }}</td>
-        <td>{{ organizacion.email | default_if_none:"-" }}</td>
+        <td>{{ organizacion.cuit |default_if_none:"Sin información" }}</td>
+        <td>{{ organizacion.telefono | default_if_none:"Sin información" }}</td>
+        <td>{{ organizacion.email | default_if_none:"Sin información" }}</td>
         <td class="project-actions text-right">
             <div class="btn-group" role="group">
                 <a href="{% url 'organizacion_detalle' organizacion.id %}"

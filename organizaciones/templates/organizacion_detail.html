@@ -3,7 +3,7 @@
 {% block title %}Organizacion: {{ organizacion.nombre }}{% endblock %}
 {% block titulo-pagina %}
     {{ organizacion.nombre }}
-    <span class="ml-2 h5">| {{ organizacion.cuit | default_if_none:"-" }}</span>
+    <span class="ml-2 h5">| {{ organizacion.cuit | default_if_none:"Sin información" }}</span>
 {% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
