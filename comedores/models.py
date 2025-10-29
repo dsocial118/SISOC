@@ -159,7 +159,7 @@ class Comedor(models.Model):
     estado_general = models.CharField(
         max_length=32,
         choices=ESTADOS_GENERALES,
-        default="Activo",
+        default="Sin definir",
         verbose_name="Estado general",
     )
 
