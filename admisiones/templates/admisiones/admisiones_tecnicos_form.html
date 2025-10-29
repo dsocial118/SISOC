@@ -587,9 +587,7 @@
                                                         data-bs-dismiss="modal"
                                                         aria-label="Close"></button>
                                             </div>
-                                            <div class="modal-body">
-                                                {{ form_if_informe_tecnico.numero_if_tecnico|as_crispy_field }}
-                                            </div>
+                                            <div class="modal-body">{{ form_if_informe_tecnico.numero_if_tecnico|as_crispy_field }}</div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                                 <button type="submit" name="btnIFInformeTecnico" class="btn btn-primary">Guardar</button>
