@@ -529,6 +529,17 @@ class DisposicionForm(forms.ModelForm):
             field.required = True
 
 
+class IFInformeTecnicoForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = ["numero_if_tecnico"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = True
+
+
 class ReinicioExpedienteForm(forms.ModelForm):
     class Meta:
         model = Admision
