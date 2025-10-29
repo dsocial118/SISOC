@@ -75,10 +75,17 @@
                            class="btn btn-primary mr-1">Informe Técnico Complementario</a>
                     {% endif %}
                     {% if not admision.enviado_legales %}
-                        <button type="button"
-                                class="btn btn-primary mr-1"
-                                data-bs-toggle="modal"
-                                data-bs-target="#confirmarLegalesModal">Mandar a legales</button>
+                        {% if not admision.numero_if_tecnico %}
+                            <button type="button"
+                                    class="btn btn-primary mr-1"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalIFInformeTecnico">IF Informe Técnico</button>
+                        {% else %}
+                            <button type="button"
+                                    class="btn btn-primary mr-1"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmarLegalesModal">Mandar a legales</button>
+                        {% endif %}
                     {% endif %}
                 {% endif %}
             {% endif %}
@@ -232,6 +239,15 @@
                                                         </i>
                                                     </div>
                                                 </li>
+                                                {% if admision.numero_if_tecnico %}
+                                                    <li class="nav-item">
+                                                        <div class="comment-text">
+                                                            IF Informe Técnico:
+                                                            <span class="fw-bold">{{ admision.numero_if_tecnico }}</span>
+                                                            <i class="bi bi-check-circle-fill text-success"></i>
+                                                        </div>
+                                                    </li>
+                                                {% endif %}
                                                 {% if pdf %}
                                                     <li class="nav-item">
                                                         <div class="comment-text">
@@ -551,6 +567,34 @@
                                                         class="btn btn-primary">Confirmar</button>
                                             </form>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Modal para IF Informe Técnico -->
+                            <div class="modal fade"
+                                 id="modalIFInformeTecnico"
+                                 tabindex="-1"
+                                 aria-labelledby="modalIFInformeTecnicoLabel"
+                                 aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form method="POST" action="">
+                                            {% csrf_token %}
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modalIFInformeTecnicoLabel">IF Informe Técnico</h5>
+                                                <button type="button"
+                                                        class="btn-close"
+                                                        data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                {{ form_if_informe_tecnico.numero_if_tecnico|as_crispy_field }}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" name="btnIFInformeTecnico" class="btn btn-primary">Guardar</button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
