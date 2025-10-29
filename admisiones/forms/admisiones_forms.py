@@ -152,7 +152,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     admision,
                     "Relevamiento al Programa PAC",
                 )
-            #ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
+            # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
             # if referente:
             #    self.fields["representante_nombre"].initial = (
             #        f"{referente.nombre or ''} {referente.apellido or ''}".strip()
@@ -284,7 +284,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     admision,
                     "Relevamiento al Programa PAC",
                 )
-            #ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
+            # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
             # if referente:
             #    self.fields["representante_nombre"].initial = (
             #        f"{referente.nombre or ''} {referente.apellido or ''}".strip()
