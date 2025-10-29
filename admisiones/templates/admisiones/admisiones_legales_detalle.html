@@ -47,13 +47,13 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Estado expediente:
-                                <span class="fw-bold">{{ admision.estado_legales|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.estado_legales|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Número de expediente:
-                                <span class="fw-bold">{{ admision.legales_num_if|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.legales_num_if|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
@@ -181,19 +181,19 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Tipo:
-                                <span class="fw-bold">{{ admision.get_tipo_display|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.get_tipo_display|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Tipo Convenio:
-                                <span class="fw-bold">{{ admision.tipo_convenio.nombre|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.tipo_convenio.nombre|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Estado:
-                                <span class="fw-bold">{{ admision.estado.nombre|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.estado.nombre|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
@@ -217,7 +217,7 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Número de Expediente:
-                                <span class="fw-bold">{{ admision.num_expediente|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.num_expediente|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         {% if pdf_url %}
@@ -284,31 +284,31 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Tipo Comedor:
-                                <span class="fw-bold">{{ admision.comedor.tipocomedor|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.tipocomedor|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Programa:
-                                <span class="fw-bold">{{ admision.comedor.programa|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.programa|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Organización:
-                                <span class="fw-bold">{{ admision.comedor.organizacion|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.organizacion|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Provincia:
-                                <span class="fw-bold">{{ admision.comedor.provincia|default_if_none:"-" }} - {{ admision.comedor.municipio|default_if_none:"-" }} - {{ admision.comedor.localidad|default_if_none:"-" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.provincia|default_if_none:"Sin información" }} - {{ admision.comedor.municipio|default_if_none:"Sin información" }} - {{ admision.comedor.localidad|default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
                                 Calle:
-                                <span class="fw-bold">{{ admision.comedor.calle|default_if_none:"-" }} {{ admision.comedor.numero|default_if_none:"-" }} - Piso: {{ admision.comedor.piso|default_if_none:"-" }} {{ admision.comedor.departamento|default_if_none:"" }}</span>
+                                <span class="fw-bold">{{ admision.comedor.calle|default_if_none:"Sin información" }} {{ admision.comedor.numero|default_if_none:"Sin información" }} - Piso: {{ admision.comedor.piso|default_if_none:"Sin información" }} {{ admision.comedor.departamento|default_if_none:"" }}</span>
                             </div>
                         </li>
                     </ul>

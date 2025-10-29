@@ -105,22 +105,22 @@
                             <i class="bi bi-house-door-fill me-2"></i><strong>{{ comedor.nombre }}</strong>
                         </p>
                         <p class="mb-1">
-                            <i class="bi bi-geo  me-2"></i><strong>{{ comedor.calle| default_if_none:"-" }} {{ comedor.numero| default_if_none:"-" }}</strong>
+                            <i class="bi bi-geo  me-2"></i><strong>{{ comedor.calle| default_if_none:"Sin información" }} {{ comedor.numero| default_if_none:"Sin información" }}</strong>
                         </p>
                         <p class="mb-1">
-                            <i class="bi bi-geo-alt-fill  me-2"></i><strong>{{ comedor.provincia.nombre| default_if_none:"-" }}, {{ comedor.municipio.nombre| default_if_none:"-" }}</strong>
+                            <i class="bi bi-geo-alt-fill  me-2"></i><strong>{{ comedor.provincia.nombre| default_if_none:"Sin información" }}, {{ comedor.municipio.nombre| default_if_none:"Sin información" }}</strong>
                         </p>
                         <p class="mb-1">
-                            Localidad: <strong>{{ comedor.localidad.nombre | default_if_none:"-" }}</strong>
+                            Localidad: <strong>{{ comedor.localidad.nombre | default_if_none:"Sin información" }}</strong>
                         </p>
                         <p class="mb-1">
-                            Partido: <strong>{{ comedor.partido | default_if_none:"-" }}</strong>
+                            Partido: <strong>{{ comedor.partido | default_if_none:"Sin información" }}</strong>
                         </p>
                         <p class="mb-1">
-                            Barrio: <strong>{{ comedor.barrio | default_if_none:"-" }}</strong>
+                            Barrio: <strong>{{ comedor.barrio | default_if_none:"Sin información" }}</strong>
                         </p>
                         <p class="mb-1">
-                            Codigo Postal: <strong>{{ comedor.codigo_postal | default_if_none:"-" }}</strong>
+                            Codigo Postal: <strong>{{ comedor.codigo_postal | default_if_none:"Sin información" }}</strong>
                         </p>
                     </div>
                 </div>
@@ -151,7 +151,7 @@
                     <div class="col-6 overflow-auto" style="max-height: 370px;">
                         <h2 class="border-bottom border-3 mb-4 fw-bold">Responsables</h2>
                         <p class="mb-1">
-                            <i class="bi bi-building me-2"></i><strong>{{ comedor.organizacion.nombre | default_if_none:"-" }}</strong>
+                            <i class="bi bi-building me-2"></i><strong>{{ comedor.organizacion.nombre | default_if_none:"Sin información" }}</strong>
                         </p>
                         <p class="mb-1">
                             <i class="bi bi-person-fill-check me-2"></i><strong>{{ comedor.referente.nombre | default_if_none:"" }} {{ comedor.referente.apellido | default_if_none:"" }} , {{ comedor.referente.documento |   default_if_none:"" }}</strong>
@@ -160,10 +160,10 @@
                             <i class="bi bi-person-fill-check me-2"></i><strong>{{ comedor.referente.nombre | default_if_none:"" }} {{ comedor.referente.apellido | default_if_none:"" }} , {{ comedor.referente.documento |   default_if_none:"" }}</strong>
                         </p>
                         <p class="mb-1">
-                            <i class="bi bi-geo-alt-fill  me-2"></i><strong>{{ comedor.provincia.nombre| default_if_none:"-" }}, {{ comedor.municipio.nombre| default_if_none:"-" }}</strong>
+                            <i class="bi bi-geo-alt-fill  me-2"></i><strong>{{ comedor.provincia.nombre| default_if_none:"Sin información" }}, {{ comedor.municipio.nombre| default_if_none:"Sin información" }}</strong>
                         </p>
                         <p class="mb-1">
-                            <i class="bi bi-phone  me-2"></i><strong>{{ comedor.referente.celular |   default_if_none:"-" }}</strong>
+                            <i class="bi bi-phone  me-2"></i><strong>{{ comedor.referente.celular |   default_if_none:"Sin información" }}</strong>
                         </p>
                         <hr class="mb-1" />
                         <p class="mb-1">
@@ -665,19 +665,19 @@
                         </div>
                         <div class="card-body">
                             <p class="mb-0 fs-7">
-                                Fecha: <strong>{{ admision.creado |date:'d/m/Y' |default_if_none:"-" }}</strong>
+                                Fecha: <strong>{{ admision.creado |date:'d/m/Y' |default_if_none:"Sin información" }}</strong>
                             </p>
                             <p class="mb-0 fs-7">
-                                Número de expediente: <strong class="text-uppercase">{{ admision.num_expediente |default_if_none:"-" }}</strong>
+                                Número de expediente: <strong class="text-uppercase">{{ admision.num_expediente |default_if_none:"Sin información" }}</strong>
                             </p>
                             <p class="mb-0 fs-7">
-                                Estado: <strong class="text-uppercase">{{ admision.estado.nombre |default_if_none:"-" }}</strong>
+                                Estado: <strong class="text-uppercase">{{ admision.estado.nombre |default_if_none:"Sin información" }}</strong>
                             </p>
                             <p class="mb-0 fs-7">
-                                Dupla: <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"-" }}, USUARIO 1, USUARIO 2</strong>
+                                Dupla: <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"Sin información" }}, USUARIO 1, USUARIO 2</strong>
                             </p>
                             <p class="mb-0 fs-7">
-                                Tipo de convenio: <strong class="text-uppercase">{{ admision.tipo_convenio.nombre |default_if_none:"-" }}</strong>
+                                Tipo de convenio: <strong class="text-uppercase">{{ admision.tipo_convenio.nombre |default_if_none:"Sin información" }}</strong>
                             </p>
                             <div class="mt-3 d-flex justify-content-center">
                                 <a href="{% url 'dupla_asignar' pk=comedor.id %}"

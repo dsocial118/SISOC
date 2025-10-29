@@ -939,6 +939,7 @@ class Relevamiento(models.Model):
         on_delete=models.CASCADE,
     )
     fecha_visita = models.DateTimeField(null=True, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     territorial_nombre = models.CharField(max_length=255, blank=True, null=True)
     territorial_uid = models.CharField(max_length=255, blank=True, null=True)
     funcionamiento = models.OneToOneField(

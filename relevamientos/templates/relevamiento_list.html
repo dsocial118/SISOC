@@ -6,7 +6,7 @@
 {% block titulo-pagina %}
     {{ relevamiento.comedor__nombre }}
     <span class="ml-2 h5"> {{ comedor.nombre }} | {{ comedor.provincia__nombre }}, {{ comedor.municipio__nombre }}, {{ comedor.localidad__nombre }}</span>
-    <span class="ml-2 h5">{{ relevamiento.fecha_visita | default_if_none:"-" }}</span>
+    <span class="ml-2 h5">{{ relevamiento.fecha_visita | default_if_none:"Sin información" }}</span>
 {% endblock %}
 ;
 {% block breadcrumb %}{% endblock %}
