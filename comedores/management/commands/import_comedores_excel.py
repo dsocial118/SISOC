@@ -145,7 +145,9 @@ def resolve_programa(name: Optional[str]) -> Tuple[Optional[Programas], Optional
     return programa, None
 
 
-def resolve_tipocomedor(name: Optional[str]) -> Tuple[Optional[TipoDeComedor], Optional[str]]:
+def resolve_tipocomedor(
+    name: Optional[str],
+) -> Tuple[Optional[TipoDeComedor], Optional[str]]:
     if not name:
         return None, None
     tipo = TipoDeComedor.objects.filter(nombre__iexact=name.strip()).first()
@@ -333,9 +335,7 @@ class Command(BaseCommand):
                 updated_ids.append(comedor.id)
 
                 if row_warnings:
-                    register_warnings(
-                        warnings, f"id {comedor.id}", row_warnings
-                    )
+                    register_warnings(warnings, f"id {comedor.id}", row_warnings)
                 continue
 
             nombre = as_string(row_data.get("nombre"))
@@ -348,7 +348,10 @@ class Command(BaseCommand):
                 )
                 continue
 
-            comedor_kwargs: Dict[str, object] = {"nombre": nombre, "estado_general": ACTIVE_STATE}
+            comedor_kwargs: Dict[str, object] = {
+                "nombre": nombre,
+                "estado_general": ACTIVE_STATE,
+            }
 
             if "programa" in row_data:
                 programa_name = as_string(row_data.get("programa"))
@@ -445,7 +448,9 @@ class Command(BaseCommand):
                     self.stdout.write(f"  {key}: {message}")
 
         if failures:
-            self.stdout.write(self.style.ERROR("No se pudieron procesar las siguientes filas:"))
+            self.stdout.write(
+                self.style.ERROR("No se pudieron procesar las siguientes filas:")
+            )
             for failure in failures:
                 row = failure.get("row")
                 identifier = failure.get("id_sisoc")
@@ -455,15 +460,23 @@ class Command(BaseCommand):
                 else:
                     self.stdout.write(f"  Fila {row}: {reason}")
         else:
-            self.stdout.write(self.style.SUCCESS("Todas las filas reconocidas se procesaron correctamente."))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Todas las filas reconocidas se procesaron correctamente."
+                )
+            )
 
-    def _load_rows(self, file_path: str, sheet_name: Optional[str]) -> List[List[Optional[object]]]:
+    def _load_rows(
+        self, file_path: str, sheet_name: Optional[str]
+    ) -> List[List[Optional[object]]]:
         extension = os.path.splitext(file_path)[1].lower()
         if extension in {".xlsx", ".xlsm"}:
             return self._load_rows_from_excel(file_path, sheet_name)
         if extension == ".csv":
             if sheet_name:
-                raise CommandError("La opción --sheet-name solo aplica para archivos Excel.")
+                raise CommandError(
+                    "La opción --sheet-name solo aplica para archivos Excel."
+                )
             return self._load_rows_from_csv(file_path)
         raise CommandError(
             f"Extensión no soportada '{extension}'. Utilice un archivo .xlsx, .xlsm o .csv."

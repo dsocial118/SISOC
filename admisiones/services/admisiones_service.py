@@ -336,7 +336,9 @@ class AdmisionService:
             comedor = admision.comedor
             convenios = TipoConvenio.objects.all()
             caratular_form = CaratularForm(instance=admision) if admision else None
-            form_if_informe_tecnico = IFInformeTecnicoForm(instance=admision) if admision else None
+            form_if_informe_tecnico = (
+                IFInformeTecnicoForm(instance=admision) if admision else None
+            )
             informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
             informes_complementarios = InformeComplementario.objects.filter(
                 admision=admision
