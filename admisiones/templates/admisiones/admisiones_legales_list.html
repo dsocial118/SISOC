@@ -36,7 +36,7 @@
                                     <td>{{ admision.tipo_convenio.nombre }}</td>
                                     <td>{{ admision.num_expediente }}</td>
                                     <td>{{ admision.modificado|date:'d/m/Y' }}</td>
-                                    <td>{{ admision.estado_legales| default_if_none:"-" }}</td>
+                                    <td>{{ admision.estado_legales| default_if_none:"Sin información" }}</td>
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'admisiones_legales_ver' admision.id %}"

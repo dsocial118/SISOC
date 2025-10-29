@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.utils import timezone
@@ -158,7 +159,7 @@ class Comedor(models.Model):
     estado_general = models.CharField(
         max_length=32,
         choices=ESTADOS_GENERALES,
-        default="Activo",
+        default="Sin definir",
         verbose_name="Estado general",
     )
 
@@ -220,6 +221,7 @@ class Comedor(models.Model):
         to=Referente, on_delete=models.SET_NULL, null=True, blank=True
     )
     foto_legajo = models.ImageField(upload_to="comedor/", blank=True, null=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self) -> str:
         return str(self.nombre)
@@ -231,6 +233,50 @@ class Comedor(models.Model):
         verbose_name = "comedor"
         verbose_name_plural = "comedores"
         ordering = ["nombre"]
+
+
+class AuditComedorPrograma(models.Model):
+    comedor = models.ForeignKey(
+        Comedor, on_delete=models.CASCADE, related_name="programa_changes"
+    )
+    from_programa = models.ForeignKey(
+        Programas,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="programa_changes_from",
+    )
+    to_programa = models.ForeignKey(
+        Programas,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="programa_changes_to",
+    )
+    changed_at = models.DateTimeField(auto_now_add=True)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="comedor_programa_changes",
+    )
+
+    class Meta:
+        ordering = ["-changed_at", "-id"]
+        verbose_name = "Cambio de programa del comedor"
+        verbose_name_plural = "Cambios de programa del comedor"
+        indexes = [
+            models.Index(fields=["comedor", "changed_at"]),
+            models.Index(fields=["changed_by"]),
+        ]
+
+    def __str__(self):
+        from_programa = (
+            self.from_programa.nombre if self.from_programa else "Sin programa"
+        )
+        to_programa = self.to_programa.nombre if self.to_programa else "Sin programa"
+        return f"{self.comedor.nombre}: {from_programa} -> {to_programa}"
 
 
 class Nomina(models.Model):

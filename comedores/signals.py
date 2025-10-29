@@ -1,10 +1,7 @@
+from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
-from comedores.models import (
-    Observacion,
-    Referente,
-    Comedor,
-)
+from comedores.models import Observacion, Referente, Comedor, AuditComedorPrograma
 from comedores.services.clasificacion_comedor_service import ClasificacionComedorService
 from comedores.tasks import (
     AsyncRemoveComedorToGestionar,
@@ -19,6 +16,7 @@ from rendicioncuentasfinal.models import (
     RendicionCuentasFinal,
     TipoDocumentoRendicionFinal,
 )
+from config.middlewares.threadlocals import get_current_user
 
 
 @receiver(post_save, sender=Comedor)
@@ -33,6 +31,22 @@ def update_comedor_in_gestionar(sender, instance, **kwargs):
     if not instance.pk:
         return
     previous = sender.objects.get(pk=instance.pk)
+
+    programa_changed = previous.programa_id != instance.programa_id
+    if programa_changed:
+        previous_programa_id = previous.programa_id
+        new_programa_id = instance.programa_id
+        current_user = get_current_user()
+        current_user_id = getattr(current_user, "pk", None)
+
+        transaction.on_commit(
+            lambda: AuditComedorPrograma.objects.create(
+                comedor=instance,
+                from_programa_id=previous_programa_id,
+                to_programa_id=new_programa_id,
+                changed_by_id=current_user_id,
+            )
+        )
 
     changed = any(
         f.name not in {"foto_legajo"}

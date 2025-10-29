@@ -14,12 +14,12 @@
                     <dl class="row mb-0">
                         <dt class="col-lg-5 font-weight-normal">Dirección</dt>
                         <dd class="col-lg-7 font-weight-bold">
-                            {{ familiar|attr:ciudadano_field|attr:'calle'|default_if_none:"-" }}
+                            {{ familiar|attr:ciudadano_field|attr:'calle'|default_if_none:"Sin información" }}
                             {{ familiar|attr:ciudadano_field|attr:'altura'|default_if_none:"" }}
                         </dd>
                         <dt class="col-lg-5 font-weight-normal">Teléfono</dt>
                         <dd class="col-lg-7 font-weight-bold">
-                            {{ familiar|attr:ciudadano_field|attr:'telefono'|default_if_none:"-" }}
+                            {{ familiar|attr:ciudadano_field|attr:'telefono'|default_if_none:"Sin información" }}
                         </dd>
                         <dt class="col-lg-5 font-weight-normal">Relación</dt>
                         <dd class="col-lg-7 font-weight-bold">
