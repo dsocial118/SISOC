@@ -418,7 +418,11 @@ class LegalesNumIFForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # Precargar legales_num_if desde num_expediente si está vacío
-        if self.instance and self.instance.num_expediente and not self.instance.legales_num_if:
+        if (
+            self.instance
+            and self.instance.num_expediente
+            and not self.instance.legales_num_if
+        ):
             self.initial["legales_num_if"] = self.instance.num_expediente
 
         for field in self.fields.values():
@@ -427,7 +431,9 @@ class LegalesNumIFForm(forms.ModelForm):
         # Hacer campo readonly para evitar errores de carga
         if self.instance and self.instance.num_expediente:
             self.fields["legales_num_if"].widget.attrs["readonly"] = True
-            self.fields["legales_num_if"].help_text = "Este número fue precargado desde el Informe Técnico"
+            self.fields["legales_num_if"].help_text = (
+                "Este número fue precargado desde el Informe Técnico"
+            )
 
 
 class DocumentosExpedienteForm(forms.ModelForm):
