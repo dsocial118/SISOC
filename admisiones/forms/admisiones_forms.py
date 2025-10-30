@@ -152,12 +152,13 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     admision,
                     "Relevamiento al Programa PAC",
                 )
-            if referente:
-                self.fields["representante_nombre"].initial = (
-                    f"{referente.nombre or ''} {referente.apellido or ''}".strip()
-                )
-                self.fields["representante_dni"].initial = referente.documento or ""
-                self.fields["representante_cargo"].initial = referente.funcion or ""
+            # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
+            # if referente:
+            #    self.fields["representante_nombre"].initial = (
+            #        f"{referente.nombre or ''} {referente.apellido or ''}".strip()
+            #    )
+            #    self.fields["representante_dni"].initial = referente.documento or ""
+            #    self.fields["representante_cargo"].initial = referente.funcion or ""
 
             if organizacion:
                 self.fields["nombre_organizacion"].initial = organizacion.nombre
@@ -283,12 +284,13 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     admision,
                     "Relevamiento al Programa PAC",
                 )
-            if referente:
-                self.fields["representante_nombre"].initial = (
-                    f"{referente.nombre or ''} {referente.apellido or ''}".strip()
-                )
-                self.fields["representante_dni"].initial = referente.documento or ""
-                self.fields["representante_cargo"].initial = referente.funcion or ""
+            # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
+            # if referente:
+            #    self.fields["representante_nombre"].initial = (
+            #        f"{referente.nombre or ''} {referente.apellido or ''}".strip()
+            #    )
+            #    self.fields["representante_dni"].initial = referente.documento or ""
+            #    self.fields["representante_cargo"].initial = referente.funcion or ""
 
             if organizacion:
                 self.fields["nombre_organizacion"].initial = organizacion.nombre
