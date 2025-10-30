@@ -338,10 +338,14 @@
             <p>
                 Conforme a la nota de solicitud, {{ informe.admision.comedor.organizacion.subtipo_entidad }} &quot;{{ informe.nombre_organizacion }}&quot;, declara que el efector {{ informe.nombre_espacio }} se encuentra ubicado en {{ informe.domicilio_espacio }}. En este marco, la Institución solicita la continuidad del financiamiento, con el objetivo de complementar las siguientes prestaciones alimentarias brindadas:
             </p>
-            <p>DESAYUNO: {{ texto_comidas.Desayunos }}</p>
-            <p>ALMUERZO: {{ texto_comidas.Almuerzos }}</p>
-            <p>MERIENDA: {{ texto_comidas.Meriendas }}</p>
-            <p>CENA: {{ texto_comidas.Cenas }}</p>
+            <p>DESAYUNO:</p>
+            {{ texto_comidas.Desayunos|safe }}
+            <p>ALMUERZO:</p>
+            {{ texto_comidas.Almuerzos|safe }}
+            <p>MERIENDA:</p>
+            {{ texto_comidas.Meriendas|safe }}
+            <p>CENA:</p>
+            {{ texto_comidas.Cenas|safe }}
             <p>
                 A los efectos del cumplimiento de los requisitos de admisibilidad al Programa Alimentar Comunidad, se agrega: Las constancias de inexistencia de percepción por parte de la organización solicitante de otros subsidios nacionales para asistencia alimentaria:
             </p>
