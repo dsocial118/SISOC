@@ -133,7 +133,7 @@ class Admision(models.Model):
     )
     informe_sga = models.BooleanField(default=False, verbose_name="Estados Informe SGA")
     numero_if_tecnico = models.CharField(
-        max_length=100, blank=True, verbose_name="Número IF Informe Técnico"
+        max_length=255, blank=True, default="", verbose_name="Número IF Informe Técnico"
     )
     numero_convenio = models.CharField(max_length=100, blank=True, null=True)
     archivo_convenio = models.FileField(
