@@ -2,6 +2,8 @@ import logging
 
 from django.db.models import Q, Exists, OuterRef
 from django.db import transaction
+from datetime import datetime, date
+from django.utils.timezone import localtime
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
@@ -142,6 +144,28 @@ class AcompanamientoService:
                     for field in Hitos._meta.fields:
                         if field.verbose_name == hito_mapping.hito:
                             fechas_hitos[field.name] = intervencion.fecha
+                            raw_fecha = getattr(intervencion, "fecha", None)
+                            if raw_fecha is None:
+                                break
+                            # Si es datetime, convertir a timezone local y obtener date
+                            if isinstance(raw_fecha, datetime):
+                                try:
+                                    fecha_dt = localtime(raw_fecha)
+                                except Exception:
+                                    fecha_dt = raw_fecha
+                                fecha_str = fecha_dt.strftime("%d/%m/%Y")
+                            elif isinstance(raw_fecha, date):
+                                fecha_str = raw_fecha.strftime("%d/%m/%Y")
+                            else:
+                                # intentar parsear ISO-like o tomar los primeros 10 caracteres
+                                try:
+                                    fecha_dt = datetime.fromisoformat(str(raw_fecha))
+                                    fecha_str = fecha_dt.strftime("%d/%m/%Y")
+                                except Exception:
+                                    s = str(raw_fecha)
+                                    fecha_str = s[:10]
+
+                            fechas_hitos[field.name] = fecha_str
                             break
 
             return fechas_hitos
