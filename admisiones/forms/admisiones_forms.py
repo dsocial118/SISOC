@@ -26,6 +26,22 @@ def _ultimo_numero_gde(admision, documentacion_nombre):
         .first()
     )
 
+def _if_relevamiento_a_pac(fields, admision):
+    if not fields:
+        return fields
+    
+    if "if_relevamiento" in fields:
+        fields["if_relevamiento"].initial = _ultimo_numero_gde(
+            admision,
+            "Relevamiento al Programa PAC",
+        )
+    if "IF_relevamiento_territorial" in fields:
+        fields["IF_relevamiento_territorial"].initial = _ultimo_numero_gde(
+            admision,
+            "Relevamiento al Programa PAC",
+        )
+    
+    return fields
 
 class AdmisionForm(forms.ModelForm):
     class Meta:
@@ -147,11 +163,9 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     .values_list("numero_gde", flat=True)
                     .first()
                 )
-            if "if_relevamiento" in self.fields:
-                self.fields["if_relevamiento"].initial = _ultimo_numero_gde(
-                    admision,
-                    "Relevamiento al Programa PAC",
-                )
+
+            self.fields = _if_relevamiento_a_pac(self.field, admision)
+
             # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
             # if referente:
             #    self.fields["representante_nombre"].initial = (
@@ -279,11 +293,9 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     .values_list("numero_gde", flat=True)
                     .first()
                 )
-            if "if_relevamiento" in self.fields:
-                self.fields["if_relevamiento"].initial = _ultimo_numero_gde(
-                    admision,
-                    "Relevamiento al Programa PAC",
-                )
+
+            self.fields = _if_relevamiento_a_pac(self.field, admision)
+
             # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
             # if referente:
             #    self.fields["representante_nombre"].initial = (
