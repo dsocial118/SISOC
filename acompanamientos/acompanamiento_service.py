@@ -1,7 +1,8 @@
 import logging
-
+from datetime import datetime, date
 from django.db.models import Q, Exists, OuterRef
 from django.db import transaction
+from django.utils.timezone import localtime
 from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
@@ -106,6 +107,32 @@ class AcompanamientoService:
             raise
 
     @staticmethod
+    def _format_date(raw_fecha):
+        """Formatea datetime/date/string a 'dd/mm/YYYY' o devuelve None."""
+        if raw_fecha is None:
+            return None
+
+        # Si es datetime, convertir a timezone local y formatear
+        if isinstance(raw_fecha, datetime):
+            try:
+                fecha_dt = localtime(raw_fecha)
+            except Exception:
+                fecha_dt = raw_fecha
+            return fecha_dt.strftime("%d/%m/%Y")
+
+        # Si es date puro
+        if isinstance(raw_fecha, date):
+            return raw_fecha.strftime("%d/%m/%Y")
+
+        # Intentar parsear ISO-like y formatear, si falla tomar primeros 10 chars
+        try:
+            fecha_dt = datetime.fromisoformat(str(raw_fecha))
+            return fecha_dt.strftime("%d/%m/%Y")
+        except Exception:
+            s = str(raw_fecha)
+            return s[:10] if len(s) >= 10 else s
+
+    @staticmethod
     def obtener_fechas_hitos(comedor):
         """Obtener las fechas de las intervenciones que completaron cada hito.
 
@@ -113,7 +140,7 @@ class AcompanamientoService:
             comedor: Comedor para el cual se solicitan las fechas de hitos.
 
         Returns:
-            dict: Diccionario con las fechas de cada hito completado.
+            dict: Diccionario con las fechas de cada hito completado en formato 'dd/mm/YYYY'.
         """
         try:
             fechas_hitos = {}
@@ -124,25 +151,36 @@ class AcompanamientoService:
                 .order_by("fecha")
             )
 
+            # Prepara un mapeo verbose_name -> field_name para Hitos para evitar loop anidado
+            verbose_to_field = {
+                field.verbose_name: field.name for field in Hitos._meta.fields
+            }
+
             for intervencion in intervenciones:
                 if not intervencion.tipo_intervencion:
                     continue
 
-                subintervencion_nombre = ""
-                if intervencion.subintervencion:
-                    subintervencion_nombre = intervencion.subintervencion.nombre
+                subintervencion_nombre = (
+                    intervencion.subintervencion.nombre
+                    if intervencion.subintervencion
+                    else ""
+                )
 
                 hitos_completados = HitosIntervenciones.objects.filter(
                     intervencion=intervencion.tipo_intervencion.nombre,
                     subintervencion=subintervencion_nombre,
                 )
 
+                # Para cada hito mapping, obtener el field correspondiente y asignar la fecha formateada
                 for hito_mapping in hitos_completados:
-
-                    for field in Hitos._meta.fields:
-                        if field.verbose_name == hito_mapping.hito:
-                            fechas_hitos[field.name] = intervencion.fecha
-                            break
+                    field_name = verbose_to_field.get(hito_mapping.hito)
+                    if not field_name:
+                        continue
+                    fecha_str = AcompanamientoService._format_date(
+                        getattr(intervencion, "fecha", None)
+                    )
+                    if fecha_str:
+                        fechas_hitos[field_name] = fecha_str
 
             return fechas_hitos
         except Exception:
