@@ -128,8 +128,6 @@ class Command(BaseCommand):
                                     total_webp_size += info_after["webp_size"]
                         else:
                             total_skipped += 1
-                    else:
-                        total_processed += 1
 
                     total_processed += 1
 
