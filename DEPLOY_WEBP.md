@@ -399,36 +399,3 @@ docker-compose restart web
 # Ver uso de recursos
 docker stats <container_name>
 ```
-
----
-
-## 📞 Contacto
-
-Si hay algún problema durante el despliegue, contactar a [Tu Nombre] con:
-- Logs completos: `docker-compose logs web > logs.txt`
-- Espacio en disco: `df -h`
-- Permisos: `ls -la /path/to/media`
-
----
-
-## ✅ Checklist de Despliegue
-
-```
-[ ] Backup del volumen de media
-[ ] Verificar espacio en disco suficiente
-[ ] Actualizar requirements.txt con Pillow y tqdm
-[ ] Pull código + rebuild contenedor
-[ ] Verificar logs sin errores
-[ ] Ejecutar --dry-run primero
-[ ] Probar con --limit 10
-[ ] Verificar permisos de escritura
-[ ] Conversión masiva fuera de horario
-[ ] Monitorear durante la conversión
-[ ] Testing en navegador (WebP + fallback)
-[ ] Verificar métricas después de 1 semana
-```
-
----
-
-**Última actualización**: 2025-11-04
-**Versión**: 1.0
