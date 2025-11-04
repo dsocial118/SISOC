@@ -1,9 +1,11 @@
 ﻿"""Servicio de optimización de imágenes con WebP."""
 
-import os
 import logging
+import os
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
+
 from PIL import Image
 from django.conf import settings
 from django.core.cache import cache
@@ -103,13 +105,23 @@ def _convert_to_webp(input_path: str, output_path: str, quality: int) -> bool:
 
 def _get_absolute_path(image_path: str) -> str:
     """Convierte ruta relativa o URL a ruta absoluta del sistema."""
-    if os.path.isabs(image_path):
-        return image_path
+    if not image_path:
+        return ""
 
-    if image_path.startswith(settings.MEDIA_URL):
-        image_path = image_path[len(settings.MEDIA_URL) :]
+    parsed_path = urlparse(image_path)
+    is_remote_path = bool(parsed_path.scheme and parsed_path.netloc)
+    normalized_path = parsed_path.path if is_remote_path else image_path
 
-    return os.path.join(settings.MEDIA_ROOT, image_path)
+    if not is_remote_path and os.path.isabs(normalized_path):
+        return normalized_path
+
+    media_url = settings.MEDIA_URL or ""
+    if media_url and normalized_path.startswith(media_url):
+        normalized_path = normalized_path[len(media_url) :]
+
+    normalized_path = normalized_path.lstrip("/")
+
+    return os.path.join(settings.MEDIA_ROOT, normalized_path)
 
 
 def _get_webp_path(image_path: str) -> str:

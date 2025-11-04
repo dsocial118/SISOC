@@ -56,25 +56,25 @@ def optimized_image(
         if extra_attrs:
             img_attrs.append(extra_attrs)
 
-        attrs_string = " ".join(img_attrs)
+        attrs_string = mark_safe(" " + " ".join(img_attrs)) if img_attrs else ""
 
         if webp_url != original_url and webp_url.endswith(".webp"):
             html = format_html(
                 "<picture>"
                 '<source srcset="{}" type="image/webp">'
-                '<img src="{}" alt="{}" {}>'
+                '<img src="{}" alt="{}"{}>'
                 "</picture>",
                 webp_url,
                 original_url,
                 alt_text,
-                mark_safe(attrs_string),
+                attrs_string,
             )
         else:
             html = format_html(
-                '<img src="{}" alt="{}" {}>',
+                '<img src="{}" alt="{}"{}>',
                 original_url,
                 alt_text,
-                mark_safe(attrs_string),
+                attrs_string,
             )
 
         return html
