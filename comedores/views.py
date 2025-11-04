@@ -460,11 +460,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         # Preparar datos para la tabla de admisiones
         admisiones_headers = [
             {"title": "Fecha"},
+            {"title": "Expediente"},
+            {"title": "Convenio"},
             {"title": "Tipo"},
-            {"title": "Tipo Convenio"},
             {"title": "Estado"},
-            {"title": "Enviado Legales"},
-            {"title": "Estado Legales"},
         ]
 
         admisiones_items = []
@@ -482,6 +481,21 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                             },
                             {
                                 "content": (
+                                    a.num_expediente
+                                    if hasattr(a, "num_expediente") and a.num_expediente
+                                    else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    a.numero_convenio
+                                    if hasattr(a, "numero_convenio")
+                                    and a.numero_convenio
+                                    else "-"
+                                )
+                            },
+                            {
+                                "content": (
                                     a.get_tipo_display()
                                     if hasattr(a, "tipo") and a.tipo
                                     else "-"
@@ -489,30 +503,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                             },
                             {
                                 "content": (
-                                    a.tipo_convenio.nombre
-                                    if hasattr(a, "tipo_convenio") and a.tipo_convenio
-                                    else "-"
-                                )
-                            },
-                            {
-                                "content": (
                                     a.estado.nombre
                                     if hasattr(a, "estado") and a.estado
-                                    else "-"
-                                )
-                            },
-                            {
-                                "content": (
-                                    "Sí"
-                                    if hasattr(a, "enviado_legales")
-                                    and a.enviado_legales
-                                    else "No"
-                                )
-                            },
-                            {
-                                "content": (
-                                    a.get_estado_legales_display()
-                                    if hasattr(a, "estado_legales") and a.estado_legales
                                     else "-"
                                 )
                             },
