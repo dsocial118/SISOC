@@ -56,7 +56,9 @@ def get_or_create_webp(image_path: str, quality: int = WEBP_QUALITY) -> str:
             return image_path
 
     except Exception as e:
-        logger.error(f"Error en get_or_create_webp para {image_path}: {e}", exc_info=True)
+        logger.error(
+            f"Error en get_or_create_webp para {image_path}: {e}", exc_info=True
+        )
         return image_path
 
 
