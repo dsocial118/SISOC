@@ -730,42 +730,114 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const items = tbody.querySelectorAll('.preview-row');
-    if (items.length === 0) {
+    // Skip if already fixed by pagination_fix.js
+    if (pageSizeSel.hasAttribute('data-fixed')) {
+      console.log('Preview pagination already fixed, skipping original implementation');
+      return;
+    }
+
+    // Obtener todas las filas de preview y almacenar los datos
+    const getAllPreviewRows = () => {
+      return Array.from(tbody.querySelectorAll('.preview-row'));
+    };
+
+    let allItems = getAllPreviewRows();
+    if (allItems.length === 0) {
       console.log('No hay filas preview para paginar');
       return;
     }
 
-    // Implementación simplificada para preview
+    // Almacenar los datos originales para evitar pérdida
+    const originalData = allItems.map(row => ({
+      element: row.cloneNode(true),
+      html: row.outerHTML
+    }));
+
     let currentPage = 1;
 
     function getCurrentPageSize() {
       const val = pageSizeSel.value;
-      return val === 'all' ? items.length : parseInt(val, 10) || 10;
+      return val === 'all' ? originalData.length : parseInt(val, 10) || 10;
     }
 
     function renderPage() {
       const pageSize = getCurrentPageSize();
-      const totalPages = Math.ceil(items.length / pageSize);
+      const totalPages = Math.ceil(originalData.length / pageSize);
 
-      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
       if (currentPage < 1) currentPage = 1;
 
       const start = (currentPage - 1) * pageSize;
       const end = start + pageSize;
 
-      console.log('Renderizando preview:', { currentPage, pageSize, totalPages, start, end });
-
-      items.forEach((item, index) => {
-        const shouldShow = index >= start && index < end;
-        item.style.display = shouldShow ? '' : 'none';
+      console.log('Renderizando preview:', { 
+        currentPage, 
+        pageSize, 
+        totalPages, 
+        start, 
+        end, 
+        totalItems: originalData.length 
       });
 
-      // Generar paginación
+      // Limpiar tbody y agregar solo las filas de la página actual
+      tbody.innerHTML = '';
+      
+      for (let i = start; i < end && i < originalData.length; i++) {
+        const clonedRow = originalData[i].element.cloneNode(true);
+        // Mantener la clase preview-row para compatibilidad
+        if (!clonedRow.classList.contains('preview-row')) {
+          clonedRow.classList.add('preview-row');
+        }
+        tbody.appendChild(clonedRow);
+      }
+
+      // Generar paginación mejorada
       pagUl.innerHTML = '';
 
       if (totalPages > 1) {
-        for (let i = 1; i <= totalPages; i++) {
+        // Botón anterior
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item${currentPage === 1 ? ' disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" aria-label="Anterior">&laquo;</a>`;
+        if (currentPage > 1) {
+          prevLi.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage--;
+            renderPage();
+          });
+        }
+        pagUl.appendChild(prevLi);
+
+        // Páginas numeradas (mostrar máximo 5 páginas)
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        
+        if (endPage - startPage < 4) {
+          startPage = Math.max(1, endPage - 4);
+        }
+
+        // Primera página si no está visible
+        if (startPage > 1) {
+          const firstLi = document.createElement('li');
+          firstLi.className = 'page-item';
+          firstLi.innerHTML = '<a class="page-link" href="#">1</a>';
+          firstLi.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = 1;
+            renderPage();
+          });
+          pagUl.appendChild(firstLi);
+
+          if (startPage > 2) {
+            const dotsLi = document.createElement('li');
+            dotsLi.className = 'page-item disabled';
+            dotsLi.innerHTML = '<span class="page-link">...</span>';
+            pagUl.appendChild(dotsLi);
+          }
+        }
+
+        // Páginas del rango visible
+        for (let i = startPage; i <= endPage; i++) {
           const li = document.createElement('li');
           li.className = `page-item${i === currentPage ? ' active' : ''}`;
           li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
@@ -776,6 +848,39 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           pagUl.appendChild(li);
         }
+
+        // Última página si no está visible
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            const dotsLi = document.createElement('li');
+            dotsLi.className = 'page-item disabled';
+            dotsLi.innerHTML = '<span class="page-link">...</span>';
+            pagUl.appendChild(dotsLi);
+          }
+          
+          const lastLi = document.createElement('li');
+          lastLi.className = 'page-item';
+          lastLi.innerHTML = `<a class="page-link" href="#">${totalPages}</a>`;
+          lastLi.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = totalPages;
+            renderPage();
+          });
+          pagUl.appendChild(lastLi);
+        }
+
+        // Botón siguiente
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item${currentPage === totalPages ? ' disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" aria-label="Siguiente">&raquo;</a>`;
+        if (currentPage < totalPages) {
+          nextLi.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage++;
+            renderPage();
+          });
+        }
+        pagUl.appendChild(nextLi);
       }
     }
 
@@ -785,6 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderPage();
     });
 
+    // Renderizar página inicial
     renderPage();
   })();
 
@@ -1351,121 +1457,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ===== FILTRO POR ESTADO ===== */
-  const filtroEstado = document.getElementById('filtro-estado');
-  if (filtroEstado) {
-    filtroEstado.addEventListener('change', function() {
-      const estadoSeleccionado = this.value;
-      console.log('Filtro estado seleccionado:', estadoSeleccionado);
-      
-      // Obtener todas las filas de legajos (no las filas colapsables)
-      const filas = document.querySelectorAll('tbody tr:not(.collapse)');
-      console.log('Total filas encontradas:', filas.length);
-      
-      filas.forEach((fila, index) => {
-        if (!estadoSeleccionado) {
-          fila.style.display = '';
-          return;
-        }
-        
-        // Buscar el badge de estado en la fila
-        const badges = fila.querySelectorAll('.badge');
-        let estadoFila = '';
-        
-        // Buscar el badge que contiene el estado de revisión
-        badges.forEach(badge => {
-          const texto = badge.textContent.trim();
-          if (['Aprobado', 'Rechazado', 'Subsanar', 'Subsanado', 'Pendiente'].includes(texto)) {
-            if (texto === 'Aprobado') estadoFila = 'APROBADO';
-            else if (texto === 'Rechazado') estadoFila = 'RECHAZADO';
-            else if (texto === 'Subsanar') estadoFila = 'SUBSANAR';
-            else if (texto === 'Subsanado') estadoFila = 'SUBSANADO';
-            else if (texto === 'Pendiente') estadoFila = 'PENDIENTE';
-          }
-        });
-        
-        const mostrar = estadoFila === estadoSeleccionado;
-        fila.style.display = mostrar ? '' : 'none';
-        
-        if (index < 5) {
-          console.log(`Fila ${index}: estado="${estadoFila}", mostrar=${mostrar}`);
-        }
-      });
-    });
-  }
+  // El filtro por estado ahora se maneja dentro de la paginación de legajos
+  // para evitar conflictos y mantener la consistencia de datos
 
-  /* ===== Inicializar paginación para LEGAJOS ===== */
-  setTimeout(() => {
-    const pageSizeSel = document.getElementById('legajos-page-size');
-    const pagUl = document.getElementById('legajos-pagination');
-    const tbody = document.querySelector('tbody');
 
-    if (!pageSizeSel || !pagUl || !tbody) {
-      console.log('Elementos de paginación no encontrados');
-      return;
-    }
-
-    // Obtener todas las filas de legajos (excluyendo las colapsables)
-    const getVisibleRows = () => {
-      return Array.from(tbody.querySelectorAll('tr:not(.collapse)'));
-    };
-
-    let currentPage = 1;
-
-    function renderPage() {
-      const items = getVisibleRows();
-      const pageSize = pageSizeSel.value === 'all' ? items.length : parseInt(pageSizeSel.value) || 10;
-      const totalPages = Math.ceil(items.length / pageSize);
-      const start = (currentPage - 1) * pageSize;
-      const end = start + pageSize;
-
-      console.log('Paginación legajos:', { totalItems: items.length, pageSize, currentPage, totalPages, start, end });
-
-      items.forEach((item, i) => {
-        const shouldShow = (i >= start && i < end) && item.style.display !== 'none';
-        // Solo aplicar paginación si el elemento no está oculto por filtros
-        if (item.style.display !== 'none') {
-          item.style.display = shouldShow ? '' : 'none';
-        }
-      });
-
-      // Generar paginación
-      pagUl.innerHTML = '';
-      if (totalPages > 1) {
-        for (let i = 1; i <= totalPages; i++) {
-          const li = document.createElement('li');
-          li.className = `page-item${i === currentPage ? ' active' : ''}`;
-          li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-          li.onclick = (e) => {
-            e.preventDefault();
-            currentPage = i;
-            renderPage();
-          };
-          pagUl.appendChild(li);
-        }
-      }
-    }
-
-    pageSizeSel.onchange = () => {
-      console.log('Tamaño de página cambió a:', pageSizeSel.value);
-      currentPage = 1;
-      renderPage();
-    };
-
-    // Renderizar inicialmente
-    renderPage();
-
-    // Re-renderizar cuando cambie el filtro
-    if (filtroEstado) {
-      const originalChangeHandler = filtroEstado.onchange;
-      filtroEstado.addEventListener('change', () => {
-        setTimeout(() => {
-          currentPage = 1;
-          renderPage();
-        }, 10);
-      });
-    }
-  }, 100);
 });
 
   /* ===== CONFIRMAR SUBSANACIÓN INDIVIDUAL ===== */
@@ -1530,3 +1525,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  /* ===== PAGINACIÓN DE LEGAJOS DESACTIVADA ===== */
+  setTimeout(() => {
+    const pageSizeSel = document.getElementById('legajos-page-size');
+    const pagUl = document.getElementById('legajos-pagination');
+    
+    // Ocultar completamente los controles de paginaci��n
+    if (pageSizeSel) {
+      pageSizeSel.style.display = 'none';
+    }
+    if (pagUl) {
+      pagUl.style.display = 'none';
+    }
+    
+    return; // Salir sin hacer nada más
+
+
+  }, 100);
