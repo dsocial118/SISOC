@@ -65,6 +65,10 @@ class CiudadanoService:
         for fmt in ("%Y-%m-%d", "%d-%m-%Y"):
             try:
                 return datetime.strptime(s, fmt).date()
+            except ValueError as e:
+                if "day is out of range" in str(e):
+                    raise ValidationError(f"Fecha inválida: {value}")
+                continue
             except Exception:
                 continue
         try:
