@@ -26,10 +26,11 @@ def _ultimo_numero_gde(admision, documentacion_nombre):
         .first()
     )
 
+
 def _if_relevamiento_a_pac(fields, admision):
     if not fields:
         return fields
-    
+
     if "if_relevamiento" in fields:
         fields["if_relevamiento"].initial = _ultimo_numero_gde(
             admision,
@@ -40,8 +41,9 @@ def _if_relevamiento_a_pac(fields, admision):
             admision,
             "Relevamiento al Programa PAC",
         )
-    
+
     return fields
+
 
 class AdmisionForm(forms.ModelForm):
     class Meta:
