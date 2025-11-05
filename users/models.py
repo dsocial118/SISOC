@@ -23,6 +23,18 @@ class Profile(models.Model):
         verbose_name="Coordinador de Gestión",
         help_text="Coordinador asignado a este técnico",
     )
+    es_coordinador = models.BooleanField(
+        default=False,
+        verbose_name="Es Coordinador de Gestión",
+        help_text="Marca si este usuario es coordinador de gestión",
+    )
+    duplas_asignadas = models.ManyToManyField(
+        "duplas.Dupla",
+        blank=True,
+        related_name="coordinadores",
+        verbose_name="Duplas asignadas",
+        help_text="Duplas (equipos técnicos) asignadas a este coordinador",
+    )
 
     def __str__(self):
         return f"Perfil de {self.user.username}"

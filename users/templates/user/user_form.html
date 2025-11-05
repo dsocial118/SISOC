@@ -34,6 +34,9 @@
                 {{ form.rol|as_crispy_field }}
                 {{ form.es_usuario_provincial|as_crispy_field }}
                 {{ form.provincia|as_crispy_field }}
+                {{ form.es_coordinador|as_crispy_field }}
+                {{ form.duplas_asignadas|as_crispy_field }}
+                {{ form.coordinador|as_crispy_field }}
                 {% include 'components/form_buttons.html' with cancel_url='usuarios' default_save=True save_text='Confirmar' layout='start' %}
             </form>
         </div>
