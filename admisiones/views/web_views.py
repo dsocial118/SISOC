@@ -1,11 +1,12 @@
 from django.contrib import messages
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
+from django.core.paginator import Paginator
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,6 @@ from admisiones.services.legales_service import LegalesService
 from django.views.generic.edit import FormMixin
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.http import HttpResponseRedirect
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from expedientespagos.services import ExpedientesPagosService
 from rendicioncuentasmensual.services import RendicionCuentaMensualService

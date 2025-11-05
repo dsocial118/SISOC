@@ -111,9 +111,32 @@
 }
 
 .sin-imagenes {
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 2px dashed #dee2e6;
+    background: linear-gradient(160deg, #111827 0%, #1f2937 100%);
+    border-radius: 12px;
+    border: 1px dashed rgba(148, 163, 184, 0.35);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.35);
+    color: #e2e8f0;
+}
+
+.sin-imagenes__body {
+    background: rgba(15, 23, 42, 0.55);
+    border-radius: 12px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+.sin-imagenes__icon {
+    color: rgba(148, 163, 184, 0.75);
+}
+
+.sin-imagenes__title {
+    color: rgba(226, 232, 240, 0.9);
+    font-weight: 600;
+}
+
+.sin-imagenes__description {
+    color: rgba(226, 232, 240, 0.72);
+    margin-bottom: 0;
 }
 
 /* Estilos del modal */

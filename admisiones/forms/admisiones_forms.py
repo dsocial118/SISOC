@@ -27,6 +27,24 @@ def _ultimo_numero_gde(admision, documentacion_nombre):
     )
 
 
+def _if_relevamiento_a_pac(fields, admision):
+    if not fields:
+        return fields
+
+    if "if_relevamiento" in fields:
+        fields["if_relevamiento"].initial = _ultimo_numero_gde(
+            admision,
+            "Relevamiento al Programa PAC",
+        )
+    if "IF_relevamiento_territorial" in fields:
+        fields["IF_relevamiento_territorial"].initial = _ultimo_numero_gde(
+            admision,
+            "Relevamiento al Programa PAC",
+        )
+
+    return fields
+
+
 class AdmisionForm(forms.ModelForm):
     class Meta:
         model = Admision
@@ -147,17 +165,16 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     .values_list("numero_gde", flat=True)
                     .first()
                 )
-            if "if_relevamiento" in self.fields:
-                self.fields["if_relevamiento"].initial = _ultimo_numero_gde(
-                    admision,
-                    "Relevamiento al Programa PAC",
-                )
-            if referente:
-                self.fields["representante_nombre"].initial = (
-                    f"{referente.nombre or ''} {referente.apellido or ''}".strip()
-                )
-                self.fields["representante_dni"].initial = referente.documento or ""
-                self.fields["representante_cargo"].initial = referente.funcion or ""
+
+            self.fields = _if_relevamiento_a_pac(self.field, admision)
+
+            # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
+            # if referente:
+            #    self.fields["representante_nombre"].initial = (
+            #        f"{referente.nombre or ''} {referente.apellido or ''}".strip()
+            #    )
+            #    self.fields["representante_dni"].initial = referente.documento or ""
+            #    self.fields["representante_cargo"].initial = referente.funcion or ""
 
             if organizacion:
                 self.fields["nombre_organizacion"].initial = organizacion.nombre
@@ -278,17 +295,16 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     .values_list("numero_gde", flat=True)
                     .first()
                 )
-            if "if_relevamiento" in self.fields:
-                self.fields["if_relevamiento"].initial = _ultimo_numero_gde(
-                    admision,
-                    "Relevamiento al Programa PAC",
-                )
-            if referente:
-                self.fields["representante_nombre"].initial = (
-                    f"{referente.nombre or ''} {referente.apellido or ''}".strip()
-                )
-                self.fields["representante_dni"].initial = referente.documento or ""
-                self.fields["representante_cargo"].initial = referente.funcion or ""
+
+            self.fields = _if_relevamiento_a_pac(self.field, admision)
+
+            # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
+            # if referente:
+            #    self.fields["representante_nombre"].initial = (
+            #        f"{referente.nombre or ''} {referente.apellido or ''}".strip()
+            #    )
+            #    self.fields["representante_dni"].initial = referente.documento or ""
+            #    self.fields["representante_cargo"].initial = referente.funcion or ""
 
             if organizacion:
                 self.fields["nombre_organizacion"].initial = organizacion.nombre
@@ -414,8 +430,24 @@ class LegalesNumIFForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Precargar legales_num_if desde num_expediente si está vacío
+        if (
+            self.instance
+            and self.instance.num_expediente
+            and not self.instance.legales_num_if
+        ):
+            self.initial["legales_num_if"] = self.instance.num_expediente
+
         for field in self.fields.values():
             field.required = True
+
+        # Hacer campo readonly para evitar errores de carga
+        if self.instance and self.instance.num_expediente:
+            self.fields["legales_num_if"].widget.attrs["readonly"] = True
+            self.fields["legales_num_if"].help_text = (
+                "Este número fue precargado desde el Informe Técnico"
+            )
 
 
 class DocumentosExpedienteForm(forms.ModelForm):
@@ -522,6 +554,17 @@ class DisposicionForm(forms.ModelForm):
     class Meta:
         model = Admision
         fields = ["numero_disposicion", "archivo_disposicion"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = True
+
+
+class IFInformeTecnicoForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = ["numero_if_tecnico"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
