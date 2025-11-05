@@ -13,6 +13,16 @@ class Profile(models.Model):
     )
     rol = models.CharField(max_length=100, null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    coordinador = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tecnicos_coordinados",
+        limit_choices_to={"groups__name": "Coordinador Gestion"},
+        verbose_name="Coordinador de Gestión",
+        help_text="Coordinador asignado a este técnico",
+    )
 
     def __str__(self):
         return f"Perfil de {self.user.username}"
