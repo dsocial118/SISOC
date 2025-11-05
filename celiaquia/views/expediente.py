@@ -139,13 +139,7 @@ class ExpedienteListView(ListView):
     paginate_by = 20
 
     def get_paginate_by(self, queryset):
-        page_size = self.request.GET.get("page_size", "20")
-        if page_size.lower() in ("all", "todos"):
-            return None
-        try:
-            return int(page_size)
-        except (ValueError, TypeError):
-            return 20
+        return None
 
     def get_queryset(self):
         user = self.request.user
