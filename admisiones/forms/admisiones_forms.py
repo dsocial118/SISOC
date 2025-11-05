@@ -33,7 +33,7 @@ def _if_relevamiento_a_pac(fields, admision):
     if not admision or not fields:
         return fields
 
-    numero_gde = _ultimo_numero_gde(admision, "Relevamiento al Programa PAC")
+    numero_gde = _ultimo_numero_gde(admision, "Relevamiento Programa PAC")
     if not numero_gde:
         return fields
 
@@ -296,7 +296,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     .first()
                 )
 
-            self.fields = _if_relevamiento_a_pac(self.field, admision)
+            _if_relevamiento_a_pac(self.fields, admision)
 
             # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
             # if referente:
