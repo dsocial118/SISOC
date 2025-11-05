@@ -683,6 +683,7 @@ class LegalesService:
 
     @staticmethod
     def guardar_formulario_reso(request, admision):
+        # Guardar el formulario de proyecto de disposición y generar documentos PDF y DOCX
         try:
             with transaction.atomic():
                 formulario_existente = FormularioProyectoDisposicion.objects.filter(
@@ -712,12 +713,16 @@ class LegalesService:
                 )
 
                 proyecto_convenio = admision.admisiones_proyecto_convenio.first()
+                proyecto_disposicion_if = FormularioProyectoDeConvenio.objects.filter(
+                    admision=admision
+                ).first()
 
                 context = {
                     "admision": admision,
                     "formulario": nuevo_formulario,
                     "informe": informe,
                     "proyecto_convenio": proyecto_convenio,
+                    "proyecto_disposicion_if": proyecto_disposicion_if.numero_if,
                 }
 
                 tipo_admision = admision.tipo or "incorporacion"
