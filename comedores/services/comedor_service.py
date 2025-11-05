@@ -458,7 +458,11 @@ class ComedorService:
 
         # Si intenta crear incorporación, verificar que no haya existido nunca una incorporación anterior
         if tipo_admision == "incorporacion":
-            if Admision.objects.filter(comedor=comedor, tipo="incorporacion").exists():
+            if (
+                Admision.objects.filter(comedor=comedor, tipo="incorporacion")
+                .exclude(estado__nombre="Descartado")
+                .exists()
+            ):
                 messages.warning(
                     request,
                     "Ya existe una admisión de tipo Incorporación para este comedor. Solo puede crear admisiones de tipo Renovación.",
