@@ -64,11 +64,7 @@ class CiudadanoService:
         s = s.replace("/", "-")
         for fmt in ("%Y-%m-%d", "%d-%m-%Y"):
             try:
-                parsed_date = datetime.strptime(s, fmt).date()
-                # Validar fechas imposibles como 31/11
-                if parsed_date.strftime(fmt) != s:
-                    raise ValidationError(f"Fecha inválida: {value}")
-                return parsed_date
+                return datetime.strptime(s, fmt).date()
             except ValueError as e:
                 if "day is out of range" in str(e):
                     raise ValidationError(f"Fecha inválida: {value}")
