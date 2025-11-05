@@ -361,36 +361,36 @@ class AcompanamientoService:
             QuerySet: QuerySet de objetos Comedor filtrados según los criterios especificados.
         """
         try:
-
+            # Grupos del usuario
             user_groups = list(user.groups.values_list("name", flat=True))
-            is_area_legales = "Area Legales" in user_groups
+            # is_area_legales = "Area Legales" in user_groups
             is_dupla = (
                 "Tecnico Comedor" in user_groups or "Abogado Dupla" in user_groups
             )
-
             # Subqueries para evitar JOINs 1:N y uso de distinct()
             admision_subq = Admision.objects.filter(
-                comedor=OuterRef("pk"), enviado_acompaniamiento=True
-            )
+                comedor=OuterRef("pk"),
+                enviado_acompaniamiento=True,
+                enviada_a_archivo=False,
+            ).exclude(estado__nombre="Descartado")
             dupla_abogado_subq = Dupla.objects.filter(
                 comedor=OuterRef("pk"), abogado=user
             )
             dupla_tecnico_subq = Dupla.objects.filter(
                 comedor=OuterRef("pk"), tecnico=user
             )
-
             qs = Comedor.objects.select_related(
-                "referente", "tipocomedor", "provincia", "dupla__abogado"
+                "referente",
+                "tipocomedor",
+                "provincia",
+                "dupla__abogado",
             )
-
+            qs = qs.filter(Exists(admision_subq))
             if not user.is_superuser:
                 if is_dupla:
                     qs = qs.filter(
                         Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
                     )
-                if is_area_legales:
-                    qs = qs.filter(Exists(admision_subq))
-
             if busqueda:
                 qs = qs.filter(
                     Q(nombre__icontains=busqueda)
@@ -402,11 +402,10 @@ class AcompanamientoService:
                     | Q(referente__apellido__icontains=busqueda)
                     | Q(referente__celular__icontains=busqueda)
                 )
-
             return qs
         except Exception:
             logger.exception(
-                f"Error en AcompanamientoService.obtener_comedores_acompanamiento para user: {user.pk}",
+                f"Error en AcompanamientoService.obtener_comedores_acompanamiento para user: {user.pk}"
             )
             raise
 
