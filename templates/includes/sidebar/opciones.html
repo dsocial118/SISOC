@@ -176,7 +176,7 @@
                                             </a>
                                         </li>
                                     {% endif %}
-                                    {% if request.user|has_group:"Area Legales" %}
+                                    {% if request.user|has_group:"Area Legales" or request.user|has_group:"Coordinador Gestion" %}
                                         <li class="nav-item">
                                             <a href="{% url 'admisiones_legales_listar' %}"
                                                class="nav-link nav-dot ms-4 {% if 'admisiones_legales' in pagina_actual %}active{% endif %}">

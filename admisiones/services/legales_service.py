@@ -932,11 +932,19 @@ class LegalesService:
             return redirect(request.path_info)
 
     @staticmethod
-    def get_admisiones_legales_filtradas(query=""):
+    def get_admisiones_legales_filtradas(query="", user=None):
         try:
+            from users.services import UserPermissionService
+
             queryset = Admision.objects.filter(enviado_legales=True).select_related(
                 "comedor", "tipo_convenio"
             )
+
+            # Filtrar por duplas si es coordinador
+            if user and not user.is_superuser:
+                is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+                if is_coordinador and duplas_ids:
+                    queryset = queryset.filter(comedor__dupla_id__in=duplas_ids)
 
             if query:
                 query = query.strip().lower()

@@ -88,7 +88,12 @@ class RendicionCuentasFinalService:
     @staticmethod
     def filter_documentos_por_area(user, query):
         try:
+            from users.services import UserPermissionService
+
             filtros_validador = Q()
+            is_coordinador = False
+            duplas_ids = []
+
             if user.is_superuser:
                 filtros_validador = Q(
                     tipo__validador__in=["Contable", "Legales", "Dupla"]
@@ -101,7 +106,16 @@ class RendicionCuentasFinalService:
                 if user.groups.filter(name="Tecnico Comedor").exists():
                     filtros_validador |= Q(tipo__validador="Dupla")
 
+                # Coordinador de Gestión: ver documentos de duplas asignadas
+                is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+                if is_coordinador:
+                    filtros_validador |= Q(tipo__validador="Dupla")
+
             qs = DocumentoRendicionFinal.objects.filter(filtros_validador)
+
+            # Filtrar por duplas asignadas si es coordinador
+            if is_coordinador and duplas_ids and not user.is_superuser:
+                qs = qs.filter(rendicion_final__comedor__dupla_id__in=duplas_ids)
 
             if query:
                 qs = qs.filter(
