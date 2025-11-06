@@ -22,21 +22,21 @@ from admisiones.views.web_views import (
 urlpatterns = [
     path(
         "comedores/admisiones/tecnicos/listar",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla", "Coordinador Gestion"])(
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla", "Coordinador Equipo Tecnico"])(
             AdmisionesTecnicosListView.as_view()
         ),
         name="admisiones_tecnicos_listar",
     ),
     path(
         "comedores/admisiones/tecnicos/editar/<int:pk>",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla", "Coordinador Gestion"])(
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla", "Coordinador Equipo Tecnico"])(
             AdmisionesTecnicosUpdateView.as_view()
         ),
         name="admisiones_tecnicos_editar",
     ),
     path(
         "comedores/<int:comedor_pk>/admision/<int:pk>/detalle/",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla", "Coordinador Gestion"])(
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla", "Coordinador Equipo Tecnico"])(
             AdmisionDetailView.as_view()
         ),
         name="admision_detalle",
@@ -97,12 +97,12 @@ urlpatterns = [
     # Legales
     path(
         "comedores/admisiones/legales/listar",
-        group_required(["Area Legales", "Coordinador Gestion"])(AdmisionesLegalesListView.as_view()),
+        group_required(["Area Legales", "Coordinador Equipo Tecnico"])(AdmisionesLegalesListView.as_view()),
         name="admisiones_legales_listar",
     ),
     path(
         "comedores/admisiones/legales/ver/<int:pk>",
-        group_required(["Area Legales", "Coordinador Gestion"])(AdmisionesLegalesDetailView.as_view()),
+        group_required(["Area Legales", "Coordinador Equipo Tecnico"])(AdmisionesLegalesDetailView.as_view()),
         name="admisiones_legales_ver",
     ),
     path(

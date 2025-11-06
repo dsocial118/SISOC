@@ -46,7 +46,7 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" or request.user|has_group:"Coordinador Gestion" %}
+            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" or request.user|has_group:"Coordinador Equipo Tecnico" %}
                 <li class="nav-item">
                     <a href="{% url 'comedores' %}"
                        class="nav-link {% if 'comedores_nuevo/' in pagina_actual %}active{% endif %}">
@@ -78,7 +78,7 @@
                     </ul>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Coordinador Gestion" %}
+            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Coordinador Equipo Tecnico" %}
                 <li class="nav-item">
                     <a href="{% url 'lista_comedores_acompanamiento' %}"
                        class="nav-link {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
@@ -87,7 +87,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Coordinador Gestion" %}
+            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Coordinador Equipo Tecnico" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicion_cuentas_final_listar' %}"
                        class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">

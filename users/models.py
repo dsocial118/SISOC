@@ -23,7 +23,7 @@ class Profile(models.Model):
 
        Requisitos para ser Coordinador:
        - es_coordinador=True
-       - Pertenecer al grupo "Coordinador Gestion" (en User.groups)
+       - Pertenecer al grupo "Coordinador Equipo Tecnico" (en User.groups)
        - is_staff=True (requerido para acceso al backoffice)
        - Tener al menos una dupla asignada en duplas_asignadas
 
