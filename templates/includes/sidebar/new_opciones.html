@@ -29,7 +29,7 @@
                         <p>Grupos</p>
                     </a>
                     <a href="{% url 'dupla_list' %}"
-                       class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
+                       class="nav-link {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual %}active{% endif %}">
                         <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Equipos Técnicos</p>
                     </a>
