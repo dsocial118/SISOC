@@ -49,10 +49,6 @@ class Profile(models.Model):
        >>> profile.duplas_asignadas.add(dupla1)
        >>> # Ahora coord1 puede ver comedores de dupla1 en modo solo lectura
 
-    3. Técnico con Coordinador:
-       - Técnicos y abogados de duplas pueden tener un coordinador asignado
-       - El campo 'coordinador' apunta a un usuario con rol Coordinador de Gestión
-
     Campos:
     -------
     user : OneToOneField
@@ -65,8 +61,6 @@ class Profile(models.Model):
         Provincia específica si es_usuario_provincial=True
     rol : CharField
         Descripción textual del rol (complementa groups)
-    coordinador : ForeignKey
-        Coordinador de gestión asignado (para técnicos/abogados)
     es_coordinador : BooleanField
         Marca si este usuario es coordinador de gestión
     duplas_asignadas : ManyToManyField
@@ -88,16 +82,6 @@ class Profile(models.Model):
     )
     rol = models.CharField(max_length=100, null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    coordinador = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="tecnicos_coordinados",
-        limit_choices_to={"groups__name": "Coordinador Gestion"},
-        verbose_name="Coordinador de Gestión",
-        help_text="Coordinador asignado a este técnico",
-    )
     es_coordinador = models.BooleanField(
         default=False,
         verbose_name="Es Coordinador de Gestión",

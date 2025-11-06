@@ -39,14 +39,6 @@ class UserCreationForm(forms.ModelForm):
         help_text="Solo duplas activas con comedores asignados",
     )
 
-    coordinador = forms.ModelChoiceField(
-        queryset=User.objects.filter(groups__name=UserGroups.COORDINADOR_GESTION),
-        required=False,
-        widget=forms.Select(attrs={"class": "select2"}),
-        label="Coordinador de Gestión",
-        help_text="Asignar coordinador (solo para técnicos)",
-    )
-
     rol = forms.CharField(max_length=100, required=False, label="Rol")
 
     class Meta:
@@ -60,7 +52,6 @@ class UserCreationForm(forms.ModelForm):
             "provincia",
             "es_coordinador",
             "duplas_asignadas",
-            "coordinador",
             "last_name",
             "first_name",
             "rol",
@@ -96,7 +87,6 @@ class UserCreationForm(forms.ModelForm):
                 else None
             )
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
-            profile.coordinador = self.cleaned_data.get("coordinador")
             profile.rol = self.cleaned_data.get("rol")
             profile.save()
 
@@ -146,14 +136,6 @@ class CustomUserChangeForm(forms.ModelForm):
         help_text="Solo duplas activas con comedores asignados",
     )
 
-    coordinador = forms.ModelChoiceField(
-        queryset=User.objects.filter(groups__name=UserGroups.COORDINADOR_GESTION),
-        required=False,
-        widget=forms.Select(attrs={"class": "select2"}),
-        label="Coordinador de Gestión",
-        help_text="Asignar coordinador (solo para técnicos)",
-    )
-
     rol = forms.CharField(max_length=100, required=False, label="Rol")
 
     class Meta:
@@ -167,7 +149,6 @@ class CustomUserChangeForm(forms.ModelForm):
             "provincia",
             "es_coordinador",
             "duplas_asignadas",
-            "coordinador",
             "last_name",
             "first_name",
             "rol",
@@ -189,7 +170,6 @@ class CustomUserChangeForm(forms.ModelForm):
             self.fields["provincia"].initial = prof.provincia
             self.fields["es_coordinador"].initial = prof.es_coordinador
             self.fields["duplas_asignadas"].initial = prof.duplas_asignadas.all()
-            self.fields["coordinador"].initial = prof.coordinador
             self.fields["rol"].initial = prof.rol
 
     def clean(self):
@@ -227,7 +207,6 @@ class CustomUserChangeForm(forms.ModelForm):
                 else None
             )
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
-            profile.coordinador = self.cleaned_data.get("coordinador")
             profile.rol = self.cleaned_data.get("rol")
             profile.save()
 
