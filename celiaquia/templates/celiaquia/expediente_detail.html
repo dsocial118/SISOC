@@ -275,32 +275,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-3">Legajos</h5>
             <div class="d-flex align-items-center gap-3">
-                <div class="d-flex align-items-center gap-2">
-                    <label for="filtro-estado" class="me-2 mb-0 small">Filtrar por estado:</label>
-                    <select id="filtro-estado"
-                            class="form-select form-select-sm"
-                            style="width: auto">
-                        <option value="">Todos</option>
-                        <option value="PENDIENTE">Pendiente</option>
-                        <option value="APROBADO">Aprobado</option>
-                        <option value="RECHAZADO">Rechazado</option>
-                        <option value="SUBSANAR">Subsanar</option>
-                        <option value="SUBSANADO">Subsanado</option>
-                    </select>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <label for="legajos-page-size" class="me-2 mb-0 small">Registros por página:</label>
-                    <select id="legajos-page-size"
-                            class="form-select form-select-sm"
-                            style="width: auto">
-                        <option value="5">5</option>
-                        <option value="10" selected>10</option>
-                        <option value="15">15</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="all">Todos</option>
-                    </select>
-                </div>
+                <!-- Selector de paginación removido - ahora muestra todos los registros -->
             </div>
         </div>
 
@@ -767,11 +742,7 @@
                 </div>
             {% endfor %}
         </div>
-        <nav class="mt-3">
-            <ul id="legajos-pagination"
-                class="pagination pagination-sm justify-content-center mb-0">
-            </ul>
-        </nav>
+        <!-- Paginación removida - ahora muestra todos los registros -->
     {% else %}
         <p class="text-muted">No hay legajos cargados.</p>
     {% endif %}
@@ -1560,4 +1531,5 @@
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
+    <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
 {% endblock %}
