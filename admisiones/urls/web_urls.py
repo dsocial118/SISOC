@@ -97,12 +97,12 @@ urlpatterns = [
     # Legales
     path(
         "comedores/admisiones/legales/listar",
-        group_required(["Area Legales"])(AdmisionesLegalesListView.as_view()),
+        group_required(["Area Legales", "Coordinador Gestion"])(AdmisionesLegalesListView.as_view()),
         name="admisiones_legales_listar",
     ),
     path(
         "comedores/admisiones/legales/ver/<int:pk>",
-        group_required(["Area Legales"])(AdmisionesLegalesDetailView.as_view()),
+        group_required(["Area Legales", "Coordinador Gestion"])(AdmisionesLegalesDetailView.as_view()),
         name="admisiones_legales_ver",
     ),
     path(

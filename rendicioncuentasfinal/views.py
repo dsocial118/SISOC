@@ -209,7 +209,7 @@ def documentos_rendicion_cuentas_final_ajax(request):
     """Endpoint AJAX para búsqueda filtrada de documentos de rendición de cuentas final"""
 
     # Aplicar el decorador manualmente para mantener permisos
-    @group_required(["Area Contable", "Area Legales", "Tecnico Comedor"])
+    @group_required(["Area Contable", "Area Legales", "Tecnico Comedor", "Coordinador Gestion"])
     def _documentos_rendicion_ajax(request):
         query = request.GET.get("busqueda", "")
         page = request.GET.get("page", 1)
