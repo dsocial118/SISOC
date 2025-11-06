@@ -10,7 +10,7 @@ class UserGroups:
     """Nombres de grupos de usuarios del sistema."""
 
     # Grupos principales
-    COORDINADOR_GESTION = "Coordinador Gestion"
+    COORDINADOR_GESTION = "Coordinador Equipo Tecnico"
     TECNICO_COMEDOR = "Tecnico Comedor"
     ABOGADO_DUPLA = "Abogado Dupla"
     AREA_LEGALES = "Area Legales"
