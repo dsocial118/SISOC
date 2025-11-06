@@ -5,26 +5,26 @@ from core.decorators import group_required
 urlpatterns = [
     path(
         "acompanamiento/<int:comedor_id>/detalle/",
-        group_required(["Acompanamiento Detalle", "Area Legales", "Tecnico Comedor"])(
+        group_required(["Acompanamiento Detalle", "Area Legales", "Tecnico Comedor", "Coordinador Gestion"])(
             views.AcompanamientoDetailView.as_view()
         ),
         name="detalle_acompanamiento",
     ),
     path(
         "acompanamiento/",
-        group_required(["Acompanamiento Listar", "Area Legales", "Tecnico Comedor"])(
+        group_required(["Acompanamiento Listar", "Area Legales", "Tecnico Comedor", "Coordinador Gestion"])(
             views.ComedoresAcompanamientoListView.as_view()
         ),
         name="lista_comedores_acompanamiento",
     ),
     path(
         "comedor/<int:comedor_id>/restaurar-hito/",
-        group_required(["Tecnico Comedor"])(views.restaurar_hito),
+        group_required(["Tecnico Comedor", "Coordinador Gestion"])(views.restaurar_hito),
         name="restaurar_hito",
     ),
     path(
         "acompanamiento/ajax/",
-        group_required(["Acompanamiento Listar", "Area Legales", "Tecnico Comedor"])(
+        group_required(["Acompanamiento Listar", "Area Legales", "Tecnico Comedor", "Coordinador Gestion"])(
             views.comedores_acompanamiento_ajax
         ),
         name="comedores_acompanamiento_ajax",
