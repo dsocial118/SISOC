@@ -204,12 +204,16 @@ class ImportacionService:
             row_with_id.update(row)
             rows_with_id.append(row_with_id)
 
-        return {
+        # Almacenar datos en sesión para paginación
+        preview_data = {
             "headers": headers,
             "rows": rows_with_id,
             "total_rows": total_rows,
             "shown_rows": len(sample),
+            "all_rows": df.to_dict(orient="records") if limit is None else df.head(5000).to_dict(orient="records"),
         }
+        
+        return preview_data
 
     @staticmethod
     @transaction.atomic
@@ -470,7 +474,9 @@ class ImportacionService:
                         payload.get("fecha_nacimiento")
                     )
                 except ValidationError as e:
-                    raise ValidationError(str(e))
+                    # Si la fecha es inválida, registrar error pero continuar
+                    add_warning(offset, "fecha_nacimiento", f"Fecha inválida: {payload.get('fecha_nacimiento')} - {str(e)}")
+                    raise ValidationError(f"Fecha de nacimiento inválida: {payload.get('fecha_nacimiento')}")
 
                 # CONVERSIÓN OPTIMIZADA: IDs a nombres usando cache
                 # Municipio
@@ -739,11 +745,11 @@ class ImportacionService:
                                         responsable_payload["fecha_nacimiento"]
                                     )
                                 )
-                            except ValidationError:
+                            except ValidationError as e:
                                 add_warning(
                                     offset,
                                     "fecha_nacimiento_responsable",
-                                    "Fecha inválida",
+                                    f"Fecha inválida: {responsable_payload.get('fecha_nacimiento')} - {str(e)}",
                                 )
                                 responsable_payload.pop("fecha_nacimiento", None)
 
