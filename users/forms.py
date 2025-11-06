@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import User, Group
 
 from core.models import Provincia
+from core.constants import UserGroups
 from duplas.models import Dupla
 from .models import Profile
 
@@ -31,15 +32,15 @@ class UserCreationForm(forms.ModelForm):
     )
 
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.filter(estado="Activo"),
+        queryset=Dupla.objects.activas_con_comedores(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
-        help_text="Duplas asignadas al coordinador",
+        help_text="Solo duplas activas con comedores asignados",
     )
 
     coordinador = forms.ModelChoiceField(
-        queryset=User.objects.filter(groups__name="Coordinador Gestion"),
+        queryset=User.objects.filter(groups__name=UserGroups.COORDINADOR_GESTION),
         required=False,
         widget=forms.Select(attrs={"class": "select2"}),
         label="Coordinador de Gestión",
@@ -76,6 +77,10 @@ class UserCreationForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password"])
+
+        # Activar is_staff si es coordinador (requerido para acceso al backoffice)
+        if self.cleaned_data.get("es_coordinador", False):
+            user.is_staff = True
 
         if commit:
             user.save()
@@ -134,15 +139,15 @@ class CustomUserChangeForm(forms.ModelForm):
     )
 
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.filter(estado="Activo"),
+        queryset=Dupla.objects.activas_con_comedores(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
-        help_text="Duplas asignadas al coordinador",
+        help_text="Solo duplas activas con comedores asignados",
     )
 
     coordinador = forms.ModelChoiceField(
-        queryset=User.objects.filter(groups__name="Coordinador Gestion"),
+        queryset=User.objects.filter(groups__name=UserGroups.COORDINADOR_GESTION),
         required=False,
         widget=forms.Select(attrs={"class": "select2"}),
         label="Coordinador de Gestión",
@@ -203,6 +208,10 @@ class CustomUserChangeForm(forms.ModelForm):
             user.set_password(new_pwd)
         else:
             user.password = self._original_password_hash
+
+        # Activar is_staff si es coordinador (requerido para acceso al backoffice)
+        if self.cleaned_data.get("es_coordinador", False):
+            user.is_staff = True
 
         if commit:
             user.save()
