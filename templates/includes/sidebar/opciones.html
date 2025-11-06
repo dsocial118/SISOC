@@ -67,7 +67,7 @@
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'dupla_list' %}"
-                       class="nav-link nav-dot ms-2 {% if 'dupla' in pagina_actual %}active{% endif %}">
+                       class="nav-link nav-dot ms-2 {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual %}active{% endif %}">
                         <p>Equipos Técnicos</p>
                     </a>
                 </li>
