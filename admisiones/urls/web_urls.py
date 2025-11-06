@@ -22,21 +22,21 @@ from admisiones.views.web_views import (
 urlpatterns = [
     path(
         "comedores/admisiones/tecnicos/listar",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla", "Coordinador Gestion"])(
             AdmisionesTecnicosListView.as_view()
         ),
         name="admisiones_tecnicos_listar",
     ),
     path(
         "comedores/admisiones/tecnicos/editar/<int:pk>",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla", "Coordinador Gestion"])(
             AdmisionesTecnicosUpdateView.as_view()
         ),
         name="admisiones_tecnicos_editar",
     ),
     path(
         "comedores/<int:comedor_pk>/admision/<int:pk>/detalle/",
-        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
+        group_required(["Comedores", "Tecnico Comedor", "Abogado Dupla", "Coordinador Gestion"])(
             AdmisionDetailView.as_view()
         ),
         name="admision_detalle",
