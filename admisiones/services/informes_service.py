@@ -86,7 +86,9 @@ class InformeService:
 
     @staticmethod
     def get_form_class_por_tipo(tipo):
-        return InformeTecnicoJuridicoForm if tipo == "juridico" else InformeTecnicoBaseForm
+        return (
+            InformeTecnicoJuridicoForm if tipo == "juridico" else InformeTecnicoBaseForm
+        )
 
     @staticmethod
     def get_tipo_from_kwargs(kwargs):

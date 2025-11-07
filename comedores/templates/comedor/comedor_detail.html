@@ -38,8 +38,8 @@
                         data-bs-target="#modalAdmision">
                     <i class="bi bi-box-arrow-in-right me-1"></i> Comenzar Admisión
                 </button>
-            <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-               class="btn btn-primary me-1">Modificar Equipo Técnico</a>
+                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                   class="btn btn-primary me-1">Modificar Equipo Técnico</a>
             {% endif %}
             <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
                class="btn btn-primary me-1">Intervenciones</a>
