@@ -30,7 +30,7 @@
                class="btn btn-primary me-1">Nomina</a>
             {% if comedor.estado == "Sin Ingreso" %}
                 <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-                   class="btn btn-primary me-1">Asignar Dupla</a>
+                   class="btn btn-primary me-1">Asignar Equipo Técnico</a>
             {% else %}
                 <button type="button"
                         class="btn btn-warning text-white me-1 fw-bold"
@@ -39,7 +39,7 @@
                     <i class="bi bi-box-arrow-in-right me-1"></i> Comenzar Admisión
                 </button>
                 <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-                   class="btn btn-primary me-1">Modificar Dupla</a>
+                   class="btn btn-primary me-1">Modificar Equipo Técnico</a>
             {% endif %}
             <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
                class="btn btn-primary me-1">Intervenciones</a>
@@ -537,9 +537,9 @@
                             <a href="{% url 'dupla_asignar' pk=comedor.id %}"
                                class="btn btn-primary me-1 btn-sm">
                                 {% if comedor.estado == "Sin Ingreso" %}
-                                    Asignar Dupla
+                                    Asignar Equipo Técnico
                                 {% else %}
-                                    Modificar Dupla
+                                    Modificar Equipo Técnico
                                 {% endif %}
                             </a>
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">

@@ -165,7 +165,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     .values_list("numero_gde", flat=True)
                     .first()
                 )
-            
+
             _if_relevamiento_a_pac(self.fields, admision)
 
             # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
