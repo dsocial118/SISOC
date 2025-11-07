@@ -27,6 +27,13 @@ class DuplaForm(forms.ModelForm):
         else:
             self.fields["abogado"].queryset = self.fields["abogado"].queryset.none()
 
+        # Filtrar coordinadores: solo usuarios del grupo "Coordinador Equipo Tecnico"
+        grupo_coordinador = Group.objects.filter(name="Coordinador Equipo Tecnico").first()
+        if grupo_coordinador:
+            self.fields["coordinador"].queryset = grupo_coordinador.user_set.all()
+        else:
+            self.fields["coordinador"].queryset = self.fields["coordinador"].queryset.none()
+
     class Meta:
         model = Dupla
         fields = "__all__"
@@ -40,12 +47,14 @@ class DuplaForm(forms.ModelForm):
                 }
             ),
             "abogado": forms.Select(attrs={"class": "form-control"}),
+            "coordinador": forms.Select(attrs={"class": "form-control"}),
         }
         labels = {
             "nombre": "Nombre",
             "tecnico": "Técnico",
             "abogado": "Abogado",
             "estado": "Estado",
+            "coordinador": "Coordinador de Equipo Técnico",
         }
 
     def clean_tecnico(self):
