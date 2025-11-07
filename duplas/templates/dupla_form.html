@@ -4,10 +4,10 @@
     <link rel="stylesheet"
           href="{% static 'custom/css/duplasSelect2.min.css' %}" />
 {% endblock %}
-{% block title %}Editar Dupla{% endblock %}
+{% block title %}Editar Equipo técnico{% endblock %}
 {% block content %}
     <div class="container mt-4">
-        <h2>Editar Dupla</h2>
+        <h2>Editar Equipo técnico</h2>
         <form method="post">
             {% csrf_token %}
             {{ form.nombre | as_crispy_field }}
