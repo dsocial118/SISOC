@@ -28,19 +28,19 @@ def _ultimo_numero_gde(admision, documentacion_nombre):
 
 
 def _if_relevamiento_a_pac(fields, admision):
-    if not fields:
+    """Setea el último número GDE disponible en los campos de relevamiento."""
+
+    if not admision or not fields:
         return fields
 
-    if "if_relevamiento" in fields:
-        fields["if_relevamiento"].initial = _ultimo_numero_gde(
-            admision,
-            "Relevamiento al Programa PAC",
-        )
-    if "IF_relevamiento_territorial" in fields:
-        fields["IF_relevamiento_territorial"].initial = _ultimo_numero_gde(
-            admision,
-            "Relevamiento al Programa PAC",
-        )
+    numero_gde = _ultimo_numero_gde(admision, "Relevamiento Programa PAC")
+    if not numero_gde:
+        return fields
+
+    for field_name in ("if_relevamiento", "IF_relevamiento_territorial"):
+        field = fields.get(field_name)
+        if field:
+            field.initial = numero_gde
 
     return fields
 
@@ -166,7 +166,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     .first()
                 )
 
-            self.fields = _if_relevamiento_a_pac(self.field, admision)
+            _if_relevamiento_a_pac(self.fields, admision)
 
             # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
             # if referente:
@@ -296,7 +296,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     .first()
                 )
 
-            self.fields = _if_relevamiento_a_pac(self.field, admision)
+            _if_relevamiento_a_pac(self.fields, admision)
 
             # ESTO SE COMENTIO POR QUE NO QUIEREN QUE SE PREGARGE EL REFERENTE PERO PUEDE CAMBIAR
             # if referente:
