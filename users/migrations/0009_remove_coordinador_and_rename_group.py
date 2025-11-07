@@ -33,11 +33,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Remover campo coordinador del Profile
-        migrations.RemoveField(
-            model_name="profile",
-            name="coordinador",
-        ),
         # Renombrar grupo
         migrations.RunPython(rename_coordinador_group, reverse_rename_coordinador_group),
     ]
