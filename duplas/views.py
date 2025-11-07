@@ -25,7 +25,7 @@ class DuplaListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         """Retorna las duplas ordenadas para evitar warning de paginación"""
         return (
-            Dupla.objects.select_related("abogado")
+            Dupla.objects.select_related("abogado", "coordinador")
             .prefetch_related("tecnico")
             .order_by("-fecha", "nombre")
         )
@@ -37,12 +37,14 @@ class DuplaListView(LoginRequiredMixin, ListView):
             {"title": "Nombre"},
             {"title": "Técnico/s"},
             {"title": "Abogado"},
+            {"title": "Coordinador"},
             {"title": "Estado"},
         ]
         context["table_fields"] = [
             {"name": "nombre", "link_field": True, "link_url": "dupla_detalle"},
             {"name": "tecnicos_nombres"},
             {"name": "abogado"},
+            {"name": "coordinador"},
             {"name": "estado"},
         ]
         context["table_actions"] = [
@@ -114,7 +116,7 @@ class DuplaDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         """Optimiza las queries para el detalle de dupla"""
-        return Dupla.objects.select_related("abogado").prefetch_related("tecnico")
+        return Dupla.objects.select_related("abogado", "coordinador").prefetch_related("tecnico")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

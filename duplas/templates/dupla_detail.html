@@ -1,0 +1,64 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Dupla: {{ dupla.nombre }}{% endblock %}
+{% block titulo-pagina %}{{ dupla.nombre }}{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'dupla_list' %}">Duplas</a>
+        </div>
+        <div class="breadcrumb-item active">{{ dupla.nombre }}</div>
+    </ol>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <div class="row justify-content-between d-print-none mx-1 mb-3">
+        <div class="col-auto">
+            <a href="{% url 'dupla_list' %}"
+               class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'dupla_editar' dupla.id %}"
+               class="btn btn-primary mr-1">Editar</a>
+            <a href="{% url 'dupla_eliminar' dupla.id %}"
+               class="btn btn-danger">Eliminar</a>
+        </div>
+    </div>
+    <div class="card card-outline card-primary">
+        <div class="card-header">
+            <h3 class="card-title">Información de la Dupla</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Nombre:</dt>
+                        <dd class="col-sm-8">{{ dupla.nombre }}</dd>
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">{{ dupla.estado }}</dd>
+                        <dt class="col-sm-4">Técnico/s:</dt>
+                        <dd class="col-sm-8">{{ dupla.tecnicos_nombres }}</dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="row">
+                        <dt class="col-sm-4">Abogado:</dt>
+                        <dd class="col-sm-8">
+                            {{ dupla.abogado.get_full_name|default:dupla.abogado.username }}
+                        </dd>
+                        <dt class="col-sm-4">Coordinador:</dt>
+                        <dd class="col-sm-8">
+                            {% if dupla.coordinador %}
+                                {{ dupla.coordinador.get_full_name|default:dupla.coordinador.username }}
+                            {% else %}
+                                <span class="badge badge-warning">Sin asignar</span>
+                            {% endif %}
+                        </dd>
+                        <dt class="col-sm-4">Fecha de creación:</dt>
+                        <dd class="col-sm-8">{{ dupla.fecha|date:"d/m/Y H:i" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

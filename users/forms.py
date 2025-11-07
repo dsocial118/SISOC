@@ -2,7 +2,6 @@ from django import forms
 from django.contrib.auth.models import User, Group
 
 from core.models import Provincia
-from core.constants import UserGroups
 from duplas.models import Dupla
 from .models import Profile
 
@@ -28,7 +27,7 @@ class UserCreationForm(forms.ModelForm):
 
     es_coordinador = forms.BooleanField(
         required=False,
-        label="Es Coordinador de Gestión",
+        label="Es Coordinador de Equipo Técnico",
     )
 
     duplas_asignadas = forms.ModelMultipleChoiceField(
@@ -125,7 +124,7 @@ class CustomUserChangeForm(forms.ModelForm):
 
     es_coordinador = forms.BooleanField(
         required=False,
-        label="Es Coordinador de Gestión",
+        label="Es Coordinador de Equipo Técnico",
     )
 
     duplas_asignadas = forms.ModelMultipleChoiceField(
