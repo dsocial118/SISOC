@@ -210,9 +210,13 @@ class ImportacionService:
             "rows": rows_with_id,
             "total_rows": total_rows,
             "shown_rows": len(sample),
-            "all_rows": df.to_dict(orient="records") if limit is None else df.head(5000).to_dict(orient="records"),
+            "all_rows": (
+                df.to_dict(orient="records")
+                if limit is None
+                else df.head(5000).to_dict(orient="records")
+            ),
         }
-        
+
         return preview_data
 
     @staticmethod
@@ -475,8 +479,14 @@ class ImportacionService:
                     )
                 except ValidationError as e:
                     # Si la fecha es inválida, registrar error pero continuar
-                    add_warning(offset, "fecha_nacimiento", f"Fecha inválida: {payload.get('fecha_nacimiento')} - {str(e)}")
-                    raise ValidationError(f"Fecha de nacimiento inválida: {payload.get('fecha_nacimiento')}")
+                    add_warning(
+                        offset,
+                        "fecha_nacimiento",
+                        f"Fecha inválida: {payload.get('fecha_nacimiento')} - {str(e)}",
+                    )
+                    raise ValidationError(
+                        f"Fecha de nacimiento inválida: {payload.get('fecha_nacimiento')}"
+                    )
 
                 # CONVERSIÓN OPTIMIZADA: IDs a nombres usando cache
                 # Municipio
