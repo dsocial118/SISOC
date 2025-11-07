@@ -71,13 +71,13 @@ class DuplaCreateView(LoginRequiredMixin, CreateView):
         if form.is_valid():
             try:
                 self.object = self.form_valid(form)
-                messages.success(request, "Dupla creada correctamente.")
+                messages.success(request, "Equipo técnico creado correctamente.")
                 return HttpResponseRedirect(self.get_success_url())
             except ValidationError as e:
                 messages.error(request, str(e))
                 return self.form_invalid(form)
         else:
-            messages.error(request, "Error al crear la Dupla.")
+            messages.error(request, "Error al crear el Equipo técnico.")
             return self.form_invalid(form)
 
     def get_success_url(self):
@@ -135,11 +135,11 @@ class DuplaDeleteView(LoginRequiredMixin, DeleteView):
         if comedor:
             messages.error(
                 request,
-                "No se puede eliminar la dupla porque está asignada al comedor "
+                "No se puede eliminar el equipo técnico porque está asignada al comedor "
                 + str(comedor.nombre),
             )
             return HttpResponseRedirect(self.get_success_url())
         self.object = self.get_object()
         self.object.delete()
-        messages.success(request, "Dupla eliminada correctamente.")
+        messages.success(request, "Equipo técnico eliminado correctamente.")
         return HttpResponseRedirect(self.get_success_url())
