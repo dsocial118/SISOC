@@ -1,16 +1,16 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title %}Listado de duplas{% endblock %}
-{% block titulo-pagina %}Duplas{% endblock %}
+{% block title %}Listado de Equipos técnicos{% endblock %}
+{% block titulo-pagina %}Equipo técnico{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
     <div class="container mt-4">
-        <h2>Listado de Duplas</h2>
-        <a href="{% url 'dupla_crear' %}" class="btn btn-primary mb-3">Crear Nueva Dupla</a>
+        <h2>Listado de Equipos técnicos</h2>
+        <a href="{% url 'dupla_crear' %}" class="btn btn-primary mb-3">Crear Nuevo Equipo técnico</a>
         {% load custom_filters %}
-        {% include 'components/data_table.html' with headers=table_headers items=duplas show_actions=True actions=table_actions empty_message='No hay duplas disponibles.' fields=table_fields disable_links=True %}
+        {% include 'components/data_table.html' with headers=table_headers items=duplas show_actions=True actions=table_actions empty_message='No hay equipos técnicos disponibles.' fields=table_fields disable_links=True %}
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Anterior' next_text='Siguiente' %}
     </div>
 {% endblock %}
