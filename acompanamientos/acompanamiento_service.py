@@ -362,7 +362,9 @@ class AcompanamientoService:
             QuerySet: QuerySet de objetos Comedor filtrados según los criterios especificados.
         """
         try:
-            from users.services import UserPermissionService  # pylint: disable=import-outside-toplevel
+            from users.services import (
+                UserPermissionService,
+            )  # pylint: disable=import-outside-toplevel
 
             # Verificar roles usando servicio centralizado
             is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
