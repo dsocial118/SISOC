@@ -25,15 +25,52 @@
                   enctype="multipart/form-data"
                   autocomplete="off">
                 {% csrf_token %}
-                {{ form.username | as_crispy_field }}
-                {{ form.email | as_crispy_field }}
-                {{ form.password | as_crispy_field }}
-                {{ form.groups | as_crispy_field }}
-                {{ form.first_name|as_crispy_field }}
-                {{ form.last_name|as_crispy_field }}
-                {{ form.rol|as_crispy_field }}
-                {{ form.es_usuario_provincial|as_crispy_field }}
-                {{ form.provincia|as_crispy_field }}
+
+                <!-- Datos Personales -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Datos Personales</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form.first_name|as_crispy_field }}
+                        {{ form.last_name|as_crispy_field }}
+                    </div>
+                </div>
+
+                <!-- Datos de Acceso -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Datos de Acceso</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form.username | as_crispy_field }}
+                        {{ form.email | as_crispy_field }}
+                        {{ form.password | as_crispy_field }}
+                    </div>
+                </div>
+
+                <!-- Permisos y Roles -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Permisos y Roles</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form.groups | as_crispy_field }}
+                        {{ form.rol|as_crispy_field }}
+                    </div>
+                </div>
+
+                
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"></h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form.es_usuario_provincial|as_crispy_field }}
+                        {{ form.provincia|as_crispy_field }}
+                    </div>
+                </div>
+
                 {% include 'components/form_buttons.html' with cancel_url='usuarios' default_save=True save_text='Confirmar' layout='start' %}
             </form>
         </div>
