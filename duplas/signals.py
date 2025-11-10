@@ -22,11 +22,11 @@ def capture_old_coordinador(sender, instance, **kwargs):
     if instance.pk:
         try:
             old_dupla = Dupla.objects.get(pk=instance.pk)
-            instance._old_coordinador_id = old_dupla.coordinador_id
+            instance._old_coordinador_id = old_dupla.coordinador_id  # pylint: disable=protected-access
         except Dupla.DoesNotExist:
-            instance._old_coordinador_id = None
+            instance._old_coordinador_id = None  # pylint: disable=protected-access
     else:
-        instance._old_coordinador_id = None
+        instance._old_coordinador_id = None  # pylint: disable=protected-access
 
 
 @receiver(post_save, sender=Dupla)
@@ -51,7 +51,7 @@ def sync_dupla_coordinador_to_profile(sender, instance, created, **kwargs):
     # Remover de coordinador anterior si existe
     if old_coordinador_id:
         try:
-            from django.contrib.auth.models import User
+            from django.contrib.auth.models import User  # pylint: disable=import-outside-toplevel
 
             old_coordinador = User.objects.get(pk=old_coordinador_id)
             if hasattr(old_coordinador, "profile"):
