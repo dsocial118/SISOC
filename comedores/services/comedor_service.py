@@ -154,7 +154,9 @@ class ComedorService:
             from users.services import UserPermissionService
 
             # Verificar si es coordinador usando servicio centralizado
-            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(
+                user
+            )
             is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
             # Aplicar filtros según el rol
@@ -164,32 +166,42 @@ class ComedorService:
             elif is_dupla:
                 # Técnico o Abogado: ver comedores donde está asignado
                 from django.db.models import Exists, OuterRef
+
                 dupla_abogado_subq = Dupla.objects.filter(
                     comedor=OuterRef("pk"), abogado=user
                 )
                 dupla_tecnico_subq = Dupla.objects.filter(
                     comedor=OuterRef("pk"), tecnico=user
                 )
-                base_qs = Comedor.objects.filter(
-                    Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
-                ).select_related(
-                    "provincia", "municipio", "localidad", "referente", "tipocomedor"
-                ).values(
-                    "id",
-                    "nombre",
-                    "estado_general",
-                    "tipocomedor__nombre",
-                    "provincia__nombre",
-                    "municipio__nombre",
-                    "localidad__nombre",
-                    "barrio",
-                    "partido",
-                    "calle",
-                    "numero",
-                    "referente__nombre",
-                    "referente__apellido",
-                    "referente__celular",
-                ).order_by("-id")
+                base_qs = (
+                    Comedor.objects.filter(
+                        Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
+                    )
+                    .select_related(
+                        "provincia",
+                        "municipio",
+                        "localidad",
+                        "referente",
+                        "tipocomedor",
+                    )
+                    .values(
+                        "id",
+                        "nombre",
+                        "estado_general",
+                        "tipocomedor__nombre",
+                        "provincia__nombre",
+                        "municipio__nombre",
+                        "localidad__nombre",
+                        "barrio",
+                        "partido",
+                        "calle",
+                        "numero",
+                        "referente__nombre",
+                        "referente__apellido",
+                        "referente__celular",
+                    )
+                    .order_by("-id")
+                )
 
         return COMEDOR_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 

@@ -884,8 +884,7 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return LegalesService.get_admisiones_legales_filtradas(
-            self.request.GET.get("busqueda", ""),
-            self.request.user
+            self.request.GET.get("busqueda", ""), self.request.user
         )
 
     def get_context_data(self, **kwargs):
@@ -1046,7 +1045,9 @@ def admisiones_legales_ajax(request):
         query = request.GET.get("busqueda", "")
         page = request.GET.get("page", 1)
 
-        admisiones = LegalesService.get_admisiones_legales_filtradas(query, request.user)
+        admisiones = LegalesService.get_admisiones_legales_filtradas(
+            query, request.user
+        )
         paginator = Paginator(admisiones, 10)
         page_obj = paginator.get_page(page)
 

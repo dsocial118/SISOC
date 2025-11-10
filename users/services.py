@@ -113,7 +113,7 @@ class UserPermissionService:
         """
         try:
             # Verificar que el usuario tenga profile
-            if not hasattr(user, 'profile'):
+            if not hasattr(user, "profile"):
                 logger.debug(f"Usuario {user.pk} no tiene profile")
                 return False, []
 
@@ -124,9 +124,7 @@ class UserPermissionService:
                 return False, []
 
             # Obtener IDs de duplas asignadas
-            duplas_ids = list(
-                profile.duplas_asignadas.values_list('id', flat=True)
-            )
+            duplas_ids = list(profile.duplas_asignadas.values_list("id", flat=True))
 
             if not duplas_ids:
                 logger.warning(

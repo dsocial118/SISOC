@@ -189,7 +189,9 @@ class AdmisionService:
             from users.services import UserPermissionService
 
             # Verificar si es coordinador usando servicio centralizado
-            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(
+                user
+            )
 
             if is_coordinador and duplas_ids:
                 # Coordinador: ver admisiones de comedores de sus duplas asignadas
