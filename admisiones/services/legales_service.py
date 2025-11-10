@@ -945,8 +945,11 @@ class LegalesService:
                 is_coordinador, duplas_ids = (
                     UserPermissionService.get_coordinador_duplas(user)
                 )
-                if is_coordinador and duplas_ids:
-                    queryset = queryset.filter(comedor__dupla_id__in=duplas_ids)
+                if is_coordinador:
+                    if not duplas_ids:
+                        queryset = queryset.none()
+                    else:
+                        queryset = queryset.filter(comedor__dupla_id__in=duplas_ids)
 
             if query:
                 query = query.strip().lower()
