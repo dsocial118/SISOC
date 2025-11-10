@@ -23,7 +23,7 @@
                 </div>
             {% endfor %}
         {% endif %}
- 
+
         <!-- Buscar Ciudadano -->
         <div class="card mb-3">
             <div class="card-header font-weight-bold">Buscar Ciudadano</div>
@@ -42,7 +42,7 @@
                 </form>
             </div>
         </div>
- 
+
         <!-- Resultados de Búsqueda -->
         {% if ciudadanos %}
             <div class="card mb-3">
@@ -80,7 +80,7 @@
                 </div>
             </div>
         {% endif %}
- 
+
         <!-- Formulario Creación de Ciudadano -->
         {% if request.GET.query and no_resultados %}
             <div class="alert alert-info mb-3">
@@ -111,7 +111,7 @@
             </div>
         {% endif %}
     </div>
- 
+
     <!-- Modal Agregar Ciudadano -->
     <div class="modal fade"
          id="modalNomina"

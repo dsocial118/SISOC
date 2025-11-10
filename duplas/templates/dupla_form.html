@@ -21,10 +21,12 @@
                     <strong>Coordinador de Equipo Técnico:</strong>
                     {% if dupla.coordinador %}
                         {{ dupla.coordinador.get_full_name|default:dupla.coordinador.username }}
-                        <br><small class="text-muted">El coordinador se asigna desde el Usuarios</small>
+                        <br />
+                        <small class="text-muted">El coordinador se asigna desde el Usuarios</small>
                     {% else %}
                         <span class="badge badge-warning">Sin asignar</span>
-                        <br><small class="text-muted">Asigne esta dupla a un coordinador desde el ABM de Usuarios</small>
+                        <br />
+                        <small class="text-muted">Asigne esta dupla a un coordinador desde el ABM de Usuarios</small>
                     {% endif %}
                 </div>
             </div>
