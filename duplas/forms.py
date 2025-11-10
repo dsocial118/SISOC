@@ -29,7 +29,8 @@ class DuplaForm(forms.ModelForm):
 
     class Meta:
         model = Dupla
-        fields = "__all__"
+        # Excluimos coordinador porque se asigna SOLO desde el ABM de usuarios
+        fields = ["nombre", "tecnico", "abogado", "estado"]
         widgets = {
             "tecnico": forms.SelectMultiple(
                 attrs={
