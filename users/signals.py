@@ -29,7 +29,7 @@ def sync_profile_duplas_to_dupla_coordinador(
     - post_remove: Se removieron duplas -> limpiar Dupla.coordinador de esas duplas
     - post_clear: Se limpiaron todas las duplas -> limpiar Dupla.coordinador de todas
     """
-    from duplas.models import Dupla
+    from duplas.models import Dupla  # pylint: disable=import-outside-toplevel
 
     if action == "post_add":
         # Se agregaron duplas al coordinador

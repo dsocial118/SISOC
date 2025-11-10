@@ -7,4 +7,4 @@ class DuplaConfig(AppConfig):
 
     def ready(self):
         """Importar signals cuando la app esté lista."""
-        import duplas.signals
+        import duplas.signals  # noqa: F401  # pylint: disable=import-outside-toplevel,unused-import
