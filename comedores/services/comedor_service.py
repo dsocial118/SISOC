@@ -32,6 +32,7 @@ from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
+from duplas.models import Dupla
 
 logger = logging.getLogger("django")
 
@@ -160,9 +161,12 @@ class ComedorService:
             is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
             # Aplicar filtros según el rol
-            if is_coordinador and duplas_ids:
-                # Coordinador: ver comedores de sus duplas asignadas
-                base_qs = base_qs.filter(dupla_id__in=duplas_ids)
+            if is_coordinador:
+                if not duplas_ids:
+                    base_qs = base_qs.none()
+                else:
+                    # Coordinador: ver comedores de sus duplas asignadas
+                    base_qs = base_qs.filter(dupla_id__in=duplas_ids)
             elif is_dupla:
                 # Técnico o Abogado: ver comedores donde está asignado
                 from django.db.models import Exists, OuterRef

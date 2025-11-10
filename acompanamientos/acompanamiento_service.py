@@ -391,9 +391,12 @@ class AcompanamientoService:
             )
             qs = qs.filter(Exists(admision_subq))
             if not user.is_superuser:
-                if is_coordinador and duplas_ids:
-                    # Coordinador: ver comedores de sus duplas asignadas
-                    qs = qs.filter(dupla_id__in=duplas_ids)
+                if is_coordinador:
+                    if not duplas_ids:
+                        qs = qs.none()
+                    else:
+                        # Coordinador: ver comedores de sus duplas asignadas
+                        qs = qs.filter(dupla_id__in=duplas_ids)
                 elif is_dupla:
                     qs = qs.filter(
                         Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
