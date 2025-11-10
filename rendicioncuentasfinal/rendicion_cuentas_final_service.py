@@ -88,9 +88,8 @@ class RendicionCuentasFinalService:
     @staticmethod
     def filter_documentos_por_area(user, query):
         try:
-            from users.services import (
-                UserPermissionService,
-            )  # pylint: disable=import-outside-toplevel
+            # pylint: disable=import-outside-toplevel
+            from users.services import UserPermissionService
 
             filtros_validador = Q()
             is_coordinador = False
