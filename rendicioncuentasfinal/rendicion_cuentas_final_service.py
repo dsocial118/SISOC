@@ -117,8 +117,13 @@ class RendicionCuentasFinalService:
             qs = DocumentoRendicionFinal.objects.filter(filtros_validador)
 
             # Filtrar por duplas asignadas si es coordinador
-            if is_coordinador and duplas_ids and not user.is_superuser:
-                qs = qs.filter(rendicion_final__comedor__dupla_id__in=duplas_ids)
+            if is_coordinador and not user.is_superuser:
+                if not duplas_ids:
+                    qs = qs.none()
+                else:
+                    qs = qs.filter(
+                        rendicion_final__comedor__dupla_id__in=duplas_ids
+                    )
 
             if query:
                 qs = qs.filter(
