@@ -364,12 +364,17 @@ class AcompanamientoService:
         try:
             from users.services import UserPermissionService
             from core.constants import UserGroups
+
             # Verificar roles usando servicio centralizado
-            is_area_legales = UserPermissionService.tiene_grupo(user, UserGroups.AREA_LEGALES)
+            is_area_legales = UserPermissionService.tiene_grupo(
+                user, UserGroups.AREA_LEGALES
+            )
             user_groups = list(user.groups.values_list("name", flat=True))
             is_area_legales = "Area Legales" in user_groups
             is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
-            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(
+                user
+            )
 
             # Subqueries para evitar JOINs 1:N y uso de distinct()
             admision_subq = Admision.objects.filter(

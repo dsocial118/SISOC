@@ -74,6 +74,7 @@ class Profile(models.Model):
     - core.constants.UserGroups: Nombres de grupos del sistema
     - duplas.models.Dupla: Modelo de equipos técnicos
     """
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     dark_mode = models.BooleanField(default=True)
     es_usuario_provincial = models.BooleanField(default=False)

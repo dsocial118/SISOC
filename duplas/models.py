@@ -18,9 +18,9 @@ class DuplaManager(models.Manager):
         """
         return (
             self.filter(estado="Activo")
-            .annotate(comedores_count=Count('comedor'))
+            .annotate(comedores_count=Count("comedor"))
             .filter(comedores_count__gt=0)
-            .order_by('nombre')
+            .order_by("nombre")
         )
 
 
@@ -87,8 +87,5 @@ class Dupla(models.Model):
     def coordinador_nombre(self) -> str:
         """Devuelve el nombre del coordinador o un indicador si no hay coordinador asignado."""
         if self.coordinador:
-            return (
-                self.coordinador.get_full_name()
-                or self.coordinador.username
-            )
+            return self.coordinador.get_full_name() or self.coordinador.username
         return "Sin asignar"

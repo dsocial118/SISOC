@@ -116,7 +116,9 @@ class DuplaDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         """Optimiza las queries para el detalle de dupla"""
-        return Dupla.objects.select_related("abogado", "coordinador").prefetch_related("tecnico")
+        return Dupla.objects.select_related("abogado", "coordinador").prefetch_related(
+            "tecnico"
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

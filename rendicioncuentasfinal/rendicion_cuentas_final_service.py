@@ -107,7 +107,9 @@ class RendicionCuentasFinalService:
                     filtros_validador |= Q(tipo__validador="Dupla")
 
                 # Coordinador de Gestión: ver documentos de duplas asignadas
-                is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+                is_coordinador, duplas_ids = (
+                    UserPermissionService.get_coordinador_duplas(user)
+                )
                 if is_coordinador:
                     filtros_validador |= Q(tipo__validador="Dupla")
 

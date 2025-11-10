@@ -942,7 +942,9 @@ class LegalesService:
 
             # Filtrar por duplas si es coordinador
             if user and not user.is_superuser:
-                is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+                is_coordinador, duplas_ids = (
+                    UserPermissionService.get_coordinador_duplas(user)
+                )
                 if is_coordinador and duplas_ids:
                     queryset = queryset.filter(comedor__dupla_id__in=duplas_ids)
 

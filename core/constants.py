@@ -54,6 +54,7 @@ class UserGroups:
 
 class DuplaEstados:
     """Estados posibles de una dupla."""
+
     ACTIVO = "Activo"
     INACTIVO = "Inactivo"
 

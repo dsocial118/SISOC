@@ -16,7 +16,9 @@ from rendicioncuentasfinal.views import (
 urlpatterns = [
     path(
         "comedores/<int:pk>/rendicion_cuentas_final/",
-        group_required(["Tecnico Comedor", "Coordinador Equipo Tecnico"])(RendicionCuentasFinalDetailView.as_view()),
+        group_required(["Tecnico Comedor", "Coordinador Equipo Tecnico"])(
+            RendicionCuentasFinalDetailView.as_view()
+        ),
         name="rendicion_cuentas_final",
     ),
     path(
@@ -51,9 +53,14 @@ urlpatterns = [
     ),
     path(
         "rendicion_cuentas_final/listar/",
-        group_required(["Area Contable", "Area Legales", "Tecnico Comedor", "Coordinador Equipo Tecnico"])(
-            DocumentosRendicionCuentasFinalListView.as_view()
-        ),
+        group_required(
+            [
+                "Area Contable",
+                "Area Legales",
+                "Tecnico Comedor",
+                "Coordinador Equipo Tecnico",
+            ]
+        )(DocumentosRendicionCuentasFinalListView.as_view()),
         name="rendicion_cuentas_final_listar",
     ),
     # AJAX endpoint
