@@ -17040,6 +17040,70 @@
     }
   },
   {
+    "model": "core.municipio",
+    "pk": 2134,
+    "fields": {
+      "nombre": "Florentino Ameghino",
+      "provincia": 14
+    }
+  },
+  {
+    "model": "core.municipio",
+    "pk": 2135,
+    "fields": {
+      "nombre": "Salto Encantado",
+      "provincia": 14
+    }
+  },
+  {
+    "model": "core.municipio",
+    "pk": 2136,
+    "fields": {
+      "nombre": "San Javier",
+      "provincia": 14
+    }
+  },
+  {
+    "model": "core.municipio",
+    "pk": 2137,
+    "fields": {
+      "nombre": "25 de Mayo",
+      "provincia": 14
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10874,
+    "fields": {
+      "nombre": "San Javier",
+      "municipio": 2134
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10875,
+    "fields": {
+      "nombre": "Cainguas",
+      "municipio": 2135
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10876,
+    "fields": {
+      "nombre": "San Javier",
+      "municipio": 2136
+    }
+  },
+  {
+    "model": "core.localidad",
+    "pk": 10877,
+    "fields": {
+      "nombre": "25 de Mayo",
+      "municipio": 2137
+    }
+  },
+  {
     "model": "core.localidad",
     "pk": 2091,
     "fields": {
