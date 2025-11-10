@@ -349,6 +349,7 @@ class AcompanamientoService:
 
         - Si el usuario es superusuario o pertenece al grupo "Area Legales", obtiene todos los comedores
           con admisión en estado 2 y enviados a acompañamiento.
+        - Si es Coordinador de Gestión, obtiene comedores de sus duplas asignadas.
         - Si no, filtra los comedores donde el usuario es abogado o técnico asignado en la dupla.
         - Permite aplicar un filtro de búsqueda global sobre varios campos relacionados (nombre, provincia,
           tipo de comedor, dirección, referente, etc.).
@@ -361,12 +362,15 @@ class AcompanamientoService:
             QuerySet: QuerySet de objetos Comedor filtrados según los criterios especificados.
         """
         try:
-            # Grupos del usuario
-            user_groups = list(user.groups.values_list("name", flat=True))
-            # is_area_legales = "Area Legales" in user_groups
-            is_dupla = (
-                "Tecnico Comedor" in user_groups or "Abogado Dupla" in user_groups
+            # pylint: disable=import-outside-toplevel
+            from users.services import UserPermissionService
+
+            # Verificar roles usando servicio centralizado
+            is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
+            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(
+                user
             )
+
             # Subqueries para evitar JOINs 1:N y uso de distinct()
             admision_subq = Admision.objects.filter(
                 comedor=OuterRef("pk"),
@@ -387,7 +391,13 @@ class AcompanamientoService:
             )
             qs = qs.filter(Exists(admision_subq))
             if not user.is_superuser:
-                if is_dupla:
+                if is_coordinador:
+                    if not duplas_ids:
+                        qs = qs.none()
+                    else:
+                        # Coordinador: ver comedores de sus duplas asignadas
+                        qs = qs.filter(dupla_id__in=duplas_ids)
+                elif is_dupla:
                     qs = qs.filter(
                         Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
                     )

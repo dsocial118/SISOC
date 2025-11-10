@@ -14,6 +14,23 @@
             {{ form.estado | as_crispy_field }}
             {{ form.tecnico | as_crispy_field }}
             {{ form.abogado | as_crispy_field }}
+
+            {# Coordinador es solo lectura - se asigna desde el ABM de usuarios #}
+            <div class="form-group">
+                <div class="alert alert-info" role="alert">
+                    <strong>Coordinador de Equipo Técnico:</strong>
+                    {% if dupla.coordinador %}
+                        {{ dupla.coordinador.get_full_name|default:dupla.coordinador.username }}
+                        <br />
+                        <small class="text-muted">El coordinador se asigna desde el Usuarios</small>
+                    {% else %}
+                        <span class="badge badge-warning">Sin asignar</span>
+                        <br />
+                        <small class="text-muted">Asigne esta dupla a un coordinador desde el ABM de Usuarios</small>
+                    {% endif %}
+                </div>
+            </div>
+
             {% include 'components/form_buttons.html' with cancel_url='dupla_list' default_save=True save_text='Guardar' layout='between' %}
         </form>
     </div>

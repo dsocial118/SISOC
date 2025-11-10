@@ -32,6 +32,7 @@ from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
+from duplas.models import Dupla
 
 logger = logging.getLogger("django")
 
@@ -113,12 +114,17 @@ class ComedorService:
             comedor_instance.save(update_fields=["foto_legajo"])
 
     @staticmethod
-    def get_filtered_comedores(request_or_get: Any) -> QuerySet:
+    def get_filtered_comedores(request_or_get: Any, user=None) -> QuerySet:
         """
         Filtra comedores usando el JSON avanzado recibido en el parámetro GET
         ``filters``. La construcción del ``Q`` final se delega en
         ``COMEDOR_ADVANCED_FILTER`` para poder reutilizar el mismo parser en
         otras vistas de listado.
+
+        Si se proporciona un usuario, filtra los comedores según sus permisos:
+        - Superusuario: ve todos los comedores
+        - Coordinador de Gestión: ve comedores de sus duplas asignadas
+        - Técnico/Abogado de dupla: ve comedores donde está asignado
         """
 
         base_qs = (
@@ -143,6 +149,64 @@ class ComedorService:
             )
             .order_by("-id")
         )
+
+        # Filtrar por usuario si se proporciona
+        if user and not user.is_superuser:
+            from users.services import UserPermissionService
+
+            # Verificar si es coordinador usando servicio centralizado
+            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(
+                user
+            )
+            is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
+
+            # Aplicar filtros según el rol
+            if is_coordinador:
+                if not duplas_ids:
+                    base_qs = base_qs.none()
+                else:
+                    # Coordinador: ver comedores de sus duplas asignadas
+                    base_qs = base_qs.filter(dupla_id__in=duplas_ids)
+            elif is_dupla:
+                # Técnico o Abogado: ver comedores donde está asignado
+                from django.db.models import Exists, OuterRef
+
+                dupla_abogado_subq = Dupla.objects.filter(
+                    comedor=OuterRef("pk"), abogado=user
+                )
+                dupla_tecnico_subq = Dupla.objects.filter(
+                    comedor=OuterRef("pk"), tecnico=user
+                )
+                base_qs = (
+                    Comedor.objects.filter(
+                        Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
+                    )
+                    .select_related(
+                        "provincia",
+                        "municipio",
+                        "localidad",
+                        "referente",
+                        "tipocomedor",
+                    )
+                    .values(
+                        "id",
+                        "nombre",
+                        "estado_general",
+                        "tipocomedor__nombre",
+                        "provincia__nombre",
+                        "municipio__nombre",
+                        "localidad__nombre",
+                        "barrio",
+                        "partido",
+                        "calle",
+                        "numero",
+                        "referente__nombre",
+                        "referente__apellido",
+                        "referente__celular",
+                    )
+                    .order_by("-id")
+                )
+
         return COMEDOR_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
     @staticmethod
