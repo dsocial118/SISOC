@@ -1,0 +1,15 @@
+/* Estilos para el formulario de usuarios */
+
+.card-header-custom {
+    background-color: #f5f3ef;
+    border-bottom: 1px dotted #e3e0db;
+}
+
+.card-custom {
+    border: 1px solid #e9e6e1;
+    border-left: 3px solid #d4cfc7;
+}
+
+.card-header-custom i {
+    margin-right: 12px;
+}
