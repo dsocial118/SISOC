@@ -186,16 +186,37 @@ class AdmisionService:
                 "estado",
             )
         else:
-            queryset = Admision.objects.filter(
-                Q(comedor__dupla__tecnico=user) | Q(comedor__dupla__abogado=user),
-                comedor__dupla__estado="Activo",
-            ).select_related(
-                "comedor",
-                "comedor__provincia",
-                "comedor__tipocomedor",
-                "comedor__referente",
-                "estado",
+            from users.services import UserPermissionService
+
+            # Verificar si es coordinador usando servicio centralizado
+            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(
+                user
             )
+
+            if is_coordinador and duplas_ids:
+                # Coordinador: ver admisiones de comedores de sus duplas asignadas
+                queryset = Admision.objects.filter(
+                    comedor__dupla_id__in=duplas_ids,
+                    comedor__dupla__estado="Activo",
+                ).select_related(
+                    "comedor",
+                    "comedor__provincia",
+                    "comedor__tipocomedor",
+                    "comedor__referente",
+                    "estado",
+                )
+            else:
+                # Técnico o Abogado: ver admisiones donde está asignado
+                queryset = Admision.objects.filter(
+                    Q(comedor__dupla__tecnico=user) | Q(comedor__dupla__abogado=user),
+                    comedor__dupla__estado="Activo",
+                ).select_related(
+                    "comedor",
+                    "comedor__provincia",
+                    "comedor__tipocomedor",
+                    "comedor__referente",
+                    "estado",
+                )
 
         if query:
             query = query.strip().lower()

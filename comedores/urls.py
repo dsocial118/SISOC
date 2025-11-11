@@ -41,9 +41,14 @@ from core.decorators import group_required
 urlpatterns = [
     path(
         "comedores/listar",
-        group_required(["Comedores Listar", "Tecnico Comedor", "Abogado Dupla"])(
-            ComedorListView.as_view()
-        ),
+        group_required(
+            [
+                "Comedores Listar",
+                "Tecnico Comedor",
+                "Abogado Dupla",
+                "Coordinador Equipo Tecnico",
+            ]
+        )(ComedorListView.as_view()),
         name="comedores",
     ),
     path(
@@ -53,9 +58,14 @@ urlpatterns = [
     ),
     path(
         "comedores/<int:pk>",
-        group_required(["Comedores Ver", "Tecnico Comedor", "Abogado Dupla"])(
-            ComedorDetailView.as_view()
-        ),
+        group_required(
+            [
+                "Comedores Ver",
+                "Tecnico Comedor",
+                "Abogado Dupla",
+                "Coordinador Equipo Tecnico",
+            ]
+        )(ComedorDetailView.as_view()),
         name="comedor_detalle",
     ),
     path(

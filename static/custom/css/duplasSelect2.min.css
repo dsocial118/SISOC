@@ -661,3 +661,11 @@
 .select2-container--classic.select2-container--open .select2-dropdown {
     border-color: #5897fb
 }
+
+.alert.alert-info {
+    border-color: #e7ba61 !important;
+}
+
+.alert-info strong {
+    color: #e7ba61 !important;
+}
