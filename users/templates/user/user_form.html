@@ -17,6 +17,7 @@
 {% load crispy_forms_tags %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'admin/css/select2templated.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/user_form.css' %}" />
     <div class="row">
         <div class="col">
             <form class="needs-validation"
@@ -27,20 +28,30 @@
                 {% csrf_token %}
 
                 <!-- Datos Personales -->
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="mb-0">Datos Personales</h5>
+                <div class="card card-custom mb-3 shadow-sm">
+                    <div class="card-header card-header-custom">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user mr-4"></i>Datos Personales
+                        </h5>
                     </div>
                     <div class="card-body">
-                        {{ form.first_name|as_crispy_field }}
-                        {{ form.last_name|as_crispy_field }}
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.first_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.last_name|as_crispy_field }}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Datos de Acceso -->
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="mb-0">Datos de Acceso</h5>
+                <div class="card card-custom mb-3 shadow-sm">
+                    <div class="card-header card-header-custom">
+                        <h5 class="mb-0">
+                            <i class="fas fa-key mr-3"></i>Datos de Acceso
+                        </h5>
                     </div>
                     <div class="card-body">
                         {{ form.username | as_crispy_field }}
@@ -50,9 +61,11 @@
                 </div>
 
                 <!-- Permisos y Roles -->
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="mb-0">Permisos y Roles</h5>
+                <div class="card card-custom mb-3 shadow-sm">
+                    <div class="card-header card-header-custom">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shield-alt mr-3"></i>Permisos y Roles
+                        </h5>
                     </div>
                     <div class="card-body">
                         {{ form.groups | as_crispy_field }}
@@ -60,10 +73,12 @@
                     </div>
                 </div>
 
-                
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="mb-0"></h5>
+                <!-- Configuración Adicional -->
+                <div class="card card-custom mb-3 shadow-sm">
+                    <div class="card-header card-header-custom">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog mr-3"></i>Configuración Adicional
+                        </h5>
                     </div>
                     <div class="card-body">
                         {{ form.es_usuario_provincial|as_crispy_field }}
