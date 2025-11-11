@@ -56,7 +56,7 @@ class Referente(models.Model):
     funcion = models.CharField(
         verbose_name="Funcion del referente", max_length=255, blank=True, null=True
     )
-    
+
     def clean(self):
         errors = {}
         # validar celular: exactamente 10 dígitos numéricos
@@ -82,7 +82,7 @@ class Referente(models.Model):
         # asegurar que clean() se ejecute antes de salvar (validación consistente)
         self.full_clean()
         return super().save(*args, **kwargs)
-    
+
     class Meta:
         verbose_name = "Referente"
         verbose_name_plural = "Referentes"
