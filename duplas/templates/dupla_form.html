@@ -3,6 +3,7 @@
 {% block head %}
     <link rel="stylesheet"
           href="{% static 'custom/css/duplasSelect2.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/user_form.css' %}" />
 {% endblock %}
 {% block title %}Editar Equipo técnico{% endblock %}
 {% block content %}
@@ -10,24 +11,54 @@
         <h2>Editar Equipo técnico</h2>
         <form method="post">
             {% csrf_token %}
-            {{ form.nombre | as_crispy_field }}
-            {{ form.estado | as_crispy_field }}
-            {{ form.tecnico | as_crispy_field }}
-            {{ form.abogado | as_crispy_field }}
 
-            {# Coordinador es solo lectura - se asigna desde el ABM de usuarios #}
-            <div class="form-group">
-                <div class="alert alert-info" role="alert">
-                    <strong>Coordinador de Equipo Técnico:</strong>
-                    {% if dupla.coordinador %}
-                        {{ dupla.coordinador.get_full_name|default:dupla.coordinador.username }}
-                        <br />
-                        <small class="text-muted">El coordinador se asigna desde el Usuarios</small>
-                    {% else %}
-                        <span class="badge badge-warning">Sin asignar</span>
-                        <br />
-                        <small class="text-muted">Asigne esta dupla a un coordinador desde el ABM de Usuarios</small>
-                    {% endif %}
+            <!-- Datos del Equipo Técnico -->
+            <div class="card card-custom mb-3 shadow-sm">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-id-card"></i>Datos del Equipo Técnico
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {{ form.nombre | as_crispy_field }}
+                    {{ form.estado | as_crispy_field }}
+                </div>
+            </div>
+
+            <!-- Miembros del Equipo -->
+            <div class="card card-custom mb-3 shadow-sm">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users"></i>Miembros del Equipo Técnico
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {{ form.tecnico | as_crispy_field }}
+                    {{ form.abogado | as_crispy_field }}
+                </div>
+            </div>
+
+            <!-- Coordinador -->
+            <div class="card card-custom mb-3 shadow-sm">
+                <div class="card-header card-header-custom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-tie"></i>Coordinador del Equipo Técnico
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {# Coordinador es solo lectura - se asigna desde el ABM de usuarios #}
+                    <div class="alert alert-info mb-0" role="alert">
+                        <strong>Coordinador de Equipo Técnico:</strong>
+                        {% if dupla.coordinador %}
+                            {{ dupla.coordinador.get_full_name|default:dupla.coordinador.username }}
+                            <br />
+                            <small class="text-muted">El coordinador se asigna desde el Usuarios</small>
+                        {% else %}
+                            <span class="badge badge-warning">Sin asignar</span>
+                            <br />
+                            <small class="text-muted">Asigne esta dupla a un coordinador desde el ABM de Usuarios</small>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 

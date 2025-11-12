@@ -121,9 +121,7 @@ class RendicionCuentasFinalService:
                 if not duplas_ids:
                     qs = qs.none()
                 else:
-                    qs = qs.filter(
-                        rendicion_final__comedor__dupla_id__in=duplas_ids
-                    )
+                    qs = qs.filter(rendicion_final__comedor__dupla_id__in=duplas_ids)
 
             if query:
                 qs = qs.filter(
