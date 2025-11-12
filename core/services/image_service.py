@@ -112,12 +112,13 @@ def _get_absolute_path(image_path: str) -> str:
     is_remote_path = bool(parsed_path.scheme and parsed_path.netloc)
     normalized_path = parsed_path.path if is_remote_path else image_path
 
-    if not is_remote_path and os.path.isabs(normalized_path):
-        return normalized_path
-
+    # Verificar si es una URL de Django (ej: /media/...) ANTES de verificar si es absoluta
     media_url = settings.MEDIA_URL or ""
     if media_url and normalized_path.startswith(media_url):
         normalized_path = normalized_path[len(media_url) :]
+    elif not is_remote_path and os.path.isabs(normalized_path):
+        # Solo es una ruta absoluta real si no es una URL de Django
+        return normalized_path
 
     normalized_path = normalized_path.lstrip("/")
 
