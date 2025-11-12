@@ -23,7 +23,7 @@
     </div>
  
     {% with headers=table_headers items=comedores %}
-        {% include 'components/data_table.html' with headers=headers items=items custom_cells=custom_cells custom_actions=custom_actions show_actions=True empty_message="No se encontraron comedores." include_pagination=True %}
+        {% include 'components/data_table.html' with headers=headers items=items custom_cells=custom_cells custom_actions=custom_actions show_actions=True empty_message="No se encontraron comedores." include_pagination=True tbody_id="comedores-table-body" %}
     {% endwith %}
 {% endblock %}
 {% block customJS %}

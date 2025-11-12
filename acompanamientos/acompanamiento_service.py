@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, date
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q, Exists, OuterRef, Prefetch
 from django.db import transaction
 from django.utils.timezone import localtime
 from admisiones.models.admisiones import (
@@ -346,61 +346,52 @@ class AcompanamientoService:
         """
         Obtiene un queryset de objetos Comedor que cumplen con los criterios de acompañamiento,
         filtrando según el usuario y una búsqueda opcional.
-
-        - Si el usuario es superusuario o pertenece al grupo "Area Legales", obtiene todos los comedores
-          con admisión en estado 2 y enviados a acompañamiento.
-        - Si es Coordinador de Gestión, obtiene comedores de sus duplas asignadas.
-        - Si no, filtra los comedores donde el usuario es abogado o técnico asignado en la dupla.
-        - Permite aplicar un filtro de búsqueda global sobre varios campos relacionados (nombre, provincia,
-          tipo de comedor, dirección, referente, etc.).
-
-        Args:
-            user (User): Usuario autenticado que realiza la consulta.
-            busqueda (str, optional): Texto de búsqueda global para filtrar los resultados. Por defecto es None.
-
-        Returns:
-            QuerySet: QuerySet de objetos Comedor filtrados según los criterios especificados.
         """
         try:
-            # pylint: disable=import-outside-toplevel
             from users.services import UserPermissionService
 
-            # Verificar roles usando servicio centralizado
             is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
-            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(
-                user
+            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+
+            dupla_abogado_subq = Dupla.objects.filter(comedor=OuterRef("pk"), abogado=user)
+            dupla_tecnico_subq = Dupla.objects.filter(comedor=OuterRef("pk"), tecnico=user)
+
+            admisiones_prefetch = Prefetch(
+                "admision_set",
+                queryset=Admision.objects.filter(enviado_acompaniamiento=True)
+                .select_related(
+                    "comedor",
+                    "comedor__provincia",
+                    "comedor__tipocomedor",
+                    "comedor__referente",
+                    "comedor__organizacion",
+                    "comedor__dupla",
+                    "estado",
+                )
+                .only("id", "num_expediente", "estado__nombre", "modificado", "comedor_id"),
+                to_attr="admisiones_acompaniamiento",
             )
 
-            # Filtrar comedores con admisiones válidas
-            dupla_abogado_subq = Dupla.objects.filter(
-                comedor=OuterRef("pk"), abogado=user
-            )
-            dupla_tecnico_subq = Dupla.objects.filter(
-                comedor=OuterRef("pk"), tecnico=user
-            )
             qs = (
                 Comedor.objects.select_related(
                     "referente",
                     "tipocomedor",
                     "provincia",
+                    "dupla",
                     "dupla__abogado",
+                    "organizacion",
                 )
-                .filter(
-                    admision__enviado_acompaniamiento=True,
-                )
+                .prefetch_related(admisiones_prefetch, "dupla__tecnico")
+                .filter(admision__enviado_acompaniamiento=True)
                 .distinct()
             )
+
             if not user.is_superuser:
                 if is_coordinador:
-                    if not duplas_ids:
-                        qs = qs.none()
-                    else:
-                        # Coordinador: ver comedores de sus duplas asignadas
-                        qs = qs.filter(dupla_id__in=duplas_ids)
+                    qs = qs.filter(dupla_id__in=duplas_ids or [])
                 elif is_dupla:
-                    qs = qs.filter(
-                        Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
-                    )
+                    qs = qs.filter(Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq))
+
             if busqueda:
                 qs = qs.filter(
                     Q(nombre__icontains=busqueda)
@@ -412,11 +403,57 @@ class AcompanamientoService:
                     | Q(referente__apellido__icontains=busqueda)
                     | Q(referente__celular__icontains=busqueda)
                 )
+
             return qs
+
         except Exception:
             logger.exception(
                 f"Error en AcompanamientoService.obtener_comedores_acompanamiento para user: {user.pk}"
             )
+            raise
+
+
+    @staticmethod
+    def preparar_datos_tabla_comedores(comedores_queryset):
+        """
+        Prepara los datos de comedores para la tabla, evitando consultas N+1.
+        
+        Args:
+            comedores_queryset: QuerySet de comedores ya optimizado con prefetch_related
+            
+        Returns:
+            list: Lista de diccionarios con datos preparados para la tabla
+        """
+        try:
+            comedores_con_celdas = []
+            
+            for comedor in comedores_queryset:
+                # Usar la caché creada con Prefetch
+                admision = comedor.admisiones_acompaniamiento[0] if comedor.admisiones_acompaniamiento else None
+                
+                comedores_con_celdas.append({
+                    'cells': [
+                        {'content': comedor.id or '-'},
+                        {'content': comedor.nombre or '-'},
+                        {'content': comedor.organizacion.nombre if comedor.organizacion else '-'},
+                        {'content': admision.num_expediente if admision and admision.num_expediente else '-'},
+                        {'content': comedor.provincia.nombre if comedor.provincia else '-'},
+                        {'content': str(comedor.dupla) if comedor.dupla else '-'},
+                        {'content': admision.estado.nombre if admision and admision.estado else '-'},
+                        {'content': admision.modificado.strftime('%d/%m/%Y') if admision and admision.modificado else '-'},
+                    ],
+                    'actions': [
+                        {
+                            'url': f"/acompanamientos/detalle/{comedor.id}/",
+                            'label': 'Ver Acompañamiento',
+                            'type': 'primary'
+                        }
+                    ]
+                })
+            
+            return comedores_con_celdas
+        except Exception:
+            logger.exception("Error en AcompanamientoService.preparar_datos_tabla_comedores")
             raise
 
     @staticmethod
