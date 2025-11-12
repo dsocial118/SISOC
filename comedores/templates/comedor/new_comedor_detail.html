@@ -1,5 +1,5 @@
 {% extends "includes/new_main.html" %};
-{% load static %}
+{% load static image_tags %}
 ;
 {% block head %}
     <style>
@@ -133,12 +133,7 @@
                 <div class="row">
                     <div class="col-6">
                         {% if comedor.foto_legajo %}
-                            <img src="/media/{{ comedor.foto_legajo }}"
-                                 alt="Imagen del comedor"
-                                 class="img-fluid rounded"
-                                 style="max-width: 100%;
-                                        height: auto;
-                                        max-height: 370px" />
+                            {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid rounded" extra_attrs='style="max-width: 100%; height: auto; max-height: 370px"' %}
                         {% else %}
                             <img src="{% static 'custom/img/default.png' %}"
                                  alt="Imagen del comedor"
