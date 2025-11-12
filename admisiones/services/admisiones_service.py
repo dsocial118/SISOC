@@ -275,21 +275,40 @@ class AdmisionService:
             table_items.append(
                 {
                     "cells": [
+                        # ID
+                        {"content": str(comedor.id) if comedor else "-"},
+                        # Nombre
                         {
                             "content": comedor_nombre,
                             "link_url": comedor_link_url,
                             "link_class": "font-weight-bold link-handler",
                             "link_title": "Ver detalles",
                         },
-                        {"content": tipocomedor_display},
-                        {"content": provincia_display},
+                        # Organización
                         {
                             "content": (
-                                str(admision.tipo_convenio.nombre)
-                                if admision.tipo_convenio
+                                comedor.organizacion.nombre
+                                if comedor and comedor.organizacion
                                 else "-"
                             )
                         },
+                        # N° Expediente
+                        {
+                            "content": (
+                                admision.num_expediente
+                                if admision and admision.num_expediente
+                                else "-"
+                            )
+                        },
+                        # Provincia
+                        {"content": provincia_display},
+                        # Dupla
+                        {
+                            "content": (
+                                str(comedor.dupla) if comedor and comedor.dupla else "-"
+                            )
+                        },
+                        # Tipo
                         {
                             "content": (
                                 str(admision.get_tipo_display())
@@ -297,9 +316,18 @@ class AdmisionService:
                                 else "-"
                             )
                         },
+                        # Estado
                         {
                             "content": (
                                 str(admision.estado.nombre) if admision.estado else "-"
+                            )
+                        },
+                        # Última Modificación
+                        {
+                            "content": (
+                                admision.modificado.strftime("%d/%m/%Y")
+                                if admision.modificado
+                                else "-"
                             )
                         },
                     ],
@@ -315,7 +343,7 @@ class AdmisionService:
             documentaciones = (
                 Documentacion.objects.filter(models.Q(convenios=admision.tipo_convenio))
                 .distinct()
-                .order_by("-obligatorio", "nombre")
+                .order_by("orden")
             )
 
             archivos_subidos = ArchivoAdmision.objects.filter(
@@ -358,7 +386,7 @@ class AdmisionService:
             )
 
             comedor = admision.comedor
-            convenios = TipoConvenio.objects.all()
+            convenios = TipoConvenio.objects.exclude(id=4)
             caratular_form = CaratularForm(instance=admision) if admision else None
             form_if_informe_tecnico = (
                 IFInformeTecnicoForm(instance=admision) if admision else None
@@ -991,6 +1019,49 @@ class AdmisionService:
             )
 
             return {}
+
+    @staticmethod
+    def get_admision_create_context(comedor_id):
+        try:
+            from comedores.models import Comedor
+
+            comedor = get_object_or_404(Comedor, id=comedor_id)
+            convenios = TipoConvenio.objects.exclude(id=4)
+
+            return {
+                "comedor": comedor,
+                "convenios": convenios,
+            }
+        except Exception:
+            logger.exception(
+                "Error en get_admision_create_context",
+                extra={"comedor_id": comedor_id},
+            )
+            return {}
+
+    @staticmethod
+    def create_admision(comedor_id, tipo_convenio_id):
+        try:
+            from comedores.models import Comedor
+
+            comedor = get_object_or_404(Comedor, id=comedor_id)
+            tipo_convenio = get_object_or_404(TipoConvenio, id=tipo_convenio_id)
+            estado_inicial = EstadoAdmision.objects.first()
+
+            admision = Admision.objects.create(
+                comedor=comedor,
+                tipo_convenio=tipo_convenio,
+                estado=estado_inicial,
+                tipo="incorporacion",
+            )
+
+            return admision
+        except Exception:
+            logger.exception(
+                "Error en create_admision",
+                extra={"comedor_id": comedor_id, "tipo_convenio_id": tipo_convenio_id},
+            )
+            return None
 
     @staticmethod
     def get_admision_instance(admision_id):
