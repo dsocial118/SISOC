@@ -11,17 +11,19 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from duplas.models import Dupla
-from duplas.forms import DuplaForm
+
 from comedores.services.comedor_service import ComedorService
 from core.services.advanced_filters import AdvancedFilterEngine
+
 from duplas.dupla_filter_config import (
     FIELD_MAP as DUPLA_FILTER_MAP,
     FIELD_TYPES as DUPLA_FIELD_TYPES,
-    TEXT_OPS as DUPLA_TEXT_OPS,
     NUM_OPS as DUPLA_NUM_OPS,
+    TEXT_OPS as DUPLA_TEXT_OPS,
     get_filters_ui_config,
 )
+from duplas.forms import DuplaForm
+from duplas.models import Dupla
 
 DUPLA_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=DUPLA_FILTER_MAP,
