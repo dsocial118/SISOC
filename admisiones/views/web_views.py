@@ -251,12 +251,15 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
                     {"name": "Listar", "active": True},
                 ],
                 "table_headers": [
+                    {"title": "ID"},
                     {"title": "Nombre"},
-                    {"title": "Tipo Comedor"},
-                    {"title": "Ubicación"},
-                    {"title": "Convenio"},
+                    {"title": "Organización"},
+                    {"title": "N° Expediente"},
+                    {"title": "Provincia"},
+                    {"title": "Dupla"},
                     {"title": "Tipo"},
                     {"title": "Estado"},
+                    {"title": "Última Modificación"},
                 ],
                 "table_items": table_items,
             }

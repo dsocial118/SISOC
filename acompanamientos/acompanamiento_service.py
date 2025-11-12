@@ -371,25 +371,25 @@ class AcompanamientoService:
                 user
             )
 
-            # Subqueries para evitar JOINs 1:N y uso de distinct()
-            admision_subq = Admision.objects.filter(
-                comedor=OuterRef("pk"),
-                enviado_acompaniamiento=True,
-                enviada_a_archivo=False,
-            ).exclude(estado__nombre="Descartado")
+            # Filtrar comedores con admisiones válidas
             dupla_abogado_subq = Dupla.objects.filter(
                 comedor=OuterRef("pk"), abogado=user
             )
             dupla_tecnico_subq = Dupla.objects.filter(
                 comedor=OuterRef("pk"), tecnico=user
             )
-            qs = Comedor.objects.select_related(
-                "referente",
-                "tipocomedor",
-                "provincia",
-                "dupla__abogado",
+            qs = (
+                Comedor.objects.select_related(
+                    "referente",
+                    "tipocomedor",
+                    "provincia",
+                    "dupla__abogado",
+                )
+                .filter(
+                    admision__enviado_acompaniamiento=True,
+                )
+                .distinct()
             )
-            qs = qs.filter(Exists(admision_subq))
             if not user.is_superuser:
                 if is_coordinador:
                     if not duplas_ids:

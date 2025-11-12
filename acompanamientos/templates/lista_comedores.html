@@ -16,45 +16,15 @@
             {% endwith %}
         {% endwith %}
     {% endwith %}
-    <div class="row mt-5 max-width-100">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Listado de Comedores</h3>
-                </div>
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th style="width: 15%" class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="comedores-table-body">
-                            {% for comedor in comedores %}
-                                <tr>
-                                    <td>{{ comedor.nombre }}</td>
-                                    <td>
-                                        <a href="{% url 'detalle_acompanamiento' comedor.id %}"
-                                           class="btn btn-primary btn-sm">Ver Acompañamiento</a>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="2" class="text-center">No se encontraron comedores.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    <div id="pagination-container">
-                        {% if is_paginated %}
-                            {% include 'components/pagination.html' %}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Listado de Comedores</h3>
         </div>
     </div>
+ 
+    {% with headers=table_headers items=comedores %}
+        {% include 'components/data_table.html' with headers=headers items=items custom_cells=custom_cells custom_actions=custom_actions show_actions=True empty_message="No se encontraron comedores." include_pagination=True %}
+    {% endwith %}
 {% endblock %}
 {% block customJS %}
     <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>

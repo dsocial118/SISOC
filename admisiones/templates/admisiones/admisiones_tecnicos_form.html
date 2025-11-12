@@ -131,7 +131,9 @@
                         <div class="modal-body">
                             <select name="tipo_convenio" id="tipoConvenio" class="form-control" required>
                                 <option value="">-- Seleccione --</option>
-                                {% for c in convenios %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                                {% for c in convenios %}
+                                    {% if c.id != 4 %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endif %}
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="modal-footer">
@@ -526,10 +528,12 @@
                                                         required>
                                                     <option value="">-- Seleccione --</option>
                                                     {% for c in convenios %}
-                                                        <option value="{{ c.id }}"
-                                                                {% if c.id == admision.tipo_convenio.id %}selected{% endif %}>
-                                                            {{ c.nombre }}
-                                                        </option>
+                                                        {% if c.id != 4 %}
+                                                            <option value="{{ c.id }}"
+                                                                    {% if c.id == admision.tipo_convenio.id %}selected{% endif %}>
+                                                                {{ c.nombre }}
+                                                            </option>
+                                                        {% endif %}
                                                     {% endfor %}
                                                 </select>
                                             </div>
@@ -587,7 +591,17 @@
                                                         data-bs-dismiss="modal"
                                                         aria-label="Close"></button>
                                             </div>
-                                            <div class="modal-body">{{ form_if_informe_tecnico.numero_if_tecnico|as_crispy_field }}</div>
+                                            <div class="modal-body">
+                                                {% if form_if_informe_tecnico %}
+                                                    {{ form_if_informe_tecnico.numero_if_tecnico|as_crispy_field }}
+                                                {% else %}
+                                                    <input type="text"
+                                                           name="numero_if_tecnico"
+                                                           class="form-control"
+                                                           placeholder="Número IF Informe Técnico"
+                                                           required />
+                                                {% endif %}
+                                            </div>
                                             <div class="modal-footer">
                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                                 <button type="submit" name="btnIFInformeTecnico" class="btn btn-primary">Guardar</button>
