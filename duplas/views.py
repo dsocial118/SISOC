@@ -14,6 +14,23 @@ from django.views.generic import (
 from duplas.models import Dupla
 from duplas.forms import DuplaForm
 from comedores.services.comedor_service import ComedorService
+from core.services.advanced_filters import AdvancedFilterEngine
+from duplas.dupla_filter_config import (
+    FIELD_MAP as DUPLA_FILTER_MAP,
+    FIELD_TYPES as DUPLA_FIELD_TYPES,
+    TEXT_OPS as DUPLA_TEXT_OPS,
+    NUM_OPS as DUPLA_NUM_OPS,
+    get_filters_ui_config,
+)
+
+DUPLA_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=DUPLA_FILTER_MAP,
+    field_types=DUPLA_FIELD_TYPES,
+    allowed_ops={
+        "text": DUPLA_TEXT_OPS,
+        "number": DUPLA_NUM_OPS,
+    },
+)
 
 
 class DuplaListView(LoginRequiredMixin, ListView):
@@ -23,12 +40,15 @@ class DuplaListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        """Retorna las duplas ordenadas para evitar warning de paginación"""
-        return (
+        """Retorna las duplas ordenadas y filtradas con filtros avanzados"""
+        base_qs = (
             Dupla.objects.select_related("abogado", "coordinador")
             .prefetch_related("tecnico")
             .order_by("-fecha", "nombre")
         )
+
+        # Aplicar filtros avanzados combinables
+        return DUPLA_ADVANCED_FILTER.filter_queryset(base_qs, self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -50,6 +70,18 @@ class DuplaListView(LoginRequiredMixin, ListView):
         context["table_actions"] = [
             {"label": "Editar", "url_name": "dupla_editar", "type": "primary"},
             {"label": "Eliminar", "url_name": "dupla_eliminar", "type": "danger"},
+        ]
+
+        # Configuración para el search_bar con filtros avanzados
+        context["reset_url"] = reverse("dupla_list")
+        context["add_url"] = reverse("dupla_crear")
+        context["filters_mode"] = True
+        context["filters_config"] = get_filters_ui_config()
+        context["filters_action"] = reverse("dupla_list")
+        context["show_add_button"] = True
+        context["breadcrumb_items"] = [
+            {"text": "Equipos técnicos", "url": reverse("dupla_list")},
+            {"text": "Listar", "active": True},
         ]
 
         return context
