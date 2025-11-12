@@ -49,8 +49,9 @@ class DuplaListView(LoginRequiredMixin, ListView):
             .order_by("-fecha", "nombre")
         )
 
-        # Aplicar filtros avanzados combinables
-        return DUPLA_ADVANCED_FILTER.filter_queryset(base_qs, self.request)
+        # Aplicar filtros avanzados combinables asegurando resultados únicos para M2M
+        filtered_qs = DUPLA_ADVANCED_FILTER.filter_queryset(base_qs, self.request)
+        return filtered_qs.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
