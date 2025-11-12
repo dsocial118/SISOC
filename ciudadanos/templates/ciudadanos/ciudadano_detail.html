@@ -428,9 +428,7 @@
                                     {% if files_img %}
                                         {% for f in files_img %}
                                             <tr>
-                                                <td style="width:120px;">
-                                                    {% optimized_image f.archivo "Vista previa" css_class="img-fluid rounded" %}
-                                                </td>
+                                                <td style="width:120px;">{% optimized_image f.archivo "Vista previa" css_class="img-fluid rounded" %}</td>
                                                 <td>{{ f.archivo.name|truncatechars:30 }}</td>
                                                 <td>{{ f.fecha|date:"d/m/Y" }}</td>
                                                 <td>
