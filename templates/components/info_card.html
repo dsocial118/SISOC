@@ -1,3 +1,4 @@
+{% load image_tags %}
 <!-- Componente Info Card -->
 <!-- Uso: include 'components/info_card.html' with title='Mi Título' items=data_items card_class='custom-class' -->
 <div class="card shadow-sm {% if card_class %}{{ card_class }}{% else %}h-100{% endif %}">
@@ -20,12 +21,16 @@
             <!-- Estilo Lista de datos -->
             {% if image_url %}
                 <div class="text-center py-6">
-                    <img src="{{ image_url }}"
-                         class="rounded-circle shadow"
-                         style="width:{{ image_size|default:'140px' }};
-                                height:{{ image_size|default:'140px' }};
-                                object-fit:cover"
-                         alt="{{ image_alt|default:'Foto' }}" />
+                    {% if image_field %}
+                        {% optimized_image image_field image_alt|default:"Foto" css_class="rounded-circle shadow" width=image_size|default:"140" height=image_size|default:"140" extra_attrs='style="object-fit:cover"' %}
+                    {% else %}
+                        <img src="{{ image_url }}"
+                             class="rounded-circle shadow"
+                             style="width:{{ image_size|default:'140px' }};
+                                    height:{{ image_size|default:'140px' }};
+                                    object-fit:cover"
+                             alt="{{ image_alt|default:'Foto' }}" />
+                    {% endif %}
                 </div>
             {% endif %}
             {% if items %}

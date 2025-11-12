@@ -1,4 +1,4 @@
-{% load custom_filters static %}
+{% load custom_filters static image_tags %}
 <!-- Componente Tarjeta de Familiar -->
 <!-- Uso: include 'components/familiar_card.html' with familiar=f ciudadano_field='ciudadano_2' vinculo_field='vinculo' -->
 <div class="col-12 col-sm-6 col-md-4 d-flex align-items-stretch flex-column">
@@ -54,9 +54,7 @@
                 <div class="col-5 text-center">
                     {% with ciudadano_obj=familiar|attr:ciudadano_field %}
                         {% if ciudadano_obj.foto %}
-                            <img src="{{ ciudadano_obj.foto.url }}"
-                                 alt="Foto del ciudadano"
-                                 class="img-circle img-fluid justify-content-center" />
+                            {% optimized_image ciudadano_obj.foto "Foto del ciudadano" css_class="img-circle img-fluid justify-content-center" %}
                         {% else %}
                             <img src="{% static 'custom/img/default.png' %}"
                                  alt="Foto no disponible"

@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static image_tags %}
 {% block title %}Centro de Desarrollo Infantil: {{ centrodesarrolloinfantiles.nombre }}{% endblock %}
 {% block titulo-pagina %}
     {{ centrodesarrolloinfantiles.nombre }}
@@ -97,9 +97,7 @@
                 <div class="nav-item d-flex">
                     <div class="comment-text comment-text d-flex flex-column min-width-100">
                         {% if centrodesarrolloinfantiles.foto_legajo %}
-                            <img src="/media/{{ centrodesarrolloinfantiles.foto_legajo }}"
-                                 alt="Imagen del comedor"
-                                 class="img-fluid mw-100 rounded" />
+                            {% optimized_image centrodesarrolloinfantiles.foto_legajo "Foto del CDI" css_class="img-fluid mw-100 rounded" %}
                         {% else %}
                             <img src="{% static 'custom/img/default.png' %}"
                                  alt="Imagen del comedor"
