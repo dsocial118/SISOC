@@ -43,7 +43,6 @@ from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
 from duplas.dupla_service import DuplaService
 from relevamientos.service import RelevamientoService
-from ciudadanos.models import EstadoIntervencion
 
 logger = logging.getLogger("django")
 
@@ -181,7 +180,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 or CiudadanoFormParaNomina(),
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(),
-                "estados": EstadoIntervencion.objects.all(),
+                "estados": Nomina.ESTADO_CHOICES,
             }
         )
         return context
@@ -204,14 +203,13 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 return self.render_to_response(context)
 
             estado = form_nomina_extra.cleaned_data.get("estado")
-            estado_id = estado.id if estado else None
             observaciones = form_nomina_extra.cleaned_data.get("observaciones", "")
 
             ok, msg = ComedorService.agregar_ciudadano_a_nomina(
                 comedor_id=self.kwargs["pk"],
                 ciudadano_id=ciudadano_id,
                 user=request.user,
-                estado_id=estado_id,
+                estado=estado,
                 observaciones=observaciones,
             )
 
@@ -228,14 +226,13 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
 
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
                 estado = form_nomina_extra.cleaned_data.get("estado")
-                estado_id = estado.id if estado else None
                 observaciones = form_nomina_extra.cleaned_data.get("observaciones")
 
                 ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
                     ciudadano_data=form_ciudadano.cleaned_data,
                     comedor_id=self.kwargs["pk"],
                     user=request.user,
-                    estado_id=estado_id,
+                    estado=estado,
                     observaciones=observaciones,
                 )
 

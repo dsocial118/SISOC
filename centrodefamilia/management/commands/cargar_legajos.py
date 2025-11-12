@@ -1,8 +1,10 @@
 import pandas as pd
 from django.core.management.base import BaseCommand, CommandError
-from centrodefamilia.services.participante import ParticipanteService
-from ciudadanos.models import TipoDocumento, Sexo, Ciudadano
 from datetime import datetime
+
+from centrodefamilia.services.participante import ParticipanteService
+from ciudadanos.models import Ciudadano
+from core.models import Sexo
 
 
 class Command(BaseCommand):
@@ -30,14 +32,12 @@ class Command(BaseCommand):
                     "apellido": str(row["apellido"]).strip(),
                     "dni": str(row["dni"]).strip(),
                     "fecha_nacimiento": self.parse_fecha(row["fecha_nacimiento"]),
-                    "tipo_documento": self.get_tipo_documento(
-                        row.get("tipo_documento")
-                    ),
+                    "tipo_documento": self.get_tipo_documento(row.get("tipo_documento")),
                     "genero": self.get_sexo(row.get("genero")),
                 }
 
                 if not self.ciudadano_ya_existe(data["tipo_documento"], data["dni"]):
-                    ParticipanteService.crear_ciudadano_con_dimensiones(data)
+                    ParticipanteService.crear_ciudadano(data)
                     exitosos += 1
                 else:
                     self.stdout.write(
@@ -69,20 +69,21 @@ class Command(BaseCommand):
             return None
 
     def get_tipo_documento(self, valor):
-        try:
-            if isinstance(valor, int) or str(valor).isdigit():
-                return TipoDocumento.objects.get(id=int(valor))
-            return TipoDocumento.objects.get(nombre__iexact=str(valor).strip())
-        except TipoDocumento.DoesNotExist:
-            raise ValueError(f"TipoDocumento no encontrado: {valor}")
+        if valor in (None, ""):
+            return Ciudadano.DOCUMENTO_DNI
+        normalized = str(valor).strip().upper()
+        for codigo, _ in Ciudadano.DOCUMENTO_CHOICES:
+            if normalized in {codigo, codigo.upper(), codigo.lower()}:
+                return codigo
+        raise ValueError(f"Tipo de documento no permitido: {valor}")
 
     def get_sexo(self, valor):
         try:
             if isinstance(valor, int) or str(valor).isdigit():
                 return Sexo.objects.get(id=int(valor))
-            return Sexo.objects.get(nombre__iexact=str(valor).strip())
-        except Sexo.DoesNotExist:
-            raise ValueError(f"Sexo no encontrado: {valor}")
+            return Sexo.objects.get(sexo__iexact=str(valor).strip())
+        except Sexo.DoesNotExist as exc:
+            raise ValueError(f"Sexo no encontrado: {valor}") from exc
 
     def ciudadano_ya_existe(self, tipo_documento, dni):
         return Ciudadano.objects.filter(

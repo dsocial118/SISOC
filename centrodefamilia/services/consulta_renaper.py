@@ -2,7 +2,8 @@ from django.conf import settings
 from django.core.cache import cache
 import requests
 import unicodedata
-from ciudadanos.models import Sexo, TipoDocumento
+from core.models import Sexo
+from ciudadanos.models import Ciudadano
 from requests.exceptions import RequestException, ConnectionError
 import logging
 
@@ -124,8 +125,6 @@ def consultar_datos_renaper(dni, sexo):
             sexo_obj = Sexo.objects.filter(sexo=sexo_texto).first()
             sexo_pk = sexo_obj.pk if sexo_obj else None
 
-        tipo_doc = TipoDocumento.objects.get(tipo="DNI")
-
         # Solo datos básicos de RENAPER, sin mapeo de ubicación
 
         # Mapeo optimizado de datos
@@ -145,6 +144,8 @@ def consultar_datos_renaper(dni, sexo):
             "apellido": datos.get("apellido", ""),
             "nombre": datos.get("nombres", ""),
             "genero": sexo,
+            "sexo": sexo_pk,
+            "tipo_documento": Ciudadano.DOCUMENTO_DNI,
             "fecha_nacimiento": datos.get("fechaNacimiento"),
             # Datos de ubicación sin mapear (se seleccionarán manualmente)
             "provincia_api": datos.get("provincia", ""),

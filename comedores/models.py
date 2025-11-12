@@ -6,7 +6,7 @@ from django.utils import timezone
 from core.models import Municipio, Provincia
 from core.models import Localidad
 from organizaciones.models import Organizacion
-from ciudadanos.models import Ciudadano, EstadoIntervencion
+from ciudadanos.models import Ciudadano
 from duplas.models import Dupla
 
 
@@ -289,7 +289,17 @@ class Nomina(models.Model):
         blank=True,
     )
     fecha = models.DateTimeField(auto_now_add=True)
-    estado = models.ForeignKey(EstadoIntervencion, on_delete=models.SET_NULL, null=True)
+    ESTADO_PENDIENTE = "pendiente"
+    ESTADO_ACTIVO = "activo"
+    ESTADO_BAJA = "baja"
+    ESTADO_CHOICES = [
+        (ESTADO_PENDIENTE, "Pendiente"),
+        (ESTADO_ACTIVO, "Activo"),
+        (ESTADO_BAJA, "Baja"),
+    ]
+    estado = models.CharField(
+        max_length=20, choices=ESTADO_CHOICES, default=ESTADO_PENDIENTE
+    )
     observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
