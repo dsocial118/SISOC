@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
 
-from ciudadanos.models import Provincia
+from core.models import Provincia
 from celiaquia.models import (
     ExpedienteCiudadano,
     PagoExpediente,

@@ -11,7 +11,7 @@ from celiaquia.models import (
     EstadoLegajo,
     ExpedienteCiudadano,
 )
-from ciudadanos.models import Ciudadano, TipoDocumento
+from ciudadanos.models import Ciudadano
 
 
 @pytest.mark.django_db
@@ -25,13 +25,12 @@ def test_exportar_nomina_sintys(client):
     creador = User.objects.create_user(username="prov", password="pass")
     expediente = Expediente.objects.create(usuario_provincia=creador, estado=estado_exp)
 
-    tipo_doc = TipoDocumento.objects.create(tipo="DNI")
     ciudadano = Ciudadano.objects.create(
         apellido="Perez",
         nombre="Juan",
         fecha_nacimiento="2000-01-01",
         documento=12345678,
-        tipo_documento=tipo_doc,
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
     )
     ExpedienteCiudadano.objects.create(
         expediente=expediente, ciudadano=ciudadano, estado=estado_leg

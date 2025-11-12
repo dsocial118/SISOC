@@ -49,30 +49,20 @@ class ReferenteForm(forms.ModelForm):
 
 
 class NominaForm(forms.ModelForm):
-    class Meta:
-        model = Nomina
-        fields = ["estado", "observaciones"]
-        widgets = {
-            "estado": forms.Select(attrs={"class": "form-control"}),
-            "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-        }
-
-
-class NominaExtraForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        from ciudadanos.models import EstadoIntervencion
-
-        self.fields["estado"].queryset = EstadoIntervencion.objects.all()
-        self.fields["estado"].empty_label = "Seleccione un estado"
+    estado = forms.ChoiceField(
+        choices=Nomina.ESTADO_CHOICES, widget=forms.Select(attrs={"class": "form-control"})
+    )
 
     class Meta:
         model = Nomina
         fields = ["estado", "observaciones"]
         widgets = {
-            "estado": forms.Select(attrs={"class": "form-control"}),
             "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
+
+
+class NominaExtraForm(NominaForm):
+    pass
 
 
 class CiudadanoFormParaNomina(forms.ModelForm):

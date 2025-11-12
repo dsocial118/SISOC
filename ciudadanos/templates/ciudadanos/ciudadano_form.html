@@ -1,152 +1,343 @@
 {% extends "includes/main.html" %}
-{% load crispy_forms_tags %}
 {% load static %}
-{% block head %}{% endblock %}
-{% block title %}Ciudadano{% endblock %}
-{% block titulo-pagina %}Ciudadano{% endblock %}
-{% block breadcrumb %}
-    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
-{% endblock %}
-{% block menu-adicional %}{% endblock %}
+
+{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} ciudadano{% endblock %}
+{% block titulo-pagina %}{% if object %}Editar{% else %}Nuevo{% endif %} ciudadano{% endblock %}
+
 {% block content %}
-    {% include 'components/alert_message.html' with show_django_messages=True %}
     <div class="row">
-        <div class="col-sm-12">
-            <div class="card card-primary card-outline mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h3 class="card-title mb-0">{% if object %}Actualizar datos{% else %}Registrar ciudadano{% endif %}</h3>
+                    </div>
+                    <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'ciudadanos' %}{% endif %}"
+                       class="btn btn-outline-secondary ms-md-auto">Volver</a>
+                </div>
                 <div class="card-body">
-                    {% include 'components/ciudadano_stepper.html' with is_edit_mode=is_edit_mode object=object %}
-                    <div class="row mt-5 max-width-100">
-                        <div class="col-12">
-                            <form action="#"
-                                  method="POST"
-                                  class="dropzone p-0 m-0"
-                                  name="upload"
-                                  id="upload"
-                                  novalidate
-                                  enctype="multipart/form-data"
-                                  autocomplete="off">
-                                {% csrf_token %}
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="row justify-content-center mt-3">
-                                            <div class="card mx-auto border-0" style="max-width: 300px;">
-                                                <div class="card-body">
-                                                    <div class="text-center">
-                                                        {% if object.foto %}
-                                                            <img src="{{ object.foto.url }}"
-                                                                 data-holder-rendered="true"
-                                                                 alt="avatar"
-                                                                 class="avatar p-1"
-                                                                 height="150"
-                                                                 id="blah" />
-                                                        {% else %}
-                                                            <img src="{% static 'custom/img/default.png' %}"
-                                                                 data-holder-rendered="true"
-                                                                 alt="avatar"
-                                                                 class="avatar p-1"
-                                                                 height="150"
-                                                                 id="blah" />
-                                                        {% endif %}
-                                                        {% if form.foto.errors %}
-                                                            <div class="error-message">
-                                                                {% for error in form.foto.errors %}<span class="text-danger">{{ error }}</span>{% endfor %}
+                    <link rel="stylesheet"
+                          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+                    <link rel="stylesheet"
+                          href="{% static 'custom/css/fotos.css' %}" />
+                    <form method="post"
+                          enctype="multipart/form-data"
+                          novalidate>
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+                        <div class="row g-4">
+                            {% for field in form %}
+                                {% if field.name == "foto" %}
+                                    <div class="col-12">
+                                        <label for="{{ form.foto.id_for_label }}"
+                                               class="form-label font-weight-bold">
+                                            <i class="fas fa-camera mr-2"></i>
+                                            Foto de Legajo
+                                        </label>
+                                        <!-- Foto existente -->
+                                        {% if form.instance.foto %}
+                                            <div class="foto-legajo-existente mb-3">
+                                                <h6 class="text-light mb-2">
+                                                    <i class="fas fa-image mr-1"></i>
+                                                    Foto actual:
+                                                </h6>
+                                                <div class="foto-existente-container">
+                                                    <div class="foto-thumbnail-container"
+                                                         data-image-url="{{ form.instance.foto.url }}">
+                                                        <div class="preview-placeholder">
+                                                            <i class="fas fa-image"></i>
+                                                            <div class="loader">
+                                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                                    <span class="sr-only">Cargando...</span>
+                                                                </div>
                                                             </div>
-                                                        {% endif %}
+                                                        </div>
                                                     </div>
-                                                    <label for="id_foto" class="btn btn-primary w-100">
-                                                        <span>
-                                                            {% if request.resolver_match.url_name == "ciudadanos_editar" %}
-                                                                Cambiar
-                                                                foto
+                                                    <div class="foto-info">
+                                                        <div class="foto-nombre">
+                                                            {% if "comedor/" in form.instance.foto.name %}
+                                                                {{ form.instance.foto.name|slice:"8:" }}
                                                             {% else %}
-                                                                Agregar foto
+                                                                {{ form.instance.foto.name }}
                                                             {% endif %}
-                                                        </span>
-                                                    </label>
+                                                        </div>
+                                                        <div class="foto-status">
+                                                            <i class="fas fa-check-circle text-success"></i>
+                                                            <span class="text-success">Guardada</span>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button"
+                                                            class="btn btn-outline-primary btn-sm"
+                                                            onclick="abrirFotoCiudadanoModal('{{ form.instance.foto.url|escapejs }}', '{{ form.instance.foto.name|escapejs }}')">
+                                                        <i class="fas fa-expand-alt mr-1"></i>
+                                                        Ver completa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        <!-- Input para nueva foto -->
+                                        <div class="nueva-foto-section">
+                                            <h6 class="text-light mb-2">
+                                                <i class="fas fa-upload mr-1"></i>
+                                                {% if form.instance.foto %}
+                                                    Cambiar foto:
+                                                {% else %}
+                                                    Seleccionar foto:
+                                                {% endif %}
+                                            </h6>
+                                            {{ form.foto }}
+                                            <button type="button"
+                                                    id="foto-picker-btn"
+                                                    class="btn-seleccionar mt-2">
+                                                <i class="fas fa-upload"></i>
+                                                Seleccionar imagen
+                                            </button>
+                                            <div class="contador-imagenes mt-2 d-none"
+                                                 id="foto-selected-info">
+                                                <span id="foto-selected-name"></span>
+                                            </div>
+                                        </div>
+                                        <!-- Previsualización de nueva foto -->
+                                        <div id="fotoCiudadanoPreviewContainer"
+                                             class="nueva-foto-preview mt-3 d-none">
+                                            <h6 class="text-light mb-2">
+                                                <i class="fas fa-eye mr-1"></i>
+                                                Vista previa:
+                                            </h6>
+                                            <div class="nueva-foto-container">
+                                                <div class="foto-preview-wrapper">
+                                                    <img id="fotoCiudadanoPreview"
+                                                         src=""
+                                                         alt="Vista previa de foto legajo"
+                                                         class="foto-preview-img" />
+                                                    <button type="button"
+                                                            class="btn-remover-preview"
+                                                            onclick="removerPreviewFotoCiudadano()">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="foto-preview-info">
+                                                    <div class="preview-nombre" id="fotoCiudadanoNombre">imagen.jpg</div>
+                                                    <div class="preview-size" id="fotoCiudadanoSize">0 KB</div>
+                                                    <div class="preview-status">
+                                                        <i class="fas fa-clock text-warning"></i>
+                                                        <span class="text-warning">Pendiente de guardar</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row mx-auto px-6 mt-3">
-                                            <div class="form-group col-md-6">{{ form.apellido|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.nombre|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.tipo_documento|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.documento|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.sexo|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.fecha_nacimiento|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.telefono|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.telefono_alternativo|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.email|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6"></div>
-                                            <div class="form-group col-md-6">{{ form.estado_civil|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6"></div>
-                                            <div class="form-group col-md-6">{{ form.calle|as_crispy_field }}</div>
-                                            <div class="form-group col-md-3">{{ form.altura|as_crispy_field }}</div>
-                                            <div class="form-group col-md-3">{{ form.piso_departamento|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.torre_pasillo|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.escalera_manzana|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.provincia|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.municipio|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.localidad|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.circuito|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.codigo_postal|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6"></div>
-                                            <div class="form-group col-md-6">{{ form.longitud|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6">{{ form.latitud|as_crispy_field }}</div>
-                                            <div class="form-group col-md-6 {% if request.resolver_match.url_name != 'ciudadanos_editar' %}d-none{% endif %}">
-                                                {{ form.estado|as_crispy_field }}
-                                            </div>
-                                            <div class="form-group col-12">{{ form.observaciones|as_crispy_field }}</div>
-                                        </div>
-                                        <input type="file"
-                                               name="foto"
-                                               id="id_foto"
-                                               class="input-file"
-                                               id="id_foto"
-                                               accept="image/*"
-                                               hidden />
                                     </div>
-                                </div>
-                                <!-- botones del pie -->
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="form-group mb-0 mt-3 d-flex justify-content-between">
-                                            {% if request.resolver_match.url_name == "ciudadanos_editar" %}
-                                                <a href="{% url 'ciudadanos_ver' object.id %}"
-                                                   class="btn btn-secondary mb-3">Cancelar</a>
-                                                <button type="submit"
-                                                        id="form_ciudadanos"
-                                                        name="form_ciudadanos"
-                                                        class="btn btn-primary mb-3 form_ciudadano">Guardar</button>
-                                                <button type="submit"
-                                                        id="form_step2"
-                                                        name="form_step2"
-                                                        class="btn btn-secondary mb-3 form_ciudadano">
-                                                    Continuar
-                                                </button>
-                                            {% else %}
-                                                <a href="{% url 'ciudadanos' %}" class="btn btn-secondary mb-3">Cancelar</a>
-                                                <button type="submit"
-                                                        id="form_step2"
-                                                        name="form_step2"
-                                                        class="btn btn-primary mb-3  form_ciudadano">Continuar</button>
+                                {% elif field.name == "activo" %}
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-check form-switch mt-4">
+                                            {{ field }}
+                                            <label class="form-check-label ms-2" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            {% if field.help_text %}
+                                                <small class="form-text text-muted d-block">{{ field.help_text }}</small>
+                                            {% endif %}
+                                            {% if field.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {{ field.errors|join:", " }}
+                                                </div>
                                             {% endif %}
                                         </div>
                                     </div>
-                                </div>
-                                <!-- /botones del pie -->
-                            </form>
+                                {% else %}
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            {{ field }}
+                                            {% if field.help_text %}
+                                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                                            {% endif %}
+                                            {% if field.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {{ field.errors|join:", " }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
                         </div>
+                        <div class="d-flex gap-2 mt-4 flex-wrap">
+                            <button type="submit" class="btn btn-primary">
+                                {% if object %}Guardar cambios{% else %}Crear ciudadano{% endif %}
+                            </button>
+                            <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'ciudadanos' %}{% endif %}"
+                               class="btn btn-outline-secondary ms-auto">Volver</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade"
+         id="fotoCiudadanoModal"
+         tabindex="-1"
+         aria-labelledby="fotoCiudadanoModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-foto-legajo">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="fotoCiudadanoModalLabel">
+                        <i class="fas fa-camera mr-2"></i>
+                        Foto del ciudadano
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="foto-legajo-modal-container">
+                        <div class="foto-legajo-principal">
+                            <img id="fotoCiudadanoPrincipal"
+                                 src=""
+                                 alt="Foto ampliada"
+                                 class="img-fluid" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-between">
+                    <div class="info-foto">
+                        <span class="nombre-archivo" id="nombreArchivoCiudadano">foto.jpg</span>
+                    </div>
+                    <div class="acciones-foto">
+                        <button type="button"
+                                class="btn btn-outline-success btn-sm"
+                                onclick="descargarFotoCiudadano()">
+                            <i class="fas fa-download mr-1"></i>Descargar
+                        </button>
+                        <button type="button"
+                                class="btn btn-secondary btn-sm"
+                                data-bs-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i>Cerrar
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
+
 {% block customJS %}
     <script>
-        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
-        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        document.addEventListener("DOMContentLoaded", function () {
+            const fotoInput = document.getElementById("foto-input") || document.getElementById("id_foto");
+            const triggerBtn = document.getElementById("foto-picker-btn");
+            const infoLabel = document.getElementById("foto-selected-info");
+            const infoName = document.getElementById("foto-selected-name");
+            const previewContainer = document.getElementById("fotoCiudadanoPreviewContainer");
+            const previewImg = document.getElementById("fotoCiudadanoPreview");
+            const previewName = document.getElementById("fotoCiudadanoNombre");
+            const previewSize = document.getElementById("fotoCiudadanoSize");
+            const modalElement = document.getElementById("fotoCiudadanoModal");
+            const modalImg = document.getElementById("fotoCiudadanoPrincipal");
+            const modalName = document.getElementById("nombreArchivoCiudadano");
+            let modalInstance = null;
+            let modalImageUrl = null;
+            let modalImageName = null;
+
+            if (triggerBtn && fotoInput) {
+                triggerBtn.addEventListener("click", function () {
+                    fotoInput.click();
+                });
+            }
+
+            if (modalElement && typeof bootstrap !== "undefined") {
+                modalInstance = new bootstrap.Modal(modalElement);
+            }
+
+            function resetPreview() {
+                if (infoLabel) {
+                    infoLabel.classList.add("d-none");
+                }
+                if (infoName) {
+                    infoName.textContent = "";
+                }
+                if (previewContainer) {
+                    previewContainer.classList.add("d-none");
+                }
+                if (previewImg) {
+                    previewImg.removeAttribute("src");
+                }
+                if (previewName) {
+                    previewName.textContent = "";
+                }
+                if (previewSize) {
+                    previewSize.textContent = "";
+                }
+            }
+
+            function setModalData(url, name) {
+                modalImageUrl = url;
+                modalImageName = name || "foto.jpg";
+                if (modalImg) {
+                    modalImg.src = modalImageUrl;
+                }
+                if (modalName) {
+                    modalName.textContent = modalImageName;
+                }
+            }
+
+            if (fotoInput) {
+                fotoInput.addEventListener("change", function (event) {
+                    const file = event.target.files[0];
+                    if (!file) {
+                        resetPreview();
+                        return;
+                    }
+                    if (infoLabel) {
+                        infoLabel.classList.remove("d-none");
+                    }
+                    if (infoName) {
+                        infoName.textContent = `Imagen seleccionada: ${file.name}`;
+                    }
+                    if (previewContainer) {
+                        previewContainer.classList.remove("d-none");
+                    }
+                    if (previewName) {
+                        previewName.textContent = file.name;
+                    }
+                    if (previewSize) {
+                        previewSize.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+                    }
+                    if (previewImg) {
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            previewImg.src = e.target.result;
+                            setModalData(e.target.result, file.name);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+
+            window.removerPreviewFotoCiudadano = function () {
+                if (fotoInput) {
+                    fotoInput.value = "";
+                }
+                resetPreview();
+            };
+
+            window.abrirFotoCiudadanoModal = function (url, name) {
+                if (!modalInstance) return;
+                setModalData(url, name);
+                modalInstance.show();
+            };
+
+            window.descargarFotoCiudadano = function () {
+                if (!modalImageUrl) return;
+                const link = document.createElement("a");
+                link.href = modalImageUrl;
+                link.download = modalImageName || "foto.jpg";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+        });
     </script>
-    <script src="{% static 'custom/js/ciudadanosform.js' %}"></script>
 {% endblock %}

@@ -7,7 +7,7 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.db.models import F
 
-from ciudadanos.models import Provincia
+from core.models import Provincia
 from celiaquia.models import (
     ExpedienteCiudadano,
     ProvinciaCupo,

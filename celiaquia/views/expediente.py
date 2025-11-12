@@ -581,11 +581,20 @@ class ExpedienteDetailView(DetailView):
         ).order_by("fila_excel")
 
         # Datos para desplegables en registros erróneos
-        from ciudadanos.models import Sexo, Nacionalidad
-        from core.models import Municipio, Localidad
+        from core.models import Sexo, Municipio, Localidad
+        from ciudadanos.models import Ciudadano
 
         sexos = Sexo.objects.all()
-        nacionalidades = Nacionalidad.objects.all()
+        nacionalidades = [
+            {"id": nombre, "nombre": nombre}
+            for nombre in (
+                Ciudadano.objects.exclude(nacionalidad="")
+                .order_by("nacionalidad")
+                .values_list("nacionalidad", flat=True)
+                .distinct()
+            )
+            if nombre
+        ]
         municipios = []
         localidades = []
 
@@ -1319,16 +1328,7 @@ class ReprocesarRegistrosErroneosView(View):
         # Crear relaciones familiares
         if relaciones_crear:
             try:
-                from ciudadanos.models import GrupoFamiliar, VinculoFamiliar
-
-                vinculo_hijo = VinculoFamiliar.objects.filter(
-                    vinculo__icontains="hijo"
-                ).first()
-                if not vinculo_hijo:
-                    vinculo_hijo = VinculoFamiliar.objects.create(
-                        vinculo="Hijo/a",
-                        inverso="Padre/Madre",
-                    )
+                from ciudadanos.models import GrupoFamiliar
 
                 relaciones_obj = []
                 for rel in relaciones_crear:
@@ -1336,8 +1336,7 @@ class ReprocesarRegistrosErroneosView(View):
                         GrupoFamiliar(
                             ciudadano_1_id=rel["responsable_id"],
                             ciudadano_2_id=rel["hijo_id"],
-                            vinculo=vinculo_hijo,
-                            vinculo_inverso=vinculo_hijo.inverso,
+                            vinculo=GrupoFamiliar.RELACION_HIJO,
                             conviven=True,
                             cuidador_principal=True,
                         )
