@@ -52,11 +52,11 @@
                         {% if dupla.coordinador %}
                             {{ dupla.coordinador.get_full_name|default:dupla.coordinador.username }}
                             <br />
-                            <small class="text-muted">El coordinador se asigna desde el Usuarios</small>
+                            <small class="text-muted">El coordinador se asigna desde módulo de configuración de Usuarios</small>
                         {% else %}
                             <span class="badge badge-warning">Sin asignar</span>
                             <br />
-                            <small class="text-muted">"El coordinador se asigna desde módulo de configuración de Usuarios</small>
+                            <small class="text-muted">El coordinador se asigna desde módulo de configuración de Usuarios</small>
                         {% endif %}
                     </div>
                 </div>
