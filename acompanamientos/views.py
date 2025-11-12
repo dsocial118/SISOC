@@ -176,66 +176,10 @@ class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
         # Usar modo personalizado para acceder a campos relacionados
         context["custom_cells"] = True
 
-        # Preparar datos con celdas personalizadas
-        comedores_con_celdas = []
-        for comedor in context["comedores"]:
-            # Obtener la admisión que cumple con los criterios de acompañamiento
-            admision = (
-                comedor.admision_set.filter(
-                    enviado_acompaniamiento=True,
-                ).first()
-                if hasattr(comedor, "admision_set")
-                else None
-            )
-            comedores_con_celdas.append(
-                {
-                    "cells": [
-                        {"content": comedor.id or "-"},
-                        {"content": comedor.nombre or "-"},
-                        {
-                            "content": (
-                                comedor.organizacion.nombre
-                                if comedor.organizacion
-                                else "-"
-                            )
-                        },
-                        {
-                            "content": (
-                                admision.num_expediente
-                                if admision and admision.num_expediente
-                                else "-"
-                            )
-                        },
-                        {
-                            "content": (
-                                comedor.provincia.nombre if comedor.provincia else "-"
-                            )
-                        },
-                        {"content": str(comedor.dupla) if comedor.dupla else "-"},
-                        {
-                            "content": (
-                                admision.estado.nombre
-                                if admision and admision.estado
-                                else "-"
-                            )
-                        },
-                        {
-                            "content": (
-                                admision.modificado.strftime("%d/%m/%Y")
-                                if admision and admision.modificado
-                                else "-"
-                            )
-                        },
-                    ],
-                    "actions": [
-                        {
-                            "url": f"/acompanamientos/detalle/{comedor.id}/",
-                            "label": "Ver Acompañamiento",
-                            "type": "primary",
-                        }
-                    ],
-                }
-            )
+        # Usar el servicio optimizado para preparar los datos
+        comedores_con_celdas = AcompanamientoService.preparar_datos_tabla_comedores(
+            context["comedores"]
+        )
         context["comedores"] = comedores_con_celdas
 
         context["custom_actions"] = True
