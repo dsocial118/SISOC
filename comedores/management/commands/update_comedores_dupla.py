@@ -114,6 +114,7 @@ class Command(BaseCommand):
 
             with transaction.atomic():
                 comedor.dupla = dupla
+                comedor.estado = "Asignado a Dupla Técnica"
                 comedor.save(update_fields=["dupla"])
 
             stats["applied"] += 1
