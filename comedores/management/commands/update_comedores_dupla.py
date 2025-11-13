@@ -5,6 +5,8 @@ from typing import Iterator, Tuple
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from acompanamientos.models.hitos import Hitos
+from admisiones.models.admisiones import Admision
 from comedores.models import Comedor
 from duplas.models import Dupla
 
@@ -116,6 +118,23 @@ class Command(BaseCommand):
                 comedor.dupla = dupla
                 comedor.estado = "Asignado a Dupla Técnica"
                 comedor.save(update_fields=["dupla"])
+
+                if Admision.objects.filter(
+                    comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
+                ).exists():
+                    stats["errors"] += 1
+                    stats["error_lines"].append(line_number)
+                    self.stdout.write(self.style.ERROR("Línea {line_number}: "
+                        f"El comedor {comedor.id} ya tiene una admisión de "
+                        f"incorporación activa."
+                    ))
+                nueva_admision = Admision.objects.create(
+                    comedor=comedor,
+                    tipo="incorporacion",
+                )
+
+                if Hitos.objects.filter(comedor=comedor).exists() == False:
+                    Hitos.objects.create(comedor=comedor)
 
             stats["applied"] += 1
             self.stdout.write(self.style.SUCCESS(f"[APLICADO] {change_message}"))
