@@ -58,16 +58,16 @@ class DuplaListView(LoginRequiredMixin, ListView):
         # Data table config
         context["table_headers"] = [
             {"title": "Nombre"},
+            {"title": "Coordinador"},
             {"title": "Técnico/s"},
             {"title": "Abogado"},
-            {"title": "Coordinador"},
             {"title": "Estado"},
         ]
         context["table_fields"] = [
             {"name": "nombre", "link_field": True, "link_url": "dupla_detalle"},
+            {"name": "coordinador_nombre"},
             {"name": "tecnicos_nombres"},
-            {"name": "abogado"},
-            {"name": "coordinador"},
+            {"name": "abogado_nombre"},
             {"name": "estado"},
         ]
         context["table_actions"] = [
