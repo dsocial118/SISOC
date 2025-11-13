@@ -22,7 +22,7 @@
                                 </tr>
                             </thead>
                         {% endif %}
-                        <tbody>
+                        <tbody {% if tbody_id %}id="{{ tbody_id }}"{% endif %}>
                             {% for item in items %}
                                 <tr>
                                     {% if custom_cells %}
