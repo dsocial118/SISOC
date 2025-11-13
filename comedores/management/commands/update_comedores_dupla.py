@@ -121,17 +121,11 @@ class Command(BaseCommand):
 
                 if Admision.objects.filter(
                     comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
-                ).exists():
-                    stats["errors"] += 1
-                    stats["error_lines"].append(line_number)
-                    self.stdout.write(self.style.ERROR("Línea {line_number}: "
-                        f"El comedor {comedor.id} ya tiene una admisión de "
-                        f"incorporación activa."
-                    ))
-                nueva_admision = Admision.objects.create(
-                    comedor=comedor,
-                    tipo="incorporacion",
-                )
+                ).exists() == False:
+                    Admision.objects.create(
+                        comedor=comedor,
+                        tipo="incorporacion",
+                    )
 
                 if Hitos.objects.filter(comedor=comedor).exists() == False:
                     Hitos.objects.create(comedor=comedor)
