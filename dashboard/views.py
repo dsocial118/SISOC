@@ -1,8 +1,11 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView
 
+from core.constants import UserGroups
 from dashboard.models import Dashboard
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
+
+DATACALLE_CHACO_GROUP = "Tablero DataCalle Chaco"
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -29,3 +32,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context["actividades_totales"] = ActividadCentro.objects.count()
 
         return context
+
+
+class DataCalleChacoDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "dashboard_datacalle_chaco.html"
+    raise_exception = True
+
+    def test_func(self):
+        user = self.request.user
+        return user.is_superuser or user.groups.filter(
+            name__in=[DATACALLE_CHACO_GROUP, UserGroups.ADMINISTRADOR]
+        ).exists()
