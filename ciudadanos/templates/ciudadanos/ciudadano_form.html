@@ -1,6 +1,6 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
-{% load static %}
+{% load static image_tags %}
 {% block head %}{% endblock %}
 {% block title %}Ciudadano{% endblock %}
 {% block titulo-pagina %}Ciudadano{% endblock %}
@@ -33,12 +33,7 @@
                                                 <div class="card-body">
                                                     <div class="text-center">
                                                         {% if object.foto %}
-                                                            <img src="{{ object.foto.url }}"
-                                                                 data-holder-rendered="true"
-                                                                 alt="avatar"
-                                                                 class="avatar p-1"
-                                                                 height="150"
-                                                                 id="blah" />
+                                                            {% optimized_image object.foto "Foto del ciudadano" css_class="avatar p-1" height="150" extra_attrs='data-holder-rendered="true" id="blah"' %}
                                                         {% else %}
                                                             <img src="{% static 'custom/img/default.png' %}"
                                                                  data-holder-rendered="true"

@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static image_tags %}
 {% block title %}Grupo Familiar{% endblock %}
 {% block titulo-pagina %}Grupo familiar de {{ nombre }}{% endblock %}
 {% block breadcrumb %}
@@ -64,9 +64,7 @@
                                 </div>
                                 <div class="col-5 text-center">
                                     {% if f.ciudadano_2.foto %}
-                                        <img src="{{ f.ciudadano_2.foto.url }}"
-                                             alt="user-avatar"
-                                             class="img-circle img-fluid justify-content-center" />
+                                        {% optimized_image f.ciudadano_2.foto "Foto del familiar" css_class="img-circle img-fluid justify-content-center" %}
                                     {% else %}
                                         <img src="{% static 'custom/img/default.png' %}"
                                              alt="user-avatar"
@@ -137,9 +135,7 @@
                                 </div>
                                 <div class="col-5 text-center">
                                     {% if f.ciudadano_1.foto %}
-                                        <img src="{{ f.ciudadano_1.foto.url }}"
-                                             alt="user-avatar"
-                                             class="img-circle img-fluid justify-content-center" />
+                                        {% optimized_image f.ciudadano_1.foto "Foto del familiar" css_class="img-circle img-fluid justify-content-center" %}
                                     {% else %}
                                         <img src="{% static 'custom/img/default.png' %}"
                                              alt="user-avatar"
