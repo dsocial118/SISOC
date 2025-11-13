@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -55,6 +56,32 @@ class Referente(models.Model):
     funcion = models.CharField(
         verbose_name="Funcion del referente", max_length=255, blank=True, null=True
     )
+
+    def clean(self):
+        errors = {}
+        # validar celular: exactamente 10 dígitos numéricos
+        if self.celular is not None:
+            s = str(self.celular)
+            if not s.isdigit() or len(s) != 10:
+                errors["celular"] = ValidationError(
+                    "El celular debe contener exactamente 10 dígitos numéricos (sin espacios ni signos)."
+                )
+
+        # validar documento: 7 u 8 dígitos numéricos
+        if self.documento is not None:
+            s = str(self.documento)
+            if not s.isdigit() or len(s) not in (7, 8):
+                errors["documento"] = ValidationError(
+                    "El documento debe contener 7 u 8 dígitos numéricos."
+                )
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        # asegurar que clean() se ejecute antes de salvar (validación consistente)
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Referente"

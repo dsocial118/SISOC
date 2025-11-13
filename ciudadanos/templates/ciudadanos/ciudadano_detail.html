@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static crispy_forms_tags %}
+{% load static crispy_forms_tags image_tags %}
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/ciudadano.css' %}" />
@@ -63,12 +63,7 @@
                 <div class="card shadow-sm rounded-lg overflow-hidden">
                     <div class="card-header text-center py-6">
                         {% if object.foto %}
-                            <img src="{{ object.foto.url }}"
-                                 class="rounded-circle shadow"
-                                 style="width:200px;
-                                        height:200px;
-                                        object-fit:cover"
-                                 alt="Foto" />
+                            {% optimized_image object.foto "Foto de perfil" css_class="rounded-circle shadow" width="200" height="200" extra_attrs='style="object-fit:cover"' %}
                         {% else %}
                             <img src="{% static 'custom/img/default.png' %}"
                                  class="rounded-circle shadow"
@@ -433,11 +428,7 @@
                                     {% if files_img %}
                                         {% for f in files_img %}
                                             <tr>
-                                                <td style="width:120px;">
-                                                    <img src="{{ MEDIA_URL }}{{ f.archivo.url }}"
-                                                         class="img-fluid rounded"
-                                                         alt="" />
-                                                </td>
+                                                <td style="width:120px;">{% optimized_image f.archivo "Vista previa" css_class="img-fluid rounded" %}</td>
                                                 <td>{{ f.archivo.name|truncatechars:30 }}</td>
                                                 <td>{{ f.fecha|date:"d/m/Y" }}</td>
                                                 <td>
