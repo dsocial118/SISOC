@@ -28,7 +28,9 @@ class DuplaListViewFiltersTests(TestCase):
             username="abogado", first_name="Law", last_name="Yer"
         )
 
-        dupla = Dupla.objects.create(nombre="Equipo A", estado="Activo", abogado=abogado)
+        dupla = Dupla.objects.create(
+            nombre="Equipo A", estado="Activo", abogado=abogado
+        )
         dupla.tecnico.set([tecnico_a, tecnico_b])
 
         filters_payload = {
