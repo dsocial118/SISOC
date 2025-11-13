@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static image_tags %}
 {% load crispy_forms_tags %}
 {% block head %}
     <!-- Dropzone plugin -->
@@ -35,11 +35,7 @@
                                                                class=""
                                                                target="_blank"
                                                                title='{{ f.archivo|cut:"ciudadanos/archivos/" }}'>
-                                                                <img src="{{ MEDIA_URL }}{{ f.archivo.url }}"
-                                                                     alt="archivo de imagen"
-                                                                     class="rounded"
-                                                                     style="width: 60px;
-                                                                            height: 60px" />
+                                                                {% optimized_image f.archivo "Vista previa" css_class="rounded" width="60" height="60" %}
                                                                 <span class="users-list-name">{{ f.archivo|cut:"ciudadanos/archivos/"|truncatechars:7 }}</span>
                                                             </a>
                                                             <span class="users-list-date">
