@@ -12,6 +12,7 @@ from acompanamientos.models.acompanamiento import InformacionRelevante, Prestaci
 from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
+from users.services import UserPermissionService
 
 logger = logging.getLogger("django")
 
@@ -348,13 +349,17 @@ class AcompanamientoService:
         filtrando según el usuario y una búsqueda opcional.
         """
         try:
-            from users.services import UserPermissionService
-
             is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
-            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(
+                user
+            )
 
-            dupla_abogado_subq = Dupla.objects.filter(comedor=OuterRef("pk"), abogado=user)
-            dupla_tecnico_subq = Dupla.objects.filter(comedor=OuterRef("pk"), tecnico=user)
+            dupla_abogado_subq = Dupla.objects.filter(
+                comedor=OuterRef("pk"), abogado=user
+            )
+            dupla_tecnico_subq = Dupla.objects.filter(
+                comedor=OuterRef("pk"), tecnico=user
+            )
 
             admisiones_prefetch = Prefetch(
                 "admision_set",
@@ -368,7 +373,9 @@ class AcompanamientoService:
                     "comedor__dupla",
                     "estado",
                 )
-                .only("id", "num_expediente", "estado__nombre", "modificado", "comedor_id"),
+                .only(
+                    "id", "num_expediente", "estado__nombre", "modificado", "comedor_id"
+                ),
                 to_attr="admisiones_acompaniamiento",
             )
 
@@ -390,7 +397,9 @@ class AcompanamientoService:
                 if is_coordinador:
                     qs = qs.filter(dupla_id__in=duplas_ids or [])
                 elif is_dupla:
-                    qs = qs.filter(Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq))
+                    qs = qs.filter(
+                        Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
+                    )
 
             if busqueda:
                 qs = qs.filter(
@@ -412,48 +421,85 @@ class AcompanamientoService:
             )
             raise
 
-
     @staticmethod
     def preparar_datos_tabla_comedores(comedores_queryset):
         """
         Prepara los datos de comedores para la tabla, evitando consultas N+1.
-        
+
         Args:
             comedores_queryset: QuerySet de comedores ya optimizado con prefetch_related
-            
+
         Returns:
             list: Lista de diccionarios con datos preparados para la tabla
         """
         try:
             comedores_con_celdas = []
-            
+
             for comedor in comedores_queryset:
                 # Usar la caché creada con Prefetch
-                admision = comedor.admisiones_acompaniamiento[0] if comedor.admisiones_acompaniamiento else None
-                
-                comedores_con_celdas.append({
-                    'cells': [
-                        {'content': comedor.id or '-'},
-                        {'content': comedor.nombre or '-'},
-                        {'content': comedor.organizacion.nombre if comedor.organizacion else '-'},
-                        {'content': admision.num_expediente if admision and admision.num_expediente else '-'},
-                        {'content': comedor.provincia.nombre if comedor.provincia else '-'},
-                        {'content': str(comedor.dupla) if comedor.dupla else '-'},
-                        {'content': admision.estado.nombre if admision and admision.estado else '-'},
-                        {'content': admision.modificado.strftime('%d/%m/%Y') if admision and admision.modificado else '-'},
-                    ],
-                    'actions': [
-                        {
-                            'url': f"/acompanamientos/detalle/{comedor.id}/",
-                            'label': 'Ver Acompañamiento',
-                            'type': 'primary'
-                        }
-                    ]
-                })
-            
+                admision = (
+                    comedor.admisiones_acompaniamiento[0]
+                    if comedor.admisiones_acompaniamiento
+                    else None
+                )
+
+                comedores_con_celdas.append(
+                    {
+                        "cells": [
+                            {"content": comedor.id or "-"},
+                            {"content": comedor.nombre or "-"},
+                            {
+                                "content": (
+                                    comedor.organizacion.nombre
+                                    if comedor.organizacion
+                                    else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    admision.num_expediente
+                                    if admision and admision.num_expediente
+                                    else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    comedor.provincia.nombre
+                                    if comedor.provincia
+                                    else "-"
+                                )
+                            },
+                            {"content": str(comedor.dupla) if comedor.dupla else "-"},
+                            {
+                                "content": (
+                                    admision.estado.nombre
+                                    if admision and admision.estado
+                                    else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    admision.modificado.strftime("%d/%m/%Y")
+                                    if admision and admision.modificado
+                                    else "-"
+                                )
+                            },
+                        ],
+                        "actions": [
+                            {
+                                "url": f"/acompanamientos/detalle/{comedor.id}/",
+                                "label": "Ver Acompañamiento",
+                                "type": "primary",
+                            }
+                        ],
+                    }
+                )
+
             return comedores_con_celdas
         except Exception:
-            logger.exception("Error en AcompanamientoService.preparar_datos_tabla_comedores")
+            logger.exception(
+                "Error en AcompanamientoService.preparar_datos_tabla_comedores"
+            )
             raise
 
     @staticmethod
