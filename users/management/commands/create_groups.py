@@ -60,6 +60,7 @@ class Command(BaseCommand):
             "CDF SSE",
             "Dashboard Comedor",
             "Dashboard Centrodefamilia",
+            "Tablero DataCalle Chaco",
             "TecnicoCeliaquia",
             "CoordinadorCeliaquia",
             "ProvinciaCeliaquia",
