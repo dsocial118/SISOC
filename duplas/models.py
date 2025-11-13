@@ -94,6 +94,8 @@ class Dupla(models.Model):
     def coordinador_nombre(self) -> str:
         """Devuelve el nombre del coordinador en formato 'Apellido Nombre' o un indicador si no hay coordinador asignado."""
         if self.coordinador:
-            full_name = f"{self.coordinador.last_name} {self.coordinador.first_name}".strip()
+            full_name = (
+                f"{self.coordinador.last_name} {self.coordinador.first_name}".strip()
+            )
             return full_name or self.coordinador.username
         return "Sin asignar"

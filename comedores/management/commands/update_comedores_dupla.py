@@ -106,9 +106,7 @@ class Command(BaseCommand):
                 continue
 
             stats["updates"] += 1
-            change_message = (
-                f"Comedor {comedor.id} ({comedor.nombre}): {previous_dupla_label} -> {dupla.id}"
-            )
+            change_message = f"Comedor {comedor.id} ({comedor.nombre}): {previous_dupla_label} -> {dupla.id}"
 
             if dry_run:
                 self.stdout.write(f"[DRY-RUN] {change_message}")
@@ -119,9 +117,12 @@ class Command(BaseCommand):
                 comedor.estado = "Asignado a Dupla Técnica"
                 comedor.save(update_fields=["dupla"])
 
-                if Admision.objects.filter(
-                    comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
-                ).exists() == False:
+                if (
+                    Admision.objects.filter(
+                        comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
+                    ).exists()
+                    == False
+                ):
                     Admision.objects.create(
                         comedor=comedor,
                         tipo="incorporacion",
