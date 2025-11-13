@@ -1,7 +1,11 @@
 import logging
+from typing import Tuple, List
+
 from django.contrib.auth.models import User
 from django.db.models import F
 from django.urls import reverse
+
+from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
 from users.users_filter_config import (
     FIELD_MAP as BENEFICIARIO_FILTER_MAP,
@@ -83,3 +87,133 @@ class UsuariosService:
             "filters_action": reverse("usuarios"),
             "show_add_button": True,
         }
+
+
+class UserPermissionService:
+    """Servicio para verificación y gestión de permisos de usuarios."""
+
+    @staticmethod
+    def get_coordinador_duplas(user: User) -> Tuple[bool, List[int]]:
+        """
+        Obtiene información de coordinador de un usuario.
+
+        Args:
+            user: Usuario a verificar
+
+        Returns:
+            Tuple de (es_coordinador: bool, duplas_ids: List[int])
+            - Si es coordinador: (True, [lista de IDs de duplas])
+            - Si no es coordinador: (False, [])
+            - Si hay error: (False, [])
+
+        Examples:
+            >>> is_coord, duplas = UserPermissionService.get_coordinador_duplas(user)
+            >>> if is_coord:
+            ...     comedores = Comedor.objects.filter(dupla_id__in=duplas)
+        """
+        try:
+            # Verificar que el usuario tenga profile
+            if not hasattr(user, "profile"):
+                logger.debug(f"Usuario {user.pk} no tiene profile")
+                return False, []
+
+            profile = user.profile
+
+            # Verificar si es coordinador
+            if not profile.es_coordinador:
+                return False, []
+
+            # Obtener IDs de duplas asignadas
+            duplas_ids = list(profile.duplas_asignadas.values_list("id", flat=True))
+
+            if not duplas_ids:
+                logger.warning(
+                    f"Usuario {user.pk} es coordinador pero no tiene duplas asignadas"
+                )
+
+            return True, duplas_ids
+
+        except AttributeError as e:
+            # Error en estructura del modelo - no debería ocurrir
+            logger.error(
+                f"Error de atributo al obtener duplas de coordinador "
+                f"para usuario {user.pk}: {e}"
+            )
+            return False, []
+
+        except Exception as e:
+            # Error inesperado
+            logger.exception(
+                f"Error inesperado al obtener duplas de coordinador "
+                f"para usuario {user.pk}: {e}"
+            )
+            return False, []
+
+    @staticmethod
+    def tiene_grupo(user: User, grupo_nombre: str) -> bool:
+        """
+        Verifica si un usuario pertenece a un grupo específico.
+
+        Args:
+            user: Usuario a verificar
+            grupo_nombre: Nombre del grupo
+
+        Returns:
+            True si el usuario pertenece al grupo, False en caso contrario
+        """
+        if not user or not user.is_authenticated:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        return user.groups.filter(name=grupo_nombre).exists()
+
+    @staticmethod
+    def tiene_alguno_de_los_grupos(user: User, grupos: List[str]) -> bool:
+        """
+        Verifica si un usuario pertenece a al menos uno de los grupos especificados.
+
+        Args:
+            user: Usuario a verificar
+            grupos: Lista de nombres de grupos
+
+        Returns:
+            True si el usuario pertenece a al menos un grupo, False en caso contrario
+        """
+        if not user or not user.is_authenticated:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        return user.groups.filter(name__in=grupos).exists()
+
+    @staticmethod
+    def es_tecnico_o_abogado(user: User) -> bool:
+        """
+        Verifica si un usuario es técnico de comedor o abogado de dupla.
+
+        Args:
+            user: Usuario a verificar
+
+        Returns:
+            True si es técnico o abogado, False en caso contrario
+        """
+        return UserPermissionService.tiene_alguno_de_los_grupos(
+            user, UserGroups.DUPLA_ROLES
+        )
+
+    @staticmethod
+    def es_coordinador(user: User) -> bool:
+        """
+        Verifica si un usuario es coordinador de gestión.
+
+        Args:
+            user: Usuario a verificar
+
+        Returns:
+            True si es coordinador, False en caso contrario
+        """
+        is_coord, _ = UserPermissionService.get_coordinador_duplas(user)
+        return is_coord

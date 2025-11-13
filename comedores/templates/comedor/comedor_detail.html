@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static image_tags %}
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 {% block titulo-pagina %}
     {{ comedor.nombre }}
@@ -162,9 +162,7 @@
                                             <div class="nav-item d-flex">
                                                 <div class="comment-text comment-text d-flex flex-column min-width-100">
                                                     {% if comedor.foto_legajo %}
-                                                        <img src="/media/{{ comedor.foto_legajo }}"
-                                                             alt="Imagen del comedor"
-                                                             class="img-fluid mw-100 rounded" />
+                                                        {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid mw-100 rounded" %}
                                                     {% else %}
                                                         <img src="{% static 'custom/img/default.png' %}"
                                                              alt="Imagen del comedor"
@@ -603,7 +601,7 @@
                 </div>
             </div>
         </div>
- 
+
         <!-- Modal Descartar Expediente -->
         <div class="modal fade"
              id="descartarModal"
@@ -641,7 +639,7 @@
                 </div>
             </div>
         </div>
- 
+
         <script>
         document.addEventListener('DOMContentLoaded', function() {
             const descartarModal = document.getElementById('descartarModal');
@@ -652,7 +650,7 @@
             });
         });
         </script>
- 
+
         <div class="row relevamiento-container">
             <div class="col-12">
                 <div class="card">
