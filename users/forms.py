@@ -31,11 +31,11 @@ class UserCreationForm(forms.ModelForm):
     )
 
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.activas_con_comedores(),
+        queryset=Dupla.objects.filter(estado="Activo").order_by("nombre"),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
-        help_text="Solo duplas activas con comedores asignados",
+        help_text="Duplas activas disponibles para asignar",
     )
 
     rol = forms.CharField(max_length=100, required=False, label="Rol")
@@ -128,11 +128,11 @@ class CustomUserChangeForm(forms.ModelForm):
     )
 
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.activas_con_comedores(),
+        queryset=Dupla.objects.filter(estado="Activo").order_by("nombre"),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
-        help_text="Solo duplas activas con comedores asignados",
+        help_text="Duplas activas disponibles para asignar",
     )
 
     rol = forms.CharField(max_length=100, required=False, label="Rol")
