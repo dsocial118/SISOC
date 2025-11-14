@@ -180,7 +180,9 @@ class ComedorForm(forms.ModelForm):
             if detalle_prev:
                 self.fields["motivo"].initial = detalle_prev.pk
 
-        self.fields["estado_general"].queryset = EstadoActividad.objects.order_by("estado")
+        self.fields["estado_general"].queryset = EstadoActividad.objects.order_by(
+            "estado"
+        )
 
         selected_actividad = self._get_selected_actividad()
         if selected_actividad:
@@ -207,7 +209,9 @@ class ComedorForm(forms.ModelForm):
 
     def _get_selected_actividad(self):
         value = self._get_bound_value("estado_general")
-        queryset = self.fields["estado_general"].queryset or EstadoActividad.objects.all()
+        queryset = (
+            self.fields["estado_general"].queryset or EstadoActividad.objects.all()
+        )
         if value:
             try:
                 return queryset.get(pk=value)
@@ -329,7 +333,9 @@ class ComedorForm(forms.ModelForm):
         if commit:
             comedor.save()
             self.save_m2m()
-            self._sync_estado_historial(comedor, estado_actividad, estado_proceso, estado_detalle)
+            self._sync_estado_historial(
+                comedor, estado_actividad, estado_proceso, estado_detalle
+            )
 
         return comedor
 

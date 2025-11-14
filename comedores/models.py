@@ -100,7 +100,7 @@ class Programas(models.Model):
         verbose_name_plural = "Programas"
 
 
-class EstadoActividad(models.Model): 
+class EstadoActividad(models.Model):
     estado = models.CharField(max_length=255)
 
     def __str__(self):
@@ -110,6 +110,7 @@ class EstadoActividad(models.Model):
         ordering = ["id"]
         verbose_name = "Estado de Actividad"
         verbose_name_plural = "Estados de Actividad"
+
 
 class EstadoProceso(models.Model):
     estado = models.CharField(max_length=255)
@@ -128,18 +129,22 @@ class EstadoProceso(models.Model):
         verbose_name = "Estado de Proceso"
         verbose_name_plural = "Estados de Proceso"
 
+
 class EstadoDetalle(models.Model):
     estado = models.CharField(max_length=255)
     estado_proceso = models.ForeignKey(
         to=EstadoProceso,
         on_delete=models.PROTECT,
     )
+
     def __str__(self):
         return str(self.estado)
+
     class Meta:
         ordering = ["id"]
         verbose_name = "Estado de Detalle"
         verbose_name_plural = "Estados de Detalle"
+
 
 class EstadoGeneral(models.Model):
     estado_actividad = models.ForeignKey(
@@ -158,6 +163,7 @@ class EstadoGeneral(models.Model):
         blank=True,
         null=True,
     )
+
 
 class EstadoHistorial(models.Model):
     comedor = models.ForeignKey(
