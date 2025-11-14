@@ -45,9 +45,9 @@ class Command(BaseCommand):
         if not models:
             self.stderr.write(f"⚠️  Sin modelos en: {fixture_path}")
             return False
-        # Si todos vacíos → carga; si no, igual podrías cargar sin borrar,
-        # pero mantengo tu política original a menos que uses --force.
-        return all(self.model_is_empty(m) for m in models)
+        # Cargar si al menos uno de los modelos mencionados está vacío
+        # (permite completar tablas faltantes sin bloquear toda la fixture).
+        return any(self.model_is_empty(m) for m in models)
 
     def upsert_fixture(self, fixture_path):
         """
