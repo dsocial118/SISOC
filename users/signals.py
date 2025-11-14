@@ -6,9 +6,18 @@ from users.models import Profile
 
 
 @receiver(post_save, sender=User)
-def ensure_user_profile(sender, instance, created, **kwargs):
-    """Garantiza que cada usuario tenga exactamente un Profile asociado."""
-    Profile.objects.get_or_create(user=instance)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+    else:
+        # Garantiza existencia sin provocar RelatedObjectDoesNotExist
+        Profile.objects.get_or_create(user=instance)
 
 
 @receiver(m2m_changed, sender=Profile.duplas_asignadas.through)
