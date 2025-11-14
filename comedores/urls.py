@@ -197,9 +197,7 @@ urlpatterns = [
                 "Coordinador Equipo Tecnico",
                 "Coordinador general",
             ]
-        )(
-            ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")
-        ),
+        )(ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")),
         name="nuevo_comedor_detalle",
     ),
     path(

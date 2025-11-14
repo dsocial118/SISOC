@@ -8,7 +8,11 @@ from dashboard.views import (
 )
 
 urlpatterns = [
-    path("dashboard/centro-de-familia", login_required(DashboardView.as_view()), name="dashboard"),
+    path(
+        "dashboard/centro-de-familia",
+        login_required(DashboardView.as_view()),
+        name="dashboard",
+    ),
     path(
         "dashboard/datacalle-general-chaco/",
         login_required(DataCalleChacoDashboardView.as_view()),
