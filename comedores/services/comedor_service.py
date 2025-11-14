@@ -2,13 +2,14 @@ import re
 import logging
 from typing import Any
 
-from django.db.models import Q, Count, Prefetch, QuerySet
+from django.db.models import Q, Count, Prefetch, QuerySet, Value
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
+from django.db.models.functions import Coalesce
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
@@ -130,7 +131,18 @@ class ComedorService:
 
         base_qs = (
             Comedor.objects.select_related(
-                "provincia", "municipio", "localidad", "referente", "tipocomedor"
+                "provincia",
+                "municipio",
+                "localidad",
+                "referente",
+                "tipocomedor",
+                "ultimo_estado__estado_general__estado_actividad",
+            )
+            .annotate(
+                estado_general=Coalesce(
+                    "ultimo_estado__estado_general__estado_actividad__estado",
+                    Value(Comedor.ESTADO_GENERAL_DEFAULT),
+                )
             )
             .values(
                 "id",
@@ -191,6 +203,13 @@ class ComedorService:
                         "localidad",
                         "referente",
                         "tipocomedor",
+                        "ultimo_estado__estado_general__estado_actividad",
+                    )
+                    .annotate(
+                        estado_general=Coalesce(
+                            "ultimo_estado__estado_general__estado_actividad__estado",
+                            Value(Comedor.ESTADO_GENERAL_DEFAULT),
+                        )
                     )
                     .values(
                         "id",
@@ -226,6 +245,9 @@ class ComedorService:
             "programa",
             "tipocomedor",
             "dupla",
+            "ultimo_estado__estado_general__estado_actividad",
+            "ultimo_estado__estado_general__estado_proceso",
+            "ultimo_estado__estado_general__estado_detalle",
         ).prefetch_related(
             "expedientes_pagos",
             Prefetch(
