@@ -34,7 +34,10 @@ ESTADO_LABEL_MAPPING = {
     },
 }
 
-_estados_cache: Dict[str, Tuple[Optional[EstadoActividad], Optional[EstadoProceso], Optional[EstadoDetalle]]] = {}
+_estados_cache: Dict[
+    str,
+    Tuple[Optional[EstadoActividad], Optional[EstadoProceso], Optional[EstadoDetalle]],
+] = {}
 
 
 def resolve_estado_components(label: str):
@@ -74,6 +77,7 @@ def set_estado_general_from_label(comedor: Comedor, label: str):
         proceso=proceso,
         detalle=detalle,
     )
+
 
 # Headers normalizados -> nombre de campo interno o token especial
 HEADER_TO_FIELD: Dict[str, str] = {
