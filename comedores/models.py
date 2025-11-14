@@ -100,6 +100,95 @@ class Programas(models.Model):
         verbose_name_plural = "Programas"
 
 
+class EstadoActividad(models.Model):
+    estado = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Estado de Actividad"
+        verbose_name_plural = "Estados de Actividad"
+
+
+class EstadoProceso(models.Model):
+    estado = models.CharField(max_length=255)
+    estado_actividad = models.ForeignKey(
+        to=EstadoActividad,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Estado de Proceso"
+        verbose_name_plural = "Estados de Proceso"
+
+
+class EstadoDetalle(models.Model):
+    estado = models.CharField(max_length=255)
+    estado_proceso = models.ForeignKey(
+        to=EstadoProceso,
+        on_delete=models.PROTECT,
+    )
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Estado de Detalle"
+        verbose_name_plural = "Estados de Detalle"
+
+
+class EstadoGeneral(models.Model):
+    estado_actividad = models.ForeignKey(
+        to=EstadoActividad,
+        on_delete=models.PROTECT,
+    )
+    estado_proceso = models.ForeignKey(
+        to=EstadoProceso,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    estado_detalle = models.ForeignKey(
+        to=EstadoDetalle,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+
+
+class EstadoHistorial(models.Model):
+    comedor = models.ForeignKey(
+        to="Comedor",
+        on_delete=models.CASCADE,
+        related_name="historial_estados",
+    )
+    estado_general = models.ForeignKey(
+        to=EstadoGeneral,
+        on_delete=models.PROTECT,
+    )
+    usuario = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    fecha_cambio = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha_cambio"]
+        verbose_name = "Historial de Estado de Comedor"
+        verbose_name_plural = "Historiales de Estado de Comedor"
+
+
 class Comedor(models.Model):
     """
     Representa una Comedor/Merendero.
@@ -175,19 +264,13 @@ class Comedor(models.Model):
         default="Sin Ingreso",
     )
 
-    ESTADOS_GENERALES = [
-        ("Activo", "Activo"),
-        ("Inactivo", "Inactivo"),
-        ("En proceso - Incorporación", "En proceso - Incorporación"),
-        ("En proceso - Renovación", "En proceso - Renovación"),
-        ("Sin definir", "Sin definir"),
-    ]
-
-    estado_general = models.CharField(
-        max_length=32,
-        choices=ESTADOS_GENERALES,
-        default="Sin definir",
-        verbose_name="Estado general",
+    ESTADO_GENERAL_DEFAULT = "Sin definir"
+    ultimo_estado = models.ForeignKey(
+        to=EstadoHistorial,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comedores_con_ultimo_estado",
     )
 
     direccion_validator = RegexValidator(
@@ -271,6 +354,18 @@ class Comedor(models.Model):
 
     def __str__(self) -> str:
         return str(self.nombre)
+
+    def get_estado_general_display(self) -> str:
+        """
+        Devuelve el nombre del estado general (actividad) basado en el último historial registrado.
+        """
+        if (
+            self.ultimo_estado
+            and self.ultimo_estado.estado_general_id
+            and self.ultimo_estado.estado_general.estado_actividad
+        ):
+            return self.ultimo_estado.estado_general.estado_actividad.estado
+        return self.ESTADO_GENERAL_DEFAULT
 
     class Meta:
         indexes = [
