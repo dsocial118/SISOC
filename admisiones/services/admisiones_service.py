@@ -798,7 +798,7 @@ class AdmisionService:
                 if archivos.exists() and all(
                     archivo.estado == "Aceptado" for archivo in archivos
                 ):
-
+                    # FIXME:
                     if admision.estado_id != 2:
 
                         admision.estado_id = 2

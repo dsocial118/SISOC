@@ -525,11 +525,15 @@
                                 <div class="form-group row">
                                     <div class="col-4">{{ form.organizacion|as_crispy_field }}</div>
                                     <div class="col-4">{{ form.programa|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.estado_general|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.codigo_de_proyecto|as_crispy_field }}</div>
                                 </div>
                                 <div class="form-group row">
-                                    <div class="col-2">{{ form.codigo_de_proyecto|as_crispy_field }}</div>
-                                    <div class="col-1">{{ form.comienzo|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.estado_general|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.subestado|as_crispy_field }}</div>
+                                    <div class="col-4">{{ form.motivo|as_crispy_field }}</div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-3">{{ form.comienzo|as_crispy_field }}</div>
                                     <div class="col-3">{{ form.provincia|as_crispy_field }}</div>
                                     <div class="col-3">{{ form.municipio|as_crispy_field }}</div>
                                     <div class="col-3">{{ form.localidad|as_crispy_field }}</div>
@@ -809,6 +813,136 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    {{ form.estado_tree|json_script:"estado-general-data" }}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dataElement = document.getElementById("estado-general-data");
+            if (!dataElement) {
+                return;
+            }
+            let estadoTree = {};
+            try {
+                estadoTree = JSON.parse(dataElement.textContent) || {};
+            } catch (error) {
+                console.error("No se pudo interpretar los estados del comedor.", error);
+                return;
+            }
+
+            const estadoSelect = document.getElementById("id_estado_general");
+            const subestadoSelect = document.getElementById("id_subestado");
+            const motivoSelect = document.getElementById("id_motivo");
+
+            if (!estadoSelect || !subestadoSelect || !motivoSelect) {
+                return;
+            }
+
+            const subestadoPlaceholder =
+                subestadoSelect.dataset.placeholder || "Seleccione un subestado";
+            const motivoPlaceholder =
+                motivoSelect.dataset.placeholder || "Seleccione un motivo";
+
+            const initialSelections = {
+                subestado: subestadoSelect.value,
+                motivo: motivoSelect.value,
+            };
+
+            function renderOptions(select, options, placeholderText, preservedValue = "") {
+                const desiredValue = preservedValue ?? select.value;
+                select.innerHTML = "";
+
+                const emptyOption = document.createElement("option");
+                emptyOption.value = "";
+                emptyOption.textContent = placeholderText;
+                select.appendChild(emptyOption);
+
+                options.forEach((option) => {
+                    const opt = document.createElement("option");
+                    opt.value = option.id;
+                    opt.textContent = option.label;
+                    if (desiredValue && String(option.id) === String(desiredValue)) {
+                        opt.selected = true;
+                    }
+                    select.appendChild(opt);
+                });
+
+                if (desiredValue) {
+                    const exists = options.some(
+                        (option) => String(option.id) === String(desiredValue)
+                    );
+                    if (!exists) {
+                        select.value = "";
+                    }
+                }
+            }
+
+            function getProcesos(actividadId) {
+                if (!actividadId) {
+                    return [];
+                }
+                const actividad = estadoTree[String(actividadId)];
+                return actividad ? actividad.procesos : [];
+            }
+
+            function getDetalles(actividadId, procesoId) {
+                if (!actividadId || !procesoId) {
+                    return [];
+                }
+                const procesos = getProcesos(actividadId);
+                const proceso = procesos.find(
+                    (item) => String(item.id) === String(procesoId)
+                );
+                return proceso ? proceso.detalles : [];
+            }
+
+            function setDisabled(select, disabled) {
+                select.disabled = disabled;
+                if (disabled) {
+                    select.setAttribute("disabled", "disabled");
+                } else {
+                    select.removeAttribute("disabled");
+                }
+            }
+
+            function refreshMotivos(preservedMotivo = "") {
+                const actividadId = estadoSelect.value;
+                const procesoId = subestadoSelect.value;
+                const detalles = getDetalles(actividadId, procesoId);
+                renderOptions(motivoSelect, detalles, motivoPlaceholder, preservedMotivo);
+                const disableMotivo = detalles.length === 0;
+                setDisabled(motivoSelect, disableMotivo);
+                if (disableMotivo) {
+                    motivoSelect.value = "";
+                }
+            }
+
+            function refreshSubestados(preservedSubestado = "", preservedMotivo = "") {
+                const actividadId = estadoSelect.value;
+                const procesos = getProcesos(actividadId);
+                renderOptions(
+                    subestadoSelect,
+                    procesos,
+                    subestadoPlaceholder,
+                    preservedSubestado
+                );
+                const disableSubestados = procesos.length === 0;
+                setDisabled(subestadoSelect, disableSubestados);
+                if (disableSubestados) {
+                    subestadoSelect.value = "";
+                }
+                refreshMotivos(preservedMotivo);
+            }
+
+            estadoSelect.addEventListener("change", function () {
+                refreshSubestados("", "");
+            });
+
+            subestadoSelect.addEventListener("change", function () {
+                refreshMotivos("");
+            });
+
+            refreshSubestados(initialSelections.subestado || "", initialSelections.motivo || "");
+        });
+    </script>
     <script>
   var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
   var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";

@@ -327,16 +327,32 @@
                                                 <span class="username">{{ comedor.latitud | default_if_none:"Sin información" }}</span>
                                             </div>
                                         </div>
-                                        <div class="nav-item d-flex col-12">
+                                        <div class="nav-item d-flex col-6">
                                             <div class="comment-text comment-text d-flex flex-column">
                                                 Estado
                                                 <span class="username">{{ comedor.estado }}</span>
                                             </div>
                                         </div>
-                                        <div class="nav-item d-flex col-12">
+                                        <div class="nav-item d-flex col-6">
                                             <div class="comment-text comment-text d-flex flex-column">
                                                 Estado general
-                                                <span class="username">{{ comedor.estado_general }}</span>
+                                                <span class="username">{{ comedor.get_estado_general_display }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text d-flex flex-column">
+                                                Subestado
+                                                <span class="username">
+                                                    {{ comedor.ultimo_estado.estado_general.estado_proceso.estado|default_if_none:"Sin información" }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text d-flex flex-column">
+                                                Motivo
+                                                <span class="username">
+                                                    {{ comedor.ultimo_estado.estado_general.estado_detalle.estado|default_if_none:"Sin información" }}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
