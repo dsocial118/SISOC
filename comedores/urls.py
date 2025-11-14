@@ -47,6 +47,7 @@ urlpatterns = [
                 "Tecnico Comedor",
                 "Abogado Dupla",
                 "Coordinador Equipo Tecnico",
+                "Coordinador general",
             ]
         )(ComedorListView.as_view()),
         name="comedores",
@@ -64,6 +65,7 @@ urlpatterns = [
                 "Tecnico Comedor",
                 "Abogado Dupla",
                 "Coordinador Equipo Tecnico",
+                "Coordinador general",
             ]
         )(ComedorDetailView.as_view()),
         name="comedor_detalle",
@@ -187,7 +189,15 @@ urlpatterns = [
     # esto es prueba de nuevo front para el comedor
     path(
         "comedores_nuevo/<int:pk>",
-        group_required(["Comedores Ver", "Tecnico Comedor", "Abogado Dupla"])(
+        group_required(
+            [
+                "Comedores Ver",
+                "Tecnico Comedor",
+                "Abogado Dupla",
+                "Coordinador Equipo Tecnico",
+                "Coordinador general",
+            ]
+        )(
             ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")
         ),
         name="nuevo_comedor_detalle",
