@@ -333,6 +333,25 @@ class Comedor(models.Model):
     foto_legajo = models.ImageField(upload_to="comedor/", blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
+    ESTADOS_VALIDACION = [
+        ("Pendiente", "Pendiente"),
+        ("Validado", "Validado"),
+        ("No Validado", "No Validado"),
+    ]
+
+    estado_validacion = models.CharField(
+        max_length=20,
+        choices=ESTADOS_VALIDACION,
+        default="Pendiente",
+        verbose_name="Estado de validación",
+    )
+
+    fecha_validado = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de validación",
+    )
+
     def __str__(self) -> str:
         return str(self.nombre)
 
@@ -539,3 +558,44 @@ class TerritorialSyncLog(models.Model):
     def __str__(self):
         status = "Exitoso" if self.exitoso else "Error"
         return f"{self.fecha.strftime('%Y-%m-%d %H:%M')} - {status}"
+
+
+class HistorialValidacion(models.Model):
+    """
+    Historial de validaciones de comedores.
+    """
+
+    comedor = models.ForeignKey(
+        Comedor,
+        on_delete=models.CASCADE,
+        related_name="historial_validaciones",
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    estado_validacion = models.CharField(
+        max_length=20,
+        choices=Comedor.ESTADOS_VALIDACION,
+    )
+    comentario = models.TextField(
+        verbose_name="Comentario",
+    )
+    fecha_validacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de validación",
+    )
+
+    class Meta:
+        ordering = ["-fecha_validacion"]
+        verbose_name = "Historial de validación"
+        verbose_name_plural = "Historiales de validación"
+        indexes = [
+            models.Index(fields=["comedor", "fecha_validacion"]),
+        ]
+
+    def __str__(self):
+        fecha_str = self.fecha_validacion.strftime("%d/%m/%Y")
+        return f"{self.comedor.nombre} - {self.estado_validacion} ({fecha_str})"
