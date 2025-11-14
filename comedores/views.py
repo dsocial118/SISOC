@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.html import escape, format_html
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import (
     CreateView,
@@ -564,11 +565,17 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         for validacion in historial_validaciones:
             # Badge para estado
             if validacion.estado_validacion == "Validado":
-                estado_badge = '<span class="badge bg-success">Validado</span>'
+                estado_badge = format_html(
+                    '<span class="badge bg-success">{}</span>', "Validado"
+                )
             elif validacion.estado_validacion == "No Validado":
-                estado_badge = '<span class="badge bg-danger">No Validado</span>'
+                estado_badge = format_html(
+                    '<span class="badge bg-danger">{}</span>', "No Validado"
+                )
             else:
-                estado_badge = '<span class="badge bg-warning">Pendiente</span>'
+                estado_badge = format_html(
+                    '<span class="badge bg-warning">{}</span>', "Pendiente"
+                )
 
             usuario_nombre = (
                 validacion.usuario.get_full_name() or validacion.usuario.username
@@ -586,7 +593,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                         },
                         {"content": usuario_nombre},
                         {"content": estado_badge},
-                        {"content": validacion.comentario},
+                        {"content": escape(validacion.comentario)},
                     ]
                 }
             )

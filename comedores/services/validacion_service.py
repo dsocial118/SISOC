@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
@@ -33,18 +34,19 @@ class ValidacionService:
         else:
             return False, "Acción no válida."
 
-        # Actualizar comedor
-        comedor.estado_validacion = estado
-        comedor.fecha_validado = timezone.now()
-        comedor.save()
+        with transaction.atomic():
+            # Actualizar comedor
+            comedor.estado_validacion = estado
+            comedor.fecha_validado = timezone.now()
+            comedor.save(update_fields=["estado_validacion", "fecha_validado"])
 
-        # Crear registro en historial
-        HistorialValidacion.objects.create(
-            comedor=comedor,
-            usuario=user,
-            estado_validacion=estado,
-            comentario=comentario,
-        )
+            # Crear registro en historial
+            HistorialValidacion.objects.create(
+                comedor=comedor,
+                usuario=user,
+                estado_validacion=estado,
+                comentario=comentario,
+            )
 
         return True, mensaje
 
