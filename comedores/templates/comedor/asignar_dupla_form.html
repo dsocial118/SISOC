@@ -28,7 +28,7 @@
             <input type="text"
                    id="duplaFilter"
                    class="form-control"
-                   placeholder="Filtrar por nombre de dupla..."
+                   placeholder="Filtrar por nombre de equipo técnico..."
                    onkeyup="filterTable()" />
         </div>
         <form method="post">
@@ -37,6 +37,7 @@
                 <thead>
                     <tr>
                         <th>Nombre</th>
+                        <th>Coordinador</th>
                         <th>Técnicos</th>
                         <th>Abogado</th>
                         <th>Acciones</th>
@@ -47,13 +48,9 @@
                     {% for dupla in duplas %}
                         <tr>
                             <td>{{ dupla.nombre }}</td>
-                            <td>
-                                {% for tecnico in dupla.tecnico.all %}
-                                    {{ tecnico }}
-                                    {% if not forloop.last %},{% endif %}
-                                {% endfor %}
-                            </td>
-                            <td>{{ dupla.abogado }}</td>
+                            <td>{{ dupla.coordinador_nombre }}</td>
+                            <td>{{ dupla.tecnicos_nombres }}</td>
+                            <td>{{ dupla.abogado_nombre }}</td>
                             <td>
                                 <button type="submit"
                                         name="dupla_id"
@@ -67,7 +64,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="5">No hay equipos técnicos activos disponibles.</td>
+                            <td colspan="6">No hay equipos técnicos activos disponibles.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
