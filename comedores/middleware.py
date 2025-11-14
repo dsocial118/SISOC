@@ -1,7 +1,7 @@
 import logging
 
-from django.utils import timezone
 from django.core.cache import cache
+from django.utils import timezone
 
 from comedores.services.validacion_service import ValidacionService
 
@@ -28,17 +28,16 @@ class AutoResetValidacionesMiddleware:
                 primer_dia_mes = hoy.replace(day=1)
                 if hoy >= primer_dia_mes:
                     try:
-                        comedores_actualizados = (
-                            ValidacionService.resetear_validaciones()
-                        )
+                        comedores_actualizados = ValidacionService.resetear_validaciones()
                         logger.info(
-                            f"Auto-reset middleware: {comedores_actualizados} "
-                            f"comedores reseteados (día {hoy.day})"
+                            "Auto-reset middleware: %s comedores reseteados (día %s)",
+                            comedores_actualizados,
+                            hoy.day,
                         )
                         # Marcar como ejecutado este mes
                         cache.set(reset_key, True, 60 * 60 * 24 * 32)
-                    except Exception as e:
-                        logger.error(f"Error en auto-reset middleware: {e}")
+                    except Exception as exc:  # pragma: no cover
+                        logger.error("Error en auto-reset middleware: %s", exc)
 
             # Actualizar último check
             cache.set(cache_key, hoy, 60 * 60 * 24)

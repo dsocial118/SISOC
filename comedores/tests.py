@@ -1,13 +1,18 @@
 from unittest import mock
 
 import pytest
-from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
+from django.contrib.auth import get_user_model
 from django.core.files.storage import FileSystemStorage
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError
+from django.test import RequestFactory, override_settings
+from django.urls import reverse
+from django.utils.html import escape
 
-from comedores.models import Comedor
+from comedores.models import Comedor, HistorialValidacion
 from comedores.services.comedor_service import ComedorService
+from comedores.services.validacion_service import ValidacionService
+from comedores.views import ComedorDetailView
 
 
 # Tests for ComedorDetailView (HTML)
@@ -79,6 +84,65 @@ def test_comedor_detail_view_post_edit_relevamiento(
         reverse("relevamiento_detalle", kwargs={"pk": 2, "comedor_pk": comedor.pk})
         in response.url
     )
+
+
+@pytest.mark.django_db
+def test_validar_comedor_rollback_on_historial_error(monkeypatch):
+    user_model = get_user_model()
+    user = user_model.objects.create_superuser(
+        username="validator",
+        email="validator@example.com",
+        password="strong-password",
+    )
+    comedor = Comedor.objects.create(nombre="Comedor Atomic Test")
+
+    def _raise_integrity_error(*args, **kwargs):
+        raise IntegrityError("boom")
+
+    monkeypatch.setattr(
+        "comedores.services.validacion_service.HistorialValidacion.objects.create",
+        _raise_integrity_error,
+    )
+
+    with pytest.raises(IntegrityError):
+        ValidacionService.validar_comedor(
+            comedor_id=comedor.pk,
+            user=user,
+            accion="validar",
+            comentario="comentario de prueba",
+        )
+
+    comedor.refresh_from_db()
+    assert comedor.estado_validacion == "Pendiente"
+    assert comedor.fecha_validado is None
+
+
+@pytest.mark.django_db
+def test_get_relaciones_optimizadas_escapes_historial_comment():
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="historial-user",
+        email="historial@example.com",
+        password="complex-pass",
+    )
+    comedor = Comedor.objects.create(nombre="Comedor Sanitized")
+    HistorialValidacion.objects.create(
+        comedor=comedor,
+        usuario=user,
+        estado_validacion="Validado",
+        comentario="<script>alert('xss')</script>",
+    )
+
+    view = ComedorDetailView()
+    view.request = RequestFactory().get("/comedores/1/")
+    view.object = comedor
+
+    relaciones = view.get_relaciones_optimizadas()
+    comentario_cell = relaciones["validaciones_items"][0]["cells"][3]["content"]
+    estado_cell = relaciones["validaciones_items"][0]["cells"][2]["content"]
+
+    assert comentario_cell == escape("<script>alert('xss')</script>")
+    assert str(estado_cell) == '<span class="badge bg-success">Validado</span>'
 
 
 @pytest.mark.django_db
