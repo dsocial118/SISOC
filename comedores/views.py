@@ -41,6 +41,7 @@ from comedores.models import (
 )
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
+from comedores.services.validacion_service import ValidacionService
 from duplas.dupla_service import DuplaService
 from relevamientos.service import RelevamientoService
 from ciudadanos.models import EstadoIntervencion
@@ -545,6 +546,51 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             )
         )
 
+        historial_validaciones = list(
+            self.object.historial_validaciones.select_related("usuario").order_by(
+                "-fecha_validacion"
+            )[:10]
+        )
+
+        # Preparar datos para data_table component
+        validaciones_headers = [
+            {"title": "Fecha"},
+            {"title": "Usuario"},
+            {"title": "Estado"},
+            {"title": "Comentario"},
+        ]
+
+        validaciones_items = []
+        for validacion in historial_validaciones:
+            # Badge para estado
+            if validacion.estado_validacion == "Validado":
+                estado_badge = '<span class="badge bg-success">Validado</span>'
+            elif validacion.estado_validacion == "No Validado":
+                estado_badge = '<span class="badge bg-danger">No Validado</span>'
+            else:
+                estado_badge = '<span class="badge bg-warning">Pendiente</span>'
+
+            usuario_nombre = (
+                validacion.usuario.get_full_name() or validacion.usuario.username
+                if validacion.usuario
+                else "Sin información"
+            )
+
+            validaciones_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": validacion.fecha_validacion.strftime(
+                                "%d/%m/%Y %H:%M"
+                            )
+                        },
+                        {"content": usuario_nombre},
+                        {"content": estado_badge},
+                        {"content": validacion.comentario},
+                    ]
+                }
+            )
+
         return {
             "relevamientos": relevamientos,
             "observaciones": observaciones,
@@ -556,6 +602,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "admisiones_headers": admisiones_headers,
             "admisiones_items": admisiones_items,
             "programa_history": programa_history,
+            "historial_validaciones": historial_validaciones,
+            "validaciones_headers": validaciones_headers,
+            "validaciones_items": validaciones_items,
         }
 
     def _get_environment_config(self):
@@ -748,3 +797,21 @@ class ObservacionDeleteView(LoginRequiredMixin, DeleteView):
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
+
+
+@login_required
+@require_POST
+def validar_comedor(request, pk):
+    accion = request.POST.get("accion")
+    comentario = request.POST.get("comentario", "")
+
+    success, mensaje = ValidacionService.validar_comedor(
+        comedor_id=pk, user=request.user, accion=accion, comentario=comentario
+    )
+
+    if success:
+        messages.success(request, mensaje)
+    else:
+        messages.error(request, mensaje)
+
+    return redirect("comedor_detalle", pk=pk)

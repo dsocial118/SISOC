@@ -92,6 +92,7 @@ MIDDLEWARE = [
     "django.contrib.admindocs.middleware.XViewMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
+    "comedores.middleware.AutoResetValidacionesMiddleware",
 ]
 
 # URLs / WSGI
