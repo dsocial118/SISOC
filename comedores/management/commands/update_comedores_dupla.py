@@ -49,6 +49,7 @@ class Command(BaseCommand):
             "errors": 0,
             "skipped_lines": [],
             "error_lines": [],
+            "error_details": [],
         }
 
         for line_number, row in self._iter_rows(csv_path):
@@ -62,7 +63,9 @@ class Command(BaseCommand):
             except ValueError as error:
                 stats["errors"] += 1
                 stats["error_lines"].append(line_number)
-                self.stdout.write(self.style.ERROR(str(error)))
+                error_message = str(error)
+                stats["error_details"].append(error_message)
+                self.stdout.write(self.style.ERROR(error_message))
                 continue
 
             try:
@@ -70,11 +73,11 @@ class Command(BaseCommand):
             except Comedor.DoesNotExist:
                 stats["errors"] += 1
                 stats["error_lines"].append(line_number)
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"Línea {line_number}: el comedor {comedor_id} no existe."
-                    )
+                error_message = (
+                    f"Línea {line_number}: el comedor {comedor_id} no existe."
                 )
+                self.stdout.write(self.style.ERROR(error_message))
+                stats["error_details"].append(error_message)
                 continue
 
             try:
@@ -82,11 +85,9 @@ class Command(BaseCommand):
             except Dupla.DoesNotExist:
                 stats["errors"] += 1
                 stats["error_lines"].append(line_number)
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"Línea {line_number}: la dupla {dupla_id} no existe."
-                    )
-                )
+                error_message = f"Línea {line_number}: la dupla {dupla_id} no existe."
+                self.stdout.write(self.style.ERROR(error_message))
+                stats["error_details"].append(error_message)
                 continue
 
             previous_dupla_id = comedor.dupla_id
@@ -106,9 +107,7 @@ class Command(BaseCommand):
                 continue
 
             stats["updates"] += 1
-            change_message = (
-                f"Comedor {comedor.id} ({comedor.nombre}): {previous_dupla_label} -> {dupla.id}"
-            )
+            change_message = f"Comedor {comedor.id} ({comedor.nombre}): {previous_dupla_label} -> {dupla.id}"
 
             if dry_run:
                 self.stdout.write(f"[DRY-RUN] {change_message}")
@@ -119,9 +118,12 @@ class Command(BaseCommand):
                 comedor.estado = "Asignado a Dupla Técnica"
                 comedor.save(update_fields=["dupla"])
 
-                if Admision.objects.filter(
-                    comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
-                ).exists() == False:
+                if (
+                    Admision.objects.filter(
+                        comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
+                    ).exists()
+                    == False
+                ):
                     Admision.objects.create(
                         comedor=comedor,
                         tipo="incorporacion",
@@ -189,6 +191,9 @@ class Command(BaseCommand):
             self.stdout.write(
                 f"  Líneas con errores: {', '.join(map(str, stats['error_lines']))}"
             )
+            self.stdout.write("  Detalles de errores:")
+            for detail in stats["error_details"]:
+                self.stdout.write(f"    - {detail}")
         if dry_run:
             self.stdout.write("Modo dry-run: no se aplicaron cambios.")
         else:

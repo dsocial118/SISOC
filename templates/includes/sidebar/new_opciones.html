@@ -46,7 +46,7 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" or request.user|has_group:"Coordinador Equipo Tecnico" or request.user|has_group:"Coordinador general" %}
                 <li class="nav-item">
                     <a href="{% url 'comedores' %}"
                        class="nav-link {% if 'comedores_nuevo/' in pagina_actual %}active{% endif %}">
