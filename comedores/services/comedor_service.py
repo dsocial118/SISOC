@@ -155,12 +155,8 @@ class ComedorService:
         if user and not user.is_superuser:
             from users.services import UserPermissionService
 
-            if UserPermissionService.tiene_grupo(
-                user, UserGroups.COORDINADOR_GENERAL
-            ):
-                return COMEDOR_ADVANCED_FILTER.filter_queryset(
-                    base_qs, request_or_get
-                )
+            if UserPermissionService.tiene_grupo(user, UserGroups.COORDINADOR_GENERAL):
+                return COMEDOR_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
             # Verificar si es coordinador usando servicio centralizado
             is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(

@@ -76,9 +76,7 @@ class Command(BaseCommand):
                 error_message = (
                     f"Línea {line_number}: el comedor {comedor_id} no existe."
                 )
-                self.stdout.write(
-                    self.style.ERROR(error_message)
-                )
+                self.stdout.write(self.style.ERROR(error_message))
                 stats["error_details"].append(error_message)
                 continue
 
@@ -88,9 +86,7 @@ class Command(BaseCommand):
                 stats["errors"] += 1
                 stats["error_lines"].append(line_number)
                 error_message = f"Línea {line_number}: la dupla {dupla_id} no existe."
-                self.stdout.write(
-                    self.style.ERROR(error_message)
-                )
+                self.stdout.write(self.style.ERROR(error_message))
                 stats["error_details"].append(error_message)
                 continue
 
@@ -111,9 +107,7 @@ class Command(BaseCommand):
                 continue
 
             stats["updates"] += 1
-            change_message = (
-                f"Comedor {comedor.id} ({comedor.nombre}): {previous_dupla_label} -> {dupla.id}"
-            )
+            change_message = f"Comedor {comedor.id} ({comedor.nombre}): {previous_dupla_label} -> {dupla.id}"
 
             if dry_run:
                 self.stdout.write(f"[DRY-RUN] {change_message}")
@@ -124,9 +118,12 @@ class Command(BaseCommand):
                 comedor.estado = "Asignado a Dupla Técnica"
                 comedor.save(update_fields=["dupla"])
 
-                if Admision.objects.filter(
-                    comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
-                ).exists() == False:
+                if (
+                    Admision.objects.filter(
+                        comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
+                    ).exists()
+                    == False
+                ):
                     Admision.objects.create(
                         comedor=comedor,
                         tipo="incorporacion",

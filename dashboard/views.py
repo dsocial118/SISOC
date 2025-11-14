@@ -35,15 +35,20 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class DataCalleChacoDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class DataCalleChacoDashboardView(
+    LoginRequiredMixin, UserPassesTestMixin, TemplateView
+):
     template_name = "dashboard_datacalle_chaco.html"
     raise_exception = True
 
     def test_func(self):
         user = self.request.user
-        return user.is_superuser or user.groups.filter(
-            name__in=[DATACALLE_CHACO_GROUP, UserGroups.ADMINISTRADOR]
-        ).exists()
+        return (
+            user.is_superuser
+            or user.groups.filter(
+                name__in=[DATACALLE_CHACO_GROUP, UserGroups.ADMINISTRADOR]
+            ).exists()
+        )
 
 
 class DataCalleGeneralDashboardView(
@@ -54,6 +59,9 @@ class DataCalleGeneralDashboardView(
 
     def test_func(self):
         user = self.request.user
-        return user.is_superuser or user.groups.filter(
-            name__in=[DATACALLE_GENERAL_GROUP, UserGroups.ADMINISTRADOR]
-        ).exists()
+        return (
+            user.is_superuser
+            or user.groups.filter(
+                name__in=[DATACALLE_GENERAL_GROUP, UserGroups.ADMINISTRADOR]
+            ).exists()
+        )
