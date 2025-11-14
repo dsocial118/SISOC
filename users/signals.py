@@ -8,7 +8,16 @@ from core.constants import GROUP_INHERITANCE
 
 @receiver(post_save, sender=User)
 def ensure_user_profile(sender, instance, created, **kwargs):
-    """Garantiza que cada usuario tenga exactamente un Profile asociado."""
+    """
+    Garantiza que cada usuario tenga exactamente un Profile asociado.
+    - Cuando se crea el usuario, se genera el Profile correspondiente.
+    - Si se actualiza un usuario existente, recrea el Profile solo si falta
+      (por ejemplo, si se eliminó manualmente).
+    """
+    if created:
+        Profile.objects.create(user=instance)
+        return
+
     Profile.objects.get_or_create(user=instance)
 
 
