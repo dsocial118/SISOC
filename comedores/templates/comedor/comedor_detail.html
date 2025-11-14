@@ -16,37 +16,54 @@
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <link rel="stylesheet"
           href="{% static 'custom/css/galeria-imagenes.css' %}" />
-    <div class="row justify-content-between d-print-none mx-1 mb-3">
-        <div class="col-auto">
+    <div class="d-print-none mb-3">
+        <div class="mb-2">
             <a href="{% url 'comedores' %}"
-               class="btn btn-secondary me-1 backbutton-handler">Volver</a>
+               class="btn btn-secondary backbutton-handler">Volver</a>
         </div>
-        <div class="col-auto">
+        <div class="d-flex justify-content-end flex-wrap gap-1">
+            {% if comedor.estado_validacion == "Pendiente" %}
+                <button type="button"
+                        class="btn btn-sm btn-warning text-white fw-bold"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalValidacion">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Validación Pendiente
+                </button>
+            {% elif comedor.estado_validacion == "Validado" %}
+                <button type="button" class="btn btn-sm btn-success fw-bold" disabled>
+                    <i class="bi bi-check-circle me-1"></i> Validado
+                </button>
+            {% elif comedor.estado_validacion == "No Validado" %}
+                <button type="button" class="btn btn-sm btn-danger fw-bold" disabled>
+                    <i class="bi bi-x-circle me-1"></i> No Validado
+                </button>
+            {% endif %}
             {% if rendicion_cuentas_final_activo == True %}
                 <a href="{% url 'rendicion_cuentas_final' pk=comedor.id %}"
-                   class="btn btn-primary me-1">Rendicion de Cuentas Final</a>
+                   class="btn btn-sm btn-primary">Rendicion de Cuentas Final</a>
             {% endif %}
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
-               class="btn btn-primary me-1">Nomina</a>
+               class="btn btn-sm btn-primary">Nomina</a>
             {% if comedor.estado == "Sin Ingreso" %}
                 <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-                   class="btn btn-primary me-1">Asignar Equipo Técnico</a>
+                   class="btn btn-sm btn-primary">Asignar Equipo Técnico</a>
             {% else %}
                 <button type="button"
-                        class="btn btn-warning text-white me-1 fw-bold"
+                        class="btn btn-sm btn-warning text-white fw-bold"
                         data-bs-toggle="modal"
                         data-bs-target="#modalAdmision">
                     <i class="bi bi-box-arrow-in-right me-1"></i> Comenzar Admisión
                 </button>
                 <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-                   class="btn btn-primary me-1">Modificar Equipo Técnico</a>
+                   class="btn btn-sm btn-primary">Modificar Equipo Técnico</a>
             {% endif %}
             <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
-               class="btn btn-primary me-1">Intervenciones</a>
+               class="btn btn-sm btn-primary">Intervenciones</a>
             <a href="{% url 'comedor_editar' comedor.id %}"
-               class="btn btn-primary me-1">Editar</a>
-            <a href="#" class="btn btn-secondary print me-1 d-none d-sm-inline">Imprimir</a>
-            <a href="{% url 'comedor_eliminar' comedor.id %}" class="btn btn-danger">Eliminar</a>
+               class="btn btn-sm btn-primary">Editar</a>
+            <a href="#" class="btn btn-sm btn-secondary print d-none d-sm-inline">Imprimir</a>
+            <a href="{% url 'comedor_eliminar' comedor.id %}"
+               class="btn btn-sm btn-danger">Eliminar</a>
         </div>
     </div>
     <div class="row text-center mb-3">
@@ -683,6 +700,23 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Historial de validaciones</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% include 'components/data_table.html' with headers=validaciones_headers items=validaciones_items custom_cells=True empty_message='No se han registrado validaciones.' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row relevamiento-container">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
                         <h3 class="card-title font-weight-bold me-3 pt-1">Historial de programas</h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-tool" data-card-widget="collapse">
@@ -911,6 +945,44 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit" class="btn btn-primary" id="seleccionAdmision">Seleccionar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+ 
+        <!-- Modal Validación -->
+        <div class="modal fade"
+             id="modalValidacion"
+             tabindex="-1"
+             aria-labelledby="modalValidacionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="{% url 'validar_comedor' comedor.pk %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalValidacionLabel">Validación del Comedor</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="comentario" class="form-label">Comentario *</label>
+                                <textarea class="form-control"
+                                          id="comentario"
+                                          name="comentario"
+                                          rows="4"
+                                          placeholder="Ingrese un comentario obligatorio..."
+                                          required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" name="accion" value="no_validar" class="btn btn-danger">No Validar</button>
+                            <button type="submit" name="accion" value="validar" class="btn btn-success">Validar</button>
                         </div>
                     </form>
                 </div>
