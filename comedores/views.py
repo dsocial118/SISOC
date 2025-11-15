@@ -343,7 +343,6 @@ class ComedorCreateView(LoginRequiredMixin, CreateView):
         else:
             return self.form_invalid(form)
 
-
 class ComedorDetailView(LoginRequiredMixin, DetailView):
     model = Comedor
     template_name = "comedor/comedor_detail.html"
