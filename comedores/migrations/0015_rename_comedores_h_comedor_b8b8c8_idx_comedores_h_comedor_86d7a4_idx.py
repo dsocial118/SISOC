@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("comedores", "0013_comedor_estado_validacion_comedor_fecha_validado_and_more"),
+        ("comedores", "0014_comedor_estado_validacion_comedor_fecha_validado_and_more"),
     ]
 
     operations = [
