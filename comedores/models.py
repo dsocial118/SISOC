@@ -342,6 +342,7 @@ class Comedor(models.Model):
     estado_validacion = models.CharField(
         max_length=20,
         choices=ESTADOS_VALIDACION,
+        blank=True,
         default="Pendiente",
         verbose_name="Estado de validación",
     )
