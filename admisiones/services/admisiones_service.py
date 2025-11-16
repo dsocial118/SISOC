@@ -233,7 +233,7 @@ class AdmisionService:
 
         queryset = queryset.exclude(
             Q(enviado_acompaniamiento=True) | Q(enviada_a_archivo=True)
-        )
+        ).distinct()
         return queryset.order_by("-creado")
 
     @staticmethod
