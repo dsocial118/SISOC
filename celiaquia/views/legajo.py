@@ -14,7 +14,8 @@ from celiaquia.permissions import can_edit_legajo_files, can_review_legajo
 logger = logging.getLogger("django")
 
 
-# Función _in_group movida a permissions.py para evitar duplicación
+def _in_group(user, group_name):
+    return user.groups.filter(name=group_name).exists()
 
 
 class LegajoArchivoUploadView(View):
@@ -394,6 +395,49 @@ class LegajoSubsanarView(View):
                 "estado": "PENDIENTE_SUBSANACION",
             }
         )
+
+    def get(self, *_a, **_k):
+        return HttpResponseNotAllowed(["POST"])
+
+
+class LegajoEliminarView(View):
+    @method_decorator(csrf_protect)
+    def post(self, request, pk, legajo_id):
+        from django.db import transaction
+        
+        user = request.user
+        is_coord = _in_group(user, "CoordinadorCeliaquia")
+
+        if not (user.is_superuser or is_coord):
+            return JsonResponse(
+                {"success": False, "message": "Solo coordinadores pueden eliminar legajos."},
+                status=403,
+            )
+
+        try:
+            legajo = get_object_or_404(ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk)
+            
+            with transaction.atomic():
+                # Eliminar registros relacionados primero
+                from celiaquia.models import CupoMovimiento, PagoNomina
+                
+                # Eliminar movimientos de cupo relacionados
+                CupoMovimiento.objects.filter(legajo=legajo).delete()
+                
+                # Eliminar registros de pago relacionados
+                PagoNomina.objects.filter(legajo=legajo).delete()
+                
+                # Eliminar el legajo
+                legajo.delete()
+                
+            return JsonResponse({"success": True, "message": "Legajo eliminado correctamente."})
+            
+        except Exception as e:
+            logger.error("Error al eliminar legajo %s: %s", legajo_id, str(e), exc_info=True)
+            return JsonResponse(
+                {"success": False, "message": f"Error: {str(e)}"},
+                status=500,
+            )
 
     def get(self, *_a, **_k):
         return HttpResponseNotAllowed(["POST"])

@@ -963,7 +963,7 @@ class RevisarLegajoView(View):
         )
 
         accion = (request.POST.get("accion") or "").upper()
-        if accion not in ("APROBAR", "RECHAZAR", "SUBSANAR"):
+        if accion not in ("APROBAR", "RECHAZAR", "SUBSANAR", "ELIMINAR"):
             return JsonResponse(
                 {"success": False, "error": "Acción inválida."}, status=400
             )
@@ -1014,6 +1014,39 @@ class RevisarLegajoView(View):
             return JsonResponse(
                 {"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True}
             )
+
+        # ELIMINAR - Solo coordinadores
+        if accion == "ELIMINAR":
+            if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+                return JsonResponse(
+                    {"success": False, "error": "Solo coordinadores pueden eliminar legajos."},
+                    status=403,
+                )
+            
+            try:
+                # Liberar cupo si estaba ocupado
+                if leg.estado_cupo == "DENTRO":
+                    try:
+                        CupoService.liberar_slot(
+                            legajo=leg,
+                            usuario=user,
+                            motivo="Eliminación de legajo del expediente",
+                        )
+                    except Exception as e:
+                        logger.error(
+                            "Error al liberar cupo para legajo %s: %s", leg.pk, e, exc_info=True
+                        )
+                
+                leg.delete()
+                return JsonResponse(
+                    {"success": True, "message": "Legajo eliminado correctamente."}
+                )
+            except Exception as e:
+                logger.error("Error al eliminar legajo %s: %s", leg.pk, e, exc_info=True)
+                return JsonResponse(
+                    {"success": False, "message": f"Error al eliminar el legajo: {str(e)}"},
+                    status=500,
+                )
 
         # SUBSANAR
         motivo = (request.POST.get("motivo") or "").strip()
