@@ -703,82 +703,105 @@ class ImportacionService:
                         doc_resp = payload.get("documento_responsable")
                         if doc_resp:
                             responsable_payload["documento"] = doc_resp
-
-                        # Procesar domicilio del responsable
-                        domicilio_resp = payload.get("domicilio_responsable", "")
-                        if domicilio_resp:
-                            # Intentar extraer calle y altura del domicilio
-                            match = re.match(
-                                r"^(.+?)\s+(\d+)\s*$", domicilio_resp.strip()
-                            )
-                            if match:
-                                responsable_payload["calle"] = match.group(1).strip()
-                                responsable_payload["altura"] = match.group(2)
-                            else:
-                                responsable_payload["calle"] = domicilio_resp
-
-                        # Procesar localidad del responsable
-                        localidad_resp = payload.get("localidad_responsable")
-                        if localidad_resp:
-                            # Buscar localidad por nombre
-                            try:
-                                localidad_obj = Localidad.objects.filter(
-                                    nombre__icontains=localidad_resp,
-                                    municipio__provincia_id=provincia_usuario_id,
-                                ).first()
-                                if localidad_obj:
-                                    responsable_payload["localidad"] = localidad_obj.pk
-                                    responsable_payload["municipio"] = (
-                                        localidad_obj.municipio.pk
-                                    )
-                            except Exception as e:
-                                add_warning(
-                                    offset,
-                                    "localidad_responsable",
-                                    f"No se pudo procesar: {e}",
-                                )
-
-                        # Generar documento ficticio para el responsable si no tiene
-                        if not responsable_payload.get("documento"):
-                            # Usar timestamp + offset para generar un documento único
-                            import time
-
-                            responsable_payload["documento"] = (
-                                f"99{int(time.time())}{offset:04d}"[-11:]
-                            )
-
-                        # Convertir fecha de nacimiento del responsable
-                        if responsable_payload.get("fecha_nacimiento"):
-                            try:
-                                responsable_payload["fecha_nacimiento"] = (
-                                    CiudadanoService._to_date(
-                                        responsable_payload["fecha_nacimiento"]
-                                    )
-                                )
-                            except ValidationError as e:
-                                add_warning(
-                                    offset,
-                                    "fecha_nacimiento_responsable",
-                                    f"Fecha inválida: {responsable_payload.get('fecha_nacimiento')} - {str(e)}",
-                                )
-                                responsable_payload.pop("fecha_nacimiento", None)
-
-                        # Crear ciudadano responsable
-                        ciudadano_responsable = (
-                            CiudadanoService.get_or_create_ciudadano(
-                                datos=responsable_payload,
-                                usuario=usuario,
-                                expediente=expediente,
-                                programa_id=3,
-                            )
+                        
+                        # Verificar si el responsable es la misma persona que el beneficiario
+                        es_mismo_documento = (
+                            doc_resp and str(doc_resp).strip() == str(payload.get("documento", "")).strip()
                         )
+                        
+                        if es_mismo_documento:
+                            # Es la misma persona - solo crear la relación familiar pero no duplicar el legajo
+                            cid_resp = cid  # Usar el mismo ciudadano
+                            add_warning(offset, "responsable", "Responsable es el mismo beneficiario - no se duplica legajo")
+                        else:
+                            # Procesar domicilio del responsable
+                            domicilio_resp = payload.get("domicilio_responsable", "")
+                            if domicilio_resp:
+                                # Intentar extraer calle y altura del domicilio
+                                match = re.match(
+                                    r"^(.+?)\s+(\d+)\s*$", domicilio_resp.strip()
+                                )
+                                if match:
+                                    responsable_payload["calle"] = match.group(1).strip()
+                                    responsable_payload["altura"] = match.group(2)
+                                else:
+                                    responsable_payload["calle"] = domicilio_resp
 
-                        if ciudadano_responsable and ciudadano_responsable.pk:
-                            cid_resp = ciudadano_responsable.pk
+                            # Procesar localidad del responsable
+                            localidad_resp = payload.get("localidad_responsable")
+                            if localidad_resp:
+                                # Buscar localidad por nombre
+                                try:
+                                    localidad_obj = Localidad.objects.filter(
+                                        nombre__icontains=localidad_resp,
+                                        municipio__provincia_id=provincia_usuario_id,
+                                    ).first()
+                                    if localidad_obj:
+                                        responsable_payload["localidad"] = localidad_obj.pk
+                                        responsable_payload["municipio"] = (
+                                            localidad_obj.municipio.pk
+                                        )
+                                except Exception as e:
+                                    add_warning(
+                                        offset,
+                                        "localidad_responsable",
+                                        f"No se pudo procesar: {e}",
+                                    )
 
-                            # Guardar relacion familiar aun si el legajo ya existe
+                            # Generar documento ficticio para el responsable si no tiene
+                            if not responsable_payload.get("documento"):
+                                # Usar timestamp + offset para generar un documento único
+                                import time
+
+                                responsable_payload["documento"] = (
+                                    f"99{int(time.time())}{offset:04d}"[-11:]
+                                )
+
+                            # Convertir fecha de nacimiento del responsable
+                            if responsable_payload.get("fecha_nacimiento"):
+                                try:
+                                    responsable_payload["fecha_nacimiento"] = (
+                                        CiudadanoService._to_date(
+                                            responsable_payload["fecha_nacimiento"]
+                                        )
+                                    )
+                                except ValidationError as e:
+                                    add_warning(
+                                        offset,
+                                        "fecha_nacimiento_responsable",
+                                        f"Fecha inválida: {responsable_payload.get('fecha_nacimiento')} - {str(e)}",
+                                    )
+                                    responsable_payload.pop("fecha_nacimiento", None)
+
+                            # Crear ciudadano responsable
+                            ciudadano_responsable = (
+                                CiudadanoService.get_or_create_ciudadano(
+                                    datos=responsable_payload,
+                                    usuario=usuario,
+                                    expediente=expediente,
+                                    programa_id=3,
+                                )
+                            )
+
+                            if ciudadano_responsable and ciudadano_responsable.pk:
+                                cid_resp = ciudadano_responsable.pk
+
+                                # Responsables pueden estar en múltiples expedientes, solo validar si ya está en ESTE expediente
+                                if cid_resp not in existentes_ids:
+                                    legajos_crear.append(
+                                        ExpedienteCiudadano(
+                                            expediente=expediente,
+                                            ciudadano=ciudadano_responsable,
+                                            estado_id=estado_id,
+                                        )
+                                    )
+                                    existentes_ids.add(cid_resp)
+                                    validos += 1
+                        
+                        # Guardar relacion familiar (tanto si es la misma persona como si no)
+                        if 'cid_resp' in locals():
                             pair = (cid_resp, cid)
-                            if pair not in relaciones_familiares_pairs:
+                            if pair not in relaciones_familiares_pairs and cid_resp != cid:
                                 relaciones_familiares_pairs.add(pair)
                                 relaciones_familiares.append(
                                     {
@@ -787,18 +810,6 @@ class ImportacionService:
                                         "fila": offset,
                                     }
                                 )
-
-                            # Responsables pueden estar en múltiples expedientes, solo validar si ya está en ESTE expediente
-                            if cid_resp not in existentes_ids:
-                                legajos_crear.append(
-                                    ExpedienteCiudadano(
-                                        expediente=expediente,
-                                        ciudadano=ciudadano_responsable,
-                                        estado_id=estado_id,
-                                    )
-                                )
-                                existentes_ids.add(cid_resp)
-                                validos += 1
 
                     except Exception as e:
                         add_warning(

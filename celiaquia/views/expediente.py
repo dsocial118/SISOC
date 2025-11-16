@@ -467,7 +467,23 @@ class ExpedienteDetailView(DetailView):
             legajo.es_responsable = LegajoService._es_responsable(
                 legajo.ciudadano, responsables_ids
             )
-            legajo.tipo_legajo = "Responsable" if legajo.es_responsable else "Hijo"
+            hijos_list = []
+            if legajo.es_responsable:
+                hijos_list = FamiliaService.obtener_hijos_a_cargo(
+                    legajo.ciudadano.id, expediente
+                )
+
+            # Determinar tipo de legajo segun los roles:
+            # - Responsable y Beneficiario: tiene hijos a cargo en el expediente.
+            # - Responsable: es responsable pero sin hijos a cargo en este expediente.
+            # - Beneficiario: no es responsable.
+            if legajo.es_responsable and hijos_list:
+                legajo.tipo_legajo = "Responsable y Beneficiario"
+            elif legajo.es_responsable:
+                legajo.tipo_legajo = "Responsable"
+            else:
+                legajo.tipo_legajo = "Beneficiario"
+
             legajo.archivos_requeridos = (
                 LegajoService.get_archivos_requeridos_por_legajo(
                     legajo, responsables_ids
@@ -475,9 +491,7 @@ class ExpedienteDetailView(DetailView):
             )
 
             if legajo.es_responsable:
-                legajo.hijos_a_cargo = FamiliaService.obtener_hijos_a_cargo(
-                    legajo.ciudadano.id, expediente
-                )
+                legajo.hijos_a_cargo = hijos_list
                 legajo.responsable_id = None
                 responsables_legajos.append(legajo)
             else:
