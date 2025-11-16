@@ -275,20 +275,26 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-3">Legajos</h5>
             <div class="d-flex align-items-center gap-3">
-                <!-- Selector de paginación removido - ahora muestra todos los registros -->
+                <input type="text" 
+                       id="search-legajos" 
+                       class="form-control" 
+                       placeholder="Buscar por ID, nombre, apellido o DNI..." 
+                       style="width: 300px;">
             </div>
         </div>
 
         {% if legajos %}
+            <div class="mb-3"></div>
 
             <div class="table-responsive">
                 <table class="table table-hover" style="color: #e0e0e0;">
                     <thead style="background: #13212f;">
                         <tr>
-                            <th width="25%">Beneficiario</th>
+                            <th width="8%">ID</th>
+                            <th width="22%">Beneficiario</th>
                             <th width="15%">Estado</th>
                             <th width="15%">Archivos</th>
-                            <th width="30%">Observaciones</th>
+                            <th width="25%">Observaciones</th>
                             <th width="15%">Acciones</th>
                         </tr>
                     </thead>
@@ -296,7 +302,11 @@
                         {% for leg in legajos %}
                             <tr class="legajo-row"
                                 {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}style="border-left: 4px solid #dc3545;"{% elif leg.revision_tecnico == 'APROBADO' %}style="border-left: 4px solid #28a745;"{% endif %}
-                                data-estado="{{ leg.revision_tecnico|default:'PENDIENTE' }}">
+                                data-estado="{{ leg.revision_tecnico|default:'PENDIENTE' }}"
+                                data-search="{{ leg.pk }} {{ leg.ciudadano.nombre|lower }} {{ leg.ciudadano.apellido|lower }} {{ leg.ciudadano.documento|default:'' }}">
+                                <td>
+                                    <span class="text-muted">#{{ leg.pk }}</span>
+                                </td>
                                 <td>
                                     <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 2rem;"{% endif %}>
                                         <div class="fw-semibold">
@@ -351,10 +361,18 @@
                                             data-bs-target="#detalle-{{ leg.pk }}-{{ forloop.counter }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
+                                    {% if is_coord %}
+                                        <button class="btn btn-outline-danger btn-sm ms-1 btn-eliminar-legajo"
+                                                data-legajo-id="{{ leg.pk }}"
+                                                data-expediente-id="{{ expediente.pk }}"
+                                                title="Eliminar legajo">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    {% endif %}
                                 </td>
                             </tr>
                             <tr class="collapse" id="detalle-{{ leg.pk }}-{{ forloop.counter }}">
-                                <td colspan="5" class="p-0">
+                                <td colspan="6" class="p-0">
                                     <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
                                         <div class="card-body">
                                             <div class="row gy-3 gx-3">

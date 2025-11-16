@@ -1543,3 +1543,118 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   }, 100);
+
+  /* ===== BUSCADOR DE LEGAJOS ===== */
+  const searchInput = document.getElementById('search-legajos');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase().trim();
+      const rows = document.querySelectorAll('.legajo-row');
+      
+      rows.forEach(function(row) {
+        const searchData = row.getAttribute('data-search') || '';
+        const isVisible = searchData.includes(searchTerm);
+        
+        // Mostrar/ocultar fila principal
+        row.style.display = isVisible ? '' : 'none';
+        
+        // También ocultar la fila de detalle expandible si existe
+        const nextRow = row.nextElementSibling;
+        if (nextRow && nextRow.classList.contains('collapse')) {
+          nextRow.style.display = isVisible ? '' : 'none';
+        }
+      });
+    });
+  }
+
+  /* ===== ELIMINAR LEGAJO ===== */
+  const botonesEliminar = document.querySelectorAll('.btn-eliminar-legajo');
+  botonesEliminar.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const legajoId = btn.getAttribute('data-legajo-id');
+      
+      if (!legajoId) {
+        showAlert('danger', 'Error: No se pudo identificar el legajo.');
+        return;
+      }
+
+      if (!confirm('¿Estás seguro de que querés eliminar este legajo? Esta acción no se puede deshacer.')) {
+        return;
+      }
+
+      if (!window.REVISAR_URL_TEMPLATE) {
+        showAlert('danger', 'No se configuró la URL de revisión de legajos.');
+        return;
+      }
+
+      const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+      try {
+        const fd = new FormData();
+        fd.append('accion', 'ELIMINAR');
+        
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || data.message || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        showAlert('success', data.message || 'Legajo eliminado correctamente.');
+        setTimeout(() => window.location.reload(), 800);
+
+      } catch (err) {
+        console.error('Error eliminar legajo:', err);
+        showAlert('danger', 'Error al eliminar legajo: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  });
+
+// Buscador de legajos
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-legajos');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.legajo-row');
+            
+            rows.forEach(function(row) {
+                const searchData = row.getAttribute('data-search') || '';
+                const isVisible = searchData.includes(searchTerm);
+                
+                // Mostrar/ocultar fila principal
+                row.style.display = isVisible ? '' : 'none';
+                
+                // También ocultar la fila de detalle expandible si existe
+                const nextRow = row.nextElementSibling;
+                if (nextRow && nextRow.classList.contains('collapse')) {
+                    nextRow.style.display = isVisible ? '' : 'none';
+                }
+            });
+        });
+    }
+});

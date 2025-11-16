@@ -35,6 +35,7 @@ from celiaquia.views.confirm_envio import ExpedienteConfirmView
 from celiaquia.views.legajo import (
     LegajoArchivoUploadView,
     LegajoSubsanarView,
+    LegajoEliminarView,
 )
 from celiaquia.views.validacion_renaper import ValidacionRenaperView
 from celiaquia.views.respuesta_subsanacion_renaper import (
@@ -237,5 +238,10 @@ urlpatterns = [
         "expedientes/<int:pk>/registros-erroneos/<int:registro_id>/eliminar/",
         group_required(["ProvinciaCeliaquia"])(EliminarRegistroErroneoView.as_view()),
         name="registro_erroneo_eliminar",
+    ),
+    path(
+        "expedientes/<int:pk>/legajos/<int:legajo_id>/eliminar/",
+        group_required(["CoordinadorCeliaquia"])(LegajoEliminarView.as_view()),
+        name="legajo_eliminar",
     ),
 ]
