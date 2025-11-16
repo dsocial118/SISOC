@@ -310,17 +310,12 @@ class ComedorForm(forms.ModelForm):
                 "El subestado seleccionado no pertenece al estado general elegido.",
             )
 
-        detalle_qs = EstadoDetalle.objects.filter(estado_proceso=estado_proceso)
-        tiene_detalles = detalle_qs.exists()
-
         if estado_detalle:
             if estado_detalle.estado_proceso_id != estado_proceso.id:
                 self.add_error(
                     "motivo",
                     "El motivo seleccionado no pertenece al subestado elegido.",
                 )
-        elif tiene_detalles:
-            self.add_error("motivo", "Seleccione un motivo.")
 
         return cleaned_data
 

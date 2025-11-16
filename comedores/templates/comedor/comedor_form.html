@@ -853,6 +853,9 @@
                 const emptyOption = document.createElement("option");
                 emptyOption.value = "";
                 emptyOption.textContent = placeholderText;
+                if (!desiredValue) {
+                    emptyOption.selected = true;
+                }
                 select.appendChild(emptyOption);
 
                 options.forEach((option) => {
@@ -872,6 +875,8 @@
                     if (!exists) {
                         select.value = "";
                     }
+                } else {
+                    select.value = "";
                 }
             }
 
