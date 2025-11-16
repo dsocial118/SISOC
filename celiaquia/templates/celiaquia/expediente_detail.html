@@ -320,12 +320,16 @@
                                         </div>
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
                                         {% if leg.es_responsable %}
-                                            <small class="badge bg-info mt-1">Responsable</small>
+                                            <small class="badge bg-info mt-1">
+                                                {{ leg.tipo_legajo|default:"Responsable" }}
+                                            </small>
                                             {% if leg.hijos_a_cargo %}
                                                 <small class="text-muted d-block mt-1">Tiene {{ leg.hijos_a_cargo|length }} hijo{{ leg.hijos_a_cargo|length|pluralize }} a cargo</small>
                                             {% endif %}
                                         {% else %}
-                                            <small class="badge bg-success mt-1">Beneficiario</small>
+                                            <small class="badge bg-success mt-1">
+                                                {{ leg.tipo_legajo|default:"Beneficiario" }}
+                                            </small>
                                         {% endif %}
                                     </div>
                                 </td>
