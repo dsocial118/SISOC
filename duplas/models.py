@@ -6,22 +6,9 @@ from django.db.models import Count
 class DuplaManager(models.Manager):
     """Manager personalizado para el modelo Dupla."""
 
-    def activas_con_comedores(self):
-        """
-        Retorna duplas activas que tienen al menos un comedor asignado.
-
-        Esta query se usa comúnmente en forms de asignación de coordinadores
-        para evitar mostrar duplas sin comedores.
-
-        Returns:
-            QuerySet de Duplas activas con comedores, ordenadas por nombre
-        """
-        return (
-            self.filter(estado="Activo")
-            .annotate(comedores_count=Count("comedor"))
-            .filter(comedores_count__gt=0)
-            .order_by("nombre")
-        )
+    def activas(self):
+        """Retorna todas las duplas activas, tengan o no comedores asignados."""
+        return self.filter(estado="Activo").order_by("nombre")
 
 
 class Dupla(models.Model):
