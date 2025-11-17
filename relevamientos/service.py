@@ -50,7 +50,10 @@ from relevamientos.models import (
     TipoRecurso,
     TipoTecnologia,
 )
-from relevamientos.tasks import AsyncSendRelevamientoToGestionar
+from relevamientos.tasks import (
+    AsyncSendRelevamientoToGestionar,
+    build_relevamiento_payload,
+)
 
 logger = logging.getLogger("django")
 
@@ -178,7 +181,8 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
             relevamiento.save()
 
-            AsyncSendRelevamientoToGestionar(relevamiento.id).start()
+            payload = build_relevamiento_payload(relevamiento)
+            AsyncSendRelevamientoToGestionar(relevamiento.id, payload).start()
 
             return relevamiento
         except Relevamiento.DoesNotExist:
