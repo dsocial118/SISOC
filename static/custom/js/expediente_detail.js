@@ -1567,6 +1567,125 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* ===== EDITAR LEGAJO ===== */
+  const modalEditarLegajo = document.getElementById('modalEditarLegajo');
+  if (modalEditarLegajo) {
+    modalEditarLegajo.addEventListener('show.bs.modal', async function(event) {
+      const button = event.relatedTarget;
+      const legajoId = button.getAttribute('data-legajo-id');
+      const expedienteId = button.getAttribute('data-expediente-id');
+      
+      if (!legajoId || !expedienteId) {
+        console.error('Faltan datos del legajo');
+        return;
+      }
+      
+      try {
+        // Cargar datos actuales del legajo
+        const editarUrl = document.querySelector('meta[name="editar-legajo-url-template"]')?.getAttribute('content')?.replace('0', legajoId);
+        if (!editarUrl) {
+          showAlert('danger', 'URL de edición no configurada.');
+          return;
+        }
+        
+        const response = await fetch(editarUrl, {
+          method: 'GET',
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          const legajo = data.legajo;
+          
+          // Llenar el formulario con los datos actuales
+          document.getElementById('editar-apellido').value = legajo.apellido;
+          document.getElementById('editar-nombre').value = legajo.nombre;
+          document.getElementById('editar-documento').value = legajo.documento;
+          document.getElementById('editar-fecha-nacimiento').value = legajo.fecha_nacimiento;
+          document.getElementById('editar-sexo').value = legajo.sexo;
+          document.getElementById('editar-nacionalidad').value = legajo.nacionalidad;
+          document.getElementById('editar-telefono').value = legajo.telefono;
+          document.getElementById('editar-email').value = legajo.email;
+          document.getElementById('editar-calle').value = legajo.calle;
+          document.getElementById('editar-altura').value = legajo.altura;
+          document.getElementById('editar-codigo-postal').value = legajo.codigo_postal;
+          
+          // Configurar la acción del formulario
+          const form = document.getElementById('form-editar-legajo');
+          form.setAttribute('action', editarUrl);
+        } else {
+          showAlert('danger', 'Error al cargar los datos: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error cargando datos del legajo:', error);
+        showAlert('danger', 'Error al cargar los datos del legajo.');
+      }
+    });
+    
+    // Manejar envío del formulario
+    const formEditarLegajo = document.getElementById('form-editar-legajo');
+    if (formEditarLegajo) {
+      formEditarLegajo.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        const alertasDiv = document.getElementById('modal-alertas-editar');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando...';
+        alertasDiv.innerHTML = '';
+        
+        try {
+          const formData = new FormData(this);
+          const response = await fetch(this.getAttribute('action'), {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+              'X-CSRFToken': getCsrfToken(),
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json'
+            }
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            showAlert('success', data.message);
+            const modal = bootstrap.Modal.getInstance(modalEditarLegajo);
+            modal.hide();
+            setTimeout(() => window.location.reload(), 1000);
+          } else {
+            alertasDiv.innerHTML = `
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                ${data.error}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            `;
+          }
+        } catch (error) {
+          console.error('Error guardando cambios:', error);
+          alertasDiv.innerHTML = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              Error al guardar los cambios.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        }
+      });
+    }
+  }
+
   /* ===== ELIMINAR LEGAJO ===== */
   const botonesEliminar = document.querySelectorAll('.btn-eliminar-legajo');
   botonesEliminar.forEach(btn => {

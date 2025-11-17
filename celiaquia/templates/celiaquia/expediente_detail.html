@@ -365,6 +365,16 @@
                                             data-bs-target="#detalle-{{ leg.pk }}-{{ forloop.counter }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
+                                    {% if is_tec or is_coord or (is_prov and expediente.estado.nombre in 'CREADO,PROCESADO,EN_ESPERA') %}
+                                        <button class="btn btn-outline-primary btn-sm ms-1"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalEditarLegajo"
+                                                data-legajo-id="{{ leg.pk }}"
+                                                data-expediente-id="{{ expediente.pk }}"
+                                                title="Editar datos del legajo">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    {% endif %}
                                     {% if is_coord %}
                                         <button class="btn btn-outline-danger btn-sm ms-1 btn-eliminar-legajo"
                                                 data-legajo-id="{{ leg.pk }}"
@@ -1518,6 +1528,126 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Editar Legajo -->
+<div class="modal fade"
+     id="modalEditarLegajo"
+     tabindex="-1"
+     aria-labelledby="modalEditarLegajoLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="form-editar-legajo" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarLegajoLabel">
+                        <i class="fas fa-edit"></i> Editar Datos del Legajo
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="modal-alertas-editar" class="mb-3"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="editar-apellido" class="form-label">Apellido *</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-apellido"
+                                   name="apellido"
+                                   required />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-nombre" class="form-label">Nombre *</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-nombre"
+                                   name="nombre"
+                                   required />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-documento" class="form-label">Documento *</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-documento"
+                                   name="documento"
+                                   required />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-fecha-nacimiento" class="form-label">Fecha de Nacimiento *</label>
+                            <input type="date"
+                                   class="form-control"
+                                   id="editar-fecha-nacimiento"
+                                   name="fecha_nacimiento"
+                                   required />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-sexo" class="form-label">Sexo</label>
+                            <select class="form-select" id="editar-sexo" name="sexo">
+                                <option value="">Seleccionar...</option>
+                                {% for sexo in sexos %}
+                                    <option value="{{ sexo.id }}">{{ sexo.sexo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-nacionalidad" class="form-label">Nacionalidad</label>
+                            <select class="form-select" id="editar-nacionalidad" name="nacionalidad">
+                                <option value="">Seleccionar...</option>
+                                {% for nac in nacionalidades %}
+                                    <option value="{{ nac.id }}">{{ nac.nacionalidad }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-telefono" class="form-label">Teléfono</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-telefono"
+                                   name="telefono" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-email" class="form-label">Email</label>
+                            <input type="email"
+                                   class="form-control"
+                                   id="editar-email"
+                                   name="email" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editar-calle" class="form-label">Calle</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-calle"
+                                   name="calle" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editar-altura" class="form-label">Altura</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-altura"
+                                   name="altura" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editar-codigo-postal" class="form-label">Código Postal</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-codigo-postal"
+                                   name="codigo_postal" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endwith %}
 {% endblock %}
 {% block customCSS %}
@@ -1548,6 +1678,8 @@
           content="{% url 'registro_erroneo_actualizar' expediente.pk 0 %}" />
     <meta name="eliminar-error-url-template"
           content="{% url 'registro_erroneo_eliminar' expediente.pk 0 %}" />
+    <meta name="editar-legajo-url-template"
+          content="{% url 'legajo_editar' expediente.pk 0 %}" />
     <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
