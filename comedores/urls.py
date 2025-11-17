@@ -16,6 +16,7 @@ from comedores.views import (
     AsignarDuplaListView,
     relevamiento_crear_editar_ajax,
     nomina_editar_ajax,
+    validar_comedor,
 )
 
 from comedores.views_territorial import (
@@ -214,5 +215,10 @@ urlpatterns = [
         "comedores/territoriales/estadisticas/",
         estadisticas_cache_territoriales,
         name="api_estadisticas_territoriales",
+    ),
+    path(
+        "comedores/<int:pk>/validar/",
+        group_required(["Tecnico Comedor", "Abogado Dupla"])(validar_comedor),
+        name="validar_comedor",
     ),
 ]
