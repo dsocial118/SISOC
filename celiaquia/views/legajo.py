@@ -466,7 +466,7 @@ class LegajoEliminarView(View):
             return JsonResponse(
                 {
                     "success": False,
-                    "message": "Ocurrió un error interno. Por favor intente nuevamente o contacte al administrador."
+                    "message": "Ocurrió un error interno. Por favor intente nuevamente o contacte al administrador.",
                 },
                 status=500,
             )
