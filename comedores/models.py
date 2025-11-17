@@ -374,6 +374,7 @@ class Comedor(models.Model):
         """
         db_alias = using or self._state.db or "default"
         with transaction.atomic(using=db_alias):
+            # pylint: disable=access-member-before-definition
             ultimo_estado_id = getattr(self, "ultimo_estado_id", None)
             if ultimo_estado_id:
                 type(self).objects.using(db_alias).filter(pk=self.pk).update(
