@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 
 from core.models import Municipio, Provincia
@@ -367,6 +367,20 @@ class Comedor(models.Model):
         ):
             return self.ultimo_estado.estado_general.estado_actividad.estado
         return self.ESTADO_GENERAL_DEFAULT
+
+    def delete(self, using=None, keep_parents=False):
+        """
+        Elimina el comedor junto con su historial de estados evitando errores de llaves protegidas.
+        """
+        db_alias = using or self._state.db or "default"
+        with transaction.atomic(using=db_alias):
+            if self.ultimo_estado_id:
+                type(self).objects.using(db_alias).filter(pk=self.pk).update(
+                    ultimo_estado=None
+                )
+                self.ultimo_estado_id = None
+            EstadoHistorial.objects.using(db_alias).filter(comedor_id=self.pk).delete()
+            return super().delete(using=db_alias, keep_parents=keep_parents)
 
     class Meta:
         indexes = [
