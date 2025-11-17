@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.html import escape, format_html
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import (
     CreateView,
@@ -41,6 +42,7 @@ from comedores.models import (
 )
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
+from comedores.services.validacion_service import ValidacionService
 from duplas.dupla_service import DuplaService
 from relevamientos.service import RelevamientoService
 from ciudadanos.models import EstadoIntervencion
@@ -307,6 +309,11 @@ class ComedorCreateView(LoginRequiredMixin, CreateView):
     form_class = ComedorForm
     template_name = "comedor/comedor_form.html"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
     def get_success_url(self):
         return reverse("comedor_detalle", kwargs={"pk": self.object.pk})
 
@@ -426,7 +433,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
         return ComedorService.post_comedor_relevamiento(request, self.object)
 
-    def get_relaciones_optimizadas(self):
+    def get_relaciones_optimizadas(self):  # pylint: disable=too-many-locals
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
         relevamientos = (
             self.object.relevamientos_optimized[:1]
@@ -545,6 +552,57 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             )
         )
 
+        historial_validaciones = list(
+            self.object.historial_validaciones.select_related("usuario").order_by(
+                "-fecha_validacion"
+            )[:10]
+        )
+
+        # Preparar datos para data_table component
+        validaciones_headers = [
+            {"title": "Fecha"},
+            {"title": "Usuario"},
+            {"title": "Estado"},
+            {"title": "Comentario"},
+        ]
+
+        validaciones_items = []
+        for validacion in historial_validaciones:
+            # Badge para estado
+            if validacion.estado_validacion == "Validado":
+                estado_badge = format_html(
+                    '<span class="badge bg-success">{}</span>', "Validado"
+                )
+            elif validacion.estado_validacion == "No Validado":
+                estado_badge = format_html(
+                    '<span class="badge bg-danger">{}</span>', "No Validado"
+                )
+            else:
+                estado_badge = format_html(
+                    '<span class="badge bg-warning">{}</span>', "Pendiente"
+                )
+
+            usuario_nombre = (
+                validacion.usuario.get_full_name() or validacion.usuario.username
+                if validacion.usuario
+                else "Sin información"
+            )
+
+            validaciones_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": validacion.fecha_validacion.strftime(
+                                "%d/%m/%Y %H:%M"
+                            )
+                        },
+                        {"content": usuario_nombre},
+                        {"content": estado_badge},
+                        {"content": escape(validacion.comentario)},
+                    ]
+                }
+            )
+
         return {
             "relevamientos": relevamientos,
             "observaciones": observaciones,
@@ -556,6 +614,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "admisiones_headers": admisiones_headers,
             "admisiones_items": admisiones_items,
             "programa_history": programa_history,
+            "historial_validaciones": historial_validaciones,
+            "validaciones_headers": validaciones_headers,
+            "validaciones_items": validaciones_items,
         }
 
     def _get_environment_config(self):
@@ -607,6 +668,11 @@ class ComedorUpdateView(LoginRequiredMixin, UpdateView):
     model = Comedor
     form_class = ComedorForm
     template_name = "comedor/comedor_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
 
     def get_success_url(self):
         return reverse("comedor_detalle", kwargs={"pk": self.object.pk})
@@ -748,3 +814,21 @@ class ObservacionDeleteView(LoginRequiredMixin, DeleteView):
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
+
+
+@login_required
+@require_POST
+def validar_comedor(request, pk):
+    accion = request.POST.get("accion")
+    comentario = request.POST.get("comentario", "")
+
+    success, mensaje = ValidacionService.validar_comedor(
+        comedor_id=pk, user=request.user, accion=accion, comentario=comentario
+    )
+
+    if success:
+        messages.success(request, mensaje)
+    else:
+        messages.error(request, mensaje)
+
+    return redirect("comedor_detalle", pk=pk)

@@ -11,7 +11,7 @@ FIELD_MAP: Dict[str, str] = {
     # Texto simples
     "nombre": "nombre",
     "estado": "estado",
-    "estado_general": "estado_general",
+    "estado_general": "ultimo_estado__estado_general__estado_actividad__estado",
     "calle": "calle",
     "piso": "piso",
     "departamento": "departamento",
