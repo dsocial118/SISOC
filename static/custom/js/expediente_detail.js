@@ -1589,11 +1589,13 @@ document.addEventListener('DOMContentLoaded', () => {
       
       try {
         // Cargar datos actuales del legajo
-        const editarUrl = editarLegajoUrlTemplate?.replace('{id}', legajoId);
-        if (!editarUrl) {
+        const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
+        const editarLegajoUrlTemplate = editarLegajoMeta?.getAttribute('content')?.replace('/0/', '/{id}/');
+        if (!editarLegajoUrlTemplate) {
           showAlert('danger', 'URL de edición no configurada.');
           return;
         }
+        const editarUrl = editarLegajoUrlTemplate.replace('{id}', legajoId);
         
         const response = await fetch(editarUrl, {
           method: 'GET',
