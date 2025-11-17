@@ -5,13 +5,15 @@ from relevamientos.models import Relevamiento
 from relevamientos.tasks import (
     AsyncSendRelevamientoToGestionar,
     AsyncRemoveRelevamientoToGestionar,
+    build_relevamiento_payload,
 )
 
 
 @receiver(post_save, sender=Relevamiento)
 def send_relevamiento_to_gestionar(sender, instance, created, **kwargs):
     if created:
-        AsyncSendRelevamientoToGestionar(instance.id).start()
+        payload = build_relevamiento_payload(instance)
+        AsyncSendRelevamientoToGestionar(instance.id, payload).start()
 
 
 @receiver(post_save, sender=Relevamiento)
