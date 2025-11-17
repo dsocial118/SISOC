@@ -321,7 +321,7 @@
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
                                         {% if leg.es_responsable %}
                                             <small class="badge bg-info mt-1">{{ leg.tipo_legajo|default:"Responsable" }}</small>
-                                            {% if leg.hijos_a_cargo %}
+                                            {% if leg.hijos_a_cargo and leg.hijos_a_cargo|length > 0 %}
                                                 <small class="text-muted d-block mt-1">Tiene {{ leg.hijos_a_cargo|length }} hijo{{ leg.hijos_a_cargo|length|pluralize }} a cargo</small>
                                             {% endif %}
                                         {% else %}

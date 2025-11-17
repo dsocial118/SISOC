@@ -448,12 +448,18 @@ class ImportacionService:
             
             # Validar longitud según tipo
             if campo_nombre == "documento":
-                if len(doc_str) < 7 or len(doc_str) > 8:
-                    raise ValidationError(f"{campo_nombre} debe tener el formato correcto")
-                # Validar rango para DNI
-                doc_int = int(doc_str)
-                if doc_int < 1000000 or doc_int > 99999999:
-                    raise ValidationError(f"{campo_nombre} {doc_str} fuera del rango válido para DNI")
+                # Aceptar tanto DNI (7-8) como CUIT (11)
+                if len(doc_str) == 11:
+                    # Es CUIT, validar formato
+                    if not (doc_str.startswith('20') or doc_str.startswith('23') or doc_str.startswith('27')):
+                        raise ValidationError(f"{campo_nombre} CUIT debe comenzar con 20, 23 o 27")
+                elif len(doc_str) < 7 or len(doc_str) > 8:
+                    raise ValidationError(f"{campo_nombre} debe tener 7-8 dígitos (DNI) o 11 dígitos (CUIT)")
+                else:
+                    # Es DNI, validar rango
+                    doc_int = int(doc_str)
+                    if doc_int < 1000000 or doc_int > 99999999:
+                        raise ValidationError(f"{campo_nombre} {doc_str} fuera del rango válido para DNI")
             elif "responsable" in campo_nombre:
                 if len(doc_str) != 11:
                     raise ValidationError(f"{campo_nombre} debe tener 11 dígitos (CUIT)")
@@ -497,8 +503,12 @@ class ImportacionService:
                         else:
                             payload[field] = v or None
 
-                # Asignar tipo de documento CUIT
-                payload["tipo_documento"] = tipo_doc_cuit_id
+                # Asignar tipo de documento basado en longitud
+                doc_length = len(str(payload.get("documento", "")))
+                if doc_length == 11:
+                    payload["tipo_documento"] = tipo_doc_cuit_id
+                else:
+                    payload["tipo_documento"] = _tipo_doc_por_defecto()
 
                 # Asignar provincia del usuario
                 payload["provincia"] = provincia_usuario_id
