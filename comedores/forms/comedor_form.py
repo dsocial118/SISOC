@@ -134,7 +134,9 @@ class ComedorForm(forms.ModelForm):
         self.popular_campos_ubicacion()
 
         # Ordenar organizaciones alfabéticamente
-        self.fields["organizacion"].queryset = Organizacion.objects.all().order_by("nombre")
+        self.fields["organizacion"].queryset = Organizacion.objects.all().order_by(
+            "nombre"
+        )
 
     def popular_campos_ubicacion(self):
 
@@ -155,12 +157,16 @@ class ComedorForm(forms.ModelForm):
 
         if provincia:
             self.fields["provincia"].initial = Provincia.objects.get(id=provincia.id)
-            self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
+                "nombre"
+            )
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia
             ).order_by("nombre_region")
         else:
-            self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
+                "nombre"
+            )
             self.fields["municipio"].queryset = Municipio.objects.none()
             self.fields["localidad"].queryset = Localidad.objects.none()
 
