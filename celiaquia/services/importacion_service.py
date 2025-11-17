@@ -415,13 +415,22 @@ class ImportacionService:
             for l in Localidad.objects.filter(pk__in=localidad_ids):
                 localidades_cache[l.pk] = l.pk
 
-        if sexos_nombres:
-            try:
-                for s in Sexo.objects.all():
-                    if s.sexo.lower() in sexos_nombres:
-                        sexos_cache[s.sexo.lower()] = s.id
-            except Exception as e:
-                logger.warning("Error cargando sexos: %s", e)
+        # Cargar sexos con mapeo mejorado
+        try:
+            for s in Sexo.objects.all():
+                sexo_lower = s.sexo.lower()
+                sexos_cache[sexo_lower] = s.id
+                # Agregar mapeos comunes
+                if 'masculino' in sexo_lower or 'hombre' in sexo_lower or 'male' in sexo_lower:
+                    sexos_cache['m'] = s.id
+                    sexos_cache['masculino'] = s.id
+                    sexos_cache['hombre'] = s.id
+                elif 'femenino' in sexo_lower or 'mujer' in sexo_lower or 'female' in sexo_lower:
+                    sexos_cache['f'] = s.id
+                    sexos_cache['femenino'] = s.id
+                    sexos_cache['mujer'] = s.id
+        except Exception as e:
+            logger.warning("Error cargando sexos: %s", e)
 
         if nacionalidades_nombres:
             try:
@@ -430,6 +439,34 @@ class ImportacionService:
                         nacionalidades_cache[n.nacionalidad.lower()] = n.id
             except Exception as e:
                 logger.warning("Error cargando nacionalidades: %s", e)
+        
+        # Funciones de validación
+        def validar_documento(doc_str, campo_nombre, fila):
+            """Valida formato y longitud de documento"""
+            if not doc_str or not doc_str.isdigit():
+                raise ValidationError(f"{campo_nombre} debe contener solo dígitos")
+            
+            # Validar longitud según tipo
+            if campo_nombre == "documento":
+                if len(doc_str) < 7 or len(doc_str) > 8:
+                    raise ValidationError(f"{campo_nombre} debe tener el formato correcto")
+                # Validar rango para DNI
+                doc_int = int(doc_str)
+                if doc_int < 1000000 or doc_int > 99999999:
+                    raise ValidationError(f"{campo_nombre} {doc_str} fuera del rango válido para DNI")
+            elif "responsable" in campo_nombre:
+                if len(doc_str) != 11:
+                    raise ValidationError(f"{campo_nombre} debe tener 11 dígitos (CUIT)")
+            
+            return doc_str
+        
+        def normalizar_sexo(sexo_valor):
+            """Normaliza valores de sexo comunes"""
+            if not sexo_valor:
+                return None
+            
+            sexo_lower = str(sexo_valor).strip().lower()
+            return sexos_cache.get(sexo_lower)
 
         # Procesar cada fila
         legajos_crear = []
@@ -444,7 +481,12 @@ class ImportacionService:
                     if field in numeric_fields:
                         cleaned = re.sub(r"\D", "", v)
                         if cleaned:
-                            payload[field] = cleaned
+                            # Validar documento después de limpiar
+                            try:
+                                validar_documento(cleaned, field, offset)
+                                payload[field] = cleaned
+                            except ValidationError as e:
+                                raise ValidationError(f"{field}: {str(e)}")
                         else:
                             payload[field] = None
                             if v:
@@ -467,6 +509,8 @@ class ImportacionService:
                         raise ValidationError(f"Campo obligatorio faltante: {req}")
 
                 doc = payload.get("documento")
+                if not doc:
+                    raise ValidationError("Documento es obligatorio")
                 if not str(doc).isdigit():
                     raise ValidationError("Documento debe contener sólo dígitos")
 
@@ -531,15 +575,14 @@ class ImportacionService:
                 else:
                     payload.pop("localidad", None)
 
-                # Resolver sexo y nacionalidad usando cache
+                # Resolver sexo usando normalización mejorada
                 sexo_val = payload.get("sexo")
                 if sexo_val:
-                    sexo_key = str(sexo_val).strip().lower()
-                    if sexo_key in sexos_cache:
-                        payload["sexo"] = sexos_cache[sexo_key]
+                    sexo_id = normalizar_sexo(sexo_val)
+                    if sexo_id:
+                        payload["sexo"] = sexo_id
                     else:
-                        add_warning(offset, "sexo", f"{sexo_val} no encontrado")
-                        payload.pop("sexo", None)
+                        raise ValidationError(f"Sexo '{sexo_val}' no válido. Use M/F, Masculino/Femenino, etc.")
                 else:
                     payload.pop("sexo", None)
 
@@ -564,6 +607,11 @@ class ImportacionService:
                     except ValidationError:
                         add_warning(offset, "email", f"Email inválido: {email}")
                         payload.pop("email", None)
+                
+                # Validar teléfono si existe
+                telefono = payload.get("telefono")
+                if telefono and len(telefono) < 8:
+                    raise ValidationError(f"Teléfono '{telefono}' debe tener al menos 8 dígitos")
 
                 # Crear ciudadano - AHORA CON NOMBRES EN LUGAR DE IDs
                 try:
@@ -703,16 +751,22 @@ class ImportacionService:
                         doc_resp = payload.get("documento_responsable")
                         if doc_resp:
                             responsable_payload["documento"] = doc_resp
-                        
+
                         # Verificar si el responsable es la misma persona que el beneficiario
                         es_mismo_documento = (
-                            doc_resp and str(doc_resp).strip() == str(payload.get("documento", "")).strip()
+                            doc_resp
+                            and str(doc_resp).strip()
+                            == str(payload.get("documento", "")).strip()
                         )
-                        
+
                         if es_mismo_documento:
                             # Es la misma persona - solo crear la relación familiar pero no duplicar el legajo
                             cid_resp = cid  # Usar el mismo ciudadano
-                            add_warning(offset, "responsable", "Responsable es el mismo beneficiario - no se duplica legajo")
+                            add_warning(
+                                offset,
+                                "responsable",
+                                "Responsable es el mismo beneficiario - no se duplica legajo",
+                            )
                         else:
                             # Procesar domicilio del responsable
                             domicilio_resp = payload.get("domicilio_responsable", "")
@@ -722,7 +776,9 @@ class ImportacionService:
                                     r"^(.+?)\s+(\d+)\s*$", domicilio_resp.strip()
                                 )
                                 if match:
-                                    responsable_payload["calle"] = match.group(1).strip()
+                                    responsable_payload["calle"] = match.group(
+                                        1
+                                    ).strip()
                                     responsable_payload["altura"] = match.group(2)
                                 else:
                                     responsable_payload["calle"] = domicilio_resp
@@ -737,7 +793,9 @@ class ImportacionService:
                                         municipio__provincia_id=provincia_usuario_id,
                                     ).first()
                                     if localidad_obj:
-                                        responsable_payload["localidad"] = localidad_obj.pk
+                                        responsable_payload["localidad"] = (
+                                            localidad_obj.pk
+                                        )
                                         responsable_payload["municipio"] = (
                                             localidad_obj.municipio.pk
                                         )
@@ -797,11 +855,14 @@ class ImportacionService:
                                     )
                                     existentes_ids.add(cid_resp)
                                     validos += 1
-                        
+
                         # Guardar relacion familiar (tanto si es la misma persona como si no)
-                        if 'cid_resp' in locals():
+                        if "cid_resp" in locals():
                             pair = (cid_resp, cid)
-                            if pair not in relaciones_familiares_pairs and cid_resp != cid:
+                            if (
+                                pair not in relaciones_familiares_pairs
+                                and cid_resp != cid
+                            ):
                                 relaciones_familiares_pairs.add(pair)
                                 relaciones_familiares.append(
                                     {

@@ -1033,10 +1033,13 @@ class RevisarLegajoView(View):
         if accion == "ELIMINAR":
             if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
                 return JsonResponse(
-                    {"success": False, "error": "Solo coordinadores pueden eliminar legajos."},
+                    {
+                        "success": False,
+                        "error": "Solo coordinadores pueden eliminar legajos.",
+                    },
                     status=403,
                 )
-            
+
             try:
                 # Liberar cupo si estaba ocupado
                 if leg.estado_cupo == "DENTRO":
@@ -1048,17 +1051,25 @@ class RevisarLegajoView(View):
                         )
                     except Exception as e:
                         logger.error(
-                            "Error al liberar cupo para legajo %s: %s", leg.pk, e, exc_info=True
+                            "Error al liberar cupo para legajo %s: %s",
+                            leg.pk,
+                            e,
+                            exc_info=True,
                         )
-                
+
                 leg.delete()
                 return JsonResponse(
                     {"success": True, "message": "Legajo eliminado correctamente."}
                 )
             except Exception as e:
-                logger.error("Error al eliminar legajo %s: %s", leg.pk, e, exc_info=True)
+                logger.error(
+                    "Error al eliminar legajo %s: %s", leg.pk, e, exc_info=True
+                )
                 return JsonResponse(
-                    {"success": False, "message": f"Error al eliminar el legajo: {str(e)}"},
+                    {
+                        "success": False,
+                        "message": f"Error al eliminar el legajo: {str(e)}",
+                    },
                     status=500,
                 )
 
