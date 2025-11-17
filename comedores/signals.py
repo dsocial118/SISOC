@@ -9,6 +9,8 @@ from comedores.tasks import (
     AsyncSendObservacionToGestionar,
     AsyncSendReferenteToGestionar,
     build_comedor_payload,
+    build_observacion_payload,
+    build_referente_payload,
 )
 from relevamientos.models import Relevamiento
 from rendicioncuentasfinal.models import (
@@ -68,13 +70,15 @@ def remove_comedor_to_gestionar(sender, instance, using, **kwargs):
 @receiver(post_save, sender=Observacion)
 def send_observacion_to_gestionar(sender, instance, created, **kwargs):
     if created:
-        AsyncSendObservacionToGestionar(instance.id).start()
+        payload = build_observacion_payload(instance)
+        AsyncSendObservacionToGestionar(instance.id, payload).start()
 
 
 @receiver(post_save, sender=Referente)
 def send_referente_to_gestionar(sender, instance, created, **kwargs):
     if created:
-        AsyncSendReferenteToGestionar(instance.id).start()
+        payload = build_referente_payload(instance)
+        AsyncSendReferenteToGestionar(instance.id, payload).start()
 
 
 @receiver(post_save, sender=RendicionCuentasFinal)
