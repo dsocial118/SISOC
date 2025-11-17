@@ -28,7 +28,9 @@ class AutoResetValidacionesMiddleware:
                 primer_dia_mes = hoy.replace(day=1)
                 if hoy >= primer_dia_mes:
                     try:
-                        comedores_actualizados = ValidacionService.resetear_validaciones()
+                        comedores_actualizados = (
+                            ValidacionService.resetear_validaciones()
+                        )
                         logger.info(
                             "Auto-reset middleware: %s comedores reseteados (día %s)",
                             comedores_actualizados,

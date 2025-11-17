@@ -343,6 +343,7 @@ class ComedorCreateView(LoginRequiredMixin, CreateView):
         else:
             return self.form_invalid(form)
 
+
 class ComedorDetailView(LoginRequiredMixin, DetailView):
     model = Comedor
     template_name = "comedor/comedor_detail.html"
@@ -432,7 +433,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
         return ComedorService.post_comedor_relevamiento(request, self.object)
 
-    def get_relaciones_optimizadas(self): # pylint: disable=too-many-locals
+    def get_relaciones_optimizadas(self):  # pylint: disable=too-many-locals
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
         relevamientos = (
             self.object.relevamientos_optimized[:1]
