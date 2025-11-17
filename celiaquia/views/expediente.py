@@ -954,8 +954,12 @@ class RevisarLegajoView(View):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
 
-        # Permisos: admin o técnico
-        if not (_is_admin(user) or _user_in_group(user, "TecnicoCeliaquia")):
+        # Permisos: admin, técnico o coordinador
+        if not (
+            _is_admin(user)
+            or _user_in_group(user, "TecnicoCeliaquia")
+            or _user_in_group(user, "CoordinadorCeliaquia")
+        ):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
@@ -1068,7 +1072,7 @@ class RevisarLegajoView(View):
                 return JsonResponse(
                     {
                         "success": False,
-                        "message": f"Error al eliminar el legajo: {str(e)}",
+                        "message": "Ocurrió un error al eliminar el legajo. Inténtelo nuevamente más tarde.",
                     },
                     status=500,
                 )

@@ -478,7 +478,7 @@ class ImportacionService:
                         raise ValidationError(
                             f"{campo_nombre} {doc_str} fuera del rango válido para DNI"
                         )
-            elif "responsable" in campo_nombre:
+            elif "responsable" in campo_nombre and "telefono" not in campo_nombre and "contacto" not in campo_nombre:
                 if len(doc_str) != 11:
                     raise ValidationError(
                         f"{campo_nombre} debe tener 11 dígitos (CUIT)"

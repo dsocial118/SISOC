@@ -201,7 +201,8 @@ class EditarLegajoView(View):
                 )
 
         except ValidationError as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=400)
+            logger.warning("Validación fallida al editar legajo %s: %s", legajo.pk, e, exc_info=True)
+            return JsonResponse({"success": False, "error": "Los datos ingresados no son válidos."}, status=400)
         except Exception as e:
             logger.error("Error editando legajo %s: %s", legajo.pk, e, exc_info=True)
             return JsonResponse(
