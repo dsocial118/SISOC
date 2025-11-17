@@ -22,7 +22,7 @@ class ComedorAdmin(admin.ModelAdmin):
         "provincia",
         "municipio",
     ]
-    list_filter = ["estado_validacion", "provincia", "estado_general"]
+    list_filter = ["estado_validacion", "provincia"]
     search_fields = ["nombre", "codigo_de_proyecto"]
     readonly_fields = ["fecha_validado"]
 
