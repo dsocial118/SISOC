@@ -275,11 +275,11 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-3">Legajos</h5>
             <div class="d-flex align-items-center gap-3">
-                <input type="text" 
-                       id="search-legajos" 
-                       class="form-control" 
-                       placeholder="Buscar por ID, nombre, apellido o DNI..." 
-                       style="width: 300px;">
+                <input type="text"
+                       id="search-legajos"
+                       class="form-control"
+                       placeholder="Buscar por ID, nombre, apellido o DNI..."
+                       style="width: 300px" />
             </div>
         </div>
 
@@ -320,16 +320,12 @@
                                         </div>
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
                                         {% if leg.es_responsable %}
-                                            <small class="badge bg-info mt-1">
-                                                {{ leg.tipo_legajo|default:"Responsable" }}
-                                            </small>
+                                            <small class="badge bg-info mt-1">{{ leg.tipo_legajo|default:"Responsable" }}</small>
                                             {% if leg.hijos_a_cargo %}
                                                 <small class="text-muted d-block mt-1">Tiene {{ leg.hijos_a_cargo|length }} hijo{{ leg.hijos_a_cargo|length|pluralize }} a cargo</small>
                                             {% endif %}
                                         {% else %}
-                                            <small class="badge bg-success mt-1">
-                                                {{ leg.tipo_legajo|default:"Beneficiario" }}
-                                            </small>
+                                            <small class="badge bg-success mt-1">{{ leg.tipo_legajo|default:"Beneficiario" }}</small>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -365,7 +361,7 @@
                                             data-bs-target="#detalle-{{ leg.pk }}-{{ forloop.counter }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    {% if is_tec or is_coord or (is_prov and expediente.estado.nombre in 'CREADO,PROCESADO,EN_ESPERA') %}
+                                    {% if is_tec or is_coord or is_prov and expediente.estado.nombre in 'CREADO,PROCESADO,EN_ESPERA' %}
                                         <button class="btn btn-outline-primary btn-sm ms-1"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#modalEditarLegajo"
@@ -1587,47 +1583,31 @@
                             <label for="editar-sexo" class="form-label">Sexo</label>
                             <select class="form-select" id="editar-sexo" name="sexo">
                                 <option value="">Seleccionar...</option>
-                                {% for sexo in sexos %}
-                                    <option value="{{ sexo.id }}">{{ sexo.sexo }}</option>
-                                {% endfor %}
+                                {% for sexo in sexos %}<option value="{{ sexo.id }}">{{ sexo.sexo }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="editar-nacionalidad" class="form-label">Nacionalidad</label>
                             <select class="form-select" id="editar-nacionalidad" name="nacionalidad">
                                 <option value="">Seleccionar...</option>
-                                {% for nac in nacionalidades %}
-                                    <option value="{{ nac.id }}">{{ nac.nacionalidad }}</option>
-                                {% endfor %}
+                                {% for nac in nacionalidades %}<option value="{{ nac.id }}">{{ nac.nacionalidad }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="editar-telefono" class="form-label">Teléfono</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editar-telefono"
-                                   name="telefono" />
+                            <input type="text" class="form-control" id="editar-telefono" name="telefono" />
                         </div>
                         <div class="col-md-6">
                             <label for="editar-email" class="form-label">Email</label>
-                            <input type="email"
-                                   class="form-control"
-                                   id="editar-email"
-                                   name="email" />
+                            <input type="email" class="form-control" id="editar-email" name="email" />
                         </div>
                         <div class="col-md-4">
                             <label for="editar-calle" class="form-label">Calle</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editar-calle"
-                                   name="calle" />
+                            <input type="text" class="form-control" id="editar-calle" name="calle" />
                         </div>
                         <div class="col-md-4">
                             <label for="editar-altura" class="form-label">Altura</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editar-altura"
-                                   name="altura" />
+                            <input type="text" class="form-control" id="editar-altura" name="altura" />
                         </div>
                         <div class="col-md-4">
                             <label for="editar-codigo-postal" class="form-label">Código Postal</label>

@@ -404,36 +404,45 @@ class LegajoEliminarView(View):
     @method_decorator(csrf_protect)
     def post(self, request, pk, legajo_id):
         from django.db import transaction
-        
+
         user = request.user
         is_coord = _in_group(user, "CoordinadorCeliaquia")
 
         if not (user.is_superuser or is_coord):
             return JsonResponse(
-                {"success": False, "message": "Solo coordinadores pueden eliminar legajos."},
+                {
+                    "success": False,
+                    "message": "Solo coordinadores pueden eliminar legajos.",
+                },
                 status=403,
             )
 
         try:
-            legajo = get_object_or_404(ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk)
-            
+            legajo = get_object_or_404(
+                ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk
+            )
+
             with transaction.atomic():
                 # Eliminar registros relacionados primero
                 from celiaquia.models import CupoMovimiento, PagoNomina
-                
+
                 # Eliminar movimientos de cupo relacionados
                 CupoMovimiento.objects.filter(legajo=legajo).delete()
-                
+
                 # Eliminar registros de pago relacionados
                 PagoNomina.objects.filter(legajo=legajo).delete()
-                
+
                 # Eliminar el legajo
                 legajo.delete()
-                
-            return JsonResponse({"success": True, "message": "Legajo eliminado correctamente."})
-            
+
+            return JsonResponse(
+                {"success": True, "message": "Legajo eliminado correctamente."}
+            )
+
         except Exception as e:
-            logger.error("Error al eliminar legajo %s: %s", legajo_id, str(e), exc_info=True)
+            logger.error(
+                "Error al eliminar legajo %s: %s", legajo_id, str(e), exc_info=True
+            )
             return JsonResponse(
                 {"success": False, "message": f"Error: {str(e)}"},
                 status=500,

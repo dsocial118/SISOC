@@ -247,7 +247,9 @@ urlpatterns = [
     ),
     path(
         "expedientes/<int:pk>/legajos/<int:legajo_id>/editar/",
-        group_required(["ProvinciaCeliaquia", "TecnicoCeliaquia", "CoordinadorCeliaquia"])(EditarLegajoView.as_view()),
+        group_required(
+            ["ProvinciaCeliaquia", "TecnicoCeliaquia", "CoordinadorCeliaquia"]
+        )(EditarLegajoView.as_view()),
         name="legajo_editar",
     ),
 ]
