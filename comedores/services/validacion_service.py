@@ -11,7 +11,7 @@ class ValidacionService:
     def puede_validar(user, comedor):
         """Verifica si el usuario puede validar el comedor"""
         return user.is_superuser or (
-            comedor.dupla and user in [comedor.dupla.tecnico, comedor.dupla.abogado]
+            comedor.dupla and user in comedor.dupla.tecnico.all()
         )
 
     @staticmethod
