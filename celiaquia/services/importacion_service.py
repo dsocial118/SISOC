@@ -447,13 +447,13 @@ class ImportacionService:
                         nacionalidades_cache[n.nacionalidad.lower()] = n.id
             except Exception as e:
                 logger.warning("Error cargando nacionalidades: %s", e)
-        
+
         # Funciones de validación
         def validar_documento(doc_str, campo_nombre, fila):
             """Valida formato y longitud de documento"""
             if not doc_str or not doc_str.isdigit():
                 raise ValidationError(f"{campo_nombre} debe contener solo dígitos")
-            
+
             # Validar longitud según tipo
             if campo_nombre == "documento":
                 # Aceptar tanto DNI (7-8) como CUIT (11)
@@ -478,19 +478,23 @@ class ImportacionService:
                         raise ValidationError(
                             f"{campo_nombre} {doc_str} fuera del rango válido para DNI"
                         )
-            elif "responsable" in campo_nombre and "telefono" not in campo_nombre and "contacto" not in campo_nombre:
+            elif (
+                "responsable" in campo_nombre
+                and "telefono" not in campo_nombre
+                and "contacto" not in campo_nombre
+            ):
                 if len(doc_str) != 11:
                     raise ValidationError(
                         f"{campo_nombre} debe tener 11 dígitos (CUIT)"
                     )
-            
+
             return doc_str
-        
+
         def normalizar_sexo(sexo_valor):
             """Normaliza valores de sexo comunes"""
             if not sexo_valor:
                 return None
-            
+
             sexo_lower = str(sexo_valor).strip().lower()
             return sexos_cache.get(sexo_lower)
 
@@ -639,7 +643,7 @@ class ImportacionService:
                     except ValidationError:
                         add_warning(offset, "email", f"Email inválido: {email}")
                         payload.pop("email", None)
-                
+
                 # Validar teléfono si existe
                 telefono = payload.get("telefono")
                 if telefono and len(telefono) < 8:
