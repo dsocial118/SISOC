@@ -444,7 +444,10 @@ class LegajoEliminarView(View):
                 "Error al eliminar legajo %s: %s", legajo_id, str(e), exc_info=True
             )
             return JsonResponse(
-                {"success": False, "message": f"Error: {str(e)}"},
+                {
+                    "success": False,
+                    "message": "Ocurrió un error interno. Por favor intente nuevamente o contacte al administrador."
+                },
                 status=500,
             )
 
