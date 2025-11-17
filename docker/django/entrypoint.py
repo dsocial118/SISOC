@@ -76,22 +76,19 @@ def run_server():
         logger.info("🚀 Iniciando Django en modo producción con Gunicorn...")
         workers = os.getenv("GUNICORN_WORKERS", "4")
         threads = os.getenv("GUNICORN_THREADS", "1")
-        subprocess.run(
-            [
-                "gunicorn",
-                "config.asgi:application",
-                "-k",
-                "uvicorn.workers.UvicornWorker",
-                "-b",
-                "0.0.0.0:8000",
-                "--workers",
-                workers,
-                "--threads",
-                threads,
-                "--log-level",
-                "info",
-            ]
-        )
+        cmd = [
+            "gunicorn",
+            "config.wsgi:application",
+            "-b",
+            "0.0.0.0:8000",
+            "--workers",
+            workers,
+            "--log-level",
+            "info",
+        ]
+        if threads and threads != "1":
+            cmd.extend(["--threads", threads])
+        subprocess.run(cmd)
     else:
         logger.info("🧪 Iniciando Django en modo desarrollo...")
         subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])

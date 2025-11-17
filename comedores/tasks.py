@@ -10,7 +10,7 @@ from comedores.models import Comedor, Observacion, Referente
 
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
 MAX_WORKERS = int(
-    os.getenv("GESTIONAR_COMEDORES_WORKERS", os.getenv("GESTIONAR_WORKERS", "5"))
+    os.getenv("GESTIONAR_COMEDORES_WORKERS", os.getenv("GESTIONAR_WORKERS", "2"))
 )
 _EXECUTOR = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
@@ -66,6 +66,38 @@ def build_comedor_payload(comedor):
     }
 
 
+def build_referente_payload(referente):
+    return {
+        "Action": "Add",
+        "Properties": {"Locale": "es-ES"},
+        "Rows": [
+            {
+                "documento": referente.documento,
+                "nombre": referente.nombre,
+                "apellido": referente.apellido,
+                "mail": referente.mail,
+                "celular": referente.celular,
+            }
+        ],
+    }
+
+
+def build_observacion_payload(observacion):
+    return {
+        "Action": "Add",
+        "Properties": {"Locale": "es-ES"},
+        "Rows": [
+            {
+                "Comedor_Id": observacion.comedor_id,
+                "OBSERVACION": observacion.observacion,
+                "Adjunto": "",
+                "Usr": "",
+                "FechaHora": observacion.fecha_visita.strftime("%d/%m/%Y %H:%M"),
+            }
+        ],
+    }
+
+
 class AsyncSendComedorToGestionar(threading.Thread):
     def __init__(self, payload):
         super().__init__(daemon=True)
@@ -106,14 +138,12 @@ class AsyncRemoveComedorToGestionar(threading.Thread):
 
     def run(self):
         close_old_connections()
+        data = {
+            "Action": "Delete",
+            "Properties": {"Locale": "es-ES"},
+            "Rows": [{"ComedorID": f"{self.comedor_id}"}],
+        }
         try:
-            comedor = Comedor.objects.get(id=self.comedor_id)
-            data = {
-                "Action": "Delete",
-                "Properties": {"Locale": "es-ES"},
-                "Rows": [{"ComedorID": f"{comedor.id}"}],
-            }
-
             headers = {
                 "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
             }
@@ -125,7 +155,7 @@ class AsyncRemoveComedorToGestionar(threading.Thread):
                 timeout=TIMEOUT,
             )
             response.raise_for_status()
-            logger.info(f"COMEDOR {comedor.id} sincronizado con exito")
+            logger.info(f"COMEDOR {self.comedor_id} sincronizado con exito")
         except Exception:
             logger.exception(
                 "Error al sincronizar eliminacion de COMEDOR con GESTIONAR",
@@ -138,37 +168,28 @@ class AsyncRemoveComedorToGestionar(threading.Thread):
 class AsyncSendReferenteToGestionar(threading.Thread):
     """Hilo para enviar referente a GESTIONAR asincronamente"""
 
-    def __init__(self, referente_id):
+    def __init__(self, referente_id, payload=None):
         super().__init__()
         self.referente_id = referente_id
+        self.payload = payload
 
     def start(self):  # type: ignore[override]
         _EXECUTOR.submit(self.run)
 
     def run(self):
         close_old_connections()
+        data = self.payload
         try:
-            referente = Referente.objects.get(id=self.referente_id)
-
-            data = {
-                "Action": "Add",
-                "Properties": {"Locale": "es-ES"},
-                "Rows": [
-                    {
-                        "documento": referente.documento,
-                        "nombre": referente.nombre,
-                        "apellido": referente.apellido,
-                        "mail": referente.mail,
-                        "celular": referente.celular,
-                    }
-                ],
-            }
+            if data is None:
+                referente = Referente.objects.get(id=self.referente_id)
+                data = build_referente_payload(referente)
 
             headers = {
                 "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
             }
 
-            if referente.documento is not None:
+            documento = data["Rows"][0].get("documento")
+            if documento:
                 response = requests.post(
                     os.getenv("GESTIONAR_API_CREAR_REFERENTE"),
                     json=data,
@@ -176,15 +197,14 @@ class AsyncSendReferenteToGestionar(threading.Thread):
                     timeout=TIMEOUT,
                 )
                 response.raise_for_status()
-                response = response.json()
                 logger.info(
-                    f"REFERENTE {referente.id} sincronizado con GESTIONAR con exito"
+                    f"REFERENTE {self.referente_id} sincronizado con GESTIONAR con exito"
                 )
 
         except Exception:
             logger.exception(
                 "Error al sincronizar REFERENTE con GESTIONAR",
-                extra={"body": data},
+                extra={"body": data or {"referente_id": self.referente_id}},
             )
         finally:
             close_old_connections()
@@ -193,33 +213,21 @@ class AsyncSendReferenteToGestionar(threading.Thread):
 class AsyncSendObservacionToGestionar(threading.Thread):
     """Hilo para enviar observacion a GESTIONAR asincronamente"""
 
-    def __init__(self, observacion_id):
+    def __init__(self, observacion_id, payload=None):
         super().__init__()
         self.observacion_id = observacion_id
+        self.payload = payload
 
     def start(self):  # type: ignore[override]
         _EXECUTOR.submit(self.run)
 
     def run(self):
         close_old_connections()
+        data = self.payload
         try:
-            observacion = Observacion.objects.get(id=self.observacion_id)
-
-            data = {
-                "Action": "Add",
-                "Properties": {"Locale": "es-ES"},
-                "Rows": [
-                    {
-                        "Comedor_Id": observacion.comedor.id,
-                        "OBSERVACION": observacion.observacion,
-                        "Adjunto": "",
-                        "Usr": "",
-                        "FechaHora": observacion.fecha_visita.strftime(
-                            "%d/%m/%Y %H:%M"
-                        ),
-                    }
-                ],
-            }
+            if data is None:
+                observacion = Observacion.objects.get(id=self.observacion_id)
+                data = build_observacion_payload(observacion)
 
             headers = {
                 "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),
@@ -232,11 +240,11 @@ class AsyncSendObservacionToGestionar(threading.Thread):
                 timeout=TIMEOUT,
             )
             response.raise_for_status()
-            response = response.json()
-            logger.info(f"OBSERVACION {observacion.id} sincronizada con exito")
+            logger.info(f"OBSERVACION {self.observacion_id} sincronizada con exito")
         except Exception:
             logger.exception(
-                "Error al sincronizar OBSERVACION con GESTIONAR", extra={"body": data}
+                "Error al sincronizar OBSERVACION con GESTIONAR",
+                extra={"body": data or {"observacion_id": self.observacion_id}},
             )
         finally:
             close_old_connections()
