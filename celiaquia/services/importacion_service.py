@@ -421,14 +421,22 @@ class ImportacionService:
                 sexo_lower = s.sexo.lower()
                 sexos_cache[sexo_lower] = s.id
                 # Agregar mapeos comunes
-                if 'masculino' in sexo_lower or 'hombre' in sexo_lower or 'male' in sexo_lower:
-                    sexos_cache['m'] = s.id
-                    sexos_cache['masculino'] = s.id
-                    sexos_cache['hombre'] = s.id
-                elif 'femenino' in sexo_lower or 'mujer' in sexo_lower or 'female' in sexo_lower:
-                    sexos_cache['f'] = s.id
-                    sexos_cache['femenino'] = s.id
-                    sexos_cache['mujer'] = s.id
+                if (
+                    "masculino" in sexo_lower
+                    or "hombre" in sexo_lower
+                    or "male" in sexo_lower
+                ):
+                    sexos_cache["m"] = s.id
+                    sexos_cache["masculino"] = s.id
+                    sexos_cache["hombre"] = s.id
+                elif (
+                    "femenino" in sexo_lower
+                    or "mujer" in sexo_lower
+                    or "female" in sexo_lower
+                ):
+                    sexos_cache["f"] = s.id
+                    sexos_cache["femenino"] = s.id
+                    sexos_cache["mujer"] = s.id
         except Exception as e:
             logger.warning("Error cargando sexos: %s", e)
 
@@ -451,18 +459,30 @@ class ImportacionService:
                 # Aceptar tanto DNI (7-8) como CUIT (11)
                 if len(doc_str) == 11:
                     # Es CUIT, validar formato
-                    if not (doc_str.startswith('20') or doc_str.startswith('23') or doc_str.startswith('27')):
-                        raise ValidationError(f"{campo_nombre} CUIT debe comenzar con 20, 23 o 27")
+                    if not (
+                        doc_str.startswith("20")
+                        or doc_str.startswith("23")
+                        or doc_str.startswith("27")
+                    ):
+                        raise ValidationError(
+                            f"{campo_nombre} CUIT debe comenzar con 20, 23 o 27"
+                        )
                 elif len(doc_str) < 7 or len(doc_str) > 8:
-                    raise ValidationError(f"{campo_nombre} debe tener 7-8 dígitos (DNI) o 11 dígitos (CUIT)")
+                    raise ValidationError(
+                        f"{campo_nombre} debe tener 7-8 dígitos (DNI) o 11 dígitos (CUIT)"
+                    )
                 else:
                     # Es DNI, validar rango
                     doc_int = int(doc_str)
                     if doc_int < 1000000 or doc_int > 99999999:
-                        raise ValidationError(f"{campo_nombre} {doc_str} fuera del rango válido para DNI")
+                        raise ValidationError(
+                            f"{campo_nombre} {doc_str} fuera del rango válido para DNI"
+                        )
             elif "responsable" in campo_nombre:
                 if len(doc_str) != 11:
-                    raise ValidationError(f"{campo_nombre} debe tener 11 dígitos (CUIT)")
+                    raise ValidationError(
+                        f"{campo_nombre} debe tener 11 dígitos (CUIT)"
+                    )
             
             return doc_str
         
@@ -592,7 +612,9 @@ class ImportacionService:
                     if sexo_id:
                         payload["sexo"] = sexo_id
                     else:
-                        raise ValidationError(f"Sexo '{sexo_val}' no válido. Use M/F, Masculino/Femenino, etc.")
+                        raise ValidationError(
+                            f"Sexo '{sexo_val}' no válido. Use M/F, Masculino/Femenino, etc."
+                        )
                 else:
                     payload.pop("sexo", None)
 
@@ -621,7 +643,9 @@ class ImportacionService:
                 # Validar teléfono si existe
                 telefono = payload.get("telefono")
                 if telefono and len(telefono) < 8:
-                    raise ValidationError(f"Teléfono '{telefono}' debe tener al menos 8 dígitos")
+                    raise ValidationError(
+                        f"Teléfono '{telefono}' debe tener al menos 8 dígitos"
+                    )
 
                 # Crear ciudadano - AHORA CON NOMBRES EN LUGAR DE IDs
                 try:
