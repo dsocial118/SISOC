@@ -18,6 +18,7 @@ from comedores.services.estado_manager import registrar_cambio_estado
 
 from core.models import Municipio, Provincia
 from core.models import Localidad
+from organizaciones.models import Organizacion
 
 
 class ReferenteForm(forms.ModelForm):
@@ -132,6 +133,11 @@ class ComedorForm(forms.ModelForm):
         self._configure_estado_fields()
         self.popular_campos_ubicacion()
 
+        # Ordenar organizaciones alfabéticamente
+        self.fields["organizacion"].queryset = Organizacion.objects.all().order_by(
+            "nombre"
+        )
+
     def popular_campos_ubicacion(self):
 
         def pk_formatter(value):
@@ -151,12 +157,16 @@ class ComedorForm(forms.ModelForm):
 
         if provincia:
             self.fields["provincia"].initial = Provincia.objects.get(id=provincia.id)
-            self.fields["provincia"].queryset = Provincia.objects.all()
+            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
+                "nombre"
+            )
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia
-            )
+            ).order_by("nombre")
         else:
-            self.fields["provincia"].queryset = Provincia.objects.all()
+            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
+                "nombre"
+            )
             self.fields["municipio"].queryset = Municipio.objects.none()
             self.fields["localidad"].queryset = Localidad.objects.none()
 
@@ -164,7 +174,7 @@ class ComedorForm(forms.ModelForm):
             self.fields["municipio"].initial = municipio
             self.fields["localidad"].queryset = Localidad.objects.filter(
                 municipio=municipio
-            )
+            ).order_by("nombre")
 
         if localidad:
             self.fields["localidad"].initial = localidad
