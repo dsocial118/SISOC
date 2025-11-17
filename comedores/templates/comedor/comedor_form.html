@@ -6,9 +6,7 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-          rel="stylesheet" />
+    <!-- Select2 CSS ya está cargado en base.html -->
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <style>
@@ -550,6 +548,380 @@
       flex: 0 0 100%;
     }
   }
+
+  /* ESTILOS PARA SECCIONES COLAPSABLES MODERNAS */
+  .section-card {
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #374151;
+  }
+
+  .section-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    padding: 18px 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+  }
+
+  .section-header:hover {
+    background: linear-gradient(135deg, #34495e 0%, #3d566e 100%);
+    border-bottom-color: #3b82f6;
+  }
+
+  .section-header.active {
+    border-bottom-color: #10b981;
+  }
+
+  .section-header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+  }
+
+  .section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    transition: all 0.3s ease;
+  }
+
+  .section-header:hover .section-icon {
+    background: rgba(59, 130, 246, 0.2);
+    transform: scale(1.1);
+  }
+
+  .section-title-group {
+    flex: 1;
+  }
+
+  .section-title {
+    color: #e5e7eb;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .section-subtitle {
+    color: #9ca3af;
+    font-size: 13px;
+    margin: 2px 0 0 0;
+  }
+
+  .section-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .status-badge.complete {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+  }
+
+  .status-badge.incomplete {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+  }
+
+  .status-badge.empty {
+    background: rgba(156, 163, 175, 0.15);
+    color: #9ca3af;
+  }
+
+  .collapse-indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    color: #9ca3af;
+    transition: all 0.3s ease;
+  }
+
+  .section-header:hover .collapse-indicator {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e5e7eb;
+  }
+
+  .collapse-indicator i {
+    transition: transform 0.3s ease;
+  }
+
+  .section-header.collapsed .collapse-indicator i {
+    transform: rotate(-90deg);
+  }
+
+  .section-body {
+    background: #1a252f;
+    padding: 24px;
+    transition: all 0.3s ease;
+  }
+
+  .section-body.collapsing {
+    transition: height 0.3s ease;
+  }
+
+  /* Indicador de progreso global */
+  .progress-indicator {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    padding: 20px 24px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .progress-title {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .progress-stats {
+    color: #93c5fd;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .progress-bar-container {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  }
+
+  /* Tooltips modernos */
+  .field-tooltip {
+    position: relative;
+    display: inline-block;
+    margin-left: 6px;
+    cursor: help;
+  }
+
+  .field-tooltip i {
+    color: #60a5fa;
+    font-size: 14px;
+    transition: all 0.2s ease;
+  }
+
+  .field-tooltip:hover i {
+    color: #3b82f6;
+    transform: scale(1.1);
+  }
+
+  .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: #e5e7eb;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid #374151;
+    transition: all 0.2s ease;
+  }
+
+  .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #1f2937 transparent transparent transparent;
+  }
+
+  .field-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  /* Validación en tiempo real */
+  .field-validated.valid .form-control,
+  .field-validated.valid .select2-selection {
+    border-color: #10b981 !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2310b981'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+    padding-right: 40px;
+  }
+
+  .field-validated.invalid .form-control,
+  .field-validated.invalid .select2-selection {
+    border-color: #ef4444 !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ef4444'%3E%3Cpath fill-rule='evenodd' d='M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 20px;
+    padding-right: 40px;
+  }
+
+  /* Skeleton loader para AJAX */
+  .skeleton-loader {
+    background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+    height: 38px;
+  }
+
+  @keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Botones sticky */
+  .sticky-actions {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(to top, #111827 0%, rgba(17, 24, 39, 0.95) 100%);
+    padding: 16px 24px;
+    border-top: 2px solid #374151;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 24px;
+    border-radius: 8px 8px 0 0;
+  }
+
+  .sticky-actions .btn {
+    padding: 10px 24px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .sticky-actions .btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+  }
+
+  .sticky-actions .btn-success:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .sticky-actions .btn-secondary {
+    background: #374151;
+    border: 1px solid #4b5563;
+  }
+
+  .sticky-actions .btn-secondary:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+  }
+
+  /* Mejorar espaciado de form-group */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    color: #d1d5db;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  /* Asegurar que Select2 no se vea afectado por otros estilos */
+  .select2-container .select2-selection--single {
+    display: block !important;
+  }
+
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding-left: 12px !important;
+  }
+
+  /* Fix para validación con Select2 */
+  .field-validated.valid .select2-container .select2-selection--single,
+  .field-validated.invalid .select2-container .select2-selection--single {
+    padding-right: 12px !important;
+  }
+
+  /* Asegurar que el contenedor de Select2 tenga el ancho correcto */
+  .form-group .select2-container {
+    max-width: 100%;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .section-header {
+      padding: 14px 16px;
+    }
+
+    .section-body {
+      padding: 16px;
+    }
+
+    .section-title {
+      font-size: 15px;
+    }
+
+    .progress-indicator {
+      padding: 16px;
+    }
+
+    .sticky-actions {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sticky-actions .btn {
+      width: 100%;
+    }
+  }
     </style>
     <div class="d-flex justify-content-between mb-3">
         <div>
@@ -572,254 +944,465 @@
                   class="w-100"
                   enctype="multipart/form-data"
                   onsubmit="return confirmSubmit()">
-                <div class="card card-primary card-outline">
-                    <div class="bs-stepper">
-                        <div class="card-header mb-3">
-                            <h3 class="card-title">Agregar Comedor/Merendero</h3>
+                {% csrf_token %}
+
+                <!-- Indicador de progreso global -->
+                <div class="progress-indicator">
+                    <div class="progress-header">
+                        <h4 class="progress-title">
+                            <i class="fas fa-clipboard-check mr-2"></i>
+                            Progreso del Formulario
+                        </h4>
+                        <span class="progress-stats">
+                            <span id="completedSections">0</span>/5 secciones completadas
+                        </span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Sección 1: Información Básica -->
+                <div class="section-card" data-section="basic">
+                    <div class="section-header" onclick="toggleSection('basic')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Información Básica</h3>
+                                <p class="section-subtitle">Datos generales del comedor/merendero</p>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="form-row justify-content-center">
-                                {% csrf_token %}
-                                <div class="form-group row">
-                                    <div class="col-4">{{ form.nombre|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.id_externo|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.tipocomedor|as_crispy_field }}</div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-basic">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-basic">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.nombre|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.id_externo|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.tipocomedor|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.organizacion|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.programa|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.codigo_de_proyecto|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Código de 7 caracteres máximo</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Estado y Proceso -->
+                <div class="section-card" data-section="estado">
+                    <div class="section-header" onclick="toggleSection('estado')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Estado y Proceso</h3>
+                                <p class="section-subtitle">Seguimiento y estado actual del comedor</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-estado">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-estado">
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                {{ form.estado_general|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.subestado|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.motivo|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.comienzo|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Año de inicio (1900 en adelante)</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 3: Ubicación -->
+                <div class="section-card" data-section="ubicacion">
+                    <div class="section-header" onclick="toggleSection('ubicacion')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Ubicación y Dirección</h3>
+                                <p class="section-subtitle">Datos de geolocalización y domicilio</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-ubicacion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-ubicacion">
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.provincia|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                <div id="municipio-loader" class="skeleton-loader d-none"></div>
+                                <div id="municipio-field">
+                                    {{ form.municipio|as_crispy_field }}
                                 </div>
-                                <div class="form-group row">
-                                    <div class="col-4">{{ form.organizacion|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.programa|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.codigo_de_proyecto|as_crispy_field }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="localidad-loader" class="skeleton-loader d-none"></div>
+                                <div id="localidad-field">
+                                    {{ form.localidad|as_crispy_field }}
                                 </div>
-                                <div class="form-group row">
-                                    <div class="col-4">{{ form.estado_general|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.subestado|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.motivo|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-3">{{ form.comienzo|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.provincia|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.municipio|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.localidad|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-4">{{ form.partido|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.barrio|as_crispy_field }}</div>
-                                    <div class="col-4">{{ form.codigo_postal|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-2">{{ form.calle|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.numero|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.piso|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.departamento|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.manzana|as_crispy_field }}</div>
-                                    <div class="col-2">{{ form.lote|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-3">{{ form.entre_calle_1|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.entre_calle_2|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.latitud|as_crispy_field }}</div>
-                                    <div class="col-3">{{ form.longitud|as_crispy_field }}</div>
-                                </div>
-                                <div class="form-group row">
-                                    <div class="col-12">
-                                        <label for="{{ form.foto_legajo.id_for_label }}"
-                                               class="form-label text-dark font-weight-bold">
-                                            <i class="fas fa-camera mr-2"></i>
-                                            Foto de Legajo
-                                        </label>
-                                        <!-- Foto existente -->
-                                        {% if form.instance.foto_legajo %}
-                                            <div class="foto-legajo-existente mb-3">
-                                                <h6 class="text-light mb-2">
-                                                    <i class="fas fa-image mr-1"></i>
-                                                    Foto actual:
-                                                </h6>
-                                                <div class="foto-existente-container">
-                                                    <div class="foto-thumbnail-container"
-                                                         data-image-url="{{ form.instance.foto_legajo.url }}">
-                                                        <div class="preview-placeholder">
-                                                            <i class="fas fa-image"></i>
-                                                            <div class="loader">
-                                                                <div class="spinner-border spinner-border-sm" role="status">
-                                                                    <span class="sr-only">Cargando...</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.partido|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.barrio|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.codigo_postal|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Código postal (1000-999999)</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">
+                                {{ form.calle|as_crispy_field }}
+                            </div>
+                            <div class="col-md-2">
+                                {{ form.numero|as_crispy_field }}
+                            </div>
+                            <div class="col-md-2">
+                                {{ form.piso|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.departamento|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">
+                                {{ form.manzana|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.lote|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.entre_calle_1|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.entre_calle_2|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6">
+                                {{ form.latitud|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Coordenada latitud (-90 a 90)</span>
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.longitud|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Coordenada longitud (-180 a 180)</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 4: Datos del Referente -->
+                <div class="section-card" data-section="referente">
+                    <div class="section-header" onclick="toggleSection('referente')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Datos del Referente</h3>
+                                <p class="section-subtitle">Información de contacto del responsable</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-referente">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-referente">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ referente_form.nombre|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ referente_form.apellido|as_crispy_field }}</div>
+                            <div class="col-md-4">
+                                {{ referente_form.mail|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Formato: correo@ejemplo.com</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ referente_form.celular|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ referente_form.documento|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ referente_form.funcion|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 5: Multimedia -->
+                <div class="section-card" data-section="multimedia">
+                    <div class="section-header" onclick="toggleSection('multimedia')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-images"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Galería y Multimedia</h3>
+                                <p class="section-subtitle">Foto de legajo e imágenes del comedor</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-multimedia">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-multimedia">
+                        <!-- Foto de legajo -->
+                        <div class="form-group">
+                            <label for="{{ form.foto_legajo.id_for_label }}"
+                                   class="form-label text-light font-weight-bold">
+                                <i class="fas fa-camera mr-2"></i>
+                                Foto de Legajo
+                            </label>
+                            <!-- Foto existente -->
+                            {% if form.instance.foto_legajo %}
+                                <div class="foto-legajo-existente mb-3">
+                                    <h6 class="text-light mb-2">
+                                        <i class="fas fa-image mr-1"></i>
+                                        Foto actual:
+                                    </h6>
+                                    <div class="foto-existente-container">
+                                        <div class="foto-thumbnail-container"
+                                             data-image-url="{{ form.instance.foto_legajo.url }}">
+                                            <div class="preview-placeholder">
+                                                <i class="fas fa-image"></i>
+                                                <div class="loader">
+                                                    <div class="spinner-border spinner-border-sm" role="status">
+                                                        <span class="sr-only">Cargando...</span>
                                                     </div>
-                                                    <div class="foto-info">
-                                                        <div class="foto-nombre">
-                                                            {% if "comedor/" in form.instance.foto_legajo.name %}
-                                                                {{ form.instance.foto_legajo.name|slice:"8:" }}
-                                                            {% else %}
-                                                                {{ form.instance.foto_legajo.name }}
-                                                            {% endif %}
-                                                        </div>
-                                                        <div class="foto-status">
-                                                            <i class="fas fa-check-circle text-success"></i>
-                                                            <span class="text-success">Guardada</span>
-                                                        </div>
-                                                    </div>
-                                                    <button type="button"
-                                                            class="btn btn-outline-primary btn-sm"
-                                                            onclick="ampliarFotoLegajo('{{ form.instance.foto_legajo.url|escapejs }}', '{{ form.instance.foto_legajo.name|escapejs }}')">
-                                                        <i class="fas fa-expand-alt mr-1"></i>
-                                                        Ver completa
-                                                    </button>
                                                 </div>
                                             </div>
-                                        {% endif %}
-                                        <!-- Input para nueva foto -->
-                                        <div class="nueva-foto-section">
-                                            <h6 class="text-light mb-2">
-                                                <i class="fas fa-upload mr-1"></i>
-                                                {% if form.instance.foto_legajo %}
-                                                    Cambiar foto:
-                                                {% else %}
-                                                    Seleccionar foto:
-                                                {% endif %}
-                                            </h6>
-                                            {{ form.foto_legajo }}
                                         </div>
-                                        <!-- Previsualización de nueva foto -->
-                                        <div id="fotoLegajoPreviewContainer"
-                                             class="nueva-foto-preview mt-3 d-none">
-                                            <h6 class="text-light mb-2">
-                                                <i class="fas fa-eye mr-1"></i>
-                                                Vista previa:
-                                            </h6>
-                                            <div class="nueva-foto-container">
-                                                <div class="foto-preview-wrapper">
-                                                    <img id="fotoLegajoPreview"
-                                                         src=""
-                                                         alt="Vista previa de foto legajo"
-                                                         class="foto-preview-img" />
-                                                    <button type="button"
-                                                            class="btn-remover-preview"
-                                                            onclick="removerPreviewFotoLegajo()">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </div>
-                                                <div class="foto-preview-info">
-                                                    <div class="preview-nombre" id="fotoLegajoNombre">imagen.jpg</div>
-                                                    <div class="preview-size" id="fotoLegajoSize">0 KB</div>
-                                                    <div class="preview-status">
-                                                        <i class="fas fa-clock text-warning"></i>
-                                                        <span class="text-warning">Pendiente de guardar</span>
-                                                    </div>
-                                                </div>
+                                        <div class="foto-info">
+                                            <div class="foto-nombre">
+                                                {% if "comedor/" in form.instance.foto_legajo.name %}
+                                                    {{ form.instance.foto_legajo.name|slice:"8:" }}
+                                                {% else %}
+                                                    {{ form.instance.foto_legajo.name }}
+                                                {% endif %}
                                             </div>
+                                            <div class="foto-status">
+                                                <i class="fas fa-check-circle text-success"></i>
+                                                <span class="text-success">Guardada</span>
+                                            </div>
+                                        </div>
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm"
+                                                onclick="ampliarFotoLegajo('{{ form.instance.foto_legajo.url|escapejs }}', '{{ form.instance.foto_legajo.name|escapejs }}')">
+                                            <i class="fas fa-expand-alt mr-1"></i>
+                                            Ver completa
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <!-- Input para nueva foto -->
+                            <div class="nueva-foto-section">
+                                <h6 class="text-light mb-2">
+                                    <i class="fas fa-upload mr-1"></i>
+                                    {% if form.instance.foto_legajo %}
+                                        Cambiar foto:
+                                    {% else %}
+                                        Seleccionar foto:
+                                    {% endif %}
+                                </h6>
+                                {{ form.foto_legajo }}
+                            </div>
+                            <!-- Previsualización de nueva foto -->
+                            <div id="fotoLegajoPreviewContainer"
+                                 class="nueva-foto-preview mt-3 d-none">
+                                <h6 class="text-light mb-2">
+                                    <i class="fas fa-eye mr-1"></i>
+                                    Vista previa:
+                                </h6>
+                                <div class="nueva-foto-container">
+                                    <div class="foto-preview-wrapper">
+                                        <img id="fotoLegajoPreview"
+                                             src=""
+                                             alt="Vista previa de foto legajo"
+                                             class="foto-preview-img" />
+                                        <button type="button"
+                                                class="btn-remover-preview"
+                                                onclick="removerPreviewFotoLegajo()">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="foto-preview-info">
+                                        <div class="preview-nombre" id="fotoLegajoNombre">imagen.jpg</div>
+                                        <div class="preview-size" id="fotoLegajoSize">0 KB</div>
+                                        <div class="preview-status">
+                                            <i class="fas fa-clock text-warning"></i>
+                                            <span class="text-warning">Pendiente de guardar</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-                <div class="card card-primary card-outline">
-                    <div class="bs-stepper">
-                        <div class="card-header mb-3">
-                            <h3 class="card-title">Datos del referente del comedor/merendero</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group row">
-                                <div class="col-4">{{ referente_form.nombre|as_crispy_field }}</div>
-                                <div class="col-4">{{ referente_form.apellido|as_crispy_field }}</div>
-                                <div class="col-4">{{ referente_form.mail|as_crispy_field }}</div>
-                            </div>
-                            <div class="form-group row">
-                                <div class="col-4">{{ referente_form.celular|as_crispy_field }}</div>
-                                <div class="col-4">{{ referente_form.documento|as_crispy_field }}</div>
-                                <div class="col-4">{{ referente_form.funcion|as_crispy_field }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="card card-primary card-outline">
-                    <div class="bs-stepper">
-                        <div class="card-header mb-3">
-                            <h3 class="card-title">
-                                <i class="fas fa-images mr-2"></i>
-                                Galería de Imágenes
-                            </h3>
-                        </div>
-                        <div class="card-body">
-                            <!-- Sección: Imágenes Existentes -->
-                            <div class="imagenes-existentes-section">
-                                <h5 class="imagen-header">Imágenes Existentes:</h5>
-                                <div class="imagenes-container">
-                                    {% for imagen in imagenes_borrar %}
-                                        <div class="imagen-existente imagen-item" data-image-id="{{ imagen.id }}">
-                                            <div class="imagen-card-content">
-                                                <div class="imagen-thumbnail-container"
-                                                     data-image-url="{{ imagen.imagen.url }}">
-                                                    <div class="preview-placeholder">
-                                                        <i class="fas fa-image"></i>
-                                                    </div>
-                                                </div>
-                                                <div class="imagen-info-content">
-                                                    <div class="imagen-filename-display">
-                                                        {% if "comedor/" in imagen.imagen.name %}
-                                                            {{ imagen.imagen.name|slice:"8:" }}
-                                                        {% else %}
-                                                            {{ imagen.imagen.name }}
-                                                        {% endif %}
-                                                    </div>
-                                                    <div class="imagen-status">
-                                                        <i class="fas fa-check-circle"></i>
-                                                        Guardada
-                                                    </div>
-                                                </div>
-                                                <div class="imagen-actions">
-                                                    <input type="checkbox"
-                                                           name="imagen_ciudadano-borrar-{{ imagen.id }}"
-                                                           id="imagen_borrar_{{ imagen.id }}"
-                                                           class="checkbox-eliminar-custom"
-                                                           data-image-id="{{ imagen.id }}" />
-                                                    <button type="button" class="btn-eliminar-custom">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                    </button>
+
+                        <!-- Galería de imágenes -->
+                        <div class="imagenes-existentes-section mt-4">
+                            <h5 class="imagen-header">Imágenes Existentes:</h5>
+                            <div class="imagenes-container">
+                                {% for imagen in imagenes_borrar %}
+                                    <div class="imagen-existente imagen-item" data-image-id="{{ imagen.id }}">
+                                        <div class="imagen-card-content">
+                                            <div class="imagen-thumbnail-container"
+                                                 data-image-url="{{ imagen.imagen.url }}">
+                                                <div class="preview-placeholder">
+                                                    <i class="fas fa-image"></i>
                                                 </div>
                                             </div>
-                                            <div class="overlay-eliminar d-none">
-                                                <div class="overlay-text">
-                                                    <i class="fas fa-trash-alt"></i>
-                                                    <br />
-                                                    MARCADA PARA ELIMINAR
+                                            <div class="imagen-info-content">
+                                                <div class="imagen-filename-display">
+                                                    {% if "comedor/" in imagen.imagen.name %}
+                                                        {{ imagen.imagen.name|slice:"8:" }}
+                                                    {% else %}
+                                                        {{ imagen.imagen.name }}
+                                                    {% endif %}
                                                 </div>
+                                                <div class="imagen-status">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    Guardada
+                                                </div>
+                                            </div>
+                                            <div class="imagen-actions">
+                                                <input type="checkbox"
+                                                       name="imagen_ciudadano-borrar-{{ imagen.id }}"
+                                                       id="imagen_borrar_{{ imagen.id }}"
+                                                       class="checkbox-eliminar-custom"
+                                                       data-image-id="{{ imagen.id }}" />
+                                                <button type="button" class="btn-eliminar-custom">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
                                             </div>
                                         </div>
-                                    {% endfor %}
-                                </div>
+                                        <div class="overlay-eliminar d-none">
+                                            <div class="overlay-text">
+                                                <i class="fas fa-trash-alt"></i>
+                                                <br />
+                                                MARCADA PARA ELIMINAR
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
                             </div>
-                            <!-- Sección: Agregar Nuevas Imágenes -->
-                            <div class="seccion-nuevas">
-                                <h5 class="nuevas-header">Agregar Nuevas Imágenes:</h5>
-                                <input type="file"
-                                       name="imagenes"
-                                       id="imagenesInput"
-                                       class="d-none"
-                                       multiple
-                                       accept="image/*" />
-                                <button type="button" id="addImagesBtn" class="btn-seleccionar">
-                                    <i class="fas fa-plus"></i>
-                                    Seleccionar Imágenes
-                                </button>
-                                <div id="selectedImagesInfo" class="contador-imagenes d-none">
-                                    <span id="imageCount">0</span> imagen(es) seleccionada(s)
-                                </div>
-                                <!-- Contenedor para mostrar las imágenes seleccionadas -->
-                                <div id="imagePreviewContainer" class="nuevas-imagenes-container"></div>
+                        </div>
+                        <!-- Sección: Agregar Nuevas Imágenes -->
+                        <div class="seccion-nuevas">
+                            <h5 class="nuevas-header">Agregar Nuevas Imágenes:</h5>
+                            <input type="file"
+                                   name="imagenes"
+                                   id="imagenesInput"
+                                   class="d-none"
+                                   multiple
+                                   accept="image/*" />
+                            <button type="button" id="addImagesBtn" class="btn-seleccionar">
+                                <i class="fas fa-plus"></i>
+                                Seleccionar Imágenes
+                            </button>
+                            <div id="selectedImagesInfo" class="contador-imagenes d-none">
+                                <span id="imageCount">0</span> imagen(es) seleccionada(s)
                             </div>
-                            <div class="d-flex justify-content-end">
-                                <div class="card-tools d-flex align-items-start my-3">
-                                    <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
-                                </div>
-                            </div>
+                            <!-- Contenedor para mostrar las imágenes seleccionadas -->
+                            <div id="imagePreviewContainer" class="nuevas-imagenes-container"></div>
                         </div>
                     </div>
                 </div>
-                <div class="d-flex justify-content-end">
-                    <button class="btn btn-success mx-1" type="submit">Guardar comedor</button>
+
+                <!-- Botones sticky -->
+                <div class="sticky-actions">
+                    <div>
+                        {% if comedor.id %}
+                            <a href="{% url 'comedor_detalle' comedor.id %}"
+                               class="btn btn-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i> Volver
+                            </a>
+                        {% else %}
+                            <a href="{% url 'comedores' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i> Volver
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <button type="button" onclick="window.history.back();" class="btn btn-secondary mr-2">
+                            <i class="fas fa-times mr-1"></i> Cancelar
+                        </button>
+                        <button class="btn btn-success" type="submit">
+                            <i class="fas fa-save mr-1"></i> Guardar comedor
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -876,14 +1459,7 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <!-- jQuery (requerido para Select2) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
-            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
-            crossorigin="anonymous"></script>
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
-            integrity="sha256-9yRP/2EFlblE92vzCA10469Ctd0jT48HnmmYw8dOv2I="
-            crossorigin="anonymous"></script>
+    <!-- jQuery y Select2 ya están cargados en mainscripts.html -->
     {{ form.estado_tree|json_script:"estado-general-data" }}
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -1025,22 +1601,346 @@
     </script>
     <script src="{% static 'custom/js/comedorform.js' %}"></script>
     <script>
-    // Inicializar Select2 después de que todo esté cargado
+    // Inicializar Select2 usando la función del archivo comedorform.js
     $(document).ready(function() {
-        console.log('jQuery cargado:', typeof jQuery !== 'undefined');
+        console.log('=== DEBUG SELECT2 ===');
+        console.log('jQuery version:', $.fn.jquery);
         console.log('Select2 disponible:', typeof $.fn.select2 !== 'undefined');
-        console.log('initializeSelect2 función disponible:', typeof initializeSelect2 === 'function');
+        console.log('initializeSelect2 función disponible:', typeof initializeSelect2 !== 'undefined');
 
-        if (typeof initializeSelect2 === 'function') {
-            console.log('Inicializando Select2 en los campos...');
-            initializeSelect2("id_organizacion", { placeholder: "Seleccione una organización" });
-            initializeSelect2("id_provincia", { placeholder: "Seleccione una provincia" });
-            initializeSelect2("id_municipio", { placeholder: "Seleccione un municipio" });
-            initializeSelect2("id_localidad", { placeholder: "Seleccione una localidad" });
-            console.log('Select2 inicializado');
-        } else {
-            console.error('initializeSelect2 no está disponible');
+        // Verificar que los elementos existen
+        console.log('Elemento organizacion existe:', $('#id_organizacion').length > 0);
+        console.log('Elemento provincia existe:', $('#id_provincia').length > 0);
+
+        // Esperar a que el archivo externo esté completamente cargado
+        setTimeout(function() {
+            console.log('Iniciando Select2 usando initializeSelect2()...');
+
+            try {
+                // Usar la función initializeSelect2 del archivo comedorform.js
+                initializeSelect2('id_organizacion', {
+                    placeholder: "Seleccione una organización",
+                    allowClear: true
+                });
+                console.log('✓ Select2 inicializado en organizacion');
+
+                initializeSelect2('id_provincia', {
+                    placeholder: "Seleccione una provincia",
+                    allowClear: true
+                });
+                console.log('✓ Select2 inicializado en provincia');
+
+                initializeSelect2('id_municipio', {
+                    placeholder: "Seleccione un municipio",
+                    allowClear: true
+                });
+                console.log('✓ Select2 inicializado en municipio');
+
+                initializeSelect2('id_localidad', {
+                    placeholder: "Seleccione una localidad",
+                    allowClear: true
+                });
+                console.log('✓ Select2 inicializado en localidad');
+
+                initializeSelect2('id_estado_general', {
+                    placeholder: "Seleccione un estado general",
+                    allowClear: false
+                });
+                console.log('✓ Select2 inicializado en estado_general');
+
+                initializeSelect2('id_subestado', {
+                    placeholder: "Seleccione un subestado",
+                    allowClear: false
+                });
+                console.log('✓ Select2 inicializado en subestado');
+
+                initializeSelect2('id_motivo', {
+                    placeholder: "Seleccione un motivo",
+                    allowClear: true
+                });
+                console.log('✓ Select2 inicializado en motivo');
+
+                console.log('✓✓✓ Todos los Select2 inicializados correctamente ✓✓✓');
+
+            } catch (error) {
+                console.error('ERROR al inicializar Select2:', error);
+                console.error('Stack trace:', error.stack);
+            }
+        }, 500);
+    });
+    </script>
+
+    <!-- JavaScript para Secciones Colapsables y Progreso -->
+    <script>
+    // SISTEMA DE SECCIONES COLAPSABLES CON ACCESIBILIDAD
+    function toggleSection(sectionId) {
+        const sectionBody = document.getElementById('section-' + sectionId);
+        const sectionHeader = document.querySelector(`[data-section="${sectionId}"] .section-header`);
+
+        if (sectionBody) {
+            // Bootstrap collapse
+            $(sectionBody).collapse('toggle');
+
+            // Toggle clase collapsed en el header
+            sectionHeader.classList.toggle('collapsed');
+        }
+    }
+
+    // Agregar soporte de teclado para accesibilidad
+    document.addEventListener('DOMContentLoaded', function() {
+        const sectionHeaders = document.querySelectorAll('.section-header');
+
+        sectionHeaders.forEach(header => {
+            // Hacer accesible con teclado
+            header.setAttribute('tabindex', '0');
+            header.setAttribute('role', 'button');
+            header.setAttribute('aria-expanded', 'true');
+
+            // Soporte Enter y Space
+            header.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const section = this.closest('.section-card').dataset.section;
+                    toggleSection(section);
+                }
+            });
+
+            // Actualizar aria-expanded
+            const sectionBody = this.nextElementSibling;
+            if (sectionBody) {
+                $(sectionBody).on('shown.bs.collapse', function() {
+                    header.setAttribute('aria-expanded', 'true');
+                });
+                $(sectionBody).on('hidden.bs.collapse', function() {
+                    header.setAttribute('aria-expanded', 'false');
+                });
+            }
+        });
+
+        // Inicializar validación en tiempo real
+        initializeRealTimeValidation();
+
+        // Actualizar progreso inicial
+        updateProgress();
+
+        // Monitorear cambios en formulario
+        const form = document.getElementById('comedorForm');
+        if (form) {
+            form.addEventListener('input', function() {
+                updateProgress();
+            });
+            form.addEventListener('change', function() {
+                updateProgress();
+            });
         }
     });
+
+    // VALIDACIÓN EN TIEMPO REAL
+    function initializeRealTimeValidation() {
+        const requiredFields = [
+            'id_nombre',
+            'id_tipocomedor',
+            'id_organizacion',
+            'id_estado_general',
+            'id_subestado'
+        ];
+
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                const wrapper = field.closest('.form-group');
+
+                field.addEventListener('blur', function() {
+                    validateField(this, wrapper);
+                });
+
+                field.addEventListener('input', function() {
+                    if (wrapper && wrapper.classList.contains('field-validated')) {
+                        validateField(this, wrapper);
+                    }
+                });
+            }
+        });
+
+        // Validación especial para Select2
+        $('.select2').on('select2:select select2:unselect', function() {
+            const wrapper = $(this).closest('.form-group')[0];
+            validateField(this, wrapper);
+        });
+    }
+
+    function validateField(field, wrapper) {
+        if (!wrapper) return;
+
+        const value = field.value.trim();
+        const isRequired = field.hasAttribute('required') || field.id.includes('nombre') ||
+                          field.id.includes('tipocomedor') || field.id.includes('organizacion') ||
+                          field.id.includes('estado_general') || field.id.includes('subestado');
+
+        wrapper.classList.remove('field-validated', 'valid', 'invalid');
+
+        if (isRequired) {
+            if (value) {
+                wrapper.classList.add('field-validated', 'valid');
+            } else {
+                wrapper.classList.add('field-validated', 'invalid');
+            }
+        } else if (value) {
+            wrapper.classList.add('field-validated', 'valid');
+        }
+    }
+
+    // SISTEMA DE PROGRESO
+    function updateProgress() {
+        const sections = {
+            basic: checkSectionBasic(),
+            estado: checkSectionEstado(),
+            ubicacion: checkSectionUbicacion(),
+            referente: checkSectionReferente(),
+            multimedia: checkSectionMultimedia()
+        };
+
+        let completedCount = 0;
+        Object.keys(sections).forEach(sectionId => {
+            const badge = document.getElementById('status-' + sectionId);
+            if (badge) {
+                const isComplete = sections[sectionId];
+                if (isComplete) {
+                    completedCount++;
+                    badge.className = 'status-badge complete';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Completada';
+                } else {
+                    const hasData = hasSectionData(sectionId);
+                    if (hasData) {
+                        badge.className = 'status-badge incomplete';
+                        badge.innerHTML = '<i class="fas fa-exclamation-circle"></i> Incompleta';
+                    } else {
+                        badge.className = 'status-badge empty';
+                        badge.innerHTML = '<i class="fas fa-circle"></i> Sin completar';
+                    }
+                }
+            }
+        });
+
+        // Actualizar barra de progreso
+        const progressPercent = (completedCount / 5) * 100;
+        const progressBar = document.getElementById('progressBarFill');
+        const completedSections = document.getElementById('completedSections');
+
+        if (progressBar) {
+            progressBar.style.width = progressPercent + '%';
+        }
+        if (completedSections) {
+            completedSections.textContent = completedCount;
+        }
+    }
+
+    function checkSectionBasic() {
+        const nombre = document.getElementById('id_nombre');
+        const tipocomedor = document.getElementById('id_tipocomedor');
+        const organizacion = document.getElementById('id_organizacion');
+
+        return nombre && nombre.value.trim() !== '' &&
+               tipocomedor && tipocomedor.value !== '' &&
+               organizacion && organizacion.value !== '';
+    }
+
+    function checkSectionEstado() {
+        const estadoGeneral = document.getElementById('id_estado_general');
+        const subestado = document.getElementById('id_subestado');
+
+        return estadoGeneral && estadoGeneral.value !== '' &&
+               subestado && subestado.value !== '';
+    }
+
+    function checkSectionUbicacion() {
+        const provincia = document.getElementById('id_provincia');
+        const municipio = document.getElementById('id_municipio');
+        const localidad = document.getElementById('id_localidad');
+
+        return provincia && provincia.value !== '' &&
+               municipio && municipio.value !== '' &&
+               localidad && localidad.value !== '';
+    }
+
+    function checkSectionReferente() {
+        const nombre = document.getElementById('id_referente-nombre');
+        const apellido = document.getElementById('id_referente-apellido');
+        const celular = document.getElementById('id_referente-celular');
+
+        return nombre && nombre.value.trim() !== '' &&
+               apellido && apellido.value.trim() !== '' &&
+               celular && celular.value.trim() !== '';
+    }
+
+    function checkSectionMultimedia() {
+        // Verificar si hay foto de legajo o imágenes
+        const fotoLegajo = document.getElementById('id_foto_legajo');
+        const hasExistingPhoto = document.querySelector('.foto-legajo-existente') !== null;
+        const hasExistingImages = document.querySelectorAll('.imagen-existente').length > 0;
+        const hasNewImages = document.querySelectorAll('.preview-nueva-imagen').length > 0;
+
+        return hasExistingPhoto || (fotoLegajo && fotoLegajo.files.length > 0) ||
+               hasExistingImages || hasNewImages;
+    }
+
+    function hasSectionData(sectionId) {
+        const section = document.getElementById('section-' + sectionId);
+        if (!section) return false;
+
+        const inputs = section.querySelectorAll('input:not([type="hidden"]), select, textarea');
+        for (let input of inputs) {
+            if (input.value && input.value.trim() !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // SKELETON LOADERS PARA AJAX
+    // Modificar la función cargarOpciones existente para mostrar skeleton loaders
+    const originalCargarOpciones = window.cargarOpciones;
+    if (originalCargarOpciones) {
+        window.cargarOpciones = async function(url, select) {
+            // Mostrar skeleton loader
+            if (select === 'municipio') {
+                showLoader('municipio');
+            } else if (select === 'localidad') {
+                showLoader('localidad');
+            }
+
+            try {
+                await originalCargarOpciones(url, select);
+            } finally {
+                // Ocultar skeleton loader
+                if (select === 'municipio') {
+                    hideLoader('municipio');
+                } else if (select === 'localidad') {
+                    hideLoader('localidad');
+                }
+            }
+        };
+    }
+
+    function showLoader(fieldName) {
+        const loader = document.getElementById(fieldName + '-loader');
+        const field = document.getElementById(fieldName + '-field');
+        if (loader && field) {
+            loader.classList.remove('d-none');
+            field.style.opacity = '0.3';
+        }
+    }
+
+    function hideLoader(fieldName) {
+        const loader = document.getElementById(fieldName + '-loader');
+        const field = document.getElementById(fieldName + '-field');
+        if (loader && field) {
+            loader.classList.add('d-none');
+            field.style.opacity = '1';
+        }
+    }
+
+    // Hacer funciones globales
+    window.toggleSection = toggleSection;
     </script>
 {% endblock %}
