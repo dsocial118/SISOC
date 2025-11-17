@@ -6,14 +6,67 @@ function confirmSubmit() {
   return confirm("¿Estás seguro de que deseas guardar el comedor?");
 }
 
+// FUNCIONALIDAD DE FILTRADO CON SELECT2
+/**
+ * Inicializa Select2 en un elemento select
+ * @param {string} selectId - ID del select a inicializar
+ * @param {object} options - Opciones adicionales para Select2
+ */
+function initializeSelect2(selectId, options = {}) {
+  const selectElement = $('#' + selectId);
+
+  if (selectElement.length === 0) {
+    console.warn('Select element not found:', selectId);
+    return;
+  }
+
+  // Guardar el valor actual antes de destruir
+  const currentValue = selectElement.val();
+
+  // Destruir instancia previa si existe
+  if (selectElement.data('select2')) {
+    selectElement.select2('destroy');
+  }
+
+  // Configuración por defecto
+  const defaultOptions = {
+    theme: 'default',
+    placeholder: 'Seleccione una opción',
+    allowClear: false,
+    width: '100%',
+    language: {
+      noResults: function() {
+        return "No se encontraron resultados";
+      },
+      searching: function() {
+        return "Buscando...";
+      }
+    }
+  };
+
+  // Combinar opciones
+  const finalOptions = { ...defaultOptions, ...options };
+
+  // Inicializar Select2
+  selectElement.select2(finalOptions);
+
+  // Restaurar el valor si existía
+  if (currentValue) {
+    selectElement.val(currentValue).trigger('change.select2');
+  }
+}
+
+// Event listeners con Select2
 if (provinciaSelect) {
-  provinciaSelect.addEventListener("change", async function () {
+  // Usar jQuery para eventos de Select2
+  $('#id_provincia').on('select2:select', async function (e) {
+    const provinciaId = e.params.data.id;
     await cargarOpciones(
-      `${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`,
+      `${ajaxLoadMunicipiosUrl}?provincia_id=${provinciaId}`,
       "municipio"
     ).then(async () => {
       await cargarOpciones(
-        `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioSelect.options[0].value}`,
+        `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioSelect.options[0]?.value || ''}`,
         "localidad"
       );
     });
@@ -21,9 +74,10 @@ if (provinciaSelect) {
 }
 
 if (municipioSelect) {
-  municipioSelect.addEventListener("change", async function () {
+  $('#id_municipio').on('select2:select', async function (e) {
+    const municipioId = e.params.data.id;
     await cargarOpciones(
-      `${ajaxLoadLocalidadesUrl}?municipio_id=${this.value}`,
+      `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioId}`,
       "localidad"
     );
   });
@@ -33,17 +87,44 @@ async function cargarOpciones(url, select) {
   try {
     const response = await fetch(url);
     const data = await response.json();
+
+    // Ordenar alfabéticamente por nombre o nombre_region
+    data.sort((a, b) => {
+      const nameA = (a.nombre || a.nombre_region || '').toUpperCase();
+      const nameB = (b.nombre || b.nombre_region || '').toUpperCase();
+      return nameA.localeCompare(nameB);
+    });
+
     if (select === "municipio") {
       municipioSelect.innerHTML = "";
       localidadSelect.innerHTML = "";
+
+      // Agregar opción vacía al inicio
+      const emptyOption = document.createElement("option");
+      emptyOption.value = "";
+      emptyOption.textContent = "---------";
+      municipioSelect.appendChild(emptyOption);
+
       data.forEach((item) => crearOpcion(item, municipioSelect));
+      // Reinicializar Select2 para municipio
+      setTimeout(() => initializeSelect2("id_municipio", { placeholder: "Seleccione un municipio" }), 100);
     }
 
     if (select === "localidad") {
       localidadSelect.innerHTML = "";
+
+      // Agregar opción vacía al inicio
+      const emptyOption = document.createElement("option");
+      emptyOption.value = "";
+      emptyOption.textContent = "---------";
+      localidadSelect.appendChild(emptyOption);
+
       data.forEach((item) => crearOpcion(item, localidadSelect));
+      // Reinicializar Select2 para localidad
+      setTimeout(() => initializeSelect2("id_localidad", { placeholder: "Seleccione una localidad" }), 100);
     }
   } catch (error) {
+    console.error('Error cargando opciones:', error);
   }
 }
 
@@ -56,7 +137,7 @@ function crearOpcion({ id, nombre, nombre_region }, select) {
 
 // FUNCIONALIDAD DE IMÁGENES
 document.addEventListener("DOMContentLoaded", function () {
-  
+
   // Array para almacenar todos los archivos seleccionados
   let selectedFiles = [];
 
