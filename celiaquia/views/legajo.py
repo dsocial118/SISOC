@@ -423,6 +423,26 @@ class LegajoEliminarView(View):
             )
 
             with transaction.atomic():
+                # Liberar cupo ocupado antes de eliminar el legajo
+                try:
+                    CupoService.liberar_slot(
+                        legajo=legajo,
+                        usuario=user,
+                        motivo="Eliminación manual del legajo",
+                    )
+                except CupoNoConfigurado as e:
+                    logger.warning(
+                        "No se pudo liberar cupo para legajo %s: %s", legajo_id, e
+                    )
+                except Exception as e:  # pragma: no cover - log y abortar
+                    logger.error(
+                        "Error liberando cupo antes de eliminar legajo %s: %s",
+                        legajo_id,
+                        e,
+                        exc_info=True,
+                    )
+                    raise
+
                 # Eliminar registros relacionados primero
                 from celiaquia.models import CupoMovimiento, PagoNomina
 

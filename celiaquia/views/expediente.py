@@ -954,18 +954,18 @@ class RevisarLegajoView(View):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
 
+        es_admin = _is_admin(user)
+        es_tecnico = _user_in_group(user, "TecnicoCeliaquia")
+        es_coord = _user_in_group(user, "CoordinadorCeliaquia")
+
         # Permisos: admin, técnico o coordinador
-        if not (
-            _is_admin(user)
-            or _user_in_group(user, "TecnicoCeliaquia")
-            or _user_in_group(user, "CoordinadorCeliaquia")
-        ):
+        if not (es_admin or es_tecnico or es_coord):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
 
-        # Si no es admin, debe ser el técnico asignado a este expediente
-        if not _is_admin(user):
+        # Técnicos deben estar asignados; coordinadores quedan exceptuados
+        if not (es_admin or es_coord):
             # Usar prefetch para evitar query adicional
             tecnicos_ids = [
                 t.tecnico_id for t in expediente.asignaciones_tecnicos.all()

@@ -42,6 +42,13 @@ if (typeof module !== 'undefined') {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
+  const editarLegajoUrlTemplate = (window.EDITAR_LEGAJO_URL_TEMPLATE ||
+    editarLegajoMeta?.getAttribute('content')?.replace('/0/', '/{id}/')) || null;
+  if (editarLegajoUrlTemplate && !window.EDITAR_LEGAJO_URL_TEMPLATE) {
+    window.EDITAR_LEGAJO_URL_TEMPLATE = editarLegajoUrlTemplate;
+  }
+
   /* ====== Paginación genérica client-side ====== */
   function paginate({
     items,
@@ -1582,7 +1589,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       try {
         // Cargar datos actuales del legajo
-        const editarUrl = document.querySelector('meta[name="editar-legajo-url-template"]')?.getAttribute('content')?.replace('0', legajoId);
+        const editarUrl = editarLegajoUrlTemplate?.replace('{id}', legajoId);
         if (!editarUrl) {
           showAlert('danger', 'URL de edición no configurada.');
           return;
