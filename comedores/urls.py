@@ -218,7 +218,7 @@ urlpatterns = [
     ),
     path(
         "comedores/<int:pk>/validar/",
-        group_required(["Tecnico Comedor", "Abogado Dupla"])(validar_comedor),
+        login_required(validar_comedor),
         name="validar_comedor",
     ),
 ]
