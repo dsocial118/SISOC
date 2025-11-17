@@ -162,7 +162,7 @@ class ComedorForm(forms.ModelForm):
             )
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia
-            ).order_by("nombre_region")
+            ).order_by("nombre")
         else:
             self.fields["provincia"].queryset = Provincia.objects.all().order_by(
                 "nombre"
