@@ -31,7 +31,9 @@ class Command(BaseCommand):
             dest="dry_run",
             help="Muestra los cambios sin persistirlos en la base de datos.",
         )
-        parser.add_argument("--admision", action="store_true", help="Crear admisión si no existe.")
+        parser.add_argument(
+            "--admision", action="store_true", help="Crear admisión si no existe."
+        )
 
     def handle(self, *args, **options):
         csv_path = Path(options["csv_path"]).expanduser()
@@ -122,7 +124,9 @@ class Command(BaseCommand):
                 if options["admision"]:
                     if (
                         Admision.objects.filter(
-                            comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
+                            comedor=comedor,
+                            tipo="incorporacion",
+                            enviada_a_archivo=False,
                         ).exists()
                         == False
                     ):
