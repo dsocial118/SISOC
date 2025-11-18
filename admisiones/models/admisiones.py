@@ -76,6 +76,22 @@ class Admision(models.Model):
         ),
     ]
 
+    ESTADOS_ADMISION = [
+        ("iniciada", "Iniciada"),
+        ("convenio_seleccionado", "Convenio seleccionado"),
+        ("documentacion_en_proceso", "Documentación en proceso"),
+        ("documentacion_finalizada", "Documentación finalizada"),
+        ("documentacion_aprobada", "Documentación aprobada"),
+        ("expediente_cargado", "Expediente cargado"),
+        ("informe_tecnico_en_proceso", "Informe técnico en proceso"),
+        ("informe_tecnico_en_revision", "Informe técnico en revisión"),
+        ("informe_tecnico_en_subsanacion", "Informe técnico en subsanación"),
+        ("informe_tecnico_aprobado", "Informe técnico aprobado"),
+        ("if_informe_tecnico_cargado", "IF Informe técnico cargado"),
+        ("enviado_a_legales", "Enviado a legales"),
+        ("enviado_a_acompaniamiento", "Enviado a acompañamiento"),
+    ]
+
     comedor = models.ForeignKey(
         Comedor,
         on_delete=models.SET_NULL,
@@ -165,6 +181,16 @@ class Admision(models.Model):
     )
     fecha_descarte_expediente = models.DateField(
         "Fecha de descarte del Expediente", null=True, blank=True
+    )
+    activa = models.BooleanField(default=True, verbose_name="¿Activa?")
+    motivo_forzar_cierre = models.TextField(
+        "Motivo de forzar cierre", null=True, blank=True
+    )
+    estado_admision = models.CharField(
+        max_length=40,
+        choices=ESTADOS_ADMISION,
+        default="iniciada",
+        verbose_name="Estado de Admisión",
     )
 
     @property

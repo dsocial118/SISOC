@@ -936,7 +936,7 @@ class LegalesService:
         try:
             from users.services import UserPermissionService
 
-            queryset = Admision.objects.filter(enviado_legales=True).select_related(
+            queryset = Admision.objects.filter(enviado_legales=True, activa=True).select_related(
                 "comedor", "tipo_convenio"
             )
 

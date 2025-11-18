@@ -1,9 +1,8 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
 {% load crispy_forms_tags %}
-;
 {% load static custom_filters %}
+{% load admisiones_tags %}
 ;
 {% block title %}Admision: {{ comedor.nombre }}{% endblock %}
 ;
@@ -34,61 +33,9 @@
                class="btn btn-secondary mr-1">Volver</a>
         </div>
         <div class="col-auto">
-            {% if request.user|has_group:"Abogado Dupla" %}
-                {% if informe_tecnico and informe_tecnico.estado != "Iniciado" %}
-                    <a href="{% url 'informe_tecnico_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
-                       class="btn btn-primary mr-1">Ver Informe Técnico</a>
-                {% endif %}
-            {% endif %}
-            {% if request.user|has_group:"Tecnico Comedor" %}
-                {% if admision.numero_disposicion and not admision.enviado_acompaniamiento %}
-                    <button type="button"
-                            class="btn btn-success mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalDisponibilizarAcomp">Comenzar Acompañamiento</button>
-                {% endif %}
-                {% if admision.estado_legales == "A Rectificar" %}
-                    <button type="button"
-                            class="btn btn-warning mr-1"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalRectificarDocumetacion">Rectificar Documentación</button>
-                {% endif %}
-                {% if informe_tecnico.estado != "Validado" %}
-                    {% if admision.estado.nombre == "Finalizada" and not admision.num_expediente %}
-                        <button type="button"
-                                class="btn btn-primary mr-1"
-                                data-bs-toggle="modal"
-                                data-bs-target="#caratularExpediente">Caratular expediente</button>
-                    {% endif %}
-                    {% if admision.estado.nombre == "Finalizada" and admision.num_expediente %}
-                        {% if not informe_tecnico %}
-                            <a href="{% url 'informe_tecnico_crear' tipo=admision.tipo_informe admision_id=admision.id %}"
-                               class="btn btn-primary mr-1">Crear Informe Técnico</a>
-                        {% else %}
-                            <a href="{% url 'informe_tecnico_editar' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
-                               class="btn btn-primary mr-1">Editar Informe Técnico</a>
-                        {% endif %}
-                    {% endif %}
-                {% else %}
-                    {% if mostrar_informe_complementario %}
-                        <a href="{% url 'informe_complementario_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
-                           class="btn btn-primary mr-1">Informe Técnico Complementario</a>
-                    {% endif %}
-                    {% if not admision.enviado_legales %}
-                        {% if not admision.numero_if_tecnico %}
-                            <button type="button"
-                                    class="btn btn-primary mr-1"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalIFInformeTecnico">IF Informe Técnico</button>
-                        {% else %}
-                            <button type="button"
-                                    class="btn btn-primary mr-1"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#confirmarLegalesModal">Mandar a legales</button>
-                        {% endif %}
-                    {% endif %}
-                {% endif %}
-            {% endif %}
+            {% for boton in botones_disponibles %}
+                {% render_boton_tecnicos boton admision informe_tecnico %}
+            {% endfor %}
         </div>
     </div>
     {% if mostrar_informe_complementario %}
@@ -178,24 +125,10 @@
                                 <span class="fw-bold">{{ admision.get_tipo_display| default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
-                        <li class="nav-item">
-                            <div class="comment-text">
-                                Estado:
-                                {% if admision_todo_aceptado %}
-                                    <span class="fw-bold">Finalizada</span> <i class="bi bi-check-circle-fill text-success">
-                                    {% else %}
-                                        <span class="fw-bold">{{ admision.estado.nombre| default_if_none:"Sin información" }}</span>
-                                        {% if admision.estado.nombre == "Finalizada" %}
-                                            <i class="bi bi-check-circle-fill text-success">
-                                            {% else %}
-                                                <i class="bi bi-exclamation-circle-fill text-warning">
-                                                {% endif %}
-                                            </i>
-                                        {% endif %}
-                                        {% if admision.enviado_legales %}- Enviado a Legales <i class="bi bi-check-circle-fill text-success"></i>{% endif %}
-                                        {% if admision.enviado_acompaniamiento %}
-                                            - Enviado a Acompañamiento <i class="bi bi-check-circle-fill text-success"></i>
-                                        {% endif %}
+                                <li class="nav-item">
+                                    <div class="comment-text">
+                                        Estado del Proceso:
+                                        <span class="fw-bold">{{ admision.get_estado_admision_display }}</span>
                                     </div>
                                 </li>
                                 <li class="nav-item">
