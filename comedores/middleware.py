@@ -21,25 +21,25 @@ class AutoResetValidacionesMiddleware:
         hoy = timezone.now().date()
 
         if not ultimo_check or ultimo_check != hoy:
-            # Verificar si necesita reset mensual
-            reset_key = f'reset_validaciones_{hoy.strftime("%Y_%m")}'
-            if not cache.get(reset_key):
-                # ¿Ya pasó el día 1 de este mes?
-                primer_dia_mes = hoy.replace(day=1)
-                if hoy >= primer_dia_mes:
-                    try:
-                        comedores_actualizados = (
-                            ValidacionService.resetear_validaciones()
-                        )
-                        logger.info(
-                            "Auto-reset middleware: %s comedores reseteados (día %s)",
-                            comedores_actualizados,
-                            hoy.day,
-                        )
-                        # Marcar como ejecutado este mes
-                        cache.set(reset_key, True, 60 * 60 * 24 * 32)
-                    except Exception as exc:  # pragma: no cover
-                        logger.error("Error en auto-reset middleware: %s", exc)
+            # Solo activar a partir de diciembre 2024 (evitar reset en deploy inicial)
+            if hoy >= timezone.datetime(2024, 12, 1).date():
+                # Verificar si necesita reset mensual (cualquier día del mes nuevo)
+                reset_key = f'reset_validaciones_{hoy.strftime("%Y_%m")}'
+                if not cache.get(reset_key):
+                try:
+                    comedores_actualizados = (
+                        ValidacionService.resetear_validaciones()
+                    )
+                    logger.info(
+                        "Auto-reset middleware: %s comedores reseteados (mes %s, día %s)",
+                        comedores_actualizados,
+                        hoy.strftime("%Y-%m"),
+                        hoy.day,
+                    )
+                    # Marcar como ejecutado este mes
+                    cache.set(reset_key, True, 60 * 60 * 24 * 32)
+                except Exception as exc:  # pragma: no cover
+                    logger.error("Error en auto-reset middleware: %s", exc)
 
             # Actualizar último check
             cache.set(cache_key, hoy, 60 * 60 * 24)

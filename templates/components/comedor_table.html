@@ -11,7 +11,7 @@
                             <th>Ubicacion</th>
                             <th>Direccion</th>
                             <th>Referente</th>
-                            <th>Numero de contacto</th>
+                            <th>Validación</th>
                             <th style="width: 15%" class="notexport">Acciones</th>
                         </tr>
                     </thead>
@@ -33,7 +33,21 @@
                                 <td>
                                     {{ comedor.referente__nombre | default_if_none:"Sin información" }}, {{ comedor.referente__apellido | default_if_none:"Sin información" }}
                                 </td>
-                                <td>{{ comedor.referente__celular | default_if_none:"Sin información" }}</td>
+                                <td>
+                                    {% if comedor.estado_validacion == "Validado" %}
+                                        <span class="badge bg-success">Validado</span>
+                                        {% if comedor.fecha_validado %}
+                                            <br><small class="text-muted">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
+                                        {% endif %}
+                                    {% elif comedor.estado_validacion == "No Validado" %}
+                                        <span class="badge bg-danger">No Validado</span>
+                                        {% if comedor.fecha_validado %}
+                                            <br><small class="text-muted">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <a href="{% url 'comedor_detalle' comedor.id %}"
