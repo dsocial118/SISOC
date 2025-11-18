@@ -34,6 +34,8 @@ function initializeSelect2(selectId, options = {}) {
     allowClear: false,
     width: '100%',
     minimumResultsForSearch: 0, // Siempre mostrar la caja de búsqueda
+    dropdownAutoWidth: false, // Mantener el ancho del select
+    dropdownPosition: 'below', // Forzar apertura hacia abajo (requiere plugin)
     language: {
       noResults: function() {
         return "No se encontraron resultados";
@@ -52,6 +54,23 @@ function initializeSelect2(selectId, options = {}) {
 
   // Inicializar Select2
   selectElement.select2(finalOptions);
+
+  // Forzar que el dropdown siempre se abra hacia abajo
+  selectElement.on('select2:open', function() {
+    // Obtener el dropdown
+    const $dropdown = $('.select2-dropdown');
+
+    // Remover clases de posicionamiento hacia arriba
+    $dropdown.removeClass('select2-dropdown--above');
+
+    // Agregar clase de posicionamiento hacia abajo
+    $dropdown.addClass('select2-dropdown--below');
+
+    // Forzar la posición del contenedor
+    const $container = $('.select2-container--open');
+    $container.removeClass('select2-container--above');
+    $container.addClass('select2-container--below');
+  });
 
   // Restaurar el valor si existía
   if (currentValue) {
