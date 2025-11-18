@@ -363,7 +363,7 @@ class AcompanamientoService:
 
             admisiones_prefetch = Prefetch(
                 "admision_set",
-                queryset=Admision.objects.filter(enviado_acompaniamiento=True)
+                queryset=Admision.objects.filter(enviado_acompaniamiento=True, activa=True)
                 .select_related(
                     "comedor",
                     "comedor__provincia",
@@ -389,7 +389,7 @@ class AcompanamientoService:
                     "organizacion",
                 )
                 .prefetch_related(admisiones_prefetch, "dupla__tecnico")
-                .filter(admision__enviado_acompaniamiento=True)
+                .filter(admision__enviado_acompaniamiento=True, admision__activa=True)
                 .distinct()
             )
 
@@ -472,8 +472,8 @@ class AcompanamientoService:
                             {"content": str(comedor.dupla) if comedor.dupla else "-"},
                             {
                                 "content": (
-                                    admision.estado.nombre
-                                    if admision and admision.estado
+                                    admision.get_estado_admision_display()
+                                    if admision and admision.estado_admision
                                     else "-"
                                 )
                             },
@@ -487,7 +487,7 @@ class AcompanamientoService:
                         ],
                         "actions": [
                             {
-                                "url": f"/acompanamientos/detalle/{comedor.id}/",
+                                "url": f"/acompanamientos/acompanamiento/{comedor.id}/detalle/",
                                 "label": "Ver Acompañamiento",
                                 "type": "primary",
                             }

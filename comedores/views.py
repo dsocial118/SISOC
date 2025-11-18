@@ -473,6 +473,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             {"title": "Convenio"},
             {"title": "Tipo"},
             {"title": "Estado"},
+            {"title": "Proceso"},
+            {"title": "Activa"},
         ]
 
         admisiones_items = []
@@ -513,8 +515,22 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                             {
                                 "content": (
                                     a.estado.nombre
-                                    if hasattr(a, "estado") and a.estado
+                                    if hasattr(a, "estado") and a.estado.nombre
                                     else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    a.get_estado_admision_display()
+                                    if hasattr(a, "get_estado_admision_display") and a.get_estado_admision_display()
+                                    else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    format_html('<i class="bi bi-check-circle-fill text-success"></i>')
+                                    if getattr(a, "activa", True)
+                                    else format_html('<i class="bi bi-x-circle-fill text-danger"></i>')
                                 )
                             },
                         ],

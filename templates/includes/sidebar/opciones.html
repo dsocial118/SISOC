@@ -242,6 +242,7 @@
                                 </a>
                             </li>
                         {% endif %}
+                        {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
                         {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Coordinador Equipo Tecnico" %}
                             <li class="nav-item">
@@ -252,6 +253,7 @@
                                 </a>
                             </li>
                         {% endif %}
+                        {% endcomment %}
                     </ul>
                 </li>
             {% endif %}
