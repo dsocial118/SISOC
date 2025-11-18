@@ -71,6 +71,30 @@
     color: #9ca3af;
   }
 
+  /* Forzar que el dropdown siempre se abra hacia abajo */
+  .select2-container--open .select2-dropdown--below {
+    border-top: 1px solid #374151;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  /* Prevenir que el dropdown se abra hacia arriba */
+  .select2-container--open .select2-dropdown--above {
+    display: none !important;
+  }
+
+  /* Mantener el select en su posición cuando se abre */
+  .select2-container--open {
+    position: relative;
+  }
+
+  /* Asegurar que el dropdown esté debajo del select */
+  .select2-dropdown {
+    position: absolute;
+    top: 100%;
+    margin-top: -1px;
+  }
+
   /* Estilos para replicar el diseño de la imagen original */
   .imagenes-existentes-section {
     margin-bottom: 30px;
