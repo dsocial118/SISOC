@@ -982,8 +982,12 @@
                     <div class="modal-body text-center">
                         <p class="mb-4">Seleccione una opción para validar el comedor:</p>
                         <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-success btn-lg" onclick="validarComedor()">Validar</button>
-                            <button type="button" class="btn btn-danger btn-lg" onclick="mostrarOpcionesNoValidar()">No Validar</button>
+                            <button type="button"
+                                    class="btn btn-success btn-lg"
+                                    onclick="validarComedor()">Validar</button>
+                            <button type="button"
+                                    class="btn btn-danger btn-lg"
+                                    onclick="mostrarOpcionesNoValidar()">No Validar</button>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1001,9 +1005,11 @@
              aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form method="POST" action="{% url 'validar_comedor' comedor.pk %}" id="formNoValidar">
+                    <form method="POST"
+                          action="{% url 'validar_comedor' comedor.pk %}"
+                          id="formNoValidar">
                         {% csrf_token %}
-                        <input type="hidden" name="accion" value="no_validar">
+                        <input type="hidden" name="accion" value="no_validar" />
                         <div class="modal-header">
                             <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validación</h5>
                             <button type="button"
@@ -1015,9 +1021,7 @@
                             <div class="mb-3">
                                 <label for="opcionesSelect" class="form-label">Seleccione uno o más motivos: *</label>
                                 <select class="form-control" id="opcionesSelect" name="opciones" multiple>
-                                    {% for value, label in opciones_no_validar %}
-                                        <option value="{{ value }}">{{ label }}</option>
-                                    {% endfor %}
+                                    {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
                                 </select>
                             </div>
                             <div class="mb-3" id="comentarioDiv" style="display: none;">
@@ -1031,7 +1035,9 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-danger" onclick="return validarFormNoValidar()">No Validar</button>
+                            <button type="submit"
+                                    class="btn btn-danger"
+                                    onclick="return validarFormNoValidar()">No Validar</button>
                         </div>
                     </form>
                 </div>
@@ -1105,7 +1111,7 @@
             box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
         }
         </style>
-        
+ 
         <script>
         const comedorId = "{{ comedor.id }}"
         const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
