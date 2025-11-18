@@ -26,20 +26,20 @@ class AutoResetValidacionesMiddleware:
                 # Verificar si necesita reset mensual (cualquier día del mes nuevo)
                 reset_key = f'reset_validaciones_{hoy.strftime("%Y_%m")}'
                 if not cache.get(reset_key):
-                try:
-                    comedores_actualizados = (
-                        ValidacionService.resetear_validaciones()
-                    )
-                    logger.info(
-                        "Auto-reset middleware: %s comedores reseteados (mes %s, día %s)",
-                        comedores_actualizados,
-                        hoy.strftime("%Y-%m"),
-                        hoy.day,
-                    )
-                    # Marcar como ejecutado este mes
-                    cache.set(reset_key, True, 60 * 60 * 24 * 32)
-                except Exception as exc:  # pragma: no cover
-                    logger.error("Error en auto-reset middleware: %s", exc)
+                    try:
+                        comedores_actualizados = (
+                            ValidacionService.resetear_validaciones()
+                        )
+                        logger.info(
+                            "Auto-reset middleware: %s comedores reseteados (mes %s, día %s)",
+                            comedores_actualizados,
+                            hoy.strftime("%Y-%m"),
+                            hoy.day,
+                        )
+                        # Marcar como ejecutado este mes
+                        cache.set(reset_key, True, 60 * 60 * 24 * 32)
+                    except Exception as exc:  # pragma: no cover
+                        logger.error("Error en auto-reset middleware: %s", exc)
 
             # Actualizar último check
             cache.set(cache_key, hoy, 60 * 60 * 24)
