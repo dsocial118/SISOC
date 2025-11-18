@@ -158,7 +158,8 @@ class ComedorService:
                 "numero",
                 "referente__nombre",
                 "referente__apellido",
-                "referente__celular",
+                "estado_validacion",
+                "fecha_validado",
             )
             .order_by("-id")
         )
@@ -225,7 +226,8 @@ class ComedorService:
                         "numero",
                         "referente__nombre",
                         "referente__apellido",
-                        "referente__celular",
+                        "estado_validacion",
+                        "fecha_validado",
                     )
                     .order_by("-id")
                 )

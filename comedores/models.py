@@ -597,8 +597,48 @@ class HistorialValidacion(models.Model):
         max_length=20,
         choices=Comedor.ESTADOS_VALIDACION,
     )
+    OPCIONES_NO_VALIDAR = [
+        ("nombre_comedor_incorrecto", "Nombre del Comedor incorrecto"),
+        ("organizacion_incorrecta", "Organización incorrecta"),
+        ("direccion_incorrecta", "Dirección incorrecta"),
+        ("pac_inexistente", "PAC inexistente"),
+        ("sin_movimiento", "Sin movimiento"),
+        ("baja_por_organizacion", "Baja por la Organización"),
+        ("baja_por_programa", "Baja por el Programa"),
+        ("baja_por_comedor", "Baja por el Comedor"),
+        ("no_se_reconoce_comedor", "No se reconoce el comedor"),
+        ("otro", "Otro"),
+    ]
+
+    @classmethod
+    def get_opciones_no_validar(cls):
+        """Retorna las opciones de no validación para uso en templates"""
+        return cls.OPCIONES_NO_VALIDAR
+
+    def get_opciones_display(self):
+        """Retorna las opciones seleccionadas en formato legible"""
+        if not self.opciones_no_validar:
+            return "-"
+
+        opciones_dict = dict(self.OPCIONES_NO_VALIDAR)
+        opciones_texto = []
+
+        for opcion in self.opciones_no_validar:
+            if opcion in opciones_dict:
+                opciones_texto.append(opciones_dict[opcion])
+
+        return ", ".join(opciones_texto) if opciones_texto else "-"
+
+    opciones_no_validar = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Opciones de no validación",
+        help_text="Opciones seleccionadas cuando se marca como no validado",
+    )
     comentario = models.TextField(
         verbose_name="Comentario",
+        blank=True,
+        null=True,
     )
     fecha_validacion = models.DateTimeField(
         auto_now_add=True,

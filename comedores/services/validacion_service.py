@@ -15,22 +15,30 @@ class ValidacionService:
         )
 
     @staticmethod
-    def validar_comedor(comedor_id, user, accion, comentario):
+    def validar_comedor(comedor_id, user, accion, opciones=None, comentario=""):
         """Procesa la validación del comedor"""
         comedor = get_object_or_404(Comedor, pk=comedor_id)
 
         if not ValidacionService.puede_validar(user, comedor):
             return False, "No tiene permisos para validar este comedor."
 
-        if not comentario.strip():
-            return False, "El comentario es obligatorio."
-
         if accion == "validar":
             estado = "Validado"
             mensaje = "Comedor validado correctamente."
+            opciones_guardadas = None
         elif accion == "no_validar":
             estado = "No Validado"
             mensaje = "Comedor marcado como no validado."
+
+            # Validar que se seleccionó al menos una opción
+            if not opciones or len(opciones) == 0:
+                return False, "Debe seleccionar al menos una opción."
+
+            # Si seleccionó "otro", el comentario es obligatorio
+            if "otro" in opciones and not comentario.strip():
+                return False, "El comentario es obligatorio cuando selecciona 'Otro'."
+
+            opciones_guardadas = opciones
         else:
             return False, "Acción no válida."
 
@@ -45,6 +53,7 @@ class ValidacionService:
                 comedor=comedor,
                 usuario=user,
                 estado_validacion=estado,
+                opciones_no_validar=opciones_guardadas,
                 comentario=comentario,
             )
 
@@ -52,7 +61,8 @@ class ValidacionService:
 
     @staticmethod
     def resetear_validaciones():
-        """Resetea todas las validaciones a Pendiente"""
+        """Resetea el estado de validación de todos los comedores a Pendiente."""
+
         return Comedor.objects.filter(
             estado_validacion__in=["Validado", "No Validado"]
         ).update(estado_validacion="Pendiente", fecha_validado=None)
