@@ -107,9 +107,9 @@
                         </li>
                     {% endif %}
                     {% if has_datacalle_general or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general' in pagina_actual %}menu-open{% endif %}">
+                        <li class="nav-item {% if 'dashboard/datacalle-general/' in pagina_actual %}menu-open{% endif %}">
                             <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general' in pagina_actual %}active{% endif %}">
+                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general/' in pagina_actual %}active{% endif %}">
                                 <p>
                                     DataCalle
                                     <i class="nav-arrow bi bi-chevron-right"></i>
@@ -118,7 +118,7 @@
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
                                     <a href="{% url 'dashboard_datacalle_general' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general' in pagina_actual %}active{% endif %}">
+                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general/' in pagina_actual %}active{% endif %}">
                                         <i class="nav-icon bi bi-arrow-return-right"></i>
                                         <p>Ver</p>
                                     </a>
@@ -127,9 +127,9 @@
                         </li>
                     {% endif %}
                     {% if has_datacalle or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-chaco' in pagina_actual %}menu-open{% endif %}">
+                        <li class="nav-item {% if 'dashboard/datacalle-general-chaco/' in pagina_actual %}menu-open{% endif %}">
                             <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-chaco' in pagina_actual %}active{% endif %}">
+                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-chaco/' in pagina_actual %}active{% endif %}">
                                 <p>
                                     DataCalle - Chaco
                                     <i class="nav-arrow bi bi-chevron-right"></i>
@@ -138,7 +138,7 @@
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
                                     <a href="{% url 'dashboard_datacalle_chaco' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-chaco' in pagina_actual %}active{% endif %}">
+                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-chaco/' in pagina_actual %}active{% endif %}">
                                         <i class="nav-icon bi bi-arrow-return-right"></i>
                                         <p>Ver</p>
                                     </a>
@@ -147,9 +147,9 @@
                         </li>
                     {% endif %}
                     {% if has_datacalle_misiones or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-misiones' in pagina_actual %}menu-open{% endif %}">
+                        <li class="nav-item {% if 'dashboard/datacalle-general-misiones/' in pagina_actual %}menu-open{% endif %}">
                             <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-misiones' in pagina_actual %}active{% endif %}">
+                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-misiones/' in pagina_actual %}active{% endif %}">
                                 <p>
                                     DataCalle - Misiones
                                     <i class="nav-arrow bi bi-chevron-right"></i>
@@ -158,7 +158,7 @@
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
                                     <a href="{% url 'dashboard_datacalle_misiones' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-misiones' in pagina_actual %}active{% endif %}">
+                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-misiones/' in pagina_actual %}active{% endif %}">
                                         <i class="nav-icon bi bi-arrow-return-right"></i>
                                         <p>Ver</p>
                                     </a>
