@@ -62,6 +62,7 @@ class Command(BaseCommand):
             "Dashboard Comedor",
             "Dashboard Centrodefamilia",
             "Tablero DataCalle Chaco",
+            "Tablero DataCalle Misiones",
             "Tablero DataCalle General",
             "TecnicoCeliaquia",
             "CoordinadorCeliaquia",

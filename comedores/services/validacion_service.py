@@ -29,15 +29,15 @@ class ValidacionService:
         elif accion == "no_validar":
             estado = "No Validado"
             mensaje = "Comedor marcado como no validado."
-            
+
             # Validar que se seleccionó al menos una opción
             if not opciones or len(opciones) == 0:
                 return False, "Debe seleccionar al menos una opción."
-            
+
             # Si seleccionó "otro", el comentario es obligatorio
             if "otro" in opciones and not comentario.strip():
                 return False, "El comentario es obligatorio cuando selecciona 'Otro'."
-            
+
             opciones_guardadas = opciones
         else:
             return False, "Acción no válida."
@@ -66,5 +66,3 @@ class ValidacionService:
         return Comedor.objects.filter(
             estado_validacion__in=["Validado", "No Validado"]
         ).update(estado_validacion="Pendiente", fecha_validado=None)
-
-
