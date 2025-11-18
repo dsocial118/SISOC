@@ -33,12 +33,16 @@ function initializeSelect2(selectId, options = {}) {
     placeholder: 'Seleccione una opción',
     allowClear: false,
     width: '100%',
+    minimumResultsForSearch: 0, // Siempre mostrar la caja de búsqueda
     language: {
       noResults: function() {
         return "No se encontraron resultados";
       },
       searching: function() {
         return "Buscando...";
+      },
+      inputTooShort: function() {
+        return "Por favor ingrese más caracteres";
       }
     }
   };
@@ -56,31 +60,29 @@ function initializeSelect2(selectId, options = {}) {
 }
 
 // Event listeners con Select2
-if (provinciaSelect) {
-  provinciaSelect.addEventListener("change", async function () {
-  // Usar jQuery para eventos de Select2
+/**
+ * Configura los event listeners para Select2 en provincia, municipio y localidad
+ * Debe llamarse después de inicializar Select2
+ */
+function setupSelect2EventListeners() {
+  // Provincia: cuando cambia, cargar municipios y limpiar localidad
   $('#id_provincia').on('select2:select', async function (e) {
     const provinciaId = e.params.data.id;
     await cargarOpciones(
-      `${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`,
       `${ajaxLoadMunicipiosUrl}?provincia_id=${provinciaId}`,
       "municipio"
-    ).then(async () => {
-      await cargarOpciones(
-        `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioSelect.options[0].value}`,
-        `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioSelect.options[0]?.value || ''}`,
-        "localidad"
-      );
-    });
+    );
+    // Limpiar localidad cuando cambia provincia
+    await cargarOpciones(
+      `${ajaxLoadLocalidadesUrl}?municipio_id=`,
+      "localidad"
+    );
   });
-}
 
-if (municipioSelect) {
-  municipioSelect.addEventListener("change", async function () {
+  // Municipio: cuando cambia, cargar localidades
   $('#id_municipio').on('select2:select', async function (e) {
     const municipioId = e.params.data.id;
     await cargarOpciones(
-      `${ajaxLoadLocalidadesUrl}?municipio_id=${this.value}`,
       `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioId}`,
       "localidad"
     );

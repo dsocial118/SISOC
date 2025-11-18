@@ -811,14 +811,14 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <!-- jQuery (requerido para Select2) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
-            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
-            crossorigin="anonymous"></script>
+    <!-- jQuery (requerido para Select2) - solo cargar si no existe -->
+    <script>
+        if (typeof jQuery === 'undefined') {
+            document.write('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"><\/script>');
+        }
+    </script>
     <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
-            integrity="sha256-9yRP/2EFlblE92vzCA10469Ctd0jT48HnmmYw8dOv2I="
-            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     {{ form.estado_tree|json_script:"estado-general-data" }}
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -944,22 +944,56 @@
     </script>
     <script src="{% static 'custom/js/comedorform.js' %}"></script>
     <script>
-    // Inicializar Select2 después de que todo esté cargado
-    $(document).ready(function() {
-        console.log('jQuery cargado:', typeof jQuery !== 'undefined');
-        console.log('Select2 disponible:', typeof $.fn.select2 !== 'undefined');
-        console.log('initializeSelect2 función disponible:', typeof initializeSelect2 === 'function');
-
-        if (typeof initializeSelect2 === 'function') {
-            console.log('Inicializando Select2 en los campos...');
-            initializeSelect2("id_organizacion", { placeholder: "Seleccione una organización" });
-            initializeSelect2("id_provincia", { placeholder: "Seleccione una provincia" });
-            initializeSelect2("id_municipio", { placeholder: "Seleccione un municipio" });
-            initializeSelect2("id_localidad", { placeholder: "Seleccione una localidad" });
-            console.log('Select2 inicializado');
-        } else {
-            console.error('initializeSelect2 no está disponible');
+    // Esperar a que jQuery y Select2 estén cargados antes de inicializar
+    (function waitForDependencies() {
+        if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+            console.log('Esperando jQuery y Select2...');
+            setTimeout(waitForDependencies, 100);
+            return;
         }
-    });
+
+        $(document).ready(function() {
+            console.log('✓ jQuery cargado:', typeof jQuery !== 'undefined');
+            console.log('✓ Select2 disponible:', typeof $.fn.select2 !== 'undefined');
+            console.log('✓ initializeSelect2 función disponible:', typeof initializeSelect2 === 'function');
+
+            if (typeof initializeSelect2 === 'function') {
+                console.log('Inicializando Select2 en los campos...');
+
+                // Inicializar cada campo con su configuración específica
+                initializeSelect2("id_organizacion", {
+                    placeholder: "Seleccione una organización",
+                    minimumResultsForSearch: 0
+                });
+
+                initializeSelect2("id_provincia", {
+                    placeholder: "Seleccione una provincia",
+                    minimumResultsForSearch: 0
+                });
+
+                initializeSelect2("id_municipio", {
+                    placeholder: "Seleccione un municipio",
+                    minimumResultsForSearch: 0
+                });
+
+                initializeSelect2("id_localidad", {
+                    placeholder: "Seleccione una localidad",
+                    minimumResultsForSearch: 0
+                });
+
+                console.log('✓ Select2 inicializado en todos los campos');
+
+                // Configurar event listeners para cascada provincia > municipio > localidad
+                if (typeof setupSelect2EventListeners === 'function') {
+                    setupSelect2EventListeners();
+                    console.log('✓ Event listeners de Select2 configurados');
+                } else {
+                    console.error('✗ setupSelect2EventListeners no está disponible');
+                }
+            } else {
+                console.error('✗ initializeSelect2 no está disponible');
+            }
+        });
+    })();
     </script>
 {% endblock %}
