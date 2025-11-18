@@ -74,8 +74,8 @@
             </ul>
         </li>
     {% endif %}
-    {% with has_dashboard_cf=request.user|has_group:"Dashboard Centrodefamilia" has_datacalle=request.user|has_group:"Tablero DataCalle Chaco" has_datacalle_general=request.user|has_group:"Tablero DataCalle General" has_admin=request.user|has_group:"Administrador" %}
-        {% if has_dashboard_cf or has_datacalle or has_datacalle_general or has_admin %}
+    {% with has_dashboard_cf=request.user|has_group:"Dashboard Centrodefamilia" has_datacalle=request.user|has_group:"Tablero DataCalle Chaco" has_datacalle_general=request.user|has_group:"Tablero DataCalle General" has_datacalle_misiones=request.user|has_group:"Tablero DataCalle Misiones" has_admin=request.user|has_group:"Administrador" %}
+        {% if has_dashboard_cf or has_datacalle or has_datacalle_general or has_datacalle_misiones or has_admin %}
             <!-- Tableros -->
             <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
                 <a href="#" class="nav-link">
@@ -146,7 +146,7 @@
                             </ul>
                         </li>
                     {% endif %}
-                    {% if has_datacalle or has_admin %}
+                    {% if has_datacalle_misiones or has_admin %}
                         <li class="nav-item {% if 'dashboard/datacalle-misiones' in pagina_actual %}menu-open{% endif %}">
                             <a href="#"
                                class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-misiones' in pagina_actual %}active{% endif %}">
