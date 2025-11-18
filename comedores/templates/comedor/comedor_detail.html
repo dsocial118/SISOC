@@ -5,6 +5,13 @@
     {{ comedor.nombre }}
     <span class="ms-2 h5">| {{ comedor.provincia.nombre | default_if_none:"Sin información" }}, {{ comedor.municipio.nombre | default_if_none:"Sin información" }}, {{ comedor.localidad.nombre | default_if_none:"Sin información" }}</span>
     <span class="ms-2 h5">- {{ comedor.programa.nombre }} - {{ comedor_categoria.categoria.nombre }}</span>
+    {% if comedor.estado_validacion == "Validado" %}
+        <span class="badge bg-success badge-sm ms-2">Validado</span>
+    {% elif comedor.estado_validacion == "No Validado" %}
+        <span class="badge bg-danger badge-sm ms-2">No Validado</span>
+    {% else %}
+        <span class="badge bg-warning badge-sm ms-2">Validación Pendiente</span>
+    {% endif %}
 {% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
@@ -22,22 +29,12 @@
                class="btn btn-secondary backbutton-handler">Volver</a>
         </div>
         <div class="d-flex justify-content-end flex-wrap gap-1">
-            {% if comedor.estado_validacion == "Pendiente" %}
-                <button type="button"
-                        class="btn btn-sm btn-warning text-white fw-bold"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalValidacion">
-                    <i class="bi bi-exclamation me-1"></i> Validación Pendiente
-                </button>
-            {% elif comedor.estado_validacion == "Validado" %}
-                <button type="button" class="btn btn-sm btn-success fw-bold" disabled>
-                    <i class="bi bi-check-circle me-1"></i> Validado
-                </button>
-            {% elif comedor.estado_validacion == "No Validado" %}
-                <button type="button" class="btn btn-sm btn-danger fw-bold" disabled>
-                    <i class="bi bi-x-circle me-1"></i> No Validado
-                </button>
-            {% endif %}
+            <button type="button"
+                    class="btn btn-sm btn-warning text-white fw-bold"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalValidacion">
+                <i class="bi bi-clipboard-check me-1"></i> Validar
+            </button>
             {% if rendicion_cuentas_final_activo == True %}
                 <a href="{% url 'rendicion_cuentas_final' pk=comedor.id %}"
                    class="btn btn-sm btn-primary">Rendicion de Cuentas Final</a>
@@ -724,7 +721,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        {% include 'components/data_table.html' with headers=validaciones_headers items=validaciones_items custom_cells=True empty_message='No se han registrado validaciones.' %}
+                        {% include 'components/data_table.html' with headers=validaciones_headers items=validaciones_items custom_cells=True empty_message='No se han registrado validaciones.' include_pagination=True %}
                     </div>
                 </div>
             </div>
@@ -975,10 +972,40 @@
              aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <form method="POST" action="{% url 'validar_comedor' comedor.pk %}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalValidacionLabel">Validación del Comedor</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <p class="mb-4">Seleccione una opción para validar el comedor:</p>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-success btn-lg" onclick="validarComedor()">Validar</button>
+                            <button type="button" class="btn btn-danger btn-lg" onclick="mostrarOpcionesNoValidar()">No Validar</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal No Validar -->
+        <div class="modal fade"
+             id="modalNoValidar"
+             tabindex="-1"
+             aria-labelledby="modalNoValidarLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="{% url 'validar_comedor' comedor.pk %}" id="formNoValidar">
                         {% csrf_token %}
+                        <input type="hidden" name="accion" value="no_validar">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="modalValidacionLabel">Validación del Comedor</h5>
+                            <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validación</h5>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"
@@ -986,19 +1013,25 @@
                         </div>
                         <div class="modal-body">
                             <div class="mb-3">
-                                <label for="comentario" class="form-label">Comentario *</label>
+                                <label for="opcionesSelect" class="form-label">Seleccione uno o más motivos: *</label>
+                                <select class="form-control" id="opcionesSelect" name="opciones" multiple>
+                                    {% for value, label in opciones_no_validar %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3" id="comentarioDiv" style="display: none;">
+                                <label for="comentario" class="form-label">Comentario: *</label>
                                 <textarea class="form-control"
                                           id="comentario"
                                           name="comentario"
-                                          rows="4"
-                                          placeholder="Ingrese un comentario obligatorio..."
-                                          required></textarea>
+                                          rows="3"
+                                          placeholder="Especifique el motivo..."></textarea>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" name="accion" value="no_validar" class="btn btn-danger">No Validar</button>
-                            <button type="submit" name="accion" value="validar" class="btn btn-success">Validar</button>
+                            <button type="submit" class="btn btn-danger" onclick="return validarFormNoValidar()">No Validar</button>
                         </div>
                     </form>
                 </div>
@@ -1006,10 +1039,156 @@
         </div>
     {% endblock %}
     {% block customJS %}
+        <!-- CSS personalizado para Select2 Bootstrap 5 tema oscuro -->
+        <style>
+        .select2-container .select2-selection--multiple {
+            background-color: #495057 !important;
+            border: 1px solid #6c757d !important;
+            border-radius: 0.375rem !important;
+            color: #fff !important;
+            min-height: 38px !important;
+            padding: 0.375rem 0.75rem !important;
+        }
+        
+        .select2-container .select2-selection--multiple .select2-selection__choice {
+            background-color: #0d6efd !important;
+            border: 1px solid #0d6efd !important;
+            border-radius: 0.25rem !important;
+            color: #fff !important;
+            font-size: 0.875rem !important;
+            margin: 0.125rem 0.25rem 0.125rem 0 !important;
+            padding: 0.25rem 0.5rem !important;
+        }
+        
+        .select2-container .select2-selection--multiple .select2-selection__choice__remove {
+            color: #fff !important;
+            margin-right: 0.25rem !important;
+        }
+        
+        .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #f8f9fa !important;
+        }
+        
+        .select2-dropdown {
+            background-color: #343a40 !important;
+            border: 1px solid #6c757d !important;
+            border-radius: 0.375rem !important;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        .select2-results__option {
+            background-color: #343a40 !important;
+            color: #fff !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+        
+        .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: #fff !important;
+        }
+        
+        .select2-search__field {
+            background-color: #495057 !important;
+            border: 1px solid #6c757d !important;
+            border-radius: 0.25rem !important;
+            color: #fff !important;
+            padding: 0.25rem 0.5rem !important;
+        }
+        
+        .select2-container .select2-selection--multiple .select2-selection__placeholder {
+            color: #adb5bd !important;
+            margin-top: 0.25rem !important;
+        }
+        
+        .select2-container--focus .select2-selection--multiple {
+            border-color: #86b7fe !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+        }
+        </style>
+        
         <script>
         const comedorId = "{{ comedor.id }}"
         const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
         const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
+        
+        function validarComedor() {
+            // Crear form para validar
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "validar_comedor" comedor.pk %}';
+            
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            const accion = document.createElement('input');
+            accion.type = 'hidden';
+            accion.name = 'accion';
+            accion.value = 'validar';
+            
+            form.appendChild(csrf);
+            form.appendChild(accion);
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        function mostrarOpcionesNoValidar() {
+            const modalValidacion = bootstrap.Modal.getInstance(document.getElementById('modalValidacion'));
+            modalValidacion.hide();
+            
+            const modalNoValidar = new bootstrap.Modal(document.getElementById('modalNoValidar'));
+            modalNoValidar.show();
+        }
+        
+        // Inicializar Select2 cuando se abre el modal
+        document.getElementById('modalNoValidar').addEventListener('shown.bs.modal', function() {
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                $('#opcionesSelect').select2({
+                    placeholder: 'Seleccione una o más opciones...',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#modalNoValidar')
+                });
+                
+                // Escuchar cambios para mostrar/ocultar comentario
+                $('#opcionesSelect').on('change', function() {
+                    toggleComentario();
+                });
+            }
+        });
+        
+        function toggleComentario() {
+            const selectedValues = $('#opcionesSelect').val() || [];
+            const comentarioDiv = document.getElementById('comentarioDiv');
+            const comentarioTextarea = document.getElementById('comentario');
+            
+            if (selectedValues.includes('otro')) {
+                comentarioDiv.style.display = 'block';
+                comentarioTextarea.required = true;
+            } else {
+                comentarioDiv.style.display = 'none';
+                comentarioTextarea.required = false;
+                comentarioTextarea.value = '';
+            }
+        }
+        
+        function validarFormNoValidar() {
+            const selectedValues = $('#opcionesSelect').val() || [];
+            const comentario = document.getElementById('comentario').value.trim();
+            
+            if (selectedValues.length === 0) {
+                alert('Debe seleccionar al menos una opción.');
+                return false;
+            }
+            
+            if (selectedValues.includes('otro') && !comentario) {
+                alert('El comentario es obligatorio cuando selecciona "Otro".');
+                return false;
+            }
+            
+            return true;
+        }
         </script>
         <script src="{% static 'custom/js/galeria-imagenes.js' %}"></script>
         <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
