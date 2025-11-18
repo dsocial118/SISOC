@@ -607,7 +607,7 @@ class HistorialValidacion(models.Model):
         ("baja_por_programa", "Baja por el Programa"),
         ("baja_por_comedor", "Baja por el Comedor"),
         ("no_se_reconoce_comedor", "No se reconoce el comedor"),
-        ("otros", "Otros"),
+        ("otro", "Otro"),
     ]
 
     @classmethod
