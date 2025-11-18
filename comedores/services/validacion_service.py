@@ -59,4 +59,12 @@ class ValidacionService:
 
         return True, mensaje
 
+    @staticmethod
+    def resetear_validaciones():
+        """Resetea el estado de validación de todos los comedores a Pendiente."""
+
+        return Comedor.objects.filter(
+            estado_validacion__in=["Validado", "No Validado"]
+        ).update(estado_validacion="Pendiente", fecha_validado=None)
+
 
