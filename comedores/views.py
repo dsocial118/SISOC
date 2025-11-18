@@ -553,11 +553,13 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         )
 
         from django.core.paginator import Paginator
-        
+
         # Paginación para historial de validaciones
-        validaciones_queryset = self.object.historial_validaciones.select_related("usuario").order_by("-fecha_validacion")
+        validaciones_queryset = self.object.historial_validaciones.select_related(
+            "usuario"
+        ).order_by("-fecha_validacion")
         paginator = Paginator(validaciones_queryset, 10)  # 10 items por página
-        page_number = self.request.GET.get('page', 1)
+        page_number = self.request.GET.get("page", 1)
         page_obj = paginator.get_page(page_number)
         historial_validaciones = list(page_obj)
 
@@ -594,8 +596,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
             # Mostrar opciones solo si es "No Validado"
             opciones_display = (
-                validacion.get_opciones_display() 
-                if validacion.estado_validacion == "No Validado" 
+                validacion.get_opciones_display()
+                if validacion.estado_validacion == "No Validado"
                 else "-"
             )
 
@@ -645,11 +647,12 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         presupuestos_data = self.get_presupuestos_data()
         relaciones_data = self.get_relaciones_optimizadas()
         env_config = self._get_environment_config()
-        
+
         # Agregar opciones de validación
         from comedores.models import HistorialValidacion
-        context['opciones_no_validar'] = HistorialValidacion.get_opciones_no_validar()
-        
+
+        context["opciones_no_validar"] = HistorialValidacion.get_opciones_no_validar()
+
         context.update({**presupuestos_data, **relaciones_data, **env_config})
         return context
 
@@ -843,7 +846,11 @@ def validar_comedor(request, pk):
     opciones = request.POST.getlist("opciones") if accion == "no_validar" else None
 
     success, mensaje = ValidacionService.validar_comedor(
-        comedor_id=pk, user=request.user, accion=accion, opciones=opciones, comentario=comentario
+        comedor_id=pk,
+        user=request.user,
+        accion=accion,
+        opciones=opciones,
+        comentario=comentario,
     )
 
     if success:

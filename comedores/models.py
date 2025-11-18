@@ -609,19 +609,19 @@ class HistorialValidacion(models.Model):
     def get_opciones_no_validar(cls):
         """Retorna las opciones de no validación para uso en templates"""
         return cls.OPCIONES_NO_VALIDAR
-    
+
     def get_opciones_display(self):
         """Retorna las opciones seleccionadas en formato legible"""
         if not self.opciones_no_validar:
             return "-"
-        
+
         opciones_dict = dict(self.OPCIONES_NO_VALIDAR)
         opciones_texto = []
-        
+
         for opcion in self.opciones_no_validar:
             if opcion in opciones_dict:
                 opciones_texto.append(opciones_dict[opcion])
-        
+
         return ", ".join(opciones_texto) if opciones_texto else "-"
 
     opciones_no_validar = models.JSONField(

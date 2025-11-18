@@ -6,6 +6,7 @@ from dashboard.models import Dashboard
 from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActividad
 
 DATACALLE_CHACO_GROUP = "Tablero DataCalle Chaco"
+DATACALLE_MISIONES_GROUP = "Tablero DataCalle Misiones"
 DATACALLE_GENERAL_GROUP = "Tablero DataCalle General"
 
 
@@ -47,6 +48,22 @@ class DataCalleChacoDashboardView(
             user.is_superuser
             or user.groups.filter(
                 name__in=[DATACALLE_CHACO_GROUP, UserGroups.ADMINISTRADOR]
+            ).exists()
+        )
+
+
+class DataCalleMisionesDashboardView(
+    LoginRequiredMixin, UserPassesTestMixin, TemplateView
+):
+    template_name = "dashboard_datacalle_misiones.html"
+    raise_exception = True
+
+    def test_func(self):
+        user = self.request.user
+        return (
+            user.is_superuser
+            or user.groups.filter(
+                name__in=[DATACALLE_MISIONES_GROUP, UserGroups.ADMINISTRADOR]
             ).exists()
         )
 
