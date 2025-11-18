@@ -1,6 +1,6 @@
-const provinciaSelect = document.getElementById("id_provincia");
-const municipioSelect = document.getElementById("id_municipio");
-const localidadSelect = document.getElementById("id_localidad");
+let provinciaSelect;
+let municipioSelect;
+let localidadSelect;
 
 function confirmSubmit() {
   return confirm("¿Estás seguro de que deseas guardar el comedor?");
@@ -56,31 +56,62 @@ function initializeSelect2(selectId, options = {}) {
   }
 }
 
-// Event listeners con Select2
-if (provinciaSelect) {
-  // Usar jQuery para eventos de Select2
-  $('#id_provincia').on('select2:select', async function (e) {
-    const provinciaId = e.params.data.id;
+document.addEventListener("DOMContentLoaded", function () {
+  provinciaSelect = document.getElementById("id_provincia");
+  municipioSelect = document.getElementById("id_municipio");
+  localidadSelect = document.getElementById("id_localidad");
+
+  if (!provinciaSelect || !municipioSelect || !localidadSelect) {
+    return;
+  }
+
+  const handleProvinciaChange = async (provinciaId) => {
+    if (!provinciaId) {
+      resetSelect(municipioSelect, "Seleccione un municipio");
+      resetSelect(localidadSelect, "Seleccione una localidad");
+      initializeSelect2("id_municipio", { placeholder: "Seleccione un municipio" });
+      initializeSelect2("id_localidad", { placeholder: "Seleccione una localidad" });
+      return;
+    }
+
+    resetSelect(localidadSelect, "Seleccione una localidad");
     await cargarOpciones(
       `${ajaxLoadMunicipiosUrl}?provincia_id=${provinciaId}`,
       "municipio"
-    ).then(async () => {
-      await cargarOpciones(
-        `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioSelect.options[0]?.value || ''}`,
-        "localidad"
-      );
-    });
-  });
-}
+    );
+  };
 
-if (municipioSelect) {
-  $('#id_municipio').on('select2:select', async function (e) {
-    const municipioId = e.params.data.id;
+  const handleMunicipioChange = async (municipioId) => {
+    if (!municipioId) {
+      resetSelect(localidadSelect, "Seleccione una localidad");
+      initializeSelect2("id_localidad", { placeholder: "Seleccione una localidad" });
+      return;
+    }
+
     await cargarOpciones(
       `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioId}`,
       "localidad"
     );
-  });
+  };
+
+  provinciaSelect.addEventListener("change", (event) =>
+    handleProvinciaChange(event.target.value)
+  );
+
+  municipioSelect.addEventListener("change", (event) =>
+    handleMunicipioChange(event.target.value)
+  );
+});
+
+function resetSelect(selectElement, placeholderText = "---------") {
+  if (!selectElement) {
+    return;
+  }
+  selectElement.innerHTML = "";
+  const emptyOption = document.createElement("option");
+  emptyOption.value = "";
+  emptyOption.textContent = placeholderText;
+  selectElement.appendChild(emptyOption);
 }
 
 async function cargarOpciones(url, select) {
@@ -95,14 +126,20 @@ async function cargarOpciones(url, select) {
       return nameA.localeCompare(nameB);
     });
 
-    if (select === "municipio") {
+    if (select === "municipio" && municipioSelect) {
       municipioSelect.innerHTML = "";
-      localidadSelect.innerHTML = "";
+      if (localidadSelect) {
+        localidadSelect.innerHTML = "";
+        const emptyLocalidad = document.createElement("option");
+        emptyLocalidad.value = "";
+        emptyLocalidad.textContent = "Seleccione una localidad";
+        localidadSelect.appendChild(emptyLocalidad);
+      }
 
       // Agregar opción vacía al inicio
       const emptyOption = document.createElement("option");
       emptyOption.value = "";
-      emptyOption.textContent = "---------";
+      emptyOption.textContent = "Seleccione un municipio";
       municipioSelect.appendChild(emptyOption);
 
       data.forEach((item) => crearOpcion(item, municipioSelect));
@@ -110,13 +147,13 @@ async function cargarOpciones(url, select) {
       setTimeout(() => initializeSelect2("id_municipio", { placeholder: "Seleccione un municipio" }), 100);
     }
 
-    if (select === "localidad") {
+    if (select === "localidad" && localidadSelect) {
       localidadSelect.innerHTML = "";
 
       // Agregar opción vacía al inicio
       const emptyOption = document.createElement("option");
       emptyOption.value = "";
-      emptyOption.textContent = "---------";
+      emptyOption.textContent = "Seleccione una localidad";
       localidadSelect.appendChild(emptyOption);
 
       data.forEach((item) => crearOpcion(item, localidadSelect));
