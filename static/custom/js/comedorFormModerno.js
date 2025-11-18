@@ -53,6 +53,14 @@ function initializeEstadoTree() {
 
     function renderOptions(select, options, placeholderText, preservedValue = "") {
         const desiredValue = preservedValue ?? select.value;
+        const $select = $(select);
+
+        // Destruir Select2 temporalmente
+        if (typeof $.fn.select2 !== 'undefined' && $select.data('select2')) {
+            $select.select2('destroy');
+        }
+
+        // Modificar opciones del select nativo
         select.innerHTML = "";
 
         const emptyOption = document.createElement("option");
@@ -83,6 +91,19 @@ function initializeEstadoTree() {
         } else {
             select.value = "";
         }
+
+        // SIEMPRE reinicializar Select2 después de modificar opciones
+        // (solo si el select está habilitado AHORA)
+        if (typeof initializeSelect2 === 'function' && !select.disabled) {
+            const selectId = select.id;
+            console.log(`Reinicializando Select2 para ${selectId} con ${options.length} opciones`);
+            initializeSelect2(selectId, {
+                placeholder: placeholderText,
+                allowClear: selectId === 'id_motivo'
+            });
+        } else {
+            console.log(`NO se reinicializa Select2 para ${select.id}: disabled=${select.disabled}, initializeSelect2 existe=${typeof initializeSelect2 === 'function'}`);
+        }
     }
 
     function getProcesos(actividadId) {
@@ -106,10 +127,17 @@ function initializeEstadoTree() {
 
     function setDisabled(select, disabled) {
         select.disabled = disabled;
+        const $select = $(select);
+
         if (disabled) {
             select.setAttribute("disabled", "disabled");
         } else {
             select.removeAttribute("disabled");
+        }
+
+        // Actualizar Select2 para reflejar el cambio de estado
+        if (typeof $.fn.select2 !== 'undefined' && $select.data('select2')) {
+            $select.prop('disabled', disabled);
         }
     }
 
@@ -117,36 +145,54 @@ function initializeEstadoTree() {
         const actividadId = estadoSelect.value;
         const procesoId = subestadoSelect.value;
         const detalles = getDetalles(actividadId, procesoId);
-        renderOptions(motivoSelect, detalles, motivoPlaceholder, preservedMotivo);
         const disableMotivo = detalles.length === 0;
-        setDisabled(motivoSelect, disableMotivo);
+
+        // Primero deshabilitar si es necesario
         if (disableMotivo) {
             motivoSelect.value = "";
+            setDisabled(motivoSelect, true);
+        } else {
+            // Habilitar primero, luego renderizar opciones
+            setDisabled(motivoSelect, false);
+            renderOptions(motivoSelect, detalles, motivoPlaceholder, preservedMotivo);
         }
     }
 
     function refreshSubestados(preservedSubestado = "", preservedMotivo = "") {
         const actividadId = estadoSelect.value;
         const procesos = getProcesos(actividadId);
-        renderOptions(
-            subestadoSelect,
-            procesos,
-            subestadoPlaceholder,
-            preservedSubestado
-        );
         const disableSubestados = procesos.length === 0;
-        setDisabled(subestadoSelect, disableSubestados);
+
+        console.log(`=== refreshSubestados ===`);
+        console.log(`actividadId: ${actividadId}`);
+        console.log(`procesos encontrados: ${procesos.length}`, procesos);
+        console.log(`disableSubestados: ${disableSubestados}`);
+        console.log(`subestadoSelect.disabled ANTES: ${subestadoSelect.disabled}`);
+
+        // Primero deshabilitar si es necesario
         if (disableSubestados) {
+            console.log(`→ Deshabilitando subestado (no hay procesos)`);
             subestadoSelect.value = "";
+            setDisabled(subestadoSelect, true);
+        } else {
+            // Habilitar primero, luego renderizar opciones
+            console.log(`→ Habilitando subestado y renderizando ${procesos.length} opciones`);
+            setDisabled(subestadoSelect, false);
+            console.log(`subestadoSelect.disabled DESPUÉS de setDisabled(false): ${subestadoSelect.disabled}`);
+            renderOptions(subestadoSelect, procesos, subestadoPlaceholder, preservedSubestado);
         }
+
         refreshMotivos(preservedMotivo);
     }
 
-    estadoSelect.addEventListener("change", function () {
+    // Usar eventos de Select2 en lugar de eventos nativos
+    $(estadoSelect).on('change', function () {
+        console.log('Estado general cambió a:', this.value);
         refreshSubestados("", "");
     });
 
-    subestadoSelect.addEventListener("change", function () {
+    $(subestadoSelect).on('change', function () {
+        console.log('Subestado cambió a:', this.value);
         refreshMotivos("");
     });
 
