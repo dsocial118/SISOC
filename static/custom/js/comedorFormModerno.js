@@ -92,17 +92,16 @@ function initializeEstadoTree() {
             select.value = "";
         }
 
-        // SIEMPRE reinicializar Select2 después de modificar opciones
-        // (solo si el select está habilitado AHORA)
-        if (typeof initializeSelect2 === 'function' && !select.disabled) {
+        // Solo inicializar Select2 si hay opciones disponibles
+        if (options.length > 0 && typeof initializeSelect2 === 'function') {
             const selectId = select.id;
             console.log(`Reinicializando Select2 para ${selectId} con ${options.length} opciones`);
             initializeSelect2(selectId, {
                 placeholder: placeholderText,
                 allowClear: selectId === 'id_motivo'
             });
-        } else {
-            console.log(`NO se reinicializa Select2 para ${select.id}: disabled=${select.disabled}, initializeSelect2 existe=${typeof initializeSelect2 === 'function'}`);
+        } else if (options.length === 0) {
+            console.log(`No se reinicializa Select2 para ${select.id}: no hay opciones`);
         }
     }
 
@@ -115,14 +114,25 @@ function initializeEstadoTree() {
     }
 
     function getDetalles(actividadId, procesoId) {
+        console.log(`getDetalles llamado con actividadId=${actividadId}, procesoId=${procesoId}`);
+
         if (!actividadId || !procesoId) {
+            console.log(`→ Retornando [] porque actividadId o procesoId están vacíos`);
             return [];
         }
+
         const procesos = getProcesos(actividadId);
+        console.log(`→ Procesos obtenidos:`, procesos);
+
         const proceso = procesos.find(
             (item) => String(item.id) === String(procesoId)
         );
-        return proceso ? proceso.detalles : [];
+        console.log(`→ Proceso encontrado con id=${procesoId}:`, proceso);
+
+        const detalles = proceso ? proceso.detalles : [];
+        console.log(`→ Detalles retornados:`, detalles);
+
+        return detalles;
     }
 
     function setDisabled(select, disabled) {
@@ -145,54 +155,59 @@ function initializeEstadoTree() {
         const actividadId = estadoSelect.value;
         const procesoId = subestadoSelect.value;
         const detalles = getDetalles(actividadId, procesoId);
-        const disableMotivo = detalles.length === 0;
 
-        // Primero deshabilitar si es necesario
-        if (disableMotivo) {
+        console.log(`=== refreshMotivos ===`);
+        console.log(`actividadId: ${actividadId}, procesoId: ${procesoId}`);
+        console.log(`detalles encontrados: ${detalles.length}`, detalles);
+
+        if (detalles.length === 0) {
+            // No hay opciones: limpiar, deshabilitar y NO inicializar Select2
+            motivoSelect.innerHTML = '<option value="">---------</option>';
             motivoSelect.value = "";
             setDisabled(motivoSelect, true);
+            console.log(`→ Motivo deshabilitado (no hay detalles)`);
         } else {
-            // Habilitar primero, luego renderizar opciones
+            // Hay opciones: renderizar e inicializar Select2
             setDisabled(motivoSelect, false);
             renderOptions(motivoSelect, detalles, motivoPlaceholder, preservedMotivo);
+            console.log(`→ Motivo habilitado con ${detalles.length} opciones`);
         }
     }
 
     function refreshSubestados(preservedSubestado = "", preservedMotivo = "") {
         const actividadId = estadoSelect.value;
         const procesos = getProcesos(actividadId);
-        const disableSubestados = procesos.length === 0;
 
         console.log(`=== refreshSubestados ===`);
         console.log(`actividadId: ${actividadId}`);
         console.log(`procesos encontrados: ${procesos.length}`, procesos);
-        console.log(`disableSubestados: ${disableSubestados}`);
-        console.log(`subestadoSelect.disabled ANTES: ${subestadoSelect.disabled}`);
 
-        // Primero deshabilitar si es necesario
-        if (disableSubestados) {
-            console.log(`→ Deshabilitando subestado (no hay procesos)`);
+        if (procesos.length === 0) {
+            // No hay opciones: limpiar, deshabilitar y NO inicializar Select2
+            subestadoSelect.innerHTML = '<option value="">---------</option>';
             subestadoSelect.value = "";
             setDisabled(subestadoSelect, true);
+            console.log(`→ Subestado deshabilitado (no hay procesos)`);
         } else {
-            // Habilitar primero, luego renderizar opciones
-            console.log(`→ Habilitando subestado y renderizando ${procesos.length} opciones`);
+            // Hay opciones: renderizar e inicializar Select2
             setDisabled(subestadoSelect, false);
-            console.log(`subestadoSelect.disabled DESPUÉS de setDisabled(false): ${subestadoSelect.disabled}`);
             renderOptions(subestadoSelect, procesos, subestadoPlaceholder, preservedSubestado);
+            console.log(`→ Subestado habilitado con ${procesos.length} opciones`);
         }
 
         refreshMotivos(preservedMotivo);
     }
 
     // Usar eventos de Select2 en lugar de eventos nativos
-    $(estadoSelect).on('change', function () {
-        console.log('Estado general cambió a:', this.value);
+    $(estadoSelect).on('select2:select change', function (e) {
+        const value = $(this).val();
+        console.log('Estado general cambió a:', value, 'Tipo de evento:', e.type);
         refreshSubestados("", "");
     });
 
-    $(subestadoSelect).on('change', function () {
-        console.log('Subestado cambió a:', this.value);
+    $(subestadoSelect).on('select2:select change', function (e) {
+        const value = $(this).val();
+        console.log('Subestado cambió a:', value, 'Tipo de evento:', e.type);
         refreshMotivos("");
     });
 
@@ -267,6 +282,14 @@ function initializeSelect2Fields() {
                 console.log('✓ Select2 inicializado en motivo');
 
                 console.log('✓✓✓ Todos los Select2 inicializados correctamente ✓✓✓');
+
+                // Configurar event listeners para carga dinámica (provincia -> municipio -> localidad)
+                if (typeof setupSelect2EventListeners === 'function') {
+                    setupSelect2EventListeners();
+                    console.log('✓ Event listeners configurados para provincia/municipio/localidad');
+                } else {
+                    console.warn('setupSelect2EventListeners no está disponible');
+                }
 
             } catch (error) {
                 console.error('ERROR al inicializar Select2:', error);
