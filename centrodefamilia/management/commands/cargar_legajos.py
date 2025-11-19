@@ -32,7 +32,9 @@ class Command(BaseCommand):
                     "apellido": str(row["apellido"]).strip(),
                     "dni": str(row["dni"]).strip(),
                     "fecha_nacimiento": self.parse_fecha(row["fecha_nacimiento"]),
-                    "tipo_documento": self.get_tipo_documento(row.get("tipo_documento")),
+                    "tipo_documento": self.get_tipo_documento(
+                        row.get("tipo_documento")
+                    ),
                     "genero": self.get_sexo(row.get("genero")),
                 }
 

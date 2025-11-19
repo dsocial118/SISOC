@@ -1,11 +1,14 @@
 {% extends "includes/main.html" %}
 
 {% block content %}
-<h1>Eliminar relación familiar</h1>
-<p>¿Confirmás que querés eliminar el vínculo con <strong>{{ object.ciudadano_2 }}</strong>?</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Eliminar</button>
-    <a href="{{ object.ciudadano_1.get_absolute_url }}" class="btn btn-outline-secondary">Cancelar</a>
-</form>
+    <h1>Eliminar relación familiar</h1>
+    <p>
+        ¿Confirmás que querés eliminar el vínculo con <strong>{{ object.ciudadano_2 }}</strong>?
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+        <a href="{{ object.ciudadano_1.get_absolute_url }}"
+           class="btn btn-outline-secondary">Cancelar</a>
+    </form>
 {% endblock %}

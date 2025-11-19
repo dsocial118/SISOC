@@ -1,20 +1,21 @@
 {% extends "includes/main.html" %}
 
 {% block content %}
-<h1 class="mb-4">Agregar familiar para {{ ciudadano }}</h1>
-<form method="post" class="card p-4">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    {% for field in form %}
-        <div class="mb-3">
-            {{ field.label_tag }}
-            {{ field }}
-            {% if field.errors %}<div class="text-danger small">{{ field.errors|join:', ' }}</div>{% endif %}
+    <h1 class="mb-4">Agregar familiar para {{ ciudadano }}</h1>
+    <form method="post" class="card p-4">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            <div class="mb-3">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.errors %}<div class="text-danger small">{{ field.errors|join:', ' }}</div>{% endif %}
+            </div>
+        {% endfor %}
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a href="{{ ciudadano.get_absolute_url }}"
+               class="btn btn-outline-secondary">Cancelar</a>
         </div>
-    {% endfor %}
-    <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Guardar</button>
-        <a href="{{ ciudadano.get_absolute_url }}" class="btn btn-outline-secondary">Cancelar</a>
-    </div>
-</form>
+    </form>
 {% endblock %}

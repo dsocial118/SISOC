@@ -12,11 +12,31 @@ from ciudadanos.views import (
 )
 
 urlpatterns = [
-    path("ciudadanos/listar", login_required(CiudadanosListView.as_view()), name="ciudadanos"),
-    path("ciudadanos/crear/", login_required(CiudadanosCreateView.as_view()), name="ciudadanos_crear"),
-    path("ciudadanos/ver/<int:pk>", login_required(CiudadanosDetailView.as_view()), name="ciudadanos_ver"),
-    path("ciudadanos/editar/<int:pk>", login_required(CiudadanosUpdateView.as_view()), name="ciudadanos_editar"),
-    path("ciudadanos/eliminar/<int:pk>", login_required(CiudadanosDeleteView.as_view()), name="ciudadanos_eliminar"),
+    path(
+        "ciudadanos/listar",
+        login_required(CiudadanosListView.as_view()),
+        name="ciudadanos",
+    ),
+    path(
+        "ciudadanos/crear/",
+        login_required(CiudadanosCreateView.as_view()),
+        name="ciudadanos_crear",
+    ),
+    path(
+        "ciudadanos/ver/<int:pk>",
+        login_required(CiudadanosDetailView.as_view()),
+        name="ciudadanos_ver",
+    ),
+    path(
+        "ciudadanos/editar/<int:pk>",
+        login_required(CiudadanosUpdateView.as_view()),
+        name="ciudadanos_editar",
+    ),
+    path(
+        "ciudadanos/eliminar/<int:pk>",
+        login_required(CiudadanosDeleteView.as_view()),
+        name="ciudadanos_eliminar",
+    ),
     path(
         "ciudadanos/<int:pk>/familiares/nuevo",
         login_required(GrupoFamiliarCreateView.as_view()),

@@ -37,7 +37,9 @@ class CiudadanoForm(forms.ModelForm):
         ]
         widgets = {
             "observaciones": forms.Textarea(attrs={"rows": 3}),
-            "activo": forms.CheckboxInput(attrs={"class": "form-check-input", "role": "switch"}),
+            "activo": forms.CheckboxInput(
+                attrs={"class": "form-check-input", "role": "switch"}
+            ),
         }
 
     provincia = forms.ModelChoiceField(
@@ -138,9 +140,7 @@ class GrupoFamiliarForm(forms.ModelForm):
     def __init__(self, ciudadano: Ciudadano, *args, **kwargs):
         self.ciudadano = ciudadano
         super().__init__(*args, **kwargs)
-        self.fields["ciudadano_2"].queryset = Ciudadano.objects.exclude(
-            pk=ciudadano.pk
-        )
+        self.fields["ciudadano_2"].queryset = Ciudadano.objects.exclude(pk=ciudadano.pk)
         self.fields["ciudadano_2"].label = "Familiar"
 
     def clean_ciudadano_2(self):
