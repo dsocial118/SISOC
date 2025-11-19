@@ -7,7 +7,8 @@
 {% endblock %}
 {% block content %}
     <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+          rel="stylesheet" />
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <style>
@@ -887,11 +888,11 @@
         if (typeof jQuery === 'undefined') {
             document.write('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"><\/script>');
         }
-    </script>
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    {{ form.estado_tree|json_script:"estado-general-data" }}
-    <script>
+</script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{{ form.estado_tree|json_script:"estado-general-data" }}
+<script>
         document.addEventListener("DOMContentLoaded", function () {
             const dataElement = document.getElementById("estado-general-data");
             if (!dataElement) {
@@ -1008,13 +1009,13 @@
             });
             refreshSubestados(initialSelections.subestado || "", initialSelections.motivo || "");
         });
-    </script>
-    <script>
+</script>
+<script>
   var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
   var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
-    </script>
-    <script src="{% static 'custom/js/comedorform.js' %}"></script>
-    <script>
+</script>
+<script src="{% static 'custom/js/comedorform.js' %}"></script>
+<script>
     // Esperar a que jQuery y Select2 estén cargados antes de inicializar
     (function waitForDependencies() {
         if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
@@ -1066,5 +1067,5 @@
             }
         });
     })();
-    </script>
+</script>
 {% endblock %}
