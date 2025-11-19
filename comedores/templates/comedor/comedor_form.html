@@ -23,7 +23,24 @@
   .select2-container--default .select2-selection--single .select2-selection__rendered {
     line-height: 36px;
     color: #e5e7eb;
-    background-color: transparent;
+    background-color: transparent !important;
+  }
+
+  /* Asegurar que el texto seleccionado mantenga el tema oscuro */
+  .select2-container--default .select2-selection--single {
+    background-color: #1f2d3d !important;
+  }
+
+  /* Estado focus del select */
+  .select2-container--default.select2-container--focus .select2-selection--single {
+    background-color: #1f2d3d !important;
+    border-color: #3b82f6;
+  }
+
+  /* Estado disabled */
+  .select2-container--default.select2-container--disabled .select2-selection--single {
+    background-color: #0f1a24 !important;
+    color: #6b7280 !important;
   }
 
   .select2-container--default .select2-selection--single .select2-selection__arrow {
@@ -55,35 +72,87 @@
   }
 
   .select2-results__option {
-    background-color: #1f2d3d;
-    color: #e5e7eb;
+    background-color: #1f2d3d !important;
+    color: #e5e7eb !important;
   }
 
-  .select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background-color: #3b82f6;
-    color: white;
+  /* Forzar colores en todas las opciones sin excepción */
+  .select2-container--default .select2-results__option {
+    background-color: #1f2d3d !important;
+    color: #e5e7eb !important;
+  }
+
+  .select2-container--default .select2-results__option--highlighted[aria-selected],
+  .select2-container--default .select2-results__option--highlighted {
+    background-color: #3b82f6 !important;
+    color: white !important;
   }
 
   .select2-container--default .select2-results__option[aria-selected=true] {
-    background-color: #374151;
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
+  }
+
+  /* Asegurar que las opciones seleccionadas no tengan fondo blanco */
+  .select2-results__option[aria-selected=true],
+  .select2-results__option[aria-selected="true"],
+  li.select2-results__option[aria-selected=true],
+  .select2-results > .select2-results__options > .select2-results__option[aria-selected=true] {
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
+  }
+
+  /* Forzar fondo oscuro en opciones con clase selected */
+  .select2-results__option.select2-results__option--selected {
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
+  }
+
+  /* Cuando se hace hover sobre una opción ya seleccionada */
+  .select2-container--default .select2-results__option[aria-selected=true]:hover,
+  .select2-container--default .select2-results__option.select2-results__option--selected:hover {
+    background-color: #4b5563 !important;
+    color: white !important;
   }
 
   .select2-container--default .select2-selection--single .select2-selection__placeholder {
     color: #9ca3af;
   }
 
+  /* Forzar que el dropdown siempre se abra hacia abajo */
+  .select2-container--open .select2-dropdown--below {
+    border-top: 1px solid #374151;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  /* Prevenir que el dropdown se abra hacia arriba */
+  .select2-container--open .select2-dropdown--above {
+    display: none !important;
+  }
+
+  /* Mantener el select en su posición cuando se abre */
+  .select2-container--open {
+    position: relative;
+  }
+
+  /* Asegurar que el dropdown esté debajo del select */
+  .select2-dropdown {
+    position: absolute;
+    top: 100%;
+    margin-top: -1px;
+  }
+
   /* Estilos para replicar el diseño de la imagen original */
   .imagenes-existentes-section {
     margin-bottom: 30px;
   }
-
   .imagenes-container {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
     margin-bottom: 20px;
   }
-
   .imagen-existente {
     background: #2c3e50;
     border-radius: 12px;
@@ -93,20 +162,17 @@
     flex: 0 0 calc(50% - 7.5px); /* Dos columnas con gap */
     min-width: 300px;
   }
-
   .imagen-header {
     color: #ecf0f1;
     font-size: 16px;
     margin-bottom: 20px;
     opacity: 0.9;
   }
-
   .imagen-card-content {
     display: flex;
     align-items: center;
     gap: 15px;
   }
-
   .imagen-thumbnail-container {
     width: 80px;
     height: 80px;
@@ -118,26 +184,22 @@
     justify-content: center;
     background: #34495e;
   }
-
   .imagen-thumbnail {
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 6px;
   }
-
   .imagen-info-content {
     flex: 1;
     color: #ecf0f1;
   }
-
   .imagen-filename-display {
     font-size: 13px;
     margin-bottom: 8px;
     color: #bdc3c7;
     word-break: break-word;
   }
-
   .imagen-status {
     display: inline-flex;
     align-items: center;
@@ -145,13 +207,11 @@
     font-size: 12px;
     color: #2ecc71;
   }
-
   .imagen-actions {
     display: flex;
     align-items: center;
     gap: 10px;
   }
-
   .btn-eliminar-custom {
     background: #e74c3c;
     color: white;
@@ -162,34 +222,28 @@
     cursor: pointer;
     transition: all 0.3s ease;
   }
-
   .btn-eliminar-custom:hover {
     background: #c0392b;
     transform: scale(1.05);
   }
-
   .btn-eliminar-custom:focus {
     outline: none;
     box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.3);
   }
-
   .checkbox-eliminar-custom {
     width: 16px;
     height: 16px;
     margin-right: 5px;
   }
-
   /* Estilos para nuevas imágenes */
   .seccion-nuevas {
     margin-top: 30px;
   }
-
   .nuevas-header {
     color: #7f8c8d;
     font-size: 16px;
     margin-bottom: 20px;
   }
-
   .btn-seleccionar {
     background: #3498db;
     color: white;
@@ -203,24 +257,20 @@
     gap: 8px;
     transition: background 0.3s ease;
   }
-
   .btn-seleccionar:hover {
     background: #2980b9;
   }
-
   .contador-imagenes {
     color: #7f8c8d;
     font-size: 13px;
     margin-top: 15px;
   }
-
   .nuevas-imagenes-container {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
     margin-top: 20px;
   }
-
   .preview-nueva-imagen {
     background: #f8f9fa;
     border: 2px solid #e9ecef;
@@ -233,7 +283,6 @@
     align-items: center;
     gap: 15px;
   }
-
   .preview-imagen {
     width: 60px;
     height: 60px;
@@ -243,12 +292,10 @@
     background: #f8f9fa;
     flex-shrink: 0;
   }
-
   .preview-info {
     flex: 1;
     min-width: 0;
   }
-
   .preview-info-content {
     color: #495057;
     font-size: 13px;
@@ -256,12 +303,10 @@
     word-break: break-word;
     font-weight: 500;
   }
-
   .preview-size {
     color: #6c757d;
     font-size: 11px;
   }
-
   .preview-status {
     color: #28a745;
     font-size: 11px;
@@ -270,7 +315,6 @@
     gap: 4px;
     margin-top: 3px;
   }
-
   .btn-eliminar-preview {
     background: #dc3545;
     color: white;
@@ -282,12 +326,10 @@
     transition: all 0.2s;
     flex-shrink: 0;
   }
-
   .btn-eliminar-preview:hover {
     background: #c82333;
     transform: scale(1.05);
   }
-
   .preview-placeholder {
     width: 60px;
     height: 60px;
@@ -300,12 +342,10 @@
     font-size: 24px;
     flex-shrink: 0;
   }
-
   /* Overlay para imágenes marcadas para eliminar */
   .imagen-eliminada {
     opacity: 0.5;
   }
-
   .overlay-eliminar {
     position: absolute;
     top: 0;
@@ -319,26 +359,22 @@
     border-radius: 12px;
     z-index: 10;
   }
-
   .overlay-text {
     color: white;
     font-weight: bold;
     text-align: center;
   }
-
   .preview-error {
     color: #e74c3c;
     text-align: center;
     padding: 20px;
     font-size: 12px;
   }
-
   .preview-error i {
     display: block;
     font-size: 24px;
     margin-bottom: 10px;
   }
-
   /* Estilos para foto de legajo */
   .foto-legajo-existente {
     background: #2c3e50;
@@ -346,13 +382,11 @@
     border-radius: 8px;
     padding: 20px;
   }
-
   .foto-existente-container {
     display: flex;
     align-items: center;
     gap: 15px;
   }
-
   .foto-thumbnail-container {
     width: 120px;
     height: 120px;
@@ -365,18 +399,15 @@
     background: #34495e;
     flex-shrink: 0;
   }
-
   .foto-thumbnail-container img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
-
   .foto-info {
     flex: 1;
     min-width: 0;
   }
-
   .foto-nombre {
     font-size: 14px;
     font-weight: 500;
@@ -384,7 +415,6 @@
     margin-bottom: 8px;
     word-break: break-word;
   }
-
   .foto-status {
     font-size: 13px;
     display: flex;
@@ -392,7 +422,6 @@
     gap: 5px;
     color: #bdc3c7;
   }
-
   .nueva-foto-section {
     background: #34495e;
     border: 2px dashed #5d6d7e;
@@ -401,30 +430,25 @@
     text-align: center;
     transition: all 0.3s ease;
   }
-
   .nueva-foto-section:hover {
     border-color: #3498db;
     background: #2c3e50;
   }
-
   .nueva-foto-preview {
     background: #1e3d32;
     border: 1px solid #27ae60;
     border-radius: 8px;
     padding: 20px;
   }
-
   .nueva-foto-container {
     display: flex;
     align-items: flex-start;
     gap: 15px;
   }
-
   .foto-preview-wrapper {
     position: relative;
     flex-shrink: 0;
   }
-
   .foto-preview-img {
     width: 120px;
     height: 120px;
@@ -432,7 +456,6 @@
     border-radius: 8px;
     border: 2px solid #28a745;
   }
-
   .btn-remover-preview {
     position: absolute;
     top: -8px;
@@ -450,17 +473,14 @@
     justify-content: center;
     transition: all 0.2s ease;
   }
-
   .btn-remover-preview:hover {
     background: #c82333;
     transform: scale(1.1);
   }
-
   .foto-preview-info {
     flex: 1;
     min-width: 0;
   }
-
   .preview-nombre {
     font-size: 14px;
     font-weight: 500;
@@ -468,13 +488,11 @@
     margin-bottom: 5px;
     word-break: break-word;
   }
-
   .preview-size {
     font-size: 12px;
     color: #bdc3c7;
     margin-bottom: 8px;
   }
-
   .preview-status {
     font-size: 13px;
     display: flex;
@@ -482,20 +500,17 @@
     gap: 5px;
     color: #ecf0f1;
   }
-
   /* Modal para foto de legajo */
   .modal-foto-legajo .modal-content {
     border: none;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   }
-
   .modal-foto-legajo .modal-header {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     color: white;
     border-radius: 12px 12px 0 0;
   }
-
   .modal-foto-legajo .btn-close {
     background: none;
     border: none;
@@ -503,11 +518,9 @@
     font-size: 18px;
     opacity: 0.8;
   }
-
   .modal-foto-legajo .btn-close:hover {
     opacity: 1;
   }
-
   .foto-legajo-modal-container {
     background: #000;
     display: flex;
@@ -515,36 +528,30 @@
     justify-content: center;
     min-height: 400px;
   }
-
   .foto-legajo-principal img {
     max-width: 100%;
     max-height: 70vh;
     object-fit: contain;
   }
-
   /* Responsive */
   @media (max-width: 768px) {
     .imagen-existente {
       flex: 0 0 100%;
     }
-
     .preview-nueva-imagen {
       flex: 0 0 calc(50% - 7.5px);
     }
-
     .foto-existente-container,
     .nueva-foto-container {
       flex-direction: column;
       text-align: center;
     }
-
     .foto-thumbnail-container,
     .foto-preview-img {
       width: 100px;
       height: 100px;
     }
   }
-
   @media (max-width: 480px) {
     .preview-nueva-imagen {
       flex: 0 0 100%;
@@ -876,16 +883,16 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <!-- jQuery (requerido para Select2) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
-            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
-            crossorigin="anonymous"></script>
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"
-            integrity="sha256-9yRP/2EFlblE92vzCA10469Ctd0jT48HnmmYw8dOv2I="
-            crossorigin="anonymous"></script>
-    {{ form.estado_tree|json_script:"estado-general-data" }}
+    <!-- jQuery (requerido para Select2) - solo cargar si no existe -->
     <script>
+        if (typeof jQuery === 'undefined') {
+            document.write('<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"><\/script>');
+        }
+</script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+{{ form.estado_tree|json_script:"estado-general-data" }}
+<script>
         document.addEventListener("DOMContentLoaded", function () {
             const dataElement = document.getElementById("estado-general-data");
             if (!dataElement) {
@@ -898,29 +905,23 @@
                 console.error("No se pudo interpretar los estados del comedor.", error);
                 return;
             }
-
             const estadoSelect = document.getElementById("id_estado_general");
             const subestadoSelect = document.getElementById("id_subestado");
             const motivoSelect = document.getElementById("id_motivo");
-
             if (!estadoSelect || !subestadoSelect || !motivoSelect) {
                 return;
             }
-
             const subestadoPlaceholder =
                 subestadoSelect.dataset.placeholder || "Seleccione un subestado";
             const motivoPlaceholder =
                 motivoSelect.dataset.placeholder || "Seleccione un motivo";
-
             const initialSelections = {
                 subestado: subestadoSelect.value,
                 motivo: motivoSelect.value,
             };
-
             function renderOptions(select, options, placeholderText, preservedValue = "") {
                 const desiredValue = preservedValue ?? select.value;
                 select.innerHTML = "";
-
                 const emptyOption = document.createElement("option");
                 emptyOption.value = "";
                 emptyOption.textContent = placeholderText;
@@ -928,7 +929,6 @@
                     emptyOption.selected = true;
                 }
                 select.appendChild(emptyOption);
-
                 options.forEach((option) => {
                     const opt = document.createElement("option");
                     opt.value = option.id;
@@ -938,7 +938,6 @@
                     }
                     select.appendChild(opt);
                 });
-
                 if (desiredValue) {
                     const exists = options.some(
                         (option) => String(option.id) === String(desiredValue)
@@ -950,7 +949,6 @@
                     select.value = "";
                 }
             }
-
             function getProcesos(actividadId) {
                 if (!actividadId) {
                     return [];
@@ -958,7 +956,6 @@
                 const actividad = estadoTree[String(actividadId)];
                 return actividad ? actividad.procesos : [];
             }
-
             function getDetalles(actividadId, procesoId) {
                 if (!actividadId || !procesoId) {
                     return [];
@@ -969,7 +966,6 @@
                 );
                 return proceso ? proceso.detalles : [];
             }
-
             function setDisabled(select, disabled) {
                 select.disabled = disabled;
                 if (disabled) {
@@ -978,7 +974,6 @@
                     select.removeAttribute("disabled");
                 }
             }
-
             function refreshMotivos(preservedMotivo = "") {
                 const actividadId = estadoSelect.value;
                 const procesoId = subestadoSelect.value;
@@ -990,7 +985,6 @@
                     motivoSelect.value = "";
                 }
             }
-
             function refreshSubestados(preservedSubestado = "", preservedMotivo = "") {
                 const actividadId = estadoSelect.value;
                 const procesos = getProcesos(actividadId);
@@ -1007,40 +1001,71 @@
                 }
                 refreshMotivos(preservedMotivo);
             }
-
             estadoSelect.addEventListener("change", function () {
                 refreshSubestados("", "");
             });
-
             subestadoSelect.addEventListener("change", function () {
                 refreshMotivos("");
             });
-
             refreshSubestados(initialSelections.subestado || "", initialSelections.motivo || "");
         });
-    </script>
-    <script>
+</script>
+<script>
   var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
   var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
-    </script>
-    <script src="{% static 'custom/js/comedorform.js' %}"></script>
-    <script>
-    // Inicializar Select2 después de que todo esté cargado
-    $(document).ready(function() {
-        console.log('jQuery cargado:', typeof jQuery !== 'undefined');
-        console.log('Select2 disponible:', typeof $.fn.select2 !== 'undefined');
-        console.log('initializeSelect2 función disponible:', typeof initializeSelect2 === 'function');
-
-        if (typeof initializeSelect2 === 'function') {
-            console.log('Inicializando Select2 en los campos...');
-            initializeSelect2("id_organizacion", { placeholder: "Seleccione una organización" });
-            initializeSelect2("id_provincia", { placeholder: "Seleccione una provincia" });
-            initializeSelect2("id_municipio", { placeholder: "Seleccione un municipio" });
-            initializeSelect2("id_localidad", { placeholder: "Seleccione una localidad" });
-            console.log('Select2 inicializado');
-        } else {
-            console.error('initializeSelect2 no está disponible');
+</script>
+<script src="{% static 'custom/js/comedorform.js' %}"></script>
+<script>
+    // Esperar a que jQuery y Select2 estén cargados antes de inicializar
+    (function waitForDependencies() {
+        if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+            console.log('Esperando jQuery y Select2...');
+            setTimeout(waitForDependencies, 100);
+            return;
         }
-    });
-    </script>
+
+        $(document).ready(function() {
+            console.log('✓ jQuery cargado:', typeof jQuery !== 'undefined');
+            console.log('✓ Select2 disponible:', typeof $.fn.select2 !== 'undefined');
+            console.log('✓ initializeSelect2 función disponible:', typeof initializeSelect2 === 'function');
+
+            if (typeof initializeSelect2 === 'function') {
+                console.log('Inicializando Select2 en los campos...');
+
+                // Inicializar cada campo con su configuración específica
+                initializeSelect2("id_organizacion", {
+                    placeholder: "Seleccione una organización",
+                    minimumResultsForSearch: 0
+                });
+
+                initializeSelect2("id_provincia", {
+                    placeholder: "Seleccione una provincia",
+                    minimumResultsForSearch: 0
+                });
+
+                initializeSelect2("id_municipio", {
+                    placeholder: "Seleccione un municipio",
+                    minimumResultsForSearch: 0
+                });
+
+                initializeSelect2("id_localidad", {
+                    placeholder: "Seleccione una localidad",
+                    minimumResultsForSearch: 0
+                });
+
+                console.log('✓ Select2 inicializado en todos los campos');
+
+                // Configurar event listeners para cascada provincia > municipio > localidad
+                if (typeof setupSelect2EventListeners === 'function') {
+                    setupSelect2EventListeners();
+                    console.log('✓ Event listeners de Select2 configurados');
+                } else {
+                    console.error('✗ setupSelect2EventListeners no está disponible');
+                }
+            } else {
+                console.error('✗ initializeSelect2 no está disponible');
+            }
+        });
+    })();
+</script>
 {% endblock %}
