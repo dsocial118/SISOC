@@ -1,0 +1,20 @@
+{% if url %}
+    {% if boton == "crear_informe_tecnico" %}
+        <a href="{% url 'informe_tecnico_crear' tipo=admision.tipo_informe admision_id=admision.id %}"
+           class="btn {{ clase }} mr-1">{{ texto }}</a>
+    {% elif boton == "editar_informe_tecnico" %}
+        <a href="{% url 'informe_tecnico_editar' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
+           class="btn {{ clase }} mr-1">{{ texto }}</a>
+    {% elif boton == "ver_informe_tecnico" %}
+        <a href="{% url 'informe_tecnico_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
+           class="btn {{ clase }} mr-1">{{ texto }}</a>
+    {% elif boton == "informe_tecnico_complementario" %}
+        <a href="{% url 'informe_complementario_ver' tipo=informe_tecnico.tipo pk=informe_tecnico.id %}"
+           class="btn {{ clase }} mr-1">{{ texto }}</a>
+    {% endif %}
+{% else %}
+    <button type="button"
+            class="btn {{ clase }} mr-1"
+            data-bs-toggle="modal"
+            data-bs-target="{{ modal }}">{{ texto }}</button>
+{% endif %}

@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 from django.db import close_old_connections
 
-from comedores.models import Comedor, Observacion, Referente
+from comedores.models import Observacion, Referente
 
 TIMEOUT = 360  # Segundos máximos de espera por respuesta
 MAX_WORKERS = int(

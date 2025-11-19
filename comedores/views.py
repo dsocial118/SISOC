@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
+from django.core.paginator import Paginator
 from django.conf import settings
 from django.db.models.base import Model
 from django.forms import BaseModelForm, ValidationError
@@ -26,6 +27,7 @@ from django.views.generic import (
 )
 
 from admisiones.models.admisiones import Admision, EstadoAdmision
+from comedores.models import HistorialValidacion
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
@@ -473,6 +475,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             {"title": "Convenio"},
             {"title": "Tipo"},
             {"title": "Estado"},
+            {"title": "Proceso"},
+            {"title": "Activa"},
         ]
 
         admisiones_items = []
@@ -513,8 +517,27 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                             {
                                 "content": (
                                     a.estado.nombre
-                                    if hasattr(a, "estado") and a.estado
+                                    if hasattr(a, "estado") and a.estado.nombre
                                     else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    a.get_estado_admision_display()
+                                    if hasattr(a, "get_estado_admision_display")
+                                    and a.get_estado_admision_display()
+                                    else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    format_html(
+                                        '<i class="bi bi-check-circle-fill text-success"></i>'
+                                    )
+                                    if getattr(a, "activa", True)
+                                    else format_html(
+                                        '<i class="bi bi-x-circle-fill text-danger"></i>'
+                                    )
                                 )
                             },
                         ],
@@ -551,8 +574,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 ).order_by("-changed_at", "-id")
             )
         )
-
-        from django.core.paginator import Paginator
 
         # Paginación para historial de validaciones
         validaciones_queryset = self.object.historial_validaciones.select_related(
@@ -654,7 +675,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         env_config = self._get_environment_config()
 
         # Agregar opciones de validación
-        from comedores.models import HistorialValidacion
 
         context["opciones_no_validar"] = HistorialValidacion.get_opciones_no_validar()
 

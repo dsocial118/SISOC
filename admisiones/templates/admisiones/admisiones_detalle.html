@@ -3,7 +3,14 @@
 {% load admisiones_tags %}
 
 {% block title %}Admision {{ admision.id }}{% endblock %}
-{% block titulo-pagina %}Detalle de Admision{% endblock %}
+{% block titulo-pagina %}
+    Detalle de Admision
+    {% if admision.activa %}
+        <span class="badge bg-success">Activa</span>
+    {% else %}
+        <span class="badge bg-danger">Cerrada</span>
+    {% endif %}
+{% endblock %}
 
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -19,11 +26,32 @@
 
 {% block content %}
     <div class="row mb-3">
-        <div class="col-12 d-flex flex-wrap gap-2">
+        <div class="col-12 d-flex justify-content-between flex-wrap gap-2">
             <a href="{% url 'comedor_detalle' comedor.id %}"
                class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Volver al comedor
             </a>
+            {% if admision.activa %}
+                {% if user.is_superuser %}
+                    <button type="button"
+                            class="btn btn-danger"
+                            data-bs-toggle="modal"
+                            data-bs-target="#forzarCierreModal">
+                        <i class="fas fa-times-circle me-2"></i>Forzar Cierre
+                    </button>
+                {% else %}
+                    {% for group in user.groups.all %}
+                        {% if group.name == "Coordinador Equipo Tecnico" %}
+                            <button type="button"
+                                    class="btn btn-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#forzarCierreModal">
+                                <i class="fas fa-times-circle me-2"></i>Forzar Cierre
+                            </button>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 
@@ -51,6 +79,10 @@
                         <dd class="col-sm-7">
                             {{ admision.estado.nombre|default:"-" }}
                         </dd>
+                        <dt class="col-sm-5">Proceso Admision</dt>
+                        <dd class="col-sm-7">
+                            {{ admision.get_estado_legales_display|default:"-" }}
+                        </dd>
                         <dt class="col-sm-5">Estado legales</dt>
                         <dd class="col-sm-7">
                             {{ admision.get_estado_legales_display|default:"-" }}
@@ -71,6 +103,16 @@
                         <dd class="col-sm-7">
                             {{ admision.num_expediente|default:"-" }}
                         </dd>
+                        {% if not admision.activa %}
+                            <dt class="col-sm-5">Fecha de cierre</dt>
+                            <dd class="col-sm-7">
+                                {{ admision.modificado|date:"d/m/Y" }}
+                            </dd>
+                            <dt class="col-sm-5">Motivo de cierre</dt>
+                            <dd class="col-sm-7">
+                                {{ admision.motivo_forzar_cierre|default:"-" }}
+                            </dd>
+                        {% endif %}
                     </dl>
                 </div>
             </div>
@@ -561,6 +603,49 @@
             {% else %}
                 <p class="text-muted mb-0">Todavia no se genero una rendicion de cuenta final para este comedor.</p>
             {% endif %}
+        </div>
+    </div>
+
+    <!-- Modal Forzar Cierre -->
+    <div class="modal fade"
+         id="forzarCierreModal"
+         tabindex="-1"
+         aria-labelledby="forzarCierreModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="forzarCierreModalLabel">Forzar Cierre de Admisión</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Atención:</strong> Esta acción marcará la admisión como inactiva y no se podrá revertir.
+                        </div>
+                        <div class="mb-3">
+                            <label for="motivo_forzar_cierre" class="form-label">
+                                Motivo del cierre forzado <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control"
+                                      id="motivo_forzar_cierre"
+                                      name="motivo_forzar_cierre"
+                                      rows="4"
+                                      required
+                                      placeholder="Ingrese el motivo por el cual se fuerza el cierre de esta admisión..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" name="forzar_cierre" class="btn btn-danger">Confirmar Cierre</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 {% endblock %}
