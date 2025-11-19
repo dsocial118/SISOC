@@ -575,7 +575,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             )
         )
 
-
         # Paginación para historial de validaciones
         validaciones_queryset = self.object.historial_validaciones.select_related(
             "usuario"
@@ -623,14 +622,19 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 else "-"
             )
 
+            fecha_validacion = validacion.fecha_validacion
+            if fecha_validacion:
+                if timezone.is_naive(fecha_validacion):
+                    fecha_validacion = timezone.make_aware(fecha_validacion)
+                fecha_validacion = timezone.localtime(fecha_validacion)
+                fecha_display = fecha_validacion.strftime("%d/%m/%Y %H:%M")
+            else:
+                fecha_display = "-"
+
             validaciones_items.append(
                 {
                     "cells": [
-                        {
-                            "content": validacion.fecha_validacion.strftime(
-                                "%d/%m/%Y %H:%M"
-                            )
-                        },
+                        {"content": fecha_display},
                         {"content": usuario_nombre},
                         {"content": estado_badge},
                         {"content": opciones_display},
