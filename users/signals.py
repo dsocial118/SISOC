@@ -1,24 +1,24 @@
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group, User
 
-from users.models import Profile
 from core.constants import GROUP_INHERITANCE
+from users.models import Profile
 
 
 @receiver(post_save, sender=User)
 def ensure_user_profile(sender, instance, created, **kwargs):
     """
     Garantiza que cada usuario tenga exactamente un Profile asociado.
-    - Cuando se crea el usuario, se genera el Profile correspondiente.
-    - Si se actualiza un usuario existente, recrea el Profile solo si falta
-      (por ejemplo, si se eliminó manualmente).
+    - Crea el perfil cuando se crea el usuario.
+    - Vuelve a generarlo si se eliminó manualmente y persiste los cambios.
     """
     if created:
         Profile.objects.create(user=instance)
         return
 
-    Profile.objects.get_or_create(user=instance)
+    profile, _ = Profile.objects.get_or_create(user=instance)
+    profile.save()
 
 
 @receiver(m2m_changed, sender=Profile.duplas_asignadas.through)

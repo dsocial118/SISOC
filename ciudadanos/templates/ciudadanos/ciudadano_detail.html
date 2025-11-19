@@ -1,513 +1,102 @@
 {% extends "includes/main.html" %}
-{% load static crispy_forms_tags image_tags %}
-{% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/timeline.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/ciudadano.css' %}" />
-{% endblock %}
-{% block title %}Ciudadano – {{ object.apellido }}, {{ object.nombre }}{% endblock %}
-{% block breadcrumb %}
-    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
-{% endblock %}
+
 {% block content %}
-    {% include 'components/alert_message.html' with show_django_messages=True %}
-    <div class="container-fluid">
-        <!-- Acciones -->
-        <div class="d-flex justify-content-between mb-4">
-            {% include 'components/action_buttons.html' with back_button=back_button buttons=action_buttons button_group=True %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-0">{{ ciudadano.nombre }} {{ ciudadano.apellido }}</h1>
+            <p class="text-muted mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
         </div>
-        <!-- Indicadores -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <i class="fas fa-bell fa-2x text-primary me-3"></i>
-                        <div>
-                            <h5 class="mb-1">{{ count_alta }}</h5>
-                            <a href="{% url 'alertas_listar' object.id %}"
-                               class="text-decoration-none">Alertas →</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <i class="fas fa-exclamation-triangle fa-2x text-warning me-3"></i>
-                        <div>
-                            <h5 class="mb-1">
-                                <span class="badge bg-warning">{{ count_media }}</span>
-                                <span class="badge bg-danger">{{ count_baja }}</span>
-                            </h5>
-                            <a href="{% url 'alertas_listar' object.id %}"
-                               class="text-decoration-none">Indicadores →</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <i class="fas fa-book fa-2x text-success me-3"></i>
-                        <div>
-                            <h5 class="mb-1">{{ count_programas }}</h5>
-                            <a href="{% url 'programas_intervencion' object.id %}"
-                               class="text-decoration-none">Programas →</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="btn-group">
+            <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
+               class="btn btn-outline-primary">Editar</a>
+            <a href="{% url 'ciudadanos_eliminar' ciudadano.pk %}"
+               class="btn btn-outline-danger">Eliminar</a>
         </div>
-        <!-- Perfil y Mapa -->
-        <div class="row gx-4 mb-5">
-            <div class="col-lg-4">
-                <div class="card shadow-sm rounded-lg overflow-hidden">
-                    <div class="card-header text-center py-6">
-                        {% if object.foto %}
-                            {% optimized_image object.foto "Foto de perfil" css_class="rounded-circle shadow" width="200" height="200" extra_attrs='style="object-fit:cover"' %}
-                        {% else %}
-                            <img src="{% static 'custom/img/default.png' %}"
-                                 class="rounded-circle shadow"
-                                 style="width:140px;
-                                        height:140px;
-                                        object-fit:cover"
-                                 alt="Foto" />
-                        {% endif %}
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Nombre</span><span>{{ object.apellido }}, {{ object.nombre }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Documento</span><span>{{ object.tipo_documento }} {{ object.documento }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Sexo</span><span>{{ object.sexo }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Fecha nacimiento</span><span>{{ object.fecha_nacimiento|date:"d/m/Y" }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Estado civil</span><span>{{ object.estado_civil|default:"–" }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Teléfono</span><span>{{ object.telefono|default:"–" }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Email</span><span>{{ object.email|default:"–" }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Provincia</span><span>{{ object.provincia|default:"–" }}</span>
-                        </li>
-                    </ul>
-                    <div class="card-body">
-                        <h6 class="text-muted mb-2">Programas</h6>
-                        {% if object.ciudadano_programa.all %}
-                            {% for cp in object.ciudadano_programa.all %}
-                                <span class="badge badge-custom px-3 py-1 me-1">{{ cp.programas.nombre }}</span>
-                            {% endfor %}
-                        {% else %}
-                            <span class="text-muted">No participa en programas</span>
-                        {% endif %}
-                    </div>
-                    <div class="card-body text-center">
-                        {% if object.estado %}
-                            <span class="badge bg-success px-4 py-2">Activo</span>
-                        {% else %}
-                            <span class="badge bg-danger px-4 py-2">Inactivo</span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-8">
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h5 class="mb-0">Ubicación</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <iframe width="100%"
-                                height="450"
-                                frameborder="0"
-                                style="border:0"
-                                src="https://maps.google.com/maps?q={{ object.calle|urlencode }}+{{ object.altura }},+{{ object.localidad|urlencode }},+{{ object.municipio|urlencode }},+{{ object.provincia|urlencode }}&output=embed"
-                                allowfullscreen>
-                        </iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Dimensiones -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-dark-blue text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Dimensiones</h5>
-                <ul class="nav nav-pills nav-dimensiones mb-0" role="tablist">
-                    <li class="nav-item">
-                        <button class="nav-link active"
-                                data-bs-toggle="pill"
-                                data-bs-target="#familia"
-                                type="button">Familia</button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link"
-                                data-bs-toggle="pill"
-                                data-bs-target="#vivienda"
-                                type="button">Vivienda</button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link"
-                                data-bs-toggle="pill"
-                                data-bs-target="#salud"
-                                type="button">Salud</button>
-                    </li>
-                    <li class="nav-item">
-                        <button class="nav-link"
-                                data-bs-toggle="pill"
-                                data-bs-target="#trabajo"
-                                type="button">Trabajo</button>
-                    </li>
-                </ul>
-            </div>
-            <div class="tab-content">
-                <!-- Familia -->
-                <div class="tab-pane fade show active" id="familia">
-                    <div class="table-responsive rounded border mb-4">
-                        <table class="table table-striped table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th>Cantidad de hijos</th>
-                                    <td>{{ dimensionfamilia.cant_hijos|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Otro responsable</th>
-                                    <td>{{ dimensionfamilia.otro_responsable|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Embarazadas</th>
-                                    <td>{{ dimensionfamilia.hay_embarazadas|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Privados de libertad</th>
-                                    <td>{{ dimensionfamilia.hay_priv_libertad|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Salud mental</th>
-                                    <td>{{ dimensionfamilia.hay_prbl_smental|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Enfermedades crónicas</th>
-                                    <td>{{ dimensionfamilia.hay_enf_cronica|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Discapacidad</th>
-                                    <td>{{ dimensionfamilia.hay_fam_discapacidad|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Observaciones</th>
-                                    <td>{{ dimensionfamilia.obs_familia|default:"–" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <!-- Vivienda -->
-                <div class="tab-pane fade" id="vivienda">
-                    <div class="table-responsive rounded border">
-                        <table class="table table-striped table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th>Posesión</th>
-                                    <td>{{ dimensionvivienda.posesion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Tipo</th>
-                                    <td>{{ dimensionvivienda.tipo|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Material</th>
-                                    <td>{{ dimensionvivienda.material|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Ambientes</th>
-                                    <td>{{ dimensionvivienda.cant_ambientes|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Baño</th>
-                                    <td>{{ dimensionvivienda.hay_banio|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Agua caliente</th>
-                                    <td>{{ dimensionvivienda.hay_agua_caliente|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Desmoronamiento</th>
-                                    <td>{{ dimensionvivienda.hay_desmoronamiento|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Observaciones</th>
-                                    <td>{{ dimensionfamilia.obs_familia|default:"–" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <!-- Vivienda -->
-                <div class="tab-pane fade" id="vivienda">
-                    <div class="table-responsive rounded border">
-                        <table class="table table-striped table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th>Posesión</th>
-                                    <td>{{ dimensionvivienda.posesion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Tipo</th>
-                                    <td>{{ dimensionvivienda.tipo|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Material</th>
-                                    <td>{{ dimensionvivienda.material|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Ambientes</th>
-                                    <td>{{ dimensionvivienda.cant_ambientes|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Baño</th>
-                                    <td>{{ dimensionvivienda.hay_banio|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Agua caliente</th>
-                                    <td>{{ dimensionvivienda.hay_agua_caliente|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Desmoronamiento</th>
-                                    <td>{{ dimensionvivienda.hay_desmoronamiento|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Observaciones</th>
-                                    <td>{{ dimensionvivienda.obs_vivienda|default:"–" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <!-- Salud -->
-                <div class="tab-pane fade" id="salud">
-                    <div class="table-responsive rounded border">
-                        <table class="table table-striped table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th>Lugar atención</th>
-                                    <td>{{ dimensionsalud.lugares_atencion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Frecuencia controles</th>
-                                    <td>{{ dimensionsalud.frecuencia_controles_medicos|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Enfermedad</th>
-                                    <td>{{ dimensionsalud.hay_enfermedad|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Cobertura</th>
-                                    <td>{{ dimensionsalud.hay_obra_social|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Discapacidad</th>
-                                    <td>{{ dimensionsalud.hay_discapacidad|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Observaciones</th>
-                                    <td>{{ dimensionsalud.obs_salud|default:"–" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <!-- Trabajo -->
-                <div class="tab-pane fade" id="trabajo">
-                    <div class="table-responsive rounded border">
-                        <table class="table table-striped table-hover mb-0">
-                            <tbody>
-                                <tr>
-                                    <th>Actualmente trabaja</th>
-                                    <td>{{ dimensiontrabajo.tiene_trabajo|yesno:"Sí,No" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Ocupación</th>
-                                    <td>{{ dimensiontrabajo.ocupacion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Contratación</th>
-                                    <td>{{ dimensiontrabajo.modo_contratacion|default:"–" }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Observaciones</th>
-                                    <td>{{ dimensiontrabajo.obs_trabajo|default:"–" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Programas -->
-        <div class="col-12 mb-4">
-            <div class="card shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Programas</h5>
-                </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
                 <div class="card-body">
-                    {% if ciudadanos_programas %}
-                        <div class="row g-3" id="programas_ciudadanos">
-                            {% for cp in ciudadanos_programas %}
-                                <div class="col-md-2 col-lg-2 mb-2 ease-out">
-                                    <div class="card card-programa shadow-sm h-100 position-relative">
-                                        <div class="card-body d-flex justify-content-between align-items-center">
-                                            <div class="d-flex align-items-center">
-                                                <i class="fas fa-tag fa-lg text-info me-2"></i>
-                                                <span class="fw-semibold text-truncate" style="max-width: 160px;">{{ cp.programas.nombre }}</span>
-                                            </div>
-                                            <button class="btn btn-sm btn-outline-danger borrar-programa"
-                                                    data-program-id="{{ cp.id }}">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-5 text-muted">
-                            <i class="fas fa-clipboard-list fa-3x mb-3"></i>
-                            <br />
-                            No hay programas asignados
-                        </div>
-                    {% endif %}
-                </div>
-                <!-- Formulario para agregar programa -->
-                <div id="form-programas" class="card-footer bg-body-tertiary d-none">
-                    <form id="ProgramaForm"
-                          method="POST"
-                          action="{% url 'actualizar_programas' object.id %}">
-                        {% csrf_token %}
-                        {{ form_prog.programas|as_crispy_field }}
-                        <div class="mt-3 text-end">
-                            <button type="button"
-                                    id="cancelar-btn"
-                                    class="btn btn-outline-secondary btn-sm">Cancelar</button>
-                            <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer bg-body-tertiary text-start">
-                    <a href="{% url 'programas_intervencion' object.id %}"
-                       class="btn btn-sm btn-outline-primary me-2">Ver más</a>
-                    {% if perms.Usuarios.rol_admin %}<a id="agregar-programa-btn" class="btn btn-sm btn-primary">+ Agregar</a>{% endif %}
+                    <h5 class="card-title">Contacto</h5>
+                    <p class="mb-1">
+                        <strong>Sexo:</strong> {{ ciudadano.sexo|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Nacionalidad:</strong> {{ ciudadano.nacionalidad|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Teléfono:</strong> {{ ciudadano.telefono|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Email:</strong> {{ ciudadano.email|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Dirección:</strong> {{ ciudadano.calle }} {{ ciudadano.altura }} {{ ciudadano.barrio }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Provincia:</strong> {{ ciudadano.provincia|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Municipio:</strong> {{ ciudadano.municipio|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Localidad:</strong> {{ ciudadano.localidad|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Código postal:</strong> {{ ciudadano.codigo_postal|default:'-' }}
+                    </p>
                 </div>
             </div>
         </div>
-        <div class="row gx-4 mb-5">
-            <!-- Imágenes -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">Imágenes</h5>
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Grupo familiar</h5>
+                        <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
+                           class="btn btn-sm btn-primary">Agregar familiar</a>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-dark table-striped mb-0 align-middle">
-                                <thead>
+                    {% if familia %}
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Vínculo</th>
+                                    <th>Conviven</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for relacion, familiar in familia %}
                                     <tr>
-                                        <th>Previsualización</th>
-                                        <th>Nombre</th>
-                                        <th>Fecha</th>
-                                        <th>Acciones</th>
+                                        <td>
+                                            <a href="{% url 'ciudadanos_ver' familiar.pk %}">{{ familiar }}</a>
+                                        </td>
+                                        <td>{{ relacion.get_vinculo_display }}</td>
+                                        <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
+                                        <td class="text-end">
+                                            <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}"
+                                               class="btn btn-sm btn-outline-danger">Eliminar</a>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {% if files_img %}
-                                        {% for f in files_img %}
-                                            <tr>
-                                                <td style="width:120px;">{% optimized_image f.archivo "Vista previa" css_class="img-fluid rounded" %}</td>
-                                                <td>{{ f.archivo.name|truncatechars:30 }}</td>
-                                                <td>{{ f.fecha|date:"d/m/Y" }}</td>
-                                                <td>
-                                                    <a href="{{ MEDIA_URL }}{{ f.archivo.url }}"
-                                                       download
-                                                       class="btn btn-sm btn-outline-light">Descargar</a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    {% else %}
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted py-4">Sin imágenes</td>
-                                        </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-body-tertiary text-start">
-                        <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
-                           class="btn btn-sm btn-outline-primary me-2">Ver más</a>
-                        {% if perms.Usuarios.rol_admin %}
-                            <a href="{% url 'ciudadanosarchivos_crear' object.id %}"
-                               class="btn btn-sm btn-primary">Agregar</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <!-- Documentos -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">Documentos</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-dark table-striped mb-0 align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Documento</th>
-                                        <th>Fecha</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% if files_docs %}
-                                        {% for f in files_docs %}
-                                            <tr>
-                                                <td>{{ f.archivo.name|truncatechars:30 }}</td>
-                                                <td>{{ f.fecha|date:"d/m/Y" }}</td>
-                                                <td>
-                                                    <a href="{{ f.archivo.url }}"
-                                                       download
-                                                       class="btn btn-sm btn-outline-light">Descargar</a>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    {% else %}
-                                        <tr>
-                                            <td colspan="3" class="text-center text-muted py-4">Sin documentos</td>
-                                        </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-body-tertiary text-start">
-                        <a href="{% url 'ciudadanosarchivos_listar' object.id %}"
-                           class="btn btn-sm btn-outline-primary me-2">Ver más</a>
-                        {% if perms.Usuarios.rol_admin %}
-                            <a href="{% url 'ciudadanosarchivos_crear' object.id %}"
-                               class="btn btn-sm btn-primary">Agregar</a>
-                        {% endif %}
-                    </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted">Aún no hay familiares cargados.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-{% endblock %}
-{% block customJS %}
-    <script src="{% static 'custom/js/ciudadano.js' %}"></script>
+
+    {% if ciudadano.observaciones %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Observaciones</h5>
+                <p class="mb-0">{{ ciudadano.observaciones }}</p>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}

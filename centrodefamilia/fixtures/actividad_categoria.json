@@ -304,56 +304,10 @@
   {
     "model": "centrodefamilia.actividad",
     "pk": 57,
-    "fields": { "nombre": "Deportes y recreación", "categoria": 1 }
-  },
-
-  {
-    "model": "ciudadanos.secretarias",
-    "pk": 1,
     "fields": {
-      "nombre": "Secretaria",
-      "observaciones": "",
-      "estado": 1
-    }
-  },
-  {
-    "model": "ciudadanos.subsecretarias",
-    "pk": 1,
-    "fields": {
-      "secretaria": 1,
-      "nombre": "Subsecretaria",
-      "observaciones": "",
-      "estado": 1
-    }
-  },
-  {
-    "model": "ciudadanos.programa",
-    "pk": 1,
-    "fields": {
-      "subsecretaria": 1,
-      "nombre": "Centro de Familia",
-      "estado": 1,
-      "observaciones": ""
-    }
-  },
-  {
-    "model": "ciudadanos.programa",
-    "pk": 2,
-    "fields": {
-      "subsecretaria": 1,
-      "nombre": "Comedores",
-      "estado": 1,
-      "observaciones": ""
-    }
-  },
-  {
-    "model": "ciudadanos.programa",
-    "pk": 3,
-    "fields": {
-      "subsecretaria": 1,
-      "nombre": "Celiaquia",
-      "estado": 1,
-      "observaciones": ""
+      "nombre": "Deportes y recreación",
+      "categoria": 1
     }
   }
+
 ]

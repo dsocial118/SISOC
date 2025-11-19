@@ -7,17 +7,7 @@ from centrodefamilia.models import (
     ParticipanteActividad,
     ParticipanteActividadHistorial,
 )
-from ciudadanos.models import (
-    Ciudadano,
-    DimensionEconomia,
-    DimensionEducacion,
-    DimensionFamilia,
-    DimensionSalud,
-    DimensionTrabajo,
-    DimensionVivienda,
-    CiudadanoPrograma,
-    HistorialCiudadanoProgramas,
-)
+from ciudadanos.models import Ciudadano
 
 logger = logging.getLogger("django")
 
@@ -103,35 +93,7 @@ class ParticipanteService:
         return len(nuevos)
 
     @staticmethod
-    def _crear_dimensiones_y_programa(ciudadano, usuario, actividad_id):
-        # Forzar siempre programa ID = 1
-        programa_id = 1
-
-        for Modelo in (
-            DimensionEconomia,
-            DimensionEducacion,
-            DimensionFamilia,
-            DimensionSalud,
-            DimensionTrabajo,
-            DimensionVivienda,
-        ):
-            Modelo.objects.update_or_create(ciudadano=ciudadano)
-
-            creado = CiudadanoPrograma.objects.update_or_create(
-                ciudadano=ciudadano,
-                programas_id=programa_id,
-                defaults={"creado_por": usuario},
-            )
-        if creado:
-            HistorialCiudadanoProgramas.objects.create(
-                programa_id=programa_id,
-                ciudadano=ciudadano,
-                accion="agregado",
-                usuario=usuario,
-            )
-
-    @staticmethod
-    def crear_ciudadano_con_dimensiones(datos, usuario, actividad_id):
+    def crear_ciudadano(datos):
         ciudadano = Ciudadano.objects.create(
             nombre=datos.get("nombre"),
             apellido=datos.get("apellido"),
@@ -139,9 +101,6 @@ class ParticipanteService:
             fecha_nacimiento=datos.get("fecha_nacimiento"),
             tipo_documento=datos.get("tipo_documento"),
             sexo=datos.get("genero"),
-        )
-        ParticipanteService._crear_dimensiones_y_programa(
-            ciudadano, usuario, actividad_id
         )
         return ciudadano
 
@@ -182,14 +141,11 @@ class ParticipanteService:
             ciudadano = Ciudadano.objects.filter(pk=ciudadano_id).first()
             if not ciudadano:
                 raise LookupError("Ciudadano no encontrado.")
-            cls._crear_dimensiones_y_programa(ciudadano, usuario, actividad_id)
         else:
             genero = datos.get("genero")
             if actividad.sexoact.exists() and genero not in actividad.sexoact.all():
                 raise SexoNoPermitido("Sexo no permitido para esta actividad.")
-            ciudadano = cls.crear_ciudadano_con_dimensiones(
-                datos, usuario, actividad_id
-            )
+            ciudadano = cls.crear_ciudadano(datos)
 
         if actividad.sexoact.exists() and ciudadano.sexo not in actividad.sexoact.all():
             raise SexoNoPermitido("Sexo no permitido para esta actividad.")

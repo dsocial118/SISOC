@@ -152,14 +152,6 @@ def invalidate_ciudadano_cache_on_change(sender, instance, **kwargs):
     invalidate_dashboard_cache()
 
 
-@receiver([post_save, post_delete], sender="ciudadanos.Alerta")
-def invalidate_alerta_cache_on_change(sender, instance, **kwargs):
-    """Invalida cache cuando se modifica una alerta."""
-    if hasattr(instance, "ciudadano_id"):
-        invalidate_ciudadano_cache(instance.ciudadano_id)
-    invalidate_dashboard_cache()
-
-
 @receiver([post_save, post_delete], sender="intervenciones.TipoIntervencion")
 def invalidate_tipo_intervencion_cache_on_change(sender, instance, **kwargs):
     """Invalida cache cuando se modifica un tipo de intervención."""
