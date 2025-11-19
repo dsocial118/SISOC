@@ -275,20 +275,26 @@
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="mb-3">Legajos</h5>
             <div class="d-flex align-items-center gap-3">
-                <!-- Selector de paginación removido - ahora muestra todos los registros -->
+                <input type="text"
+                       id="search-legajos"
+                       class="form-control"
+                       placeholder="Buscar por ID, nombre, apellido o DNI..."
+                       style="width: 300px" />
             </div>
         </div>
 
         {% if legajos %}
+            <div class="mb-3"></div>
 
             <div class="table-responsive">
                 <table class="table table-hover" style="color: #e0e0e0;">
                     <thead style="background: #13212f;">
                         <tr>
-                            <th width="25%">Beneficiario</th>
+                            <th width="8%">ID</th>
+                            <th width="22%">Beneficiario</th>
                             <th width="15%">Estado</th>
                             <th width="15%">Archivos</th>
-                            <th width="30%">Observaciones</th>
+                            <th width="25%">Observaciones</th>
                             <th width="15%">Acciones</th>
                         </tr>
                     </thead>
@@ -296,7 +302,11 @@
                         {% for leg in legajos %}
                             <tr class="legajo-row"
                                 {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}style="border-left: 4px solid #dc3545;"{% elif leg.revision_tecnico == 'APROBADO' %}style="border-left: 4px solid #28a745;"{% endif %}
-                                data-estado="{{ leg.revision_tecnico|default:'PENDIENTE' }}">
+                                data-estado="{{ leg.revision_tecnico|default:'PENDIENTE' }}"
+                                data-search="{{ leg.pk }} {{ leg.ciudadano.nombre|lower }} {{ leg.ciudadano.apellido|lower }} {{ leg.ciudadano.documento|default:'' }}">
+                                <td>
+                                    <span class="text-muted">#{{ leg.pk }}</span>
+                                </td>
                                 <td>
                                     <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 2rem;"{% endif %}>
                                         <div class="fw-semibold">
@@ -310,12 +320,12 @@
                                         </div>
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
                                         {% if leg.es_responsable %}
-                                            <small class="badge bg-info mt-1">Responsable</small>
-                                            {% if leg.hijos_a_cargo %}
+                                            <small class="badge bg-info mt-1">{{ leg.tipo_legajo|default:"Responsable" }}</small>
+                                            {% if leg.hijos_a_cargo and leg.hijos_a_cargo|length > 0 %}
                                                 <small class="text-muted d-block mt-1">Tiene {{ leg.hijos_a_cargo|length }} hijo{{ leg.hijos_a_cargo|length|pluralize }} a cargo</small>
                                             {% endif %}
                                         {% else %}
-                                            <small class="badge bg-success mt-1">Beneficiario</small>
+                                            <small class="badge bg-success mt-1">{{ leg.tipo_legajo|default:"Beneficiario" }}</small>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -351,10 +361,28 @@
                                             data-bs-target="#detalle-{{ leg.pk }}-{{ forloop.counter }}">
                                         <i class="fas fa-eye"></i>
                                     </button>
+                                    {% if is_tec or is_coord or is_prov and expediente.estado.nombre in 'CREADO,PROCESADO,EN_ESPERA' %}
+                                        <button class="btn btn-outline-primary btn-sm ms-1"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalEditarLegajo"
+                                                data-legajo-id="{{ leg.pk }}"
+                                                data-expediente-id="{{ expediente.pk }}"
+                                                title="Editar datos del legajo">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    {% endif %}
+                                    {% if is_coord %}
+                                        <button class="btn btn-outline-danger btn-sm ms-1 btn-eliminar-legajo"
+                                                data-legajo-id="{{ leg.pk }}"
+                                                data-expediente-id="{{ expediente.pk }}"
+                                                title="Eliminar legajo">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    {% endif %}
                                 </td>
                             </tr>
                             <tr class="collapse" id="detalle-{{ leg.pk }}-{{ forloop.counter }}">
-                                <td colspan="5" class="p-0">
+                                <td colspan="6" class="p-0">
                                     <div class="card mt-2" style="background: #2c3e50; border-color: #495057;">
                                         <div class="card-body">
                                             <div class="row gy-3 gx-3">
@@ -1046,16 +1074,7 @@
     </div>
 {% endif %}
 
-<div class="p-3 rounded shadow mb-4"
-     style="background-color: #1c2a3a;
-            color: #e0e0e0">
-    {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
-        <div class="text-end mt-3">
-            <button id="btn-confirm-subs" class="btn btn-warning">Confirmar subsanación</button>
-        </div>
-    {% endif %}
 
-</div>
 <!-- Asignar TÃ©cnico: solo Coordinador (segÃºn tu condiciÃ³n actual por id) -->
 {% if expediente.estado.id == 2 and is_coord %}
     <div class="card mb-4">
@@ -1496,6 +1515,110 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Editar Legajo -->
+<div class="modal fade"
+     id="modalEditarLegajo"
+     tabindex="-1"
+     aria-labelledby="modalEditarLegajoLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="form-editar-legajo" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarLegajoLabel">
+                        <i class="fas fa-edit"></i> Editar Datos del Legajo
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="modal-alertas-editar" class="mb-3"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="editar-apellido" class="form-label">Apellido *</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-apellido"
+                                   name="apellido"
+                                   required />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-nombre" class="form-label">Nombre *</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-nombre"
+                                   name="nombre"
+                                   required />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-documento" class="form-label">Documento *</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-documento"
+                                   name="documento"
+                                   required />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-fecha-nacimiento" class="form-label">Fecha de Nacimiento *</label>
+                            <input type="date"
+                                   class="form-control"
+                                   id="editar-fecha-nacimiento"
+                                   name="fecha_nacimiento"
+                                   required />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-sexo" class="form-label">Sexo</label>
+                            <select class="form-select" id="editar-sexo" name="sexo">
+                                <option value="">Seleccionar...</option>
+                                {% for sexo in sexos %}<option value="{{ sexo.id }}">{{ sexo.sexo }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-nacionalidad" class="form-label">Nacionalidad</label>
+                            <select class="form-select" id="editar-nacionalidad" name="nacionalidad">
+                                <option value="">Seleccionar...</option>
+                                {% for nac in nacionalidades %}<option value="{{ nac.id }}">{{ nac.nacionalidad }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-telefono" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="editar-telefono" name="telefono" />
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editar-email" name="email" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editar-calle" class="form-label">Calle</label>
+                            <input type="text" class="form-control" id="editar-calle" name="calle" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editar-altura" class="form-label">Altura</label>
+                            <input type="text" class="form-control" id="editar-altura" name="altura" />
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editar-codigo-postal" class="form-label">Código Postal</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-codigo-postal"
+                                   name="codigo_postal" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endwith %}
 {% endblock %}
 {% block customCSS %}
@@ -1526,6 +1649,8 @@
           content="{% url 'registro_erroneo_actualizar' expediente.pk 0 %}" />
     <meta name="eliminar-error-url-template"
           content="{% url 'registro_erroneo_eliminar' expediente.pk 0 %}" />
+    <meta name="editar-legajo-url-template"
+          content="{% url 'legajo_editar' expediente.pk 0 %}" />
     <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>

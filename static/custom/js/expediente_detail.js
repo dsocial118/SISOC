@@ -42,6 +42,13 @@ if (typeof module !== 'undefined') {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
+  const editarLegajoUrlTemplate = (window.EDITAR_LEGAJO_URL_TEMPLATE ||
+    editarLegajoMeta?.getAttribute('content')?.replace('/0/', '/{id}/')) || null;
+  if (editarLegajoUrlTemplate && !window.EDITAR_LEGAJO_URL_TEMPLATE) {
+    window.EDITAR_LEGAJO_URL_TEMPLATE = editarLegajoUrlTemplate;
+  }
+
   /* ====== Paginación genérica client-side ====== */
   function paginate({
     items,
@@ -1543,3 +1550,239 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   }, 100);
+
+  /* ===== BUSCADOR DE LEGAJOS ===== */
+  const searchInput = document.getElementById('search-legajos');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase().trim();
+      const rows = document.querySelectorAll('.legajo-row');
+      
+      rows.forEach(function(row) {
+        const searchData = row.getAttribute('data-search') || '';
+        const isVisible = searchData.includes(searchTerm);
+        
+        // Mostrar/ocultar fila principal
+        row.style.display = isVisible ? '' : 'none';
+        
+        // También ocultar la fila de detalle expandible si existe
+        const nextRow = row.nextElementSibling;
+        if (nextRow && nextRow.classList.contains('collapse')) {
+          nextRow.style.display = isVisible ? '' : 'none';
+        }
+      });
+    });
+  }
+
+  /* ===== EDITAR LEGAJO ===== */
+  const modalEditarLegajo = document.getElementById('modalEditarLegajo');
+  if (modalEditarLegajo) {
+    modalEditarLegajo.addEventListener('show.bs.modal', async function(event) {
+      const button = event.relatedTarget;
+      const legajoId = button.getAttribute('data-legajo-id');
+      const expedienteId = button.getAttribute('data-expediente-id');
+      
+      if (!legajoId || !expedienteId) {
+        console.error('Faltan datos del legajo');
+        return;
+      }
+      
+      try {
+        // Cargar datos actuales del legajo
+        const editarLegajoMeta = document.querySelector('meta[name="editar-legajo-url-template"]');
+        const editarLegajoUrlTemplate = editarLegajoMeta?.getAttribute('content')?.replace('/0/', '/{id}/');
+        if (!editarLegajoUrlTemplate) {
+          showAlert('danger', 'URL de edición no configurada.');
+          return;
+        }
+        const editarUrl = editarLegajoUrlTemplate.replace('{id}', legajoId);
+        
+        const response = await fetch(editarUrl, {
+          method: 'GET',
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          const legajo = data.legajo;
+          
+          // Llenar el formulario con los datos actuales
+          document.getElementById('editar-apellido').value = legajo.apellido;
+          document.getElementById('editar-nombre').value = legajo.nombre;
+          document.getElementById('editar-documento').value = legajo.documento;
+          document.getElementById('editar-fecha-nacimiento').value = legajo.fecha_nacimiento;
+          document.getElementById('editar-sexo').value = legajo.sexo;
+          document.getElementById('editar-nacionalidad').value = legajo.nacionalidad;
+          document.getElementById('editar-telefono').value = legajo.telefono;
+          document.getElementById('editar-email').value = legajo.email;
+          document.getElementById('editar-calle').value = legajo.calle;
+          document.getElementById('editar-altura').value = legajo.altura;
+          document.getElementById('editar-codigo-postal').value = legajo.codigo_postal;
+          
+          // Configurar la acción del formulario
+          const form = document.getElementById('form-editar-legajo');
+          form.setAttribute('action', editarUrl);
+        } else {
+          showAlert('danger', 'Error al cargar los datos: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error cargando datos del legajo:', error);
+        showAlert('danger', 'Error al cargar los datos del legajo.');
+      }
+    });
+    
+    // Manejar envío del formulario
+    const formEditarLegajo = document.getElementById('form-editar-legajo');
+    if (formEditarLegajo) {
+      formEditarLegajo.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        const alertasDiv = document.getElementById('modal-alertas-editar');
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando...';
+        alertasDiv.innerHTML = '';
+        
+        try {
+          const formData = new FormData(this);
+          const response = await fetch(this.getAttribute('action'), {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+              'X-CSRFToken': getCsrfToken(),
+              'X-Requested-With': 'XMLHttpRequest',
+              'Accept': 'application/json'
+            }
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            showAlert('success', data.message);
+            const modal = bootstrap.Modal.getInstance(modalEditarLegajo);
+            modal.hide();
+            setTimeout(() => window.location.reload(), 1000);
+          } else {
+            alertasDiv.innerHTML = `
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                ${data.error}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            `;
+          }
+        } catch (error) {
+          console.error('Error guardando cambios:', error);
+          alertasDiv.innerHTML = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              Error al guardar los cambios.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        }
+      });
+    }
+  }
+
+  /* ===== ELIMINAR LEGAJO ===== */
+  const botonesEliminar = document.querySelectorAll('.btn-eliminar-legajo');
+  botonesEliminar.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const legajoId = btn.getAttribute('data-legajo-id');
+      
+      if (!legajoId) {
+        showAlert('danger', 'Error: No se pudo identificar el legajo.');
+        return;
+      }
+
+      if (!confirm('¿Estás seguro de que querés eliminar este legajo? Esta acción no se puede deshacer.')) {
+        return;
+      }
+
+      if (!window.REVISAR_URL_TEMPLATE) {
+        showAlert('danger', 'No se configuró la URL de revisión de legajos.');
+        return;
+      }
+
+      const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+      try {
+        const fd = new FormData();
+        fd.append('accion', 'ELIMINAR');
+        
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const ct = resp.headers.get('Content-Type') || '';
+        let data = {};
+        if (ct.includes('application/json')) {
+          data = await resp.json();
+        } else {
+          const text = await resp.text();
+          if (!resp.ok) throw new Error(text || `HTTP ${resp.status}`);
+          data = { success: true, message: text };
+        }
+
+        if (!resp.ok || data.success === false) {
+          const msg = data.error || data.message || `HTTP ${resp.status}`;
+          throw new Error(msg);
+        }
+
+        showAlert('success', data.message || 'Legajo eliminado correctamente.');
+        setTimeout(() => window.location.reload(), 800);
+
+      } catch (err) {
+        console.error('Error eliminar legajo:', err);
+        showAlert('danger', 'Error al eliminar legajo: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  });
+
+// Buscador de legajos
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-legajos');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.legajo-row');
+            
+            rows.forEach(function(row) {
+                const searchData = row.getAttribute('data-search') || '';
+                const isVisible = searchData.includes(searchTerm);
+                
+                // Mostrar/ocultar fila principal
+                row.style.display = isVisible ? '' : 'none';
+                
+                // También ocultar la fila de detalle expandible si existe
+                const nextRow = row.nextElementSibling;
+                if (nextRow && nextRow.classList.contains('collapse')) {
+                    nextRow.style.display = isVisible ? '' : 'none';
+                }
+            });
+        });
+    }
+});

@@ -1,0 +1,96 @@
+[
+    {
+        "model": "comedores.estadoactividad",
+        "pk": 1,
+        "fields": {
+            "estado": "Activo"
+        }
+    },
+    {
+        "model": "comedores.estadoactividad",
+        "pk": 2,
+        "fields": {
+            "estado": "Inactivo"
+        }
+    },
+    {
+        "model": "comedores.estadoproceso",
+        "pk": 1,
+        "fields": {
+            "estado": "En proceso - Renovación",
+            "estado_actividad": 1
+        }
+    },
+    {
+        "model": "comedores.estadoproceso",
+        "pk": 2,
+        "fields": {
+            "estado": "En ejecución",
+            "estado_actividad": 1
+        }
+    },
+    {
+        "model": "comedores.estadoproceso",
+        "pk": 3,
+        "fields": {
+            "estado": "En proceso - Incorporación",
+            "estado_actividad": 2
+        }
+    },
+    {
+        "model": "comedores.estadoproceso",
+        "pk": 4,
+        "fields": {
+            "estado": "Baja",
+            "estado_actividad": 2
+        }
+    },
+    {
+        "model": "comedores.estadodetalle",
+        "pk": 1,
+        "fields": {
+            "estado": "Suspendido",
+            "estado_proceso": 2
+        }
+    },
+    {
+        "model": "comedores.estadodetalle",
+        "pk": 2,
+        "fields": {
+            "estado": "En plazo de renovación",
+            "estado_proceso": 2
+        }
+    },
+    {
+        "model": "comedores.estadodetalle",
+        "pk": 3,
+        "fields": {
+            "estado": "Cierre del comedor",
+            "estado_proceso": 4
+        }
+    },
+    {
+        "model": "comedores.estadodetalle",
+        "pk": 4,
+        "fields": {
+            "estado": "No renovación (Comedor)",
+            "estado_proceso": 4
+        }
+    },
+    {
+        "model": "comedores.estadodetalle",
+        "pk": 5,
+        "fields": {
+            "estado": "No renovación (Programa)",
+            "estado_proceso": 4
+        }
+    },
+    {
+        "model": "comedores.estadodetalle",
+        "pk": 6,
+        "fields": {
+            "estado": "No incorporación (Programa)",
+            "estado_proceso": 4
+        }
+    }
+]

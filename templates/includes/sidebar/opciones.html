@@ -74,38 +74,102 @@
             </ul>
         </li>
     {% endif %}
-    <!-- Tableros -->
-    <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
-        <a href="#" class="nav-link">
-            <img src="{% static 'custom/img/iconos_sidebar/tableros.svg' %}" alt="" />
-            <p>
-                Tableros
-                <i class="nav-arrow bi bi-chevron-right"></i>
-            </p>
-        </a>
-        {% if request.user|has_group:"Dashboard Centrodefamilia" %}
-            <ul class="nav nav-treeview">
-                <li class="nav-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
-                    <a href="#"
-                       class="nav-link nav-dot ms-2 {% if 'dashboard' in pagina_actual %}active{% endif %}">
-                        <p>
-                            Centros de Familia
-                            <i class="nav-arrow bi bi-chevron-right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{% url 'dashboard' %}"
-                               class="nav-link ms-4 {% if 'dashboard/listar' in pagina_actual %}active{% endif %}">
-                                <i class="nav-icon bi bi-arrow-return-right"></i>
-                                <p>Buscar</p>
+    {% with has_dashboard_cf=request.user|has_group:"Dashboard Centrodefamilia" has_datacalle=request.user|has_group:"Tablero DataCalle Chaco" has_datacalle_general=request.user|has_group:"Tablero DataCalle General" has_datacalle_misiones=request.user|has_group:"Tablero DataCalle Misiones" has_admin=request.user|has_group:"Administrador" %}
+        {% if has_dashboard_cf or has_datacalle or has_datacalle_general or has_datacalle_misiones or has_admin %}
+            <!-- Tableros -->
+            <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
+                <a href="#" class="nav-link">
+                    <img src="{% static 'custom/img/iconos_sidebar/tableros.svg' %}" alt="" />
+                    <p>
+                        Tableros
+                        <i class="nav-arrow bi bi-chevron-right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    {% if has_dashboard_cf %}
+                        <li class="nav-item {% if 'centro-de-familia' in pagina_actual %}menu-open{% endif %}">
+                            <a href="#"
+                               class="nav-link nav-dot ms-2 {% if 'centro-de-familia' in pagina_actual %}active{% endif %}">
+                                <p>
+                                    Centros de Familia
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </p>
                             </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{% url 'dashboard' %}"
+                                       class="nav-link ms-4 {% if 'centro-de-familia' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver</p>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
-                    </ul>
-                </li>
-            </ul>
+                    {% endif %}
+                    {% if has_datacalle_general or has_admin %}
+                        <li class="nav-item {% if 'dashboard/datacalle-general/' in pagina_actual %}menu-open{% endif %}">
+                            <a href="#"
+                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general/' in pagina_actual %}active{% endif %}">
+                                <p>
+                                    DataCalle
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{% url 'dashboard_datacalle_general' %}"
+                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general/' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                    {% if has_datacalle or has_admin %}
+                        <li class="nav-item {% if 'dashboard/datacalle-general-chaco/' in pagina_actual %}menu-open{% endif %}">
+                            <a href="#"
+                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-chaco/' in pagina_actual %}active{% endif %}">
+                                <p>
+                                    DataCalle - Chaco
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{% url 'dashboard_datacalle_chaco' %}"
+                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-chaco/' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                    {% if has_datacalle_misiones or has_admin %}
+                        <li class="nav-item {% if 'dashboard/datacalle-general-misiones/' in pagina_actual %}menu-open{% endif %}">
+                            <a href="#"
+                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-misiones/' in pagina_actual %}active{% endif %}">
+                                <p>
+                                    DataCalle - Misiones
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{% url 'dashboard_datacalle_misiones' %}"
+                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-misiones/' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                </ul>
+            </li>
         {% endif %}
-    </li>
+    {% endwith %}
     <!-- MENÚ LEGAJOS -->
     <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
@@ -138,7 +202,7 @@
                 </li>
             {% endif %}
             <!-- COMEDORES -->
-            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Comedores Listar" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Comedores Listar" or request.user|has_group:"Coordinador Equipo Tecnico" or request.user|has_group:"Coordinador general" %}
                 <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual %}active{% endif %}">
@@ -148,7 +212,7 @@
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Coordinador Equipo Tecnico" or request.user|has_group:"Coordinador general" %}
                             <li class="nav-item">
                                 <a href="{% url 'comedores' %}"
                                    class="nav-link ms-4 {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
@@ -197,16 +261,17 @@
                                 </a>
                             </li>
                         {% endif %}
+                        {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
                         {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Coordinador Equipo Tecnico" %}
                             <li class="nav-item">
-                                <a href="{% url 'rendicion_cuentas_final_listar' %}"
-                                   class="nav-link ms-4 {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
+                                <a href="{% url 'rendicion_cuentas_final_listar' %}" class="nav-link ms-4 {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
                                     <p>Rendición de Cuentas Final</p>
                                 </a>
                             </li>
                         {% endif %}
+                        {% endcomment %}
                     </ul>
                 </li>
             {% endif %}

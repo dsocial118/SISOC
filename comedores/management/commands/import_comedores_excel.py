@@ -9,10 +9,75 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from openpyxl import load_workbook
 
-from comedores.models import Comedor, Programas, TipoDeComedor
+from comedores.models import (
+    Comedor,
+    Programas,
+    TipoDeComedor,
+    EstadoActividad,
+    EstadoProceso,
+    EstadoDetalle,
+)
+from comedores.services.estado_manager import registrar_cambio_estado
 from core.models import Localidad, Municipio, Provincia
 
 ACTIVE_STATE = "Activo"
+ESTADO_LABEL_MAPPING = {
+    "Activo": {"actividad": "Activo", "proceso": "En ejecución"},
+    "Inactivo": {"actividad": "Inactivo", "proceso": "Baja"},
+    "En proceso - Incorporación": {
+        "actividad": "Inactivo",
+        "proceso": "En proceso - Incorporación",
+    },
+    "En proceso - Renovación": {
+        "actividad": "Activo",
+        "proceso": "En proceso - Renovación",
+    },
+}
+
+_estados_cache: Dict[
+    str,
+    Tuple[Optional[EstadoActividad], Optional[EstadoProceso], Optional[EstadoDetalle]],
+] = {}
+
+
+def resolve_estado_components(label: str):
+    if not label:
+        return None
+    if label in _estados_cache:
+        return _estados_cache[label]
+
+    config = ESTADO_LABEL_MAPPING.get(label)
+    if not config:
+        _estados_cache[label] = None
+        return None
+
+    actividad, _ = EstadoActividad.objects.get_or_create(estado=config["actividad"])
+    proceso, _ = EstadoProceso.objects.get_or_create(
+        estado=config["proceso"], estado_actividad=actividad
+    )
+    detalle = None
+    detalle_nombre = config.get("detalle")
+    if detalle_nombre:
+        detalle, _ = EstadoDetalle.objects.get_or_create(
+            estado=detalle_nombre, estado_proceso=proceso
+        )
+
+    _estados_cache[label] = (actividad, proceso, detalle)
+    return _estados_cache[label]
+
+
+def set_estado_general_from_label(comedor: Comedor, label: str):
+    resolved = resolve_estado_components(label)
+    if not resolved:
+        return
+    actividad, proceso, detalle = resolved
+    registrar_cambio_estado(
+        comedor=comedor,
+        actividad=actividad,
+        proceso=proceso,
+        detalle=detalle,
+    )
+
 
 # Headers normalizados -> nombre de campo interno o token especial
 HEADER_TO_FIELD: Dict[str, str] = {
@@ -327,11 +392,9 @@ class Command(BaseCommand):
                     comedor.programa = programa_obj
                     update_fields.append("programa")
 
-                comedor.estado_general = ACTIVE_STATE
-                update_fields.append("estado_general")
-
                 if not dry_run:
                     comedor.save(update_fields=update_fields)
+                    set_estado_general_from_label(comedor, ACTIVE_STATE)
                 updated_ids.append(comedor.id)
 
                 if row_warnings:
@@ -350,7 +413,6 @@ class Command(BaseCommand):
 
             comedor_kwargs: Dict[str, object] = {
                 "nombre": nombre,
-                "estado_general": ACTIVE_STATE,
             }
 
             if "programa" in row_data:
@@ -423,6 +485,7 @@ class Command(BaseCommand):
             else:
                 with transaction.atomic():
                     comedor = Comedor.objects.create(**comedor_kwargs)
+                    set_estado_general_from_label(comedor, ACTIVE_STATE)
                 created_ids.append(comedor.id)
                 if row_warnings:
                     register_warnings(warnings, f"id {comedor.id}", row_warnings)

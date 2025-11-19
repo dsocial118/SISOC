@@ -4,9 +4,32 @@ from duplas.models import Dupla
 
 
 class DuplaForm(forms.ModelForm):
+    # Sobrescribimos los campos para personalizar la visualización
+    tecnico = forms.ModelMultipleChoiceField(
+        queryset=None,
+        required=True,
+        widget=forms.SelectMultiple(
+            attrs={
+                "class": "form-control js-tecnico",
+                "data-role": "select2",
+                "data-placeholder": "Selecciona hasta 2 técnicos",
+                "aria-label": "Selecciona hasta 2 técnicos",
+            }
+        ),
+    )
+
+    abogado = forms.ModelChoiceField(
+        queryset=None,
+        required=True,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filtrar_campos_tecnico_abogado()
+        # Aplicar el label personalizado
+        self.fields["tecnico"].label_from_instance = self.label_from_instance_custom
+        self.fields["abogado"].label_from_instance = self.label_from_instance_custom
 
     def filtrar_campos_tecnico_abogado(self):
         grupo_tecnico = Group.objects.filter(name="Tecnico Comedor").first()
@@ -27,21 +50,21 @@ class DuplaForm(forms.ModelForm):
         else:
             self.fields["abogado"].queryset = self.fields["abogado"].queryset.none()
 
+    def label_from_instance_custom(self, user):
+        """
+        Genera el label personalizado para los usuarios en formato:
+        Apellido/s Nombre/s - usuario
+        Ejemplo: Dolesor Roman - rdolesor
+        """
+        full_name = f"{user.last_name} {user.first_name}".strip()
+        if full_name:
+            return f"{full_name} - {user.username}"
+        return user.username
+
     class Meta:
         model = Dupla
         # Excluimos coordinador porque se asigna SOLO desde el ABM de usuarios
         fields = ["nombre", "tecnico", "abogado", "estado"]
-        widgets = {
-            "tecnico": forms.SelectMultiple(
-                attrs={
-                    "class": "form-control js-tecnico",
-                    "data-role": "select2",
-                    "data-placeholder": "Selecciona hasta 2 técnicos",
-                    "aria-label": "Selecciona hasta 2 técnicos",
-                }
-            ),
-            "abogado": forms.Select(attrs={"class": "form-control"}),
-        }
         labels = {
             "nombre": "Nombre",
             "tecnico": "Técnico",

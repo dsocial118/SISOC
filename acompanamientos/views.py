@@ -160,6 +160,29 @@ class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
+
+        # Configuración para data_table
+        context["table_headers"] = [
+            {"title": "ID"},
+            {"title": "Nombre"},
+            {"title": "Organización"},
+            {"title": "N° Expediente"},
+            {"title": "Provincia"},
+            {"title": "Dupla"},
+            {"title": "Estado"},
+            {"title": "Última Modificación"},
+        ]
+
+        # Usar modo personalizado para acceder a campos relacionados
+        context["custom_cells"] = True
+
+        # Usar el servicio optimizado para preparar los datos
+        comedores_con_celdas = AcompanamientoService.preparar_datos_tabla_comedores(
+            context["comedores"]
+        )
+        context["comedores"] = comedores_con_celdas
+
+        context["custom_actions"] = True
         return context
 
 
