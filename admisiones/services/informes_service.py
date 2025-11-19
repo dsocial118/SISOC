@@ -205,7 +205,17 @@ class InformeService:
             informe.estado = nuevo_estado
             informe.save()
 
-            if nuevo_estado == "Validado":
+            # Actualizar estado de admisión según el nuevo estado del informe
+            from .admisiones_service import AdmisionService
+
+            if nuevo_estado == "A subsanar":
+                AdmisionService.actualizar_estado_admision(
+                    informe.admision, "subsanar_informe"
+                )
+            elif nuevo_estado == "Validado":
+                AdmisionService.actualizar_estado_admision(
+                    informe.admision, "aprobar_informe_tecnico"
+                )
                 try:
                     pdf_obj = InformeService.generar_y_guardar_pdf(informe, tipo)
                     if pdf_obj:
@@ -411,9 +421,20 @@ class InformeService:
     @staticmethod
     def get_informe_update_context(informe, tipo):
         try:
-            campos_a_subsanar = CampoASubsanar.objects.filter(
+            campos_a_subsanar_db = CampoASubsanar.objects.filter(
                 informe=informe
             ).values_list("campo", flat=True)
+
+            # Convertir nombres de campo a verbose names para el template
+            campos_a_subsanar = []
+            field_to_verbose = {
+                field.name: field.verbose_name for field in informe._meta.fields
+            }
+
+            for campo in campos_a_subsanar_db:
+                verbose_name = field_to_verbose.get(campo, campo)
+                campos_a_subsanar.append(verbose_name)
+
             try:
                 observacion = ObservacionGeneralInforme.objects.get(informe=informe)
             except ObservacionGeneralInforme.DoesNotExist:
@@ -424,7 +445,7 @@ class InformeService:
                 "admision": informe.admision,
                 "comedor": informe.admision.comedor,
                 "campos": InformeService.get_campos_visibles_informe(informe),
-                "campos_a_subsanar": list(campos_a_subsanar),
+                "campos_a_subsanar": campos_a_subsanar,
                 "observacion": observacion,
             }
         except Exception:
@@ -457,6 +478,18 @@ class InformeService:
 
             if action == "submit" and informe.estado_formulario == "finalizado":
                 InformeService.generar_pdf_borrador(informe)
+
+            # Actualizar estado de admisión según la acción
+            from .admisiones_service import AdmisionService
+
+            if es_creacion:
+                AdmisionService.actualizar_estado_admision(
+                    admision, "iniciar_informe_tecnico"
+                )
+            elif action == "submit" and informe.estado_formulario == "finalizado":
+                AdmisionService.actualizar_estado_admision(
+                    admision, "enviar_informe_revision"
+                )
 
             return {"success": True, "informe": informe}
         except Exception as e:

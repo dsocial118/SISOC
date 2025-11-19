@@ -296,7 +296,11 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(AdmisionService.get_admision_update_context(self.get_object()))
+        context.update(
+            AdmisionService.get_admision_update_context(
+                self.get_object(), self.request.user
+            )
+        )
         return context
 
     def post(self, request, *args, **kwargs):
@@ -357,7 +361,10 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         else:
             tecnicos_dupla = []
 
-        admision_context = AdmisionService.get_admision_update_context(admision) or {}
+        admision_context = (
+            AdmisionService.get_admision_update_context(admision, self.request.user)
+            or {}
+        )
 
         informes_complementarios_queryset = (
             InformeComplementario.objects.filter(admision=admision)
@@ -489,182 +496,33 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
 
         return context
 
+    def post(self, request, *args, **kwargs):
+        if "forzar_cierre" in request.POST:
+            # Check permissions
+            if not (
+                request.user.is_superuser
+                or request.user.groups.filter(
+                    name="Coordinador Equipo Tecnico"
+                ).exists()
+            ):
+                messages.error(request, "No tiene permisos para realizar esta acción.")
+                return redirect(request.path_info)
 
-class AdmisionDetailView(DetailView):
-    model = Admision
-    template_name = "admisiones/admisiones_detalle.html"
-    context_object_name = "admision"
+            admision = self.get_object()
+            motivo = request.POST.get("motivo_forzar_cierre", "").strip()
 
-    def get_queryset(self):
-        queryset = (
-            super()
-            .get_queryset()
-            .select_related(
-                "comedor",
-                "comedor__provincia",
-                "comedor__municipio",
-                "comedor__localidad",
-                "comedor__dupla",
-                "comedor__dupla__abogado",
-                "estado",
-                "tipo_convenio",
-            )
-            .prefetch_related("comedor__dupla__tecnico", "historial__usuario")
-        )
-        return queryset
+            if not motivo:
+                messages.error(request, "El motivo del cierre forzado es obligatorio.")
+                return redirect(request.path_info)
 
-    def get_object(self, queryset=None):
-        admision = super().get_object(queryset)
-        comedor_pk = self.kwargs.get("comedor_pk")
-        if comedor_pk and admision.comedor_id != comedor_pk:
-            raise Http404("La admisiA3n no pertenece al comedor solicitado.")
-        return admision
+            admision.activa = False
+            admision.motivo_forzar_cierre = motivo
+            admision.save(update_fields=["activa", "motivo_forzar_cierre"])
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        admision = self.object
-        comedor = admision.comedor
+            messages.success(request, "La admisión ha sido cerrada forzadamente.")
+            return redirect(request.path_info)
 
-        dupla = getattr(comedor, "dupla", None)
-        if dupla:
-            tecnicos_dupla = [
-                (usuario.get_full_name() or usuario.username or str(usuario))
-                for usuario in dupla.tecnico.all()
-            ]
-        else:
-            tecnicos_dupla = []
-
-        admision_context = AdmisionService.get_admision_update_context(admision) or {}
-
-        informes_complementarios_queryset = (
-            InformeComplementario.objects.filter(admision=admision)
-            .select_related("informe_tecnico", "creado_por")
-            .prefetch_related("pdf_final")
-        )
-        informes_complementarios = list(informes_complementarios_queryset)
-
-        acompanamiento_data = (
-            AcompanamientoService.obtener_datos_admision(comedor) if comedor else {}
-        )
-        prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
-            acompanamiento_data.get("anexo")
-        )
-
-        expedientes_pagos = []
-        if comedor:
-            expedientes_pagos = list(
-                ExpedientesPagosService.obtener_expedientes_pagos(comedor)
-            )
-
-        rendiciones_mensuales = []
-        if comedor:
-            rendiciones_mensuales = list(
-                RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
-                    comedor
-                )
-            )
-
-        rendicion_final = (
-            RendicionCuentasFinal.objects.filter(comedor=comedor)
-            .prefetch_related("documentos__tipo", "documentos__estado")
-            .first()
-            if comedor
-            else None
-        )
-
-        rendicion_final_documentos = []
-        rendicion_final_historial = []
-        if rendicion_final:
-            rendicion_final_documentos = list(
-                RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final(
-                    rendicion_final
-                )
-            )
-            rendicion_final_historial = list(
-                HistorialService.get_historial_documentos_by_rendicion_cuentas_final(
-                    rendicion_final
-                )
-            )
-
-        historial_records = list(
-            admision.historial.select_related("usuario").order_by("-fecha")
-        )
-        historial_page_param = "historial_page"
-        historial_page_number = self.request.GET.get(historial_page_param) or 1
-        historial_paginator = Paginator(historial_records, 10)
-        historial_page = historial_paginator.get_page(historial_page_number)
-
-        historial_headers = [
-            {"title": "Fecha"},
-            {"title": "Usuario"},
-            {"title": "Campo"},
-            {"title": "Valor nuevo"},
-            {"title": "Valor anterior"},
-        ]
-        historial_items = []
-        for record in historial_page.object_list:
-            usuario = record.usuario
-            usuario_display = (
-                getattr(usuario, "get_full_name", lambda: "")()
-                or getattr(usuario, "username", None)
-                if usuario
-                else "-"
-            )
-            historial_items.append(
-                {
-                    "cells": [
-                        {
-                            "content": (
-                                record.fecha.strftime("%d/%m/%Y %H:%M")
-                                if record.fecha
-                                else "-"
-                            )
-                        },
-                        {"content": usuario_display or "-"},
-                        {"content": record.campo or "-"},
-                        {"content": record.valor_nuevo or "-"},
-                        {"content": record.valor_anterior or "-"},
-                    ]
-                }
-            )
-
-        context.update(
-            {
-                "comedor": comedor,
-                "dupla": dupla,
-                "dupla_tecnicos": tecnicos_dupla,
-                "dupla_abogado": getattr(dupla, "abogado", None),
-                "documentos": admision_context.get("documentos", []),
-                "documentos_personalizados": admision_context.get(
-                    "documentos_personalizados", []
-                ),
-                "informe_tecnico": admision_context.get("informe_tecnico"),
-                "informe_tecnico_pdf": admision_context.get("pdf"),
-                "informes_complementarios": informes_complementarios,
-                "acompanamiento_info": acompanamiento_data.get("info_relevante"),
-                "acompanamiento_numero_if": acompanamiento_data.get("numero_if"),
-                "acompanamiento_numero_disposicion": acompanamiento_data.get(
-                    "numero_disposicion"
-                ),
-                "prestaciones_por_dia": prestaciones_detalle.get(
-                    "prestaciones_por_dia", []
-                ),
-                "prestaciones_dias": prestaciones_detalle.get("prestaciones_dias", []),
-                "dias_semana": prestaciones_detalle.get("dias_semana", []),
-                "expedientes_pagos": expedientes_pagos,
-                "rendiciones_mensuales": rendiciones_mensuales,
-                "rendicion_final": rendicion_final,
-                "rendicion_final_documentos": rendicion_final_documentos,
-                "rendicion_final_historial": rendicion_final_historial,
-                "admision_historial_headers": historial_headers,
-                "admision_historial_items": historial_items,
-                "admision_historial_page_obj": historial_page,
-                "admision_historial_is_paginated": historial_page.has_other_pages(),
-                "admision_historial_page_param": historial_page_param,
-            }
-        )
-
-        return context
+        return super().get(request, *args, **kwargs)
 
 
 class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
