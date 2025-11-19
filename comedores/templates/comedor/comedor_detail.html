@@ -35,10 +35,11 @@
                     data-bs-target="#modalValidacion">
                 <i class="bi bi-clipboard-check me-1"></i> Validar
             </button>
+            {% comment %}
             {% if rendicion_cuentas_final_activo == True %}
-                <a href="{% url 'rendicion_cuentas_final' pk=comedor.id %}"
-                   class="btn btn-sm btn-primary">Rendicion de Cuentas Final</a>
+                <a href="{% url 'rendicion_cuentas_final' pk=comedor.id %}" class="btn btn-sm btn-primary">Rendicion de Cuentas Final</a>
             {% endif %}
+            {% endcomment %}
             <a href="{% url 'nomina_ver' pk=comedor.id %}"
                class="btn btn-sm btn-primary">Nomina</a>
             {% if comedor.estado == "Sin Ingreso" %}
