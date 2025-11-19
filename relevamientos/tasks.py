@@ -15,9 +15,7 @@ TIMEOUT = 360  # Segundos máximos de espera por respuesta
 
 # Pool global para limitar la concurrencia de tareas asincrónicas
 MAX_WORKERS = int(
-    os.getenv(
-        "GESTIONAR_RELEVAMIENTOS_WORKERS", os.getenv("GESTIONAR_WORKERS", "2")
-    )
+    os.getenv("GESTIONAR_RELEVAMIENTOS_WORKERS", os.getenv("GESTIONAR_WORKERS", "2"))
 )
 _EXECUTOR = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 

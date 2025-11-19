@@ -207,10 +207,15 @@ class InformeService:
 
             # Actualizar estado de admisión según el nuevo estado del informe
             from .admisiones_service import AdmisionService
+
             if nuevo_estado == "A subsanar":
-                AdmisionService.actualizar_estado_admision(informe.admision, "subsanar_informe")
+                AdmisionService.actualizar_estado_admision(
+                    informe.admision, "subsanar_informe"
+                )
             elif nuevo_estado == "Validado":
-                AdmisionService.actualizar_estado_admision(informe.admision, "aprobar_informe_tecnico")
+                AdmisionService.actualizar_estado_admision(
+                    informe.admision, "aprobar_informe_tecnico"
+                )
                 try:
                     pdf_obj = InformeService.generar_y_guardar_pdf(informe, tipo)
                     if pdf_obj:
@@ -419,17 +424,17 @@ class InformeService:
             campos_a_subsanar_db = CampoASubsanar.objects.filter(
                 informe=informe
             ).values_list("campo", flat=True)
-            
+
             # Convertir nombres de campo a verbose names para el template
             campos_a_subsanar = []
             field_to_verbose = {
                 field.name: field.verbose_name for field in informe._meta.fields
             }
-            
+
             for campo in campos_a_subsanar_db:
                 verbose_name = field_to_verbose.get(campo, campo)
                 campos_a_subsanar.append(verbose_name)
-            
+
             try:
                 observacion = ObservacionGeneralInforme.objects.get(informe=informe)
             except ObservacionGeneralInforme.DoesNotExist:
@@ -476,10 +481,15 @@ class InformeService:
 
             # Actualizar estado de admisión según la acción
             from .admisiones_service import AdmisionService
+
             if es_creacion:
-                AdmisionService.actualizar_estado_admision(admision, "iniciar_informe_tecnico")
+                AdmisionService.actualizar_estado_admision(
+                    admision, "iniciar_informe_tecnico"
+                )
             elif action == "submit" and informe.estado_formulario == "finalizado":
-                AdmisionService.actualizar_estado_admision(admision, "enviar_informe_revision")
+                AdmisionService.actualizar_estado_admision(
+                    admision, "enviar_informe_revision"
+                )
 
             return {"success": True, "informe": informe}
         except Exception as e:

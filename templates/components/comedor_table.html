@@ -37,12 +37,14 @@
                                     {% if comedor.estado_validacion == "Validado" %}
                                         <span class="badge bg-success">Validado</span>
                                         {% if comedor.fecha_validado %}
-                                            <br><small class="text-muted">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
+                                            <br />
+                                            <small class="text-muted">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
                                         {% endif %}
                                     {% elif comedor.estado_validacion == "No Validado" %}
                                         <span class="badge bg-danger">No Validado</span>
                                         {% if comedor.fecha_validado %}
-                                            <br><small class="text-muted">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
+                                            <br />
+                                            <small class="text-muted">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
                                         {% endif %}
                                     {% else %}
                                         <span class="badge bg-warning">Pendiente</span>
