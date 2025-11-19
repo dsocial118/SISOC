@@ -598,16 +598,11 @@ class HistorialValidacion(models.Model):
         choices=Comedor.ESTADOS_VALIDACION,
     )
     OPCIONES_NO_VALIDAR = [
-        ("nombre_comedor_incorrecto", "Nombre del Comedor incorrecto"),
-        ("organizacion_incorrecta", "Organización incorrecta"),
-        ("direccion_incorrecta", "Dirección incorrecta"),
-        ("pac_inexistente", "PAC inexistente"),
+        ("pac_inexistente_o_no_coincide", "PAC inexistente o no coincide"),
         ("sin_movimiento", "Sin movimiento"),
-        ("baja_por_organizacion", "Baja por la Organización"),
-        ("baja_por_programa", "Baja por el Programa"),
-        ("baja_por_comedor", "Baja por el Comedor"),
-        ("no_se_reconoce_comedor", "No se reconoce el comedor"),
-        ("otro", "Otro"),
+        ("no_se_reconoce_el_comedor","No se reconoce el Comedor"),
+        ("no_corresponde_a_la_dupla","No corresponde a la dupla"),
+        ("otro", "Otros"),
     ]
 
     @classmethod
