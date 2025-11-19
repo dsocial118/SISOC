@@ -1,78 +1,102 @@
 {% extends "includes/main.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h1 class="mb-0">{{ ciudadano.nombre }} {{ ciudadano.apellido }}</h1>
-        <p class="text-muted mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
-    </div>
-    <div class="btn-group">
-        <a href="{% url 'ciudadanos_editar' ciudadano.pk %}" class="btn btn-outline-primary">Editar</a>
-        <a href="{% url 'ciudadanos_eliminar' ciudadano.pk %}" class="btn btn-outline-danger">Eliminar</a>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">Contacto</h5>
-                <p class="mb-1"><strong>Sexo:</strong> {{ ciudadano.sexo|default:'-' }}</p>
-                <p class="mb-1"><strong>Nacionalidad:</strong> {{ ciudadano.nacionalidad|default:'-' }}</p>
-                <p class="mb-1"><strong>Teléfono:</strong> {{ ciudadano.telefono|default:'-' }}</p>
-                <p class="mb-1"><strong>Email:</strong> {{ ciudadano.email|default:'-' }}</p>
-                <p class="mb-1"><strong>Dirección:</strong> {{ ciudadano.calle }} {{ ciudadano.altura }} {{ ciudadano.barrio }}</p>
-                <p class="mb-1"><strong>Provincia:</strong> {{ ciudadano.provincia|default:'-' }}</p>
-                <p class="mb-1"><strong>Municipio:</strong> {{ ciudadano.municipio|default:'-' }}</p>
-                <p class="mb-1"><strong>Localidad:</strong> {{ ciudadano.localidad|default:'-' }}</p>
-                <p class="mb-1"><strong>Código postal:</strong> {{ ciudadano.codigo_postal|default:'-' }}</p>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-0">{{ ciudadano.nombre }} {{ ciudadano.apellido }}</h1>
+            <p class="text-muted mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
+               class="btn btn-outline-primary">Editar</a>
+            <a href="{% url 'ciudadanos_eliminar' ciudadano.pk %}"
+               class="btn btn-outline-danger">Eliminar</a>
         </div>
     </div>
-    <div class="col-md-8">
-        <div class="card h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0">Grupo familiar</h5>
-                    <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}" class="btn btn-sm btn-primary">Agregar familiar</a>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Contacto</h5>
+                    <p class="mb-1">
+                        <strong>Sexo:</strong> {{ ciudadano.sexo|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Nacionalidad:</strong> {{ ciudadano.nacionalidad|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Teléfono:</strong> {{ ciudadano.telefono|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Email:</strong> {{ ciudadano.email|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Dirección:</strong> {{ ciudadano.calle }} {{ ciudadano.altura }} {{ ciudadano.barrio }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Provincia:</strong> {{ ciudadano.provincia|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Municipio:</strong> {{ ciudadano.municipio|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Localidad:</strong> {{ ciudadano.localidad|default:'-' }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Código postal:</strong> {{ ciudadano.codigo_postal|default:'-' }}
+                    </p>
                 </div>
-                {% if familia %}
-                <table class="table table-sm">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Vínculo</th>
-                            <th>Conviven</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for relacion, familiar in familia %}
-                        <tr>
-                            <td><a href="{% url 'ciudadanos_ver' familiar.pk %}">{{ familiar }}</a></td>
-                            <td>{{ relacion.get_vinculo_display }}</td>
-                            <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
-                            <td class="text-end">
-                                <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-muted">Aún no hay familiares cargados.</p>
-                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">Grupo familiar</h5>
+                        <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
+                           class="btn btn-sm btn-primary">Agregar familiar</a>
+                    </div>
+                    {% if familia %}
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Vínculo</th>
+                                    <th>Conviven</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for relacion, familiar in familia %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'ciudadanos_ver' familiar.pk %}">{{ familiar }}</a>
+                                        </td>
+                                        <td>{{ relacion.get_vinculo_display }}</td>
+                                        <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
+                                        <td class="text-end">
+                                            <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}"
+                                               class="btn btn-sm btn-outline-danger">Eliminar</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-muted">Aún no hay familiares cargados.</p>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-{% if ciudadano.observaciones %}
-<div class="card">
-    <div class="card-body">
-        <h5 class="card-title">Observaciones</h5>
-        <p class="mb-0">{{ ciudadano.observaciones }}</p>
-    </div>
-</div>
-{% endif %}
+    {% if ciudadano.observaciones %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Observaciones</h5>
+                <p class="mb-0">{{ ciudadano.observaciones }}</p>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}

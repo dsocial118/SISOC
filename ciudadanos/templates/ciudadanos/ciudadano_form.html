@@ -1,8 +1,22 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}{% if object %}Editar{% else %}Nuevo{% endif %} ciudadano{% endblock %}
-{% block titulo-pagina %}{% if object %}Editar{% else %}Nuevo{% endif %} ciudadano{% endblock %}
+{% block title %}
+    {% if object %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    ciudadano
+{% endblock %}
+{% block titulo-pagina %}
+    {% if object %}
+        Editar
+    {% else %}
+        Nuevo
+    {% endif %}
+    ciudadano
+{% endblock %}
 
 {% block content %}
     <div class="row">
@@ -10,7 +24,13 @@
             <div class="card shadow-sm">
                 <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                     <div>
-                        <h3 class="card-title mb-0">{% if object %}Actualizar datos{% else %}Registrar ciudadano{% endif %}</h3>
+                        <h3 class="card-title mb-0">
+                            {% if object %}
+                                Actualizar datos
+                            {% else %}
+                                Registrar ciudadano
+                            {% endif %}
+                        </h3>
                     </div>
                     <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'ciudadanos' %}{% endif %}"
                        class="btn btn-outline-secondary ms-md-auto">Volver</a>
@@ -18,11 +38,8 @@
                 <div class="card-body">
                     <link rel="stylesheet"
                           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
-                    <link rel="stylesheet"
-                          href="{% static 'custom/css/fotos.css' %}" />
-                    <form method="post"
-                          enctype="multipart/form-data"
-                          novalidate>
+                    <link rel="stylesheet" href="{% static 'custom/css/fotos.css' %}" />
+                    <form method="post" enctype="multipart/form-data" novalidate>
                         {% csrf_token %}
                         {{ form.non_field_errors }}
                         <div class="row g-4">
@@ -86,14 +103,11 @@
                                                 {% endif %}
                                             </h6>
                                             {{ form.foto }}
-                                            <button type="button"
-                                                    id="foto-picker-btn"
-                                                    class="btn-seleccionar mt-2">
+                                            <button type="button" id="foto-picker-btn" class="btn-seleccionar mt-2">
                                                 <i class="fas fa-upload"></i>
                                                 Seleccionar imagen
                                             </button>
-                                            <div class="contador-imagenes mt-2 d-none"
-                                                 id="foto-selected-info">
+                                            <div class="contador-imagenes mt-2 d-none" id="foto-selected-info">
                                                 <span id="foto-selected-name"></span>
                                             </div>
                                         </div>
@@ -132,14 +146,8 @@
                                         <div class="form-check form-switch mt-4">
                                             {{ field }}
                                             <label class="form-check-label ms-2" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                            {% if field.help_text %}
-                                                <small class="form-text text-muted d-block">{{ field.help_text }}</small>
-                                            {% endif %}
-                                            {% if field.errors %}
-                                                <div class="text-danger small mt-1">
-                                                    {{ field.errors|join:", " }}
-                                                </div>
-                                            {% endif %}
+                                            {% if field.help_text %}<small class="form-text text-muted d-block">{{ field.help_text }}</small>{% endif %}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
                                         </div>
                                     </div>
                                 {% else %}
@@ -147,14 +155,8 @@
                                         <div class="form-group">
                                             <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                             {{ field }}
-                                            {% if field.help_text %}
-                                                <small class="form-text text-muted">{{ field.help_text }}</small>
-                                            {% endif %}
-                                            {% if field.errors %}
-                                                <div class="text-danger small mt-1">
-                                                    {{ field.errors|join:", " }}
-                                                </div>
-                                            {% endif %}
+                                            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
                                         </div>
                                     </div>
                                 {% endif %}
@@ -162,7 +164,11 @@
                         </div>
                         <div class="d-flex gap-2 mt-4 flex-wrap">
                             <button type="submit" class="btn btn-primary">
-                                {% if object %}Guardar cambios{% else %}Crear ciudadano{% endif %}
+                                {% if object %}
+                                    Guardar cambios
+                                {% else %}
+                                    Crear ciudadano
+                                {% endif %}
                             </button>
                             <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'ciudadanos' %}{% endif %}"
                                class="btn btn-outline-secondary ms-auto">Volver</a>

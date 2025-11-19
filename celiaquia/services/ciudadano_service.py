@@ -74,7 +74,9 @@ class CiudadanoService:
         if raw in (None, ""):
             return None
         if provincia is None:
-            raise ValidationError("Debe indicar la provincia para validar el municipio.")
+            raise ValidationError(
+                "Debe indicar la provincia para validar el municipio."
+            )
         try:
             return Municipio.objects.get(pk=int(str(raw).strip()), provincia=provincia)
         except (Municipio.DoesNotExist, ValueError) as exc:
@@ -94,7 +96,9 @@ class CiudadanoService:
             raise ValidationError("Localidad inválida para el municipio dado.") from exc
 
     @staticmethod
-    def get_or_create_ciudadano(datos: dict, usuario=None, expediente=None) -> Ciudadano:
+    def get_or_create_ciudadano(
+        datos: dict, usuario=None, expediente=None
+    ) -> Ciudadano:
         """Crea o actualiza un ciudadano con los datos básicos recibidos."""
 
         tipo_documento = CiudadanoService._normalizar_tipo_documento(
@@ -201,7 +205,10 @@ class CiudadanoService:
             if not ciudadano.piso_departamento and piso_departamento:
                 ciudadano.piso_departamento = piso_departamento
                 updates.append("piso_departamento")
-            if ciudadano.codigo_postal in (None, "") and codigo_postal not in (None, ""):
+            if ciudadano.codigo_postal in (None, "") and codigo_postal not in (
+                None,
+                "",
+            ):
                 ciudadano.codigo_postal = codigo_postal
                 updates.append("codigo_postal")
             if not ciudadano.telefono and telefono:

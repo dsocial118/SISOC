@@ -50,7 +50,8 @@ class ReferenteForm(forms.ModelForm):
 
 class NominaForm(forms.ModelForm):
     estado = forms.ChoiceField(
-        choices=Nomina.ESTADO_CHOICES, widget=forms.Select(attrs={"class": "form-control"})
+        choices=Nomina.ESTADO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
     )
 
     class Meta:
