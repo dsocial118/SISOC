@@ -13,7 +13,7 @@ from django.db.models.functions import Coalesce
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
-from ciudadanos.models import Ciudadano, HistorialCiudadanoProgramas, CiudadanoPrograma
+from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import (
     Comedor,
@@ -401,12 +401,12 @@ class ComedorService:
     @staticmethod
     def get_nomina_detail(comedor_pk, page=1, per_page=100):
         qs_nomina = Nomina.objects.filter(comedor_id=comedor_pk).select_related(
-            "ciudadano__sexo", "estado"
+            "ciudadano__sexo"
         )
         resumen = qs_nomina.aggregate(
             cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
             cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
-            espera=Count("id", filter=Q(estado__nombre="Lista de espera")),
+            espera=Count("id", filter=Q(estado=Nomina.ESTADO_PENDIENTE)),
             cantidad_total=Count("id"),
         )
         paginator = Paginator(
@@ -476,7 +476,7 @@ class ComedorService:
 
     @staticmethod
     def agregar_ciudadano_a_nomina(
-        comedor_id, ciudadano_id, user, estado_id=None, observaciones=None
+        comedor_id, ciudadano_id, user, estado=None, observaciones=None
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
@@ -488,22 +488,9 @@ class ComedorService:
                 Nomina.objects.create(
                     ciudadano=ciudadano,
                     comedor_id=comedor_id,
-                    estado_id=estado_id or None,
+                    estado=estado or Nomina.ESTADO_PENDIENTE,
                     observaciones=observaciones,
                 )
-
-                _ciudadano_programa, created = CiudadanoPrograma.objects.get_or_create(
-                    ciudadano=ciudadano,
-                    programas_id=2,
-                    defaults={"creado_por": user},
-                )
-                if created:
-                    HistorialCiudadanoProgramas.objects.create(
-                        programa_id=2,
-                        ciudadano=ciudadano,
-                        accion="agregado",
-                        usuario=user,
-                    )
 
             return True, "Persona añadida correctamente a la nómina."
         except Exception as e:
@@ -512,7 +499,7 @@ class ComedorService:
     @staticmethod
     @transaction.atomic
     def crear_ciudadano_y_agregar_a_nomina(
-        ciudadano_data, comedor_id, user, estado_id, observaciones
+        ciudadano_data, comedor_id, user, estado, observaciones
     ):
         """
         Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.
@@ -524,7 +511,7 @@ class ComedorService:
             comedor_id=comedor_id,
             ciudadano_id=ciudadano.id,
             user=user,
-            estado_id=estado_id,
+            estado=estado,
             observaciones=observaciones,
         )
         if not ok:

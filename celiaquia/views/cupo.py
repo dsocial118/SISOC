@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
 from django.core.exceptions import ValidationError
 
-from ciudadanos.models import Provincia
+from core.models import Provincia
 from celiaquia.models import (
     CupoMovimiento,
     ProvinciaCupo,

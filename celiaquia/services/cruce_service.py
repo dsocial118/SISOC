@@ -120,9 +120,7 @@ class CruceService:
         from celiaquia.services.familia_service import FamiliaService
 
         rows = []
-        qs = expediente.expediente_ciudadanos.select_related(
-            "ciudadano", "ciudadano__tipo_documento"
-        )
+        qs = expediente.expediente_ciudadanos.select_related("ciudadano")
 
         ciudadanos_ids = list(qs.values_list("ciudadano_id", flat=True))
         responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)
@@ -143,8 +141,8 @@ class CruceService:
                             getattr(ciudadano, "documento", "")
                         ),
                         "TipoDocumento": getattr(
-                            getattr(ciudadano, "tipo_documento", None), "tipo", ""
-                        ),
+                            ciudadano, "get_tipo_documento_display", lambda: ""
+                        )(),
                         "nombre": getattr(ciudadano, "nombre", "") or "",
                         "apellido": getattr(ciudadano, "apellido", "") or "",
                     }
@@ -160,8 +158,8 @@ class CruceService:
                                 getattr(ciudadano, "documento", "")
                             ),
                             "TipoDocumento": getattr(
-                                getattr(ciudadano, "tipo_documento", None), "tipo", ""
-                            ),
+                                ciudadano, "get_tipo_documento_display", lambda: ""
+                            )(),
                             "nombre": getattr(ciudadano, "nombre", "") or "",
                             "apellido": getattr(ciudadano, "apellido", "") or "",
                         }
