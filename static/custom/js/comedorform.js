@@ -1,7 +1,6 @@
-let provinciaSelect;
-let municipioSelect;
-let localidadSelect;
-
+const provinciaSelect = document.getElementById("id_provincia");
+const municipioSelect = document.getElementById("id_municipio");
+const localidadSelect = document.getElementById("id_localidad");
 function confirmSubmit() {
   return confirm("¿Estás seguro de que deseas guardar el comedor?");
 }
@@ -34,12 +33,18 @@ function initializeSelect2(selectId, options = {}) {
     placeholder: 'Seleccione una opción',
     allowClear: false,
     width: '100%',
+    minimumResultsForSearch: 0, // Siempre mostrar la caja de búsqueda
+    dropdownAutoWidth: false, // Mantener el ancho del select
+    dropdownPosition: 'below', // Forzar apertura hacia abajo (requiere plugin)
     language: {
       noResults: function() {
         return "No se encontraron resultados";
       },
       searching: function() {
         return "Buscando...";
+      },
+      inputTooShort: function() {
+        return "Por favor ingrese más caracteres";
       }
     }
   };
@@ -50,70 +55,58 @@ function initializeSelect2(selectId, options = {}) {
   // Inicializar Select2
   selectElement.select2(finalOptions);
 
+  // Forzar que el dropdown siempre se abra hacia abajo
+  selectElement.on('select2:open', function() {
+    // Obtener el dropdown
+    const $dropdown = $('.select2-dropdown');
+
+    // Remover clases de posicionamiento hacia arriba
+    $dropdown.removeClass('select2-dropdown--above');
+
+    // Agregar clase de posicionamiento hacia abajo
+    $dropdown.addClass('select2-dropdown--below');
+
+    // Forzar la posición del contenedor
+    const $container = $('.select2-container--open');
+    $container.removeClass('select2-container--above');
+    $container.addClass('select2-container--below');
+  });
+
   // Restaurar el valor si existía
   if (currentValue) {
     selectElement.val(currentValue).trigger('change.select2');
   }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  provinciaSelect = document.getElementById("id_provincia");
-  municipioSelect = document.getElementById("id_municipio");
-  localidadSelect = document.getElementById("id_localidad");
-
-  if (!provinciaSelect || !municipioSelect || !localidadSelect) {
-    return;
-  }
-
-  const handleProvinciaChange = async (provinciaId) => {
-    if (!provinciaId) {
-      resetSelect(municipioSelect, "Seleccione un municipio");
-      resetSelect(localidadSelect, "Seleccione una localidad");
-      initializeSelect2("id_municipio", { placeholder: "Seleccione un municipio" });
-      initializeSelect2("id_localidad", { placeholder: "Seleccione una localidad" });
-      return;
-    }
-
-    resetSelect(localidadSelect, "Seleccione una localidad");
+// Event listeners con Select2
+/**
+ * Configura los event listeners para Select2 en provincia, municipio y localidad
+ * Debe llamarse después de inicializar Select2
+ */
+function setupSelect2EventListeners() {
+  // Provincia: cuando cambia, cargar municipios y limpiar localidad
+  $('#id_provincia').on('select2:select', async function (e) {
+    const provinciaId = e.params.data.id;
     await cargarOpciones(
       `${ajaxLoadMunicipiosUrl}?provincia_id=${provinciaId}`,
       "municipio"
     );
-  };
+    // Limpiar localidad cuando cambia provincia
+    await cargarOpciones(
+      `${ajaxLoadLocalidadesUrl}?municipio_id=`,
+      "localidad"
+    );
+  });
 
-  const handleMunicipioChange = async (municipioId) => {
-    if (!municipioId) {
-      resetSelect(localidadSelect, "Seleccione una localidad");
-      initializeSelect2("id_localidad", { placeholder: "Seleccione una localidad" });
-      return;
-    }
-
+  // Municipio: cuando cambia, cargar localidades
+  $('#id_municipio').on('select2:select', async function (e) {
+    const municipioId = e.params.data.id;
     await cargarOpciones(
       `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioId}`,
       "localidad"
     );
-  };
-
-  provinciaSelect.addEventListener("change", (event) =>
-    handleProvinciaChange(event.target.value)
-  );
-
-  municipioSelect.addEventListener("change", (event) =>
-    handleMunicipioChange(event.target.value)
-  );
-});
-
-function resetSelect(selectElement, placeholderText = "---------") {
-  if (!selectElement) {
-    return;
-  }
-  selectElement.innerHTML = "";
-  const emptyOption = document.createElement("option");
-  emptyOption.value = "";
-  emptyOption.textContent = placeholderText;
-  selectElement.appendChild(emptyOption);
+  });
 }
-
 async function cargarOpciones(url, select) {
   try {
     const response = await fetch(url);
@@ -126,20 +119,14 @@ async function cargarOpciones(url, select) {
       return nameA.localeCompare(nameB);
     });
 
-    if (select === "municipio" && municipioSelect) {
+    if (select === "municipio") {
       municipioSelect.innerHTML = "";
-      if (localidadSelect) {
-        localidadSelect.innerHTML = "";
-        const emptyLocalidad = document.createElement("option");
-        emptyLocalidad.value = "";
-        emptyLocalidad.textContent = "Seleccione una localidad";
-        localidadSelect.appendChild(emptyLocalidad);
-      }
+      localidadSelect.innerHTML = "";
 
       // Agregar opción vacía al inicio
       const emptyOption = document.createElement("option");
       emptyOption.value = "";
-      emptyOption.textContent = "Seleccione un municipio";
+      emptyOption.textContent = "---------";
       municipioSelect.appendChild(emptyOption);
 
       data.forEach((item) => crearOpcion(item, municipioSelect));
@@ -147,13 +134,13 @@ async function cargarOpciones(url, select) {
       setTimeout(() => initializeSelect2("id_municipio", { placeholder: "Seleccione un municipio" }), 100);
     }
 
-    if (select === "localidad" && localidadSelect) {
+    if (select === "localidad") {
       localidadSelect.innerHTML = "";
 
       // Agregar opción vacía al inicio
       const emptyOption = document.createElement("option");
       emptyOption.value = "";
-      emptyOption.textContent = "Seleccione una localidad";
+      emptyOption.textContent = "---------";
       localidadSelect.appendChild(emptyOption);
 
       data.forEach((item) => crearOpcion(item, localidadSelect));
@@ -174,6 +161,7 @@ function crearOpcion({ id, nombre, nombre_region }, select) {
 
 // FUNCIONALIDAD DE IMÁGENES
 document.addEventListener("DOMContentLoaded", function () {
+  
 
   // Array para almacenar todos los archivos seleccionados
   let selectedFiles = [];
@@ -183,13 +171,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectedImagesInfo = document.getElementById("selectedImagesInfo");
     const imageCount = document.getElementById("imageCount");
     const imagePreviewContainer = document.getElementById("imagePreviewContainer");
-
   // FUNCIONALIDAD PARA IMÁGENES EXISTENTES
   function setupExistingImages() {
     
     const checkboxes = document.querySelectorAll(".checkbox-eliminar-custom");
     const deleteButtons = document.querySelectorAll(".btn-eliminar-custom");
-
     // Configurar checkboxes
     checkboxes.forEach((checkbox, index) => {
       
@@ -204,7 +190,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     });
-
     // Configurar botones de eliminar
     deleteButtons.forEach((button, index) => {
       
@@ -213,10 +198,8 @@ document.addEventListener("DOMContentLoaded", function () {
         
         const imageItem = this.closest(".imagen-existente");
         const checkbox = imageItem ? imageItem.querySelector(".checkbox-eliminar-custom") : null;
-
         if (checkbox) {
           checkbox.checked = !checkbox.checked;
-
           // Disparar evento change manualmente
           const event = new Event('change', { bubbles: true });
           checkbox.dispatchEvent(event);
@@ -224,15 +207,12 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
   }
-
   function toggleImageElimination(imageItem, isMarked) {
     
     if (!imageItem) {
       return;
     }
-
     const overlay = imageItem.querySelector(".overlay-eliminar");
-
     if (isMarked) {
       // Marcar para eliminar
       imageItem.classList.add("imagen-eliminada");
@@ -247,7 +227,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   }
-
   function updateDeleteButtonText(imageItem, isMarked) {
     const deleteButton = imageItem ? imageItem.querySelector(".btn-eliminar-custom") : null;
     
@@ -263,7 +242,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
   }
-
   // FUNCIONALIDAD PARA CARGAR IMÁGENES EXISTENTES
   function loadExistingImages() {
     
@@ -309,7 +287,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
-
   // FUNCIONALIDAD PARA NUEVAS IMÁGENES
   if (addImagesBtn && imagenesInput) {
     
@@ -317,7 +294,6 @@ document.addEventListener("DOMContentLoaded", function () {
     addImagesBtn.addEventListener("click", function () {
       imagenesInput.click();
     });
-
     // Event listener para cuando se seleccionan archivos
     imagenesInput.addEventListener("change", function () {
       
@@ -330,7 +306,6 @@ document.addEventListener("DOMContentLoaded", function () {
       updateImageDisplay();
       updateFileInput();
     });
-
     function updateImageDisplay() {
       
       // Mostrar contador
@@ -340,11 +315,9 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         selectedImagesInfo?.classList.add("d-none");
       }
-
       // Limpiar contenedor de vistas previas
       if (imagePreviewContainer) {
         imagePreviewContainer.innerHTML = "";
-
         // Mostrar vista previa de cada imagen
         selectedFiles.forEach((file, index) => {
           
@@ -352,17 +325,14 @@ document.addEventListener("DOMContentLoaded", function () {
           if (!file.type.startsWith('image/')) {
             return;
           }
-
           // Crear contenedor principal
           const previewDiv = document.createElement("div");
           previewDiv.className = "preview-nueva-imagen";
           previewDiv.setAttribute('data-index', index);
-
           // Crear placeholder inicial para la imagen
           const placeholder = document.createElement("div");
           placeholder.className = "preview-placeholder";
           placeholder.innerHTML = '<i class="fas fa-image"></i>';
-
           // Crear contenedor de información
           const infoDiv = document.createElement("div");
           infoDiv.className = "preview-info";
@@ -375,7 +345,6 @@ document.addEventListener("DOMContentLoaded", function () {
               Seleccionada
             </div>
           `;
-
           // Crear botón eliminar
           const btnEliminar = document.createElement('button');
           btnEliminar.type = 'button';
@@ -385,15 +354,12 @@ document.addEventListener("DOMContentLoaded", function () {
           btnEliminar.onclick = function() {
             removeFileByIndex(index);
           };
-
           // Ensamblar el preview
           previewDiv.appendChild(placeholder);
           previewDiv.appendChild(infoDiv);
           previewDiv.appendChild(btnEliminar);
-
           // Agregar al contenedor
           imagePreviewContainer.appendChild(previewDiv);
-
           // Intentar cargar la imagen de forma asíncrona
           setTimeout(() => {
             const reader = new FileReader();
@@ -432,7 +398,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       }
     }
-
     function formatFileSize(bytes) {
       if (bytes === 0) return "0 Bytes";
       const k = 1024;
@@ -440,7 +405,6 @@ document.addEventListener("DOMContentLoaded", function () {
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
     }
-
     function updateFileInput() {
       try {
         // Crear un nuevo DataTransfer para actualizar el input file
@@ -454,7 +418,6 @@ document.addEventListener("DOMContentLoaded", function () {
       } catch (error) {
       }
     }
-
     function removeFileByIndex(index) {
       
       // Encontrar el archivo por nombre para mayor seguridad
@@ -481,13 +444,11 @@ document.addEventListener("DOMContentLoaded", function () {
         updateFileInput();
       }
     }
-
     // Función global para eliminar imagen (compatibilidad)
     window.removeImage = function (index) {
       removeFileByIndex(index);
     };
   }
-
   // Inicializar funcionalidad de imágenes existentes
   setupExistingImages();
   
@@ -497,7 +458,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // Inicializar funcionalidad de foto de legajo
   setupFotoLegajo();
 });
-
 // FUNCIONALIDAD PARA FOTO DE LEGAJO
 function setupFotoLegajo() {
   
@@ -521,7 +481,6 @@ function setupFotoLegajo() {
     });
   }
 }
-
 function cargarFotoLegajoExistente(container) {
   const imageUrl = container.getAttribute('data-image-url');
   const placeholder = container.querySelector('.preview-placeholder');
@@ -554,7 +513,6 @@ function cargarFotoLegajoExistente(container) {
     }, 10000);
   }
 }
-
 function mostrarPreviewFotoLegajo(file) {
   
   if (!file.type.startsWith('image/')) {
@@ -584,14 +542,12 @@ function mostrarPreviewFotoLegajo(file) {
     reader.readAsDataURL(file);
   }
 }
-
 function ocultarPreviewFotoLegajo() {
   const previewContainer = document.getElementById('fotoLegajoPreviewContainer');
   if (previewContainer) {
     previewContainer.classList.add('d-none');
   }
 }
-
 function removerPreviewFotoLegajo() {
   const fotoLegajoInput = document.getElementById('id_foto_legajo');
   if (fotoLegajoInput) {
@@ -599,7 +555,6 @@ function removerPreviewFotoLegajo() {
   }
   ocultarPreviewFotoLegajo();
 }
-
 function ampliarFotoLegajo(url, nombre) {
   
   const modalImg = document.getElementById('fotoLegajoPrincipal');
@@ -613,7 +568,6 @@ function ampliarFotoLegajo(url, nombre) {
     modal.show();
   }
 }
-
 function descargarFotoLegajo() {
   const modalImg = document.getElementById('fotoLegajoPrincipal');
   const nombreModal = document.getElementById('nombreArchivoLegajo');
@@ -629,7 +583,6 @@ function descargarFotoLegajo() {
     document.body.removeChild(link);
   }
 }
-
 // Funciones globales para compatibilidad con HTML
 window.ampliarFotoLegajo = ampliarFotoLegajo;
 window.descargarFotoLegajo = descargarFotoLegajo;
