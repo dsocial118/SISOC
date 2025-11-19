@@ -936,9 +936,9 @@ class LegalesService:
         try:
             from users.services import UserPermissionService
 
-            queryset = Admision.objects.filter(enviado_legales=True).select_related(
-                "comedor", "tipo_convenio"
-            )
+            queryset = Admision.objects.filter(
+                enviado_legales=True, activa=True
+            ).select_related("comedor", "tipo_convenio")
 
             # Filtrar por duplas si es coordinador
             if user and not user.is_superuser:

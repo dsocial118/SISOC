@@ -133,3 +133,67 @@ def render_boton_legales(boton, admision=None):
         "url": config.get("url", False),
         "admision": admision,
     }
+
+
+@register.inclusion_tag("admisiones/includes/boton_tecnicos.html")
+def render_boton_tecnicos(boton, admision=None, informe_tecnico=None):
+    """Renderiza un botón específico para el flujo de técnicos"""
+
+    botones_config = {
+        "comenzar_acompaniamiento": {
+            "texto": "Comenzar Acompañamiento",
+            "modal": "#modalDisponibilizarAcomp",
+            "clase": "btn-success",
+        },
+        "rectificar_documentacion": {
+            "texto": "Rectificar Documentación",
+            "modal": "#modalRectificarDocumetacion",
+            "clase": "btn-warning",
+        },
+        "caratular_expediente": {
+            "texto": "Caratular expediente",
+            "modal": "#caratularExpediente",
+            "clase": "btn-primary",
+        },
+        "crear_informe_tecnico": {
+            "texto": "Crear Informe Técnico",
+            "url": True,
+            "clase": "btn-primary",
+        },
+        "editar_informe_tecnico": {
+            "texto": "Editar Informe Técnico",
+            "url": True,
+            "clase": "btn-primary",
+        },
+        "ver_informe_tecnico": {
+            "texto": "Ver Informe Técnico",
+            "url": True,
+            "clase": "btn-primary",
+        },
+        "informe_tecnico_complementario": {
+            "texto": "Informe Técnico Complementario",
+            "url": True,
+            "clase": "btn-primary",
+        },
+        "if_informe_tecnico": {
+            "texto": "IF Informe Técnico",
+            "modal": "#modalIFInformeTecnico",
+            "clase": "btn-primary",
+        },
+        "mandar_a_legales": {
+            "texto": "Mandar a legales",
+            "modal": "#confirmarLegalesModal",
+            "clase": "btn-primary",
+        },
+    }
+
+    config = botones_config.get(boton, {})
+    return {
+        "texto": config.get("texto", ""),
+        "modal": config.get("modal", ""),
+        "clase": config.get("clase", "btn-primary"),
+        "url": config.get("url", False),
+        "boton": boton,
+        "admision": admision,
+        "informe_tecnico": informe_tecnico,
+    }
