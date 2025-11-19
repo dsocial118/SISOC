@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 from django.utils import timezone
 
 from core.models import Municipio, Provincia
@@ -56,6 +57,32 @@ class Referente(models.Model):
         verbose_name="Funcion del referente", max_length=255, blank=True, null=True
     )
 
+    def clean(self):
+        errors = {}
+        # validar celular: exactamente 10 dígitos numéricos
+        if self.celular is not None:
+            s = str(self.celular)
+            if not s.isdigit() or len(s) != 10:
+                errors["celular"] = ValidationError(
+                    "El celular debe contener exactamente 10 dígitos numéricos (sin espacios ni signos)."
+                )
+
+        # validar documento: 7 u 8 dígitos numéricos
+        if self.documento is not None:
+            s = str(self.documento)
+            if not s.isdigit() or len(s) not in (7, 8):
+                errors["documento"] = ValidationError(
+                    "El documento debe contener 7 u 8 dígitos numéricos."
+                )
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        # asegurar que clean() se ejecute antes de salvar (validación consistente)
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = "Referente"
         verbose_name_plural = "Referentes"
@@ -71,6 +98,95 @@ class Programas(models.Model):
         ordering = ["id"]
         verbose_name = "Programa"
         verbose_name_plural = "Programas"
+
+
+class EstadoActividad(models.Model):
+    estado = models.CharField(max_length=255)
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Estado de Actividad"
+        verbose_name_plural = "Estados de Actividad"
+
+
+class EstadoProceso(models.Model):
+    estado = models.CharField(max_length=255)
+    estado_actividad = models.ForeignKey(
+        to=EstadoActividad,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Estado de Proceso"
+        verbose_name_plural = "Estados de Proceso"
+
+
+class EstadoDetalle(models.Model):
+    estado = models.CharField(max_length=255)
+    estado_proceso = models.ForeignKey(
+        to=EstadoProceso,
+        on_delete=models.PROTECT,
+    )
+
+    def __str__(self):
+        return str(self.estado)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Estado de Detalle"
+        verbose_name_plural = "Estados de Detalle"
+
+
+class EstadoGeneral(models.Model):
+    estado_actividad = models.ForeignKey(
+        to=EstadoActividad,
+        on_delete=models.PROTECT,
+    )
+    estado_proceso = models.ForeignKey(
+        to=EstadoProceso,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    estado_detalle = models.ForeignKey(
+        to=EstadoDetalle,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+
+
+class EstadoHistorial(models.Model):
+    comedor = models.ForeignKey(
+        to="Comedor",
+        on_delete=models.CASCADE,
+        related_name="historial_estados",
+    )
+    estado_general = models.ForeignKey(
+        to=EstadoGeneral,
+        on_delete=models.PROTECT,
+    )
+    usuario = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    fecha_cambio = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-fecha_cambio"]
+        verbose_name = "Historial de Estado de Comedor"
+        verbose_name_plural = "Historiales de Estado de Comedor"
 
 
 class Comedor(models.Model):
@@ -148,19 +264,13 @@ class Comedor(models.Model):
         default="Sin Ingreso",
     )
 
-    ESTADOS_GENERALES = [
-        ("Activo", "Activo"),
-        ("Inactivo", "Inactivo"),
-        ("En proceso - Incorporación", "En proceso - Incorporación"),
-        ("En proceso - Renovación", "En proceso - Renovación"),
-        ("Sin definir", "Sin definir"),
-    ]
-
-    estado_general = models.CharField(
-        max_length=32,
-        choices=ESTADOS_GENERALES,
-        default="Sin definir",
-        verbose_name="Estado general",
+    ESTADO_GENERAL_DEFAULT = "Sin definir"
+    ultimo_estado = models.ForeignKey(
+        to=EstadoHistorial,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="comedores_con_ultimo_estado",
     )
 
     direccion_validator = RegexValidator(
@@ -223,8 +333,56 @@ class Comedor(models.Model):
     foto_legajo = models.ImageField(upload_to="comedor/", blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
+    ESTADOS_VALIDACION = [
+        ("Pendiente", "Pendiente"),
+        ("Validado", "Validado"),
+        ("No Validado", "No Validado"),
+    ]
+
+    estado_validacion = models.CharField(
+        max_length=20,
+        choices=ESTADOS_VALIDACION,
+        blank=True,
+        default="Pendiente",
+        verbose_name="Estado de validación",
+    )
+
+    fecha_validado = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de validación",
+    )
+
     def __str__(self) -> str:
         return str(self.nombre)
+
+    def get_estado_general_display(self) -> str:
+        """
+        Devuelve el nombre del estado general (actividad) basado en el último historial registrado.
+        """
+        if (
+            self.ultimo_estado
+            and self.ultimo_estado.estado_general_id
+            and self.ultimo_estado.estado_general.estado_actividad
+        ):
+            return self.ultimo_estado.estado_general.estado_actividad.estado
+        return self.ESTADO_GENERAL_DEFAULT
+
+    def delete(self, using=None, keep_parents=False):
+        """
+        Elimina el comedor junto con su historial de estados evitando errores de llaves protegidas.
+        """
+        db_alias = using or self._state.db or "default"
+        with transaction.atomic(using=db_alias):
+            # pylint: disable=access-member-before-definition
+            ultimo_estado_id = getattr(self, "ultimo_estado_id", None)
+            if ultimo_estado_id:
+                type(self).objects.using(db_alias).filter(pk=self.pk).update(
+                    ultimo_estado=None
+                )
+                self.ultimo_estado_id = None
+            EstadoHistorial.objects.using(db_alias).filter(comedor_id=self.pk).delete()
+            return super().delete(using=db_alias, keep_parents=keep_parents)
 
     class Meta:
         indexes = [
@@ -427,3 +585,79 @@ class TerritorialSyncLog(models.Model):
     def __str__(self):
         status = "Exitoso" if self.exitoso else "Error"
         return f"{self.fecha.strftime('%Y-%m-%d %H:%M')} - {status}"
+
+
+class HistorialValidacion(models.Model):
+    """
+    Historial de validaciones de comedores.
+    """
+
+    comedor = models.ForeignKey(
+        Comedor,
+        on_delete=models.CASCADE,
+        related_name="historial_validaciones",
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    estado_validacion = models.CharField(
+        max_length=20,
+        choices=Comedor.ESTADOS_VALIDACION,
+    )
+    OPCIONES_NO_VALIDAR = [
+        ("pac_inexistente_o_no_coincide", "PAC inexistente o no coincide"),
+        ("sin_movimiento", "Sin movimiento"),
+        ("no_se_reconoce_el_comedor","No se reconoce el Comedor"),
+        ("no_corresponde_a_la_dupla","No corresponde a la dupla"),
+        ("otro", "Otros"),
+    ]
+
+    @classmethod
+    def get_opciones_no_validar(cls):
+        """Retorna las opciones de no validación para uso en templates"""
+        return cls.OPCIONES_NO_VALIDAR
+
+    def get_opciones_display(self):
+        """Retorna las opciones seleccionadas en formato legible"""
+        if not self.opciones_no_validar:
+            return "-"
+
+        opciones_dict = dict(self.OPCIONES_NO_VALIDAR)
+        opciones_texto = []
+
+        for opcion in self.opciones_no_validar:
+            if opcion in opciones_dict:
+                opciones_texto.append(opciones_dict[opcion])
+
+        return ", ".join(opciones_texto) if opciones_texto else "-"
+
+    opciones_no_validar = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name="Opciones de no validación",
+        help_text="Opciones seleccionadas cuando se marca como no validado",
+    )
+    comentario = models.TextField(
+        verbose_name="Comentario",
+        blank=True,
+        null=True,
+    )
+    fecha_validacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de validación",
+    )
+
+    class Meta:
+        ordering = ["-fecha_validacion"]
+        verbose_name = "Historial de validación"
+        verbose_name_plural = "Historiales de validación"
+        indexes = [
+            models.Index(fields=["comedor", "fecha_validacion"]),
+        ]
+
+    def __str__(self):
+        fecha_str = self.fecha_validacion.strftime("%d/%m/%Y")
+        return f"{self.comedor.nombre} - {self.estado_validacion} ({fecha_str})"

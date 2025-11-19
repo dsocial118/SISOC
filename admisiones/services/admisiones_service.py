@@ -232,8 +232,10 @@ class AdmisionService:
             )
 
         queryset = queryset.exclude(
-            Q(enviado_acompaniamiento=True) | Q(enviada_a_archivo=True)
-        )
+            Q(enviado_acompaniamiento=True)
+            | Q(enviada_a_archivo=True)
+            | Q(activa=False)
+        ).distinct()
         return queryset.order_by("-creado")
 
     @staticmethod
@@ -275,21 +277,40 @@ class AdmisionService:
             table_items.append(
                 {
                     "cells": [
+                        # ID
+                        {"content": str(comedor.id) if comedor else "-"},
+                        # Nombre
                         {
                             "content": comedor_nombre,
                             "link_url": comedor_link_url,
                             "link_class": "font-weight-bold link-handler",
                             "link_title": "Ver detalles",
                         },
-                        {"content": tipocomedor_display},
-                        {"content": provincia_display},
+                        # Organización
                         {
                             "content": (
-                                str(admision.tipo_convenio.nombre)
-                                if admision.tipo_convenio
+                                comedor.organizacion.nombre
+                                if comedor and comedor.organizacion
                                 else "-"
                             )
                         },
+                        # N° Expediente
+                        {
+                            "content": (
+                                admision.num_expediente
+                                if admision and admision.num_expediente
+                                else "-"
+                            )
+                        },
+                        # Provincia
+                        {"content": provincia_display},
+                        # Dupla
+                        {
+                            "content": (
+                                str(comedor.dupla) if comedor and comedor.dupla else "-"
+                            )
+                        },
+                        # Tipo
                         {
                             "content": (
                                 str(admision.get_tipo_display())
@@ -297,9 +318,20 @@ class AdmisionService:
                                 else "-"
                             )
                         },
+                        # Estado
                         {
                             "content": (
-                                str(admision.estado.nombre) if admision.estado else "-"
+                                str(admision.get_estado_admision_display())
+                                if admision.estado_admision
+                                else "-"
+                            )
+                        },
+                        # Última Modificación
+                        {
+                            "content": (
+                                admision.modificado.strftime("%d/%m/%Y")
+                                if admision.modificado
+                                else "-"
                             )
                         },
                     ],
@@ -310,12 +342,12 @@ class AdmisionService:
         return table_items
 
     @staticmethod
-    def get_admision_update_context(admision):
+    def get_admision_update_context(admision, user=None):
         try:
             documentaciones = (
                 Documentacion.objects.filter(models.Q(convenios=admision.tipo_convenio))
                 .distinct()
-                .order_by("-obligatorio", "nombre")
+                .order_by("orden")
             )
 
             archivos_subidos = ArchivoAdmision.objects.filter(
@@ -358,7 +390,7 @@ class AdmisionService:
             )
 
             comedor = admision.comedor
-            convenios = TipoConvenio.objects.all()
+            convenios = TipoConvenio.objects.exclude(id=4)
             caratular_form = CaratularForm(instance=admision) if admision else None
             form_if_informe_tecnico = (
                 IFInformeTecnicoForm(instance=admision) if admision else None
@@ -391,6 +423,11 @@ class AdmisionService:
                 )
             pdf = InformeTecnicoPDF.objects.filter(admision=admision).first()
 
+            # Determinar botones disponibles basado en el estado de la admisión
+            botones_disponibles = AdmisionService._get_botones_disponibles(
+                admision, informe_tecnico, mostrar_informe_complementario, user
+            )
+
             return {
                 "documentos": documentos_info,
                 "documentos_personalizados": documentos_personalizados_info,
@@ -408,6 +445,7 @@ class AdmisionService:
                 "mostrar_informe_complementario": mostrar_informe_complementario,
                 "observaciones_complementario": observaciones_complementario,
                 "observaciones_informe_tecnico_complementario": admision.observaciones_informe_tecnico_complementario,
+                "botones_disponibles": botones_disponibles,
             }
 
         except Exception:
@@ -430,19 +468,39 @@ class AdmisionService:
                     admision, request.user
                 ):
 
+                    # Actualizar estado de admisión
+                    AdmisionService.actualizar_estado_admision(
+                        admision, "enviar_a_legales"
+                    )
+
                     return True, "La admisión fue enviada a legales correctamente."
 
                 return False, "La admisión ya estaba marcada como enviada a legales."
 
             if "btnIFInformeTecnico" in request.POST:
 
-                return AdmisionService.guardar_if_informe_tecnico(request, admision)
+                success, message = AdmisionService.guardar_if_informe_tecnico(
+                    request, admision
+                )
+
+                if success:
+                    # Actualizar estado cuando se carga el IF
+                    AdmisionService.actualizar_estado_admision(
+                        admision, "cargar_if_informe_tecnico"
+                    )
+
+                return success, message
 
             if "btnDisponibilizarAcomp" in request.POST:
 
                 if AdmisionService.marcar_como_enviado_a_acompaniamiento(
                     admision, request.user
                 ):
+
+                    # Actualizar estado de admisión
+                    AdmisionService.actualizar_estado_admision(
+                        admision, "enviar_a_acompaniamiento"
+                    )
 
                     return True, "Se envió a Acompañamiento correctamente."
 
@@ -465,6 +523,17 @@ class AdmisionService:
                 if form.is_valid():
 
                     form.save()
+
+                    # Actualizar estado cuando se carga el expediente
+                    AdmisionService.actualizar_estado_admision(
+                        admision, "cargar_expediente"
+                    )
+
+                    # Refrescar la instancia desde la base de datos
+                    admision.refresh_from_db()
+                    print(
+                        f"DEBUG - Después de cargar expediente: {admision.estado_admision}"
+                    )
 
                     return True, "Caratulación del expediente guardado correctamente."
 
@@ -505,6 +574,9 @@ class AdmisionService:
 
             admision.save()
 
+            # Actualizar estado de admisión
+            AdmisionService.actualizar_estado_admision(admision, "seleccionar_convenio")
+
             ArchivoAdmision.objects.filter(admision=admision).delete()
 
             return True
@@ -530,7 +602,7 @@ class AdmisionService:
 
             documentacion = get_object_or_404(Documentacion, pk=documentacion_id)
 
-            return ArchivoAdmision.objects.update_or_create(
+            archivo_admision, created = ArchivoAdmision.objects.update_or_create(
                 admision=admision,
                 documentacion=documentacion,
                 defaults={
@@ -539,6 +611,12 @@ class AdmisionService:
                     "nombre_personalizado": None,
                 },
             )
+
+            # Actualizar estado de admisión si es la primera vez que se carga un documento
+            if created and admision.estado_admision == "convenio_seleccionado":
+                AdmisionService.actualizar_estado_admision(admision, "cargar_documento")
+
+            return archivo_admision, created
 
         except Exception:
 
@@ -742,7 +820,10 @@ class AdmisionService:
 
             archivo.save()
 
-            AdmisionService.verificar_estado_admision(archivo.admision)
+            # Actualizar estados según la acción del usuario
+            AdmisionService._actualizar_estados_por_cambio_documento(
+                archivo.admision, estado_normalizado
+            )
 
             return True
 
@@ -766,16 +847,16 @@ class AdmisionService:
             archivos = ArchivoAdmision.objects.filter(admision=admision).only("estado")
 
             if admision.estado_id != 3:
-
-                if archivos.exists() and all(
-                    archivo.estado == "Aceptado" for archivo in archivos
-                ):
-
+                # Verificar que todos los documentos obligatorios estén aceptados
+                if AdmisionService._todos_obligatorios_aceptados(admision):
                     if admision.estado_id != 2:
-
                         admision.estado_id = 2
-
                         admision.save()
+
+                        # Actualizar estado de admisión cuando toda la documentación obligatoria está aprobada
+                        AdmisionService.actualizar_estado_admision(
+                            admision, "aprobar_documentacion"
+                        )
 
         except Exception:
 
@@ -836,6 +917,9 @@ class AdmisionService:
                 admision.enviado_legales = True
                 admision.estado_legales = "Enviado a Legales"
                 admision.save()
+
+                # Actualizar estado de admisión
+                AdmisionService.actualizar_estado_admision(admision, "enviar_a_legales")
 
                 return True
 
@@ -991,6 +1075,50 @@ class AdmisionService:
             )
 
             return {}
+
+    @staticmethod
+    def get_admision_create_context(comedor_id):
+        try:
+            from comedores.models import Comedor
+
+            comedor = get_object_or_404(Comedor, id=comedor_id)
+            convenios = TipoConvenio.objects.exclude(id=4)
+
+            return {
+                "comedor": comedor,
+                "convenios": convenios,
+            }
+        except Exception:
+            logger.exception(
+                "Error en get_admision_create_context",
+                extra={"comedor_id": comedor_id},
+            )
+            return {}
+
+    @staticmethod
+    def create_admision(comedor_id, tipo_convenio_id):
+        try:
+            from comedores.models import Comedor
+
+            comedor = get_object_or_404(Comedor, id=comedor_id)
+            tipo_convenio = get_object_or_404(TipoConvenio, id=tipo_convenio_id)
+            estado_inicial = EstadoAdmision.objects.first()
+
+            admision = Admision.objects.create(
+                comedor=comedor,
+                tipo_convenio=tipo_convenio,
+                estado=estado_inicial,
+                tipo="incorporacion",
+                estado_admision="convenio_seleccionado",
+            )
+
+            return admision
+        except Exception:
+            logger.exception(
+                "Error en create_admision",
+                extra={"comedor_id": comedor_id, "tipo_convenio_id": tipo_convenio_id},
+            )
+            return None
 
     @staticmethod
     def get_admision_instance(admision_id):
@@ -1225,4 +1353,204 @@ class AdmisionService:
                 },
             )
 
+            return False
+
+    @staticmethod
+    def _get_botones_disponibles(
+        admision, informe_tecnico, mostrar_informe_complementario, user=None
+    ):
+        """Determina qué botones deben estar disponibles según el estado de la admisión y el usuario"""
+        botones = []
+
+        # Determinar grupo del usuario
+        es_tecnico = user and user.groups.filter(name="Tecnico Comedor").exists()
+        es_abogado = user and user.groups.filter(name="Abogado Dupla").exists()
+
+        # Botón para comenzar acompañamiento
+        if admision.numero_disposicion and not admision.enviado_acompaniamiento:
+            botones.append("comenzar_acompaniamiento")
+
+        # Botón para rectificar documentación
+        if admision.estado_legales == "A Rectificar":
+            botones.append("rectificar_documentacion")
+
+        # Botón para caratular expediente (solo técnicos)
+        if (
+            es_tecnico
+            and admision.estado_admision == "documentacion_aprobada"
+            and not admision.num_expediente
+        ):
+            botones.append("caratular_expediente")
+
+        # Botones para crear/editar informe técnico (solo técnicos)
+        if es_tecnico and admision.num_expediente:
+            if admision.estado_admision == "expediente_cargado" and not informe_tecnico:
+                botones.append("crear_informe_tecnico")
+            elif (
+                admision.estado_admision
+                in ["informe_tecnico_en_proceso", "informe_tecnico_en_subsanacion"]
+                and informe_tecnico
+                and informe_tecnico.estado != "Validado"
+            ):
+                botones.append("editar_informe_tecnico")
+
+        # Botón IF Informe Técnico cuando está aprobado (solo técnicos)
+        if (
+            es_tecnico
+            and admision.estado_admision == "informe_tecnico_aprobado"
+            and not admision.numero_if_tecnico
+        ):
+            botones.append("if_informe_tecnico")
+
+        # Botón para mandar a legales cuando el IF está cargado (solo técnicos)
+        if (
+            es_tecnico
+            and admision.estado_admision == "if_informe_tecnico_cargado"
+            and not admision.enviado_legales
+        ):
+            botones.append("mandar_a_legales")
+
+        # Informe técnico validado - informe complementario
+        if (
+            es_tecnico
+            and informe_tecnico
+            and informe_tecnico.estado == "Validado"
+            and mostrar_informe_complementario
+        ):
+            botones.append("informe_tecnico_complementario")
+
+        # Botón para ver informe técnico (abogados cuando existe y no está iniciado)
+        if informe_tecnico and informe_tecnico.estado != "Iniciado":
+            botones.append("ver_informe_tecnico")
+
+        return botones
+
+    @staticmethod
+    def actualizar_estado_admision(admision, accion):
+        """Actualiza el estado_admision basado en la acción realizada"""
+        try:
+            estado_actual = admision.estado_admision
+            nuevo_estado = None
+
+            # Mapeo de acciones a nuevos estados
+            transiciones = {
+                "seleccionar_convenio": "convenio_seleccionado",
+                "cargar_documento": "documentacion_en_proceso",
+                "finalizar_documentacion": "documentacion_finalizada",
+                "aprobar_documentacion": "documentacion_aprobada",
+                "rectificar_documento": "documentacion_en_proceso",
+                "cargar_expediente": "expediente_cargado",
+                "iniciar_informe_tecnico": "informe_tecnico_en_proceso",
+                "enviar_informe_revision": "informe_tecnico_en_revision",
+                "subsanar_informe": "informe_tecnico_en_subsanacion",
+                "aprobar_informe_tecnico": "informe_tecnico_aprobado",
+                "cargar_if_informe_tecnico": "if_informe_tecnico_cargado",
+                "enviar_a_legales": "enviado_a_legales",
+                "enviar_a_acompaniamiento": "enviado_a_acompaniamiento",
+            }
+
+            nuevo_estado = transiciones.get(accion)
+
+            if nuevo_estado and nuevo_estado != estado_actual:
+                admision.estado_admision = nuevo_estado
+                admision.save(update_fields=["estado_admision"])
+                return True
+
+            return False
+
+        except Exception:
+            logger.exception(
+                "Error en actualizar_estado_admision",
+                extra={"admision_pk": admision.pk, "accion": accion},
+            )
+            return False
+
+    @staticmethod
+    def _todos_obligatorios_aceptados(admision):
+        """Verifica que todos los documentos obligatorios del tipo de convenio estén aceptados"""
+        try:
+            # Obtener documentos obligatorios para el tipo de convenio
+            documentos_obligatorios = Documentacion.objects.filter(
+                convenios=admision.tipo_convenio, obligatorio=True
+            )
+
+            # Verificar que cada documento obligatorio tenga un archivo aceptado
+            for doc_obligatorio in documentos_obligatorios:
+                archivo = ArchivoAdmision.objects.filter(
+                    admision=admision, documentacion=doc_obligatorio, estado="Aceptado"
+                ).first()
+
+                if not archivo:
+                    return False
+
+            return True
+
+        except Exception:
+            logger.exception(
+                "Error en _todos_obligatorios_aceptados",
+                extra={"admision_pk": admision.pk},
+            )
+            return False
+
+    @staticmethod
+    def _actualizar_estados_por_cambio_documento(admision, estado_documento):
+        """Actualiza estados de admisión basado en cambios de documentos"""
+        try:
+            # Si un documento se marca como "Rectificar", volver a "documentacion_en_proceso"
+            if estado_documento == "Rectificar":
+                if admision.estado_admision in [
+                    "documentacion_finalizada",
+                    "documentacion_aprobada",
+                ]:
+                    admision.estado_admision = "documentacion_en_proceso"
+                    admision.save(update_fields=["estado_admision"])
+                return
+
+            # Verificar si todos los obligatorios tienen archivos (no necesariamente aceptados)
+            if AdmisionService._todos_obligatorios_tienen_archivos(admision):
+                if admision.estado_admision == "documentacion_en_proceso":
+                    admision.estado_admision = "documentacion_finalizada"
+                    admision.save(update_fields=["estado_admision"])
+
+            # Verificar si todos los obligatorios están aceptados
+            if AdmisionService._todos_obligatorios_aceptados(admision):
+                if admision.estado_admision == "documentacion_finalizada":
+                    admision.estado_admision = "documentacion_aprobada"
+                    # También actualizar el estado principal a "Finalizada"
+                    if admision.estado_id != 2:
+                        admision.estado_id = 2
+                    admision.save(update_fields=["estado_admision", "estado_id"])
+
+        except Exception:
+            logger.exception(
+                "Error en _actualizar_estados_por_cambio_documento",
+                extra={
+                    "admision_pk": admision.pk,
+                    "estado_documento": estado_documento,
+                },
+            )
+
+    @staticmethod
+    def _todos_obligatorios_tienen_archivos(admision):
+        """Verifica que todos los documentos obligatorios tengan archivos cargados"""
+        try:
+            documentos_obligatorios = Documentacion.objects.filter(
+                convenios=admision.tipo_convenio, obligatorio=True
+            )
+
+            for doc_obligatorio in documentos_obligatorios:
+                archivo = ArchivoAdmision.objects.filter(
+                    admision=admision, documentacion=doc_obligatorio
+                ).first()
+
+                if not archivo or not archivo.archivo:
+                    return False
+
+            return True
+
+        except Exception:
+            logger.exception(
+                "Error en _todos_obligatorios_tienen_archivos",
+                extra={"admision_pk": admision.pk},
+            )
             return False

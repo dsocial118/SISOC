@@ -1,27 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import Count
 
 
 class DuplaManager(models.Manager):
     """Manager personalizado para el modelo Dupla."""
 
-    def activas_con_comedores(self):
-        """
-        Retorna duplas activas que tienen al menos un comedor asignado.
-
-        Esta query se usa comúnmente en forms de asignación de coordinadores
-        para evitar mostrar duplas sin comedores.
-
-        Returns:
-            QuerySet de Duplas activas con comedores, ordenadas por nombre
-        """
-        return (
-            self.filter(estado="Activo")
-            .annotate(comedores_count=Count("comedor"))
-            .filter(comedores_count__gt=0)
-            .order_by("nombre")
-        )
+    def activas(self):
+        """Retorna todas las duplas activas, tengan o no comedores asignados."""
+        return self.filter(estado="Activo").order_by("nombre")
 
 
 class Dupla(models.Model):
@@ -72,11 +58,10 @@ class Dupla(models.Model):
 
     @property
     def tecnicos_nombres(self) -> str:
-        """Devuelve los nombres de técnicos separados por coma para mostrar en tablas."""
+        """Devuelve los nombres de técnicos en formato 'Apellido Nombre' separados por coma."""
         try:
             nombres = ", ".join(
-                getattr(u, "get_full_name", lambda: "")()
-                or getattr(u, "username", str(u))
+                f"{u.last_name} {u.first_name}".strip() or u.username
                 for u in self.tecnico.all()
             )
             return nombres or "—"
@@ -84,8 +69,19 @@ class Dupla(models.Model):
             return "—"
 
     @property
+    def abogado_nombre(self) -> str:
+        """Devuelve el nombre del abogado en formato 'Apellido Nombre'."""
+        if self.abogado:
+            full_name = f"{self.abogado.last_name} {self.abogado.first_name}".strip()
+            return full_name or self.abogado.username
+        return "—"
+
+    @property
     def coordinador_nombre(self) -> str:
-        """Devuelve el nombre del coordinador o un indicador si no hay coordinador asignado."""
+        """Devuelve el nombre del coordinador en formato 'Apellido Nombre' o un indicador si no hay coordinador asignado."""
         if self.coordinador:
-            return self.coordinador.get_full_name() or self.coordinador.username
+            full_name = (
+                f"{self.coordinador.last_name} {self.coordinador.first_name}".strip()
+            )
+            return full_name or self.coordinador.username
         return "Sin asignar"

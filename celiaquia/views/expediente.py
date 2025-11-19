@@ -467,7 +467,23 @@ class ExpedienteDetailView(DetailView):
             legajo.es_responsable = LegajoService._es_responsable(
                 legajo.ciudadano, responsables_ids
             )
-            legajo.tipo_legajo = "Responsable" if legajo.es_responsable else "Hijo"
+            hijos_list = []
+            if legajo.es_responsable:
+                hijos_list = FamiliaService.obtener_hijos_a_cargo(
+                    legajo.ciudadano.id, expediente
+                )
+
+            # Determinar tipo de legajo segun los roles:
+            # - Responsable y Beneficiario: tiene hijos a cargo en el expediente.
+            # - Responsable: es responsable pero sin hijos a cargo en este expediente.
+            # - Beneficiario: no es responsable.
+            if legajo.es_responsable and hijos_list:
+                legajo.tipo_legajo = "Responsable y Beneficiario"
+            elif legajo.es_responsable:
+                legajo.tipo_legajo = "Responsable"
+            else:
+                legajo.tipo_legajo = "Beneficiario"
+
             legajo.archivos_requeridos = (
                 LegajoService.get_archivos_requeridos_por_legajo(
                     legajo, responsables_ids
@@ -475,9 +491,7 @@ class ExpedienteDetailView(DetailView):
             )
 
             if legajo.es_responsable:
-                legajo.hijos_a_cargo = FamiliaService.obtener_hijos_a_cargo(
-                    legajo.ciudadano.id, expediente
-                )
+                legajo.hijos_a_cargo = hijos_list
                 legajo.responsable_id = None
                 responsables_legajos.append(legajo)
             else:
@@ -949,14 +963,18 @@ class RevisarLegajoView(View):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
 
-        # Permisos: admin o técnico
-        if not (_is_admin(user) or _user_in_group(user, "TecnicoCeliaquia")):
+        es_admin = _is_admin(user)
+        es_tecnico = _user_in_group(user, "TecnicoCeliaquia")
+        es_coord = _user_in_group(user, "CoordinadorCeliaquia")
+
+        # Permisos: admin, técnico o coordinador
+        if not (es_admin or es_tecnico or es_coord):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
 
-        # Si no es admin, debe ser el técnico asignado a este expediente
-        if not _is_admin(user):
+        # Técnicos deben estar asignados; coordinadores quedan exceptuados
+        if not (es_admin or es_coord):
             # Usar prefetch para evitar query adicional
             tecnicos_ids = [
                 t.tecnico_id for t in expediente.asignaciones_tecnicos.all()
@@ -972,7 +990,7 @@ class RevisarLegajoView(View):
         )
 
         accion = (request.POST.get("accion") or "").upper()
-        if accion not in ("APROBAR", "RECHAZAR", "SUBSANAR"):
+        if accion not in ("APROBAR", "RECHAZAR", "SUBSANAR", "ELIMINAR"):
             return JsonResponse(
                 {"success": False, "error": "Acción inválida."}, status=400
             )
@@ -1023,6 +1041,50 @@ class RevisarLegajoView(View):
             return JsonResponse(
                 {"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True}
             )
+
+        # ELIMINAR - Solo coordinadores
+        if accion == "ELIMINAR":
+            if not (_is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia")):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Solo coordinadores pueden eliminar legajos.",
+                    },
+                    status=403,
+                )
+
+            try:
+                # Liberar cupo si estaba ocupado
+                if leg.estado_cupo == "DENTRO":
+                    try:
+                        CupoService.liberar_slot(
+                            legajo=leg,
+                            usuario=user,
+                            motivo="Eliminación de legajo del expediente",
+                        )
+                    except Exception as e:
+                        logger.error(
+                            "Error al liberar cupo para legajo %s: %s",
+                            leg.pk,
+                            e,
+                            exc_info=True,
+                        )
+
+                leg.delete()
+                return JsonResponse(
+                    {"success": True, "message": "Legajo eliminado correctamente."}
+                )
+            except Exception as e:
+                logger.error(
+                    "Error al eliminar legajo %s: %s", leg.pk, e, exc_info=True
+                )
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Ocurrió un error al eliminar el legajo. Inténtelo nuevamente más tarde.",
+                    },
+                    status=500,
+                )
 
         # SUBSANAR
         motivo = (request.POST.get("motivo") or "").strip()

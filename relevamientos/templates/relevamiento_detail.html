@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %};
-{% load static custom_filters %}
+{% load static custom_filters image_tags %}
 ;
 {% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
@@ -1187,9 +1187,7 @@
                             {% for imagen in relevamiento.excepcion.adjuntos %}
                                 {% if imagen and imagen != "" %}
                                     <div class="col-2 d-flex">
-                                        <img src="{{ imagen }}"
-                                             alt="Adjunto del comedor"
-                                             class="img-fluid my-1 rounded object-fit-contain" />
+                                        {% optimized_image imagen "Adjunto del relevamiento" css_class="img-fluid my-1 rounded object-fit-contain" %}
                                     </div>
                                 {% endif %}
                             {% endfor %}
@@ -1202,9 +1200,7 @@
                             Firma
                             <div class="col-2 d-flex">
                                 {% if relevamiento.excepcion.firma is not None %}
-                                    <img src="{{ relevamiento.excepcion.firma }}"
-                                         alt="Firma del responsable"
-                                         class="img-fluid my-1 rounded object-fit-contain" />
+                                    {% optimized_image relevamiento.excepcion.firma "Firma del responsable" css_class="img-fluid my-1 rounded object-fit-contain" %}
                                 {% endif %}
                             </div>
                         </div>
@@ -1248,7 +1244,7 @@
                                         </p>
                                     </iframe>
                                 {% else %}
-                                    <img src="{{ archivo }}" class="d-block w-100" alt="Relevamiento" />
+                                    {% optimized_image archivo "Foto del relevamiento" css_class="d-block w-100" %}
                                 {% endif %}
                             </div>
                         {% endfor %}
