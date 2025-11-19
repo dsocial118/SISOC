@@ -296,7 +296,11 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(AdmisionService.get_admision_update_context(self.get_object(), self.request.user))
+        context.update(
+            AdmisionService.get_admision_update_context(
+                self.get_object(), self.request.user
+            )
+        )
         return context
 
     def post(self, request, *args, **kwargs):
@@ -357,7 +361,10 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         else:
             tecnicos_dupla = []
 
-        admision_context = AdmisionService.get_admision_update_context(admision, self.request.user) or {}
+        admision_context = (
+            AdmisionService.get_admision_update_context(admision, self.request.user)
+            or {}
+        )
 
         informes_complementarios_queryset = (
             InformeComplementario.objects.filter(admision=admision)
@@ -492,24 +499,29 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
     def post(self, request, *args, **kwargs):
         if "forzar_cierre" in request.POST:
             # Check permissions
-            if not (request.user.is_superuser or request.user.groups.filter(name="Coordinador Equipo Tecnico").exists()):
+            if not (
+                request.user.is_superuser
+                or request.user.groups.filter(
+                    name="Coordinador Equipo Tecnico"
+                ).exists()
+            ):
                 messages.error(request, "No tiene permisos para realizar esta acción.")
                 return redirect(request.path_info)
-            
+
             admision = self.get_object()
             motivo = request.POST.get("motivo_forzar_cierre", "").strip()
-            
+
             if not motivo:
                 messages.error(request, "El motivo del cierre forzado es obligatorio.")
                 return redirect(request.path_info)
-            
+
             admision.activa = False
             admision.motivo_forzar_cierre = motivo
             admision.save(update_fields=["activa", "motivo_forzar_cierre"])
-            
+
             messages.success(request, "La admisión ha sido cerrada forzadamente.")
             return redirect(request.path_info)
-        
+
         return super().get(request, *args, **kwargs)
 
 

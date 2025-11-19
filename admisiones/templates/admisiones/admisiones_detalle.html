@@ -4,7 +4,7 @@
 
 {% block title %}Admision {{ admision.id }}{% endblock %}
 {% block titulo-pagina %}
-    Detalle de Admision 
+    Detalle de Admision
     {% if admision.activa %}
         <span class="badge bg-success">Activa</span>
     {% else %}
@@ -607,14 +607,21 @@
     </div>
 
     <!-- Modal Forzar Cierre -->
-    <div class="modal fade" id="forzarCierreModal" tabindex="-1" aria-labelledby="forzarCierreModalLabel" aria-hidden="true">
+    <div class="modal fade"
+         id="forzarCierreModal"
+         tabindex="-1"
+         aria-labelledby="forzarCierreModalLabel"
+         aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form method="post">
                     {% csrf_token %}
                     <div class="modal-header">
                         <h5 class="modal-title" id="forzarCierreModalLabel">Forzar Cierre de Admisión</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="alert alert-warning">
@@ -622,8 +629,15 @@
                             <strong>Atención:</strong> Esta acción marcará la admisión como inactiva y no se podrá revertir.
                         </div>
                         <div class="mb-3">
-                            <label for="motivo_forzar_cierre" class="form-label">Motivo del cierre forzado <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="motivo_forzar_cierre" name="motivo_forzar_cierre" rows="4" required placeholder="Ingrese el motivo por el cual se fuerza el cierre de esta admisión..."></textarea>
+                            <label for="motivo_forzar_cierre" class="form-label">
+                                Motivo del cierre forzado <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control"
+                                      id="motivo_forzar_cierre"
+                                      name="motivo_forzar_cierre"
+                                      rows="4"
+                                      required
+                                      placeholder="Ingrese el motivo por el cual se fuerza el cierre de esta admisión..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">

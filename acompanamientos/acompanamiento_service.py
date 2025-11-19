@@ -363,7 +363,9 @@ class AcompanamientoService:
 
             admisiones_prefetch = Prefetch(
                 "admision_set",
-                queryset=Admision.objects.filter(enviado_acompaniamiento=True, activa=True)
+                queryset=Admision.objects.filter(
+                    enviado_acompaniamiento=True, activa=True
+                )
                 .select_related(
                     "comedor",
                     "comedor__provincia",

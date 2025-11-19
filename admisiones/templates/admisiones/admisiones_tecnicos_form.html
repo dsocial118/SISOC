@@ -125,563 +125,563 @@
                                 <span class="fw-bold">{{ admision.get_tipo_display| default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
-                                <li class="nav-item">
-                                    <div class="comment-text">
-                                        Estado del Proceso:
-                                        <span class="fw-bold">{{ admision.get_estado_admision_display }}</span>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Estado del Proceso:
+                                <span class="fw-bold">{{ admision.get_estado_admision_display }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Fecha:
+                                <span class="fw-bold">{{ admision.creado |date:'d/m/Y' }}</span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Fecha de vencimiento de mandatos:
+                                <span class="fw-bold">
+                                    {% if informe_tecnico and informe_tecnico.fecha_vencimiento_mandatos %}
+                                        {{ informe_tecnico.fecha_vencimiento_mandatos|date:'d/m/Y' }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
+                                Número de Expediente:
+                                <span class="fw-bold">{{ admision.num_expediente |default_if_none:"Sin información" }}</span>
+                                {% if admision.num_expediente %}
+                                    <i class="bi bi-check-circle-fill text-success">
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger">
+                                        {% endif %}
+                                    </i>
+                                </div>
+                            </li>
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Informe Técnico:
+                                    <span class="fw-bold">{{ informe_tecnico.estado |default_if_none:"Sin información" }}</span>
+                                    {% if informe_tecnico.estado == "Validado" %}<i class="bi bi-check-circle-fill text-success">{% endif %}
+                                        {% if informe_tecnico.estado == "Para revision" or informe_tecnico.estado == "Iniciado" %}
+                                            <i class="bi bi-check-circle-fill text-warning">
+                                            {% endif %}
+                                            {% if informe_tecnico.estado == "A subsanar" %}<i class="bi bi-exclamation-circle-fill text-danger">{% endif %}
+                                                {% if not informe_tecnico %}<i class="bi bi-x-circle-fill text-danger">{% endif %}
+                                                </i>
+                                            </div>
+                                        </li>
+                                        {% if admision.numero_if_tecnico %}
+                                            <li class="nav-item">
+                                                <div class="comment-text">
+                                                    IF Informe Técnico:
+                                                    <span class="fw-bold">{{ admision.numero_if_tecnico }}</span>
+                                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                                </div>
+                                            </li>
+                                        {% endif %}
+                                        {% if pdf %}
+                                            <li class="nav-item">
+                                                <div class="comment-text">
+                                                    Informe Técnico:
+                                                    {% if pdf.archivo %}
+                                                        <span class="fw-bold">
+                                                            <a href="{{ pdf.archivo.url }}" target="_blank">
+                                                                <i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>
+                                                            </a>
+                                                        </span>
+                                                    {% endif %}
+                                                    {% if pdf.archivo_docx %}
+                                                        <span class="fw-bold">
+                                                            <a href="{{ pdf.archivo_docx.url }}" target="_blank">
+                                                                <i class="bi bi-filetype-docx text-info h4 ms-3 text-bold"></i>
+                                                            </a>
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </li>
+                                        {% endif %}
+                                        {% if informes_complementarios %}
+                                            <li class="nav-item">
+                                                <div class="comment-text">
+                                                    PDF Informes Complementarios:
+                                                    {% for i in informes_complementarios %}
+                                                        {% if i.pdf %}
+                                                            <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado |date:'d/m/Y' }}</a></span>
+                                                        {% else %}
+                                                            <span class="fw-bold">{{ i.creado |date:'d/m/Y' }} - {{ i.get_estado_display }}</span>
+                                                        {% endif %}
+                                                        <br />
+                                                    {% endfor %}
+                                                </div>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card card-primary card-outline">
+                                <div class="card-header">
+                                    <h2 class="card-title fw-bold fs-3">Comedor</h2>
+                                </div>
+                                <div class="card-body card-comments p-3">
+                                    <ul class="nav nav-pills flex-column">
+                                        <li class="nav-item">
+                                            <div class="comment-text ">
+                                                Nombre:
+                                                {% if comedor and comedor.id %}
+                                                    <a href="{% url 'comedor_detalle' comedor.id %}"><span class="fw-bold">{{ comedor.nombre }}</span></a>
+                                                {% else %}
+                                                    <span class="fw-bold">{{ comedor.nombre|default:"-" }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </li>
+                                        <li class="nav-item">
+                                            <div class="comment-text">
+                                                Tipo Comedor:
+                                                <span class="fw-bold">{{ comedor.tipocomedor| default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </li>
+                                        <li class="nav-item">
+                                            <div class="comment-text">
+                                                Programa:
+                                                <span class="fw-bold">{{ comedor.programa| default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </li>
+                                        <li class="nav-item">
+                                            <div class="comment-text">
+                                                Organización:
+                                                <span class="fw-bold">{{ comedor.organizacion | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </li>
+                                        <li class="nav-item">
+                                            <div class="comment-text">
+                                                Provincia:
+                                                <span class="fw-bold">{{ comedor.provincia | default_if_none:"Sin información" }} - {{ comedor.municipio | default_if_none:"Sin información" }} - {{ comedor.localidad | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </li>
+                                        <li class="nav-item">
+                                            <div class="comment-text">
+                                                Calle:
+                                                <span class="fw-bold">{{ comedor.calle | default_if_none:"Sin información" }} {{ comedor.numero | default_if_none:"Sin información" }} - Piso: {{ comedor.piso | default_if_none:"Sin información" }} {{ comedor.departamento | default_if_none:"" }}</span>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if admision.estado_legales == "A Rectificar" %}
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="card card-danger card-outline h-100">
+                                    <div class="card-header">
+                                        <h2 class="card-title fw-bold fs-3">A Rectificar</h2>
                                     </div>
-                                </li>
-                                <li class="nav-item">
-                                    <div class="comment-text">
-                                        Fecha:
-                                        <span class="fw-bold">{{ admision.creado |date:'d/m/Y' }}</span>
+                                    <div class="card-body card-comments">
+                                        <h6>{{ admision.observaciones }}</h6>
                                     </div>
-                                </li>
-                                <li class="nav-item">
-                                    <div class="comment-text">
-                                        Fecha de vencimiento de mandatos:
-                                        <span class="fw-bold">
-                                            {% if informe_tecnico and informe_tecnico.fecha_vencimiento_mandatos %}
-                                                {{ informe_tecnico.fecha_vencimiento_mandatos|date:'d/m/Y' }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex align-items-center">
+                                    <h2 class="card-title fw-bold fs-3 mb-0">
+                                        Documentos requeridos
+                                        <span class="fs-5 ms-3"><small>{{ stats.obligatorios_completos }}/{{ stats.obligatorios_total }}</small>
+                                            {% if stats.obligatorios_completos == stats.obligatorios_total %}
+                                                <i class="bi bi-check-circle-fill text-success"></i>
                                             {% else %}
-                                                -
+                                                <i class="bi bi-x-circle-fill text-danger"></i>
                                             {% endif %}
                                         </span>
+                                    </h2>
+                                    <div class="d-flex align-items-center gap-2 ms-auto">
+                                        <span class="badge bg-success" title="Aceptados">Aceptados: {{ stats.aceptados }}</span>
+                                        <span class="badge bg-primary" title="A Validar Abogado">Validar Abogado: {{ stats.a_validar_abogado }}</span>
+                                        <span class="badge bg-danger" title="Rectificar">Rectificar: {{ stats.rectificar }}</span>
+                                        <span class="badge bg-secondary" title="Pendientes">Pendientes: {{ stats.pendientes }}</span>
                                     </div>
-                                </li>
-                                <li class="nav-item">
-                                    <div class="comment-text">
-                                        Número de Expediente:
-                                        <span class="fw-bold">{{ admision.num_expediente |default_if_none:"Sin información" }}</span>
-                                        {% if admision.num_expediente %}
-                                            <i class="bi bi-check-circle-fill text-success">
-                                            {% else %}
-                                                <i class="bi bi-x-circle-fill text-danger">
+                                </div>
+                                <div class="card-body card-comments p-0 pb-1">
+                                    <!-- CONTENEDOR DE DOCUMENTOS -->
+                                    <div class="container mt-2 table-responsive">
+                                        <table class="table table-striped table-bordered table-hover table-sm"
+                                               id="tablaDocumentos">
+                                            <thead>
+                                                <tr>
+                                                    <th>Documento</th>
+                                                    <th style="width:1%; white-space:nowrap;">Estado</th>
+                                                    <th>Archivo</th>
+                                                    <th>Número de GDE</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tablaDocumentosBody">
+                                                {% for doc in documentos %}
+                                                    {% include "admisiones/includes/documento_row.html" %}
+                                                {% endfor %}
+                                                <tr>
+                                                    <td colspan="4" class="p-3"></td>
+                                                </tr>
+                                                <tr class="table-secondary">
+                                                    <td colspan="4" class="fw-bold text-center py-2">Documentación adicional</td>
+                                                </tr>
+                                                {% for doc in documentos_personalizados %}
+                                                    {% include "admisiones/includes/documento_row.html" %}
+                                                {% endfor %}
+                                                {% if request.user|has_group:"Tecnico Comedor" and not admision.enviada_a_archivo and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
+                                                    <tr id="fila-agregar-documento"
+                                                        data-documentacion-id=""
+                                                        data-archivo-id="">
+                                                        <td class="ps-1">
+                                                            <input type="text"
+                                                                   class="form-control form-control-sm"
+                                                                   id="nuevoDocumentoNombre"
+                                                                   placeholder="Nombre del documento adicional" />
+                                                        </td>
+                                                        <td class="ps-1">
+                                                            <span class="badge bg-secondary"></span>
+                                                        </td>
+                                                        <td>
+                                                            <input type="file" id="nuevoDocumentoArchivo" class="d-none" />
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-primary"
+                                                                    id="btnAbrirFile">Adjuntar</button>
+                                                            <div class="progress mt-2"
+                                                                 id="progress-container-nuevo"
+                                                                 style="display:none;
+                                                                        height:3px">
+                                                                <div class="progress-bar progress-bar-striped"
+                                                                     role="progressbar"
+                                                                     id="progress-bar-nuevo"
+                                                                     style="width:0%">0%</div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span class="text-muted">-</span>
+                                                        </td>
+                                                    </tr>
                                                 {% endif %}
-                                            </i>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- MODAL OBSERVACIONES RECTIFICAR -->
+                    <div class="modal fade"
+                         id="modalObservacionRectificar"
+                         tabindex="-1"
+                         aria-labelledby="modalObservacionRectificarLabel"
+                         aria-hidden="true"
+                         data-bs-backdrop="static"
+                         data-bs-keyboard="false">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalObservacionRectificarLabel">Observaciones obligatorias</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="observacionRectificar" class="form-label">Detalle el motivo de la rectificacion</label>
+                                        <textarea class="form-control"
+                                                  id="observacionRectificar"
+                                                  rows="4"
+                                                  maxlength="2000"></textarea>
+                                        <div class="text-danger small mt-2" id="observacionRectificarError"></div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="button" class="btn btn-primary" id="btnConfirmarRectificar">Guardar observaciones</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- MODAL DE CONFIRMACIÓN -->
+                    <div class="modal fade"
+                         id="modalConfirmarEliminar"
+                         tabindex="-1"
+                         role="dialog"
+                         aria-labelledby="modalConfirmarEliminarLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalConfirmarEliminarLabel">Eliminar Archivo</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">¿Estás seguro de que deseas eliminar este archivo? Esta acción no se puede deshacer.</div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- MODAL DE SELECCIÓN DE CONVENIO -->
+                    <div class="modal fade"
+                         id="nuevoSeleccionModal"
+                         tabindex="-1"
+                         aria-labelledby="nuevoSeleccionModalLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="POST" action="">
+                                    {% csrf_token %}
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Seleccione el tipo de convenio</h5>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="alert alert-danger h6 text-white" role="alert">
+                                            Al cambiar el Convenio se perderan todos los archivos cargados. Esta seguro que quiere continuar?
                                         </div>
-                                    </li>
-                                    <li class="nav-item">
-                                        <div class="comment-text">
-                                            Informe Técnico:
-                                            <span class="fw-bold">{{ informe_tecnico.estado |default_if_none:"Sin información" }}</span>
-                                            {% if informe_tecnico.estado == "Validado" %}<i class="bi bi-check-circle-fill text-success">{% endif %}
-                                                {% if informe_tecnico.estado == "Para revision" or informe_tecnico.estado == "Iniciado" %}
-                                                    <i class="bi bi-check-circle-fill text-warning">
-                                                    {% endif %}
-                                                    {% if informe_tecnico.estado == "A subsanar" %}<i class="bi bi-exclamation-circle-fill text-danger">{% endif %}
-                                                        {% if not informe_tecnico %}<i class="bi bi-x-circle-fill text-danger">{% endif %}
-                                                        </i>
-                                                    </div>
-                                                </li>
-                                                {% if admision.numero_if_tecnico %}
-                                                    <li class="nav-item">
-                                                        <div class="comment-text">
-                                                            IF Informe Técnico:
-                                                            <span class="fw-bold">{{ admision.numero_if_tecnico }}</span>
-                                                            <i class="bi bi-check-circle-fill text-success"></i>
-                                                        </div>
-                                                    </li>
+                                        <select name="tipo_convenio"
+                                                id="nuevoTipoConvenio"
+                                                class="form-control"
+                                                required>
+                                            <option value="">-- Seleccione --</option>
+                                            {% for c in convenios %}
+                                                {% if c.id != 4 %}
+                                                    <option value="{{ c.id }}"
+                                                            {% if c.id == admision.tipo_convenio.id %}selected{% endif %}>
+                                                        {{ c.nombre }}
+                                                    </option>
                                                 {% endif %}
-                                                {% if pdf %}
-                                                    <li class="nav-item">
-                                                        <div class="comment-text">
-                                                            Informe Técnico:
-                                                            {% if pdf.archivo %}
-                                                                <span class="fw-bold">
-                                                                    <a href="{{ pdf.archivo.url }}" target="_blank">
-                                                                        <i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>
-                                                                    </a>
-                                                                </span>
-                                                            {% endif %}
-                                                            {% if pdf.archivo_docx %}
-                                                                <span class="fw-bold">
-                                                                    <a href="{{ pdf.archivo_docx.url }}" target="_blank">
-                                                                        <i class="bi bi-filetype-docx text-info h4 ms-3 text-bold"></i>
-                                                                    </a>
-                                                                </span>
-                                                            {% endif %}
-                                                        </div>
-                                                    </li>
-                                                {% endif %}
-                                                {% if informes_complementarios %}
-                                                    <li class="nav-item">
-                                                        <div class="comment-text">
-                                                            PDF Informes Complementarios:
-                                                            {% for i in informes_complementarios %}
-                                                                {% if i.pdf %}
-                                                                    <span class="fw-bold"><a href="{{ i.pdf.url }}" target="_blank"><i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>{{ i.creado |date:'d/m/Y' }}</a></span>
-                                                                {% else %}
-                                                                    <span class="fw-bold">{{ i.creado |date:'d/m/Y' }} - {{ i.get_estado_display }}</span>
-                                                                {% endif %}
-                                                                <br />
-                                                            {% endfor %}
-                                                        </div>
-                                                    </li>
-                                                {% endif %}
-                                            </ul>
-                                        </div>
+                                            {% endfor %}
+                                        </select>
                                     </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" class="btn btn-danger" id="nuevoConfirmarSeleccion">Cambiar y eliminar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Modal para confirmar mandar a legales -->
+                    <div class="modal fade"
+                         id="confirmarLegalesModal"
+                         tabindex="-1"
+                         aria-labelledby="confirmarLegalesModalLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="confirmarLegalesModalLabel">Confirmar mandar a Legales</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
                                 </div>
-                                <div class="col-6">
-                                    <div class="card card-primary card-outline">
-                                        <div class="card-header">
-                                            <h2 class="card-title fw-bold fs-3">Comedor</h2>
-                                        </div>
-                                        <div class="card-body card-comments p-3">
-                                            <ul class="nav nav-pills flex-column">
-                                                <li class="nav-item">
-                                                    <div class="comment-text ">
-                                                        Nombre:
-                                                        {% if comedor and comedor.id %}
-                                                            <a href="{% url 'comedor_detalle' comedor.id %}"><span class="fw-bold">{{ comedor.nombre }}</span></a>
-                                                        {% else %}
-                                                            <span class="fw-bold">{{ comedor.nombre|default:"-" }}</span>
-                                                        {% endif %}
-                                                    </div>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <div class="comment-text">
-                                                        Tipo Comedor:
-                                                        <span class="fw-bold">{{ comedor.tipocomedor| default_if_none:"Sin información" }}</span>
-                                                    </div>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <div class="comment-text">
-                                                        Programa:
-                                                        <span class="fw-bold">{{ comedor.programa| default_if_none:"Sin información" }}</span>
-                                                    </div>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <div class="comment-text">
-                                                        Organización:
-                                                        <span class="fw-bold">{{ comedor.organizacion | default_if_none:"Sin información" }}</span>
-                                                    </div>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <div class="comment-text">
-                                                        Provincia:
-                                                        <span class="fw-bold">{{ comedor.provincia | default_if_none:"Sin información" }} - {{ comedor.municipio | default_if_none:"Sin información" }} - {{ comedor.localidad | default_if_none:"Sin información" }}</span>
-                                                    </div>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <div class="comment-text">
-                                                        Calle:
-                                                        <span class="fw-bold">{{ comedor.calle | default_if_none:"Sin información" }} {{ comedor.numero | default_if_none:"Sin información" }} - Piso: {{ comedor.piso | default_if_none:"Sin información" }} {{ comedor.departamento | default_if_none:"" }}</span>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
+                                <div class="modal-body mb-2">¿Estás seguro que queres mandar a Legales?</div>
+                                <div class="modal-footer">
+                                    <form id="mandarLegalesForm" method="POST" action="">
+                                        {% csrf_token %}
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit"
+                                                id="mandarLegalesId"
+                                                name="mandarLegales"
+                                                class="btn btn-primary">Confirmar</button>
+                                    </form>
                                 </div>
                             </div>
-                            {% if admision.estado_legales == "A Rectificar" %}
-                                <div class="row mb-3">
-                                    <div class="col-12">
-                                        <div class="card card-danger card-outline h-100">
-                                            <div class="card-header">
-                                                <h2 class="card-title fw-bold fs-3">A Rectificar</h2>
-                                            </div>
-                                            <div class="card-body card-comments">
-                                                <h6>{{ admision.observaciones }}</h6>
-                                            </div>
-                                        </div>
+                        </div>
+                    </div>
+                    <!-- Modal para IF Informe Técnico -->
+                    <div class="modal fade"
+                         id="modalIFInformeTecnico"
+                         tabindex="-1"
+                         aria-labelledby="modalIFInformeTecnicoLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <form method="POST" action="">
+                                    {% csrf_token %}
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="modalIFInformeTecnicoLabel">IF Informe Técnico</h5>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
                                     </div>
+                                    <div class="modal-body">
+                                        {% if form_if_informe_tecnico %}
+                                            {{ form_if_informe_tecnico.numero_if_tecnico|as_crispy_field }}
+                                        {% else %}
+                                            <input type="text"
+                                                   name="numero_if_tecnico"
+                                                   class="form-control"
+                                                   placeholder="Número IF Informe Técnico"
+                                                   required />
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" name="btnIFInformeTecnico" class="btn btn-primary">Guardar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Modal para confirmar disponibilizar acompañamiento -->
+                    <div class="modal fade"
+                         id="modalDisponibilizarAcomp"
+                         tabindex="-1"
+                         aria-labelledby="modalDisponibilizarAcompLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalDisponibilizarAcompLabel">Confirmar disponibilizar a acompañamiento</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
                                 </div>
-                            {% endif %}
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="card">
-                                        <div class="card-header d-flex align-items-center">
-                                            <h2 class="card-title fw-bold fs-3 mb-0">
-                                                Documentos requeridos
-                                                <span class="fs-5 ms-3"><small>{{ stats.obligatorios_completos }}/{{ stats.obligatorios_total }}</small>
-                                                    {% if stats.obligatorios_completos == stats.obligatorios_total %}
-                                                        <i class="bi bi-check-circle-fill text-success"></i>
-                                                    {% else %}
-                                                        <i class="bi bi-x-circle-fill text-danger"></i>
-                                                    {% endif %}
-                                                </span>
-                                            </h2>
-                                            <div class="d-flex align-items-center gap-2 ms-auto">
-                                                <span class="badge bg-success" title="Aceptados">Aceptados: {{ stats.aceptados }}</span>
-                                                <span class="badge bg-primary" title="A Validar Abogado">Validar Abogado: {{ stats.a_validar_abogado }}</span>
-                                                <span class="badge bg-danger" title="Rectificar">Rectificar: {{ stats.rectificar }}</span>
-                                                <span class="badge bg-secondary" title="Pendientes">Pendientes: {{ stats.pendientes }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="card-body card-comments p-0 pb-1">
-                                            <!-- CONTENEDOR DE DOCUMENTOS -->
-                                            <div class="container mt-2 table-responsive">
-                                                <table class="table table-striped table-bordered table-hover table-sm"
-                                                       id="tablaDocumentos">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Documento</th>
-                                                            <th style="width:1%; white-space:nowrap;">Estado</th>
-                                                            <th>Archivo</th>
-                                                            <th>Número de GDE</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="tablaDocumentosBody">
-                                                        {% for doc in documentos %}
-                                                            {% include "admisiones/includes/documento_row.html" %}
-                                                        {% endfor %}
-                                                        <tr>
-                                                            <td colspan="4" class="p-3"></td>
-                                                        </tr>
-                                                        <tr class="table-secondary">
-                                                            <td colspan="4" class="fw-bold text-center py-2">Documentación adicional</td>
-                                                        </tr>
-                                                        {% for doc in documentos_personalizados %}
-                                                            {% include "admisiones/includes/documento_row.html" %}
-                                                        {% endfor %}
-                                                        {% if request.user|has_group:"Tecnico Comedor" and not admision.enviada_a_archivo and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
-                                                            <tr id="fila-agregar-documento"
-                                                                data-documentacion-id=""
-                                                                data-archivo-id="">
-                                                                <td class="ps-1">
-                                                                    <input type="text"
-                                                                           class="form-control form-control-sm"
-                                                                           id="nuevoDocumentoNombre"
-                                                                           placeholder="Nombre del documento adicional" />
-                                                                </td>
-                                                                <td class="ps-1">
-                                                                    <span class="badge bg-secondary"></span>
-                                                                </td>
-                                                                <td>
-                                                                    <input type="file" id="nuevoDocumentoArchivo" class="d-none" />
-                                                                    <button type="button"
-                                                                            class="btn btn-sm btn-outline-primary"
-                                                                            id="btnAbrirFile">Adjuntar</button>
-                                                                    <div class="progress mt-2"
-                                                                         id="progress-container-nuevo"
-                                                                         style="display:none;
-                                                                                height:3px">
-                                                                        <div class="progress-bar progress-bar-striped"
-                                                                             role="progressbar"
-                                                                             id="progress-bar-nuevo"
-                                                                             style="width:0%">0%</div>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <span class="text-muted">-</span>
-                                                                </td>
-                                                            </tr>
-                                                        {% endif %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div class="modal-body mb-2">¿Esta seguro que quiere hacer esta acción?</div>
+                                <div class="modal-footer">
+                                    <form id="mandarLegalesForm" method="POST" action="">
+                                        {% csrf_token %}
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit"
+                                                id="btnDisponibilizarAcomp_id"
+                                                name="btnDisponibilizarAcomp"
+                                                class="btn btn-primary">Confirmar</button>
+                                    </form>
                                 </div>
                             </div>
-                            <!-- MODAL OBSERVACIONES RECTIFICAR -->
-                            <div class="modal fade"
-                                 id="modalObservacionRectificar"
-                                 tabindex="-1"
-                                 aria-labelledby="modalObservacionRectificarLabel"
-                                 aria-hidden="true"
-                                 data-bs-backdrop="static"
-                                 data-bs-keyboard="false">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="modalObservacionRectificarLabel">Observaciones obligatorias</h5>
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="mb-3">
-                                                <label for="observacionRectificar" class="form-label">Detalle el motivo de la rectificacion</label>
-                                                <textarea class="form-control"
-                                                          id="observacionRectificar"
-                                                          rows="4"
-                                                          maxlength="2000"></textarea>
-                                                <div class="text-danger small mt-2" id="observacionRectificarError"></div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                            <button type="button" class="btn btn-primary" id="btnConfirmarRectificar">Guardar observaciones</button>
-                                        </div>
-                                    </div>
+                        </div>
+                    </div>
+                    <!-- Modal para confirmar rectificar documentacion -->
+                    <div class="modal fade"
+                         id="modalRectificarDocumetacion"
+                         tabindex="-1"
+                         aria-labelledby="modalRectificarDocumetacionLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalRectificarDocumetacionLabel">Confirmar rectificar documentación</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body mb-2">¿Estás seguro que queres rectificar documentación?</div>
+                                <div class="modal-footer">
+                                    <form id="mandarLegalesForm" method="POST" action="">
+                                        {% csrf_token %}
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit"
+                                                id="btnRectificarDocumentacion_id"
+                                                name="btnRectificarDocumentacion"
+                                                class="btn btn-primary">Confirmar</button>
+                                    </form>
                                 </div>
                             </div>
-                            <!-- MODAL DE CONFIRMACIÓN -->
-                            <div class="modal fade"
-                                 id="modalConfirmarEliminar"
-                                 tabindex="-1"
-                                 role="dialog"
-                                 aria-labelledby="modalConfirmarEliminarLabel"
-                                 aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered" role="document">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="modalConfirmarEliminarLabel">Eliminar Archivo</h5>
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">¿Estás seguro de que deseas eliminar este archivo? Esta acción no se puede deshacer.</div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                            <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
-                                        </div>
-                                    </div>
+                        </div>
+                    </div>
+                    <!-- Toast de éxito -->
+                    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+                        <div id="toastEstadoExito"
+                             class="toast align-items-center text-bg-success border-0"
+                             role="alert"
+                             aria-live="assertive"
+                             aria-atomic="true">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    <h6>Estado actualizado con éxito.</h6>
                                 </div>
+                                <button type="button"
+                                        class="btn-close btn-close-white me-2 m-auto"
+                                        data-bs-dismiss="toast"
+                                        aria-label="Cerrar"></button>
                             </div>
-                            <!-- MODAL DE SELECCIÓN DE CONVENIO -->
-                            <div class="modal fade"
-                                 id="nuevoSeleccionModal"
-                                 tabindex="-1"
-                                 aria-labelledby="nuevoSeleccionModalLabel"
-                                 aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <form method="POST" action="">
-                                            {% csrf_token %}
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Seleccione el tipo de convenio</h5>
-                                                <button type="button"
-                                                        class="btn-close"
-                                                        data-bs-dismiss="modal"
-                                                        aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="alert alert-danger h6 text-white" role="alert">
-                                                    Al cambiar el Convenio se perderan todos los archivos cargados. Esta seguro que quiere continuar?
-                                                </div>
-                                                <select name="tipo_convenio"
-                                                        id="nuevoTipoConvenio"
-                                                        class="form-control"
-                                                        required>
-                                                    <option value="">-- Seleccione --</option>
-                                                    {% for c in convenios %}
-                                                        {% if c.id != 4 %}
-                                                            <option value="{{ c.id }}"
-                                                                    {% if c.id == admision.tipo_convenio.id %}selected{% endif %}>
-                                                                {{ c.nombre }}
-                                                            </option>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit" class="btn btn-danger" id="nuevoConfirmarSeleccion">Cambiar y eliminar</button>
-                                            </div>
-                                        </form>
-                                    </div>
+                        </div>
+                        <div id="toastGDEExito"
+                             class="toast align-items-center text-bg-success border-0"
+                             role="alert"
+                             aria-live="assertive"
+                             aria-atomic="true">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    <h6>Número GDE actualizado con éxito.</h6>
                                 </div>
+                                <button type="button"
+                                        class="btn-close btn-close-white me-2 m-auto"
+                                        data-bs-dismiss="toast"
+                                        aria-label="Cerrar"></button>
                             </div>
-                            <!-- Modal para confirmar mandar a legales -->
-                            <div class="modal fade"
-                                 id="confirmarLegalesModal"
-                                 tabindex="-1"
-                                 aria-labelledby="confirmarLegalesModalLabel"
-                                 aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="confirmarLegalesModalLabel">Confirmar mandar a Legales</h5>
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body mb-2">¿Estás seguro que queres mandar a Legales?</div>
-                                        <div class="modal-footer">
-                                            <form id="mandarLegalesForm" method="POST" action="">
-                                                {% csrf_token %}
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit"
-                                                        id="mandarLegalesId"
-                                                        name="mandarLegales"
-                                                        class="btn btn-primary">Confirmar</button>
-                                            </form>
-                                        </div>
+                        </div>
+                    </div>
+                    <!-- MODAL CARATULACION -->
+                    <div class="modal fade"
+                         id="caratularExpediente"
+                         tabindex="-1"
+                         aria-labelledby="caratularExpedienteLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="POST" action="">
+                                    {% csrf_token %}
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Caratular Expediente</h5>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
                                     </div>
-                                </div>
-                            </div>
-                            <!-- Modal para IF Informe Técnico -->
-                            <div class="modal fade"
-                                 id="modalIFInformeTecnico"
-                                 tabindex="-1"
-                                 aria-labelledby="modalIFInformeTecnicoLabel"
-                                 aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <form method="POST" action="">
-                                            {% csrf_token %}
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="modalIFInformeTecnicoLabel">IF Informe Técnico</h5>
-                                                <button type="button"
-                                                        class="btn-close"
-                                                        data-bs-dismiss="modal"
-                                                        aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                {% if form_if_informe_tecnico %}
-                                                    {{ form_if_informe_tecnico.numero_if_tecnico|as_crispy_field }}
+                                    <div class="modal-body">
+                                        <div class="form-group row mb-2">
+                                            <div class="col-sm-10">
+                                                {% if caratular_form and caratular_form.num_expediente %}
+                                                    {{ caratular_form.num_expediente| as_crispy_field }}
                                                 {% else %}
                                                     <input type="text"
-                                                           name="numero_if_tecnico"
+                                                           name="num_expediente"
                                                            class="form-control"
-                                                           placeholder="Número IF Informe Técnico"
+                                                           placeholder="Número de Expediente"
                                                            required />
                                                 {% endif %}
                                             </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit" name="btnIFInformeTecnico" class="btn btn-primary">Guardar</button>
-                                            </div>
-                                        </form>
+                                        </div>
                                     </div>
-                                </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit"
+                                                class="btn btn-primary"
+                                                name="btnCaratulacion"
+                                                id="btnCaratulacion_id">Guardar</button>
+                                    </div>
+                                </form>
                             </div>
-                            <!-- Modal para confirmar disponibilizar acompañamiento -->
-                            <div class="modal fade"
-                                 id="modalDisponibilizarAcomp"
-                                 tabindex="-1"
-                                 aria-labelledby="modalDisponibilizarAcompLabel"
-                                 aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="modalDisponibilizarAcompLabel">Confirmar disponibilizar a acompañamiento</h5>
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body mb-2">¿Esta seguro que quiere hacer esta acción?</div>
-                                        <div class="modal-footer">
-                                            <form id="mandarLegalesForm" method="POST" action="">
-                                                {% csrf_token %}
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit"
-                                                        id="btnDisponibilizarAcomp_id"
-                                                        name="btnDisponibilizarAcomp"
-                                                        class="btn btn-primary">Confirmar</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Modal para confirmar rectificar documentacion -->
-                            <div class="modal fade"
-                                 id="modalRectificarDocumetacion"
-                                 tabindex="-1"
-                                 aria-labelledby="modalRectificarDocumetacionLabel"
-                                 aria-hidden="true">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="modalRectificarDocumetacionLabel">Confirmar rectificar documentación</h5>
-                                            <button type="button"
-                                                    class="btn-close"
-                                                    data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body mb-2">¿Estás seguro que queres rectificar documentación?</div>
-                                        <div class="modal-footer">
-                                            <form id="mandarLegalesForm" method="POST" action="">
-                                                {% csrf_token %}
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit"
-                                                        id="btnRectificarDocumentacion_id"
-                                                        name="btnRectificarDocumentacion"
-                                                        class="btn btn-primary">Confirmar</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Toast de éxito -->
-                            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
-                                <div id="toastEstadoExito"
-                                     class="toast align-items-center text-bg-success border-0"
-                                     role="alert"
-                                     aria-live="assertive"
-                                     aria-atomic="true">
-                                    <div class="d-flex">
-                                        <div class="toast-body">
-                                            <h6>Estado actualizado con éxito.</h6>
-                                        </div>
-                                        <button type="button"
-                                                class="btn-close btn-close-white me-2 m-auto"
-                                                data-bs-dismiss="toast"
-                                                aria-label="Cerrar"></button>
-                                    </div>
-                                </div>
-                                <div id="toastGDEExito"
-                                     class="toast align-items-center text-bg-success border-0"
-                                     role="alert"
-                                     aria-live="assertive"
-                                     aria-atomic="true">
-                                    <div class="d-flex">
-                                        <div class="toast-body">
-                                            <h6>Número GDE actualizado con éxito.</h6>
-                                        </div>
-                                        <button type="button"
-                                                class="btn-close btn-close-white me-2 m-auto"
-                                                data-bs-dismiss="toast"
-                                                aria-label="Cerrar"></button>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- MODAL CARATULACION -->
-                            <div class="modal fade"
-                                 id="caratularExpediente"
-                                 tabindex="-1"
-                                 aria-labelledby="caratularExpedienteLabel"
-                                 aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <form method="POST" action="">
-                                            {% csrf_token %}
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Caratular Expediente</h5>
-                                                <button type="button"
-                                                        class="btn-close"
-                                                        data-bs-dismiss="modal"
-                                                        aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="form-group row mb-2">
-                                                    <div class="col-sm-10">
-                                                        {% if caratular_form and caratular_form.num_expediente %}
-                                                            {{ caratular_form.num_expediente| as_crispy_field }}
-                                                        {% else %}
-                                                            <input type="text"
-                                                                   name="num_expediente"
-                                                                   class="form-control"
-                                                                   placeholder="Número de Expediente"
-                                                                   required />
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit"
-                                                        class="btn btn-primary"
-                                                        name="btnCaratulacion"
-                                                        id="btnCaratulacion_id">Guardar</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endblock %}
-                        {% block customJS %}
-                            <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
-                            {% if not admision.tipo_convenio and not admision.enviada_a_archivo %}
-                                <script>
+                        </div>
+                    </div>
+                {% endblock %}
+                {% block customJS %}
+                    <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
+                    {% if not admision.tipo_convenio and not admision.enviada_a_archivo %}
+                        <script>
                                         document.addEventListener('DOMContentLoaded', function() {
                                             var modal = new bootstrap.Modal(document.getElementById('seleccionModal'));
                                             modal.show();
@@ -690,18 +690,18 @@
                                                 document.getElementById('confirmarSeleccion').disabled = !this.value;
                                             });
                                         });
-                                </script>
-                            {% endif %}
+                        </script>
+                    {% endif %}
 
-                            <script src="{% static 'custom/js/admisionestecnico.js' %}"></script>
-                            <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
-                            <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
-                            <script>window.URL_ACTUALIZAR_ESTADO = "{% url 'actualizar_estado_archivo' %}";</script>
-                            <script>window.URL_ACTUALIZAR_NUMERO_GDE = "{% url 'actualizar_numero_gde_archivo' %}";</script>
-                            <script>window.ADMISION_ID = {{ admision.id }};</script>
-                            <script>window.URL_CREAR_DOCUMENTO_PERSONALIZADO = "{% url 'documento_personalizado_crear' admision.id %}";</script>
-                            <!-- Estilos para la UI de número GDE -->
-                            <style>
+                    <script src="{% static 'custom/js/admisionestecnico.js' %}"></script>
+                    <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
+                    <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
+                    <script>window.URL_ACTUALIZAR_ESTADO = "{% url 'actualizar_estado_archivo' %}";</script>
+                    <script>window.URL_ACTUALIZAR_NUMERO_GDE = "{% url 'actualizar_numero_gde_archivo' %}";</script>
+                    <script>window.ADMISION_ID = {{ admision.id }};</script>
+                    <script>window.URL_CREAR_DOCUMENTO_PERSONALIZADO = "{% url 'documento_personalizado_crear' admision.id %}";</script>
+                    <!-- Estilos para la UI de número GDE -->
+                    <style>
                                     .gde-display {
                                         cursor: pointer;
                                         padding: 4px 8px;
@@ -722,5 +722,5 @@
                                         align-items: center;
                                         justify-content: center;
                                     }
-                            </style>
-                        {% endblock %}
+                    </style>
+                {% endblock %}
