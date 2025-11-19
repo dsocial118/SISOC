@@ -7,6 +7,30 @@ import django.db.models.deletion
 import django.utils.timezone
 
 
+def copy_nacionalidad_to_text(apps, schema_editor):
+    Ciudadano = apps.get_model("ciudadanos", "Ciudadano")
+    Nacionalidad = apps.get_model("ciudadanos", "Nacionalidad")
+
+    nacionalidades = {
+        nacionalidad.pk: nacionalidad.nombre
+        for nacionalidad in Nacionalidad.objects.only("pk", "nombre")
+    }
+
+    ciudadanos = Ciudadano.objects.exclude(nacionalidad="").only("pk", "nacionalidad")
+    for ciudadano in ciudadanos.iterator(chunk_size=500):
+        try:
+            nacionalidad_id = int(ciudadano.nacionalidad)
+        except (TypeError, ValueError):
+            nacionalidad_id = None
+
+        nacionalidad_nombre = nacionalidades.get(nacionalidad_id) or ciudadano.nacionalidad or ""
+
+        if nacionalidad_nombre != ciudadano.nacionalidad:
+            Ciudadano.objects.filter(pk=ciudadano.pk).update(
+                nacionalidad=nacionalidad_nombre
+            )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -523,6 +547,9 @@ class Migration(migrations.Migration):
             model_name="ciudadano",
             name="nacionalidad",
             field=models.CharField(blank=True, max_length=100),
+        ),
+        migrations.RunPython(
+            copy_nacionalidad_to_text, reverse_code=migrations.RunPython.noop
         ),
         migrations.AlterField(
             model_name="ciudadano",
