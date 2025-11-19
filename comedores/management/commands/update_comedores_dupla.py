@@ -31,6 +31,9 @@ class Command(BaseCommand):
             dest="dry_run",
             help="Muestra los cambios sin persistirlos en la base de datos.",
         )
+        parser.add_argument(
+            "--admision", action="store_true", help="Crear admisión si no existe."
+        )
 
     def handle(self, *args, **options):
         csv_path = Path(options["csv_path"]).expanduser()
@@ -118,19 +121,22 @@ class Command(BaseCommand):
                 comedor.estado = "Asignado a Dupla Técnica"
                 comedor.save(update_fields=["dupla"])
 
-                if (
-                    Admision.objects.filter(
-                        comedor=comedor, tipo="incorporacion", enviada_a_archivo=False
-                    ).exists()
-                    == False
-                ):
-                    Admision.objects.create(
-                        comedor=comedor,
-                        tipo="incorporacion",
-                    )
+                if options["admision"]:
+                    if (
+                        Admision.objects.filter(
+                            comedor=comedor,
+                            tipo="incorporacion",
+                            enviada_a_archivo=False,
+                        ).exists()
+                        == False
+                    ):
+                        Admision.objects.create(
+                            comedor=comedor,
+                            tipo="incorporacion",
+                        )
 
-                if Hitos.objects.filter(comedor=comedor).exists() == False:
-                    Hitos.objects.create(comedor=comedor)
+                    if Hitos.objects.filter(comedor=comedor).exists() == False:
+                        Hitos.objects.create(comedor=comedor)
 
             stats["applied"] += 1
             self.stdout.write(self.style.SUCCESS(f"[APLICADO] {change_message}"))

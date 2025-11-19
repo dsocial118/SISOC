@@ -4,6 +4,7 @@ from django.urls import path
 from dashboard.views import (
     DashboardView,
     DataCalleChacoDashboardView,
+    DataCalleMisionesDashboardView,
     DataCalleGeneralDashboardView,
 )
 
@@ -17,6 +18,11 @@ urlpatterns = [
         "dashboard/datacalle-general-chaco/",
         login_required(DataCalleChacoDashboardView.as_view()),
         name="dashboard_datacalle_chaco",
+    ),
+    path(
+        "dashboard/datacalle-general-misiones/",
+        login_required(DataCalleMisionesDashboardView.as_view()),
+        name="dashboard_datacalle_misiones",
     ),
     path(
         "dashboard/datacalle-general/",

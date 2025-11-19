@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
+from django.core.paginator import Paginator
 from django.conf import settings
 from django.db.models.base import Model
 from django.forms import BaseModelForm, ValidationError
@@ -26,6 +27,7 @@ from django.views.generic import (
 )
 
 from admisiones.models.admisiones import Admision, EstadoAdmision
+from comedores.models import HistorialValidacion
 from comedores.forms.comedor_form import (
     ComedorForm,
     ReferenteForm,
@@ -473,6 +475,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             {"title": "Convenio"},
             {"title": "Tipo"},
             {"title": "Estado"},
+            {"title": "Proceso"},
+            {"title": "Activa"},
         ]
 
         admisiones_items = []
@@ -513,8 +517,27 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                             {
                                 "content": (
                                     a.estado.nombre
-                                    if hasattr(a, "estado") and a.estado
+                                    if hasattr(a, "estado") and a.estado.nombre
                                     else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    a.get_estado_admision_display()
+                                    if hasattr(a, "get_estado_admision_display")
+                                    and a.get_estado_admision_display()
+                                    else "-"
+                                )
+                            },
+                            {
+                                "content": (
+                                    format_html(
+                                        '<i class="bi bi-check-circle-fill text-success"></i>'
+                                    )
+                                    if getattr(a, "activa", True)
+                                    else format_html(
+                                        '<i class="bi bi-x-circle-fill text-danger"></i>'
+                                    )
                                 )
                             },
                         ],
@@ -552,17 +575,21 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             )
         )
 
-        historial_validaciones = list(
-            self.object.historial_validaciones.select_related("usuario").order_by(
-                "-fecha_validacion"
-            )[:10]
-        )
+        # Paginación para historial de validaciones
+        validaciones_queryset = self.object.historial_validaciones.select_related(
+            "usuario"
+        ).order_by("-fecha_validacion")
+        paginator = Paginator(validaciones_queryset, 10)  # 10 items por página
+        page_number = self.request.GET.get("page", 1)
+        page_obj = paginator.get_page(page_number)
+        historial_validaciones = list(page_obj)
 
         # Preparar datos para data_table component
         validaciones_headers = [
             {"title": "Fecha"},
             {"title": "Usuario"},
             {"title": "Estado"},
+            {"title": "Opciones"},
             {"title": "Comentario"},
         ]
 
@@ -588,17 +615,30 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 else "Sin información"
             )
 
+            # Mostrar opciones solo si es "No Validado"
+            opciones_display = (
+                validacion.get_opciones_display()
+                if validacion.estado_validacion == "No Validado"
+                else "-"
+            )
+
+            fecha_validacion = validacion.fecha_validacion
+            if fecha_validacion:
+                if timezone.is_naive(fecha_validacion):
+                    fecha_validacion = timezone.make_aware(fecha_validacion)
+                fecha_validacion = timezone.localtime(fecha_validacion)
+                fecha_display = fecha_validacion.strftime("%d/%m/%Y %H:%M")
+            else:
+                fecha_display = "-"
+
             validaciones_items.append(
                 {
                     "cells": [
-                        {
-                            "content": validacion.fecha_validacion.strftime(
-                                "%d/%m/%Y %H:%M"
-                            )
-                        },
+                        {"content": fecha_display},
                         {"content": usuario_nombre},
                         {"content": estado_badge},
-                        {"content": escape(validacion.comentario)},
+                        {"content": opciones_display},
+                        {"content": escape(validacion.comentario or "-")},
                     ]
                 }
             )
@@ -617,6 +657,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "historial_validaciones": historial_validaciones,
             "validaciones_headers": validaciones_headers,
             "validaciones_items": validaciones_items,
+            "page_obj": page_obj,
+            "is_paginated": page_obj.has_other_pages(),
         }
 
     def _get_environment_config(self):
@@ -631,6 +673,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         presupuestos_data = self.get_presupuestos_data()
         relaciones_data = self.get_relaciones_optimizadas()
         env_config = self._get_environment_config()
+
+        # Agregar opciones de validación
+
+        context["opciones_no_validar"] = HistorialValidacion.get_opciones_no_validar()
+
         context.update({**presupuestos_data, **relaciones_data, **env_config})
         return context
 
@@ -821,9 +868,14 @@ class ObservacionDeleteView(LoginRequiredMixin, DeleteView):
 def validar_comedor(request, pk):
     accion = request.POST.get("accion")
     comentario = request.POST.get("comentario", "")
+    opciones = request.POST.getlist("opciones") if accion == "no_validar" else None
 
     success, mensaje = ValidacionService.validar_comedor(
-        comedor_id=pk, user=request.user, accion=accion, comentario=comentario
+        comedor_id=pk,
+        user=request.user,
+        accion=accion,
+        opciones=opciones,
+        comentario=comentario,
     )
 
     if success:

@@ -1074,16 +1074,7 @@
     </div>
 {% endif %}
 
-<div class="p-3 rounded shadow mb-4"
-     style="background-color: #1c2a3a;
-            color: #e0e0e0">
-    {% if hay_subsanar and is_prov and expediente.estado.nombre == 'ASIGNADO' %}
-        <div class="text-end mt-3">
-            <button id="btn-confirm-subs" class="btn btn-warning">Confirmar subsanación</button>
-        </div>
-    {% endif %}
 
-</div>
 <!-- Asignar TÃ©cnico: solo Coordinador (segÃºn tu condiciÃ³n actual por id) -->
 {% if expediente.estado.id == 2 and is_coord %}
     <div class="card mb-4">
