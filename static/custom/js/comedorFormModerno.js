@@ -55,9 +55,18 @@ function initializeEstadoTree() {
         const desiredValue = preservedValue ?? select.value;
         const $select = $(select);
 
-        // Destruir Select2 temporalmente
+        console.log(`[renderOptions] Iniciando para ${select.id}, opciones: ${options.length}`);
+
+        // IMPORTANTE: Destruir Select2 COMPLETAMENTE antes de manipular el DOM
         if (typeof $.fn.select2 !== 'undefined' && $select.data('select2')) {
-            $select.select2('destroy');
+            console.log(`[renderOptions] Destruyendo Select2 existente en ${select.id}`);
+            try {
+                $select.select2('destroy');
+                // Remover cualquier elemento select2 huérfano
+                $('.select2-container').has(`[aria-controls="${select.id}"]`).remove();
+            } catch (error) {
+                console.warn('Error al destruir Select2:', error);
+            }
         }
 
         // Modificar opciones del select nativo
@@ -95,13 +104,16 @@ function initializeEstadoTree() {
         // Solo inicializar Select2 si hay opciones disponibles
         if (options.length > 0 && typeof initializeSelect2 === 'function') {
             const selectId = select.id;
-            console.log(`Reinicializando Select2 para ${selectId} con ${options.length} opciones`);
-            initializeSelect2(selectId, {
-                placeholder: placeholderText,
-                allowClear: selectId === 'id_motivo'
-            });
+            console.log(`[renderOptions] Reinicializando Select2 para ${selectId} con ${options.length} opciones`);
+            // Pequeño delay para asegurar que el DOM esté limpio
+            setTimeout(() => {
+                initializeSelect2(selectId, {
+                    placeholder: placeholderText,
+                    allowClear: selectId === 'id_motivo'
+                });
+            }, 50);
         } else if (options.length === 0) {
-            console.log(`No se reinicializa Select2 para ${select.id}: no hay opciones`);
+            console.log(`[renderOptions] No se reinicializa Select2 para ${select.id}: no hay opciones`);
         }
     }
 
