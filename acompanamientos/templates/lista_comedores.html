@@ -1,29 +1,9 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Comedores en Acompañamiento{% endblock %}
-{% block titulo-pagina %}Comedores en Acompañamiento{% endblock %}
 {% block content %}
-    {% url 'comedores_acompanamiento_ajax' as ajax_url %}
-    <!-- Variables para evitar problemas de formateo -->
-    {% with titulo_search='Buscar Comedor' %}
-        {% with placeholder_text='Buscar por nombre, ubicación, referente, etc.' %}
-            {% with help_text='Buscar por nombre, ubicación, referente, etc.' %}
-                {% with reset_url_name='lista_comedores_acompanamiento' %}
-                    {% with tbody_id='comedores-table-body' %}
-                        {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name query=query show_add_button=False ajax_search_mode=True ajax_url=ajax_url target_tbody_id=tbody_id %}
-                    {% endwith %}
-                {% endwith %}
-            {% endwith %}
-        {% endwith %}
-    {% endwith %}
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Listado de Comedores</h3>
-        </div>
-    </div>
-    {% with headers=table_headers items=comedores %}
-        {% include 'components/data_table.html' with headers=headers items=items custom_cells=custom_cells custom_actions=custom_actions show_actions=True empty_message="No se encontraron comedores." include_pagination=True tbody_id="comedores-table-body" %}
-    {% endwith %}
+    {% include 'components/search_bar.html' with titulo='Comedores en Acompañamiento' placeholder='Buscar por nombre, ubicación, referente, etc.' help_text='Buscar por nombre, ubicación, referente, etc.' reset_url='lista_comedores_acompanamiento' query=query show_add_button=False %}
+    {% include 'components/data_table.html' with headers=table_headers items=comedores custom_cells=custom_cells custom_actions=custom_actions show_actions=True empty_message="No se encontraron comedores." include_pagination=True %}
 {% endblock %}
 {% block customJS %}
     <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>

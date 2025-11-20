@@ -161,6 +161,16 @@
                     </script>
                 {% endfor %}
             {% endif %}
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    document.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+                        checkbox.classList.add("toggle-switch");
+                        if (!checkbox.hasAttribute("role")) {
+                            checkbox.setAttribute("role", "switch");
+                        }
+                    });
+                });
+            </script>
             {% block customJS %}
             {% endblock %}
         </div>

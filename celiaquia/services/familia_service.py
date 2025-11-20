@@ -3,27 +3,13 @@ from typing import Dict, Iterable, List, Set
 
 from django.db import transaction
 
-from ciudadanos.models import GrupoFamiliar, VinculoFamiliar
+from ciudadanos.models import GrupoFamiliar
 
 logger = logging.getLogger("django")
 
 
 class FamiliaService:
     """Servicios auxiliares para gestionar relaciones familiares."""
-
-    @staticmethod
-    def _obtener_vinculo_hijo() -> VinculoFamiliar:
-        vinculo = (
-            VinculoFamiliar.objects.filter(vinculo__icontains="hijo")
-            .order_by("id")
-            .first()
-        )
-        if vinculo is None:
-            vinculo = VinculoFamiliar.objects.create(
-                vinculo="Hijo/a",
-                inverso="Padre/Madre",
-            )
-        return vinculo
 
     @staticmethod
     def crear_relacion_responsable_hijo(
@@ -36,13 +22,11 @@ class FamiliaService:
 
         try:
             with transaction.atomic():
-                vinculo_hijo = FamiliaService._obtener_vinculo_hijo()
                 relacion, creada = GrupoFamiliar.objects.get_or_create(
                     ciudadano_1_id=responsable_id,
                     ciudadano_2_id=hijo_id,
                     defaults={
-                        "vinculo": vinculo_hijo,
-                        "vinculo_inverso": vinculo_hijo.inverso,
+                        "vinculo": GrupoFamiliar.RELACION_HIJO,
                         "conviven": True,
                         "cuidador_principal": True,
                     },
@@ -50,12 +34,9 @@ class FamiliaService:
 
                 if not creada:
                     campos_actualizar: List[str] = []
-                    if relacion.vinculo_id != vinculo_hijo.id:
-                        relacion.vinculo = vinculo_hijo
+                    if relacion.vinculo != GrupoFamiliar.RELACION_HIJO:
+                        relacion.vinculo = GrupoFamiliar.RELACION_HIJO
                         campos_actualizar.append("vinculo")
-                    if relacion.vinculo_inverso != vinculo_hijo.inverso:
-                        relacion.vinculo_inverso = vinculo_hijo.inverso
-                        campos_actualizar.append("vinculo_inverso")
                     if relacion.conviven is not True:
                         relacion.conviven = True
                         campos_actualizar.append("conviven")

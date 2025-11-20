@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
-from ciudadanos.models import Sexo, TipoDocumento
-from core.models import Dia
+from ciudadanos.models import Ciudadano
+from core.models import Dia, Sexo
 from centrodefamilia.models import (
     Centro,
     ActividadCentro,
@@ -207,8 +207,8 @@ class ParticipanteActividadForm(forms.ModelForm):
     fecha_nacimiento = forms.DateField(
         label="Fecha de Nacimiento", widget=forms.DateInput(attrs={"type": "date"})
     )
-    tipo_documento = forms.ModelChoiceField(
-        queryset=TipoDocumento.objects.all(), label="Tipo de Documento"
+    tipo_documento = forms.ChoiceField(
+        choices=Ciudadano.DOCUMENTO_CHOICES, label="Tipo de Documento"
     )
     dni = forms.IntegerField(label="Documento")
     genero = forms.ModelChoiceField(queryset=Sexo.objects.all(), label="Sexo")

@@ -137,7 +137,7 @@
                                 <label for="estado" class="form-label">Estado</label>
                                 <select name="estado" id="estado" class="form-control">
                                     <option value="">Seleccione un estado</option>
-                                    {% for estado in estados %}<option value="{{ estado.id }}">{{ estado.nombre }}</option>{% endfor %}
+                                    {% for value,label in estados %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-12 mt-3">
