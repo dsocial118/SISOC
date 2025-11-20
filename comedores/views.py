@@ -513,8 +513,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                             },
                             {
                                 "content": (
-                                    getattr(getattr(a, "estado", None), "nombre", None)
-                                    or "-"
+                                    a.estado.nombre
+                                    if a.estado and hasattr(a.estado, "nombre")
+                                    else "-"
                                 )
                             },
                             {
