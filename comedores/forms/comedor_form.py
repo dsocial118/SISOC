@@ -1,8 +1,6 @@
 import re
 from django import forms
 from django.core.exceptions import ValidationError
-
-
 from ciudadanos.models import Ciudadano
 from ciudadanos.forms import CiudadanoForm
 from comedores.models import (
@@ -22,13 +20,11 @@ from organizaciones.models import Organizacion
 
 
 class ReferenteForm(forms.ModelForm):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         comedor_id = kwargs.pop("comedor_pk", None)
         if comedor_id:
             comedor = Comedor.objects.get(pk=comedor_id)
-
             self.fields["referente_nombre"].initial = comedor.referente.nombre
             self.fields["referente_apellido"].initial = comedor.referente.apellido
             self.fields["referente_mail"].initial = comedor.referente.mail
@@ -40,7 +36,6 @@ class ReferenteForm(forms.ModelForm):
         mail = self.cleaned_data.get("mail")
         if not mail:
             return mail
-
         email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if not isinstance(mail, str):
             raise ValidationError("El correo electrónico debe ser una cadena válida.")
@@ -97,7 +92,6 @@ class CiudadanoFormParaNomina(forms.ModelForm):
 
 
 class ComedorForm(forms.ModelForm):
-
     estado_general = forms.ModelChoiceField(
         label="Estado general",
         queryset=EstadoActividad.objects.none(),
@@ -127,7 +121,6 @@ class ComedorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.current_user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
-
         self.previous_estado_chain = self._resolve_instance_estados()
         self.estado_tree = self._build_estado_tree()
         self._configure_estado_fields()
@@ -146,24 +139,25 @@ class ComedorForm(forms.ModelForm):
         provincia = Provincia.objects.filter(
             pk=pk_formatter(self.data.get("provincia"))
         ).first() or getattr(self.instance, "provincia", None)
-
         municipio = Municipio.objects.filter(
             pk=pk_formatter(self.data.get("municipio"))
         ).first() or getattr(self.instance, "municipio", None)
-
         localidad = Localidad.objects.filter(
             pk=pk_formatter(self.data.get("localidad"))
         ).first() or getattr(self.instance, "localidad", None)
 
         if provincia:
             self.fields["provincia"].initial = Provincia.objects.get(id=provincia.id)
+            self.fields["provincia"].queryset = Provincia.objects.all()
             self.fields["provincia"].queryset = Provincia.objects.all().order_by(
                 "nombre"
             )
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia
             ).order_by("nombre")
+
         else:
+            self.fields["provincia"].queryset = Provincia.objects.all()
             self.fields["provincia"].queryset = Provincia.objects.all().order_by(
                 "nombre"
             )
@@ -181,7 +175,6 @@ class ComedorForm(forms.ModelForm):
 
     def _configure_estado_fields(self):
         actividad_prev, proceso_prev, detalle_prev = self.previous_estado_chain
-
         if not self.is_bound:
             if actividad_prev:
                 self.fields["estado_general"].initial = actividad_prev.pk
@@ -189,11 +182,9 @@ class ComedorForm(forms.ModelForm):
                 self.fields["subestado"].initial = proceso_prev.pk
             if detalle_prev:
                 self.fields["motivo"].initial = detalle_prev.pk
-
         self.fields["estado_general"].queryset = EstadoActividad.objects.order_by(
             "estado"
         )
-
         selected_actividad = self._get_selected_actividad()
         if selected_actividad:
             self.fields["subestado"].queryset = EstadoProceso.objects.filter(
@@ -201,7 +192,6 @@ class ComedorForm(forms.ModelForm):
             ).order_by("estado")
         else:
             self.fields["subestado"].queryset = EstadoProceso.objects.none()
-
         selected_proceso = self._get_selected_proceso(selected_actividad)
         if selected_proceso:
             self.fields["motivo"].queryset = EstadoDetalle.objects.filter(
@@ -256,7 +246,6 @@ class ComedorForm(forms.ModelForm):
     def _resolve_instance_estados(self):
         actividad = proceso = detalle = None
         historial = getattr(self.instance, "ultimo_estado", None)
-
         if historial and getattr(historial, "estado_general_id", None):
             estado_general = historial.estado_general
             if estado_general:
@@ -264,7 +253,6 @@ class ComedorForm(forms.ModelForm):
                 proceso = estado_general.estado_proceso
                 detalle = estado_general.estado_detalle
                 return actividad, proceso, detalle
-
         return actividad, proceso, detalle
 
     def _build_estado_tree(self):
@@ -301,32 +289,26 @@ class ComedorForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-
         estado_actividad = cleaned_data.get("estado_general")
         estado_proceso = cleaned_data.get("subestado")
         estado_detalle = cleaned_data.get("motivo")
-
         if not estado_actividad:
             self.add_error("estado_general", "Seleccione un estado general.")
             return cleaned_data
-
         if not estado_proceso:
             self.add_error("subestado", "Seleccione un subestado.")
             return cleaned_data
-
         if estado_proceso.estado_actividad_id != estado_actividad.id:
             self.add_error(
                 "subestado",
                 "El subestado seleccionado no pertenece al estado general elegido.",
             )
-
         if estado_detalle:
             if estado_detalle.estado_proceso_id != estado_proceso.id:
                 self.add_error(
                     "motivo",
                     "El motivo seleccionado no pertenece al subestado elegido.",
                 )
-
         return cleaned_data
 
     def save(self, commit=True):
@@ -334,20 +316,17 @@ class ComedorForm(forms.ModelForm):
         estado_actividad = self.cleaned_data.get("estado_general")
         estado_proceso = self.cleaned_data.get("subestado")
         estado_detalle = self.cleaned_data.get("motivo")
-
         if commit:
             comedor.save()
             self.save_m2m()
             self._sync_estado_historial(
                 comedor, estado_actividad, estado_proceso, estado_detalle
             )
-
         return comedor
 
     def _sync_estado_historial(self, comedor, actividad, proceso, detalle):
         if not actividad or not proceso:
             return
-
         previous = tuple(obj.id if obj else None for obj in self.previous_estado_chain)
         current = (
             actividad.id if actividad else None,
@@ -356,7 +335,6 @@ class ComedorForm(forms.ModelForm):
         )
         if previous == current:
             return
-
         registrar_cambio_estado(
             comedor=comedor,
             actividad=actividad,
@@ -368,7 +346,6 @@ class ComedorForm(forms.ModelForm):
     class Meta:
         model = Comedor
         fields = "__all__"
-
         labels = {
             "tipocomedor": "Tipo comedor",
         }
