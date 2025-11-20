@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.db import transaction
 
 from celiaquia.models import Expediente, ExpedienteCiudadano
-from ciudadanos.models import Ciudadano, Sexo, Nacionalidad
+from core.models import Sexo
 
 logger = logging.getLogger("django")
 
@@ -76,9 +76,7 @@ class EditarLegajoView(View):
                     else ""
                 ),
                 "sexo": ciudadano.sexo_id if ciudadano.sexo else "",
-                "nacionalidad": (
-                    ciudadano.nacionalidad_id if ciudadano.nacionalidad else ""
-                ),
+                "nacionalidad": ciudadano.nacionalidad or "",
                 "telefono": ciudadano.telefono or "",
                 "email": ciudadano.email or "",
                 "calle": ciudadano.calle or "",
@@ -160,17 +158,9 @@ class EditarLegajoView(View):
                 else:
                     ciudadano.sexo = None
 
-                # Nacionalidad
-                nacionalidad_id = request.POST.get("nacionalidad", "").strip()
-                if nacionalidad_id:
-                    try:
-                        ciudadano.nacionalidad = Nacionalidad.objects.get(
-                            pk=nacionalidad_id
-                        )
-                    except Nacionalidad.DoesNotExist:
-                        ciudadano.nacionalidad = None
-                else:
-                    ciudadano.nacionalidad = None
+                # Nacionalidad (texto libre)
+                nacionalidad_txt = request.POST.get("nacionalidad", "").strip()
+                ciudadano.nacionalidad = nacionalidad_txt or ""
 
                 # Campos opcionales
                 ciudadano.telefono = request.POST.get("telefono", "").strip() or None

@@ -7,7 +7,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 
 from celiaquia.models import ExpedienteCiudadano
-from ciudadanos.services.consulta_renaper import consultar_datos_renaper
+from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 
 logger = logging.getLogger(__name__)
 

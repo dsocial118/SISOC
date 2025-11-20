@@ -106,27 +106,9 @@ def debug_ciudadano_detail_queries():  # pylint: disable=too-many-locals,too-man
 
         # Mostrar estadísticas del contexto
         logger.info("\n📈 Estadísticas del contexto:")
-        logger.info(f"  🚨 Alertas cargadas: {context.get('count_alertas', 0)}")
         logger.info(
-            f"  👨‍👩‍👧‍👦 Familiares cargados: {context.get('count_familia', 0)}"
+            f"  👨‍👩‍👧‍👦 Familiares cargados: {len(context.get('familia', []))}"
         )
-        logger.info(f"  📋 Programas: {context.get('count_programas', 0)}")
-        logger.info(f"  🏠 Hogar familiares: {context.get('hogar_count_familia', 0)}")
-        logger.info(f"  🖼️ Imágenes: {len(context.get('files_img', []))}")
-        logger.info(f"  📄 Documentos: {len(context.get('files_docs', []))}")
-
-        # Verificar que las dimensiones se cargaron
-        dimensiones_cargadas = [
-            name
-            for name in [
-                "dimensionfamilia",
-                "dimensionvivienda",
-                "dimensionsalud",
-                "dimensiontrabajo",
-            ]
-            if context.get(name) is not None
-        ]
-        logger.info(f"  📋 Dimensiones cargadas: {len(dimensiones_cargadas)}/4")
 
         # Evaluar el rendimiento
         if total_queries <= 15:
@@ -514,58 +496,6 @@ def debug_all_views():  # pylint: disable=too-many-locals,too-many-statements,to
         results["RendicionCuentaMensualDetailView"] = queries
     except Exception as e:
         logger.error(f"❌ No se pudo depurar RendicionCuentaMensualDetailView: {e}")
-
-    # Debug DerivacionListView (ciudadanos adicional)
-    logger.info("\n" + "=" * 50)
-    try:
-        from ciudadanos.views import DerivacionListView
-        from ciudadanos.models import Derivacion
-
-        success, queries = debug_view_queries(
-            DerivacionListView,
-            "/ciudadanos/derivaciones/",
-            Derivacion,
-            "DerivacionListView (ciudadanos/derivaciones/list)",
-            pk=False,
-        )
-        results["DerivacionListView"] = queries
-    except Exception as e:
-        logger.error(f"❌ No se pudo depurar DerivacionListView: {e}")
-
-    # Debug DerivacionDetailView (ciudadanos adicional)
-    logger.info("\n" + "=" * 50)
-    try:
-        from ciudadanos.views import DerivacionDetailView
-        from ciudadanos.models import Derivacion
-
-        success, queries = debug_view_queries(
-            DerivacionDetailView,
-            "/ciudadanos/derivaciones/ver/{pk}/",
-            Derivacion,
-            "DerivacionDetailView (ciudadanos/derivaciones/detail)",
-            pk=True,
-            pk_kwarg="pk",
-        )
-        results["DerivacionDetailView"] = queries
-    except Exception as e:
-        logger.error(f"❌ No se pudo depurar DerivacionDetailView: {e}")
-
-    # Debug AlertaListView (ciudadanos adicional)
-    logger.info("\n" + "=" * 50)
-    try:
-        from ciudadanos.views import AlertaListView
-        from ciudadanos.models import Alerta
-
-        success, queries = debug_view_queries(
-            AlertaListView,
-            "/ciudadanos/alertas/",
-            Alerta,
-            "AlertaListView (ciudadanos/alertas/list)",
-            pk=False,
-        )
-        results["AlertaListView"] = queries
-    except Exception as e:
-        logger.error(f"❌ No se pudo depurar AlertaListView: {e}")
 
     # Resumen final
     logger.info("\n📊 Resumen de queries por vista:")

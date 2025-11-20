@@ -1,0 +1,318 @@
+/* Estilos compartidos para manejo de imágenes y fotos */
+.imagenes-existentes-section {
+    margin-bottom: 30px;
+}
+
+.imagenes-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.imagen-existente {
+    background: #2c3e50;
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    flex: 0 0 calc(50% - 7.5px);
+    min-width: 300px;
+}
+
+.imagen-header {
+    color: #ecf0f1;
+    font-size: 16px;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.imagen-card-content,
+.foto-existente-container,
+.nueva-foto-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.imagen-thumbnail-container,
+.foto-thumbnail-container {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    border: 2px solid #34495e;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #34495e;
+    flex-shrink: 0;
+}
+
+.imagen-thumbnail,
+.foto-thumbnail-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.imagen-info-content,
+.foto-info,
+.foto-preview-info {
+    flex: 1;
+    color: #ecf0f1;
+    min-width: 0;
+}
+
+.imagen-filename-display,
+.foto-nombre,
+.preview-nombre {
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: #bdc3c7;
+    word-break: break-word;
+}
+
+.imagen-status,
+.foto-status,
+.preview-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #2ecc71;
+}
+
+.imagen-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-eliminar-custom,
+.btn-eliminar-preview {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-eliminar-custom:hover,
+.btn-eliminar-preview:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+.btn-eliminar-custom:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.3);
+}
+
+.checkbox-eliminar-custom {
+    width: 16px;
+    height: 16px;
+    margin-right: 5px;
+}
+
+.seccion-nuevas,
+.nueva-foto-section {
+    margin-top: 30px;
+}
+
+.nuevas-header {
+    color: #7f8c8d;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.btn-seleccionar,
+#selectFotoBtn,
+#foto-picker-btn,
+#addImagesBtn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s ease;
+}
+
+.btn-seleccionar:hover,
+#selectFotoBtn:hover,
+#addImagesBtn:hover,
+#foto-picker-btn:hover {
+    background: #2980b9;
+}
+
+.contador-imagenes,
+#selectedImagesInfo,
+#fotoSelectedInfo,
+#foto-selected-info {
+    color: #7f8c8d;
+    font-size: 13px;
+    margin-top: 15px;
+}
+
+.nuevas-imagenes-container,
+.nueva-foto-preview,
+.preview-nueva-imagen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.preview-nueva-imagen,
+.nueva-foto-preview {
+    background: #2c3e50;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.preview-imagen,
+.foto-preview-img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #28a745;
+}
+
+.foto-preview-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.btn-remover-preview {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.preview-placeholder {
+    width: 60px;
+    height: 60px;
+    background: #e9ecef;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.overlay-eliminar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(231, 76, 60, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    z-index: 10;
+}
+
+.overlay-text {
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}
+
+.foto-legajo-existente {
+    background: #2c3e50;
+    border: 1px solid #34495e;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.foto-status,
+.preview-error {
+    color: #ecf0f1;
+}
+
+.preview-error {
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+}
+
+.modal-foto-legajo .modal-content {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-foto-legajo .modal-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-foto-legajo .btn-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    opacity: 0.8;
+}
+
+.modal-foto-legajo .btn-close:hover {
+    opacity: 1;
+}
+
+.foto-legajo-modal-container {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+.foto-legajo-principal img {
+    max-width: 100%;
+    max-height: 70vh;
+    object-fit: contain;
+}
+
+@media (max-width: 768px) {
+    .imagen-existente,
+    .preview-nueva-imagen {
+        flex: 0 0 100%;
+    }
+
+    .foto-existente-container,
+    .nueva-foto-container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .foto-thumbnail-container,
+    .foto-preview-img {
+        width: 100px;
+*** End of File
