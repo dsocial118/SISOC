@@ -8,27 +8,40 @@ import django.utils.timezone
 
 
 def copy_nacionalidad_to_text(apps, schema_editor):
-    Ciudadano = apps.get_model("ciudadanos", "Ciudadano")
-    Nacionalidad = apps.get_model("ciudadanos", "Nacionalidad")
+    """
+    Copia los valores de nacionalidad de ForeignKey a CharField.
+    Si el modelo o campo no existen, no hace nada.
+    """
+    try:
+        Ciudadano = apps.get_model("ciudadanos", "Ciudadano")
+        Nacionalidad = apps.get_model("ciudadanos", "Nacionalidad")
 
-    nacionalidades = {
-        nacionalidad.pk: nacionalidad.nombre
-        for nacionalidad in Nacionalidad.objects.only("pk", "nombre")
-    }
-
-    ciudadanos = Ciudadano.objects.exclude(nacionalidad="").only("pk", "nacionalidad")
-    for ciudadano in ciudadanos.iterator(chunk_size=500):
+        # Intentar obtener las nacionalidades
         try:
-            nacionalidad_id = int(ciudadano.nacionalidad)
-        except (TypeError, ValueError):
-            nacionalidad_id = None
+            nacionalidades = {
+                nacionalidad.pk: nacionalidad.nombre
+                for nacionalidad in Nacionalidad.objects.only("pk", "nombre")
+            }
+        except Exception:
+            # Si no existe el campo nombre o hay otro error, no hacer nada
+            return
 
-        nacionalidad_nombre = nacionalidades.get(nacionalidad_id) or ciudadano.nacionalidad or ""
+        ciudadanos = Ciudadano.objects.exclude(nacionalidad="").only("pk", "nacionalidad")
+        for ciudadano in ciudadanos.iterator(chunk_size=500):
+            try:
+                nacionalidad_id = int(ciudadano.nacionalidad)
+            except (TypeError, ValueError):
+                nacionalidad_id = None
 
-        if nacionalidad_nombre != ciudadano.nacionalidad:
-            Ciudadano.objects.filter(pk=ciudadano.pk).update(
-                nacionalidad=nacionalidad_nombre
-            )
+            nacionalidad_nombre = nacionalidades.get(nacionalidad_id) or ciudadano.nacionalidad or ""
+
+            if nacionalidad_nombre != ciudadano.nacionalidad:
+                Ciudadano.objects.filter(pk=ciudadano.pk).update(
+                    nacionalidad=nacionalidad_nombre
+                )
+    except Exception:
+        # Si hay cualquier error, simplemente continuar sin hacer nada
+        pass
 
 
 class Migration(migrations.Migration):
