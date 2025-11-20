@@ -9,8 +9,8 @@ from django.core.validators import EmailValidator
 from django.db import transaction
 from django.db.models import Q
 
-from ciudadanos.models import Ciudadano
-from core.models import Provincia, Municipio, Localidad, Sexo
+from ciudadanos.models import Ciudadano, TipoDocumento, Sexo, Nacionalidad
+from core.models import Provincia, Municipio, Localidad
 from celiaquia.models import EstadoCupo, EstadoLegajo, ExpedienteCiudadano
 
 logger = logging.getLogger("django")
@@ -34,15 +34,18 @@ def _estado_doc_pendiente_id():
 
 @lru_cache(maxsize=1)
 def _tipo_doc_por_defecto():
-    return Ciudadano.DOCUMENTO_DNI
+    try:
+        return TipoDocumento.objects.only("id").get(tipo__iexact="DNI").id
+    except TipoDocumento.DoesNotExist:
+        raise ValidationError("Falta el TipoDocumento por defecto (DNI)")
 
 
 @lru_cache(maxsize=1)
 def _tipo_doc_cuit():
-    for codigo, _ in Ciudadano.DOCUMENTO_CHOICES:
-        if codigo.upper() == "CUIT":
-            return codigo
-    raise ValidationError("Falta configurar el tipo de documento CUIT")
+    try:
+        return TipoDocumento.objects.only("id").get(tipo__iexact="CUIT").id
+    except TipoDocumento.DoesNotExist as exc:
+        raise ValidationError("Falta configurar el TipoDocumento CUIT") from exc
 
 
 # Estados de expediente considerados "abiertos / pre-cupo" para evitar duplicados inter-expedientes
@@ -379,11 +382,13 @@ class ImportacionService:
         municipios_cache = {}
         localidades_cache = {}
         sexos_cache = {}
+        nacionalidades_cache = {}
 
         # Obtener todos los IDs únicos del Excel
         municipio_ids = set()
         localidad_ids = set()
         sexos_nombres = set()
+        nacionalidades_nombres = set()
 
         for _, row in df.iterrows():
             if row.get("municipio"):
@@ -396,6 +401,8 @@ class ImportacionService:
                     localidad_ids.add(int(float(loc_str)))
             if row.get("sexo"):
                 sexos_nombres.add(str(row["sexo"]).strip().lower())
+            if row.get("nacionalidad"):
+                nacionalidades_nombres.add(str(row["nacionalidad"]).strip().lower())
 
         # Cargar todos los datos de una vez
         if municipio_ids:
@@ -433,13 +440,25 @@ class ImportacionService:
         except Exception as e:
             logger.warning("Error cargando sexos: %s", e)
 
+        if nacionalidades_nombres:
+            try:
+                for n in Nacionalidad.objects.all():
+                    if n.nacionalidad.lower() in nacionalidades_nombres:
+                        nacionalidades_cache[n.nacionalidad.lower()] = n.id
+            except Exception as e:
+                logger.warning("Error cargando nacionalidades: %s", e)
+
+        # Funciones de validación
         def validar_documento(doc_str, campo_nombre, fila):
-            """Valida formato y longitud de documento."""
+            """Valida formato y longitud de documento"""
             if not doc_str or not doc_str.isdigit():
                 raise ValidationError(f"{campo_nombre} debe contener solo dígitos")
 
+            # Validar longitud según tipo
             if campo_nombre == "documento":
+                # Aceptar tanto DNI (7-8) como CUIT (11)
                 if len(doc_str) == 11:
+                    # Es CUIT, validar formato
                     if not (
                         doc_str.startswith("20")
                         or doc_str.startswith("23")
@@ -453,6 +472,7 @@ class ImportacionService:
                         f"{campo_nombre} debe tener 7-8 dígitos (DNI) o 11 dígitos (CUIT)"
                     )
                 else:
+                    # Es DNI, validar rango
                     doc_int = int(doc_str)
                     if doc_int < 1000000 or doc_int > 99999999:
                         raise ValidationError(
@@ -471,7 +491,7 @@ class ImportacionService:
             return doc_str
 
         def normalizar_sexo(sexo_valor):
-            """Normaliza valores de sexo comunes."""
+            """Normaliza valores de sexo comunes"""
             if not sexo_valor:
                 return None
 
@@ -517,7 +537,7 @@ class ImportacionService:
                 # Asignar provincia del usuario
                 payload["provincia"] = provincia_usuario_id
 
-                required = ["apellido", "nombre", "documento", "fecha_nacimiento"]
+                required = ["apellido", "nombre", "documento", "fecha_nacimiento", "sexo", "nacionalidad", "municipio", "localidad", "calle", "altura", "codigo_postal", "telefono", "email"]
                 for req in required:
                     if not payload.get(req):
                         raise ValidationError(f"Campo obligatorio faltante: {req}")
@@ -604,7 +624,14 @@ class ImportacionService:
 
                 nacionalidad_val = payload.get("nacionalidad")
                 if nacionalidad_val:
-                    payload["nacionalidad"] = str(nacionalidad_val).strip()
+                    nac_key = str(nacionalidad_val).strip().lower()
+                    if nac_key in nacionalidades_cache:
+                        payload["nacionalidad"] = nacionalidades_cache[nac_key]
+                    else:
+                        add_warning(
+                            offset, "nacionalidad", f"{nacionalidad_val} no encontrado"
+                        )
+                        payload.pop("nacionalidad", None)
                 else:
                     payload.pop("nacionalidad", None)
 
@@ -746,6 +773,23 @@ class ImportacionService:
                 # Si hay datos del responsable, crear también el legajo del responsable
                 if tiene_responsable:
                     try:
+                        # Validar que TODOS los datos del responsable sean obligatorios
+                        required_responsable = [
+                            "apellido_responsable",
+                            "nombre_responsable",
+                            "fecha_nacimiento_responsable",
+                            "sexo_responsable",
+                            "documento_responsable",
+                            "telefono_responsable",
+                            "email_responsable",
+                            "domicilio_responsable",
+                            "localidad_responsable"
+                        ]
+                        
+                        for req in required_responsable:
+                            if not payload.get(req):
+                                raise ValidationError(f"Campo obligatorio del responsable faltante: {req}")
+                        
                         # Preparar datos del responsable
                         responsable_payload = {
                             "apellido": payload.get("apellido_responsable"),
@@ -756,12 +800,10 @@ class ImportacionService:
                             "sexo": payload.get("sexo_responsable"),
                             "telefono": payload.get("telefono_responsable"),
                             "email": payload.get("email_responsable"),
+                            "documento": payload.get("documento_responsable"),
                             "tipo_documento": tipo_doc_cuit_id,
                             "provincia": provincia_usuario_id,
                         }
-                        doc_resp = payload.get("documento_responsable")
-                        if doc_resp:
-                            responsable_payload["documento"] = doc_resp
 
                         # Verificar si el responsable es la misma persona que el beneficiario
                         es_mismo_documento = (
@@ -921,7 +963,18 @@ class ImportacionService:
                 # Crear relaciones familiares
                 if relaciones_familiares:
                     try:
-                        from ciudadanos.models import GrupoFamiliar
+                        from ciudadanos.models import GrupoFamiliar, VinculoFamiliar
+
+                        # Buscar vinculo "Hijo" y "Padre/Madre"
+                        vinculo_hijo = VinculoFamiliar.objects.filter(
+                            vinculo__icontains="hijo"
+                        ).first()
+
+                        if vinculo_hijo is None:
+                            vinculo_hijo = VinculoFamiliar.objects.create(
+                                vinculo="Hijo/a",
+                                inverso="Padre/Madre",
+                            )
 
                         relaciones_crear = []
                         for rel in relaciones_familiares:
@@ -930,7 +983,8 @@ class ImportacionService:
                                     GrupoFamiliar(
                                         ciudadano_1_id=rel["responsable_id"],
                                         ciudadano_2_id=rel["hijo_id"],
-                                        vinculo=GrupoFamiliar.RELACION_HIJO,
+                                        vinculo=vinculo_hijo,
+                                        vinculo_inverso=vinculo_hijo.inverso,
                                         conviven=True,
                                         cuidador_principal=True,
                                     )
@@ -946,7 +1000,7 @@ class ImportacionService:
                             GrupoFamiliar.objects.bulk_create(
                                 relaciones_crear,
                                 batch_size=batch_size,
-                                ignore_conflicts=True,
+                                ignore_conflicts=True,  # Evitar errores por duplicados
                             )
                             logger.info(
                                 "Creadas %s relaciones familiares",

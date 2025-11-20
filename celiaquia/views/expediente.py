@@ -164,26 +164,36 @@ class ExpedienteListView(ListView):
                 "usuario_provincia__profile__provincia_id",
                 "usuario_provincia__profile__provincia__id",
                 "usuario_provincia__profile__provincia__nombre",
+                "numero_expediente",
             )
         )
         if _is_admin(user):
-            return qs.order_by("-fecha_creacion")
-        if _user_in_group(user, "CoordinadorCeliaquia"):
-            return qs.filter(
+            qs = qs.order_by("-fecha_creacion")
+        elif _user_in_group(user, "CoordinadorCeliaquia"):
+            qs = qs.filter(
                 estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
             ).order_by("-fecha_creacion")
-        if _user_in_group(user, "TecnicoCeliaquia"):
-            return (
+        elif _user_in_group(user, "TecnicoCeliaquia"):
+            qs = (
                 qs.filter(asignaciones_tecnicos__tecnico=user)
                 .distinct()
                 .order_by("-fecha_creacion")
             )
-        if _is_provincial(user):
+        elif _is_provincial(user):
             prov = _user_provincia(user)
-            return qs.filter(usuario_provincia__profile__provincia=prov).order_by(
+            qs = qs.filter(usuario_provincia__profile__provincia=prov).order_by(
                 "-fecha_creacion"
             )
-        return qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
+        else:
+            qs = qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
+        
+        search_query = self.request.GET.get("q", "").strip()
+        if search_query:
+            qs = qs.filter(
+                Q(id__icontains=search_query) | Q(numero_expediente__icontains=search_query) | Q(estado__nombre__icontains=search_query)
+            )
+        
+        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -595,20 +605,11 @@ class ExpedienteDetailView(DetailView):
         ).order_by("fila_excel")
 
         # Datos para desplegables en registros erróneos
-        from core.models import Sexo, Municipio, Localidad
-        from ciudadanos.models import Ciudadano
+        from ciudadanos.models import Sexo, Nacionalidad
+        from core.models import Municipio, Localidad
 
         sexos = Sexo.objects.all()
-        nacionalidades = [
-            {"id": nombre, "nombre": nombre}
-            for nombre in (
-                Ciudadano.objects.exclude(nacionalidad="")
-                .order_by("nacionalidad")
-                .values_list("nacionalidad", flat=True)
-                .distinct()
-            )
-            if nombre
-        ]
+        nacionalidades = Nacionalidad.objects.all()
         municipios = []
         localidades = []
 
@@ -1390,7 +1391,16 @@ class ReprocesarRegistrosErroneosView(View):
         # Crear relaciones familiares
         if relaciones_crear:
             try:
-                from ciudadanos.models import GrupoFamiliar
+                from ciudadanos.models import GrupoFamiliar, VinculoFamiliar
+
+                vinculo_hijo = VinculoFamiliar.objects.filter(
+                    vinculo__icontains="hijo"
+                ).first()
+                if not vinculo_hijo:
+                    vinculo_hijo = VinculoFamiliar.objects.create(
+                        vinculo="Hijo/a",
+                        inverso="Padre/Madre",
+                    )
 
                 relaciones_obj = []
                 for rel in relaciones_crear:
@@ -1398,7 +1408,8 @@ class ReprocesarRegistrosErroneosView(View):
                         GrupoFamiliar(
                             ciudadano_1_id=rel["responsable_id"],
                             ciudadano_2_id=rel["hijo_id"],
-                            vinculo=GrupoFamiliar.RELACION_HIJO,
+                            vinculo=vinculo_hijo,
+                            vinculo_inverso=vinculo_hijo.inverso,
                             conviven=True,
                             cuidador_principal=True,
                         )
