@@ -66,6 +66,7 @@ textarea:focus {
 .select2-dropdown {
   background-color: #1e2a3a !important;
   border: 1px solid #3d4f63;
+  z-index: 1045 !important; /* Menor que header (1050) para evitar superposición al scrollear */
 }
 
 .select2-search--dropdown .select2-search__field {
