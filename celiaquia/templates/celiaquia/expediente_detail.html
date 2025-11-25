@@ -308,24 +308,23 @@
                                     <span class="text-muted">#{{ leg.pk }}</span>
                                 </td>
                                 <td>
-                                    <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 2rem;"{% endif %}>
+                                    <div>
                                         <div class="fw-semibold">
-                                            {% if leg.es_responsable %}
+                                            {% if leg.rol == 'BENEFICIARIO_Y_RESPONSABLE' %}
                                                 👨👩👧👦 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
-                                            {% elif leg.responsable_id %}
-                                                └─ 👶 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
+                                            {% elif leg.rol == 'RESPONSABLE' %}
+                                                👨👩 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% else %}
                                                 👶 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% endif %}
                                         </div>
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
-                                        {% if leg.es_responsable %}
-                                            <small class="badge bg-info mt-1">{{ leg.tipo_legajo|default:"Responsable" }}</small>
-                                            {% if leg.hijos_a_cargo and leg.hijos_a_cargo|length > 0 %}
-                                                <small class="text-muted d-block mt-1">Tiene {{ leg.hijos_a_cargo|length }} hijo{{ leg.hijos_a_cargo|length|pluralize }} a cargo</small>
-                                            {% endif %}
+                                        {% if leg.rol == 'BENEFICIARIO_Y_RESPONSABLE' %}
+                                            <small class="badge bg-info mt-1">Beneficiario y Responsable</small>
+                                        {% elif leg.rol == 'RESPONSABLE' %}
+                                            <small class="badge bg-warning mt-1">Solo Responsable</small>
                                         {% else %}
-                                            <small class="badge bg-success mt-1">{{ leg.tipo_legajo|default:"Beneficiario" }}</small>
+                                            <small class="badge bg-success mt-1">Solo Beneficiario</small>
                                         {% endif %}
                                     </div>
                                 </td>

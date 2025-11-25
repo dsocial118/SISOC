@@ -38,7 +38,7 @@ from celiaquia.services.expediente_service import (
     ExpedienteService,
     _set_estado,
 )
-from celiaquia.services.importacion_service import ImportacionService
+from celiaquia.services.importacion_service import ImportacionService, validar_edad_responsable
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
@@ -1248,11 +1248,31 @@ class ReprocesarRegistrosErroneosView(View):
                 )
 
                 if ciudadano and ciudadano.pk:
-                    # Crear legajo del hijo/beneficiario
+                    # Detectar rol del beneficiario
+                    doc_beneficiario = datos.get("documento")
+                    doc_responsable = datos.get("documento_responsable")
+                    tiene_responsable = any([
+                        datos.get("apellido_responsable"),
+                        datos.get("nombre_responsable"),
+                        datos.get("documento_responsable"),
+                    ])
+                    
+                    es_mismo_documento = (
+                        tiene_responsable
+                        and doc_responsable
+                        and str(doc_responsable).strip() == str(doc_beneficiario).strip()
+                    )
+                    
+                    if es_mismo_documento:
+                        rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                    else:
+                        rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
+                    
+                    # Crear legajo del hijo/beneficiario CON ROL
                     _, created = ExpedienteCiudadano.objects.get_or_create(
                         expediente=expediente,
                         ciudadano=ciudadano,
-                        defaults={"estado": estado_inicial},
+                        defaults={"estado": estado_inicial, "rol": rol_beneficiario},
                     )
 
                     if created:
@@ -1267,9 +1287,9 @@ class ReprocesarRegistrosErroneosView(View):
                             ]
                         )
 
-                        if tiene_responsable:
+                        if tiene_responsable and not es_mismo_documento:
                             try:
-                                # Crear responsable
+                                # Crear responsable SOLO si es diferente al beneficiario
                                 datos_resp = {
                                     "apellido": datos.get("apellido_responsable"),
                                     "nombre": datos.get("nombre_responsable"),
@@ -1286,6 +1306,12 @@ class ReprocesarRegistrosErroneosView(View):
 
                                 # Limpiar valores None
                                 datos_resp = {k: v for k, v in datos_resp.items() if v}
+
+                                # Validaciones mínimas del responsable
+                                if not datos_resp.get("documento"):
+                                    raise ValidationError("Documento del responsable obligatorio")
+                                if not datos_resp.get("nombre"):
+                                    raise ValidationError("Nombre del responsable obligatorio")
 
                                 # Convertir fecha del responsable si existe
                                 if "fecha_nacimiento" in datos_resp and isinstance(
@@ -1316,19 +1342,21 @@ class ReprocesarRegistrosErroneosView(View):
                                 )
 
                                 if responsable and responsable.pk:
-                                    # Crear legajo del responsable
-                                    _, created_resp = (
-                                        ExpedienteCiudadano.objects.get_or_create(
-                                            expediente=expediente,
-                                            ciudadano=responsable,
-                                            defaults={"estado": estado_inicial},
-                                        )
+                                    # Validar edad
+                                    valido_edad, edad_warnings, error_edad = validar_edad_responsable(
+                                        datos_resp.get("fecha_nacimiento"),
+                                        datos.get("fecha_nacimiento"),
                                     )
-
-                                    if created_resp:
-                                        creados += 1
-
-                                    # Guardar relación para crear después
+                                    if error_edad:
+                                        raise ValidationError(error_edad)
+                                    for warning in edad_warnings:
+                                        logger.warning(
+                                            "Fila %s: %s",
+                                            registro.fila_excel,
+                                            warning,
+                                        )
+                                    # NO crear legajo para responsable puro
+                                    # Solo crear GrupoFamiliar
                                     relaciones_crear.append(
                                         {
                                             "responsable_id": responsable.pk,
