@@ -5,18 +5,172 @@ import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
 import django.utils.timezone
+from django.db import OperationalError, ProgrammingError
+
+
+def drop_column_if_exists(schema_editor, table_name, column_name):
+    query = """
+        SELECT COUNT(*)
+        FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name = %s
+          AND column_name = %s
+    """
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute(query, [table_name, column_name])
+        if cursor.fetchone()[0]:
+            cursor.execute(f"ALTER TABLE `{table_name}` DROP COLUMN `{column_name}`")
+
+
+def drop_index_if_exists(schema_editor, table_name, index_name):
+    query = """
+        SELECT COUNT(*)
+        FROM information_schema.statistics
+        WHERE table_schema = DATABASE()
+          AND table_name = %s
+          AND index_name = %s
+    """
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute(query, [table_name, index_name])
+        if cursor.fetchone()[0]:
+            cursor.execute(f"ALTER TABLE `{table_name}` DROP INDEX `{index_name}`")
+
+
+def drop_table_if_exists(schema_editor, table_name):
+    with schema_editor.connection.cursor() as cursor:
+        cursor.execute(f"DROP TABLE IF EXISTS `{table_name}`")
+
+
+def drop_obsolete_indexes(apps, schema_editor):
+    indexes = {
+        "ciudadanos_ciudadano": [
+            "ciudadanos__apellid_8f0c3b_idx",
+            "ciudadanos__fecha_n_aa8772_idx",
+            "ciudadanos__observa_517ba3_idx",
+        ],
+        "ciudadanos_grupofamiliar": [
+            "ciudadanos__ciudada_0b736a_idx",
+            "ciudadanos__ciudada_547f88_idx",
+        ],
+    }
+    for table, names in indexes.items():
+        for name in names:
+            drop_index_if_exists(schema_editor, table, name)
+
+
+def cleanup_ciudadano_fields(apps, schema_editor):
+    drop_table_if_exists(schema_editor, "ciudadanos_ciudadano_alertas")
+    for column in [
+        "circuito_id",
+        "demo_centro_familia",
+        "escalera_manzana",
+        "estado_id",
+        "estado_civil_id",
+        "latitud",
+        "longitud",
+        "torre_pasillo",
+    ]:
+        drop_column_if_exists(schema_editor, "ciudadanos_ciudadano", column)
+    drop_column_if_exists(schema_editor, "ciudadanos_grupofamiliar", "vinculo_inverso")
+
+
+def drop_legacy_tables(apps, schema_editor):
+    tables = [
+        "ciudadanos_actividadrealizada",
+        "ciudadanos_agua",
+        "ciudadanos_alerta",
+        "ciudadanos_aportesjubilacion",
+        "ciudadanos_archivo",
+        "ciudadanos_areacurso",
+        "ciudadanos_asisteescuela",
+        "ciudadanos_cantidadambientes",
+        "ciudadanos_categoriaalerta",
+        "ciudadanos_centrossalud",
+        "ciudadanos_circuito",
+        "ciudadanos_ciudadanoprograma",
+        "ciudadanos_condicion",
+        "ciudadanos_derivacion",
+        "ciudadanos_desague",
+        "ciudadanos_dimension",
+        "ciudadanos_dimensioneconomia",
+        "ciudadanos_dimensioneducacion",
+        "ciudadanos_dimensionfamilia",
+        "ciudadanos_dimensionsalud",
+        "ciudadanos_dimensiontrabajo",
+        "ciudadanos_dimensionvivienda",
+        "ciudadanos_direccion",
+        "ciudadanos_duraciontrabajo",
+        "ciudadanos_estadocivil",
+        "ciudadanos_estadoderivacion",
+        "ciudadanos_estadointervencion",
+        "ciudadanos_estadollamado",
+        "ciudadanos_estadoniveleducativo",
+        "ciudadanos_estadorelacion",
+        "ciudadanos_frecuencia",
+        "ciudadanos_gas",
+        "ciudadanos_grado",
+        "ciudadanos_grupohogar",
+        "ciudadanos_historialalerta",
+        "ciudadanos_historialciudadanoprogramas",
+        "ciudadanos_importancia",
+        "ciudadanos_inodoro",
+        "ciudadanos_institucioneducativas",
+        "ciudadanos_intervencion",
+        "ciudadanos_jurisdiccion",
+        "ciudadanos_llamado",
+        "ciudadanos_modocontratacion",
+        "ciudadanos_motivonivelincompleto",
+        "ciudadanos_nacionalidad",
+        "ciudadanos_niveleducativo",
+        "ciudadanos_nobusquedalaboral",
+        "ciudadanos_organismo",
+        "ciudadanos_plansocial",
+        "ciudadanos_programa",
+        "ciudadanos_programasllamados",
+        "ciudadanos_rechazo",
+        "ciudadanos_secretarias",
+        "ciudadanos_subintervencion",
+        "ciudadanos_subsecretarias",
+        "ciudadanos_subtipollamado",
+        "ciudadanos_tiempobusquedalaboral",
+        "ciudadanos_tipoconstruccionvivienda",
+        "ciudadanos_tipodocumento",
+        "ciudadanos_tipogestion",
+        "ciudadanos_tipointervencion",
+        "ciudadanos_tipollamado",
+        "ciudadanos_tipoorganismo",
+        "ciudadanos_tipopisosvivienda",
+        "ciudadanos_tipoposesionvivienda",
+        "ciudadanos_tipotechovivienda",
+        "ciudadanos_tipovivienda",
+        "ciudadanos_turno",
+        "ciudadanos_ubicacionvivienda",
+        "ciudadanos_vinculofamiliar",
+    ]
+    for table in tables:
+        drop_table_if_exists(schema_editor, table)
 
 
 def copy_nacionalidad_to_text(apps, schema_editor):
     Ciudadano = apps.get_model("ciudadanos", "Ciudadano")
-    Nacionalidad = apps.get_model("ciudadanos", "Nacionalidad")
+    try:
+        Nacionalidad = apps.get_model("ciudadanos", "Nacionalidad")
+    except LookupError:
+        return
 
-    nacionalidades = {
-        nacionalidad.pk: nacionalidad.nombre
-        for nacionalidad in Nacionalidad.objects.only("pk", "nombre")
-    }
+    try:
+        nacionalidades = {
+            nacionalidad.pk: nacionalidad.nombre
+            for nacionalidad in Nacionalidad.objects.only("pk", "nombre")
+        }
+    except (ProgrammingError, OperationalError):
+        return
 
-    ciudadanos = Ciudadano.objects.exclude(nacionalidad="").only("pk", "nacionalidad")
+    try:
+        ciudadanos = Ciudadano.objects.exclude(nacionalidad="").only("pk", "nacionalidad")
+    except (ProgrammingError, OperationalError):
+        return
+
     for ciudadano in ciudadanos.iterator(chunk_size=500):
         try:
             nacionalidad_id = int(ciudadano.nacionalidad)
@@ -41,357 +195,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name="alerta",
-            name="categoria",
-        ),
-        migrations.RemoveField(
-            model_name="archivo",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="categoriaalerta",
-            name="dimension",
-        ),
-        migrations.AlterUniqueTogether(
-            name="ciudadanoprograma",
-            unique_together=None,
-        ),
-        migrations.RemoveField(
-            model_name="ciudadanoprograma",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadanoprograma",
-            name="creado_por",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadanoprograma",
-            name="programas",
-        ),
-        migrations.DeleteModel(
-            name="Condicion",
-        ),
-        migrations.RemoveField(
-            model_name="derivacion",
-            name="alertas",
-        ),
-        migrations.RemoveField(
-            model_name="derivacion",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="derivacion",
-            name="estado",
-        ),
-        migrations.RemoveField(
-            model_name="derivacion",
-            name="importancia",
-        ),
-        migrations.RemoveField(
-            model_name="derivacion",
-            name="motivo_rechazo",
-        ),
-        migrations.RemoveField(
-            model_name="derivacion",
-            name="organismo",
-        ),
-        migrations.RemoveField(
-            model_name="derivacion",
-            name="programa",
-        ),
-        migrations.RemoveField(
-            model_name="derivacion",
-            name="programa_solicitante",
-        ),
-        migrations.RemoveField(
-            model_name="derivacion",
-            name="usuario",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneconomia",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneconomia",
-            name="planes",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="area_curso",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="area_oficio",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="asiste_escuela",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="ciclo",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="estado_nivel",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="gestion",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="grado",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="institucion",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="localidadInstitucion",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="max_nivel",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="municipioInstitucion",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="nivel_incompleto",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="provinciaInstitucion",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="sin_educacion_formal",
-        ),
-        migrations.RemoveField(
-            model_name="dimensioneducacion",
-            name="turno",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionfamilia",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionsalud",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionsalud",
-            name="frecuencia_controles_medicos",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionsalud",
-            name="lugares_atencion",
-        ),
-        migrations.RemoveField(
-            model_name="dimensiontrabajo",
-            name="Tiempobusqueda_laboral",
-        ),
-        migrations.RemoveField(
-            model_name="dimensiontrabajo",
-            name="actividadRealizadaComo",
-        ),
-        migrations.RemoveField(
-            model_name="dimensiontrabajo",
-            name="aportesJubilacion",
-        ),
-        migrations.RemoveField(
-            model_name="dimensiontrabajo",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="dimensiontrabajo",
-            name="duracionTrabajo",
-        ),
-        migrations.RemoveField(
-            model_name="dimensiontrabajo",
-            name="modo_contratacion",
-        ),
-        migrations.RemoveField(
-            model_name="dimensiontrabajo",
-            name="nobusqueda_laboral",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="agua",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="cant_ambientes",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="desague",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="gas",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="hay_banio",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="material",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="pisos",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="posesion",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="techos",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="tipo",
-        ),
-        migrations.RemoveField(
-            model_name="dimensionvivienda",
-            name="ubicacion_vivienda",
-        ),
-        migrations.RemoveField(
-            model_name="grupohogar",
-            name="ciudadano_1Hogar",
-        ),
-        migrations.RemoveField(
-            model_name="grupohogar",
-            name="ciudadano_2Hogar",
-        ),
-        migrations.RemoveField(
-            model_name="grupohogar",
-            name="estado_relacion",
-        ),
-        migrations.RemoveField(
-            model_name="historialalerta",
-            name="alerta",
-        ),
-        migrations.RemoveField(
-            model_name="historialalerta",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="historialalerta",
-            name="creada_por",
-        ),
-        migrations.RemoveField(
-            model_name="historialalerta",
-            name="eliminada_por",
-        ),
-        migrations.RemoveField(
-            model_name="historialciudadanoprogramas",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="historialciudadanoprogramas",
-            name="programa",
-        ),
-        migrations.RemoveField(
-            model_name="historialciudadanoprogramas",
-            name="usuario",
-        ),
-        migrations.RemoveField(
-            model_name="intervencion",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="intervencion",
-            name="direccion",
-        ),
-        migrations.RemoveField(
-            model_name="intervencion",
-            name="estado",
-        ),
-        migrations.RemoveField(
-            model_name="intervencion",
-            name="subintervencion",
-        ),
-        migrations.RemoveField(
-            model_name="intervencion",
-            name="tipo_intervencion",
-        ),
-        migrations.RemoveField(
-            model_name="intervencion",
-            name="usuario",
-        ),
-        migrations.RemoveField(
-            model_name="llamado",
-            name="ciudadano",
-        ),
-        migrations.RemoveField(
-            model_name="llamado",
-            name="estado",
-        ),
-        migrations.RemoveField(
-            model_name="llamado",
-            name="programas_llamados",
-        ),
-        migrations.RemoveField(
-            model_name="llamado",
-            name="subtipo_llamado",
-        ),
-        migrations.RemoveField(
-            model_name="llamado",
-            name="tipo_llamado",
-        ),
-        migrations.RemoveField(
-            model_name="llamado",
-            name="usuario",
-        ),
-        migrations.RemoveField(
-            model_name="organismo",
-            name="localidad",
-        ),
-        migrations.RemoveField(
-            model_name="organismo",
-            name="tipo",
-        ),
-        migrations.RemoveField(
-            model_name="plansocial",
-            name="jurisdiccion",
-        ),
-        migrations.RemoveField(
-            model_name="programa",
-            name="subsecretaria",
-        ),
-        migrations.RemoveField(
-            model_name="subintervencion",
-            name="subintervencion",
-        ),
-        migrations.RemoveField(
-            model_name="subsecretarias",
-            name="secretaria",
-        ),
-        migrations.RemoveField(
-            model_name="subtipollamado",
-            name="tipo_llamado",
-        ),
-        migrations.RemoveField(
-            model_name="tipollamado",
-            name="programas_llamados",
-        ),
         migrations.AlterModelOptions(
             name="ciudadano",
             options={"ordering": ["apellido", "nombre"]},
@@ -400,65 +203,83 @@ class Migration(migrations.Migration):
             name="grupofamiliar",
             options={"ordering": ["ciudadano_1", "ciudadano_2"]},
         ),
-        migrations.RemoveIndex(
-            model_name="ciudadano",
-            name="ciudadanos__apellid_8f0c3b_idx",
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(
+                    drop_obsolete_indexes, reverse_code=migrations.RunPython.noop
+                )
+            ],
+            state_operations=[
+                migrations.RemoveIndex(
+                    model_name="ciudadano",
+                    name="ciudadanos__apellid_8f0c3b_idx",
+                ),
+                migrations.RemoveIndex(
+                    model_name="ciudadano",
+                    name="ciudadanos__fecha_n_aa8772_idx",
+                ),
+                migrations.RemoveIndex(
+                    model_name="ciudadano",
+                    name="ciudadanos__observa_517ba3_idx",
+                ),
+                migrations.RemoveIndex(
+                    model_name="grupofamiliar",
+                    name="ciudadanos__ciudada_0b736a_idx",
+                ),
+                migrations.RemoveIndex(
+                    model_name="grupofamiliar",
+                    name="ciudadanos__ciudada_547f88_idx",
+                ),
+            ],
         ),
-        migrations.RemoveIndex(
-            model_name="ciudadano",
-            name="ciudadanos__fecha_n_aa8772_idx",
-        ),
-        migrations.RemoveIndex(
-            model_name="ciudadano",
-            name="ciudadanos__observa_517ba3_idx",
-        ),
-        migrations.RemoveIndex(
-            model_name="grupofamiliar",
-            name="ciudadanos__ciudada_0b736a_idx",
-        ),
-        migrations.RemoveIndex(
-            model_name="grupofamiliar",
-            name="ciudadanos__ciudada_547f88_idx",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadano",
-            name="alertas",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadano",
-            name="circuito",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadano",
-            name="demo_centro_familia",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadano",
-            name="escalera_manzana",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadano",
-            name="estado",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadano",
-            name="estado_civil",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadano",
-            name="latitud",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadano",
-            name="longitud",
-        ),
-        migrations.RemoveField(
-            model_name="ciudadano",
-            name="torre_pasillo",
-        ),
-        migrations.RemoveField(
-            model_name="grupofamiliar",
-            name="vinculo_inverso",
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(
+                    cleanup_ciudadano_fields, reverse_code=migrations.RunPython.noop
+                )
+            ],
+            state_operations=[
+                migrations.RemoveField(
+                    model_name="ciudadano",
+                    name="alertas",
+                ),
+                migrations.RemoveField(
+                    model_name="ciudadano",
+                    name="circuito",
+                ),
+                migrations.RemoveField(
+                    model_name="ciudadano",
+                    name="demo_centro_familia",
+                ),
+                migrations.RemoveField(
+                    model_name="ciudadano",
+                    name="escalera_manzana",
+                ),
+                migrations.RemoveField(
+                    model_name="ciudadano",
+                    name="estado",
+                ),
+                migrations.RemoveField(
+                    model_name="ciudadano",
+                    name="estado_civil",
+                ),
+                migrations.RemoveField(
+                    model_name="ciudadano",
+                    name="latitud",
+                ),
+                migrations.RemoveField(
+                    model_name="ciudadano",
+                    name="longitud",
+                ),
+                migrations.RemoveField(
+                    model_name="ciudadano",
+                    name="torre_pasillo",
+                ),
+                migrations.RemoveField(
+                    model_name="grupofamiliar",
+                    name="vinculo_inverso",
+                ),
+            ],
         ),
         migrations.AddField(
             model_name="ciudadano",
@@ -473,9 +294,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="grupofamiliar",
             name="creado",
-            field=models.DateTimeField(
-                default=django.utils.timezone.now, editable=False
-            ),
+            field=models.DateTimeField(default=django.utils.timezone.now, editable=False),
         ),
         migrations.AddField(
             model_name="grupofamiliar",
@@ -500,9 +319,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="ciudadano",
             name="creado",
-            field=models.DateTimeField(
-                default=django.utils.timezone.now, editable=False
-            ),
+            field=models.DateTimeField(default=django.utils.timezone.now, editable=False),
         ),
         migrations.AlterField(
             model_name="ciudadano",
@@ -673,211 +490,223 @@ class Migration(migrations.Migration):
                 fields=["ciudadano_2"], name="ciudadanos__ciudada_547f88_idx"
             ),
         ),
-        migrations.DeleteModel(
-            name="ActividadRealizada",
-        ),
-        migrations.DeleteModel(
-            name="Agua",
-        ),
-        migrations.DeleteModel(
-            name="Alerta",
-        ),
-        migrations.DeleteModel(
-            name="AportesJubilacion",
-        ),
-        migrations.DeleteModel(
-            name="Archivo",
-        ),
-        migrations.DeleteModel(
-            name="AreaCurso",
-        ),
-        migrations.DeleteModel(
-            name="AsisteEscuela",
-        ),
-        migrations.DeleteModel(
-            name="CantidadAmbientes",
-        ),
-        migrations.DeleteModel(
-            name="CategoriaAlerta",
-        ),
-        migrations.DeleteModel(
-            name="CentrosSalud",
-        ),
-        migrations.DeleteModel(
-            name="Circuito",
-        ),
-        migrations.DeleteModel(
-            name="CiudadanoPrograma",
-        ),
-        migrations.DeleteModel(
-            name="Derivacion",
-        ),
-        migrations.DeleteModel(
-            name="Desague",
-        ),
-        migrations.DeleteModel(
-            name="Dimension",
-        ),
-        migrations.DeleteModel(
-            name="DimensionEconomia",
-        ),
-        migrations.DeleteModel(
-            name="DimensionEducacion",
-        ),
-        migrations.DeleteModel(
-            name="DimensionFamilia",
-        ),
-        migrations.DeleteModel(
-            name="DimensionSalud",
-        ),
-        migrations.DeleteModel(
-            name="DimensionTrabajo",
-        ),
-        migrations.DeleteModel(
-            name="DimensionVivienda",
-        ),
-        migrations.DeleteModel(
-            name="Direccion",
-        ),
-        migrations.DeleteModel(
-            name="DuracionTrabajo",
-        ),
-        migrations.DeleteModel(
-            name="EstadoCivil",
-        ),
-        migrations.DeleteModel(
-            name="EstadoDerivacion",
-        ),
-        migrations.DeleteModel(
-            name="EstadoIntervencion",
-        ),
-        migrations.DeleteModel(
-            name="EstadoLlamado",
-        ),
-        migrations.DeleteModel(
-            name="EstadoNivelEducativo",
-        ),
-        migrations.DeleteModel(
-            name="EstadoRelacion",
-        ),
-        migrations.DeleteModel(
-            name="Frecuencia",
-        ),
-        migrations.DeleteModel(
-            name="Gas",
-        ),
-        migrations.DeleteModel(
-            name="Grado",
-        ),
-        migrations.DeleteModel(
-            name="GrupoHogar",
-        ),
-        migrations.DeleteModel(
-            name="HistorialAlerta",
-        ),
-        migrations.DeleteModel(
-            name="HistorialCiudadanoProgramas",
-        ),
-        migrations.DeleteModel(
-            name="Importancia",
-        ),
-        migrations.DeleteModel(
-            name="Inodoro",
-        ),
-        migrations.DeleteModel(
-            name="InstitucionEducativas",
-        ),
-        migrations.DeleteModel(
-            name="Intervencion",
-        ),
-        migrations.DeleteModel(
-            name="Jurisdiccion",
-        ),
-        migrations.DeleteModel(
-            name="Llamado",
-        ),
-        migrations.DeleteModel(
-            name="ModoContratacion",
-        ),
-        migrations.DeleteModel(
-            name="MotivoNivelIncompleto",
-        ),
-        migrations.DeleteModel(
-            name="Nacionalidad",
-        ),
-        migrations.DeleteModel(
-            name="NivelEducativo",
-        ),
-        migrations.DeleteModel(
-            name="NobusquedaLaboral",
-        ),
-        migrations.DeleteModel(
-            name="Organismo",
-        ),
-        migrations.DeleteModel(
-            name="PlanSocial",
-        ),
-        migrations.DeleteModel(
-            name="Programa",
-        ),
-        migrations.DeleteModel(
-            name="ProgramasLlamados",
-        ),
-        migrations.DeleteModel(
-            name="Rechazo",
-        ),
-        migrations.DeleteModel(
-            name="Secretarias",
-        ),
-        migrations.DeleteModel(
-            name="SubIntervencion",
-        ),
-        migrations.DeleteModel(
-            name="Subsecretarias",
-        ),
-        migrations.DeleteModel(
-            name="SubtipoLlamado",
-        ),
-        migrations.DeleteModel(
-            name="TiempoBusquedaLaboral",
-        ),
-        migrations.DeleteModel(
-            name="TipoConstruccionVivienda",
-        ),
-        migrations.DeleteModel(
-            name="TipoDocumento",
-        ),
-        migrations.DeleteModel(
-            name="TipoGestion",
-        ),
-        migrations.DeleteModel(
-            name="TipoIntervencion",
-        ),
-        migrations.DeleteModel(
-            name="TipoLlamado",
-        ),
-        migrations.DeleteModel(
-            name="TipoOrganismo",
-        ),
-        migrations.DeleteModel(
-            name="TipoPisosVivienda",
-        ),
-        migrations.DeleteModel(
-            name="TipoPosesionVivienda",
-        ),
-        migrations.DeleteModel(
-            name="TipoTechoVivienda",
-        ),
-        migrations.DeleteModel(
-            name="TipoVivienda",
-        ),
-        migrations.DeleteModel(
-            name="Turno",
-        ),
-        migrations.DeleteModel(
-            name="UbicacionVivienda",
-        ),
-        migrations.DeleteModel(
-            name="VinculoFamiliar",
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(
+                    drop_legacy_tables, reverse_code=migrations.RunPython.noop
+                )
+            ],
+            state_operations=[
+                migrations.DeleteModel(
+                    name="Condicion",
+                ),
+                migrations.DeleteModel(
+                    name="ActividadRealizada",
+                ),
+                migrations.DeleteModel(
+                    name="Agua",
+                ),
+                migrations.DeleteModel(
+                    name="Alerta",
+                ),
+                migrations.DeleteModel(
+                    name="AportesJubilacion",
+                ),
+                migrations.DeleteModel(
+                    name="Archivo",
+                ),
+                migrations.DeleteModel(
+                    name="AreaCurso",
+                ),
+                migrations.DeleteModel(
+                    name="AsisteEscuela",
+                ),
+                migrations.DeleteModel(
+                    name="CantidadAmbientes",
+                ),
+                migrations.DeleteModel(
+                    name="CategoriaAlerta",
+                ),
+                migrations.DeleteModel(
+                    name="CentrosSalud",
+                ),
+                migrations.DeleteModel(
+                    name="Circuito",
+                ),
+                migrations.DeleteModel(
+                    name="CiudadanoPrograma",
+                ),
+                migrations.DeleteModel(
+                    name="Derivacion",
+                ),
+                migrations.DeleteModel(
+                    name="Desague",
+                ),
+                migrations.DeleteModel(
+                    name="Dimension",
+                ),
+                migrations.DeleteModel(
+                    name="DimensionEconomia",
+                ),
+                migrations.DeleteModel(
+                    name="DimensionEducacion",
+                ),
+                migrations.DeleteModel(
+                    name="DimensionFamilia",
+                ),
+                migrations.DeleteModel(
+                    name="DimensionSalud",
+                ),
+                migrations.DeleteModel(
+                    name="DimensionTrabajo",
+                ),
+                migrations.DeleteModel(
+                    name="DimensionVivienda",
+                ),
+                migrations.DeleteModel(
+                    name="Direccion",
+                ),
+                migrations.DeleteModel(
+                    name="DuracionTrabajo",
+                ),
+                migrations.DeleteModel(
+                    name="EstadoCivil",
+                ),
+                migrations.DeleteModel(
+                    name="EstadoDerivacion",
+                ),
+                migrations.DeleteModel(
+                    name="EstadoIntervencion",
+                ),
+                migrations.DeleteModel(
+                    name="EstadoLlamado",
+                ),
+                migrations.DeleteModel(
+                    name="EstadoNivelEducativo",
+                ),
+                migrations.DeleteModel(
+                    name="EstadoRelacion",
+                ),
+                migrations.DeleteModel(
+                    name="Frecuencia",
+                ),
+                migrations.DeleteModel(
+                    name="Gas",
+                ),
+                migrations.DeleteModel(
+                    name="Grado",
+                ),
+                migrations.DeleteModel(
+                    name="GrupoHogar",
+                ),
+                migrations.DeleteModel(
+                    name="HistorialAlerta",
+                ),
+                migrations.DeleteModel(
+                    name="HistorialCiudadanoProgramas",
+                ),
+                migrations.DeleteModel(
+                    name="Importancia",
+                ),
+                migrations.DeleteModel(
+                    name="Inodoro",
+                ),
+                migrations.DeleteModel(
+                    name="InstitucionEducativas",
+                ),
+                migrations.DeleteModel(
+                    name="Intervencion",
+                ),
+                migrations.DeleteModel(
+                    name="Jurisdiccion",
+                ),
+                migrations.DeleteModel(
+                    name="Llamado",
+                ),
+                migrations.DeleteModel(
+                    name="ModoContratacion",
+                ),
+                migrations.DeleteModel(
+                    name="MotivoNivelIncompleto",
+                ),
+                migrations.DeleteModel(
+                    name="Nacionalidad",
+                ),
+                migrations.DeleteModel(
+                    name="NivelEducativo",
+                ),
+                migrations.DeleteModel(
+                    name="NobusquedaLaboral",
+                ),
+                migrations.DeleteModel(
+                    name="Organismo",
+                ),
+                migrations.DeleteModel(
+                    name="PlanSocial",
+                ),
+                migrations.DeleteModel(
+                    name="Programa",
+                ),
+                migrations.DeleteModel(
+                    name="ProgramasLlamados",
+                ),
+                migrations.DeleteModel(
+                    name="Rechazo",
+                ),
+                migrations.DeleteModel(
+                    name="Secretarias",
+                ),
+                migrations.DeleteModel(
+                    name="SubIntervencion",
+                ),
+                migrations.DeleteModel(
+                    name="Subsecretarias",
+                ),
+                migrations.DeleteModel(
+                    name="SubtipoLlamado",
+                ),
+                migrations.DeleteModel(
+                    name="TiempoBusquedaLaboral",
+                ),
+                migrations.DeleteModel(
+                    name="TipoConstruccionVivienda",
+                ),
+                migrations.DeleteModel(
+                    name="TipoDocumento",
+                ),
+                migrations.DeleteModel(
+                    name="TipoGestion",
+                ),
+                migrations.DeleteModel(
+                    name="TipoIntervencion",
+                ),
+                migrations.DeleteModel(
+                    name="TipoLlamado",
+                ),
+                migrations.DeleteModel(
+                    name="TipoOrganismo",
+                ),
+                migrations.DeleteModel(
+                    name="TipoPisosVivienda",
+                ),
+                migrations.DeleteModel(
+                    name="TipoPosesionVivienda",
+                ),
+                migrations.DeleteModel(
+                    name="TipoTechoVivienda",
+                ),
+                migrations.DeleteModel(
+                    name="TipoVivienda",
+                ),
+                migrations.DeleteModel(
+                    name="Turno",
+                ),
+                migrations.DeleteModel(
+                    name="UbicacionVivienda",
+                ),
+                migrations.DeleteModel(
+                    name="VinculoFamiliar",
+                ),
+            ],
         ),
     ]
