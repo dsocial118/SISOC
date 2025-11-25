@@ -168,6 +168,17 @@ class ExpedienteEstadoHistorial(models.Model):
 
 
 class ExpedienteCiudadano(models.Model):
+    # Roles en minúsculas según requerimiento funcional.
+    ROLE_BENEFICIARIO = "beneficiario"
+    ROLE_RESPONSABLE = "responsable"
+    ROLE_BENEFICIARIO_Y_RESPONSABLE = "beneficiario_y_responsable"
+    
+    ROLE_CHOICES = [
+        (ROLE_BENEFICIARIO, "Solo Beneficiario"),
+        (ROLE_RESPONSABLE, "Solo Responsable"),
+        (ROLE_BENEFICIARIO_Y_RESPONSABLE, "Beneficiario y Responsable"),
+    ]
+    
     expediente = models.ForeignKey(
         Expediente, on_delete=models.CASCADE, related_name="expediente_ciudadanos"
     )
@@ -222,6 +233,12 @@ class ExpedienteCiudadano(models.Model):
         null=True,
         blank=True,
         help_text="Archivo de respuesta a subsanación Renaper",
+    )
+    rol = models.CharField(
+        max_length=50,
+        choices=ROLE_CHOICES,
+        default=ROLE_BENEFICIARIO,
+        db_index=True
     )
 
     class Meta:

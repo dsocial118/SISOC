@@ -48,6 +48,10 @@ class CupoService:
             expediente__usuario_provincia__profile__provincia=provincia,
             estado_cupo=EstadoCupo.FUERA,
             es_titular_activo=False,
+            rol__in=[
+                ExpedienteCiudadano.ROLE_BENEFICIARIO,
+                ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            ]
         ).count()
         return {
             "total_asignado": total,
@@ -67,6 +71,10 @@ class CupoService:
             resultado_sintys=ResultadoSintys.MATCH,
             estado_cupo=EstadoCupo.DENTRO,
             es_titular_activo=True,
+            rol__in=[
+                ExpedienteCiudadano.ROLE_BENEFICIARIO,
+                ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            ]
         )
 
     @staticmethod
@@ -78,6 +86,10 @@ class CupoService:
             expediente__usuario_provincia__profile__provincia=provincia,
             estado_cupo=EstadoCupo.DENTRO,
             es_titular_activo=False,
+            rol__in=[
+                ExpedienteCiudadano.ROLE_BENEFICIARIO,
+                ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            ]
         )
 
     @staticmethod
@@ -174,11 +186,16 @@ class CupoService:
             return True
 
         # Si el ciudadano YA ocupa un cupo DENTRO en la provincia (activo o suspendido), no se puede reservar otro
+        # Excluir responsables puros
         ya_ocupa = (
             ExpedienteCiudadano.objects.filter(
                 ciudadano_id=legajo.ciudadano_id,
                 expediente__usuario_provincia__profile__provincia=provincia,
                 estado_cupo=EstadoCupo.DENTRO,
+                rol__in=[
+                    ExpedienteCiudadano.ROLE_BENEFICIARIO,
+                    ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                ]
             )
             .exclude(pk=legajo.pk)
             .exists()
