@@ -451,12 +451,83 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   // Inicializar funcionalidad de imágenes existentes
   setupExistingImages();
-  
+
   // Cargar imágenes existentes
   loadExistingImages();
-  
+
   // Inicializar funcionalidad de foto de legajo
   setupFotoLegajo();
+
+  // IMPORTANTE: Interceptar submit para enviar archivos correctamente
+  const comedorForm = document.getElementById('comedorForm');
+  if (comedorForm && imagenesInput) {
+    // Interceptar después del confirmSubmit, con alta prioridad
+    comedorForm.addEventListener('submit', function(e) {
+      console.log('=== SUBMIT INTERCEPTADO ===');
+      console.log('selectedFiles.length:', selectedFiles.length);
+      console.log('imagenesInput.files.length:', imagenesInput.files?.length || 0);
+
+      // Si hay archivos seleccionados pero el input está vacío, usar FormData
+      if (selectedFiles.length > 0 && (!imagenesInput.files || imagenesInput.files.length === 0)) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.warn('⚠️ Input de imágenes vacío, usando FormData manual');
+
+        const formData = new FormData(comedorForm);
+
+        // Remover el campo imagenes vacío
+        formData.delete('imagenes');
+
+        // Agregar los archivos manualmente
+        selectedFiles.forEach((file, index) => {
+          console.log(`Agregando archivo ${index + 1}:`, file.name);
+          formData.append('imagenes', file);
+        });
+
+        // Enviar con fetch
+        fetch(comedorForm.action || window.location.href, {
+          method: 'POST',
+          body: formData,
+          redirect: 'follow'
+        })
+        .then(response => {
+          console.log('Response status:', response.status);
+          console.log('Response redirected:', response.redirected);
+          console.log('Response URL:', response.url);
+
+          if (response.redirected) {
+            window.location.href = response.url;
+          } else if (response.ok) {
+            // Intentar parsear como JSON para ver si hay errores
+            return response.text().then(text => {
+              try {
+                const json = JSON.parse(text);
+                if (json.success) {
+                  window.location.href = json.redirect || comedorForm.action;
+                } else {
+                  alert('Error: ' + (json.error || 'Error desconocido'));
+                }
+              } catch {
+                // No es JSON, probablemente es HTML de éxito
+                window.location.reload();
+              }
+            });
+          } else {
+            alert('Error al guardar el comedor (Status: ' + response.status + ')');
+            console.error('Error en respuesta:', response);
+          }
+        })
+        .catch(error => {
+          alert('Error al enviar el formulario');
+          console.error('Error:', error);
+        });
+
+        return false;
+      } else {
+        console.log('✓ Input tiene archivos o no hay archivos, enviando normalmente');
+      }
+    }, true); // Usar capture phase para ejecutar antes
+  }
 });
 // FUNCIONALIDAD PARA FOTO DE LEGAJO
 function setupFotoLegajo() {
