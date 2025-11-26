@@ -157,8 +157,7 @@ class Command(BaseCommand):
         missing_states = REQUIRED_STATE_FIELDS - headers
         if missing_states:
             raise CommandError(
-                "Faltan columnas obligatorias: "
-                + ", ".join(sorted(missing_states))
+                "Faltan columnas obligatorias: " + ", ".join(sorted(missing_states))
             )
 
     def _parse_int_field(
