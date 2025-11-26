@@ -12,6 +12,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("core", "0002_alter_provincia_nombre"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ("comedores", "0013_alter_nomina_estado"),
         ("ciudadanos", "0008_alter_ciudadano_documento"),
     ]
 
