@@ -719,8 +719,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
 
             # Campos que NO son ManyToMany
             scalar_fields = {
-                k: v for k, v in recursos_data.items()
-                if k not in many_to_many_fields
+                k: v for k, v in recursos_data.items() if k not in many_to_many_fields
             }
 
             if recursos_instance is None:
