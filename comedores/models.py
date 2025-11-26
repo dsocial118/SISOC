@@ -59,12 +59,12 @@ class Referente(models.Model):
 
     def clean(self):
         errors = {}
-        # validar celular: exactamente 10 dígitos numéricos
+        # validar celular: exactamente 15 dígitos numéricos
         if self.celular is not None:
             s = str(self.celular)
-            if not s.isdigit() or len(s) != 10:
+            if not s.isdigit() or len(s) != 15:
                 errors["celular"] = ValidationError(
-                    "El celular debe contener exactamente 10 dígitos numéricos (sin espacios ni signos)."
+                    "El celular debe contener exactamente 15 dígitos numéricos (sin espacios ni signos)."
                 )
 
         # validar documento: 7 u 8 dígitos numéricos
