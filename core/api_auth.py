@@ -17,19 +17,19 @@ class LoginThrottle(AnonRateThrottle):
 class ObtenerTokenView(APIView):
     """
     API para obtener token de autenticación.
-    
+
     POST /api/token/
     Body: {
         "username": "admin",
         "password": "password123"
     }
-    
+
     Respuesta:
     {
         "token": "abc123def456..."
     }
     """
-    
+
     permission_classes = []
     authentication_classes = []
     throttle_classes = [LoginThrottle]
@@ -60,9 +60,11 @@ class ObtenerTokenView(APIView):
             )
 
         token, created = Token.objects.get_or_create(user=user)
-        
-        logger.info(f"Token {'creado' if created else 'obtenido'} para usuario: {user.id}")
-        
+
+        logger.info(
+            f"Token {'creado' if created else 'obtenido'} para usuario: {user.id}"
+        )
+
         return Response(
             {
                 "token": token.key,

@@ -171,7 +171,9 @@ class BeneficiarioResponsableSerializer(serializers.ModelSerializer):
 
 
 class ParticipanteActividadHistorialSerializer(serializers.ModelSerializer):
-    usuario_nombre = serializers.CharField(source="usuario.get_full_name", read_only=True)
+    usuario_nombre = serializers.CharField(
+        source="usuario.get_full_name", read_only=True
+    )
 
     class Meta:
         model = ParticipanteActividadHistorial
@@ -231,7 +233,9 @@ class InformeCabalRegistroSerializer(serializers.ModelSerializer):
 
 class CabalArchivoSerializer(serializers.ModelSerializer):
     registros = InformeCabalRegistroSerializer(many=True, read_only=True)
-    usuario_nombre = serializers.CharField(source="usuario.get_full_name", read_only=True)
+    usuario_nombre = serializers.CharField(
+        source="usuario.get_full_name", read_only=True
+    )
 
     class Meta:
         model = CabalArchivo

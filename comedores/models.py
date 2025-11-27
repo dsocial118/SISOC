@@ -600,8 +600,8 @@ class HistorialValidacion(models.Model):
     OPCIONES_NO_VALIDAR = [
         ("pac_inexistente_o_no_coincide", "PAC inexistente o no coincide"),
         ("sin_movimiento", "Sin movimiento"),
-        ("no_se_reconoce_el_comedor","No se reconoce el Comedor"),
-        ("no_corresponde_a_la_dupla","No corresponde a la dupla"),
+        ("no_se_reconoce_el_comedor", "No se reconoce el Comedor"),
+        ("no_corresponde_a_la_dupla", "No corresponde a la dupla"),
         ("otro", "Otros"),
     ]
 
