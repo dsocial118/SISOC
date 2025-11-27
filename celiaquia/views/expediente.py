@@ -605,7 +605,8 @@ class ExpedienteDetailView(DetailView):
         ).order_by("fila_excel")
 
         # Datos para desplegables en registros erróneos
-        from core.models import Municipio, Localidad, Sexo, Nacionalidad
+        from ciudadanos.models import Sexo, Nacionalidad
+        from core.models import Municipio, Localidad
 
         sexos = Sexo.objects.all()
         nacionalidades = Nacionalidad.objects.all()
