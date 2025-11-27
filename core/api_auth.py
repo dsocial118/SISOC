@@ -2,10 +2,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.throttling import AnonRateThrottle
 from django.contrib.auth import authenticate
 import logging
 
 logger = logging.getLogger("django")
+
+
+class LoginThrottle(AnonRateThrottle):
+    scope = "login"
+    rate = "5/min"
 
 
 class ObtenerTokenView(APIView):
@@ -26,6 +32,7 @@ class ObtenerTokenView(APIView):
     
     permission_classes = []
     authentication_classes = []
+    throttle_classes = [LoginThrottle]
 
     def post(self, request):
         username = request.data.get("username")
@@ -37,10 +44,16 @@ class ObtenerTokenView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if len(username) > 150 or len(password) > 128:
+            return Response(
+                {"error": "username o password inválidos"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = authenticate(username=username, password=password)
 
         if not user:
-            logger.warning(f"Intento de login fallido para usuario: {username}")
+            logger.warning("Intento de login fallido")
             return Response(
                 {"error": "Credenciales inválidas"},
                 status=status.HTTP_401_UNAUTHORIZED,
@@ -48,7 +61,7 @@ class ObtenerTokenView(APIView):
 
         token, created = Token.objects.get_or_create(user=user)
         
-        logger.info(f"Token {'creado' if created else 'obtenido'} para usuario: {username}")
+        logger.info(f"Token {'creado' if created else 'obtenido'} para usuario: {user.id}")
         
         return Response(
             {
