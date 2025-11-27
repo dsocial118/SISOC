@@ -3,6 +3,8 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from core.api_auth import ObtenerTokenView
 
 urlpatterns = [
     path("admin/doc/", include("django.contrib.admindocs.urls")),
@@ -26,6 +28,13 @@ urlpatterns = [
     path("", include("relevamientos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
     path("", include("celiaquia.urls")),
+    # API URLs
+    path("api/token/", ObtenerTokenView.as_view(), name="obtener-token"),
+    path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
+    # Swagger/OpenAPI
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]
 
 if settings.DEBUG:

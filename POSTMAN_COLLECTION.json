@@ -1,0 +1,408 @@
+{
+  "info": {
+    "name": "Centro Familia API",
+    "description": "Colección de APIs para Centro de Familia",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Centros",
+      "item": [
+        {
+          "name": "Listar Centros",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/centros/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "centros"]
+            }
+          }
+        },
+        {
+          "name": "Crear Centro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Centro Nuevo Postman\",\n  \"referente\": 5,\n  \"tipo\": \"adherido\",\n  \"codigo\": \"CF_POSTMAN_001\",\n  \"provincia\": 1,\n  \"municipio\": 10,\n  \"localidad\": 100,\n  \"domicilio_actividad\": \"Calle Principal 123\",\n  \"telefono\": \"0221-1234567\",\n  \"celular\": \"1123456789\",\n  \"correo\": \"centro@example.com\",\n  \"nombre_referente\": \"Juan\",\n  \"apellido_referente\": \"Perez\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/centros/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "centros"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Centro",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/centros/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "centros", "1"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Centro",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Centro Actualizado\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/centros/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "centros", "1"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Centro",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/centros/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "centros", "1"]
+            }
+          }
+        },
+        {
+          "name": "Listar Centros Activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/centros/activos/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "centros", "activos"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Beneficiarios",
+      "item": [
+        {
+          "name": "Listar Beneficiarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/beneficiarios/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "beneficiarios"]
+            }
+          }
+        },
+        {
+          "name": "Crear Beneficiario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cuil\": \"20123456789\",\n  \"dni\": \"12345678\",\n  \"apellido\": \"Gomez\",\n  \"nombre\": \"Carlos\",\n  \"genero\": \"M\",\n  \"fecha_nacimiento\": \"2010-05-15\",\n  \"domicilio\": \"Calle 5 789\",\n  \"provincia\": 1,\n  \"municipio\": 10,\n  \"localidad\": 100,\n  \"nivel_educativo_actual\": \"Primario\",\n  \"maximo_nivel_educativo\": \"Primario incompleto\",\n  \"responsable\": 1,\n  \"actividad_preferida\": [\"Deportiva\"],\n  \"actividades_extracurriculares\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/beneficiarios/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "beneficiarios"]
+            }
+          }
+        },
+        {
+          "name": "Listar por Responsable",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/beneficiarios/por_responsable/?responsable_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "beneficiarios", "por_responsable"],
+              "query": [
+                {
+                  "key": "responsable_id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Responsables",
+      "item": [
+        {
+          "name": "Listar Responsables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/responsables/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "responsables"]
+            }
+          }
+        },
+        {
+          "name": "Crear Responsable",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vinculo_parental\": \"Padre/Madre\",\n  \"cuil\": \"20987654321\",\n  \"dni\": \"98765432\",\n  \"apellido\": \"Lopez\",\n  \"nombre\": \"Ana\",\n  \"genero\": \"F\",\n  \"fecha_nacimiento\": \"1985-03-20\",\n  \"provincia\": 1,\n  \"municipio\": 10,\n  \"localidad\": 100,\n  \"calle\": \"Calle 10\",\n  \"altura\": 500,\n  \"numero_celular\": \"1198765432\",\n  \"correo_electronico\": \"ana@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/responsables/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "responsables"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Participantes",
+      "item": [
+        {
+          "name": "Listar Participantes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/participantes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "participantes"]
+            }
+          }
+        },
+        {
+          "name": "Inscribir Participante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actividad_centro\": 1,\n  \"ciudadano\": 10,\n  \"estado\": \"inscrito\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/participantes/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "participantes"]
+            }
+          }
+        },
+        {
+          "name": "Cambiar Estado Participante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"lista_espera\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/participantes/1/cambiar_estado/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "participantes", "1", "cambiar_estado"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Actividades",
+      "item": [
+        {
+          "name": "Listar Actividades",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/actividades/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "actividades"]
+            }
+          }
+        },
+        {
+          "name": "Crear Actividad",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Futbol\",\n  \"categoria\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}{{api_path}}/actividades/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "centrodefamilia", "actividades"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "api_path",
+      "value": "/api/centrodefamilia",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

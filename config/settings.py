@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     "import_export",
     "multiselectfield",
     "rest_framework",
-    "rest_framework_api_key",
+    "rest_framework.authtoken",
+    "drf_spectacular",
     "corsheaders",
     # Apps propias
     "users",
@@ -192,6 +193,21 @@ CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+}
+
+# Swagger/OpenAPI
+SPECTACULAR_SETTINGS = {
+    "TITLE": "SISOC API",
+    "DESCRIPTION": "API de gestión de comedores, centros de familia y más",
+    "VERSION": "1.0.0",
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
 }
 
 # Dominios / Integraciones
