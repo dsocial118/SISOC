@@ -251,9 +251,7 @@ class ResponsableViewSet(viewsets.ModelViewSet):
     - GET /api/responsables/{id}/ - Detalle
     """
 
-    queryset = Responsable.objects.select_related(
-        "provincia", "municipio", "localidad"
-    )
+    queryset = Responsable.objects.select_related("provincia", "municipio", "localidad")
     serializer_class = ResponsableSerializer
     permission_classes = [IsAuthenticated]
 
@@ -302,9 +300,7 @@ class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
         if no_coincidente is not None:
-            queryset = queryset.filter(
-                no_coincidente=no_coincidente.lower() == "true"
-            )
+            queryset = queryset.filter(no_coincidente=no_coincidente.lower() == "true")
 
         return queryset
 
