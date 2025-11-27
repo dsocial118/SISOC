@@ -26,8 +26,12 @@ class Ciudadano(models.Model):
     apellido = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255)
     fecha_nacimiento = models.DateField()
-    tipo_documento = models.CharField(max_length=20, choices=DOCUMENTO_CHOICES, default=DOCUMENTO_DNI)
-    documento = models.PositiveBigIntegerField(validators=[MinValueValidator(1)], null=True)
+    tipo_documento = models.CharField(
+        max_length=20, choices=DOCUMENTO_CHOICES, default=DOCUMENTO_DNI
+    )
+    documento = models.PositiveBigIntegerField(
+        validators=[MinValueValidator(1)], null=True
+    )
     sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, null=True, blank=True)
     nacionalidad = models.CharField(max_length=100, null=True, blank=True)
 
@@ -46,8 +50,8 @@ class Ciudadano(models.Model):
     )
     codigo_postal = models.CharField(max_length=12, null=True, blank=True)
 
-    telefono = models.CharField(max_length=30,null=True,  blank=True)
-    telefono_alternativo = models.CharField(max_length=30,null=True,  blank=True)
+    telefono = models.CharField(max_length=30, null=True, blank=True)
+    telefono_alternativo = models.CharField(max_length=30, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
 
     observaciones = models.TextField(null=True, blank=True)
@@ -129,7 +133,9 @@ class GrupoFamiliar(models.Model):
     ciudadano_2 = models.ForeignKey(
         Ciudadano, related_name="relaciones_entrantes", on_delete=models.CASCADE
     )
-    vinculo = models.CharField(max_length=20, choices=VINCULO_CHOICES, null=True, blank=True)
+    vinculo = models.CharField(
+        max_length=20, choices=VINCULO_CHOICES, null=True, blank=True
+    )
     estado_relacion = models.CharField(
         max_length=20, choices=ESTADO_CHOICES, null=True, blank=True
     )
