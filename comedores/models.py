@@ -59,12 +59,12 @@ class Referente(models.Model):
 
     def clean(self):
         errors = {}
-        # validar celular: exactamente 10 dígitos numéricos
+        # validar celular: maximo 15 dígitos numéricos
         if self.celular is not None:
             s = str(self.celular)
-            if not s.isdigit() or len(s) != 10:
+            if not s.isdigit() or len(s) > 15:
                 errors["celular"] = ValidationError(
-                    "El celular debe contener exactamente 10 dígitos numéricos (sin espacios ni signos)."
+                    "El celular debe contener maximo 15 dígitos numéricos (sin espacios ni signos)."
                 )
 
         # validar documento: 7 u 8 dígitos numéricos
@@ -438,6 +438,12 @@ class AuditComedorPrograma(models.Model):
 
 
 class Nomina(models.Model):
+    ESTADO_CHOICES = [
+        ("pendiente", "Pendiente"),
+        ("activo", "Activo"),
+        ("baja", "Baja"),
+    ]
+
     comedor = models.ForeignKey("Comedor", on_delete=models.SET_NULL, null=True)
     ciudadano = models.ForeignKey(
         Ciudadano,
@@ -447,16 +453,10 @@ class Nomina(models.Model):
         blank=True,
     )
     fecha = models.DateTimeField(auto_now_add=True)
-    ESTADO_PENDIENTE = "pendiente"
-    ESTADO_ACTIVO = "activo"
-    ESTADO_BAJA = "baja"
-    ESTADO_CHOICES = [
-        (ESTADO_PENDIENTE, "Pendiente"),
-        (ESTADO_ACTIVO, "Activo"),
-        (ESTADO_BAJA, "Baja"),
-    ]
     estado = models.CharField(
-        max_length=20, choices=ESTADO_CHOICES, default=ESTADO_PENDIENTE
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default="pendiente",
     )
     observaciones = models.TextField(blank=True, null=True)
 

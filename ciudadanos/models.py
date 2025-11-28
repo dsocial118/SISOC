@@ -26,15 +26,19 @@ class Ciudadano(models.Model):
     apellido = models.CharField(max_length=255)
     nombre = models.CharField(max_length=255)
     fecha_nacimiento = models.DateField()
-    tipo_documento = models.CharField(max_length=20, choices=DOCUMENTO_CHOICES)
-    documento = models.PositiveBigIntegerField(validators=[MinValueValidator(1)])
+    tipo_documento = models.CharField(
+        max_length=20, choices=DOCUMENTO_CHOICES, default=DOCUMENTO_DNI
+    )
+    documento = models.PositiveBigIntegerField(
+        validators=[MinValueValidator(1)], null=True
+    )
     sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, null=True, blank=True)
-    nacionalidad = models.CharField(max_length=100, blank=True)
+    nacionalidad = models.CharField(max_length=100, null=True, blank=True)
 
-    calle = models.CharField(max_length=255, blank=True)
-    altura = models.CharField(max_length=10, blank=True)
-    piso_departamento = models.CharField(max_length=50, blank=True)
-    barrio = models.CharField(max_length=100, blank=True)
+    calle = models.CharField(max_length=255, null=True, blank=True)
+    altura = models.CharField(max_length=10, null=True, blank=True)
+    piso_departamento = models.CharField(max_length=50, null=True, blank=True)
+    barrio = models.CharField(max_length=100, null=True, blank=True)
     provincia = models.ForeignKey(
         Provincia, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -44,13 +48,13 @@ class Ciudadano(models.Model):
     localidad = models.ForeignKey(
         Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
-    codigo_postal = models.CharField(max_length=12, blank=True)
+    codigo_postal = models.CharField(max_length=12, null=True, blank=True)
 
-    telefono = models.CharField(max_length=30, blank=True)
-    telefono_alternativo = models.CharField(max_length=30, blank=True)
-    email = models.EmailField(blank=True)
+    telefono = models.CharField(max_length=30, null=True, blank=True)
+    telefono_alternativo = models.CharField(max_length=30, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
 
-    observaciones = models.TextField(blank=True)
+    observaciones = models.TextField(null=True, blank=True)
     foto = models.ImageField(upload_to="ciudadanos", blank=True, null=True)
 
     familiares = models.ManyToManyField(
@@ -129,13 +133,15 @@ class GrupoFamiliar(models.Model):
     ciudadano_2 = models.ForeignKey(
         Ciudadano, related_name="relaciones_entrantes", on_delete=models.CASCADE
     )
-    vinculo = models.CharField(max_length=20, choices=VINCULO_CHOICES)
+    vinculo = models.CharField(
+        max_length=20, choices=VINCULO_CHOICES, null=True, blank=True
+    )
     estado_relacion = models.CharField(
-        max_length=20, choices=ESTADO_CHOICES, blank=True
+        max_length=20, choices=ESTADO_CHOICES, null=True, blank=True
     )
     conviven = models.BooleanField(default=False)
     cuidador_principal = models.BooleanField(default=False)
-    observaciones = models.TextField(blank=True)
+    observaciones = models.TextField(null=True, blank=True)
 
     creado = models.DateTimeField(default=timezone.now, editable=False)
     modificado = models.DateTimeField(auto_now=True)
