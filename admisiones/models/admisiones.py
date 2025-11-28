@@ -200,35 +200,44 @@ class Admision(models.Model):
     fecha_estado_mostrar = models.DateField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
+        # Obtener el estado anterior si existe
+        estado_anterior = None
+        if self.pk:
+            try:
+                estado_anterior = Admision.objects.get(pk=self.pk).estado_mostrar
+            except Admision.DoesNotExist:
+                pass
+        
         # Si el estado es "Descartado" en cualquier campo, marcar como inactiva
         if self.estado_legales == "Descartado" or self.estado_admision == "descartado":
             self.activa = False
-            self.estado_mostrar = "Descartado"
-            self.fecha_estado_mostrar = timezone.now().date()
+            nuevo_estado_mostrar = "Descartado"
         elif not self.activa:
             # Si está inactiva por otro motivo, mostrar "Inactivada"
-            self.estado_mostrar = "Inactivada"
-            self.fecha_estado_mostrar = timezone.now().date()
+            nuevo_estado_mostrar = "Inactivada"
         else:
             # Actualizar estado_mostrar basado en estado_admision o estado_legales
-            nuevo_estado = None
-            
             if self.estado_legales:
-                nuevo_estado = dict(self.ESTADOS_LEGALES).get(self.estado_legales, self.estado_legales)
+                nuevo_estado_mostrar = dict(self.ESTADOS_LEGALES).get(self.estado_legales, self.estado_legales)
             elif self.estado_admision:
-                nuevo_estado = dict(self.ESTADOS_ADMISION).get(self.estado_admision, self.estado_admision)
-            
-            # Siempre actualizar el estado_mostrar
-            if nuevo_estado:
-                self.estado_mostrar = nuevo_estado
-                self.fecha_estado_mostrar = timezone.now().date()
+                nuevo_estado_mostrar = dict(self.ESTADOS_ADMISION).get(self.estado_admision, self.estado_admision)
+            else:
+                nuevo_estado_mostrar = self.estado_mostrar
         
-        # Asegurar que estado_mostrar y fecha_estado_mostrar se incluyan en update_fields
+        # Solo actualizar fecha si el estado cambió
+        if nuevo_estado_mostrar != estado_anterior:
+            self.estado_mostrar = nuevo_estado_mostrar
+            self.fecha_estado_mostrar = timezone.now().date()
+        elif nuevo_estado_mostrar:
+            self.estado_mostrar = nuevo_estado_mostrar
+        
+        # Asegurar que estado_mostrar, fecha_estado_mostrar y activa se incluyan en update_fields
         update_fields = kwargs.get('update_fields')
         if update_fields is not None:
             update_fields = set(update_fields)
             update_fields.add('estado_mostrar')
             update_fields.add('fecha_estado_mostrar')
+            update_fields.add('activa')
             kwargs['update_fields'] = list(update_fields)
         
         super().save(*args, **kwargs)
