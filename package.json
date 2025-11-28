@@ -20,7 +20,5 @@
     "url": "https://github.com/dsocial118/BACKOFFICE/issues"
   },
   "homepage": "https://github.com/dsocial118/BACKOFFICE#readme",
-  "dependencies": {
-    "jsdom": "^20.0.3"
-  }
+  "dependencies": {}
 }
