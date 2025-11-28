@@ -881,3 +881,4 @@ def validar_comedor(request, pk):
         messages.error(request, mensaje)
 
     return redirect("comedor_detalle", pk=pk)
+

@@ -2,7 +2,7 @@ import logging
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from core.api_auth import HasAPIKeyOrToken
 from relevamientos.models import Relevamiento
 from relevamientos.serializer import RelevamientoSerializer
 from core.utils import format_serializer_errors
@@ -11,7 +11,7 @@ logger = logging.getLogger("django")
 
 
 class RelevamientoApiView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasAPIKeyOrToken]
 
     def patch(self, request):
         try:
