@@ -1,53 +1,97 @@
+(function (window, document) {
+    "use strict";
 
+    const SELECTORS = {
+        provincia: "#id_provincia",
+        municipio: "#id_municipio",
+        localidad: "#id_localidad",
+        nacionalidad: "#id_nacionalidad",
+        form: "form[data-ajax-municipios-url][data-ajax-localidades-url]",
+    };
 
-document.addEventListener('DOMContentLoaded', function () {
+    const UI = {
+        provincia: { wrapper: "#provincia-field", dropdownParent: "#provincia-field" },
+        municipio: { wrapper: "#municipio-field", loader: "#municipio-loader", dropdownParent: "#municipio-field" },
+        localidad: { wrapper: "#localidad-field", loader: "#localidad-loader", dropdownParent: "#localidad-field" },
+    };
 
-    document.getElementById('id_provincia').addEventListener('change', function () {
-        var url = ajaxLoadMunicipiosUrl;  // Obtén la URL de la vista
-        var provinciaId = this.value;  // Obtén el ID de la provincia seleccionada
-        fetch(url + '?provincia_id=' + provinciaId)
-            .then(response => response.json())
-            .then(data => {
-                var municipioSelect = document.getElementById('id_municipio');
-                municipioSelect.innerHTML = '';  // Limpia el campo de municipios
+    const PLACEHOLDERS = {
+        provincia: "Seleccione una provincia",
+        municipio: "Seleccione un municipio",
+        localidad: "Seleccione una localidad",
+        nacionalidad: "Seleccione una nacionalidad",
+    };
 
-                data.forEach(function (municipio) {
-                    var option = document.createElement('option');
-                    option.value = municipio.id;
-                    option.setAttribute('data-municipio-id', municipio.id);  // Añadir propiedad personalizada
-                    option.textContent = municipio.nombre;
-                    municipioSelect.appendChild(option);
-                });
-            });
-    });
+    function getConfig() {
+        const form = document.querySelector(SELECTORS.form);
+        const ajaxMunicipios = typeof window.ajaxLoadMunicipiosUrl !== "undefined"
+            ? window.ajaxLoadMunicipiosUrl
+            : form?.dataset.ajaxMunicipiosUrl;
+        const ajaxLocalidades = typeof window.ajaxLoadLocalidadesUrl !== "undefined"
+            ? window.ajaxLoadLocalidadesUrl
+            : form?.dataset.ajaxLocalidadesUrl;
+        if (!ajaxMunicipios || !ajaxLocalidades) return null;
 
-    document.getElementById('id_municipio').addEventListener('change', function () {
-        var url = ajaxLoadLocalidadesUrl;  // Obtén la URL de la vista
-        var localidadId = this.options[this.selectedIndex].getAttribute('data-municipio-id');;  // Obtén el ID de la provincia seleccionada
-        fetch(url + '?municipio_id=' + localidadId)
-            .then(response => response.json())
-            .then(data => {
-                var localidadSelect = document.getElementById('id_localidad');
-                localidadSelect.innerHTML = '';  // Limpia el campo de municipios
-
-                data.forEach(function (localidad) {
-                    var option = document.createElement('option');
-                    option.value = localidad.id;
-                    option.textContent = localidad.nombre;
-                    localidadSelect.appendChild(option);
-                });
-            });
-    });
-});
-
-
-$(document).ready(function () {
-    $('#id_nacionalidad').select2();
-});
-
-id_foto.onchange = (evt) => {
-    const [file] = id_foto.files;
-    if (file) {
-        blah.src = URL.createObjectURL(file);
+        return {
+            ajaxMunicipiosUrl: ajaxMunicipios,
+            ajaxLocalidadesUrl: ajaxLocalidades,
+            selectors: {
+                provincia: SELECTORS.provincia,
+                municipio: SELECTORS.municipio,
+                localidad: SELECTORS.localidad,
+            },
+            ui: UI,
+            placeholders: PLACEHOLDERS,
+        };
     }
-};
+
+    function initNacionalidadSelect(config) {
+        if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) {
+            return;
+        }
+        const $nacionalidad = window.jQuery(SELECTORS.nacionalidad);
+        if (!$nacionalidad.length) return;
+        $nacionalidad.select2({
+            placeholder: config.placeholders.nacionalidad,
+            allowClear: true,
+            width: "100%",
+        });
+    }
+
+    async function initUbicacion(config) {
+        const runConfig = {
+            ...config,
+            ui: {
+                provincia: config.ui.provincia,
+                municipio: {
+                    wrapper: "#municipio-field",
+                    loader: "#municipio-loader",
+                    dropdownParent: "#municipio-field",
+                },
+                localidad: {
+                    wrapper: "#localidad-field",
+                    loader: "#localidad-loader",
+                    dropdownParent: "#localidad-field",
+                },
+            },
+            autoPrefetch: true,
+        };
+
+        const initHelper = window.setupUbicacionSelects || window.initUbicacionSelects;
+        if (typeof initHelper === "function") {
+            await initHelper(runConfig);
+            return;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", async function () {
+        const config = getConfig();
+        if (!config) return;
+
+        // Emular el comportamiento de comedores: pequeño delay antes de inicializar
+        setTimeout(async () => {
+            await initUbicacion(config);
+            initNacionalidadSelect(config);
+        }, 500);
+    });
+})(window, document);
