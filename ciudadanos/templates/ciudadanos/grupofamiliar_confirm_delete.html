@@ -7,8 +7,11 @@
     </p>
     <form method="post">
         {% csrf_token %}
+        {% if request.GET.next %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}" />
+        {% endif %}
         <button type="submit" class="btn btn-danger">Eliminar</button>
-        <a href="{{ object.ciudadano_1.get_absolute_url }}"
+        <a href="{{ request.GET.next|default:object.ciudadano_1.get_absolute_url }}"
            class="btn btn-outline-secondary">Cancelar</a>
     </form>
 {% endblock %}
