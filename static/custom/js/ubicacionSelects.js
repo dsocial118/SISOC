@@ -11,6 +11,81 @@
     };
 
     const EMPTY_OPTION_LABEL = "---------";
+    const CACHE_STORAGE_KEY = "ubicacionSelectsCache";
+
+    function createCacheStore() {
+        const memory = { municipios: {}, localidades: {} };
+        let storageSnapshot = null;
+
+        const baseSnapshot = () => ({ municipios: {}, localidades: {} });
+
+        const parseStorage = (raw) => {
+            if (!raw) return baseSnapshot();
+            try {
+                const parsed = JSON.parse(raw);
+                return {
+                    municipios: parsed.municipios || {},
+                    localidades: parsed.localidades || {},
+                };
+            } catch (error) {
+                console.warn("[UbicacionSelects] No se pudo leer el cache, se reinicia:", error);
+                return baseSnapshot();
+            }
+        };
+
+        const readStorage = () => {
+            if (storageSnapshot) return storageSnapshot;
+            if (typeof sessionStorage === "undefined") {
+                storageSnapshot = baseSnapshot();
+                return storageSnapshot;
+            }
+            try {
+                storageSnapshot = parseStorage(sessionStorage.getItem(CACHE_STORAGE_KEY));
+            } catch (error) {
+                storageSnapshot = baseSnapshot();
+            }
+            return storageSnapshot;
+        };
+
+        const writeStorage = (data) => {
+            storageSnapshot = data;
+            if (typeof sessionStorage === "undefined") return;
+            try {
+                sessionStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(storageSnapshot));
+            } catch (error) {
+                // Puede fallar en navegación privada o si se llena el storage; no es crítico.
+            }
+        };
+
+        const get = (scope, key) => {
+            if (!scope || !key) return null;
+            if (memory[scope] && memory[scope][key]) {
+                return memory[scope][key];
+            }
+            const storageData = readStorage();
+            const value = storageData?.[scope]?.[key];
+            if (value) {
+                memory[scope][key] = value;
+                return value;
+            }
+            return null;
+        };
+
+        const set = (scope, key, value) => {
+            if (!scope || !key || !Array.isArray(value)) return;
+            if (!memory[scope]) memory[scope] = {};
+            memory[scope][key] = value;
+
+            const storageData = readStorage();
+            storageData[scope] = storageData[scope] || {};
+            storageData[scope][key] = value;
+            writeStorage(storageData);
+        };
+
+        return { get, set };
+    }
+
+    const ubicacionCache = createCacheStore();
 
     function defaultSorter(a, b) {
         const nameA = (a.nombre || a.nombre_region || "").toUpperCase();
@@ -60,6 +135,13 @@
             municipio: document.querySelector(this.config.selectors.municipio),
             localidad: document.querySelector(this.config.selectors.localidad),
         };
+        this.cache =
+            ubicacionCache || {
+                get: function () {
+                    return null;
+                },
+                set: function () {},
+            };
     }
 
     UbicacionSelects.prototype.init = async function () {
@@ -142,8 +224,25 @@
             return;
         }
 
+        const cacheKey = String(provinciaId);
+        const cachedMunicipios = this.cache.get("municipios", cacheKey);
+        if (cachedMunicipios && Array.isArray(cachedMunicipios)) {
+            this.populateSelect(
+                this.selects.municipio,
+                cachedMunicipios,
+                this.selects.municipio.value,
+                Boolean(options.preserveValue)
+            );
+            this.applySelect2("municipio");
+            return;
+        }
+
         const url = `${this.config.ajaxMunicipiosUrl}?provincia_id=${encodeURIComponent(provinciaId)}`;
-        await this.fetchOptions(url, "municipio", options);
+        await this.fetchOptions(url, "municipio", {
+            ...options,
+            cacheScope: "municipios",
+            cacheKey,
+        });
     };
 
     UbicacionSelects.prototype.loadLocalidades = async function (municipioId, options = {}) {
@@ -153,8 +252,25 @@
             return;
         }
 
+        const cacheKey = String(municipioId);
+        const cachedLocalidades = this.cache.get("localidades", cacheKey);
+        if (cachedLocalidades && Array.isArray(cachedLocalidades)) {
+            this.populateSelect(
+                this.selects.localidad,
+                cachedLocalidades,
+                this.selects.localidad.value,
+                Boolean(options.preserveValue)
+            );
+            this.applySelect2("localidad");
+            return;
+        }
+
         const url = `${this.config.ajaxLocalidadesUrl}?municipio_id=${encodeURIComponent(municipioId)}`;
-        await this.fetchOptions(url, "localidad", options);
+        await this.fetchOptions(url, "localidad", {
+            ...options,
+            cacheScope: "localidades",
+            cacheKey,
+        });
     };
 
     UbicacionSelects.prototype.resetSelect = function (key) {
@@ -181,6 +297,17 @@
 
         const preserveValue = Boolean(options.preserveValue);
         const previousValue = preserveValue ? selectEl.value : "";
+        const cacheScope = options.cacheScope;
+        const cacheKey = options.cacheKey;
+
+        if (cacheScope && cacheKey) {
+            const cachedData = this.cache.get(cacheScope, cacheKey);
+            if (cachedData && Array.isArray(cachedData)) {
+                this.populateSelect(selectEl, cachedData, previousValue, preserveValue);
+                this.applySelect2(key);
+                return;
+            }
+        }
 
         this.toggleLoader(key, true);
         selectEl.disabled = true;
@@ -196,6 +323,9 @@
             }
 
             const data = (await response.json()) || [];
+            if (cacheScope && cacheKey && Array.isArray(data)) {
+                this.cache.set(cacheScope, cacheKey, data);
+            }
             this.populateSelect(selectEl, data, previousValue, preserveValue);
         } catch (error) {
             console.error(`[UbicacionSelects] Error cargando ${key}:`, error);
@@ -440,11 +570,34 @@
             localidad: null,
         };
 
-        const fetchOptionsFallback = async (url, key, preserveValue = false) => {
+        const fetchOptionsFallback = async (url, key, preserveValue = false, cacheMeta = {}) => {
             const target = selects[key];
             if (!target || !url) return;
 
             const previousValue = preserveValue ? target.value : "";
+            const cacheScope = cacheMeta.cacheScope;
+            const cacheKey = cacheMeta.cacheKey;
+
+            if (cacheScope && cacheKey) {
+                const cached = ubicacionCache.get(cacheScope, cacheKey);
+                if (cached && Array.isArray(cached)) {
+                    resetSelect(target);
+                    cached.forEach((item) => {
+                        const option = document.createElement("option");
+                        option.value = item.id;
+                        option.textContent = item.nombre || item.nombre_region || "";
+                        target.appendChild(option);
+                    });
+                    if (previousValue) {
+                        target.value = previousValue;
+                    }
+                    if ($ && $.fn && $.fn.select2) {
+                        $(target).trigger("change.select2");
+                    }
+                    return;
+                }
+            }
+
             toggleLoader(key, true);
             try {
                 if (requestControllers[key]) {
@@ -470,6 +623,9 @@
                     option.textContent = item.nombre || item.nombre_region || "";
                     target.appendChild(option);
                 });
+                if (cacheScope && cacheKey && Array.isArray(data)) {
+                    ubicacionCache.set(cacheScope, cacheKey, data);
+                }
                 if (previousValue) {
                     target.value = previousValue;
                 }
@@ -490,7 +646,10 @@
             const url = `${baseConfig.ajaxMunicipiosUrl}?provincia_id=${encodeURIComponent(
                 provinciaId
             )}`;
-            await fetchOptionsFallback(url, "municipio", preserveValue);
+            await fetchOptionsFallback(url, "municipio", preserveValue, {
+                cacheScope: "municipios",
+                cacheKey: String(provinciaId),
+            });
         };
 
         const loadLocalidadesFallback = async (municipioId, preserveValue = false) => {
@@ -499,7 +658,10 @@
             const url = `${baseConfig.ajaxLocalidadesUrl}?municipio_id=${encodeURIComponent(
                 municipioId
             )}`;
-            await fetchOptionsFallback(url, "localidad", preserveValue);
+            await fetchOptionsFallback(url, "localidad", preserveValue, {
+                cacheScope: "localidades",
+                cacheKey: String(municipioId),
+            });
         };
 
         let helperRan = false;
