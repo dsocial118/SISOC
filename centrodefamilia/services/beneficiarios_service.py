@@ -1,32 +1,37 @@
-from django.shortcuts import render, redirect
+import logging
+
 from django.contrib import messages
-from django.http import JsonResponse
+from django.db import transaction
 from django.db.models import Count
-from core.services.advanced_filters import AdvancedFilterEngine
+from django.http import JsonResponse
+from django.shortcuts import redirect, render
+
+from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.models import (
-    Responsable,
     Beneficiario,
-    PadronBeneficiarios,
     BeneficiarioResponsable,
     BeneficiariosResponsablesRenaper,
+    PadronBeneficiarios,
+    Responsable,
 )
-from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
-from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from centrodefamilia.services.beneficiarios_filter_config import (
+    CHOICE_OPS as BENEFICIARIO_CHOICE_OPS,
     FIELD_MAP as BENEFICIARIO_FILTER_MAP,
     FIELD_TYPES as BENEFICIARIO_FIELD_TYPES,
-    TEXT_OPS as BENEFICIARIO_TEXT_OPS,
     NUM_OPS as BENEFICIARIO_NUM_OPS,
-    CHOICE_OPS as BENEFICIARIO_CHOICE_OPS,
+    TEXT_OPS as BENEFICIARIO_TEXT_OPS,
 )
+from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from centrodefamilia.services.responsables_filter_config import (
+    CHOICE_OPS as RESPONSABLE_CHOICE_OPS,
     FIELD_MAP as RESPONSABLE_FILTER_MAP,
     FIELD_TYPES as RESPONSABLE_FIELD_TYPES,
-    TEXT_OPS as RESPONSABLE_TEXT_OPS,
     NUM_OPS as RESPONSABLE_NUM_OPS,
-    CHOICE_OPS as RESPONSABLE_CHOICE_OPS,
+    TEXT_OPS as RESPONSABLE_TEXT_OPS,
 )
-from django.db import transaction
+from core.services.advanced_filters import AdvancedFilterEngine
+
+logger = logging.getLogger("django")
 
 
 def _normalize_genero(value):
@@ -250,15 +255,12 @@ def separar_datos_post(request):
     return beneficiario_data, responsable_data
 
 
-def generar_respuesta(
-    request,
-    beneficiario,
-    beneficiario_form,
-    responsable_form,
-    beneficiario_data,
-    template_name,
-):
+def generar_respuesta(request, beneficiario, forms_data, template_name):
     """Genera respuesta apropiada según resultado"""
+    beneficiario_form = forms_data.get("beneficiario_form")
+    responsable_form = forms_data.get("responsable_form")
+    beneficiario_data = forms_data.get("beneficiario_data", {})
+
     if beneficiario:
         messages.success(request, "Datos cargados con éxito")
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -301,14 +303,12 @@ def manejar_request_beneficiarios(request, template_name):
             del request.session["renaper_cache"]
             request.session.modified = True
 
-        return generar_respuesta(
-            request,
-            beneficiario,
-            beneficiario_form,
-            responsable_form,
-            beneficiario_data,
-            template_name,
-        )
+        forms_data = {
+            "beneficiario_form": beneficiario_form,
+            "responsable_form": responsable_form,
+            "beneficiario_data": beneficiario_data,
+        }
+        return generar_respuesta(request, beneficiario, forms_data, template_name)
 
     except Exception as e:
         return JsonResponse(
@@ -372,7 +372,11 @@ def buscar_responsable_renaper(request, dni, sexo):
                     "status": "exists",
                     "data": data,
                     "cantidad_beneficiarios": cantidad_beneficiarios,
-                    "message": f"Este Responsable ya tiene {cantidad_beneficiarios} beneficiario{'s' if cantidad_beneficiarios != 1 else ''} a su cargo",
+                    "message": (
+                        f"Este Responsable ya tiene {cantidad_beneficiarios} "
+                        f"beneficiario{'s' if cantidad_beneficiarios != 1 else ''} "
+                        "a su cargo"
+                    ),
                 }
             )
 

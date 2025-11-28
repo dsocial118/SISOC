@@ -1,11 +1,13 @@
+import logging
+import unicodedata
+
 from django.conf import settings
 from django.core.cache import cache
 import requests
-import unicodedata
-from core.models import Sexo
+from requests.exceptions import RequestException
+
 from ciudadanos.models import Ciudadano
-from requests.exceptions import RequestException, ConnectionError
-import logging
+from core.models import Sexo
 
 logger = logging.getLogger("django")
 
@@ -36,12 +38,14 @@ class APIClient:
                 timeout=10,
             )
             response.raise_for_status()
-        except ConnectionError:
+        except requests.exceptions.ConnectionError as exc:
             logger.error("Error de conexión con RENAPER")
-            raise Exception("Error de conexión con el servicio.")
-        except RequestException as e:
-            logger.error(f"Error en login RENAPER: {str(e)}")
-            raise Exception(f"No se pudo conectar al servicio de login: {str(e)}")
+            raise RuntimeError("Error de conexión con el servicio.") from exc
+        except RequestException as exc:
+            logger.error(f"Error en login RENAPER: {str(exc)}")
+            raise RuntimeError(
+                f"No se pudo conectar al servicio de login: {str(exc)}"
+            ) from exc
 
         data = response.json()
         token = data.get("token")
@@ -53,8 +57,8 @@ class APIClient:
     def consultar_ciudadano(self, dni, sexo):
         try:
             token = self.get_token()
-        except Exception as e:
-            return {"success": False, "error": f"Error al obtener token: {str(e)}"}
+        except RuntimeError as exc:
+            return {"success": False, "error": f"Error al obtener token: {str(exc)}"}
 
         headers = {"Authorization": f"Bearer {token}"}
         params = {"dni": dni, "sexo": sexo.upper()}
@@ -64,20 +68,20 @@ class APIClient:
                 CONSULTA_URL, headers=headers, params=params, timeout=10
             )
             response.raise_for_status()
-        except ConnectionError:
+        except requests.exceptions.ConnectionError:
             logger.error(f"Error de conexión RENAPER para DNI {dni}")
             return {"success": False, "error": "Error de conexión al servicio."}
-        except RequestException as e:
-            logger.error(f"Error consulta RENAPER DNI {dni}: {str(e)}")
+        except RequestException as exc:
+            logger.error(f"Error consulta RENAPER DNI {dni}: {str(exc)}")
             return {
                 "success": False,
-                "error": f"No se pudo conectar al servicio: {str(e)}",
+                "error": f"No se pudo conectar al servicio: {str(exc)}",
             }
 
         try:
             data = response.json()
-        except Exception as e:
-            return {"success": False, "error": f"No se pudo decodificar JSON: {str(e)}"}
+        except Exception as exc:
+            return {"success": False, "error": f"No se pudo decodificar JSON: {str(exc)}"}
 
         if not data.get("isSuccess", False):
             return {
@@ -116,7 +120,7 @@ def consultar_datos_renaper(dni, sexo):
         datos = response["data"]
 
         if datos.get("mensaf") == "FALLECIDO":
-            return {"success": False, "error": f"El ciudadano se encuentra fallecido."}
+            return {"success": False, "error": "El ciudadano se encuentra fallecido."}
 
         sexo_map = {"F": "Femenino", "M": "Masculino", "X": "X"}
         sexo_texto = sexo_map.get(sexo)
@@ -166,5 +170,5 @@ def consultar_datos_renaper(dni, sexo):
 
         return {"success": True, "data": datos_mapeados, "datos_api": datos}
 
-    except Exception as e:
-        return {"success": False, "error": f"Error inesperado: {str(e)}"}
+    except RuntimeError as exc:
+        return {"success": False, "error": f"Error inesperado: {str(exc)}"}
