@@ -53,6 +53,7 @@ class DataCalleChacoDashboardView(
             ).exists()
         )
 
+
 class DataCalleSaltaDashboardView(
     LoginRequiredMixin, UserPassesTestMixin, TemplateView
 ):
@@ -68,6 +69,7 @@ class DataCalleSaltaDashboardView(
             ).exists()
         )
 
+
 class DataCalleCorrientesDashboardView(
     LoginRequiredMixin, UserPassesTestMixin, TemplateView
 ):
@@ -82,6 +84,7 @@ class DataCalleCorrientesDashboardView(
                 name__in=[DATACALLE_CORRIENTES_GROUP, UserGroups.ADMINISTRADOR]
             ).exists()
         )
+
 
 class DataCalleMisionesDashboardView(
     LoginRequiredMixin, UserPassesTestMixin, TemplateView
