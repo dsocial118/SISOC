@@ -94,6 +94,12 @@ MIDDLEWARE = [
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
 ]
 
+if DEBUG:  # Herramientas de depuración solo en entornos no productivos
+    INSTALLED_APPS += ["debug_toolbar", "silk"]
+    MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
+    INTERNAL_IPS = ["127.0.0.1"]
+
 # URLs / WSGI
 ROOT_URLCONF = "config.urls"
 WSGI_APPLICATION = "config.wsgi.application"
