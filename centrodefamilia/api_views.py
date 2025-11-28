@@ -179,7 +179,9 @@ class ParticipanteActividadViewSet(viewsets.ModelViewSet):
         except Exception:
             logger.exception("Error al inscribir participante")
             return Response(
-                {"error": "Ocurrió un error interno. Por favor, inténtelo de nuevo más tarde."},
+                {
+                    "error": "Ocurrió un error interno. Por favor, inténtelo de nuevo más tarde."
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
