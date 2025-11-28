@@ -246,7 +246,7 @@ function initializeSelect2Fields() {
         console.log('Elemento provincia existe:', $('#id_provincia').length > 0);
 
         // Esperar a que el archivo externo esté completamente cargado
-        setTimeout(async function () {
+        setTimeout(function() {
             console.log('Iniciando Select2 usando initializeSelect2()...');
 
             try {
@@ -257,25 +257,23 @@ function initializeSelect2Fields() {
                 });
                 console.log('✓ Select2 inicializado en organizacion');
 
-                if (typeof window.initUbicacionSelects === 'function') {
-                    await window.initUbicacionSelects({
-                        ajaxMunicipiosUrl: ajaxLoadMunicipiosUrl,
-                        ajaxLocalidadesUrl: ajaxLoadLocalidadesUrl,
-                        selectors: {
-                            provincia: "#id_provincia",
-                            municipio: "#id_municipio",
-                            localidad: "#id_localidad"
-                        },
-                        ui: {
-                            municipio: { loader: "#municipio-loader", wrapper: "#municipio-field", dropdownParent: "#municipio-field" },
-                            localidad: { loader: "#localidad-loader", wrapper: "#localidad-field", dropdownParent: "#localidad-field" }
-                        },
-                        autoPrefetch: true
-                    });
-                    console.log('✓ Gestor de ubicación inicializado (con Select2 exclusivo)');
-                } else {
-                    console.warn('initUbicacionSelects no está disponible');
-                }
+                initializeSelect2('id_provincia', {
+                    placeholder: "Seleccione una provincia",
+                    allowClear: true
+                });
+                console.log('✓ Select2 inicializado en provincia');
+
+                initializeSelect2('id_municipio', {
+                    placeholder: "Seleccione un municipio",
+                    allowClear: true
+                });
+                console.log('✓ Select2 inicializado en municipio');
+
+                initializeSelect2('id_localidad', {
+                    placeholder: "Seleccione una localidad",
+                    allowClear: true
+                });
+                console.log('✓ Select2 inicializado en localidad');
 
                 initializeSelect2('id_estado_general', {
                     placeholder: "Seleccione un estado general",
@@ -296,6 +294,14 @@ function initializeSelect2Fields() {
                 console.log('✓ Select2 inicializado en motivo');
 
                 console.log('✓✓✓ Todos los Select2 inicializados correctamente ✓✓✓');
+
+                // Configurar event listeners para carga dinámica (provincia -> municipio -> localidad)
+                if (typeof setupSelect2EventListeners === 'function') {
+                    setupSelect2EventListeners();
+                    console.log('✓ Event listeners configurados para provincia/municipio/localidad');
+                } else {
+                    console.warn('setupSelect2EventListeners no está disponible');
+                }
 
             } catch (error) {
                 console.error('ERROR al inicializar Select2:', error);

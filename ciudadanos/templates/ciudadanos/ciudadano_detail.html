@@ -18,17 +18,7 @@
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title">Contacto</h5>
-                    </div>
-                    {% if ciudadano.foto %}
-                        <div class="text-center mb-3">
-                            <img src="{{ ciudadano.foto.url }}"
-                                 alt="Foto de {{ ciudadano.nombre }} {{ ciudadano.apellido }}"
-                                 class="img-fluid rounded shadow-sm"
-                                 style="max-height: 260px; object-fit: cover;">
-                        </div>
-                    {% endif %}
+                    <h5 class="card-title">Contacto</h5>
                     <p class="mb-1">
                         <strong>Sexo:</strong> {{ ciudadano.sexo|default:'-' }}
                     </p>
@@ -73,7 +63,6 @@
                                 <tr>
                                     <th>Nombre</th>
                                     <th>Vínculo</th>
-                                    <th>Estado del vínculo</th>
                                     <th>Conviven</th>
                                     <th></th>
                                 </tr>
@@ -85,7 +74,6 @@
                                             <a href="{% url 'ciudadanos_ver' familiar.pk %}">{{ familiar }}</a>
                                         </td>
                                         <td>{{ relacion.get_vinculo_display }}</td>
-                                        <td>{{ relacion.get_estado_relacion_display|default:"-" }}</td>
                                         <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
                                         <td class="text-end">
                                             <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}"
@@ -106,9 +94,7 @@
     {% if ciudadano.observaciones %}
         <div class="card">
             <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title">Observaciones</h5>
-                    </div>
+                <h5 class="card-title">Observaciones</h5>
                 <p class="mb-0">{{ ciudadano.observaciones }}</p>
             </div>
         </div>
