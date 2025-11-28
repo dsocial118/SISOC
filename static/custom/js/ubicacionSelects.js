@@ -435,6 +435,11 @@
             $select.select2(options);
         };
 
+        const requestControllers = {
+            municipio: null,
+            localidad: null,
+        };
+
         const fetchOptionsFallback = async (url, key, preserveValue = false) => {
             const target = selects[key];
             if (!target || !url) return;
@@ -442,10 +447,21 @@
             const previousValue = preserveValue ? target.value : "";
             toggleLoader(key, true);
             try {
+                if (requestControllers[key]) {
+                    requestControllers[key].abort();
+                }
+
+                const controller = new AbortController();
+                requestControllers[key] = controller;
+
                 const response = await fetch(url, {
                     headers: { "X-Requested-With": "XMLHttpRequest" },
                     credentials: "same-origin",
+                    signal: controller.signal,
                 });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 const data = await response.json();
                 resetSelect(target);
                 data.forEach((item) => {
