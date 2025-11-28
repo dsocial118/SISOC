@@ -988,8 +988,12 @@ class Relevamiento(models.Model):
         super().save(*args, **kwargs)
 
     def set_referente_como_responsable(self):
-        if self.responsable_es_referente:
-            self.responsable = self.comedor.referente
+        """
+        Si el responsable es el referente del comedor, sincronizar el campo
+        ``responsable_relevamiento`` con el referente actual.
+        """
+        if self.responsable_es_referente and self.comedor and self.comedor.referente:
+            self.responsable_relevamiento = self.comedor.referente
 
     def validate_relevamientos_activos(self):
         if self.estado in ["Pendiente", "Visita pendiente"]:

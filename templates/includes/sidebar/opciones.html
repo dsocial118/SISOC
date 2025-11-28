@@ -166,6 +166,46 @@
                             </ul>
                         </li>
                     {% endif %}
+                    {% if has_datacalle_salta or has_admin %}
+                        <li class="nav-item {% if 'dashboard/datacalle-general-salta/' in pagina_actual %}menu-open{% endif %}">
+                            <a href="#"
+                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-salta/' in pagina_actual %}active{% endif %}">
+                                <p>
+                                    DataCalle - Salta
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{% url 'dashboard_datacalle_salta' %}"
+                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-salta/' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                    {% if has_datacalle_corrientes or has_admin %}
+                        <li class="nav-item {% if 'dashboard/datacalle-general-corrientes/' in pagina_actual %}menu-open{% endif %}">
+                            <a href="#"
+                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-corrientes/' in pagina_actual %}active{% endif %}">
+                                <p>
+                                    DataCalle - Corrientes
+                                    <i class="nav-arrow bi bi-chevron-right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{% url 'dashboard_datacalle_corrientes' %}"
+                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-corrientes/' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% endif %}
                 </ul>
             </li>
         {% endif %}
