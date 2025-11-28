@@ -142,29 +142,11 @@ class GrupoFamiliarForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["ciudadano_2"].queryset = Ciudadano.objects.exclude(pk=ciudadano.pk)
         self.fields["ciudadano_2"].label = "Familiar"
-        # Estilos consistentes con los formularios modernos
-        for name in ("ciudadano_2", "vinculo", "estado_relacion"):
-            css = self.fields[name].widget.attrs.get("class", "")
-            self.fields[name].widget.attrs["class"] = f"{css} form-select".strip()
-        for name in ("observaciones",):
-            css = self.fields[name].widget.attrs.get("class", "")
-            self.fields[name].widget.attrs["class"] = f"{css} form-control".strip()
-        for name in ("conviven", "cuidador_principal"):
-            css = self.fields[name].widget.attrs.get("class", "")
-            self.fields[name].widget.attrs["class"] = f"{css} form-check-input".strip()
 
     def clean_ciudadano_2(self):
         familiar = self.cleaned_data["ciudadano_2"]
         if familiar == self.ciudadano:
             raise forms.ValidationError("No puede autoreferenciarse.")
-        # Evitar duplicados (en cualquier dirección) antes de golpear la BD
-        ya_existe = GrupoFamiliar.objects.filter(
-            ciudadano_1=self.ciudadano, ciudadano_2=familiar
-        ).exists() or GrupoFamiliar.objects.filter(
-            ciudadano_1=familiar, ciudadano_2=self.ciudadano
-        ).exists()
-        if ya_existe:
-            raise forms.ValidationError("Ya existe una relación registrada con este familiar.")
         return familiar
 
     def save(self, commit=True):
