@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from users.models import User
 from comedores.models import Comedor
 from django.core.exceptions import ValidationError
@@ -51,6 +52,7 @@ class Admision(models.Model):
         ("Informe Complementario: Validado", "Informe Complementario: Validado"),
         ("Finalizado", "Finalizado"),
         ("Descartado", "Descartado"),
+        ("Inactivada", "Inactivada"),
     ]
 
     ESTADOS_INTERVENCION_JURIDICOS = [
@@ -90,6 +92,8 @@ class Admision(models.Model):
         ("if_informe_tecnico_cargado", "IF Informe técnico cargado"),
         ("enviado_a_legales", "Enviado a legales"),
         ("enviado_a_acompaniamiento", "Enviado a acompañamiento"),
+        ("inactivada", "Inactivada"),
+        ("descartado", "Descartado"),
     ]
 
     comedor = models.ForeignKey(
@@ -192,6 +196,42 @@ class Admision(models.Model):
         default="iniciada",
         verbose_name="Estado de Admisión",
     )
+    estado_mostrar = models.CharField(max_length=255, blank=True, null=True)
+    fecha_estado_mostrar = models.DateField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        # Si el estado es "Descartado" en cualquier campo, marcar como inactiva
+        if self.estado_legales == "Descartado" or self.estado_admision == "descartado":
+            self.activa = False
+            self.estado_mostrar = "Descartado"
+            self.fecha_estado_mostrar = timezone.now().date()
+        elif not self.activa:
+            # Si está inactiva por otro motivo, mostrar "Inactivada"
+            self.estado_mostrar = "Inactivada"
+            self.fecha_estado_mostrar = timezone.now().date()
+        else:
+            # Actualizar estado_mostrar basado en estado_admision o estado_legales
+            nuevo_estado = None
+            
+            if self.estado_legales:
+                nuevo_estado = dict(self.ESTADOS_LEGALES).get(self.estado_legales, self.estado_legales)
+            elif self.estado_admision:
+                nuevo_estado = dict(self.ESTADOS_ADMISION).get(self.estado_admision, self.estado_admision)
+            
+            # Siempre actualizar el estado_mostrar
+            if nuevo_estado:
+                self.estado_mostrar = nuevo_estado
+                self.fecha_estado_mostrar = timezone.now().date()
+        
+        # Asegurar que estado_mostrar y fecha_estado_mostrar se incluyan en update_fields
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            update_fields.add('estado_mostrar')
+            update_fields.add('fecha_estado_mostrar')
+            kwargs['update_fields'] = list(update_fields)
+        
+        super().save(*args, **kwargs)
 
     @property
     def tipo_informe(self):
