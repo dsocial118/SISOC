@@ -1,6 +1,3 @@
-const provinciaSelect = document.getElementById("id_provincia");
-const municipioSelect = document.getElementById("id_municipio");
-const localidadSelect = document.getElementById("id_localidad");
 function confirmSubmit() {
   return confirm("¿Estás seguro de que deseas guardar el comedor?");
 }
@@ -76,87 +73,6 @@ function initializeSelect2(selectId, options = {}) {
   if (currentValue) {
     selectElement.val(currentValue).trigger('change.select2');
   }
-}
-
-// Event listeners con Select2
-/**
- * Configura los event listeners para Select2 en provincia, municipio y localidad
- * Debe llamarse después de inicializar Select2
- */
-function setupSelect2EventListeners() {
-  // Provincia: cuando cambia, cargar municipios y limpiar localidad
-  $('#id_provincia').on('select2:select', async function (e) {
-    const provinciaId = e.params.data.id;
-    await cargarOpciones(
-      `${ajaxLoadMunicipiosUrl}?provincia_id=${provinciaId}`,
-      "municipio"
-    );
-    // Limpiar localidad cuando cambia provincia
-    await cargarOpciones(
-      `${ajaxLoadLocalidadesUrl}?municipio_id=`,
-      "localidad"
-    );
-  });
-
-  // Municipio: cuando cambia, cargar localidades
-  $('#id_municipio').on('select2:select', async function (e) {
-    const municipioId = e.params.data.id;
-    await cargarOpciones(
-      `${ajaxLoadLocalidadesUrl}?municipio_id=${municipioId}`,
-      "localidad"
-    );
-  });
-}
-async function cargarOpciones(url, select) {
-  try {
-    const response = await fetch(url);
-    const data = await response.json();
-
-    // Ordenar alfabéticamente por nombre o nombre_region
-    data.sort((a, b) => {
-      const nameA = (a.nombre || a.nombre_region || '').toUpperCase();
-      const nameB = (b.nombre || b.nombre_region || '').toUpperCase();
-      return nameA.localeCompare(nameB);
-    });
-
-    if (select === "municipio") {
-      municipioSelect.innerHTML = "";
-      localidadSelect.innerHTML = "";
-
-      // Agregar opción vacía al inicio
-      const emptyOption = document.createElement("option");
-      emptyOption.value = "";
-      emptyOption.textContent = "---------";
-      municipioSelect.appendChild(emptyOption);
-
-      data.forEach((item) => crearOpcion(item, municipioSelect));
-      // Reinicializar Select2 para municipio
-      setTimeout(() => initializeSelect2("id_municipio", { placeholder: "Seleccione un municipio" }), 100);
-    }
-
-    if (select === "localidad") {
-      localidadSelect.innerHTML = "";
-
-      // Agregar opción vacía al inicio
-      const emptyOption = document.createElement("option");
-      emptyOption.value = "";
-      emptyOption.textContent = "---------";
-      localidadSelect.appendChild(emptyOption);
-
-      data.forEach((item) => crearOpcion(item, localidadSelect));
-      // Reinicializar Select2 para localidad
-      setTimeout(() => initializeSelect2("id_localidad", { placeholder: "Seleccione una localidad" }), 100);
-    }
-  } catch (error) {
-    console.error('Error cargando opciones:', error);
-  }
-}
-
-function crearOpcion({ id, nombre, nombre_region }, select) {
-  const option = document.createElement("option");
-  option.value = id;
-  option.textContent = nombre || nombre_region;
-  select.appendChild(option);
 }
 
 // FUNCIONALIDAD DE IMÁGENES
