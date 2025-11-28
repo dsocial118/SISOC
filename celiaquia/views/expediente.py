@@ -32,13 +32,17 @@ from celiaquia.models import (
     Expediente,
     ExpedienteCiudadano,
     RevisionTecnico,
+    HistorialValidacionTecnica,
 )
 from celiaquia.services.ciudadano_service import CiudadanoService
 from celiaquia.services.expediente_service import (
     ExpedienteService,
     _set_estado,
 )
-from celiaquia.services.importacion_service import ImportacionService, validar_edad_responsable
+from celiaquia.services.importacion_service import (
+    ImportacionService,
+    validar_edad_responsable,
+)
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
@@ -186,13 +190,15 @@ class ExpedienteListView(ListView):
             )
         else:
             qs = qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
-        
+
         search_query = self.request.GET.get("q", "").strip()
         if search_query:
             qs = qs.filter(
-                Q(id__icontains=search_query) | Q(numero_expediente__icontains=search_query) | Q(estado__nombre__icontains=search_query)
+                Q(id__icontains=search_query)
+                | Q(numero_expediente__icontains=search_query)
+                | Q(estado__nombre__icontains=search_query)
             )
-        
+
         return qs
 
     def get_context_data(self, **kwargs):
@@ -1012,6 +1018,7 @@ class RevisarLegajoView(View):
                 )
 
         if accion == "APROBAR":
+            estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "APROBADO"
             leg.save(
                 update_fields=[
@@ -1021,6 +1028,15 @@ class RevisarLegajoView(View):
                     "es_titular_activo",
                 ]
             )
+
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo="APROBADO",
+                usuario=user,
+                motivo=None,
+            )
+
             return JsonResponse(
                 {
                     "success": True,
@@ -1030,6 +1046,7 @@ class RevisarLegajoView(View):
             )
 
         if accion == "RECHAZAR":
+            estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "RECHAZADO"
             leg.save(
                 update_fields=[
@@ -1039,6 +1056,15 @@ class RevisarLegajoView(View):
                     "es_titular_activo",
                 ]
             )
+
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo="RECHAZADO",
+                usuario=user,
+                motivo=None,
+            )
+
             return JsonResponse(
                 {"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True}
             )
@@ -1095,6 +1121,7 @@ class RevisarLegajoView(View):
                 status=400,
             )
 
+        estado_anterior = leg.revision_tecnico
         leg.revision_tecnico = RevisionTecnico.SUBSANAR
         leg.subsanacion_motivo = motivo[:500]
         leg.subsanacion_solicitada_en = timezone.now()
@@ -1109,6 +1136,14 @@ class RevisarLegajoView(View):
                 "estado_cupo",
                 "es_titular_activo",
             ]
+        )
+
+        HistorialValidacionTecnica.objects.create(
+            legajo=leg,
+            estado_anterior=estado_anterior,
+            estado_nuevo=RevisionTecnico.SUBSANAR,
+            usuario=user,
+            motivo=motivo[:500],
         )
 
         return JsonResponse(
@@ -1251,23 +1286,28 @@ class ReprocesarRegistrosErroneosView(View):
                     # Detectar rol del beneficiario
                     doc_beneficiario = datos.get("documento")
                     doc_responsable = datos.get("documento_responsable")
-                    tiene_responsable = any([
-                        datos.get("apellido_responsable"),
-                        datos.get("nombre_responsable"),
-                        datos.get("documento_responsable"),
-                    ])
-                    
+                    tiene_responsable = any(
+                        [
+                            datos.get("apellido_responsable"),
+                            datos.get("nombre_responsable"),
+                            datos.get("documento_responsable"),
+                        ]
+                    )
+
                     es_mismo_documento = (
                         tiene_responsable
                         and doc_responsable
-                        and str(doc_responsable).strip() == str(doc_beneficiario).strip()
+                        and str(doc_responsable).strip()
+                        == str(doc_beneficiario).strip()
                     )
-                    
+
                     if es_mismo_documento:
-                        rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                        rol_beneficiario = (
+                            ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                        )
                     else:
                         rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
-                    
+
                     # Crear legajo del hijo/beneficiario CON ROL
                     _, created = ExpedienteCiudadano.objects.get_or_create(
                         expediente=expediente,
@@ -1309,9 +1349,13 @@ class ReprocesarRegistrosErroneosView(View):
 
                                 # Validaciones mínimas del responsable
                                 if not datos_resp.get("documento"):
-                                    raise ValidationError("Documento del responsable obligatorio")
+                                    raise ValidationError(
+                                        "Documento del responsable obligatorio"
+                                    )
                                 if not datos_resp.get("nombre"):
-                                    raise ValidationError("Nombre del responsable obligatorio")
+                                    raise ValidationError(
+                                        "Nombre del responsable obligatorio"
+                                    )
 
                                 # Convertir fecha del responsable si existe
                                 if "fecha_nacimiento" in datos_resp and isinstance(
@@ -1343,9 +1387,11 @@ class ReprocesarRegistrosErroneosView(View):
 
                                 if responsable and responsable.pk:
                                     # Validar edad
-                                    valido_edad, edad_warnings, error_edad = validar_edad_responsable(
-                                        datos_resp.get("fecha_nacimiento"),
-                                        datos.get("fecha_nacimiento"),
+                                    valido_edad, edad_warnings, error_edad = (
+                                        validar_edad_responsable(
+                                            datos_resp.get("fecha_nacimiento"),
+                                            datos.get("fecha_nacimiento"),
+                                        )
                                     )
                                     if error_edad:
                                         raise ValidationError(error_edad)

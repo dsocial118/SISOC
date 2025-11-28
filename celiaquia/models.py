@@ -162,6 +162,11 @@ class ExpedienteEstadoHistorial(models.Model):
         verbose_name = "Historial de estado"
         verbose_name_plural = "Historial de estados"
         ordering = ("-fecha",)
+        indexes = [
+            models.Index(
+                fields=["expediente", "-fecha"], name="exp_hist_exp_fecha_idx"
+            ),
+        ]
 
     def __str__(self):
         return f"{self.expediente_id} {self.estado_anterior} -> {self.estado_nuevo}"
@@ -172,13 +177,13 @@ class ExpedienteCiudadano(models.Model):
     ROLE_BENEFICIARIO = "beneficiario"
     ROLE_RESPONSABLE = "responsable"
     ROLE_BENEFICIARIO_Y_RESPONSABLE = "beneficiario_y_responsable"
-    
+
     ROLE_CHOICES = [
         (ROLE_BENEFICIARIO, "Solo Beneficiario"),
         (ROLE_RESPONSABLE, "Solo Responsable"),
         (ROLE_BENEFICIARIO_Y_RESPONSABLE, "Beneficiario y Responsable"),
     ]
-    
+
     expediente = models.ForeignKey(
         Expediente, on_delete=models.CASCADE, related_name="expediente_ciudadanos"
     )
@@ -235,10 +240,7 @@ class ExpedienteCiudadano(models.Model):
         help_text="Archivo de respuesta a subsanación Renaper",
     )
     rol = models.CharField(
-        max_length=50,
-        choices=ROLE_CHOICES,
-        default=ROLE_BENEFICIARIO,
-        db_index=True
+        max_length=50, choices=ROLE_CHOICES, default=ROLE_BENEFICIARIO, db_index=True
     )
 
     class Meta:
@@ -266,6 +268,10 @@ class ExpedienteCiudadano(models.Model):
             models.Index(
                 fields=["revision_tecnico", "resultado_sintys"],
                 name="leg_rev_sintys_idx",
+            ),
+            models.Index(
+                fields=["estado_cupo", "es_titular_activo", "rol"],
+                name="leg_cupo_activo_rol_idx",
             ),
         ]
 
@@ -494,3 +500,259 @@ class RegistroErroneo(models.Model):
 
     def __str__(self):
         return f"Fila {self.fila_excel} - {self.mensaje_error[:50]}"
+
+
+class ValidacionTecnica(models.Model):
+    legajo = models.OneToOneField(
+        ExpedienteCiudadano, on_delete=models.CASCADE, related_name="validacion_tecnica"
+    )
+    revision_tecnico = models.CharField(
+        max_length=24,
+        choices=RevisionTecnico.choices,
+        default=RevisionTecnico.PENDIENTE,
+    )
+    subsanacion_motivo = models.TextField(null=True, blank=True)
+    subsanacion_solicitada_en = models.DateTimeField(null=True, blank=True)
+    subsanacion_enviada_en = models.DateTimeField(null=True, blank=True)
+    subsanacion_usuario = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="validaciones_tecnicas",
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+    modificado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Validación Técnica"
+        verbose_name_plural = "Validaciones Técnicas"
+
+    def __str__(self):
+        return f"{self.legajo} - {self.revision_tecnico}"
+
+
+class CruceResultado(models.Model):
+    legajo = models.OneToOneField(
+        ExpedienteCiudadano, on_delete=models.CASCADE, related_name="cruce_resultado"
+    )
+    resultado_sintys = models.CharField(
+        max_length=10,
+        choices=ResultadoSintys.choices,
+        default=ResultadoSintys.SIN_CRUCE,
+    )
+    cruce_ok = models.BooleanField(null=True, blank=True)
+    observacion_cruce = models.CharField(max_length=255, null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    modificado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Resultado de Cruce"
+        verbose_name_plural = "Resultados de Cruce"
+
+    def __str__(self):
+        return f"{self.legajo} - {self.resultado_sintys}"
+
+
+class CupoTitular(models.Model):
+    legajo = models.OneToOneField(
+        ExpedienteCiudadano, on_delete=models.CASCADE, related_name="cupo_titular"
+    )
+    estado_cupo = models.CharField(
+        max_length=8, choices=EstadoCupo.choices, default=EstadoCupo.NO_EVAL
+    )
+    es_titular_activo = models.BooleanField(default=False)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    modificado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Cupo Titular"
+        verbose_name_plural = "Cupos Titulares"
+        indexes = [
+            models.Index(fields=["estado_cupo", "es_titular_activo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.legajo} - {self.estado_cupo}"
+
+
+class ValidacionRenaper(models.Model):
+    legajo = models.OneToOneField(
+        ExpedienteCiudadano, on_delete=models.CASCADE, related_name="validacion_renaper"
+    )
+    estado_validacion = models.IntegerField(
+        default=0,
+        choices=[
+            (0, "No validado"),
+            (1, "Aceptado"),
+            (2, "Rechazado"),
+            (3, "Subsanar"),
+        ],
+    )
+    comentario = models.TextField(null=True, blank=True)
+    archivo = models.FileField(
+        upload_to="legajos/subsanacion_renaper/", null=True, blank=True
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+    modificado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Validación Renaper"
+        verbose_name_plural = "Validaciones Renaper"
+
+    def __str__(self):
+        return f"{self.legajo} - Estado {self.estado_validacion}"
+
+
+class HistorialValidacionTecnica(models.Model):
+    legajo = models.ForeignKey(
+        ExpedienteCiudadano,
+        on_delete=models.CASCADE,
+        related_name="historial_validacion_tecnica",
+    )
+    estado_anterior = models.CharField(
+        max_length=24, choices=RevisionTecnico.choices, null=True, blank=True
+    )
+    estado_nuevo = models.CharField(max_length=24, choices=RevisionTecnico.choices)
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cambios_validacion_tecnica",
+    )
+    motivo = models.TextField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Historial Validación Técnica"
+        verbose_name_plural = "Historiales Validación Técnica"
+        ordering = ("-creado_en",)
+        indexes = [
+            models.Index(fields=["legajo", "-creado_en"]),
+        ]
+
+    def __str__(self):
+        return f"{self.legajo} - {self.estado_anterior} → {self.estado_nuevo}"
+
+
+class HistorialCupo(models.Model):
+    legajo = models.ForeignKey(
+        ExpedienteCiudadano, on_delete=models.CASCADE, related_name="historial_cupo"
+    )
+    estado_cupo_anterior = models.CharField(
+        max_length=8, choices=EstadoCupo.choices, null=True, blank=True
+    )
+    estado_cupo_nuevo = models.CharField(max_length=8, choices=EstadoCupo.choices)
+    es_titular_activo_anterior = models.BooleanField(null=True, blank=True)
+    es_titular_activo_nuevo = models.BooleanField()
+    tipo_movimiento = models.CharField(
+        max_length=20, choices=TipoMovimientoCupo.choices
+    )
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cambios_cupo",
+    )
+    motivo = models.TextField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Historial Cupo"
+        verbose_name_plural = "Historiales Cupo"
+        ordering = ("-creado_en",)
+        indexes = [
+            models.Index(fields=["legajo", "-creado_en"]),
+            models.Index(fields=["tipo_movimiento", "-creado_en"]),
+        ]
+
+    def __str__(self):
+        return f"{self.legajo} - {self.tipo_movimiento}"
+
+
+class SubsanacionRespuesta(models.Model):
+    legajo = models.ForeignKey(
+        ExpedienteCiudadano,
+        on_delete=models.CASCADE,
+        related_name="subsanaciones_respuestas",
+    )
+    validacion_tecnica = models.ForeignKey(
+        ValidacionTecnica, on_delete=models.CASCADE, related_name="respuestas"
+    )
+    archivo1 = models.FileField(
+        upload_to="legajos/subsanacion_respuesta/", null=True, blank=True
+    )
+    archivo2 = models.FileField(
+        upload_to="legajos/subsanacion_respuesta/", null=True, blank=True
+    )
+    archivo3 = models.FileField(
+        upload_to="legajos/subsanacion_respuesta/", null=True, blank=True
+    )
+    comentario = models.TextField(null=True, blank=True)
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subsanaciones_respondidas",
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Respuesta de Subsanación"
+        verbose_name_plural = "Respuestas de Subsanación"
+        ordering = ("-creado_en",)
+        indexes = [
+            models.Index(fields=["legajo", "-creado_en"]),
+            models.Index(fields=["validacion_tecnica"]),
+        ]
+
+    def __str__(self):
+        return f"{self.legajo} - Respuesta #{self.pk}"
+
+
+class RegistroErroneoReprocesado(models.Model):
+    RESULTADO_CHOICES = [
+        ("EXITOSO", "Exitoso"),
+        ("FALLIDO", "Fallido"),
+    ]
+
+    registro_erroneo = models.ForeignKey(
+        RegistroErroneo, on_delete=models.CASCADE, related_name="reprocesados"
+    )
+    intento_numero = models.PositiveIntegerField()
+    resultado = models.CharField(max_length=10, choices=RESULTADO_CHOICES)
+    ciudadano_creado = models.ForeignKey(
+        Ciudadano, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    legajo_creado = models.ForeignKey(
+        ExpedienteCiudadano,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    error_mensaje = models.TextField(null=True, blank=True)
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reprocesados",
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Registro Erróneo Reprocesado"
+        verbose_name_plural = "Registros Erróneos Reprocesados"
+        ordering = ("-creado_en",)
+        unique_together = ("registro_erroneo", "intento_numero")
+        indexes = [
+            models.Index(fields=["registro_erroneo", "-creado_en"]),
+            models.Index(fields=["resultado"]),
+        ]
+
+    def __str__(self):
+        return f"Fila {self.registro_erroneo.fila_excel} - Intento {self.intento_numero} - {self.resultado}"
