@@ -1,0 +1,24 @@
+{
+  "name": "backoffice",
+  "version": "1.0.0",
+  "description": "Sistema de gestión basado en **Django** y **MySQL**, desplegable mediante **Docker** y **Docker Compose**.   Cada aplicación del repositorio representa un módulo funcional (ej. `comedores`, `relevamientos`, `users`).",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dsocial118/BACKOFFICE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dsocial118/BACKOFFICE/issues"
+  },
+  "homepage": "https://github.com/dsocial118/BACKOFFICE#readme",
+  "dependencies": {}
+}
