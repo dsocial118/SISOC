@@ -88,7 +88,7 @@
                                         <td>{{ relacion.get_estado_relacion_display|default:"-" }}</td>
                                         <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
                                         <td class="text-end">
-                                            <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}"
+                                            <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}?next={{ request.path }}"
                                                class="btn btn-sm btn-outline-danger">Eliminar</a>
                                         </td>
                                     </tr>
