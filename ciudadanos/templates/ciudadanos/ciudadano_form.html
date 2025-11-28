@@ -19,653 +19,165 @@
 {% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorRelevamiento.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/ciudadanoUbicacion.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/fotos.css' %}" />
-
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <h3 class="mb-1">
-                {% if object %}
-                    Actualizar ciudadano
-                {% else %}
-                    Registrar ciudadano
-                {% endif %}
-            </h3>
-            <p class="text-muted mb-0">Formulario con secciones colapsables y estilos modernos.</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'ciudadanos' %}{% endif %}"
-               class="btn btn-secondary">
-                <i class="fas fa-arrow-left mr-1"></i>
-                Volver
-            </a>
-            <a href="#" onclick="window.history.back();" class="btn btn-outline-secondary">
-                Cancelar
-            </a>
-        </div>
-    </div>
-
-    <div class="row comedor-form">
+    <div class="row">
         <div class="col-12">
-            <form method="post"
-                  id="ciudadanoForm"
-                  class="w-100"
-                  enctype="multipart/form-data"
-                  novalidate
-                  data-ajax-municipios-url="{% url 'ajax_load_municipios' %}"
-                  data-ajax-localidades-url="{% url 'ajax_load_localidades' %}">
-                {% csrf_token %}
-                {{ form.non_field_errors }}
-
-                <div class="progress-indicator">
-                    <div class="progress-header">
-                        <h4 class="progress-title">
-                            <i class="fas fa-clipboard-check mr-2"></i>
-                            Progreso del Formulario
-                        </h4>
-                        <span class="progress-stats">
-                            <span id="completedSections">0</span>/<span id="totalSections">5</span> secciones completadas
-                        </span>
+            <div class="card shadow-sm">
+                <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h3 class="card-title mb-0">
+                            {% if object %}
+                                Actualizar datos
+                            {% else %}
+                                Registrar ciudadano
+                            {% endif %}
+                        </h3>
                     </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
-                    </div>
+                    <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'ciudadanos' %}{% endif %}"
+                       class="btn btn-outline-secondary ms-md-auto">Volver</a>
                 </div>
-
-                <div class="section-card" data-section="identidad">
-                    <div class="section-header" onclick="toggleSectionCiudadano('identidad')">
-                        <div class="section-header-left">
-                            <div class="section-icon">
-                                <i class="fas fa-id-card"></i>
-                            </div>
-                            <div class="section-title-group">
-                                <h3 class="section-title">Datos personales</h3>
-                                <p class="section-subtitle">Identidad y documentación principal</p>
-                            </div>
-                        </div>
-                        <div class="section-status">
-                            <span class="status-badge empty" id="status-identidad">
-                                <i class="fas fa-circle"></i> Sin completar
-                            </span>
-                            <div class="collapse-indicator">
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="section-body collapse show" id="section-identidad">
-                        <div class="form-group row">
-                            <div class="col-md-4">
-                                {% with field=form.apellido %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
+                <div class="card-body">
+                    <link rel="stylesheet"
+                          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+                    <link rel="stylesheet" href="{% static 'custom/css/fotos.css' %}" />
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+                        <div class="row g-4">
+                            {% for field in form %}
+                                {% if field.name == "foto" %}
+                                    <div class="col-12">
+                                        <label for="{{ form.foto.id_for_label }}"
+                                               class="form-label font-weight-bold">
+                                            <i class="fas fa-camera mr-2"></i>
+                                            Foto de Legajo
                                         </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-4">
-                                {% with field=form.nombre %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-4">
-                                {% with field=form.fecha_nacimiento %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-4">
-                                {% with field=form.tipo_documento %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-4">
-                                {% with field=form.documento %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-4">
-                                {% with field=form.sexo %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-4">
-                                {% with field=form.nacionalidad %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section-card" data-section="domicilio">
-                    <div class="section-header" onclick="toggleSectionCiudadano('domicilio')">
-                        <div class="section-header-left">
-                            <div class="section-icon">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <div class="section-title-group">
-                                <h3 class="section-title">Domicilio y ubicación</h3>
-                                <p class="section-subtitle">Provincia, municipio y dirección declarada</p>
-                            </div>
-                        </div>
-                        <div class="section-status">
-                            <span class="status-badge empty" id="status-domicilio">
-                                <i class="fas fa-circle"></i> Sin completar
-                            </span>
-                            <div class="collapse-indicator">
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="section-body collapse show" id="section-domicilio">
-                        <div class="form-group row">
-                            <div class="col-md-4">
-                                {% with field=form.provincia %}
-                                    <div class="form-group ubicacion-select-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        <div id="provincia-field" class="ubicacion-select-wrapper">
-                                            {{ field }}
+                                        <!-- Foto existente -->
+                                        {% if form.instance.foto %}
+                                            <div class="foto-legajo-existente mb-3">
+                                                <h6 class="text-light mb-2">
+                                                    <i class="fas fa-image mr-1"></i>
+                                                    Foto actual:
+                                                </h6>
+                                                <div class="foto-existente-container">
+                                                    <div class="foto-thumbnail-container"
+                                                         data-image-url="{{ form.instance.foto.url }}">
+                                                        <div class="preview-placeholder">
+                                                            <i class="fas fa-image"></i>
+                                                            <div class="loader">
+                                                                <div class="spinner-border spinner-border-sm" role="status">
+                                                                    <span class="sr-only">Cargando...</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="foto-info">
+                                                        <div class="foto-nombre">
+                                                            {% if "comedor/" in form.instance.foto.name %}
+                                                                {{ form.instance.foto.name|slice:"8:" }}
+                                                            {% else %}
+                                                                {{ form.instance.foto.name }}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="foto-status">
+                                                            <i class="fas fa-check-circle text-success"></i>
+                                                            <span class="text-success">Guardada</span>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button"
+                                                            class="btn btn-outline-primary btn-sm"
+                                                            onclick="abrirFotoCiudadanoModal('{{ form.instance.foto.url|escapejs }}', '{{ form.instance.foto.name|escapejs }}')">
+                                                        <i class="fas fa-expand-alt mr-1"></i>
+                                                        Ver completa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                        <!-- Input para nueva foto -->
+                                        <div class="nueva-foto-section">
+                                            <h6 class="text-light mb-2">
+                                                <i class="fas fa-upload mr-1"></i>
+                                                {% if form.instance.foto %}
+                                                    Cambiar foto:
+                                                {% else %}
+                                                    Seleccionar foto:
+                                                {% endif %}
+                                            </h6>
+                                            {{ form.foto }}
+                                            <button type="button" id="foto-picker-btn" class="btn-seleccionar mt-2">
+                                                <i class="fas fa-upload"></i>
+                                                Seleccionar imagen
+                                            </button>
+                                            <div class="contador-imagenes mt-2 d-none" id="foto-selected-info">
+                                                <span id="foto-selected-name"></span>
+                                            </div>
                                         </div>
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-4">
-                                {% with field=form.municipio %}
-                                    <div class="form-group ubicacion-select-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        <div id="municipio-loader" class="skeleton-loader d-none"></div>
-                                        <div id="municipio-field" class="ubicacion-select-wrapper">
-                                            {{ field }}
-                                        </div>
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-4">
-                                {% with field=form.localidad %}
-                                    <div class="form-group ubicacion-select-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        <div id="localidad-loader" class="skeleton-loader d-none"></div>
-                                        <div id="localidad-field" class="ubicacion-select-wrapper">
-                                            {{ field }}
-                                        </div>
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-3">
-                                {% with field=form.barrio %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-3">
-                                {% with field=form.calle %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-3">
-                                {% with field=form.altura %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-3">
-                                {% with field=form.piso_departamento %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-md-4">
-                                {% with field=form.codigo_postal %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section-card" data-section="contacto">
-                    <div class="section-header" onclick="toggleSectionCiudadano('contacto')">
-                        <div class="section-header-left">
-                            <div class="section-icon">
-                                <i class="fas fa-phone-alt"></i>
-                            </div>
-                            <div class="section-title-group">
-                                <h3 class="section-title">Contacto</h3>
-                                <p class="section-subtitle">Datos de comunicación</p>
-                            </div>
-                        </div>
-                        <div class="section-status">
-                            <span class="status-badge empty" id="status-contacto">
-                                <i class="fas fa-circle"></i> Sin completar
-                            </span>
-                            <div class="collapse-indicator">
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="section-body collapse show" id="section-contacto">
-                        <div class="form-group row">
-                            <div class="col-md-4">
-                                {% with field=form.telefono %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-4">
-                                {% with field=form.telefono_alternativo %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                            <div class="col-md-4">
-                                {% with field=form.email %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section-card" data-section="estado">
-                    <div class="section-header" onclick="toggleSectionCiudadano('estado')">
-                        <div class="section-header-left">
-                            <div class="section-icon">
-                                <i class="fas fa-toggle-on"></i>
-                            </div>
-                            <div class="section-title-group">
-                                <h3 class="section-title">Estado y notas</h3>
-                                <p class="section-subtitle">Activación y observaciones internas</p>
-                            </div>
-                        </div>
-                        <div class="section-status">
-                            <span class="status-badge empty" id="status-estado">
-                                <i class="fas fa-circle"></i> Sin completar
-                            </span>
-                            <div class="collapse-indicator">
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="section-body collapse show" id="section-estado">
-                        <div class="form-group row">
-                            <div class="col-md-4">
-                                {% with field=form.activo %}
-                                    <div class="form-check form-switch mt-2">
-                                        {{ field }}
-                                        <label class="form-check-label ms-2" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {% if field.help_text %}<small class="form-text text-muted d-block">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                        </div>
-                        <div class="form-group row">
-                            <div class="col-12">
-                                {% with field=form.observaciones %}
-                                    <div class="form-group">
-                                        <label class="form-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                            {% if field.field.required %}
-                                                <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                                <span class="visually-hidden">Campo obligatorio</span>
-                                            {% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
-                                    </div>
-                                {% endwith %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section-card" data-section="documentacion">
-                    <div class="section-header" onclick="toggleSectionCiudadano('documentacion')">
-                        <div class="section-header-left">
-                            <div class="section-icon">
-                                <i class="fas fa-camera"></i>
-                            </div>
-                            <div class="section-title-group">
-                                <h3 class="section-title">Documentación</h3>
-                                <p class="section-subtitle">Foto de legajo del ciudadano</p>
-                            </div>
-                        </div>
-                        <div class="section-status">
-                            <span class="status-badge empty" id="status-documentacion">
-                                <i class="fas fa-circle"></i> Sin completar
-                            </span>
-                            <div class="collapse-indicator">
-                                <i class="fas fa-chevron-down"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="section-body collapse show" id="section-documentacion">
-                        <div class="form-group">
-                            <label for="{{ form.foto.id_for_label }}"
-                                   class="form-label font-weight-bold text-light">
-                                <i class="fas fa-camera mr-2"></i>
-                                Foto de Legajo
-                                {% if form.foto.field.required %}
-                                    <span class="text-danger fw-bold" aria-hidden="true">*</span>
-                                    <span class="visually-hidden">Campo obligatorio</span>
-                                {% endif %}
-                            </label>
-                            {% if form.instance.foto %}
-                                <div class="foto-legajo-existente mb-3">
-                                    <h6 class="text-light mb-2">
-                                        <i class="fas fa-image mr-1"></i>
-                                        Foto actual:
-                                    </h6>
-                                    <div class="foto-existente-container">
-                                        <div class="foto-thumbnail-container"
-                                             data-image-url="{{ form.instance.foto.url }}">
-                                            <div class="preview-placeholder">
-                                                <i class="fas fa-image"></i>
-                                                <div class="loader">
-                                                    <div class="spinner-border spinner-border-sm" role="status">
-                                                        <span class="sr-only">Cargando...</span>
+                                        <!-- Previsualización de nueva foto -->
+                                        <div id="fotoCiudadanoPreviewContainer"
+                                             class="nueva-foto-preview mt-3 d-none">
+                                            <h6 class="text-light mb-2">
+                                                <i class="fas fa-eye mr-1"></i>
+                                                Vista previa:
+                                            </h6>
+                                            <div class="nueva-foto-container">
+                                                <div class="foto-preview-wrapper">
+                                                    <img id="fotoCiudadanoPreview"
+                                                         src=""
+                                                         alt="Vista previa de foto legajo"
+                                                         class="foto-preview-img" />
+                                                    <button type="button"
+                                                            class="btn-remover-preview"
+                                                            onclick="removerPreviewFotoCiudadano()">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="foto-preview-info">
+                                                    <div class="preview-nombre" id="fotoCiudadanoNombre">imagen.jpg</div>
+                                                    <div class="preview-size" id="fotoCiudadanoSize">0 KB</div>
+                                                    <div class="preview-status">
+                                                        <i class="fas fa-clock text-warning"></i>
+                                                        <span class="text-warning">Pendiente de guardar</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="foto-info">
-                                            <div class="foto-nombre">
-                                                {% if "comedor/" in form.instance.foto.name %}
-                                                    {{ form.instance.foto.name|slice:"8:" }}
-                                                {% else %}
-                                                    {{ form.instance.foto.name }}
-                                                {% endif %}
-                                            </div>
-                                            <div class="foto-status">
-                                                <i class="fas fa-check-circle text-success"></i>
-                                                <span class="text-success">Guardada</span>
-                                            </div>
-                                        </div>
-                                        <button type="button"
-                                                class="btn btn-outline-primary btn-sm"
-                                                onclick="abrirFotoCiudadanoModal('{{ form.instance.foto.url|escapejs }}', '{{ form.instance.foto.name|escapejs }}')">
-                                            <i class="fas fa-expand-alt mr-1"></i>
-                                            Ver completa
-                                        </button>
                                     </div>
-                                </div>
-                            {% endif %}
-                            <div class="nueva-foto-section">
-                                <h6 class="text-light mb-2">
-                                    <i class="fas fa-upload mr-1"></i>
-                                    {% if form.instance.foto %}
-                                        Cambiar foto:
-                                    {% else %}
-                                        Seleccionar foto:
-                                    {% endif %}
-                                </h6>
-                                {{ form.foto }}
-                                <button type="button" id="foto-picker-btn" class="btn-seleccionar mt-2">
-                                    <i class="fas fa-upload"></i>
-                                    Seleccionar imagen
-                                </button>
-                                <div class="contador-imagenes mt-2 d-none" id="foto-selected-info">
-                                    <span id="foto-selected-name"></span>
-                                </div>
-                            </div>
-                            <div id="fotoCiudadanoPreviewContainer"
-                                 class="nueva-foto-preview mt-3 d-none">
-                                <h6 class="text-light mb-2">
-                                    <i class="fas fa-eye mr-1"></i>
-                                    Vista previa:
-                                </h6>
-                                <div class="nueva-foto-container">
-                                    <div class="foto-preview-wrapper">
-                                        <img id="fotoCiudadanoPreview"
-                                             src=""
-                                             alt="Vista previa de foto legajo"
-                                             class="foto-preview-img" />
-                                        <button type="button"
-                                                class="btn-remover-preview"
-                                                onclick="removerPreviewFotoCiudadano()">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <div class="foto-preview-info">
-                                        <div class="preview-nombre" id="fotoCiudadanoNombre">imagen.jpg</div>
-                                        <div class="preview-size" id="fotoCiudadanoSize">0 KB</div>
-                                        <div class="preview-status">
-                                            <i class="fas fa-clock text-warning"></i>
-                                            <span class="text-warning">Pendiente de guardar</span>
+                                {% elif field.name == "activo" %}
+                                    <div class="col-12 col-md-6">
+                                        <div class="form-check form-switch mt-4">
+                                            {{ field }}
+                                            <label class="form-check-label ms-2" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            {% if field.help_text %}<small class="form-text text-muted d-block">{{ field.help_text }}</small>{% endif %}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                {% else %}
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            {{ field }}
+                                            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
                         </div>
-                    </div>
+                        <div class="d-flex gap-2 mt-4 flex-wrap">
+                            <button type="submit" class="btn btn-primary">
+                                {% if object %}
+                                    Guardar cambios
+                                {% else %}
+                                    Crear ciudadano
+                                {% endif %}
+                            </button>
+                            <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'ciudadanos' %}{% endif %}"
+                               class="btn btn-outline-secondary ms-auto">Volver</a>
+                        </div>
+                    </form>
                 </div>
-
-                <div class="sticky-actions">
-                    <div>
-                        <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'ciudadanos' %}{% endif %}"
-                           class="btn btn-secondary">
-                            <i class="fas fa-arrow-left mr-1"></i>
-                            Volver
-                        </a>
-                    </div>
-                    <div>
-                        <button type="button"
-                                onclick="window.history.back();"
-                                class="btn btn-secondary mr-2">
-                            <i class="fas fa-times mr-1"></i>
-                            Cancelar
-                        </button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-save mr-1"></i>
-                            {% if object %}
-                                Guardar cambios
-                            {% else %}
-                                Crear ciudadano
-                            {% endif %}
-                        </button>
-                    </div>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
-
     <div class="modal fade"
          id="fotoCiudadanoModal"
          tabindex="-1"
@@ -718,122 +230,6 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
-        // Variables globales para emular la inicialización de comedores
-        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
-        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
-    </script>
-    <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
-    <script src="{% static 'custom/js/ciudadanosform.js' %}"></script>
-    <script>
-        function toggleSectionCiudadano(sectionId) {
-            const sectionBody = document.getElementById("section-" + sectionId);
-            const sectionHeader = document.querySelector(`[data-section="${sectionId}"] .section-header`);
-            if (!sectionBody) {
-                return;
-            }
-            if (typeof bootstrap !== "undefined" && bootstrap.Collapse) {
-                const collapse = bootstrap.Collapse.getOrCreateInstance(sectionBody, { toggle: false });
-                collapse.toggle();
-            } else {
-                sectionBody.classList.toggle("show");
-                sectionBody.classList.toggle("collapsing");
-                setTimeout(() => {
-                    sectionBody.classList.remove("collapsing");
-                }, 300);
-            }
-            if (sectionHeader) {
-                sectionHeader.classList.toggle("collapsed");
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", function () {
-            const sections = ["identidad", "domicilio", "contacto", "estado", "documentacion"];
-            const completedLabel = document.getElementById("completedSections");
-            const totalLabel = document.getElementById("totalSections");
-            const progressBar = document.getElementById("progressBarFill");
-
-            if (totalLabel) {
-                totalLabel.textContent = sections.length;
-            }
-
-            function fieldFilled(field) {
-                if (field.type === "checkbox" || field.type === "radio") {
-                    return field.checked;
-                }
-                return field.value && field.value.trim() !== "";
-            }
-
-            function updateSectionStatus(sectionId) {
-                const statusBadge = document.getElementById("status-" + sectionId);
-                const sectionBody = document.getElementById("section-" + sectionId);
-                if (!sectionBody) return false;
-
-                const requiredFields = Array.from(
-                    sectionBody.querySelectorAll("input[required], select[required], textarea[required]")
-                );
-                let state = "complete";
-
-                if (requiredFields.length === 0) {
-                    state = "complete";
-                } else {
-                    const filled = requiredFields.filter(fieldFilled).length;
-                    if (filled === 0) {
-                        state = "empty";
-                    } else if (filled < requiredFields.length) {
-                        state = "incomplete";
-                    } else {
-                        state = "complete";
-                    }
-                }
-
-                if (statusBadge) {
-                    statusBadge.classList.remove("complete", "incomplete", "empty");
-                    statusBadge.classList.add(state);
-                    if (state === "complete" && requiredFields.length === 0) {
-                        statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Opcional';
-                    } else if (state === "complete") {
-                        statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Completo';
-                    } else if (state === "incomplete") {
-                        statusBadge.innerHTML = '<i class="fas fa-adjust"></i> En progreso';
-                    } else {
-                        statusBadge.innerHTML = '<i class="fas fa-circle"></i> Sin completar';
-                    }
-                }
-
-                return state === "complete";
-            }
-
-            function updateProgress() {
-                let completed = 0;
-                sections.forEach((sectionId) => {
-                    if (updateSectionStatus(sectionId)) {
-                        completed += 1;
-                    }
-                });
-
-                if (completedLabel) {
-                    completedLabel.textContent = completed;
-                }
-                if (progressBar) {
-                    const percent = sections.length ? (completed / sections.length) * 100 : 0;
-                    progressBar.style.width = `${percent}%`;
-                }
-            }
-
-            sections.forEach((sectionId) => {
-                const sectionBody = document.getElementById("section-" + sectionId);
-                if (!sectionBody) return;
-                const fields = sectionBody.querySelectorAll("input, select, textarea");
-                fields.forEach((field) => {
-                    field.addEventListener("input", updateProgress);
-                    field.addEventListener("change", updateProgress);
-                });
-            });
-
-            updateProgress();
-        });
-    </script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const fotoInput = document.getElementById("foto-input") || document.getElementById("id_foto");
@@ -948,15 +344,6 @@
                 link.click();
                 document.body.removeChild(link);
             };
-        });
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const fechaNacimientoInput = document.getElementById("id_fecha_nacimiento");
-            const fechaNacimientoInicial = "{{ form.instance.fecha_nacimiento|date:'Y-m-d' }}";
-            if (fechaNacimientoInput && !fechaNacimientoInput.value && fechaNacimientoInicial) {
-                fechaNacimientoInput.value = fechaNacimientoInicial;
-            }
         });
     </script>
 {% endblock %}
