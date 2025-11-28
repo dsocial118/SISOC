@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 
 from core.models import Localidad, Municipio, Provincia
 from ciudadanos.models import Ciudadano, GrupoFamiliar
@@ -159,9 +160,8 @@ class GrupoFamiliarForm(forms.ModelForm):
             raise forms.ValidationError("No puede autoreferenciarse.")
         # Evitar duplicados (en cualquier dirección) antes de golpear la BD
         ya_existe = GrupoFamiliar.objects.filter(
-            ciudadano_1=self.ciudadano, ciudadano_2=familiar
-        ).exists() or GrupoFamiliar.objects.filter(
-            ciudadano_1=familiar, ciudadano_2=self.ciudadano
+            Q(ciudadano_1=self.ciudadano, ciudadano_2=familiar)
+            | Q(ciudadano_1=familiar, ciudadano_2=self.ciudadano)
         ).exists()
         if ya_existe:
             raise forms.ValidationError("Ya existe una relación registrada con este familiar.")
