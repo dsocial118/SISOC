@@ -1,4 +1,5 @@
 import logging
+from django.shortcuts import render, redirect
 
 from django.contrib import messages
 from django.db import transaction
@@ -32,6 +33,9 @@ from centrodefamilia.services.responsables_filter_config import (
 from core.services.advanced_filters import AdvancedFilterEngine
 
 logger = logging.getLogger("django")
+
+logger = logging.getLogger("django")
+
 
 
 def _normalize_genero(value):

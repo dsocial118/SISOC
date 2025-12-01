@@ -75,13 +75,13 @@
                         <dd class="col-sm-7">
                             {{ admision.tipo_convenio.nombre|default:"-" }}
                         </dd>
-                        <dt class="col-sm-5">Estado Admision</dt>
+                        <dt class="col-sm-5">Estado Actual</dt>
                         <dd class="col-sm-7">
-                            {{ admision.estado.nombre|default:"-" }}
+                            {{ admision.estado_mostrar|default:"-" }}
                         </dd>
-                        <dt class="col-sm-5">Proceso Admision</dt>
+                        <dt class="col-sm-5">Fecha Estado</dt>
                         <dd class="col-sm-7">
-                            {{ admision.get_estado_legales_display|default:"-" }}
+                            {{ admision.fecha_estado_mostrar|date:"d/m/Y"|default:"-" }}
                         </dd>
                         <dt class="col-sm-5">Estado legales</dt>
                         <dd class="col-sm-7">
@@ -110,7 +110,13 @@
                             </dd>
                             <dt class="col-sm-5">Motivo de cierre</dt>
                             <dd class="col-sm-7">
-                                {{ admision.motivo_forzar_cierre|default:"-" }}
+                                {% if admision.motivo_descarte_expediente %}
+                                    {{ admision.motivo_descarte_expediente }}
+                                {% elif admision.motivo_forzar_cierre %}
+                                    {{ admision.motivo_forzar_cierre }}
+                                {% else %}
+                                    -
+                                {% endif %}
                             </dd>
                         {% endif %}
                     </dl>
