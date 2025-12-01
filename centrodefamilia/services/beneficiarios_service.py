@@ -37,7 +37,6 @@ logger = logging.getLogger("django")
 logger = logging.getLogger("django")
 
 
-
 def _normalize_genero(value):
     """Devuelve el código de género aceptado a partir de entradas humanas."""
 
