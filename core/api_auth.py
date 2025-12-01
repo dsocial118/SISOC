@@ -1,5 +1,7 @@
 from rest_framework_api_key.models import APIKey
-from rest_framework_api_key.permissions import HasAPIKey  # pylint: disable=unused-import
+from rest_framework_api_key.permissions import (
+    HasAPIKey,
+)  # pylint: disable=unused-import
 from rest_framework.permissions import BasePermission
 
 
