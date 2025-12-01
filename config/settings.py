@@ -211,6 +211,17 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "API de gestión de comedores, centros de familia y más",
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Usar formato: Api-Key TU_API_KEY",
+            }
+        }
+    },
+    "SECURITY": [{"ApiKeyAuth": []}],
 }
 
 # Dominios / Integraciones
