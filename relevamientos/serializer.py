@@ -35,6 +35,8 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             territorial_data = self.initial_data["territorial"]
             self.initial_data["territorial_nombre"] = territorial_data["nombre"]
             self.initial_data["territorial_uid"] = territorial_data["gestionar_uid"]
+            # Evitar que quede un campo no modelado que rompa la validación
+            self.initial_data.pop("territorial", None)
 
         if "funcionamiento" in self.initial_data:
             funcionamiento_instance = (
