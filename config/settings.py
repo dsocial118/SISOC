@@ -214,10 +214,10 @@ SPECTACULAR_SETTINGS = {
     "APPEND_COMPONENTS": {
         "securitySchemes": {
             "ApiKeyAuth": {
-                "type": "apiKey",
-                "in": "header",
-                "name": "Authorization",
-                "description": "Usar formato: Api-Key TU_API_KEY",
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "Api-Key",
+                "description": "Ingresar: Api-Key TU_API_KEY",
             }
         }
     },
