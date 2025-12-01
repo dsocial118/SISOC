@@ -7,6 +7,8 @@ from centrodefamilia.models import Centro, ActividadCentro, ParticipanteActivida
 
 DATACALLE_CHACO_GROUP = "Tablero DataCalle Chaco"
 DATACALLE_MISIONES_GROUP = "Tablero DataCalle Misiones"
+DATACALLE_SALTA_GROUP = "Tablero DataCalle Salta"
+DATACALLE_CORRIENTES_GROUP = "Tablero DataCalle Corrientes"
 DATACALLE_GENERAL_GROUP = "Tablero DataCalle General"
 
 
@@ -48,6 +50,38 @@ class DataCalleChacoDashboardView(
             user.is_superuser
             or user.groups.filter(
                 name__in=[DATACALLE_CHACO_GROUP, UserGroups.ADMINISTRADOR]
+            ).exists()
+        )
+
+
+class DataCalleSaltaDashboardView(
+    LoginRequiredMixin, UserPassesTestMixin, TemplateView
+):
+    template_name = "dashboard_datacalle_salta.html"
+    raise_exception = True
+
+    def test_func(self):
+        user = self.request.user
+        return (
+            user.is_superuser
+            or user.groups.filter(
+                name__in=[DATACALLE_SALTA_GROUP, UserGroups.ADMINISTRADOR]
+            ).exists()
+        )
+
+
+class DataCalleCorrientesDashboardView(
+    LoginRequiredMixin, UserPassesTestMixin, TemplateView
+):
+    template_name = "dashboard_datacalle_corrientes.html"
+    raise_exception = True
+
+    def test_func(self):
+        user = self.request.user
+        return (
+            user.is_superuser
+            or user.groups.filter(
+                name__in=[DATACALLE_CORRIENTES_GROUP, UserGroups.ADMINISTRADOR]
             ).exists()
         )
 
