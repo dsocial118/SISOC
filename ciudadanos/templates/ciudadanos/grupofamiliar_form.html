@@ -32,11 +32,7 @@
 
             <form method="post" id="grupoFamiliarForm" class="w-100" novalidate>
                 {% csrf_token %}
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {{ form.non_field_errors }}
-                    </div>
-                {% endif %}
+                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
 
                 <div class="progress-indicator">
                     <div class="progress-header">
@@ -74,9 +70,7 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-familiar">
-                        <div class="form-group">
-                            {{ form.ciudadano_2|as_crispy_field }}
-                        </div>
+                        <div class="form-group">{{ form.ciudadano_2|as_crispy_field }}</div>
                     </div>
                 </div>
 
@@ -111,14 +105,15 @@
                                     {{ form.conviven }}
                                     <label class="form-check-label ms-2" for="{{ form.conviven.id_for_label }}">{{ form.conviven.label }}</label>
                                 </div>
-                                {% if form.conviven.errors %}
-                                    <div class="text-danger small ml-3">{{ form.conviven.errors|join:", " }}</div>
-                                {% endif %}
+                                {% if form.conviven.errors %}<div class="text-danger small ml-3">{{ form.conviven.errors|join:", " }}</div>{% endif %}
                             </div>
                             <div class="col-md-6 d-flex align-items-center">
                                 <div class="form-check form-switch">
                                     {{ form.cuidador_principal }}
-                                    <label class="form-check-label ms-2" for="{{ form.cuidador_principal.id_for_label }}">{{ form.cuidador_principal.label }}</label>
+                                    <label class="form-check-label ms-2"
+                                           for="{{ form.cuidador_principal.id_for_label }}">
+                                        {{ form.cuidador_principal.label }}
+                                    </label>
                                 </div>
                                 {% if form.cuidador_principal.errors %}
                                     <div class="text-danger small ml-3">{{ form.cuidador_principal.errors|join:", " }}</div>
@@ -149,9 +144,7 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-notas">
-                        <div class="form-group">
-                            {{ form.observaciones|as_crispy_field }}
-                        </div>
+                        <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
                     </div>
                 </div>
 
