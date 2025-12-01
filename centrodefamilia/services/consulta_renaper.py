@@ -81,7 +81,10 @@ class APIClient:
         try:
             data = response.json()
         except Exception as exc:
-            return {"success": False, "error": f"No se pudo decodificar JSON: {str(exc)}"}
+            return {
+                "success": False,
+                "error": f"No se pudo decodificar JSON: {str(exc)}",
+            }
 
         if not data.get("isSuccess", False):
             return {
