@@ -63,10 +63,13 @@ class Command(BaseCommand):
             "Dashboard Centrodefamilia",
             "Tablero DataCalle Chaco",
             "Tablero DataCalle Misiones",
+            "Tablero DataCalle Salta",
+            "Tablero DataCalle Corrientes",
             "Tablero DataCalle General",
             "TecnicoCeliaquia",
             "CoordinadorCeliaquia",
             "ProvinciaCeliaquia",
+            "ApiCentroFamilia",
         ]
         self.stdout.write(self.style.SUCCESS(f"Creando grupos de usuario..."))
         for group_name in groups:

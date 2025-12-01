@@ -1,21 +1,288 @@
 {% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Grupo familiar{% endblock %}
+{% block titulo-pagina %}Grupo familiar{% endblock %}
 
 {% block content %}
-    <h1 class="mb-4">Agregar familiar para {{ ciudadano }}</h1>
-    <form method="post" class="card p-4">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        {% for field in form %}
-            <div class="mb-3">
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.errors %}<div class="text-danger small">{{ field.errors|join:', ' }}</div>{% endif %}
-            </div>
-        {% endfor %}
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">Guardar</button>
-            <a href="{{ ciudadano.get_absolute_url }}"
-               class="btn btn-outline-secondary">Cancelar</a>
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            <a href="{{ ciudadano.get_absolute_url }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Volver
+            </a>
         </div>
-    </form>
+        <div>
+            <a href="#"
+               onclick="window.history.back(); return false;"
+               class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+
+    <div class="row comedor-form">
+        <div class="col-12 col-lg-10 mx-auto">
+            <div class="mb-4">
+                <h3 class="text-light mb-1">Agregar familiar para {{ ciudadano }}</h3>
+                <p class="text-muted mb-0">Registrá el vínculo y los datos principales del grupo familiar.</p>
+            </div>
+
+            <form method="post" id="grupoFamiliarForm" class="w-100" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="progress-indicator">
+                    <div class="progress-header">
+                        <h4 class="progress-title">
+                            <i class="fas fa-users mr-2"></i>
+                            Progreso del formulario
+                        </h4>
+                        <span class="progress-stats">
+                            <span id="completedSections">0</span>/3 secciones completadas
+                        </span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="familiar">
+                    <div class="section-header" onclick="toggleSection('familiar')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Familiar</h3>
+                                <p class="section-subtitle">Seleccioná a la persona relacionada</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-familiar">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-familiar">
+                        <div class="form-group">{{ form.ciudadano_2|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="relacion">
+                    <div class="section-header" onclick="toggleSection('relacion')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Relación</h3>
+                                <p class="section-subtitle">Definí el vínculo y la convivencia</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-relacion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-relacion">
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.vinculo|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.estado_relacion|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6 d-flex align-items-center">
+                                <div class="form-check form-switch">
+                                    {{ form.conviven }}
+                                    <label class="form-check-label ms-2" for="{{ form.conviven.id_for_label }}">{{ form.conviven.label }}</label>
+                                </div>
+                                {% if form.conviven.errors %}<div class="text-danger small ml-3">{{ form.conviven.errors|join:", " }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 d-flex align-items-center">
+                                <div class="form-check form-switch">
+                                    {{ form.cuidador_principal }}
+                                    <label class="form-check-label ms-2"
+                                           for="{{ form.cuidador_principal.id_for_label }}">
+                                        {{ form.cuidador_principal.label }}
+                                    </label>
+                                </div>
+                                {% if form.cuidador_principal.errors %}
+                                    <div class="text-danger small ml-3">{{ form.cuidador_principal.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="notas">
+                    <div class="section-header" onclick="toggleSection('notas')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-sticky-note"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Notas adicionales</h3>
+                                <p class="section-subtitle">Observaciones relevantes</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-notas">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-notas">
+                        <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <div class="sticky-actions">
+                    <div>
+                        <a href="{{ ciudadano.get_absolute_url }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left mr-1"></i> Volver
+                        </a>
+                    </div>
+                    <div>
+                        <button type="button"
+                                onclick="window.history.back();"
+                                class="btn btn-secondary mr-2">
+                            <i class="fas fa-times mr-1"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save mr-1"></i> Guardar familiar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("grupoFamiliarForm");
+            const progressBar = document.getElementById("progressBarFill");
+            const completedCounter = document.getElementById("completedSections");
+            const sectionHeaders = document.querySelectorAll(".section-header");
+
+            sectionHeaders.forEach((header) => {
+                header.setAttribute("tabindex", "0");
+                header.setAttribute("role", "button");
+                header.addEventListener("keydown", function (event) {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        const section = header.closest(".section-card")?.dataset.section;
+                        if (section) {
+                            toggleSection(section);
+                        }
+                    }
+                });
+            });
+
+            function isFilled(value) {
+                if (typeof value === "string") {
+                    return value.trim().length > 0;
+                }
+                return Boolean(value);
+            }
+
+            function updateProgress() {
+                const familiarValue = document.getElementById("id_ciudadano_2")?.value || "";
+                const vinculoValue = document.getElementById("id_vinculo")?.value || "";
+                const estadoValue = document.getElementById("id_estado_relacion")?.value || "";
+                const convivenChecked = document.getElementById("id_conviven")?.checked;
+                const cuidadorChecked = document.getElementById("id_cuidador_principal")?.checked;
+                const notasValue = document.getElementById("id_observaciones")?.value || "";
+
+                const states = {
+                    familiar: isFilled(familiarValue),
+                    relacion: isFilled(vinculoValue) || isFilled(estadoValue) || convivenChecked || cuidadorChecked,
+                    notas: isFilled(notasValue),
+                };
+
+                let completed = 0;
+                Object.keys(states).forEach((section) => {
+                    const badge = document.getElementById(`status-${section}`);
+                    if (!badge) {
+                        return;
+                    }
+
+                    if (states[section]) {
+                        completed += 1;
+                        badge.className = "status-badge complete";
+                        badge.innerHTML = '<i class="fas fa-check-circle"></i> Completa';
+                    } else {
+                        const hasSomeData =
+                            (section === "relacion" &&
+                                (isFilled(vinculoValue) ||
+                                    isFilled(estadoValue) ||
+                                    convivenChecked ||
+                                    cuidadorChecked)) ||
+                            (section === "familiar" && isFilled(familiarValue)) ||
+                            (section === "notas" && isFilled(notasValue));
+
+                        badge.className = hasSomeData ? "status-badge incomplete" : "status-badge empty";
+                        badge.innerHTML = hasSomeData
+                            ? '<i class="fas fa-exclamation-circle"></i> Incompleta'
+                            : '<i class="fas fa-circle"></i> Sin completar';
+                    }
+                });
+
+                const total = 3;
+                if (completedCounter) {
+                    completedCounter.textContent = completed;
+                }
+                if (progressBar) {
+                    const percent = Math.round((completed / total) * 100);
+                    progressBar.style.width = `${percent}%`;
+                }
+            }
+
+            document.querySelectorAll(".section-body").forEach((body) => {
+                body.addEventListener("shown.bs.collapse", function () {
+                    const header = this.previousElementSibling;
+                    if (header) {
+                        header.classList.remove("collapsed");
+                    }
+                });
+                body.addEventListener("hidden.bs.collapse", function () {
+                    const header = this.previousElementSibling;
+                    if (header) {
+                        header.classList.add("collapsed");
+                    }
+                });
+            });
+
+            if (form) {
+                form.addEventListener("input", updateProgress);
+                form.addEventListener("change", updateProgress);
+                updateProgress();
+            }
+        });
+
+        function toggleSection(sectionId) {
+            const body = document.getElementById(`section-${sectionId}`);
+            if (!body) {
+                return;
+            }
+            if (typeof $ !== "undefined" && typeof $(body).collapse === "function") {
+                $(body).collapse("toggle");
+            } else {
+                body.classList.toggle("show");
+            }
+        }
+    </script>
 {% endblock %}
