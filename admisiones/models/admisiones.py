@@ -199,14 +199,13 @@ class Admision(models.Model):
     estado_mostrar = models.CharField(max_length=255, blank=True, null=True)
     fecha_estado_mostrar = models.DateField(null=True, blank=True)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._estado_mostrar_inicial = self.estado_mostrar
+
     def save(self, *args, **kwargs):
         # Obtener el estado anterior si existe
-        estado_anterior = None
-        if self.pk:
-            try:
-                estado_anterior = Admision.objects.get(pk=self.pk).estado_mostrar
-            except Admision.DoesNotExist:
-                pass
+        estado_anterior = None if self._state.adding else self._estado_mostrar_inicial
         
         # Si el estado es "Descartado" en cualquier campo, marcar como inactiva
         if self.estado_legales == "Descartado" or self.estado_admision == "descartado":
@@ -239,8 +238,9 @@ class Admision(models.Model):
             update_fields.add('fecha_estado_mostrar')
             update_fields.add('activa')
             kwargs['update_fields'] = list(update_fields)
-        
+
         super().save(*args, **kwargs)
+        self._estado_mostrar_inicial = self.estado_mostrar
 
     @property
     def tipo_informe(self):
