@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -137,4 +138,11 @@ class GrupoFamiliarDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_success_url(self):
         messages.success(self.request, "Relación familiar eliminada.")
+        next_url = self.request.POST.get("next") or self.request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(
+            next_url,
+            allowed_hosts={self.request.get_host()},
+            require_https=self.request.is_secure(),
+        ):
+            return next_url
         return self.object.ciudadano_1.get_absolute_url()
