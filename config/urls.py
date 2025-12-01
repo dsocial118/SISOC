@@ -8,7 +8,6 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
-from core.api_auth import ObtenerTokenView
 
 urlpatterns = [
     path("admin/doc/", include("django.contrib.admindocs.urls")),
@@ -33,7 +32,6 @@ urlpatterns = [
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
     path("", include("celiaquia.urls")),
     # API URLs
-    path("api/token/", ObtenerTokenView.as_view(), name="obtener-token"),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     # Swagger/OpenAPI
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),

@@ -28,7 +28,7 @@ from centrodefamilia.serializers import (
     CabalArchivoSerializer,
     InformeCabalRegistroSerializer,
 )
-from core.api_auth import IsInApiCentroFamiliaGroup
+from core.api_auth import HasAPIKey
 from core.utils import format_serializer_errors
 
 logger = logging.getLogger("django")
@@ -48,7 +48,7 @@ class CentroViewSet(viewsets.ModelViewSet):
         "referente", "provincia", "municipio", "localidad"
     )
     serializer_class = CentroSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -75,7 +75,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
 
     queryset = Actividad.objects.select_related("categoria")
     serializer_class = ActividadSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -90,7 +90,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
 
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]
 
 
 class ActividadCentroViewSet(viewsets.ModelViewSet):
@@ -105,7 +105,7 @@ class ActividadCentroViewSet(viewsets.ModelViewSet):
         "centro", "actividad", "actividad__categoria"
     ).prefetch_related("dias", "sexoact")
     serializer_class = ActividadCentroSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -146,7 +146,7 @@ class ParticipanteActividadViewSet(viewsets.ModelViewSet):
         "actividad_centro", "ciudadano"
     ).prefetch_related("historial")
     serializer_class = ParticipanteActividadSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -215,7 +215,7 @@ class BeneficiarioViewSet(viewsets.ModelViewSet):
         "responsable", "provincia", "municipio", "localidad"
     ).prefetch_related("actividades_detalle")
     serializer_class = BeneficiarioSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -254,7 +254,7 @@ class ResponsableViewSet(viewsets.ModelViewSet):
 
     queryset = Responsable.objects.select_related("provincia", "municipio", "localidad")
     serializer_class = ResponsableSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -276,7 +276,7 @@ class BeneficiarioResponsableViewSet(viewsets.ModelViewSet):
         "beneficiario", "responsable"
     )
     serializer_class = BeneficiarioResponsableSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]
 
 
 class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
@@ -288,7 +288,7 @@ class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = InformeCabalRegistro.objects.select_related("archivo", "centro")
     serializer_class = InformeCabalRegistroSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -331,4 +331,4 @@ class CabalArchivoViewSet(viewsets.ReadOnlyModelViewSet):
         "registros"
     )
     serializer_class = CabalArchivoSerializer
-    permission_classes = [IsInApiCentroFamiliaGroup]
+    permission_classes = [HasAPIKey]

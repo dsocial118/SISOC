@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     "import_export",
     "multiselectfield",
     "rest_framework",
-    "rest_framework.authtoken",
+    "rest_framework_api_key",
     "drf_spectacular",
     "corsheaders",
     # Apps propias
@@ -197,12 +197,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
-    ],
-    "DEFAULT_THROTTLE_RATES": {
-        "login": "5/min",
-    },
 }
 
 # Swagger/OpenAPI
