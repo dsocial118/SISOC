@@ -310,18 +310,18 @@
                                 <td>
                                     <div>
                                         <div class="fw-semibold">
-                                            {% if leg.rol == 'BENEFICIARIO_Y_RESPONSABLE' %}
+                                            {% if leg.rol == 'beneficiario_y_responsable' %}
                                                 👨👩👧👦 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
-                                            {% elif leg.rol == 'RESPONSABLE' %}
+                                            {% elif leg.rol == 'responsable' %}
                                                 👨👩 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% else %}
                                                 👶 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% endif %}
                                         </div>
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
-                                        {% if leg.rol == 'BENEFICIARIO_Y_RESPONSABLE' %}
+                                        {% if leg.rol == 'beneficiario_y_responsable' %}
                                             <small class="badge bg-info mt-1">Beneficiario y Responsable</small>
-                                        {% elif leg.rol == 'RESPONSABLE' %}
+                                        {% elif leg.rol == 'responsable' %}
                                             <small class="badge bg-warning mt-1">Solo Responsable</small>
                                         {% else %}
                                             <small class="badge bg-success mt-1">Solo Beneficiario</small>
