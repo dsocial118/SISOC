@@ -28,7 +28,8 @@ from centrodefamilia.serializers import (
     CabalArchivoSerializer,
     InformeCabalRegistroSerializer,
 )
-from core.api_auth import HasAPIKey
+from rest_framework_api_key.permissions import HasAPIKey
+
 from core.utils import format_serializer_errors
 
 logger = logging.getLogger("django")

@@ -214,14 +214,17 @@ SPECTACULAR_SETTINGS = {
     "APPEND_COMPONENTS": {
         "securitySchemes": {
             "ApiKeyAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "Api-Key",
-                "description": "Ingresar: Api-Key TU_API_KEY",
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Formato: 'Api-Key TU_API_KEY_AQUI'",
             }
         }
     },
     "SECURITY": [{"ApiKeyAuth": []}],
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,
+    },
 }
 
 # Dominios / Integraciones
@@ -345,16 +348,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
-
-# Herramientas debug/perf en desarrollo
-if DEBUG:
-    INSTALLED_APPS += ["debug_toolbar", "silk"]
-    MIDDLEWARE.insert(
-        3, "debug_toolbar.middleware.DebugToolbarMiddleware"
-    )  # index tras Cors/Common
-    MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
-    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
-    SILKY_PYTHON_PROFILER = True
 
 # Seguridad por entorno
 if ENVIRONMENT == "prd":
