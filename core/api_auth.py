@@ -1,4 +1,5 @@
-from rest_framework_api_key.permissions import HasAPIKey
+from rest_framework_api_key.models import APIKey
+from rest_framework_api_key.permissions import HasAPIKey  # pylint: disable=unused-import
 from rest_framework.permissions import BasePermission
 
 
@@ -15,7 +16,6 @@ class HasAPIKeyOrToken(BasePermission):
         # Verificar APIKey en header
         api_key = request.META.get("HTTP_API_KEY")
         if api_key:
-            from rest_framework_api_key.models import APIKey
             return APIKey.objects.is_valid(api_key)
 
         return False
