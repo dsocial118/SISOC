@@ -164,7 +164,9 @@ class GrupoFamiliarForm(forms.ModelForm):
             | Q(ciudadano_1=familiar, ciudadano_2=self.ciudadano)
         ).exists()
         if ya_existe:
-            raise forms.ValidationError("Ya existe una relación registrada con este familiar.")
+            raise forms.ValidationError(
+                "Ya existe una relación registrada con este familiar."
+            )
         return familiar
 
     def save(self, commit=True):

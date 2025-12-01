@@ -26,7 +26,8 @@
                             <img src="{{ ciudadano.foto.url }}"
                                  alt="Foto de {{ ciudadano.nombre }} {{ ciudadano.apellido }}"
                                  class="img-fluid rounded shadow-sm"
-                                 style="max-height: 260px; object-fit: cover;">
+                                 style="max-height: 260px;
+                                        object-fit: cover" />
                         </div>
                     {% endif %}
                     <p class="mb-1">
@@ -106,9 +107,9 @@
     {% if ciudadano.observaciones %}
         <div class="card">
             <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title">Observaciones</h5>
-                    </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Observaciones</h5>
+                </div>
                 <p class="mb-0">{{ ciudadano.observaciones }}</p>
             </div>
         </div>
