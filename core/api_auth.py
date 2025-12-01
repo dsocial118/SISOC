@@ -1,5 +1,8 @@
 from rest_framework_api_key.models import APIKey
+from rest_framework_api_key.permissions import HasAPIKey
 from rest_framework.permissions import BasePermission
+
+__all__ = ["HasAPIKey", "HasAPIKeyOrToken"]
 
 
 class HasAPIKeyOrToken(BasePermission):
