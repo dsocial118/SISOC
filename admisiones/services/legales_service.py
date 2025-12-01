@@ -230,7 +230,7 @@ class LegalesService:
             if accion in estados_por_accion:
                 admision.estado_legales = estados_por_accion[accion]
 
-        admision.save(update_fields=["estado_legales"])
+        admision.save()  # Save completo para actualizar estado_mostrar
 
     @staticmethod
     def enviar_a_rectificar(request, admision):
@@ -325,7 +325,7 @@ class LegalesService:
     def guardar_informe_sga(request, admision):
         try:
             admision.informe_sga = not admision.informe_sga
-            admision.save(update_fields=["informe_sga"])
+            admision.save()  # Save completo para actualizar estado_mostrar
             if admision.informe_sga:
                 LegalesService.actualizar_estado_por_accion(admision, "informe_sga")
             messages.success(
@@ -415,12 +415,7 @@ class LegalesService:
             if form.is_valid():
                 reinicio = form.save(commit=False)
                 reinicio.enviada_a_archivo = True
-                reinicio.save(
-                    update_fields=[
-                        "observaciones_reinicio_expediente",
-                        "enviada_a_archivo",
-                    ]
-                )
+                reinicio.save()  # Save completo para actualizar estado_mostrar
                 LegalesService.actualizar_estado_por_accion(
                     admision, "reinicio_expediente"
                 )
@@ -470,7 +465,7 @@ class LegalesService:
                 if pdf_final:
 
                     admision.estado_legales = "Informe Complementario: Validado"
-                    admision.save(update_fields=["estado_legales"])
+                    admision.save()  # Save completo para actualizar estado_mostrar
                     messages.success(
                         request,
                         "Informe complementario validado correctamente. Se ha generado el PDF final.",
@@ -492,7 +487,7 @@ class LegalesService:
                 informe_complementario.observaciones_legales = observaciones
                 informe_complementario.save()
                 admision.estado_legales = "Informe Complementario Solicitado"
-                admision.save(update_fields=["estado_legales"])
+                admision.save()  # Save completo para actualizar estado_mostrar
                 messages.success(
                     request, "Informe complementario enviado a rectificar."
                 )
@@ -566,16 +561,7 @@ class LegalesService:
             admision.observaciones_informe_tecnico_complementario = None
 
             admision.estado_legales = "Informe Complementario: Validado"
-            admision.save(
-                update_fields=[
-                    "intervencion_juridicos",
-                    "rechazo_juridicos_motivo",
-                    "dictamen_motivo",
-                    "complementario_solicitado",
-                    "observaciones_informe_tecnico_complementario",
-                    "estado_legales",
-                ]
-            )
+            admision.save()  # Save completo para actualizar estado_mostrar
 
         except Exception:
             logger.exception(
@@ -590,12 +576,7 @@ class LegalesService:
             if form.is_valid():
                 complementario = form.save(commit=False)
                 complementario.complementario_solicitado = True
-                complementario.save(
-                    update_fields=[
-                        "observaciones_informe_tecnico_complementario",
-                        "complementario_solicitado",
-                    ]
-                )
+                complementario.save()  # Save completo para actualizar estado_mostrar
                 LegalesService.actualizar_estado_por_accion(
                     admision, "informe_complementario"
                 )

@@ -471,8 +471,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             {"title": "Expediente"},
             {"title": "Convenio"},
             {"title": "Tipo"},
-            {"title": "Estado"},
-            {"title": "Proceso"},
+            {"title": "Estado Actual"},
+            {"title": "Fecha Estado"},
             {"title": "Activa"},
         ]
 
@@ -513,16 +513,16 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                             },
                             {
                                 "content": (
-                                    a.estado.nombre
-                                    if a.estado and hasattr(a.estado, "nombre")
+                                    a.estado_mostrar
+                                    if hasattr(a, "estado_mostrar") and a.estado_mostrar
                                     else "-"
                                 )
                             },
                             {
                                 "content": (
-                                    a.get_estado_admision_display()
-                                    if hasattr(a, "get_estado_admision_display")
-                                    and a.get_estado_admision_display()
+                                    a.fecha_estado_mostrar.strftime("%d/%m/%Y")
+                                    if hasattr(a, "fecha_estado_mostrar")
+                                    and a.fecha_estado_mostrar
                                     else "-"
                                 )
                             },
@@ -549,6 +549,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                             }
                         ],
                         "admision_id": a.id,
+                        "activa": getattr(a, "activa", True),
                         "enviada_a_archivo": getattr(a, "enviada_a_archivo", False),
                         "enviado_acompaniamiento": getattr(
                             a, "enviado_acompaniamiento", False
