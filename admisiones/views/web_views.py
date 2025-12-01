@@ -520,14 +520,30 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             admision.motivo_forzar_cierre = motivo
             admision.estado_mostrar = "Inactivada"
             admision.fecha_estado_mostrar = timezone.now().date()
-            
+
             # Actualizar el estado correspondiente a "inactivada"
             if admision.estado_legales:
                 admision.estado_legales = "Inactivada"
-                admision.save(update_fields=["activa", "motivo_forzar_cierre", "estado_legales", "estado_mostrar", "fecha_estado_mostrar"])
+                admision.save(
+                    update_fields=[
+                        "activa",
+                        "motivo_forzar_cierre",
+                        "estado_legales",
+                        "estado_mostrar",
+                        "fecha_estado_mostrar",
+                    ]
+                )
             else:
                 admision.estado_admision = "inactivada"
-                admision.save(update_fields=["activa", "motivo_forzar_cierre", "estado_admision", "estado_mostrar", "fecha_estado_mostrar"])
+                admision.save(
+                    update_fields=[
+                        "activa",
+                        "motivo_forzar_cierre",
+                        "estado_admision",
+                        "estado_mostrar",
+                        "fecha_estado_mostrar",
+                    ]
+                )
 
             messages.success(request, "La admisión ha sido cerrada forzadamente.")
             return redirect(request.path_info)

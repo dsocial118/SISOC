@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
@@ -27,6 +28,9 @@ from centrodefamilia.services.responsables_filter_config import (
     CHOICE_OPS as RESPONSABLE_CHOICE_OPS,
 )
 from django.db import transaction
+
+logger = logging.getLogger("django")
+
 
 
 def _normalize_genero(value):
@@ -68,6 +72,7 @@ def obtener_o_crear_responsable(responsable_data, usuario):
         else:
             return None, responsable_form, False
     except Responsable.DoesNotExist:
+        logger.exception(f"Error al obtener responsable: {str(exc)}")
         responsable_form = ResponsableForm(responsable_data)
         if responsable_form.is_valid():
             responsable = responsable_form.save(commit=False)
