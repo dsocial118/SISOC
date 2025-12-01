@@ -611,11 +611,19 @@ class ExpedienteDetailView(DetailView):
         ).order_by("fila_excel")
 
         # Datos para desplegables en registros erróneos
-        from ciudadanos.models import Sexo, Nacionalidad
-        from core.models import Municipio, Localidad
+        from core.models import Sexo, Municipio, Localidad
 
         sexos = Sexo.objects.all()
-        nacionalidades = Nacionalidad.objects.all()
+        nacionalidades = [
+            {"id": nombre, "nombre": nombre}
+            for nombre in (
+                Ciudadano.objects.exclude(nacionalidad="")
+                .order_by("nacionalidad")
+                .values_list("nacionalidad", flat=True)
+                .distinct()
+            )
+            if nombre
+        ]
         municipios = []
         localidades = []
 
@@ -1224,9 +1232,11 @@ class ReprocesarRegistrosErroneosView(View):
 
         estado_inicial = EstadoLegajo.objects.get(nombre="DOCUMENTO_PENDIENTE")
 
-        from celiaquia.services.importacion_service import _tipo_doc_cuit
+        # Obtener tipo de documento CUIT
+        from ciudadanos.models import TipoDocumento
 
-        tipo_doc_cuit_id = _tipo_doc_cuit()
+        tipo_doc_cuit = TipoDocumento.objects.filter(tipo__icontains="cuit").first()
+        tipo_doc_cuit_id = tipo_doc_cuit.id if tipo_doc_cuit else None
 
         # Obtener provincia del usuario
         provincia_id = None
