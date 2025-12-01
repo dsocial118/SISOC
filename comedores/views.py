@@ -521,7 +521,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                             {
                                 "content": (
                                     a.fecha_estado_mostrar.strftime("%d/%m/%Y")
-                                    if hasattr(a, "fecha_estado_mostrar") and a.fecha_estado_mostrar
+                                    if hasattr(a, "fecha_estado_mostrar")
+                                    and a.fecha_estado_mostrar
                                     else "-"
                                 )
                             },

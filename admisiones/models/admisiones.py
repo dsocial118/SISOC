@@ -206,7 +206,7 @@ class Admision(models.Model):
     def save(self, *args, **kwargs):
         # Obtener el estado anterior si existe
         estado_anterior = None if self._state.adding else self._estado_mostrar_inicial
-        
+
         # Si el estado es "Descartado" en cualquier campo, marcar como inactiva
         if self.estado_legales == "Descartado" or self.estado_admision == "descartado":
             self.activa = False
@@ -217,27 +217,31 @@ class Admision(models.Model):
         else:
             # Actualizar estado_mostrar basado en estado_admision o estado_legales
             if self.estado_legales:
-                nuevo_estado_mostrar = dict(self.ESTADOS_LEGALES).get(self.estado_legales, self.estado_legales)
+                nuevo_estado_mostrar = dict(self.ESTADOS_LEGALES).get(
+                    self.estado_legales, self.estado_legales
+                )
             elif self.estado_admision:
-                nuevo_estado_mostrar = dict(self.ESTADOS_ADMISION).get(self.estado_admision, self.estado_admision)
+                nuevo_estado_mostrar = dict(self.ESTADOS_ADMISION).get(
+                    self.estado_admision, self.estado_admision
+                )
             else:
                 nuevo_estado_mostrar = self.estado_mostrar
-        
+
         # Solo actualizar fecha si el estado cambió
         if nuevo_estado_mostrar != estado_anterior:
             self.estado_mostrar = nuevo_estado_mostrar
             self.fecha_estado_mostrar = timezone.now().date()
         elif nuevo_estado_mostrar:
             self.estado_mostrar = nuevo_estado_mostrar
-        
+
         # Asegurar que estado_mostrar, fecha_estado_mostrar y activa se incluyan en update_fields
-        update_fields = kwargs.get('update_fields')
+        update_fields = kwargs.get("update_fields")
         if update_fields is not None:
             update_fields = set(update_fields)
-            update_fields.add('estado_mostrar')
-            update_fields.add('fecha_estado_mostrar')
-            update_fields.add('activa')
-            kwargs['update_fields'] = list(update_fields)
+            update_fields.add("estado_mostrar")
+            update_fields.add("fecha_estado_mostrar")
+            update_fields.add("activa")
+            kwargs["update_fields"] = list(update_fields)
 
         super().save(*args, **kwargs)
         self._estado_mostrar_inicial = self.estado_mostrar
