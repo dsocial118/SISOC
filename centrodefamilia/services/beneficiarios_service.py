@@ -72,7 +72,8 @@ def obtener_o_crear_responsable(responsable_data, usuario):
             return responsable_existente, responsable_form, False
         else:
             return None, responsable_form, False
-    except Responsable.DoesNotExist:
+    except Responsable.DoesNotExist as e:
+        logger.exception(f"Error al obtener o crear responsable: {str(e)}")
         responsable_form = ResponsableForm(responsable_data)
         if responsable_form.is_valid():
             responsable = responsable_form.save(commit=False)
@@ -311,6 +312,7 @@ def manejar_request_beneficiarios(request, template_name):
         return generar_respuesta(request, beneficiario, forms_data, template_name)
 
     except Exception as e:
+        logger.exception(f"Error al guardar beneficiarios: {str(e)}")
         return JsonResponse(
             {"status": "error", "message": f"Error al guardar: {str(e)}"}, status=500
         )
@@ -380,8 +382,8 @@ def buscar_responsable_renaper(request, dni, sexo):
                 }
             )
 
-        except Responsable.DoesNotExist:
-            pass
+        except Responsable.DoesNotExist as e:
+            logger.exception(f"Error al buscar responsable renaper: {str(e)}")
 
         resultado = consultar_datos_renaper(dni, sexo)
         if not resultado["success"]:
@@ -402,6 +404,7 @@ def buscar_responsable_renaper(request, dni, sexo):
         return JsonResponse({"status": "possible", "data": resultado["data"]})
 
     except Exception as e:
+        logger.exception(f"Error al buscar responsable renaper: {str(e)}")
         return JsonResponse(
             {"status": "error", "message": f"Error interno del servidor: {str(e)}"},
             status=500,
@@ -496,6 +499,7 @@ def buscar_cuil_beneficiario(request, cuil):
         return JsonResponse({"status": "possible", "data": data})
 
     except Exception as e:
+        logger.exception(f"Error al buscar CUIL: {str(e)}")
         return JsonResponse(
             {"status": "error", "message": f"Error al buscar CUIL: {str(e)}"},
             status=500,
