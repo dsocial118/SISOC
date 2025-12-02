@@ -32,17 +32,11 @@ def _estado_doc_pendiente_id():
         raise ValidationError("Falta el estado DOCUMENTO_PENDIENTE")
 
 
-@lru_cache(maxsize=1)
-def _tipo_doc_por_defecto():
+def _get_tipo_documento(doc_str):
+    """Retorna el tipo de documento basado en la longitud"""
+    if len(str(doc_str or "")) == 11:
+        return Ciudadano.DOCUMENTO_CUIT
     return Ciudadano.DOCUMENTO_DNI
-
-
-@lru_cache(maxsize=1)
-def _tipo_doc_cuit():
-    for codigo, _ in Ciudadano.DOCUMENTO_CHOICES:
-        if codigo.upper() == "CUIT":
-            return codigo
-    raise ValidationError("Falta configurar el tipo de documento CUIT")
 
 
 # Estados de expediente considerados "abiertos / pre-cupo" para evitar duplicados inter-expedientes
@@ -55,6 +49,31 @@ ESTADOS_PRE_CUPO = [
     "ASIGNADO",
     "PROCESO_DE_CRUCE",
 ]
+
+
+def validar_edad_responsable(fecha_nac_responsable, fecha_nac_beneficiario):
+    """Valida edad del responsable vs beneficiario. Retorna (ok, warnings, error)."""
+    from datetime import date
+
+    warnings_edad = []
+    error = None
+
+    if not fecha_nac_responsable or not fecha_nac_beneficiario:
+        return True, warnings_edad, None
+
+    try:
+        edad_responsable = (date.today() - fecha_nac_responsable).days // 365
+        edad_beneficiario = (date.today() - fecha_nac_beneficiario).days // 365
+
+        if edad_responsable < 18:
+            warnings_edad.append(f"Responsable menor de 18 anos ({edad_responsable})")
+        if edad_responsable < edad_beneficiario:
+            error = "Responsable mas joven que beneficiario"
+    except Exception as e:
+        logger.warning("Error validando edad: %s", e)
+        return True, warnings_edad, None
+
+    return error is None, warnings_edad, error
 
 
 class ImportacionService:
@@ -299,9 +318,7 @@ class ImportacionService:
                 lambda x: x.date() if hasattr(x, "date") else x
             )
 
-        _tipo_doc_por_defecto()
         estado_id = _estado_doc_pendiente_id()
-        tipo_doc_cuit_id = _tipo_doc_cuit()
 
         # Obtener provincia del usuario
         provincia_usuario_id = None
@@ -375,15 +392,20 @@ class ImportacionService:
             warnings.append({"fila": fila, "campo": campo, "detalle": detalle})
             logger.warning("Fila %s: %s (%s)", fila, detalle, campo)
 
+        def add_error(fila, campo, detalle):
+            raise ValidationError(f"Fila {fila}: {detalle} ({campo})")
+
         # Precarga de datos para optimizar consultas
         municipios_cache = {}
         localidades_cache = {}
         sexos_cache = {}
+        nacionalidades_cache = {}
 
         # Obtener todos los IDs únicos del Excel
         municipio_ids = set()
         localidad_ids = set()
         sexos_nombres = set()
+        nacionalidades_nombres = set()
 
         for _, row in df.iterrows():
             if row.get("municipio"):
@@ -396,6 +418,8 @@ class ImportacionService:
                     localidad_ids.add(int(float(loc_str)))
             if row.get("sexo"):
                 sexos_nombres.add(str(row["sexo"]).strip().lower())
+            if row.get("nacionalidad"):
+                nacionalidades_nombres.add(str(row["nacionalidad"]).strip().lower())
 
         # Cargar todos los datos de una vez
         if municipio_ids:
@@ -433,13 +457,17 @@ class ImportacionService:
         except Exception as e:
             logger.warning("Error cargando sexos: %s", e)
 
+        # Funciones de validación
         def validar_documento(doc_str, campo_nombre, fila):
-            """Valida formato y longitud de documento."""
+            """Valida formato y longitud de documento"""
             if not doc_str or not doc_str.isdigit():
                 raise ValidationError(f"{campo_nombre} debe contener solo dígitos")
 
+            # Validar longitud según tipo
             if campo_nombre == "documento":
+                # Aceptar tanto DNI (7-8) como CUIT (11)
                 if len(doc_str) == 11:
+                    # Es CUIT, validar formato
                     if not (
                         doc_str.startswith("20")
                         or doc_str.startswith("23")
@@ -453,6 +481,7 @@ class ImportacionService:
                         f"{campo_nombre} debe tener 7-8 dígitos (DNI) o 11 dígitos (CUIT)"
                     )
                 else:
+                    # Es DNI, validar rango
                     doc_int = int(doc_str)
                     if doc_int < 1000000 or doc_int > 99999999:
                         raise ValidationError(
@@ -471,7 +500,7 @@ class ImportacionService:
             return doc_str
 
         def normalizar_sexo(sexo_valor):
-            """Normaliza valores de sexo comunes."""
+            """Normaliza valores de sexo comunes"""
             if not sexo_valor:
                 return None
 
@@ -508,16 +537,28 @@ class ImportacionService:
                             payload[field] = v or None
 
                 # Asignar tipo de documento basado en longitud
-                doc_length = len(str(payload.get("documento", "")))
-                if doc_length == 11:
-                    payload["tipo_documento"] = tipo_doc_cuit_id
-                else:
-                    payload["tipo_documento"] = _tipo_doc_por_defecto()
+                payload["tipo_documento"] = _get_tipo_documento(
+                    payload.get("documento", "")
+                )
 
                 # Asignar provincia del usuario
                 payload["provincia"] = provincia_usuario_id
 
-                required = ["apellido", "nombre", "documento", "fecha_nacimiento"]
+                required = [
+                    "apellido",
+                    "nombre",
+                    "documento",
+                    "fecha_nacimiento",
+                    "sexo",
+                    "nacionalidad",
+                    "municipio",
+                    "localidad",
+                    "calle",
+                    "altura",
+                    "codigo_postal",
+                    "telefono",
+                    "email",
+                ]
                 for req in required:
                     if not payload.get(req):
                         raise ValidationError(f"Campo obligatorio faltante: {req}")
@@ -602,10 +643,9 @@ class ImportacionService:
                 else:
                     payload.pop("sexo", None)
 
+                # Nacionalidad se guarda como string en Ciudadano.nacionalidad
                 nacionalidad_val = payload.get("nacionalidad")
-                if nacionalidad_val:
-                    payload["nacionalidad"] = str(nacionalidad_val).strip()
-                else:
+                if not nacionalidad_val:
                     payload.pop("nacionalidad", None)
 
                 # Validar email
@@ -725,12 +765,31 @@ class ImportacionService:
                     ]
                 )
 
-                # OK para crear legajo del hijo
+                # Detectar si responsable = beneficiario
+                doc_beneficiario = payload.get("documento")
+                doc_responsable = payload.get("documento_responsable")
+
+                es_mismo_documento = (
+                    tiene_responsable
+                    and doc_responsable
+                    and str(doc_responsable).strip() == str(doc_beneficiario).strip()
+                )
+
+                # Determinar rol del beneficiario
+                if es_mismo_documento:
+                    rol_beneficiario = (
+                        ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                    )
+                else:
+                    rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
+
+                # OK para crear legajo del beneficiario CON ROL
                 legajos_crear.append(
                     ExpedienteCiudadano(
                         expediente=expediente,
                         ciudadano=ciudadano,
                         estado_id=estado_id,
+                        rol=rol_beneficiario,
                     )
                 )
                 existentes_ids.add(cid)
@@ -743,9 +802,23 @@ class ImportacionService:
                 }
                 validos += 1
 
-                # Si hay datos del responsable, crear también el legajo del responsable
+                # Si hay datos del responsable, crear también el ciudadano y vínculo
                 if tiene_responsable:
                     try:
+                        # Validar mínimos obligatorios del responsable
+                        if not payload.get("documento_responsable"):
+                            add_error(
+                                offset,
+                                "documento_responsable",
+                                "Documento del responsable obligatorio",
+                            )
+                        if not payload.get("nombre_responsable"):
+                            add_error(
+                                offset,
+                                "nombre_responsable",
+                                "Nombre del responsable obligatorio",
+                            )
+
                         # Preparar datos del responsable
                         responsable_payload = {
                             "apellido": payload.get("apellido_responsable"),
@@ -756,21 +829,22 @@ class ImportacionService:
                             "sexo": payload.get("sexo_responsable"),
                             "telefono": payload.get("telefono_responsable"),
                             "email": payload.get("email_responsable"),
-                            "tipo_documento": tipo_doc_cuit_id,
+                            "documento": payload.get("documento_responsable"),
+                            "tipo_documento": _get_tipo_documento(
+                                payload.get("documento_responsable", "")
+                            ),
                             "provincia": provincia_usuario_id,
                         }
-                        doc_resp = payload.get("documento_responsable")
-                        if doc_resp:
-                            responsable_payload["documento"] = doc_resp
 
                         # Verificar si el responsable es la misma persona que el beneficiario
-                        es_mismo_documento = (
-                            doc_resp
-                            and str(doc_resp).strip()
+                        es_mismo_documento_resp = (
+                            doc_responsable
+                            and str(doc_responsable).strip()
                             == str(payload.get("documento", "")).strip()
                         )
 
-                        if es_mismo_documento:
+                        cid_resp = None
+                        if es_mismo_documento_resp:
                             # Es la misma persona - solo crear la relación familiar pero no duplicar el legajo
                             cid_resp = cid  # Usar el mismo ciudadano
                             add_warning(
@@ -817,15 +891,6 @@ class ImportacionService:
                                         f"No se pudo procesar: {e}",
                                     )
 
-                            # Generar documento ficticio para el responsable si no tiene
-                            if not responsable_payload.get("documento"):
-                                # Usar timestamp + offset para generar un documento único
-                                import time
-
-                                responsable_payload["documento"] = (
-                                    f"99{int(time.time())}{offset:04d}"[-11:]
-                                )
-
                             # Convertir fecha de nacimiento del responsable
                             if responsable_payload.get("fecha_nacimiento"):
                                 try:
@@ -855,25 +920,22 @@ class ImportacionService:
                             if ciudadano_responsable and ciudadano_responsable.pk:
                                 cid_resp = ciudadano_responsable.pk
 
-                                # Responsables pueden estar en múltiples expedientes, solo validar si ya está en ESTE expediente
-                                if cid_resp not in existentes_ids:
-                                    legajos_crear.append(
-                                        ExpedienteCiudadano(
-                                            expediente=expediente,
-                                            ciudadano=ciudadano_responsable,
-                                            estado_id=estado_id,
-                                        )
+                                # Validar edad
+                                valido_edad, edad_warnings, error_edad = (
+                                    validar_edad_responsable(
+                                        responsable_payload.get("fecha_nacimiento"),
+                                        payload.get("fecha_nacimiento"),
                                     )
-                                    existentes_ids.add(cid_resp)
-                                    validos += 1
+                                )
+                                if error_edad:
+                                    add_error(offset, "edad_responsable", error_edad)
+                                for warning in edad_warnings:
+                                    add_warning(offset, "edad", warning)
 
-                        # Guardar relacion familiar (tanto si es la misma persona como si no)
-                        if "cid_resp" in locals():
+                        # Crear GrupoFamiliar SOLO si son personas diferentes
+                        if not es_mismo_documento_resp and cid_resp:
                             pair = (cid_resp, cid)
-                            if (
-                                pair not in relaciones_familiares_pairs
-                                and cid_resp != cid
-                            ):
+                            if pair not in relaciones_familiares_pairs:
                                 relaciones_familiares_pairs.add(pair)
                                 relaciones_familiares.append(
                                     {
@@ -923,6 +985,17 @@ class ImportacionService:
                     try:
                         from ciudadanos.models import GrupoFamiliar
 
+                        # Buscar vinculo "Hijo" y "Padre/Madre"
+                        vinculo_hijo = VinculoFamiliar.objects.filter(
+                            vinculo__icontains="hijo"
+                        ).first()
+
+                        if vinculo_hijo is None:
+                            vinculo_hijo = VinculoFamiliar.objects.create(
+                                vinculo="Hijo/a",
+                                inverso="Padre/Madre",
+                            )
+
                         relaciones_crear = []
                         for rel in relaciones_familiares:
                             try:
@@ -930,7 +1003,8 @@ class ImportacionService:
                                     GrupoFamiliar(
                                         ciudadano_1_id=rel["responsable_id"],
                                         ciudadano_2_id=rel["hijo_id"],
-                                        vinculo=GrupoFamiliar.RELACION_HIJO,
+                                        vinculo=vinculo_hijo,
+                                        vinculo_inverso=vinculo_hijo.inverso,
                                         conviven=True,
                                         cuidador_principal=True,
                                     )
@@ -946,7 +1020,7 @@ class ImportacionService:
                             GrupoFamiliar.objects.bulk_create(
                                 relaciones_crear,
                                 batch_size=batch_size,
-                                ignore_conflicts=True,
+                                ignore_conflicts=True,  # Evitar errores por duplicados
                             )
                             logger.info(
                                 "Creadas %s relaciones familiares",
