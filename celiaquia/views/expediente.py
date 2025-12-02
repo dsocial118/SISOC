@@ -1290,7 +1290,6 @@ class ReprocesarRegistrosErroneosView(View):
                     datos=datos,
                     usuario=user,
                     expediente=expediente,
-                    programa_id=3,
                 )
 
                 if ciudadano and ciudadano.pk:
@@ -1393,7 +1392,6 @@ class ReprocesarRegistrosErroneosView(View):
                                     datos=datos_resp,
                                     usuario=user,
                                     expediente=expediente,
-                                    programa_id=3,
                                 )
 
                                 if responsable and responsable.pk:
