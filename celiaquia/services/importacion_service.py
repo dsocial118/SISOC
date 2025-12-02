@@ -670,7 +670,6 @@ class ImportacionService:
                         datos=payload,
                         usuario=usuario,
                         expediente=expediente,
-                        programa_id=3,
                     )
 
                     if not ciudadano or not ciudadano.pk:
@@ -913,7 +912,6 @@ class ImportacionService:
                                     datos=responsable_payload,
                                     usuario=usuario,
                                     expediente=expediente,
-                                    programa_id=3,
                                 )
                             )
 
