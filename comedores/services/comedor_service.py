@@ -535,29 +535,16 @@ class ComedorService:
             messages.error(request, "Debe seleccionar un tipo de admisión.")
             return redirect(request.path)
 
-        # Si intenta crear incorporación, verificar que no haya existido nunca una incorporación anterior
-        if tipo_admision == "incorporacion":
-            if (
-                Admision.objects.filter(comedor=comedor, tipo="incorporacion")
-                .exclude(estado__nombre="Descartado")
-                .exists()
-            ):
-                messages.warning(
-                    request,
-                    "Ya existe una admisión de tipo Incorporación para este comedor. Solo puede crear admisiones de tipo Renovación.",
-                )
-                return redirect(request.path)
-
-        # Verificar si existe una admisión del mismo tipo que no esté archivada
+        # Verificar si existe una admisión del mismo tipo activa
         if Admision.objects.filter(
-            comedor=comedor, tipo=tipo_admision, enviada_a_archivo=False
+            comedor=comedor, tipo=tipo_admision, activa=True
         ).exists():
             tipo_display = (
                 "Incorporación" if tipo_admision == "incorporacion" else "Renovación"
             )
             messages.warning(
                 request,
-                f"Ya existe una admisión del tipo {tipo_display} en proceso.",
+                f"Ya existe una admisión del tipo {tipo_display} activa para este comedor.",
             )
             return redirect(request.path)
 

@@ -19,9 +19,12 @@
 {% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorRelevamiento.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/ciudadanoUbicacion.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ciudadanoUbicacion.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/fotos.css' %}" />
 
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
@@ -41,9 +44,9 @@
                 <i class="fas fa-arrow-left mr-1"></i>
                 Volver
             </a>
-            <a href="#" onclick="window.history.back();" class="btn btn-outline-secondary">
-                Cancelar
-            </a>
+            <a href="#"
+               onclick="window.history.back();"
+               class="btn btn-outline-secondary">Cancelar</a>
         </div>
     </div>
 
@@ -248,9 +251,7 @@
                                                 <span class="visually-hidden">Campo obligatorio</span>
                                             {% endif %}
                                         </label>
-                                        <div id="provincia-field" class="ubicacion-select-wrapper">
-                                            {{ field }}
-                                        </div>
+                                        <div id="provincia-field" class="ubicacion-select-wrapper">{{ field }}</div>
                                         {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
                                         {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
                                     </div>
@@ -267,9 +268,7 @@
                                             {% endif %}
                                         </label>
                                         <div id="municipio-loader" class="skeleton-loader d-none"></div>
-                                        <div id="municipio-field" class="ubicacion-select-wrapper">
-                                            {{ field }}
-                                        </div>
+                                        <div id="municipio-field" class="ubicacion-select-wrapper">{{ field }}</div>
                                         {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
                                         {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
                                     </div>
@@ -286,9 +285,7 @@
                                             {% endif %}
                                         </label>
                                         <div id="localidad-loader" class="skeleton-loader d-none"></div>
-                                        <div id="localidad-field" class="ubicacion-select-wrapper">
-                                            {{ field }}
-                                        </div>
+                                        <div id="localidad-field" class="ubicacion-select-wrapper">{{ field }}</div>
                                         {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
                                         {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>{% endif %}
                                     </div>
@@ -517,7 +514,8 @@
                 </div>
 
                 <div class="section-card" data-section="documentacion">
-                    <div class="section-header" onclick="toggleSectionCiudadano('documentacion')">
+                    <div class="section-header"
+                         onclick="toggleSectionCiudadano('documentacion')">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-camera"></i>
