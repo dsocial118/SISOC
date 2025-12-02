@@ -8,6 +8,7 @@ from core.models import (
     Localidad,
     Municipio,
 )
+from organizaciones.models import Organizacion
 
 
 @login_required
@@ -31,6 +32,38 @@ def load_localidad(request):
         localidades = Localidad.objects.none()
 
     return JsonResponse(list(localidades.values("id", "nombre")), safe=False)
+
+
+@login_required
+@require_GET
+def load_organizaciones(request):
+    """Carga organizaciones con búsqueda para Select2."""
+    search = request.GET.get("q", "").strip()
+    page = int(request.GET.get("page", 1))
+    page_size = 30
+
+    organizaciones = Organizacion.objects.all().order_by("nombre")
+
+    if search:
+        organizaciones = organizaciones.filter(nombre__icontains=search)
+
+    # Paginación
+    start = (page - 1) * page_size
+    end = start + page_size
+    total_count = organizaciones.count()
+    organizaciones_page = organizaciones[start:end]
+
+    results = [
+        {"id": org.id, "text": org.nombre}
+        for org in organizaciones_page
+    ]
+
+    return JsonResponse({
+        "results": results,
+        "pagination": {
+            "more": end < total_count
+        }
+    })
 
 
 @login_required
