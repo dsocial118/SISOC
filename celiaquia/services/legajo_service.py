@@ -12,7 +12,9 @@ from celiaquia.models import (  # pylint: disable=import-error
     SubsanacionRespuesta,
     ValidacionTecnica,
 )
-from celiaquia.services.familia_service import FamiliaService  # pylint: disable=import-error
+from celiaquia.services.familia_service import (
+    FamiliaService,
+)  # pylint: disable=import-error
 
 logger = logging.getLogger("django")
 

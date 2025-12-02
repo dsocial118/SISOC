@@ -54,27 +54,25 @@ ESTADOS_PRE_CUPO = [
 def validar_edad_responsable(fecha_nac_responsable, fecha_nac_beneficiario):
     """Valida edad del responsable vs beneficiario. Retorna (ok, warnings, error)."""
     from datetime import date
-    
+
     warnings_edad = []
     error = None
-    
+
     if not fecha_nac_responsable or not fecha_nac_beneficiario:
         return True, warnings_edad, None
-    
+
     try:
         edad_responsable = (date.today() - fecha_nac_responsable).days // 365
         edad_beneficiario = (date.today() - fecha_nac_beneficiario).days // 365
-        
+
         if edad_responsable < 18:
-            warnings_edad.append(
-                f"Responsable menor de 18 anos ({edad_responsable})"
-            )
+            warnings_edad.append(f"Responsable menor de 18 anos ({edad_responsable})")
         if edad_responsable < edad_beneficiario:
             error = "Responsable mas joven que beneficiario"
     except Exception as e:
         logger.warning("Error validando edad: %s", e)
         return True, warnings_edad, None
-    
+
     return error is None, warnings_edad, error
 
 
@@ -459,8 +457,6 @@ class ImportacionService:
         except Exception as e:
             logger.warning("Error cargando sexos: %s", e)
 
-
-
         # Funciones de validación
         def validar_documento(doc_str, campo_nombre, fila):
             """Valida formato y longitud de documento"""
@@ -541,12 +537,28 @@ class ImportacionService:
                             payload[field] = v or None
 
                 # Asignar tipo de documento basado en longitud
-                payload["tipo_documento"] = _get_tipo_documento(payload.get("documento", ""))
+                payload["tipo_documento"] = _get_tipo_documento(
+                    payload.get("documento", "")
+                )
 
                 # Asignar provincia del usuario
                 payload["provincia"] = provincia_usuario_id
 
-                required = ["apellido", "nombre", "documento", "fecha_nacimiento", "sexo", "nacionalidad", "municipio", "localidad", "calle", "altura", "codigo_postal", "telefono", "email"]
+                required = [
+                    "apellido",
+                    "nombre",
+                    "documento",
+                    "fecha_nacimiento",
+                    "sexo",
+                    "nacionalidad",
+                    "municipio",
+                    "localidad",
+                    "calle",
+                    "altura",
+                    "codigo_postal",
+                    "telefono",
+                    "email",
+                ]
                 for req in required:
                     if not payload.get(req):
                         raise ValidationError(f"Campo obligatorio faltante: {req}")
@@ -756,16 +768,18 @@ class ImportacionService:
                 # Detectar si responsable = beneficiario
                 doc_beneficiario = payload.get("documento")
                 doc_responsable = payload.get("documento_responsable")
-                
+
                 es_mismo_documento = (
                     tiene_responsable
                     and doc_responsable
                     and str(doc_responsable).strip() == str(doc_beneficiario).strip()
                 )
-                
+
                 # Determinar rol del beneficiario
                 if es_mismo_documento:
-                    rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                    rol_beneficiario = (
+                        ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                    )
                 else:
                     rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
 
@@ -775,7 +789,7 @@ class ImportacionService:
                         expediente=expediente,
                         ciudadano=ciudadano,
                         estado_id=estado_id,
-                        rol=rol_beneficiario
+                        rol=rol_beneficiario,
                     )
                 )
                 existentes_ids.add(cid)
@@ -793,10 +807,18 @@ class ImportacionService:
                     try:
                         # Validar mínimos obligatorios del responsable
                         if not payload.get("documento_responsable"):
-                            add_error(offset, "documento_responsable", "Documento del responsable obligatorio")
+                            add_error(
+                                offset,
+                                "documento_responsable",
+                                "Documento del responsable obligatorio",
+                            )
                         if not payload.get("nombre_responsable"):
-                            add_error(offset, "nombre_responsable", "Nombre del responsable obligatorio")
-                        
+                            add_error(
+                                offset,
+                                "nombre_responsable",
+                                "Nombre del responsable obligatorio",
+                            )
+
                         # Preparar datos del responsable
                         responsable_payload = {
                             "apellido": payload.get("apellido_responsable"),
@@ -808,7 +830,9 @@ class ImportacionService:
                             "telefono": payload.get("telefono_responsable"),
                             "email": payload.get("email_responsable"),
                             "documento": payload.get("documento_responsable"),
-                            "tipo_documento": _get_tipo_documento(payload.get("documento_responsable", "")),
+                            "tipo_documento": _get_tipo_documento(
+                                payload.get("documento_responsable", "")
+                            ),
                             "provincia": provincia_usuario_id,
                         }
 
@@ -895,11 +919,13 @@ class ImportacionService:
 
                             if ciudadano_responsable and ciudadano_responsable.pk:
                                 cid_resp = ciudadano_responsable.pk
-                                
+
                                 # Validar edad
-                                valido_edad, edad_warnings, error_edad = validar_edad_responsable(
-                                    responsable_payload.get("fecha_nacimiento"),
-                                    payload.get("fecha_nacimiento")
+                                valido_edad, edad_warnings, error_edad = (
+                                    validar_edad_responsable(
+                                        responsable_payload.get("fecha_nacimiento"),
+                                        payload.get("fecha_nacimiento"),
+                                    )
                                 )
                                 if error_edad:
                                     add_error(offset, "edad_responsable", error_edad)

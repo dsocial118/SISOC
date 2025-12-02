@@ -8,8 +8,8 @@ from rest_framework_api_key.models import APIKey
 from core.api_auth import HasAPIKeyOrToken
 
 
-@pytest.fixture()
-def api_key_validator(monkeypatch):
+@pytest.fixture(name="api_key_validator")
+def _api_key_validator(monkeypatch):
     calls = {}
 
     def _fake_is_valid(key: str) -> bool:
@@ -31,9 +31,7 @@ def test_has_permission_accepts_authorization_api_key_prefix(api_key_validator):
 
 
 def test_has_permission_accepts_legacy_api_key_header(api_key_validator):
-    request = APIRequestFactory().get(
-        "/relevamientos", HTTP_API_KEY="valid-api-key"
-    )
+    request = APIRequestFactory().get("/relevamientos", HTTP_API_KEY="valid-api-key")
     request.user = AnonymousUser()
 
     assert HasAPIKeyOrToken().has_permission(request, None)
