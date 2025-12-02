@@ -34,6 +34,7 @@ from celiaquia.models import (
     RevisionTecnico,
     HistorialValidacionTecnica,
 )
+from ciudadanos.models import Ciudadano
 from celiaquia.services.ciudadano_service import CiudadanoService
 from celiaquia.services.expediente_service import (
     ExpedienteService,
