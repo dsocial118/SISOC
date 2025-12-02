@@ -16,6 +16,7 @@ from celiaquia.models import (
     TipoMovimientoCupo,
     RevisionTecnico,
     ResultadoSintys,
+    HistorialCupo,
 )
 
 logger = logging.getLogger("django")
@@ -48,6 +49,10 @@ class CupoService:
             expediente__usuario_provincia__profile__provincia=provincia,
             estado_cupo=EstadoCupo.FUERA,
             es_titular_activo=False,
+            rol__in=[
+                ExpedienteCiudadano.ROLE_BENEFICIARIO,
+                ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
+            ],
         ).count()
         return {
             "total_asignado": total,
@@ -67,6 +72,10 @@ class CupoService:
             resultado_sintys=ResultadoSintys.MATCH,
             estado_cupo=EstadoCupo.DENTRO,
             es_titular_activo=True,
+            rol__in=[
+                ExpedienteCiudadano.ROLE_BENEFICIARIO,
+                ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
+            ],
         )
 
     @staticmethod
@@ -78,6 +87,10 @@ class CupoService:
             expediente__usuario_provincia__profile__provincia=provincia,
             estado_cupo=EstadoCupo.DENTRO,
             es_titular_activo=False,
+            rol__in=[
+                ExpedienteCiudadano.ROLE_BENEFICIARIO,
+                ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
+            ],
         )
 
     @staticmethod
@@ -174,11 +187,16 @@ class CupoService:
             return True
 
         # Si el ciudadano YA ocupa un cupo DENTRO en la provincia (activo o suspendido), no se puede reservar otro
+        # Excluir responsables puros
         ya_ocupa = (
             ExpedienteCiudadano.objects.filter(
                 ciudadano_id=legajo.ciudadano_id,
                 expediente__usuario_provincia__profile__provincia=provincia,
                 estado_cupo=EstadoCupo.DENTRO,
+                rol__in=[
+                    ExpedienteCiudadano.ROLE_BENEFICIARIO,
+                    ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
+                ],
             )
             .exclude(pk=legajo.pk)
             .exists()
@@ -207,9 +225,23 @@ class CupoService:
         ProvinciaCupo.objects.filter(pk=pc.pk).update(usados=F("usados") + 1)
         pc.refresh_from_db(fields=["usados"])
 
+        estado_anterior = legajo.estado_cupo
+        activo_anterior = legajo.es_titular_activo
+
         legajo.estado_cupo = EstadoCupo.DENTRO
         legajo.es_titular_activo = True
         legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
+
+        HistorialCupo.objects.create(
+            legajo=legajo,
+            estado_cupo_anterior=estado_anterior,
+            estado_cupo_nuevo=EstadoCupo.DENTRO,
+            es_titular_activo_anterior=activo_anterior,
+            es_titular_activo_nuevo=True,
+            tipo_movimiento=TipoMovimientoCupo.ALTA,
+            usuario=usuario,
+            motivo=(motivo or "").strip()[:255],
+        )
 
         CupoMovimiento.objects.create(
             provincia=provincia,
@@ -264,6 +296,17 @@ class CupoService:
         if legajo.es_titular_activo:
             legajo.es_titular_activo = False
             legajo.save(update_fields=["es_titular_activo", "modificado_en"])
+
+            HistorialCupo.objects.create(
+                legajo=legajo,
+                estado_cupo_anterior=EstadoCupo.DENTRO,
+                estado_cupo_nuevo=EstadoCupo.DENTRO,
+                es_titular_activo_anterior=True,
+                es_titular_activo_nuevo=False,
+                tipo_movimiento=TipoMovimientoCupo.SUSPENDIDO,
+                usuario=usuario,
+                motivo=(motivo or "Suspensión de titular").strip()[:255],
+            )
 
             CupoMovimiento.objects.create(
                 provincia=provincia,
@@ -333,9 +376,23 @@ class CupoService:
             ProvinciaCupo.objects.filter(pk=pc.pk).update(usados=F("usados") - 1)
             pc.refresh_from_db(fields=["usados"])
 
+        estado_anterior = legajo.estado_cupo
+        activo_anterior = legajo.es_titular_activo
+
         legajo.estado_cupo = EstadoCupo.NO_EVAL
         legajo.es_titular_activo = False
         legajo.save(update_fields=["estado_cupo", "es_titular_activo", "modificado_en"])
+
+        HistorialCupo.objects.create(
+            legajo=legajo,
+            estado_cupo_anterior=estado_anterior,
+            estado_cupo_nuevo=EstadoCupo.NO_EVAL,
+            es_titular_activo_anterior=activo_anterior,
+            es_titular_activo_nuevo=False,
+            tipo_movimiento=TipoMovimientoCupo.BAJA,
+            usuario=usuario,
+            motivo=(motivo or "Baja de titular").strip()[:255],
+        )
 
         CupoMovimiento.objects.create(
             provincia=provincia,
@@ -389,6 +446,17 @@ class CupoService:
 
         legajo.es_titular_activo = True
         legajo.save(update_fields=["es_titular_activo", "modificado_en"])
+
+        HistorialCupo.objects.create(
+            legajo=legajo,
+            estado_cupo_anterior=EstadoCupo.DENTRO,
+            estado_cupo_nuevo=EstadoCupo.DENTRO,
+            es_titular_activo_anterior=False,
+            es_titular_activo_nuevo=True,
+            tipo_movimiento=TipoMovimientoCupo.REACTIVACION,
+            usuario=usuario,
+            motivo=(motivo or "Reactivación de titular").strip()[:255],
+        )
 
         CupoMovimiento.objects.create(
             provincia=provincia,

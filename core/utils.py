@@ -51,7 +51,7 @@ class JSONDataFormatter(logging.Formatter):
         return json.dumps(payload, ensure_ascii=False, default=str)
 
 
-def convert_string_to_int(value: str | int | None) -> int | None:
+def convert_string_to_int(value):
     """Convertir una cadena a entero si contiene un valor numérico.
 
     Args:
@@ -66,13 +66,13 @@ def convert_string_to_int(value: str | int | None) -> int | None:
         return None
 
 
-def format_fecha_gestionar(fecha_visita: datetime) -> str:
+def format_fecha_gestionar(fecha_visita):
     """Formatear un objeto ``datetime`` a la representación usada por GestionAR."""
 
     return fecha_visita.strftime("%d/%m/%Y %H:%M")
 
 
-def format_fecha_django(fecha_visita: str) -> datetime:
+def format_fecha_django(fecha_visita):
     """Convertir una fecha en formato ``dd/mm/YYYY HH:MM`` a ``datetime``.
 
     La fecha resultante se marca como consciente de zona horaria utilizando la
@@ -89,7 +89,7 @@ def format_fecha_django(fecha_visita: str) -> datetime:
     return timezone.make_aware(fecha_formateada, timezone.get_default_timezone())
 
 
-def format_serializer_errors(serializer) -> str:
+def format_serializer_errors(serializer):
     """Unir los errores de un serializer en un mensaje legible."""
 
     error_messages = []
