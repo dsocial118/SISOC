@@ -137,21 +137,15 @@ class ComedorForm(forms.ModelForm):
             pk=pk_formatter(self.data.get("localidad"))
         ).first() or getattr(self.instance, "localidad", None)
 
+        # Configurar queryset de provincias (siempre disponible)
+        self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+
         if provincia:
-            self.fields["provincia"].initial = Provincia.objects.get(id=provincia.id)
-            self.fields["provincia"].queryset = Provincia.objects.all()
-            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
-                "nombre"
-            )
+            self.fields["provincia"].initial = provincia
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia
             ).order_by("nombre")
-
         else:
-            self.fields["provincia"].queryset = Provincia.objects.all()
-            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
-                "nombre"
-            )
             self.fields["municipio"].queryset = Municipio.objects.none()
             self.fields["localidad"].queryset = Localidad.objects.none()
 

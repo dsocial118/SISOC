@@ -257,6 +257,14 @@ function initializeSelect2Fields() {
                 });
                 console.log('✓ Select2 inicializado en organizacion');
 
+                // IMPORTANTE: Inicializar Select2 en provincia ANTES del gestor de ubicación
+                // para asegurar que las opciones del select estén disponibles
+                initializeSelect2('id_provincia', {
+                    placeholder: "Seleccione una provincia",
+                    allowClear: true
+                });
+                console.log('✓ Select2 inicializado en provincia');
+
                 if (typeof window.initUbicacionSelects === 'function') {
                     await window.initUbicacionSelects({
                         ajaxMunicipiosUrl: ajaxLoadMunicipiosUrl,
