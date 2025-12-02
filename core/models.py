@@ -1,6 +1,17 @@
 from django.db import models
 from django.urls import reverse
 
+
+class Nacionalidad(models.Model):
+    nacionalidad = models.CharField(max_length=50)
+
+    def __str__(self):
+        return str(self.nacionalidad)
+
+    class Meta:
+        verbose_name = "Nacionalidad"
+        verbose_name_plural = "Nacionalidades"
+
 class Programa(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     estado = models.BooleanField(default=True)
