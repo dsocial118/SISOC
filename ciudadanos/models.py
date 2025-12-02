@@ -4,10 +4,9 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
-from core.models import Localidad, Municipio, Provincia, Sexo
+from core.models import Localidad, Municipio, Programa, Provincia, Sexo
 
 User = get_user_model()
-
 
 class Ciudadano(models.Model):
     """Datos básicos del ciudadano/a."""
@@ -159,3 +158,47 @@ class GrupoFamiliar(models.Model):
 
     def get_absolute_url(self):
         return reverse("ciudadanos_ver", kwargs={"pk": self.ciudadano_1_id})
+
+class CiudadanoPrograma(models.Model):
+    programas = models.ForeignKey(
+        Programa, related_name="programa_ciudadano", on_delete=models.CASCADE
+    )
+    ciudadano = models.ForeignKey(
+        Ciudadano, related_name="ciudadano_programa", on_delete=models.CASCADE
+    )
+    fecha_creado = models.DateField(auto_now=True)
+    creado_por = models.ForeignKey(
+        User,
+        related_name="prog_creado_por",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+
+    class Meta:
+        ordering = ["-fecha_creado"]
+        verbose_name = "CiudadanoProgramas"
+        verbose_name_plural = "CiudadanosProgramas"
+        unique_together = (("ciudadano", "programas"),)
+
+
+class HistorialCiudadanoProgramas(models.Model):
+    fecha = models.DateTimeField(auto_now_add=True)
+    accion = models.CharField(
+        max_length=10, choices=[("agregado", "Agregado"), ("eliminado", "Eliminado")]
+    )
+    programa = models.ForeignKey(
+        Programa, related_name="hist_prog_ciudadano", on_delete=models.CASCADE
+    )
+    ciudadano = models.ForeignKey(
+        Ciudadano, related_name="hist_ciudadano_programa", on_delete=models.CASCADE
+    )
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ["-fecha"]
+        verbose_name = "Historial CiudadanoPrograma"
+        verbose_name_plural = "Historial CiudadanosProgramas"
+
+    def __str__(self):
+        return f"{self.fecha} - {self.accion} - {self.programa} - {self.ciudadano}"
