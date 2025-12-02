@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "multiselectfield",
     "rest_framework",
     "rest_framework_api_key",
+    "drf_spectacular",
     "corsheaders",
     # Apps propias
     "users",
@@ -93,12 +94,6 @@ MIDDLEWARE = [
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
 ]
-
-if DEBUG:  # Herramientas de depuración solo en entornos no productivos
-    INSTALLED_APPS += ["debug_toolbar", "silk"]
-    MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
-    MIDDLEWARE.append("silk.middleware.SilkyMiddleware")
-    INTERNAL_IPS = ["127.0.0.1"]
 
 # URLs / WSGI
 ROOT_URLCONF = "config.urls"
@@ -198,6 +193,29 @@ CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
+# Swagger/OpenAPI
+SPECTACULAR_SETTINGS = {
+    "TITLE": "SISOC API",
+    "DESCRIPTION": "API de gestión de comedores, centros de familia y más",
+    "VERSION": "1.0.0",
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Usar formato: Api-Key TU_API_KEY",
+            }
+        }
+    },
+    "SECURITY": [{"ApiKeyAuth": []}],
 }
 
 # Dominios / Integraciones
