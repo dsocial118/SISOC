@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction, IntegrityError
 
 from ciudadanos.models import Ciudadano
-from core.models import Localidad, Municipio, Provincia, Sexo
+from core.models import Localidad, Municipio, Nacionalidad, Provincia, Sexo
 
 logger = logging.getLogger("django")
 
@@ -61,6 +61,15 @@ class CiudadanoService:
         return Sexo.objects.filter(sexo__iexact=raw_str).first()
 
     @staticmethod
+    def _resolver_nacionalidad(raw):
+        if raw in (None, ""):
+            return None
+        raw_str = str(raw).strip()
+        if raw_str.isdigit():
+            return Nacionalidad.objects.filter(pk=int(raw_str)).first()
+        return Nacionalidad.objects.filter(nacionalidad__iexact=raw_str).first()
+
+    @staticmethod
     def _resolver_provincia(raw):
         if raw in (None, ""):
             return None
@@ -86,12 +95,12 @@ class CiudadanoService:
     def _resolver_localidad(raw, municipio):
         if raw in (None, ""):
             return None
-        if municipio is None:
-            raise ValidationError(
-                "Debe indicar el municipio para validar la localidad."
-            )
         try:
-            return Localidad.objects.get(pk=int(str(raw).strip()), municipio=municipio)
+            localidad_id = int(str(raw).strip())
+            if municipio is None:
+                # Si no hay municipio, buscar localidad solo por ID
+                return Localidad.objects.filter(pk=localidad_id).first()
+            return Localidad.objects.get(pk=localidad_id, municipio=municipio)
         except (Localidad.DoesNotExist, ValueError) as exc:
             raise ValidationError("Localidad inválida para el municipio dado.") from exc
 
@@ -123,7 +132,7 @@ class CiudadanoService:
         fecha_nacimiento = CiudadanoService._to_date(datos.get("fecha_nacimiento"))
         nombre = datos.get("nombre", "").strip()
         apellido = datos.get("apellido", "").strip()
-        nacionalidad = (datos.get("nacionalidad") or "").strip()
+        nacionalidad = CiudadanoService._resolver_nacionalidad(datos.get("nacionalidad"))
         calle = (datos.get("calle") or "").strip()
         altura = datos.get("altura")
         codigo_postal = datos.get("codigo_postal")
@@ -197,7 +206,7 @@ class CiudadanoService:
             if not ciudadano.fecha_nacimiento and fecha_nacimiento:
                 ciudadano.fecha_nacimiento = fecha_nacimiento
                 updates.append("fecha_nacimiento")
-            if not ciudadano.nacionalidad and nacionalidad:
+            if not ciudadano.nacionalidad_id and nacionalidad:
                 ciudadano.nacionalidad = nacionalidad
                 updates.append("nacionalidad")
             if not ciudadano.provincia_id and provincia:

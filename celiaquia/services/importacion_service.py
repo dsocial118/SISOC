@@ -298,7 +298,6 @@ class ImportacionService:
             "NOMBRE_REPSONSABLE": "nombre_responsable",
             "FECHA_DE_NACIMIENTO_RESPONSABLE": "fecha_nacimiento_responsable",
             "SEXO_RESPONSABLE": "sexo_responsable",
-            "SEXO": "sexo_responsable",  # columnas en mayusculas para responsable
             "DOMICILIO_RESPONSABLE": "domicilio_responsable",
             "LOCALIDAD_RESPONSABLE": "localidad_responsable",
             "CELULAR_RESPONSABLE": "telefono_responsable",
@@ -935,6 +934,18 @@ class ImportacionService:
                                     add_error(offset, "edad_responsable", error_edad)
                                 for warning in edad_warnings:
                                     add_warning(offset, "edad", warning)
+
+                                # Crear legajo del responsable si no existe ya
+                                if cid_resp not in existentes_ids:
+                                    legajos_crear.append(
+                                        ExpedienteCiudadano(
+                                            expediente=expediente,
+                                            ciudadano=ciudadano_responsable,
+                                            estado_id=estado_id,
+                                            rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+                                        )
+                                    )
+                                    existentes_ids.add(cid_resp)
 
                         # Crear GrupoFamiliar SOLO si son personas diferentes
                         if not es_mismo_documento_resp and cid_resp:
