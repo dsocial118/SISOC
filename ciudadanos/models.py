@@ -34,7 +34,6 @@ class Ciudadano(models.Model):
     )
     sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, null=True, blank=True)
     nacionalidad = models.CharField(max_length=100, null=True, blank=True)
-
     calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.CharField(max_length=10, null=True, blank=True)
     piso_departamento = models.CharField(max_length=50, null=True, blank=True)
