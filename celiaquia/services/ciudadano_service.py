@@ -132,7 +132,9 @@ class CiudadanoService:
         fecha_nacimiento = CiudadanoService._to_date(datos.get("fecha_nacimiento"))
         nombre = datos.get("nombre", "").strip()
         apellido = datos.get("apellido", "").strip()
-        nacionalidad = CiudadanoService._resolver_nacionalidad(datos.get("nacionalidad"))
+        nacionalidad = CiudadanoService._resolver_nacionalidad(
+            datos.get("nacionalidad")
+        )
         calle = (datos.get("calle") or "").strip()
         altura = datos.get("altura")
         codigo_postal = datos.get("codigo_postal")
