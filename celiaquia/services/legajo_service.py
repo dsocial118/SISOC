@@ -1,13 +1,20 @@
 import logging
+from datetime import date
 from functools import lru_cache
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from celiaquia.models import (
+from celiaquia.models import (  # pylint: disable=import-error
     EstadoLegajo,
     ExpedienteCiudadano,
     RevisionTecnico,
+    HistorialValidacionTecnica,
+    SubsanacionRespuesta,
+    ValidacionTecnica,
 )
+from celiaquia.services.familia_service import (
+    FamiliaService,
+)  # pylint: disable=import-error
 
 logger = logging.getLogger("django")
 
@@ -102,6 +109,7 @@ class LegajoService:
         archivo1=None,
         archivo2=None,
         archivo3=None,
+        usuario=None,
     ):
         changed = []
         if archivo1:
@@ -121,6 +129,21 @@ class LegajoService:
 
         changed.append("modificado_en")
         exp_ciudadano.save(update_fields=changed)
+
+        try:
+            vt = ValidacionTecnica.objects.filter(legajo=exp_ciudadano).first()
+            if vt:
+                SubsanacionRespuesta.objects.create(
+                    legajo=exp_ciudadano,
+                    validacion_tecnica=vt,
+                    archivo1=archivo1,
+                    archivo2=archivo2,
+                    archivo3=archivo3,
+                    usuario=usuario,
+                )
+        except Exception as e:
+            logger.warning("No se pudo crear SubsanacionRespuesta: %s", e)
+
         logger.info(
             "Legajo %s: subsanación, archivos actualizados: %s.",
             exp_ciudadano.pk,
@@ -133,6 +156,9 @@ class LegajoService:
     def solicitar_subsanacion(exp_ciudadano: ExpedienteCiudadano, motivo: str, usuario):
         if not motivo or not motivo.strip():
             raise ValidationError("Debés indicar un motivo de subsanación.")
+
+        estado_anterior = exp_ciudadano.revision_tecnico
+
         exp_ciudadano.revision_tecnico = RevisionTecnico.SUBSANAR
         exp_ciudadano.subsanacion_motivo = motivo.strip()[:500]
         exp_ciudadano.subsanacion_solicitada_en = timezone.now()
@@ -144,6 +170,15 @@ class LegajoService:
                 "modificado_en",
             ]
         )
+
+        HistorialValidacionTecnica.objects.create(
+            legajo=exp_ciudadano,
+            estado_anterior=estado_anterior,
+            estado_nuevo=RevisionTecnico.SUBSANAR,
+            usuario=usuario,
+            motivo=motivo.strip()[:500],
+        )
+
         logger.info(
             "Legajo %s: subsanación solicitada por %s.",
             exp_ciudadano.pk,
@@ -193,8 +228,6 @@ class LegajoService:
         responsables_ids = set()
         if ciudadanos_ids:
             try:
-                from celiaquia.services.familia_service import FamiliaService
-
                 responsables_ids = FamiliaService.obtener_ids_responsables(
                     ciudadanos_ids
                 )
@@ -251,8 +284,6 @@ class LegajoService:
             return ciudadano_id in responsables_ids
 
         try:
-            from celiaquia.services.familia_service import FamiliaService
-
             return FamiliaService.es_responsable(ciudadano_id)
         except Exception:
             return False
@@ -274,8 +305,6 @@ class LegajoService:
             }
 
         # Calcular edad para beneficiarios
-        from datetime import date
-
         # Por defecto asumir mayor de edad si no hay fecha_nacimiento
         es_menor = False
         if (
