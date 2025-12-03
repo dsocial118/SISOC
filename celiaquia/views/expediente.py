@@ -1397,14 +1397,17 @@ class ReprocesarRegistrosErroneosView(View):
                                             registro.fila_excel,
                                             warning,
                                         )
-                                    
+
                                     # Crear legajo del responsable
                                     ExpedienteCiudadano.objects.get_or_create(
                                         expediente=expediente,
                                         ciudadano=responsable,
-                                        defaults={"estado": estado_inicial, "rol": ExpedienteCiudadano.ROLE_RESPONSABLE},
+                                        defaults={
+                                            "estado": estado_inicial,
+                                            "rol": ExpedienteCiudadano.ROLE_RESPONSABLE,
+                                        },
                                     )
-                                    
+
                                     # Crear GrupoFamiliar
                                     relaciones_crear.append(
                                         {
