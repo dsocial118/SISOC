@@ -8,6 +8,7 @@ from core.models import Localidad, Municipio, Programa, Provincia, Sexo
 
 User = get_user_model()
 
+
 class Ciudadano(models.Model):
     """Datos básicos del ciudadano/a."""
 
@@ -158,6 +159,7 @@ class GrupoFamiliar(models.Model):
 
     def get_absolute_url(self):
         return reverse("ciudadanos_ver", kwargs={"pk": self.ciudadano_1_id})
+
 
 class CiudadanoPrograma(models.Model):
     programas = models.ForeignKey(

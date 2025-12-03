@@ -53,17 +53,9 @@ def load_organizaciones(request):
     total_count = organizaciones.count()
     organizaciones_page = organizaciones[start:end]
 
-    results = [
-        {"id": org.id, "text": org.nombre}
-        for org in organizaciones_page
-    ]
+    results = [{"id": org.id, "text": org.nombre} for org in organizaciones_page]
 
-    return JsonResponse({
-        "results": results,
-        "pagination": {
-            "more": end < total_count
-        }
-    })
+    return JsonResponse({"results": results, "pagination": {"more": end < total_count}})
 
 
 @login_required

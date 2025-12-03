@@ -119,7 +119,12 @@ class ComedorForm(forms.ModelForm):
 
         # Configurar organizacion: si es una instancia existente, cargar solo esa organizacion
         # Si es un formulario nuevo, dejar vacío para que Select2 con AJAX cargue bajo demanda
-        if self.instance and self.instance.pk and hasattr(self.instance, 'organizacion') and self.instance.organizacion:
+        if (
+            self.instance
+            and self.instance.pk
+            and hasattr(self.instance, "organizacion")
+            and self.instance.organizacion
+        ):
             self.fields["organizacion"].queryset = Organizacion.objects.filter(
                 pk=self.instance.organizacion.pk
             )
