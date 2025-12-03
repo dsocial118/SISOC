@@ -825,7 +825,6 @@ class ImportacionService:
                             "fecha_nacimiento": payload.get(
                                 "fecha_nacimiento_responsable"
                             ),
-                            "sexo": payload.get("sexo_responsable"),
                             "telefono": payload.get("telefono_responsable"),
                             "email": payload.get("email_responsable"),
                             "documento": payload.get("documento_responsable"),
@@ -834,6 +833,13 @@ class ImportacionService:
                             ),
                             "provincia": provincia_usuario_id,
                         }
+                        
+                        # Resolver sexo del responsable
+                        sexo_resp_val = payload.get("sexo_responsable")
+                        if sexo_resp_val:
+                            sexo_resp_id = normalizar_sexo(sexo_resp_val)
+                            if sexo_resp_id:
+                                responsable_payload["sexo"] = sexo_resp_id
 
                         # Verificar si el responsable es la misma persona que el beneficiario
                         es_mismo_documento_resp = (
@@ -983,17 +989,6 @@ class ImportacionService:
                     try:
                         from ciudadanos.models import GrupoFamiliar
 
-                        # Buscar vinculo "Hijo" y "Padre/Madre"
-                        vinculo_hijo = VinculoFamiliar.objects.filter(
-                            vinculo__icontains="hijo"
-                        ).first()
-
-                        if vinculo_hijo is None:
-                            vinculo_hijo = VinculoFamiliar.objects.create(
-                                vinculo="Hijo/a",
-                                inverso="Padre/Madre",
-                            )
-
                         relaciones_crear = []
                         for rel in relaciones_familiares:
                             try:
@@ -1001,8 +996,7 @@ class ImportacionService:
                                     GrupoFamiliar(
                                         ciudadano_1_id=rel["responsable_id"],
                                         ciudadano_2_id=rel["hijo_id"],
-                                        vinculo=vinculo_hijo,
-                                        vinculo_inverso=vinculo_hijo.inverso,
+                                        vinculo=GrupoFamiliar.RELACION_HIJO,
                                         conviven=True,
                                         cuidador_principal=True,
                                     )
