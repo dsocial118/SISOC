@@ -1,4 +1,36 @@
 from django.db import models
+from django.urls import reverse
+
+
+class Nacionalidad(models.Model):
+    nacionalidad = models.CharField(max_length=50)
+
+    def __str__(self):
+        return str(self.nacionalidad)
+
+    class Meta:
+        verbose_name = "Nacionalidad"
+        verbose_name_plural = "Nacionalidades"
+
+
+class Programa(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+    estado = models.BooleanField(default=True)
+    observaciones = models.CharField(max_length=500, null=True, blank=True)
+
+    def __str__(self):
+        return self.nombre
+
+    def clean(self):
+        self.nombre = self.nombre.capitalize()
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "Programa"
+        verbose_name_plural = "Programas"
+
+    def get_absolute_url(self):
+        return reverse("programas_ver", kwargs={"pk": self.pk})
 
 
 class Provincia(models.Model):

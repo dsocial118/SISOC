@@ -1,41 +1,45 @@
 import logging
+
+from django.db import transaction
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_api_key.permissions import HasAPIKey
+
+from core.api_auth import HasAPIKeyOrToken
+from core.utils import format_serializer_errors
 from relevamientos.models import Relevamiento
 from relevamientos.serializer import RelevamientoSerializer
-from core.utils import format_serializer_errors
 
 logger = logging.getLogger("django")
 
 
 class RelevamientoApiView(APIView):
-    permission_classes = [HasAPIKey]
+    permission_classes = [HasAPIKeyOrToken]
 
     def patch(self, request):
+        relevamiento_serializer = None
         try:
             relevamiento = Relevamiento.objects.get(
                 id=request.data["sisoc_id"],
             )
-            relevamiento_serializer = RelevamientoSerializer(
-                relevamiento, data=request.data, partial=True
-            )
             try:
-                relevamiento_serializer.clean()
-            except Exception as clean_error:
-                logger.exception(f"Error en clean(): {clean_error}")
-                return Response(
-                    f"Error procesando datos del relevamiento: {clean_error}",
-                    status=status.HTTP_400_BAD_REQUEST,
+                relevamiento_serializer = RelevamientoSerializer(
+                    relevamiento, data=request.data, partial=True
                 )
-
-            if relevamiento_serializer.is_valid():
-                relevamiento_serializer.save()
-                relevamiento = relevamiento_serializer.instance
-            else:
+                with transaction.atomic():
+                    try:
+                        relevamiento_serializer.clean()
+                    except Exception as clean_error:
+                        logger.exception(f"Error en clean(): {clean_error}")
+                        raise ValidationError(
+                            {"non_field_errors": [str(clean_error)]}
+                        ) from clean_error
+                    relevamiento_serializer.is_valid(raise_exception=True)
+                    relevamiento_serializer.save()
+                    relevamiento = relevamiento_serializer.instance
+            except ValidationError:
                 error_message_str = format_serializer_errors(relevamiento_serializer)
-
                 return Response(
                     f"Error en relevamiento: '{error_message_str}'",
                     status=status.HTTP_400_BAD_REQUEST,

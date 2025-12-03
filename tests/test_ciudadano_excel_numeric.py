@@ -5,20 +5,18 @@ import pandas as pd
 import pytest
 
 from celiaquia.services.ciudadano_service import CiudadanoService
-from ciudadanos.models import TipoDocumento
 from core.models import Sexo
 
 
 @pytest.mark.django_db
 def test_excel_numeric_sex_assigns_masculino():
-    TipoDocumento.objects.create(id=1, tipo="DNI")
     Sexo.objects.create(id=1, sexo="Femenino")
     Sexo.objects.create(id=2, sexo="Masculino")
 
     df = pd.DataFrame(
         [
             {
-                "tipo_documento": 1,
+                "tipo_documento": "DNI",
                 "documento": 12345678,
                 "nombre": "Juan",
                 "apellido": "Perez",

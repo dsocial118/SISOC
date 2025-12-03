@@ -615,6 +615,8 @@ class AdmisionService:
             # Actualizar estado de admisión si es la primera vez que se carga un documento
             if created and admision.estado_admision == "convenio_seleccionado":
                 AdmisionService.actualizar_estado_admision(admision, "cargar_documento")
+                # Forzar actualización del estado_mostrar
+                admision.save()
 
             return archivo_admision, created
 
@@ -1453,7 +1455,7 @@ class AdmisionService:
 
             if nuevo_estado and nuevo_estado != estado_actual:
                 admision.estado_admision = nuevo_estado
-                admision.save(update_fields=["estado_admision"])
+                admision.save()  # Save completo para que se actualice estado_mostrar
                 return True
 
             return False
@@ -1503,14 +1505,14 @@ class AdmisionService:
                     "documentacion_aprobada",
                 ]:
                     admision.estado_admision = "documentacion_en_proceso"
-                    admision.save(update_fields=["estado_admision"])
+                    admision.save()  # Save completo para actualizar estado_mostrar
                 return
 
             # Verificar si todos los obligatorios tienen archivos (no necesariamente aceptados)
             if AdmisionService._todos_obligatorios_tienen_archivos(admision):
                 if admision.estado_admision == "documentacion_en_proceso":
                     admision.estado_admision = "documentacion_finalizada"
-                    admision.save(update_fields=["estado_admision"])
+                    admision.save()  # Save completo para actualizar estado_mostrar
 
             # Verificar si todos los obligatorios están aceptados
             if AdmisionService._todos_obligatorios_aceptados(admision):
@@ -1519,7 +1521,7 @@ class AdmisionService:
                     # También actualizar el estado principal a "Finalizada"
                     if admision.estado_id != 2:
                         admision.estado_id = 2
-                    admision.save(update_fields=["estado_admision", "estado_id"])
+                    admision.save()  # Save completo para actualizar estado_mostrar
 
         except Exception:
             logger.exception(

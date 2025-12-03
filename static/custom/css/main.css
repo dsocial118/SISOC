@@ -15,7 +15,7 @@ footer.app-footer {
     background-color: #232d4f !important;
     position: fixed;
     top: 72px !important;
-    z-index:3;
+    z-index: 1040; /* Menor que header pero mayor que contenido */
 }
 
 .app-sidebar .sidebar-wrapper {
@@ -31,7 +31,7 @@ footer.app-footer {
 
 .main-header {
     padding: 0.5rem 1rem;
-    z-index: 4;
+    z-index: 1050; /* Mayor que Select2 dropdown para evitar superposición */
 }
 
 .main-header .nav-links {
@@ -185,3 +185,5 @@ aside .nav-link p {
     background-color: #e7ba61;
     border-color: #e7ba61;
 }
+
+/* 

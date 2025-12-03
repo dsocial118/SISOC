@@ -608,7 +608,7 @@
                                                     {% for action in item.actions %}
                                                         <a href="{{ action.url }}" class="btn btn-{{ action.type }} btn-sm">{{ action.label }}</a>
                                                     {% endfor %}
-                                                    {% if user.is_superuser and not item.enviada_a_archivo and not item.enviado_acompaniamiento %}
+                                                    {% if user.is_superuser and item.activa and not item.enviada_a_archivo and not item.enviado_acompaniamiento %}
                                                         <button class="btn btn-danger btn-sm"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#descartarModal"

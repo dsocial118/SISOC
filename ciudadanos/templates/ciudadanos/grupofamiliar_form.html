@@ -1,261 +1,288 @@
 {% extends "includes/main.html" %}
-{% load crispy_forms_tags %}
-{% load static %}
-{% block head %}
-    <!--jquery confirm-->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/jquery-confirm/3.3.2/jquery-confirm.min.css" />
-{% endblock %}
-{% block title %}Grupo Familiar{% endblock %}
-{% block titulo-pagina %}Ciudadano{% endblock %}
-{% block breadcrumb %}
-    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
-{% endblock %}
-{% block menu-adicional %}{% endblock %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Grupo familiar{% endblock %}
+{% block titulo-pagina %}Grupo familiar{% endblock %}
+
 {% block content %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card card-primary card-outline">
-                <div class="card-body">
-                    {% include 'components/ciudadano_stepper_grupofamiliar.html' with object=ciudadano_principal %}
-                    <!-- Paginación -->
-                    <div class="row mt-5 max-width-100">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title font-weight-bold">Grupo familiar</h3>
-                                </div>
-                                <div class="card-body">
-                                    <div id="tablaResultado"
-                                         class="row text-center d-flex justify-content-center justify-content-sm-start px-2">
-                                        {% if familiares_fk1 or familiares_fk2 %}
-                                            {% for f in familiares_fk1 %}
-                                                <div id="familiar-{{ f.id }}" class="px-2">
-                                                    <ul class="users-list">
-                                                        <li style="width:auto">
-                                                            {% if f.ciudadano_2__foto %}
-                                                                <img src="/media/{{ f.ciudadano_2__foto }}" alt="User Image" width="60px" />
-                                                            {% else %}
-                                                                <img src="{% static 'custom/img/default.png' %}"
-                                                                     alt="User Image"
-                                                                     width="60px" />
-                                                            {% endif %}
-                                                            <span class="users-list-name">{{ f.ciudadano_2__nombre }}, {{ f.ciudadano_2__apellido }}</span>
-                                                            <span class="users-list-date">{{ f.vinculo }}</span>
-                                                            <span class="users-list-date">
-                                                                <button class="btn btn-danger btn-sm"
-                                                                        onclick='deleteFamiliar("{{ f.id }}")'
-                                                                        type="submit">Eliminar</button>
-                                                            </span>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            {% empty %}
-                                            {% endfor %}
-                                            {% for f in familiares_fk2 %}
-                                                <div id="familiar-{{ f.id }}" class="px-2">
-                                                    <ul class="users-list">
-                                                        <li style="width:auto">
-                                                            {% if f.ciudadano_1__foto %}
-                                                                <img src="/media/{{ f.ciudadano_1__foto }}" alt="User Image" width="60px" />
-                                                            {% else %}
-                                                                <img src="{% static 'custom/img/default.png' %}"
-                                                                     alt="User Image"
-                                                                     width="60px" />
-                                                            {% endif %}
-                                                            <span class="users-list-name">{{ f.ciudadano_1__nombre }}</span>
-                                                            <span class="users-list-date">{{ f.vinculo_inverso }}</span>
-                                                            <span class="users-list-date">
-                                                                <button class="btn btn-danger btn-sm"
-                                                                        onclick='deleteFamiliar("{{ f.id }}")'
-                                                                        type="submit">Eliminar</button>
-                                                            </span>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            {% empty %}
-                                            {% endfor %}
-                                        {% else %}
-                                            <div class="col-12 text-center" id="sin-familiares">
-                                                <h6 class="text-muted">Sin grupo familiar</h6>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-12">
-                                            <nav>
-                                                <ul class="pagination justify-content-center">
-                                                    {% if familiares.has_previous %}
-                                                        <li class="page-item">
-                                                            <a class="page-link"
-                                                               href="?page={{ familiares_fk1.previous_page_number }}"
-                                                               aria-label="Previous">
-                                                                <span aria-hidden="true">&laquo;</span>
-                                                            </a>
-                                                        </li>
-                                                    {% endif %}
-                                                    {% for num in familiares.paginator.page_range %}
-                                                        <li class="page-item {% if familiares.number == num %}active{% endif %}">
-                                                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                                                        </li>
-                                                    {% endfor %}
-                                                    {% if familiares.has_next %}
-                                                        <li class="page-item">
-                                                            <a class="page-link"
-                                                               href="?page={{ familiares_fk1.next_page_number }}"
-                                                               aria-label="Next">
-                                                                <span aria-hidden="true">&raquo;</span>
-                                                            </a>
-                                                        </li>
-                                                    {% endif %}
-                                                </ul>
-                                            </nav>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Fin paginación -->
-                    <!-- Paginacion agregar familiar-->
-                    <div class="col-sm-12 mt-3">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="row align-items-between">
-                                    <div class="col mb-3 mb-sm-none ">
-                                        <h3 class="card-title font-weight-bold pt-1 mr-3">Agregar familiar</h3>
-                                    </div>
-                                    <div class="col-sm-8">
-                                        <form id="search-form" autocomplete="off">
-                                            {% csrf_token %}
-                                            <div class="form-row justify-content-sm-end">
-                                                <div class="form-group col-sm-3 mb-0 mb-0 pb-0">
-                                                    <input type="text"
-                                                           class="form-control "
-                                                           id="search-input"
-                                                           placeholder="Buscar" />
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive text-nowrap">
-                                    <table id="tabla" class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>Apellido</th>
-                                                <th>Nombre</th>
-                                                <th>Documento</th>
-                                                <th>Vínculo</th>
-                                                <th>Estado Relación</th>
-                                                <th class="text-center">Convive</th>
-                                                <th class="text-center">Cuidador Principal</th>
-                                                <th class="text-right"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="results-box">
-                                        </tbody>
-                                    </table>
-                                    <nav aria-label="Page navigation">
-                                        <ul class="pagination justify-content-center">
-                                            <li class="page-item">
-                                                <a class="page-link" href="#" id="prevPage">Anterior</a>
-                                            </li>
-                                            <li class="page-item disabled">
-                                                <span class="page-link" id="currentPage"></span>
-                                            </li>
-                                            <li class="page-item">
-                                                <a class="page-link" href="#" id="nextPage">Siguiente</a>
-                                            </li>
-                                        </ul>
-                                    </nav>
-                                    <div class="text-center" id="loadingIndicator" style="display: none;">
-                                        <div class="spinner-border" role="status">
-                                            <span class="sr-only">Cargando...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row d-none" id="nuevo_ciudadano_familiar">
-                                    <form autocomplete="off" method="POST" novalidate id="formulario-nuevo">
-                                        {% csrf_token %}
-                                        <div class="form-row px-3 px-sm-5 mt-3">
-                                            <div class="form-group col-12">
-                                                <div class="text-center text-muted h4 pt-3">
-                                                    La búsqueda no arrojó
-                                                    resultados.
-                                                </div>
-                                                <div class="text-center text-muted h4 pb-3">
-                                                    Realice una nueva
-                                                    búsqueda o bien utilice el siguiente formulario para agregar un
-                                                    familiar nuevo.
-                                                </div>
-                                            </div>
-                                            <input type="hidden" name="pk" value="{{ pk }}" />
-                                            <div class="form-group col-sm-6">{{ form.nombre|as_crispy_field }}</div>
-                                            <div class="form-group col-sm-6">{{ form.apellido|as_crispy_field }}</div>
-                                            <div class="form-group col-sm-3">{{ form.sexo|as_crispy_field }}</div>
-                                            <div class="form-group col-sm-3">{{ form.fecha_nacimiento|as_crispy_field }}</div>
-                                            <div class="form-group col-sm-3">{{ form.tipo_documento|as_crispy_field }}</div>
-                                            <div class="form-group col-sm-3">{{ form.documento|as_crispy_field }}</div>
-                                            <div class="form-group col-sm-3">{{ form.vinculo|as_crispy_field }}</div>
-                                            <div class="form-group col-sm-3">{{ form.estado_relacion|as_crispy_field }}</div>
-                                            <div class="form-group col-sm-3">{{ form.conviven|as_crispy_field }}</div>
-                                            <div class="form-group col-sm-3">{{ form.cuidador_principal|as_crispy_field }}</div>
-                                            <div class="form-group col-12 text-right">
-                                                <button type="submit"
-                                                        name="form_nuevo"
-                                                        id="form_nuevo"
-                                                        class="btn btn-primary mb-3">Agregar</button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- botones del pie -->
-                <div class="row">
-                    <div class="col-md-2">
-                        <div class="form-group mb-0 mt-3 d-flex justify-content-between">
-                            <a href="{% url 'ciudadanosdimensiones_editar' id_dimensionfamiliar %}"
-                               class="btn btn-secondary mb-3 float-right">Volver</a>
-                        </div>
-                    </div>
-                    <div class="col-md-7"></div>
-                    <div class="col-md-3">
-                        <div class="row mt-3">
-                            <div class="col-md-5">
-                                <a href="{% url 'ciudadanos_ver' pk %}" class="btn btn-primary">Guardar</a>
-                            </div>
-                            <div class="col-md-5">
-                                <a href="{% url 'ciudadanosgrupohogar_crear' pk %}"
-                                   class="btn btn-secondary">Continuar</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- /botones del pie -->
-            </div>
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            <a href="{{ ciudadano.get_absolute_url }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Volver
+            </a>
+        </div>
+        <div>
+            <a href="#"
+               onclick="window.history.back(); return false;"
+               class="btn btn-secondary">Cancelar</a>
         </div>
     </div>
-</div>
+
+    <div class="row comedor-form">
+        <div class="col-12 col-lg-10 mx-auto">
+            <div class="mb-4">
+                <h3 class="text-light mb-1">Agregar familiar para {{ ciudadano }}</h3>
+                <p class="text-muted mb-0">Registrá el vínculo y los datos principales del grupo familiar.</p>
+            </div>
+
+            <form method="post" id="grupoFamiliarForm" class="w-100" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="progress-indicator">
+                    <div class="progress-header">
+                        <h4 class="progress-title">
+                            <i class="fas fa-users mr-2"></i>
+                            Progreso del formulario
+                        </h4>
+                        <span class="progress-stats">
+                            <span id="completedSections">0</span>/3 secciones completadas
+                        </span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="familiar">
+                    <div class="section-header" onclick="toggleSection('familiar')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Familiar</h3>
+                                <p class="section-subtitle">Seleccioná a la persona relacionada</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-familiar">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-familiar">
+                        <div class="form-group">{{ form.ciudadano_2|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="relacion">
+                    <div class="section-header" onclick="toggleSection('relacion')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Relación</h3>
+                                <p class="section-subtitle">Definí el vínculo y la convivencia</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-relacion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-relacion">
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.vinculo|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.estado_relacion|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6 d-flex align-items-center">
+                                <div class="form-check form-switch">
+                                    {{ form.conviven }}
+                                    <label class="form-check-label ms-2" for="{{ form.conviven.id_for_label }}">{{ form.conviven.label }}</label>
+                                </div>
+                                {% if form.conviven.errors %}<div class="text-danger small ml-3">{{ form.conviven.errors|join:", " }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 d-flex align-items-center">
+                                <div class="form-check form-switch">
+                                    {{ form.cuidador_principal }}
+                                    <label class="form-check-label ms-2"
+                                           for="{{ form.cuidador_principal.id_for_label }}">
+                                        {{ form.cuidador_principal.label }}
+                                    </label>
+                                </div>
+                                {% if form.cuidador_principal.errors %}
+                                    <div class="text-danger small ml-3">{{ form.cuidador_principal.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card" data-section="notas">
+                    <div class="section-header" onclick="toggleSection('notas')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-sticky-note"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Notas adicionales</h3>
+                                <p class="section-subtitle">Observaciones relevantes</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-notas">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-notas">
+                        <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <div class="sticky-actions">
+                    <div>
+                        <a href="{{ ciudadano.get_absolute_url }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left mr-1"></i> Volver
+                        </a>
+                    </div>
+                    <div>
+                        <button type="button"
+                                onclick="window.history.back();"
+                                class="btn btn-secondary mr-2">
+                            <i class="fas fa-times mr-1"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save mr-1"></i> Guardar familiar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}
-;
+
 {% block customJS %}
     <script>
-    const searchUrl = "{% url 'familiares_buscar' %}";
-    const createUrl = "{% url 'grupofamiliar_ajax_crear' %}";
-    const deleteUrl = "{% url 'grupofamiliar_ajax_borrar' %}";
-    const pk1 = "{{ pk }}";
-    const formVinculo = '{{ form.vinculo|escapejs }}';
-    const formEstadoRelacion = '{{ form.estado_relacion|escapejs }}';
-    const formConviven = '{{ form.conviven|escapejs }}';
-    const formCuidadorPrincipal = '{{ form.cuidador_principal|escapejs }}';
-    const mediaUrl = "{{ MEDIA_URL }}";
-    const staticUrl = "{% static '' %}";
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("grupoFamiliarForm");
+            const progressBar = document.getElementById("progressBarFill");
+            const completedCounter = document.getElementById("completedSections");
+            const sectionHeaders = document.querySelectorAll(".section-header");
+
+            sectionHeaders.forEach((header) => {
+                header.setAttribute("tabindex", "0");
+                header.setAttribute("role", "button");
+                header.addEventListener("keydown", function (event) {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        const section = header.closest(".section-card")?.dataset.section;
+                        if (section) {
+                            toggleSection(section);
+                        }
+                    }
+                });
+            });
+
+            function isFilled(value) {
+                if (typeof value === "string") {
+                    return value.trim().length > 0;
+                }
+                return Boolean(value);
+            }
+
+            function updateProgress() {
+                const familiarValue = document.getElementById("id_ciudadano_2")?.value || "";
+                const vinculoValue = document.getElementById("id_vinculo")?.value || "";
+                const estadoValue = document.getElementById("id_estado_relacion")?.value || "";
+                const convivenChecked = document.getElementById("id_conviven")?.checked;
+                const cuidadorChecked = document.getElementById("id_cuidador_principal")?.checked;
+                const notasValue = document.getElementById("id_observaciones")?.value || "";
+
+                const states = {
+                    familiar: isFilled(familiarValue),
+                    relacion: isFilled(vinculoValue) || isFilled(estadoValue) || convivenChecked || cuidadorChecked,
+                    notas: isFilled(notasValue),
+                };
+
+                let completed = 0;
+                Object.keys(states).forEach((section) => {
+                    const badge = document.getElementById(`status-${section}`);
+                    if (!badge) {
+                        return;
+                    }
+
+                    if (states[section]) {
+                        completed += 1;
+                        badge.className = "status-badge complete";
+                        badge.innerHTML = '<i class="fas fa-check-circle"></i> Completa';
+                    } else {
+                        const hasSomeData =
+                            (section === "relacion" &&
+                                (isFilled(vinculoValue) ||
+                                    isFilled(estadoValue) ||
+                                    convivenChecked ||
+                                    cuidadorChecked)) ||
+                            (section === "familiar" && isFilled(familiarValue)) ||
+                            (section === "notas" && isFilled(notasValue));
+
+                        badge.className = hasSomeData ? "status-badge incomplete" : "status-badge empty";
+                        badge.innerHTML = hasSomeData
+                            ? '<i class="fas fa-exclamation-circle"></i> Incompleta'
+                            : '<i class="fas fa-circle"></i> Sin completar';
+                    }
+                });
+
+                const total = 3;
+                if (completedCounter) {
+                    completedCounter.textContent = completed;
+                }
+                if (progressBar) {
+                    const percent = Math.round((completed / total) * 100);
+                    progressBar.style.width = `${percent}%`;
+                }
+            }
+
+            document.querySelectorAll(".section-body").forEach((body) => {
+                body.addEventListener("shown.bs.collapse", function () {
+                    const header = this.previousElementSibling;
+                    if (header) {
+                        header.classList.remove("collapsed");
+                    }
+                });
+                body.addEventListener("hidden.bs.collapse", function () {
+                    const header = this.previousElementSibling;
+                    if (header) {
+                        header.classList.add("collapsed");
+                    }
+                });
+            });
+
+            if (form) {
+                form.addEventListener("input", updateProgress);
+                form.addEventListener("change", updateProgress);
+                updateProgress();
+            }
+        });
+
+        function toggleSection(sectionId) {
+            const body = document.getElementById(`section-${sectionId}`);
+            if (!body) {
+                return;
+            }
+            if (typeof $ !== "undefined" && typeof $(body).collapse === "function") {
+                $(body).collapse("toggle");
+            } else {
+                body.classList.toggle("show");
+            }
+        }
     </script>
-    <script src="{% static 'custom/js/grupofamiliarform.js' %}"></script>
 {% endblock %}

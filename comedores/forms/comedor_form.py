@@ -49,30 +49,21 @@ class ReferenteForm(forms.ModelForm):
 
 
 class NominaForm(forms.ModelForm):
-    class Meta:
-        model = Nomina
-        fields = ["estado", "observaciones"]
-        widgets = {
-            "estado": forms.Select(attrs={"class": "form-control"}),
-            "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-        }
-
-
-class NominaExtraForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        from ciudadanos.models import EstadoIntervencion
-
-        self.fields["estado"].queryset = EstadoIntervencion.objects.all()
-        self.fields["estado"].empty_label = "Seleccione un estado"
+    estado = forms.ChoiceField(
+        choices=Nomina.ESTADO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
 
     class Meta:
         model = Nomina
         fields = ["estado", "observaciones"]
         widgets = {
-            "estado": forms.Select(attrs={"class": "form-control"}),
             "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
+
+
+class NominaExtraForm(NominaForm):
+    pass
 
 
 class CiudadanoFormParaNomina(forms.ModelForm):
@@ -126,10 +117,19 @@ class ComedorForm(forms.ModelForm):
         self._configure_estado_fields()
         self.popular_campos_ubicacion()
 
-        # Ordenar organizaciones alfabéticamente
-        self.fields["organizacion"].queryset = Organizacion.objects.all().order_by(
-            "nombre"
-        )
+        # Configurar organizacion: si es una instancia existente, cargar solo esa organizacion
+        # Si es un formulario nuevo, dejar vacío para que Select2 con AJAX cargue bajo demanda
+        if (
+            self.instance
+            and self.instance.pk
+            and hasattr(self.instance, "organizacion")
+            and self.instance.organizacion
+        ):
+            self.fields["organizacion"].queryset = Organizacion.objects.filter(
+                pk=self.instance.organizacion.pk
+            )
+        else:
+            self.fields["organizacion"].queryset = Organizacion.objects.none()
 
     def popular_campos_ubicacion(self):
 
@@ -146,21 +146,15 @@ class ComedorForm(forms.ModelForm):
             pk=pk_formatter(self.data.get("localidad"))
         ).first() or getattr(self.instance, "localidad", None)
 
+        # Configurar queryset de provincias (siempre disponible)
+        self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+
         if provincia:
-            self.fields["provincia"].initial = Provincia.objects.get(id=provincia.id)
-            self.fields["provincia"].queryset = Provincia.objects.all()
-            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
-                "nombre"
-            )
+            self.fields["provincia"].initial = provincia
             self.fields["municipio"].queryset = Municipio.objects.filter(
                 provincia=provincia
             ).order_by("nombre")
-
         else:
-            self.fields["provincia"].queryset = Provincia.objects.all()
-            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
-                "nombre"
-            )
             self.fields["municipio"].queryset = Municipio.objects.none()
             self.fields["localidad"].queryset = Localidad.objects.none()
 
