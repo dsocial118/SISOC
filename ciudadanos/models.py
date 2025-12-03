@@ -8,6 +8,7 @@ from core.models import Localidad, Municipio, Nacionalidad, Programa, Provincia,
 
 User = get_user_model()
 
+
 class Ciudadano(models.Model):
     """Datos básicos del ciudadano/a."""
 
@@ -32,7 +33,9 @@ class Ciudadano(models.Model):
         validators=[MinValueValidator(1)], null=True
     )
     sexo = models.ForeignKey(Sexo, on_delete=models.SET_NULL, null=True, blank=True)
-    nacionalidad = models.ForeignKey(Nacionalidad, on_delete=models.SET_NULL, null=True, blank=True)
+    nacionalidad = models.ForeignKey(
+        Nacionalidad, on_delete=models.SET_NULL, null=True, blank=True
+    )
     calle = models.CharField(max_length=255, null=True, blank=True)
     altura = models.CharField(max_length=10, null=True, blank=True)
     piso_departamento = models.CharField(max_length=50, null=True, blank=True)
@@ -157,6 +160,7 @@ class GrupoFamiliar(models.Model):
 
     def get_absolute_url(self):
         return reverse("ciudadanos_ver", kwargs={"pk": self.ciudadano_1_id})
+
 
 class CiudadanoPrograma(models.Model):
     programas = models.ForeignKey(
