@@ -310,7 +310,7 @@
                                 <td>
                                     <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 20px;"{% endif %}>
                                         <div class="fw-semibold">
-                                            {% if not leg.es_responsable and leg.responsable_id %}<span class="text-muted">└─ </span>{% endif %}
+                                            {% if not leg.es_responsable and leg.responsable_id %}<span class="text-muted">└─</span>{% endif %}
                                             {% if leg.rol == 'beneficiario_y_responsable' %}
                                                 👨👩👧👦 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% elif leg.rol == 'responsable' %}
@@ -323,12 +323,18 @@
                                         {% if leg.rol == 'beneficiario_y_responsable' %}
                                             <small class="badge bg-info mt-1">Beneficiario y Responsable</small>
                                             {% if leg.hijos_a_cargo %}
-                                                <br><small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo{% if leg.hijos_a_cargo|length > 1 %}s{% endif %} a cargo</small>
+                                                <br />
+                                                <small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo
+                                                    {% if leg.hijos_a_cargo|length > 1 %}s{% endif %}
+                                                a cargo</small>
                                             {% endif %}
                                         {% elif leg.rol == 'responsable' %}
                                             <small class="badge bg-warning mt-1">Solo Responsable</small>
                                             {% if leg.hijos_a_cargo %}
-                                                <br><small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo{% if leg.hijos_a_cargo|length > 1 %}s{% endif %} a cargo</small>
+                                                <br />
+                                                <small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo
+                                                    {% if leg.hijos_a_cargo|length > 1 %}s{% endif %}
+                                                a cargo</small>
                                             {% endif %}
                                         {% else %}
                                             <small class="badge bg-success mt-1">Solo Beneficiario</small>
