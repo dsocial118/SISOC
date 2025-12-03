@@ -48,7 +48,7 @@ from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
 from django.db import transaction
-from core.models import Provincia, Localidad
+from core.models import Nacionalidad, Provincia, Localidad
 
 logger = logging.getLogger("django")
 
@@ -616,14 +616,8 @@ class ExpedienteDetailView(DetailView):
 
         sexos = Sexo.objects.all()
         nacionalidades = [
-            {"id": nombre, "nombre": nombre}
-            for nombre in (
-                Ciudadano.objects.exclude(nacionalidad="")
-                .order_by("nacionalidad")
-                .values_list("nacionalidad", flat=True)
-                .distinct()
-            )
-            if nombre
+            {"id": nac.id, "nombre": nac.nacionalidad}
+            for nac in Nacionalidad.objects.all().order_by("nacionalidad")
         ]
         municipios = []
         localidades = []
@@ -1233,12 +1227,6 @@ class ReprocesarRegistrosErroneosView(View):
 
         estado_inicial = EstadoLegajo.objects.get(nombre="DOCUMENTO_PENDIENTE")
 
-        # Obtener tipo de documento CUIT
-        from ciudadanos.models import TipoDocumento
-
-        tipo_doc_cuit = TipoDocumento.objects.filter(tipo__icontains="cuit").first()
-        tipo_doc_cuit_id = tipo_doc_cuit.id if tipo_doc_cuit else None
-
         # Obtener provincia del usuario
         provincia_id = None
         try:
@@ -1351,7 +1339,6 @@ class ReprocesarRegistrosErroneosView(View):
                                     "telefono": datos.get("telefono_responsable"),
                                     "email": datos.get("email_responsable"),
                                     "provincia": provincia_id,
-                                    "tipo_documento": tipo_doc_cuit_id,
                                 }
 
                                 # Limpiar valores None
@@ -1410,8 +1397,15 @@ class ReprocesarRegistrosErroneosView(View):
                                             registro.fila_excel,
                                             warning,
                                         )
-                                    # NO crear legajo para responsable puro
-                                    # Solo crear GrupoFamiliar
+                                    
+                                    # Crear legajo del responsable
+                                    ExpedienteCiudadano.objects.get_or_create(
+                                        expediente=expediente,
+                                        ciudadano=responsable,
+                                        defaults={"estado": estado_inicial, "rol": ExpedienteCiudadano.ROLE_RESPONSABLE},
+                                    )
+                                    
+                                    # Crear GrupoFamiliar
                                     relaciones_crear.append(
                                         {
                                             "responsable_id": responsable.pk,
