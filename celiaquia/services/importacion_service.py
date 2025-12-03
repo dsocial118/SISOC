@@ -833,7 +833,7 @@ class ImportacionService:
                             ),
                             "provincia": provincia_usuario_id,
                         }
-                        
+
                         # Resolver sexo del responsable
                         sexo_resp_val = payload.get("sexo_responsable")
                         if sexo_resp_val:
