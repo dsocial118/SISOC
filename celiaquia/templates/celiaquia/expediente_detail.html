@@ -299,7 +299,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for leg in legajos %}
+                        {% for leg in legajos_enriquecidos %}
                             <tr class="legajo-row"
                                 {% if leg.revision_tecnico == 'SUBSANAR' %}style="border-left: 4px solid #ffc107;"{% elif leg.revision_tecnico == 'SUBSANADO' %}style="border-left: 4px solid #17a2b8;"{% elif leg.revision_tecnico == 'RECHAZADO' or leg.estado_validacion_renaper == 2 %}style="border-left: 4px solid #dc3545;"{% elif leg.revision_tecnico == 'APROBADO' %}style="border-left: 4px solid #28a745;"{% endif %}
                                 data-estado="{{ leg.revision_tecnico|default:'PENDIENTE' }}"
@@ -308,24 +308,36 @@
                                     <span class="text-muted">#{{ leg.pk }}</span>
                                 </td>
                                 <td>
-                                    <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 2rem;"{% endif %}>
+                                    <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 20px;"{% endif %}>
                                         <div class="fw-semibold">
-                                            {% if leg.es_responsable %}
+                                            {% if not leg.es_responsable and leg.responsable_id %}<span class="text-muted">└─</span>{% endif %}
+                                            {% if leg.rol == 'beneficiario_y_responsable' %}
                                                 👨👩👧👦 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
-                                            {% elif leg.responsable_id %}
-                                                └─ 👶 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
+                                            {% elif leg.rol == 'responsable' %}
+                                                👨👩 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% else %}
                                                 👶 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% endif %}
                                         </div>
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
-                                        {% if leg.es_responsable %}
-                                            <small class="badge bg-info mt-1">{{ leg.tipo_legajo|default:"Responsable" }}</small>
-                                            {% if leg.hijos_a_cargo and leg.hijos_a_cargo|length > 0 %}
-                                                <small class="text-muted d-block mt-1">Tiene {{ leg.hijos_a_cargo|length }} hijo{{ leg.hijos_a_cargo|length|pluralize }} a cargo</small>
+                                        {% if leg.rol == 'beneficiario_y_responsable' %}
+                                            <small class="badge bg-info mt-1">Beneficiario y Responsable</small>
+                                            {% if leg.hijos_a_cargo %}
+                                                <br />
+                                                <small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo
+                                                    {% if leg.hijos_a_cargo|length > 1 %}s{% endif %}
+                                                a cargo</small>
+                                            {% endif %}
+                                        {% elif leg.rol == 'responsable' %}
+                                            <small class="badge bg-warning mt-1">Solo Responsable</small>
+                                            {% if leg.hijos_a_cargo %}
+                                                <br />
+                                                <small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo
+                                                    {% if leg.hijos_a_cargo|length > 1 %}s{% endif %}
+                                                a cargo</small>
                                             {% endif %}
                                         {% else %}
-                                            <small class="badge bg-success mt-1">{{ leg.tipo_legajo|default:"Beneficiario" }}</small>
+                                            <small class="badge bg-success mt-1">Solo Beneficiario</small>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -922,8 +934,8 @@
                                                         <option value="">Seleccionar...</option>
                                                         {% for nac in nacionalidades %}
                                                             <option value="{{ nac.id }}"
-                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nacionalidad|lower %}selected{% endif %}>
-                                                                {{ nac.nacionalidad }}
+                                                                    {% if registro.datos_raw.nacionalidad|stringformat:"s" == nac.id|stringformat:"s" or registro.datos_raw.nacionalidad|lower == nac.nombre|lower %}selected{% endif %}>
+                                                                {{ nac.nombre }}
                                                             </option>
                                                         {% endfor %}
                                                     </select>

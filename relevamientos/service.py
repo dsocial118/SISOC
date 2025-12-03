@@ -708,18 +708,25 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         try:
             recursos_data = RelevamientoService.populate_recursos_data(recursos_data)
 
+            # Separar campos ManyToMany de otros campos
+            many_to_many_fields = [
+                "recursos_donaciones_particulares",
+                "recursos_estado_nacional",
+                "recursos_estado_provincial",
+                "recursos_estado_municipal",
+                "recursos_otros",
+            ]
+
+            # Campos que NO son ManyToMany
+            scalar_fields = {
+                k: v for k, v in recursos_data.items() if k not in many_to_many_fields
+            }
+
             if recursos_instance is None:
-                recursos_instance = FuenteRecursos.objects.create()
+                recursos_instance = FuenteRecursos.objects.create(**scalar_fields)
             else:
-                for field, value in recursos_data.items():
-                    if field not in [
-                        "recursos_donaciones_particulares",
-                        "recursos_estado_nacional",
-                        "recursos_estado_provincial",
-                        "recursos_estado_municipal",
-                        "recursos_otros",
-                    ]:
-                        setattr(recursos_instance, field, value)
+                for field, value in scalar_fields.items():
+                    setattr(recursos_instance, field, value)
 
             if "recibe_donaciones_particulares" in recursos_data:
                 recursos_instance.recibe_donaciones_particulares = recursos_data[

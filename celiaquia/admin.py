@@ -45,8 +45,8 @@ class ExpedienteAdmin(admin.ModelAdmin):
 
 @admin.register(ExpedienteCiudadano)
 class ExpedienteCiudadanoAdmin(admin.ModelAdmin):
-    list_display = ("ciudadano", "expediente", "estado", "creado_en")
-    list_filter = ("estado",)
+    list_display = ("ciudadano", "expediente", "estado", "rol", "creado_en")
+    list_filter = ("estado", "rol", "revision_tecnico", "resultado_sintys")
     search_fields = ("ciudadano__documento", "ciudadano__nombre", "ciudadano__apellido")
 
 

@@ -32,18 +32,23 @@ from celiaquia.models import (
     Expediente,
     ExpedienteCiudadano,
     RevisionTecnico,
+    HistorialValidacionTecnica,
 )
+from ciudadanos.models import Ciudadano
 from celiaquia.services.ciudadano_service import CiudadanoService
 from celiaquia.services.expediente_service import (
     ExpedienteService,
     _set_estado,
 )
-from celiaquia.services.importacion_service import ImportacionService
+from celiaquia.services.importacion_service import (
+    ImportacionService,
+    validar_edad_responsable,
+)
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
 from django.db import transaction
-from core.models import Provincia, Localidad
+from core.models import Nacionalidad, Provincia, Localidad
 
 logger = logging.getLogger("django")
 
@@ -164,26 +169,38 @@ class ExpedienteListView(ListView):
                 "usuario_provincia__profile__provincia_id",
                 "usuario_provincia__profile__provincia__id",
                 "usuario_provincia__profile__provincia__nombre",
+                "numero_expediente",
             )
         )
         if _is_admin(user):
-            return qs.order_by("-fecha_creacion")
-        if _user_in_group(user, "CoordinadorCeliaquia"):
-            return qs.filter(
+            qs = qs.order_by("-fecha_creacion")
+        elif _user_in_group(user, "CoordinadorCeliaquia"):
+            qs = qs.filter(
                 estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
             ).order_by("-fecha_creacion")
-        if _user_in_group(user, "TecnicoCeliaquia"):
-            return (
+        elif _user_in_group(user, "TecnicoCeliaquia"):
+            qs = (
                 qs.filter(asignaciones_tecnicos__tecnico=user)
                 .distinct()
                 .order_by("-fecha_creacion")
             )
-        if _is_provincial(user):
+        elif _is_provincial(user):
             prov = _user_provincia(user)
-            return qs.filter(usuario_provincia__profile__provincia=prov).order_by(
+            qs = qs.filter(usuario_provincia__profile__provincia=prov).order_by(
                 "-fecha_creacion"
             )
-        return qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
+        else:
+            qs = qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
+
+        search_query = self.request.GET.get("q", "").strip()
+        if search_query:
+            qs = qs.filter(
+                Q(id__icontains=search_query)
+                | Q(numero_expediente__icontains=search_query)
+                | Q(estado__nombre__icontains=search_query)
+            )
+
+        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -595,11 +612,13 @@ class ExpedienteDetailView(DetailView):
         ).order_by("fila_excel")
 
         # Datos para desplegables en registros erróneos
-        from ciudadanos.models import Sexo, Nacionalidad
-        from core.models import Municipio, Localidad
+        from core.models import Sexo, Municipio, Localidad
 
         sexos = Sexo.objects.all()
-        nacionalidades = Nacionalidad.objects.all()
+        nacionalidades = [
+            {"id": nac.id, "nombre": nac.nacionalidad}
+            for nac in Nacionalidad.objects.all().order_by("nacionalidad")
+        ]
         municipios = []
         localidades = []
 
@@ -1002,6 +1021,7 @@ class RevisarLegajoView(View):
                 )
 
         if accion == "APROBAR":
+            estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "APROBADO"
             leg.save(
                 update_fields=[
@@ -1011,6 +1031,15 @@ class RevisarLegajoView(View):
                     "es_titular_activo",
                 ]
             )
+
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo="APROBADO",
+                usuario=user,
+                motivo=None,
+            )
+
             return JsonResponse(
                 {
                     "success": True,
@@ -1020,6 +1049,7 @@ class RevisarLegajoView(View):
             )
 
         if accion == "RECHAZAR":
+            estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "RECHAZADO"
             leg.save(
                 update_fields=[
@@ -1029,6 +1059,15 @@ class RevisarLegajoView(View):
                     "es_titular_activo",
                 ]
             )
+
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo="RECHAZADO",
+                usuario=user,
+                motivo=None,
+            )
+
             return JsonResponse(
                 {"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True}
             )
@@ -1085,6 +1124,7 @@ class RevisarLegajoView(View):
                 status=400,
             )
 
+        estado_anterior = leg.revision_tecnico
         leg.revision_tecnico = RevisionTecnico.SUBSANAR
         leg.subsanacion_motivo = motivo[:500]
         leg.subsanacion_solicitada_en = timezone.now()
@@ -1099,6 +1139,14 @@ class RevisarLegajoView(View):
                 "estado_cupo",
                 "es_titular_activo",
             ]
+        )
+
+        HistorialValidacionTecnica.objects.create(
+            legajo=leg,
+            estado_anterior=estado_anterior,
+            estado_nuevo=RevisionTecnico.SUBSANAR,
+            usuario=user,
+            motivo=motivo[:500],
         )
 
         return JsonResponse(
@@ -1179,10 +1227,6 @@ class ReprocesarRegistrosErroneosView(View):
 
         estado_inicial = EstadoLegajo.objects.get(nombre="DOCUMENTO_PENDIENTE")
 
-        from celiaquia.services.importacion_service import _tipo_doc_cuit
-
-        tipo_doc_cuit_id = _tipo_doc_cuit()
-
         # Obtener provincia del usuario
         provincia_id = None
         try:
@@ -1234,15 +1278,39 @@ class ReprocesarRegistrosErroneosView(View):
                     datos=datos,
                     usuario=user,
                     expediente=expediente,
-                    programa_id=3,
                 )
 
                 if ciudadano and ciudadano.pk:
-                    # Crear legajo del hijo/beneficiario
+                    # Detectar rol del beneficiario
+                    doc_beneficiario = datos.get("documento")
+                    doc_responsable = datos.get("documento_responsable")
+                    tiene_responsable = any(
+                        [
+                            datos.get("apellido_responsable"),
+                            datos.get("nombre_responsable"),
+                            datos.get("documento_responsable"),
+                        ]
+                    )
+
+                    es_mismo_documento = (
+                        tiene_responsable
+                        and doc_responsable
+                        and str(doc_responsable).strip()
+                        == str(doc_beneficiario).strip()
+                    )
+
+                    if es_mismo_documento:
+                        rol_beneficiario = (
+                            ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                        )
+                    else:
+                        rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
+
+                    # Crear legajo del hijo/beneficiario CON ROL
                     _, created = ExpedienteCiudadano.objects.get_or_create(
                         expediente=expediente,
                         ciudadano=ciudadano,
-                        defaults={"estado": estado_inicial},
+                        defaults={"estado": estado_inicial, "rol": rol_beneficiario},
                     )
 
                     if created:
@@ -1257,9 +1325,9 @@ class ReprocesarRegistrosErroneosView(View):
                             ]
                         )
 
-                        if tiene_responsable:
+                        if tiene_responsable and not es_mismo_documento:
                             try:
-                                # Crear responsable
+                                # Crear responsable SOLO si es diferente al beneficiario
                                 datos_resp = {
                                     "apellido": datos.get("apellido_responsable"),
                                     "nombre": datos.get("nombre_responsable"),
@@ -1271,11 +1339,20 @@ class ReprocesarRegistrosErroneosView(View):
                                     "telefono": datos.get("telefono_responsable"),
                                     "email": datos.get("email_responsable"),
                                     "provincia": provincia_id,
-                                    "tipo_documento": tipo_doc_cuit_id,
                                 }
 
                                 # Limpiar valores None
                                 datos_resp = {k: v for k, v in datos_resp.items() if v}
+
+                                # Validaciones mínimas del responsable
+                                if not datos_resp.get("documento"):
+                                    raise ValidationError(
+                                        "Documento del responsable obligatorio"
+                                    )
+                                if not datos_resp.get("nombre"):
+                                    raise ValidationError(
+                                        "Nombre del responsable obligatorio"
+                                    )
 
                                 # Convertir fecha del responsable si existe
                                 if "fecha_nacimiento" in datos_resp and isinstance(
@@ -1302,23 +1379,36 @@ class ReprocesarRegistrosErroneosView(View):
                                     datos=datos_resp,
                                     usuario=user,
                                     expediente=expediente,
-                                    programa_id=3,
                                 )
 
                                 if responsable and responsable.pk:
-                                    # Crear legajo del responsable
-                                    _, created_resp = (
-                                        ExpedienteCiudadano.objects.get_or_create(
-                                            expediente=expediente,
-                                            ciudadano=responsable,
-                                            defaults={"estado": estado_inicial},
+                                    # Validar edad
+                                    valido_edad, edad_warnings, error_edad = (
+                                        validar_edad_responsable(
+                                            datos_resp.get("fecha_nacimiento"),
+                                            datos.get("fecha_nacimiento"),
                                         )
                                     )
+                                    if error_edad:
+                                        raise ValidationError(error_edad)
+                                    for warning in edad_warnings:
+                                        logger.warning(
+                                            "Fila %s: %s",
+                                            registro.fila_excel,
+                                            warning,
+                                        )
 
-                                    if created_resp:
-                                        creados += 1
+                                    # Crear legajo del responsable
+                                    ExpedienteCiudadano.objects.get_or_create(
+                                        expediente=expediente,
+                                        ciudadano=responsable,
+                                        defaults={
+                                            "estado": estado_inicial,
+                                            "rol": ExpedienteCiudadano.ROLE_RESPONSABLE,
+                                        },
+                                    )
 
-                                    # Guardar relación para crear después
+                                    # Crear GrupoFamiliar
                                     relaciones_crear.append(
                                         {
                                             "responsable_id": responsable.pk,
