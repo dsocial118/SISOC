@@ -1,6 +1,7 @@
 from django.db import models
 from django.urls import reverse
 
+
 class Programa(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     estado = models.BooleanField(default=True)
