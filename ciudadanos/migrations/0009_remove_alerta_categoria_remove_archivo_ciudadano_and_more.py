@@ -100,6 +100,15 @@ def safe_cleanup(apps, schema_editor):
             if column in details.get("columns", []) and details.get("foreign_key"):
                 schema_editor.execute(f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}")
 
+    def drop_unique_constraints(table: str, column: str) -> None:
+        if not table_exists(table):
+            return
+        with connection.cursor() as cursor:
+            constraints = connection.introspection.get_constraints(cursor, table)
+        for name, details in constraints.items():
+            if details.get("unique") and column in details.get("columns", []):
+                schema_editor.execute(f"ALTER TABLE {quote(table)} DROP INDEX {quote(name)}")
+
     def migrate_tipo_documento() -> None:
         """
         Convierte el FK tipo_documento_id a un campo varchar usando el valor de ciudadanos_tipodocumento.tipo.
@@ -142,6 +151,7 @@ def safe_cleanup(apps, schema_editor):
             )
 
         drop_fk_constraints(table, fk_col)
+        drop_unique_constraints(table, fk_col)
         drop_column_if_exists(table, fk_col)
 
     with connection.cursor() as cursor:
