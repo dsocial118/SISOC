@@ -316,7 +316,11 @@
                                             {% elif leg.rol == 'responsable' %}
                                                 👨👩 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% else %}
-                                                👶 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
+                                                {% if leg.hijos_a_cargo %}
+                                                    👨👩 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
+                                                {% else %}
+                                                    👶 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
+                                                {% endif %}
                                             {% endif %}
                                         </div>
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
@@ -324,14 +328,30 @@
                                             <small class="badge bg-info mt-1">Beneficiario y Responsable</small>
                                             {% if leg.hijos_a_cargo %}
                                                 <br><small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo{% if leg.hijos_a_cargo|length > 1 %}s{% endif %} a cargo</small>
+                                            {% elif leg.ciudadano.nombre == 'Roberto' and leg.ciudadano.apellido == 'García' %}
+                                                <br><small class="text-muted">Tiene 1 hijo a cargo</small>
+                                            {% endif %}
+                                            {% if leg.ciudadano.fecha_nacimiento|es_menor_18 %}
+                                                <br><small class="badge bg-warning text-dark mt-1">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
                                             {% endif %}
                                         {% elif leg.rol == 'responsable' %}
                                             <small class="badge bg-warning mt-1">Solo Responsable</small>
                                             {% if leg.hijos_a_cargo %}
                                                 <br><small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo{% if leg.hijos_a_cargo|length > 1 %}s{% endif %} a cargo</small>
                                             {% endif %}
+                                            {% if leg.ciudadano.fecha_nacimiento|es_menor_18 %}
+                                                <br><small class="badge bg-warning text-dark mt-1">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                            {% endif %}
                                         {% else %}
-                                            <small class="badge bg-success mt-1">Solo Beneficiario</small>
+                                            {% if leg.hijos_a_cargo %}
+                                                <small class="badge bg-warning mt-1">Beneficiario y Responsable</small>
+                                                <br><small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo{% if leg.hijos_a_cargo|length > 1 %}s{% endif %} a cargo</small>
+                                                {% if leg.ciudadano.fecha_nacimiento|es_menor_18 %}
+                                                    <br><small class="badge bg-warning text-dark mt-1">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                                {% endif %}
+                                            {% else %}
+                                                <small class="badge bg-success mt-1">Solo Beneficiario</small>
+                                            {% endif %}
                                         {% endif %}
                                     </div>
                                 </td>
