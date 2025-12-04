@@ -531,9 +531,6 @@ class AdmisionService:
 
                     # Refrescar la instancia desde la base de datos
                     admision.refresh_from_db()
-                    print(
-                        f"DEBUG - Después de cargar expediente: {admision.estado_admision}"
-                    )
 
                     return True, "Caratulación del expediente guardado correctamente."
 
