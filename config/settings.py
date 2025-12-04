@@ -216,6 +216,10 @@ SPECTACULAR_SETTINGS = {
         }
     },
     "SECURITY": [{"ApiKeyAuth": []}],
+    "ENUM_NAME_OVERRIDES": {
+        "ActividadCentroEstadoEnum": ["planificada", "en_curso", "finalizada"],
+        "ParticipanteActividadEstadoEnum": ["inscrito", "lista_espera", "dado_baja"],
+    },
 }
 
 # Dominios / Integraciones
