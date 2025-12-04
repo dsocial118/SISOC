@@ -7,6 +7,50 @@ import django.db.models.deletion
 import django.utils.timezone
 
 
+def migrate_nacionalidades(apps, schema_editor):
+    """
+    Copia los datos de ciudadanos_nacionalidad hacia core_nacionalidad
+    preservando los IDs para que las FK existentes sigan siendo válidas.
+    Crea la tabla de destino si aún no existe.
+    """
+    connection = schema_editor.connection
+    quote = schema_editor.quote_name
+
+    with connection.cursor() as cursor:
+        existing_tables = set(connection.introspection.table_names(cursor))
+
+    def table_exists(name: str) -> bool:
+        return name in existing_tables
+
+    if not table_exists("ciudadanos_nacionalidad"):
+        return
+
+    if not table_exists("core_nacionalidad"):
+        schema_editor.execute(
+            f"""
+            CREATE TABLE {quote("core_nacionalidad")} (
+                {quote("id")} bigint AUTO_INCREMENT PRIMARY KEY,
+                {quote("nacionalidad")} varchar(50) NOT NULL
+            );
+            """
+        )
+
+    schema_editor.execute(
+        """
+        INSERT INTO core_nacionalidad (id, nacionalidad)
+        SELECT id, nacionalidad FROM ciudadanos_nacionalidad
+        ON DUPLICATE KEY UPDATE nacionalidad = VALUES(nacionalidad);
+        """
+    )
+
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT IFNULL(MAX(id), 0) + 1 FROM core_nacionalidad;")
+        next_id = cursor.fetchone()
+    if next_id:
+        schema_editor.execute(
+            f"ALTER TABLE {quote('core_nacionalidad')} AUTO_INCREMENT = {int(next_id[0])}"
+        )
+
 
 def safe_cleanup(apps, schema_editor):
     connection = schema_editor.connection
@@ -47,10 +91,69 @@ def safe_cleanup(apps, schema_editor):
             cols_sql = ", ".join(quote(col) for col in columns)
             schema_editor.execute(f"CREATE INDEX {quote(index_name)} ON {quote(table)} ({cols_sql})")
 
+    def drop_fk_constraints(table: str, column: str) -> None:
+        if not table_exists(table):
+            return
+        with connection.cursor() as cursor:
+            constraints = connection.introspection.get_constraints(cursor, table)
+        for name, details in constraints.items():
+            if column in details.get("columns", []) and details.get("foreign_key"):
+                schema_editor.execute(f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}")
+
+    def migrate_tipo_documento() -> None:
+        """
+        Convierte el FK tipo_documento_id a un campo varchar usando el valor de ciudadanos_tipodocumento.tipo.
+        Deja datos por defecto en 'DNI' si no existe referencia. Idempotente.
+        """
+        table = "ciudadanos_ciudadano"
+        fk_col = "tipo_documento_id"
+        text_col = "tipo_documento"
+
+        if not table_exists(table):
+            return
+
+        has_fk_col = column_exists(table, fk_col)
+        has_text_col = column_exists(table, text_col)
+
+        if not has_fk_col and has_text_col:
+            return
+
+        add_column_if_missing(
+            table,
+            text_col,
+            f"{quote(text_col)} VARCHAR(20) NOT NULL DEFAULT 'DNI'",
+        )
+
+        if table_exists("ciudadanos_tipodocumento"):
+            schema_editor.execute(
+                f"""
+                UPDATE {quote(table)} c
+                LEFT JOIN {quote("ciudadanos_tipodocumento")} t ON c.{quote(fk_col)} = t.{quote("id")}
+                SET c.{quote(text_col)} = COALESCE(NULLIF(t.{quote("tipo")}, ''), 'DNI');
+                """
+            )
+        else:
+            schema_editor.execute(
+                f"""
+                UPDATE {quote(table)}
+                SET {quote(text_col)} = 'DNI'
+                WHERE {quote(text_col)} IS NULL OR {quote(text_col)} = '';
+                """
+            )
+
+        drop_fk_constraints(table, fk_col)
+        drop_column_if_exists(table, fk_col)
+
     with connection.cursor() as cursor:
         existing_tables = set(connection.introspection.table_names(cursor))
 
-    keep_tables = {"ciudadanos_ciudadano", "ciudadanos_grupofamiliar"}
+    keep_tables = {
+        "ciudadanos_ciudadano",
+        "ciudadanos_grupofamiliar",
+        "ciudadanos_ciudadanoprograma",
+        "ciudadanos_historialciudadanoprogramas",
+    }
+    migrate_tipo_documento()
     drop_tables = [
         table
         for table in existing_tables
@@ -73,8 +176,11 @@ def safe_cleanup(apps, schema_editor):
         "longitud",
         "torre_pasillo",
     ]
-    for column in drop_ciudadano_columns:
-        drop_column_if_exists("ciudadanos_ciudadano", column)
+    if drop_ciudadano_columns:
+        schema_editor.execute("SET FOREIGN_KEY_CHECKS=0;")
+        for column in drop_ciudadano_columns:
+            drop_column_if_exists("ciudadanos_ciudadano", column)
+        schema_editor.execute("SET FOREIGN_KEY_CHECKS=1;")
 
     add_column_if_missing(
         "ciudadanos_ciudadano",
@@ -122,7 +228,7 @@ def safe_cleanup(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0002_alter_provincia_nombre"),
+        ("core", "0004_nacionalidad"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("comedores", "0013_alter_nomina_estado"),
         ("ciudadanos", "0008_alter_ciudadano_documento"),
@@ -131,6 +237,37 @@ class Migration(migrations.Migration):
     operations = [
         migrations.SeparateDatabaseAndState(
             database_operations=[
+                migrations.RunPython(
+                    migrate_nacionalidades, migrations.RunPython.noop
+                ),
+                migrations.AlterField(
+                    model_name="ciudadano",
+                    name="nacionalidad",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.nacionalidad",
+                    ),
+                ),
+                migrations.AlterField(
+                    model_name="ciudadanoprograma",
+                    name="programas",
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="programa_ciudadano",
+                        to="core.programa",
+                    ),
+                ),
+                migrations.AlterField(
+                    model_name="historialciudadanoprogramas",
+                    name="programa",
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="hist_prog_ciudadano",
+                        to="core.programa",
+                    ),
+                ),
                 migrations.RunPython(safe_cleanup, migrations.RunPython.noop),
             ],
             state_operations=[
@@ -145,22 +282,6 @@ class Migration(migrations.Migration):
                     migrations.RemoveField(
                         model_name="categoriaalerta",
                         name="dimension",
-                    ),
-                    migrations.AlterUniqueTogether(
-                        name="ciudadanoprograma",
-                        unique_together=None,
-                    ),
-                    migrations.RemoveField(
-                        model_name="ciudadanoprograma",
-                        name="ciudadano",
-                    ),
-                    migrations.RemoveField(
-                        model_name="ciudadanoprograma",
-                        name="creado_por",
-                    ),
-                    migrations.RemoveField(
-                        model_name="ciudadanoprograma",
-                        name="programas",
                     ),
                     migrations.DeleteModel(
                         name="Condicion",
@@ -394,18 +515,6 @@ class Migration(migrations.Migration):
                         name="eliminada_por",
                     ),
                     migrations.RemoveField(
-                        model_name="historialciudadanoprogramas",
-                        name="ciudadano",
-                    ),
-                    migrations.RemoveField(
-                        model_name="historialciudadanoprogramas",
-                        name="programa",
-                    ),
-                    migrations.RemoveField(
-                        model_name="historialciudadanoprogramas",
-                        name="usuario",
-                    ),
-                    migrations.RemoveField(
                         model_name="intervencion",
                         name="ciudadano",
                     ),
@@ -629,7 +738,12 @@ class Migration(migrations.Migration):
                     migrations.AlterField(
                         model_name="ciudadano",
                         name="nacionalidad",
-                        field=models.CharField(blank=True, max_length=100, null=True),
+                        field=models.ForeignKey(
+                            blank=True,
+                            null=True,
+                            on_delete=django.db.models.deletion.SET_NULL,
+                            to="core.nacionalidad",
+                        ),
                     ),
                     migrations.AlterField(
                         model_name="ciudadano",
@@ -757,6 +871,24 @@ class Migration(migrations.Migration):
                             fields=["ciudadano_2"], name="ciudadanos__ciudada_547f88_idx"
                         ),
                     ),
+                    migrations.AlterField(
+                        model_name="ciudadanoprograma",
+                        name="programas",
+                        field=models.ForeignKey(
+                            on_delete=django.db.models.deletion.CASCADE,
+                            related_name="programa_ciudadano",
+                            to="core.programa",
+                        ),
+                    ),
+                    migrations.AlterField(
+                        model_name="historialciudadanoprogramas",
+                        name="programa",
+                        field=models.ForeignKey(
+                            on_delete=django.db.models.deletion.CASCADE,
+                            related_name="hist_prog_ciudadano",
+                            to="core.programa",
+                        ),
+                    ),
                     migrations.DeleteModel(
                         name="ActividadRealizada",
                     ),
@@ -789,9 +921,6 @@ class Migration(migrations.Migration):
                     ),
                     migrations.DeleteModel(
                         name="Circuito",
-                    ),
-                    migrations.DeleteModel(
-                        name="CiudadanoPrograma",
                     ),
                     migrations.DeleteModel(
                         name="Derivacion",
@@ -858,9 +987,6 @@ class Migration(migrations.Migration):
                     ),
                     migrations.DeleteModel(
                         name="HistorialAlerta",
-                    ),
-                    migrations.DeleteModel(
-                        name="HistorialCiudadanoProgramas",
                     ),
                     migrations.DeleteModel(
                         name="Importancia",

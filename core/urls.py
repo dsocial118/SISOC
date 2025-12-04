@@ -5,6 +5,7 @@ from .views import (
     inicio_view,
     load_localidad,
     load_municipios,
+    load_organizaciones,
 )
 
 urlpatterns = [
@@ -18,5 +19,10 @@ urlpatterns = [
         "ajax/load-localidades/",
         login_required(load_localidad),
         name="ajax_load_localidades",
+    ),
+    path(
+        "ajax/load-organizaciones/",
+        login_required(load_organizaciones),
+        name="ajax_load_organizaciones",
     ),
 ]

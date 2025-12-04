@@ -132,7 +132,9 @@ class CiudadanoService:
         fecha_nacimiento = CiudadanoService._to_date(datos.get("fecha_nacimiento"))
         nombre = datos.get("nombre", "").strip()
         apellido = datos.get("apellido", "").strip()
-        nacionalidad = CiudadanoService._resolver_nacionalidad(datos.get("nacionalidad"))
+        nacionalidad = CiudadanoService._resolver_nacionalidad(
+            datos.get("nacionalidad")
+        )
         calle = (datos.get("calle") or "").strip()
         altura = datos.get("altura")
         codigo_postal = datos.get("codigo_postal")
@@ -170,22 +172,23 @@ class CiudadanoService:
                     )
                     created = True
                     logger.info("Ciudadano creado: %s", ciudadano.pk)
-                    
+
                     # Crear registro en CiudadanoPrograma con programa ID 3 (Celiaquia)
                     from ciudadanos.models import CiudadanoPrograma
                     from core.models import Programa
+
                     try:
                         programa = Programa.objects.get(pk=3)
                         CiudadanoPrograma.objects.get_or_create(
                             ciudadano=ciudadano,
                             programas=programa,
-                            defaults={'creado_por': usuario}
+                            defaults={"creado_por": usuario},
                         )
                     except Programa.DoesNotExist:
                         logger.warning("Programa con ID 3 no existe")
                     except Exception as e:
                         logger.error("Error creando CiudadanoPrograma: %s", e)
-                        
+
             except IntegrityError:
                 ciudadano = Ciudadano.objects.filter(
                     tipo_documento=tipo_documento, documento=documento
