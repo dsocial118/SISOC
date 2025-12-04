@@ -113,6 +113,8 @@ def ensure_grupofamiliar_text_fields(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    atomic = False
+
     dependencies = [
         ("ciudadanos", "0012_fix_ciudadano_datetime_fields"),
     ]
