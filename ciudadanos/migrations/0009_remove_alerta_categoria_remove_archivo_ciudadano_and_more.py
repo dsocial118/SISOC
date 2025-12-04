@@ -100,6 +100,15 @@ def safe_cleanup(apps, schema_editor):
             if column in details.get("columns", []) and details.get("foreign_key"):
                 schema_editor.execute(f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}")
 
+    def drop_unique_constraints(table: str, column: str) -> None:
+        if not table_exists(table):
+            return
+        with connection.cursor() as cursor:
+            constraints = connection.introspection.get_constraints(cursor, table)
+        for name, details in constraints.items():
+            if details.get("unique") and column in details.get("columns", []):
+                schema_editor.execute(f"ALTER TABLE {quote(table)} DROP INDEX {quote(name)}")
+
     def migrate_tipo_documento() -> None:
         """
         Convierte el FK tipo_documento_id a un campo varchar usando el valor de ciudadanos_tipodocumento.tipo.
@@ -142,6 +151,7 @@ def safe_cleanup(apps, schema_editor):
             )
 
         drop_fk_constraints(table, fk_col)
+        drop_unique_constraints(table, fk_col)
         drop_column_if_exists(table, fk_col)
 
     with connection.cursor() as cursor:
@@ -179,6 +189,7 @@ def safe_cleanup(apps, schema_editor):
     if drop_ciudadano_columns:
         schema_editor.execute("SET FOREIGN_KEY_CHECKS=0;")
         for column in drop_ciudadano_columns:
+            drop_fk_constraints("ciudadanos_ciudadano", column)
             drop_column_if_exists("ciudadanos_ciudadano", column)
         schema_editor.execute("SET FOREIGN_KEY_CHECKS=1;")
 
@@ -206,12 +217,15 @@ def safe_cleanup(apps, schema_editor):
     add_column_if_missing(
         "ciudadanos_grupofamiliar",
         "creado",
-        "creado DATETIME(6) DEFAULT CURRENT_TIMESTAMP",
+        "creado DATETIME(6) NULL",
     )
     add_column_if_missing(
         "ciudadanos_grupofamiliar",
         "modificado",
-        "modificado DATETIME(6) DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+        "modificado DATETIME(6) NULL",
+    )
+    schema_editor.execute(
+        f"UPDATE {quote('ciudadanos_grupofamiliar')} SET {quote('creado')} = COALESCE({quote('creado')}, CURRENT_TIMESTAMP(6)), {quote('modificado')} = COALESCE({quote('modificado')}, CURRENT_TIMESTAMP(6))"
     )
     add_index_if_missing(
         "ciudadanos_grupofamiliar",
