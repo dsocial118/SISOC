@@ -930,10 +930,11 @@ class ImportacionService:
                                         payload.get("fecha_nacimiento"),
                                     )
                                 )
-                                if error_edad:
-                                    add_error(offset, "edad_responsable", error_edad)
+                                # Agregar warnings ANTES de verificar errores
                                 for warning in edad_warnings:
                                     add_warning(offset, "edad", warning)
+                                if error_edad:
+                                    add_error(offset, "edad_responsable", error_edad)
 
                                 # Crear legajo del responsable si no existe ya
                                 if cid_resp not in existentes_ids:
@@ -1007,7 +1008,7 @@ class ImportacionService:
                                     GrupoFamiliar(
                                         ciudadano_1_id=rel["responsable_id"],
                                         ciudadano_2_id=rel["hijo_id"],
-                                        vinculo=GrupoFamiliar.RELACION_HIJO,
+                                        vinculo=GrupoFamiliar.RELACION_PADRE,
                                         conviven=True,
                                         cuidador_principal=True,
                                     )
