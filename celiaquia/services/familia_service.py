@@ -26,7 +26,7 @@ class FamiliaService:
                     ciudadano_1_id=responsable_id,
                     ciudadano_2_id=hijo_id,
                     defaults={
-                        "vinculo": GrupoFamiliar.RELACION_HIJO,
+                        "vinculo": GrupoFamiliar.RELACION_PADRE,
                         "conviven": True,
                         "cuidador_principal": True,
                     },
@@ -34,8 +34,8 @@ class FamiliaService:
 
                 if not creada:
                     campos_actualizar: List[str] = []
-                    if relacion.vinculo != GrupoFamiliar.RELACION_HIJO:
-                        relacion.vinculo = GrupoFamiliar.RELACION_HIJO
+                    if relacion.vinculo != GrupoFamiliar.RELACION_PADRE:
+                        relacion.vinculo = GrupoFamiliar.RELACION_PADRE
                         campos_actualizar.append("vinculo")
                     if relacion.conviven is not True:
                         relacion.conviven = True
