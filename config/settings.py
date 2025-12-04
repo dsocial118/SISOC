@@ -217,8 +217,16 @@ SPECTACULAR_SETTINGS = {
     },
     "SECURITY": [{"ApiKeyAuth": []}],
     "ENUM_NAME_OVERRIDES": {
-        "ActividadCentroEstadoEnum": ["planificada", "en_curso", "finalizada"],
-        "ParticipanteActividadEstadoEnum": ["inscrito", "lista_espera", "dado_baja"],
+        "ActividadCentroEstadoEnum": [
+            ("planificada", "Planificada"),
+            ("en_curso", "En curso"),
+            ("finalizada", "Finalizada"),
+        ],
+        "ParticipanteActividadEstadoEnum": [
+            ("inscrito", "Inscrito"),
+            ("lista_espera", "Lista de Espera"),
+            ("dado_baja", "Dado de Baja"),
+        ],
     },
 }
 
