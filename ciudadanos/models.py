@@ -165,7 +165,7 @@ class CiudadanoPrograma(models.Model):
     ciudadano = models.ForeignKey(
         Ciudadano, related_name="ciudadano_programa", on_delete=models.CASCADE
     )
-    fecha_creado = models.DateField(auto_now=True)
+    fecha_creado = models.DateTimeField(auto_now_add=True)
     creado_por = models.ForeignKey(
         User,
         related_name="prog_creado_por",
