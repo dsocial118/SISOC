@@ -12,6 +12,7 @@ class Nacionalidad(models.Model):
         verbose_name = "Nacionalidad"
         verbose_name_plural = "Nacionalidades"
 
+
 class Programa(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
     estado = models.BooleanField(default=True)
