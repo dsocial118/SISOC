@@ -91,6 +91,59 @@ def safe_cleanup(apps, schema_editor):
             cols_sql = ", ".join(quote(col) for col in columns)
             schema_editor.execute(f"CREATE INDEX {quote(index_name)} ON {quote(table)} ({cols_sql})")
 
+    def drop_fk_constraints(table: str, column: str) -> None:
+        if not table_exists(table):
+            return
+        with connection.cursor() as cursor:
+            constraints = connection.introspection.get_constraints(cursor, table)
+        for name, details in constraints.items():
+            if column in details.get("columns", []) and details.get("foreign_key"):
+                schema_editor.execute(f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}")
+
+    def migrate_tipo_documento() -> None:
+        """
+        Convierte el FK tipo_documento_id a un campo varchar usando el valor de ciudadanos_tipodocumento.tipo.
+        Deja datos por defecto en 'DNI' si no existe referencia. Idempotente.
+        """
+        table = "ciudadanos_ciudadano"
+        fk_col = "tipo_documento_id"
+        text_col = "tipo_documento"
+
+        if not table_exists(table):
+            return
+
+        has_fk_col = column_exists(table, fk_col)
+        has_text_col = column_exists(table, text_col)
+
+        if not has_fk_col and has_text_col:
+            return
+
+        add_column_if_missing(
+            table,
+            text_col,
+            f"{quote(text_col)} VARCHAR(20) NOT NULL DEFAULT 'DNI'",
+        )
+
+        if table_exists("ciudadanos_tipodocumento"):
+            schema_editor.execute(
+                f"""
+                UPDATE {quote(table)} c
+                LEFT JOIN {quote("ciudadanos_tipodocumento")} t ON c.{quote(fk_col)} = t.{quote("id")}
+                SET c.{quote(text_col)} = COALESCE(NULLIF(t.{quote("tipo")}, ''), 'DNI');
+                """
+            )
+        else:
+            schema_editor.execute(
+                f"""
+                UPDATE {quote(table)}
+                SET {quote(text_col)} = 'DNI'
+                WHERE {quote(text_col)} IS NULL OR {quote(text_col)} = '';
+                """
+            )
+
+        drop_fk_constraints(table, fk_col)
+        drop_column_if_exists(table, fk_col)
+
     with connection.cursor() as cursor:
         existing_tables = set(connection.introspection.table_names(cursor))
 
@@ -100,6 +153,7 @@ def safe_cleanup(apps, schema_editor):
         "ciudadanos_ciudadanoprograma",
         "ciudadanos_historialciudadanoprogramas",
     }
+    migrate_tipo_documento()
     drop_tables = [
         table
         for table in existing_tables
