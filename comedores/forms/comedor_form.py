@@ -117,16 +117,17 @@ class ComedorForm(forms.ModelForm):
         self._configure_estado_fields()
         self.popular_campos_ubicacion()
 
-        # Configurar organizacion: si es una instancia existente, cargar solo esa organizacion
-        # Si es un formulario nuevo, dejar vacío para que Select2 con AJAX cargue bajo demanda
-        if (
-            self.instance
-            and self.instance.pk
-            and hasattr(self.instance, "organizacion")
-            and self.instance.organizacion
-        ):
+        # Configurar organizacion: incluir la seleccionada (instancia o POST) para que pase la
+        # validacion del ModelChoiceField aunque las opciones se carguen por AJAX con Select2.
+        selected_organizacion_id = None
+        if self.is_bound:
+            selected_organizacion_id = self.data.get(self.add_prefix("organizacion"))
+        elif getattr(self.instance, "organizacion_id", None):
+            selected_organizacion_id = self.instance.organizacion_id
+
+        if selected_organizacion_id:
             self.fields["organizacion"].queryset = Organizacion.objects.filter(
-                pk=self.instance.organizacion.pk
+                pk=selected_organizacion_id
             )
         else:
             self.fields["organizacion"].queryset = Organizacion.objects.none()
