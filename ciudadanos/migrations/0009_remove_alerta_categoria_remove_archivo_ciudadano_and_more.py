@@ -217,12 +217,15 @@ def safe_cleanup(apps, schema_editor):
     add_column_if_missing(
         "ciudadanos_grupofamiliar",
         "creado",
-        "creado DATETIME(6) DEFAULT CURRENT_TIMESTAMP",
+        "creado DATETIME(6) NULL",
     )
     add_column_if_missing(
         "ciudadanos_grupofamiliar",
         "modificado",
-        "modificado DATETIME(6) DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+        "modificado DATETIME(6) NULL",
+    )
+    schema_editor.execute(
+        f"UPDATE {quote('ciudadanos_grupofamiliar')} SET {quote('creado')} = COALESCE({quote('creado')}, CURRENT_TIMESTAMP(6)), {quote('modificado')} = COALESCE({quote('modificado')}, CURRENT_TIMESTAMP(6))"
     )
     add_index_if_missing(
         "ciudadanos_grupofamiliar",
