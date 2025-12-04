@@ -189,6 +189,7 @@ def safe_cleanup(apps, schema_editor):
     if drop_ciudadano_columns:
         schema_editor.execute("SET FOREIGN_KEY_CHECKS=0;")
         for column in drop_ciudadano_columns:
+            drop_fk_constraints("ciudadanos_ciudadano", column)
             drop_column_if_exists("ciudadanos_ciudadano", column)
         schema_editor.execute("SET FOREIGN_KEY_CHECKS=1;")
 
