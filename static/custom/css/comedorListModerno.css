@@ -1,0 +1,568 @@
+/* ============================================
+   COMEDOR LIST - ESTILOS MODERNOS
+   Listado de comedores profesional y espacioso
+   ============================================ */
+
+/* CONTENEDOR PRINCIPAL */
+.comedor-list-container {
+  background: transparent;
+  padding: 0;
+}
+
+/* TÍTULO PRINCIPAL */
+.comedor-list-title {
+  color: #e5e7eb;
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* ============================================
+   SEARCH BAR MODERNIZADA
+   ============================================ */
+
+.search-actions .btn {
+  border-radius: 6px;
+  padding: 12px 28px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 14px;
+}
+
+.search-actions .btn-secondary {
+  background: #4b5563;
+  color: #e5e7eb;
+  border: 1px solid #6b7280;
+}
+
+.search-actions .btn-secondary:hover {
+  background: #374151;
+  border-color: #4b5563;
+  transform: translateY(-1px);
+}
+
+.search-actions .btn-primary {
+  background: #f39c12;
+  color: #1e2a3a;
+  border: 1px solid #f39c12;
+}
+
+.search-actions .btn-primary:hover {
+  background: #e67e22;
+  border-color: #e67e22;
+  transform: translateY(-1px);
+}
+
+.search-actions .btn-success {
+  background: #10b981;
+  color: white;
+  border: 1px solid #10b981;
+}
+
+.search-actions .btn-success:hover {
+  background: #059669;
+  border-color: #059669;
+  transform: translateY(-1px);
+}
+
+/* Input de búsqueda */
+#ajax-search-input {
+  background-color: #1e2a3a !important;
+  border: 2px solid #3d4f63 !important;
+  color: #e5e7eb !important;
+  border-radius: 12px !important;
+  padding: 16px 24px !important;
+  font-size: 16px !important;
+  transition: all 0.3s ease !important;
+}
+
+#ajax-search-input:focus {
+  background-color: #253446 !important;
+  border-color: #f39c12 !important;
+  box-shadow: 0 0 0 0.3rem rgba(243, 156, 18, 0.2) !important;
+  color: #e5e7eb !important;
+}
+
+#ajax-search-input::placeholder {
+  color: #9ca3af !important;
+}
+
+/* ============================================
+   TABLA MODERNIZADA
+   ============================================ */
+
+.comedor-table-card {
+  background: #2c3e50;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid #374151;
+  margin-top: 2rem;
+}
+
+.comedor-table-card .card-body {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.table-comedor-moderno {
+  margin-bottom: 0;
+  color: #e5e7eb;
+  border-spacing: 0;
+}
+
+.table-comedor-moderno thead {
+  background: #1e2a3a;
+  border-bottom: 2px solid #374151;
+}
+
+.table-comedor-moderno thead th {
+  color: #d1d5db;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 20px 20px;
+  border: none;
+  font-size: 13px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #1e2a3a;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.table-comedor-moderno thead th:hover {
+  background: #253446;
+  color: #f39c12;
+}
+
+.table-comedor-moderno thead th.sortable {
+  position: relative;
+  padding-right: 30px;
+}
+
+.table-comedor-moderno thead th .sort-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #6b7280;
+  transition: color 0.2s ease;
+}
+
+.table-comedor-moderno thead th:hover .sort-icon {
+  color: #f39c12;
+}
+
+.table-comedor-moderno thead th.sort-asc .sort-icon,
+.table-comedor-moderno thead th.sort-desc .sort-icon {
+  color: #f39c12;
+}
+
+.table-comedor-moderno tbody tr {
+  background: #34495e;
+  border-bottom: 1px solid #374151;
+  transition: all 0.2s ease;
+}
+
+.table-comedor-moderno tbody tr:nth-child(even) {
+  background: #2c3e50;
+}
+
+.table-comedor-moderno tbody tr:hover {
+  background: #3d566e;
+  border-left: 3px solid #f39c12;
+}
+
+.table-comedor-moderno tbody td {
+  padding: 20px;
+  vertical-align: middle;
+  border: none;
+  color: #d1d5db;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Nombre del comedor (destacado sutilmente) */
+.table-comedor-moderno tbody td:first-child a {
+  color: #e5e7eb;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.table-comedor-moderno tbody td:first-child a:hover {
+  color: #f39c12;
+  text-decoration: underline;
+}
+
+/* ============================================
+   BADGES DE VALIDACIÓN
+   ============================================ */
+
+.badge-validacion {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+}
+
+.badge-validacion.validado {
+  background: #10b981;
+  color: white;
+  border-color: #059669;
+}
+
+.badge-validacion.no-validado {
+  background: #ef4444;
+  color: white;
+  border-color: #dc2626;
+}
+
+.badge-validacion.pendiente {
+  background: #f39c12;
+  color: #1e2a3a;
+  border-color: #e67e22;
+}
+
+.badge-validacion i {
+  font-size: 10px;
+}
+
+.fecha-validacion {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+/* ============================================
+   BOTONES DE ACCIÓN
+   ============================================ */
+
+.comedor-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.comedor-actions .btn {
+  padding: 8px 14px;
+  font-size: 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comedor-actions .btn-ver {
+  background: #3b82f6;
+  color: white;
+  border-color: #2563eb;
+}
+
+.comedor-actions .btn-ver:hover {
+  background: #2563eb;
+  border-color: #1d4ed8;
+}
+
+.comedor-actions .btn-editar {
+  background: #f39c12;
+  color: #1e2a3a;
+  border-color: #e67e22;
+}
+
+.comedor-actions .btn-editar:hover {
+  background: #e67e22;
+  border-color: #d35400;
+}
+
+.comedor-actions .btn-eliminar {
+  background: #ef4444;
+  color: white;
+  border-color: #dc2626;
+}
+
+.comedor-actions .btn-eliminar:hover {
+  background: #dc2626;
+  border-color: #b91c1c;
+}
+
+/* Iconos en botones */
+.comedor-actions .btn i {
+  font-size: 12px;
+}
+
+/* ============================================
+   MENSAJE SIN COMEDORES
+   ============================================ */
+
+.no-comedores-message {
+  text-align: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+}
+
+.no-comedores-message h3 {
+  color: #d1d5db;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.no-comedores-message p {
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+/* ============================================
+   PAGINACIÓN MODERNIZADA
+   ============================================ */
+
+.pagination {
+  justify-content: center;
+  margin-top: 2.5rem;
+  margin-bottom: 2rem;
+  gap: 6px;
+}
+
+.pagination .page-item .page-link {
+  background: #2c3e50;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  margin: 0 3px;
+}
+
+.pagination .page-item .page-link:hover {
+  background: #34495e;
+  border-color: #f39c12;
+  color: #f39c12;
+}
+
+.pagination .page-item.active .page-link {
+  background: #f39c12;
+  border-color: #e67e22;
+  color: #1e2a3a;
+  font-weight: 700;
+}
+
+.pagination .page-item.disabled .page-link {
+  background: #1e2a3a;
+  border-color: #374151;
+  color: #6b7280;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ============================================
+   INFORMACIÓN DE UBICACIÓN
+   ============================================ */
+
+.ubicacion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ubicacion-item {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #d1d5db;
+  line-height: 1.5;
+}
+
+.ubicacion-item i {
+  color: #9ca3af;
+  font-size: 11px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   INFORMACIÓN DE REFERENTE
+   ============================================ */
+
+.referente-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.referente-info i {
+  color: #9ca3af;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.referente-nombre {
+  color: #e5e7eb;
+  font-weight: 500;
+}
+
+/* ============================================
+   LOADING INDICATOR
+   ============================================ */
+
+#ajax-loading-indicator {
+  padding: 40px;
+}
+
+#ajax-loading-indicator .spinner-border {
+  color: #f39c12;
+  width: 3rem;
+  height: 3rem;
+  border-width: 4px;
+}
+
+/* Contador de resultados */
+#ajax-results-count {
+  color: #f39c12;
+  font-weight: 600;
+  font-size: 14px;
+  display: block;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1200px) {
+  .table-comedor-moderno {
+    font-size: 13px;
+  }
+
+  .table-comedor-moderno thead th {
+    padding: 14px 12px;
+    font-size: 12px;
+  }
+
+  .table-comedor-moderno tbody td {
+    padding: 12px;
+  }
+
+  .comedor-actions {
+    flex-direction: column;
+  }
+
+  .comedor-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .comedor-list-title {
+    font-size: 2rem;
+  }
+
+  .search-actions {
+    flex-direction: column !important;
+  }
+
+  .search-actions .btn {
+    width: 100%;
+    margin: 4px 0 !important;
+  }
+
+  /* Hacer tabla scrolleable en móvil */
+  .comedor-table-card .card-body {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-comedor-moderno {
+    min-width: 800px;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+
+  .pagination .page-item .page-link {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .comedor-list-title {
+    font-size: 1.5rem;
+  }
+
+  .table-comedor-moderno {
+    font-size: 12px;
+  }
+
+  #ajax-search-input {
+    font-size: 14px !important;
+    padding: 12px 16px !important;
+  }
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.table-comedor-moderno tbody tr {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ============================================
+   SCROLLBAR PERSONALIZADA
+   ============================================ */
+
+.comedor-table-card .card-body::-webkit-scrollbar {
+  height: 8px;
+}
+
+.comedor-table-card .card-body::-webkit-scrollbar-track {
+  background: #1e2a3a;
+  border-radius: 4px;
+}
+
+.comedor-table-card .card-body::-webkit-scrollbar-thumb {
+  background: #f39c12;
+  border-radius: 4px;
+}
+
+.comedor-table-card .card-body::-webkit-scrollbar-thumb:hover {
+  background: #e67e22;
+}
