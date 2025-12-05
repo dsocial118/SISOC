@@ -343,14 +343,19 @@
                                                 a cargo</small>
                                             {% endif %}
                                             {% if leg.ciudadano.fecha_nacimiento|es_menor_18 %}
-                                                <br><small class="badge bg-warning text-dark mt-1">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                                <br />
+                                                <small class="badge bg-warning text-dark mt-1">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
                                             {% endif %}
                                         {% else %}
                                             {% if leg.hijos_a_cargo %}
                                                 <small class="badge bg-warning mt-1">Beneficiario y Responsable</small>
-                                                <br><small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo{% if leg.hijos_a_cargo|length > 1 %}s{% endif %} a cargo</small>
+                                                <br />
+                                                <small class="text-muted">Tiene {{ leg.hijos_a_cargo|length }} hijo
+                                                    {% if leg.hijos_a_cargo|length > 1 %}s{% endif %}
+                                                a cargo</small>
                                                 {% if leg.ciudadano.fecha_nacimiento|es_menor_18 %}
-                                                    <br><small class="badge bg-warning text-dark mt-1">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                                    <br />
+                                                    <small class="badge bg-warning text-dark mt-1">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
                                                 {% endif %}
                                             {% else %}
                                                 <small class="badge bg-success mt-1">Solo Beneficiario</small>
