@@ -47,6 +47,8 @@ def drop_estado_column(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    atomic = False
+
     dependencies = [
         ("ciudadanos", "0013_fix_grupofamiliar_text_fields"),
     ]

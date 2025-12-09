@@ -23,6 +23,10 @@
                class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
         </div>
         <div class="col-auto">
+            {% if perms.auditlog.view_logentry %}
+                <a href="{% url 'audittrail:log_instance' 'organizaciones' 'organizacion' organizacion.pk %}"
+                   class="btn btn-outline-secondary mr-1">Historial</a>
+            {% endif %}
             <a href="{% url 'organizacion_editar' organizacion.id %}"
                class="btn btn-primary mr-1">Editar</a>
             <a href="{% url 'organizacion_eliminar' organizacion.id %}"

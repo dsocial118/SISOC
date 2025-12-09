@@ -20,6 +20,7 @@ urlpatterns = [
     path("", include("organizaciones.urls")),
     path("", include("cdi.urls")),
     path("", include("duplas.urls")),
+    path("", include("audittrail.urls")),
     path("", include("ciudadanos.urls")),
     path("", include("admisiones.urls")),
     path("", include("centrodefamilia.urls")),

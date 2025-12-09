@@ -71,6 +71,14 @@
                         <p>Equipos Técnicos</p>
                     </a>
                 </li>
+                {% if perms.auditlog.view_logentry %}
+                    <li class="nav-item">
+                        <a href="{% url 'audittrail:log_list' %}"
+                           class="nav-link nav-dot ms-2 {% if 'auditoria/' in pagina_actual %}active{% endif %}">
+                            <p>Auditoría</p>
+                        </a>
+                    </li>
+                {% endif %}
             </ul>
         </li>
     {% endif %}
