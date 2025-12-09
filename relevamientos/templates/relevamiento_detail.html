@@ -42,6 +42,10 @@
                    target="_blank"
                    class="btn btn-secondary mr-1 d-none d-sm-inline">Imprimir</a>
             {% endif %}
+            {% if perms.auditlog.view_logentry %}
+                <a href="{% url 'audittrail:log_instance' 'relevamientos' 'relevamiento' relevamiento.pk %}"
+                   class="btn btn-outline-light mr-1">Historial</a>
+            {% endif %}
             <a href="{% url 'relevamiento_eliminar' relevamiento.comedor.id relevamiento.id %}"
                class="btn btn-danger">Eliminar</a>
         </div>

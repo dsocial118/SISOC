@@ -98,8 +98,9 @@ class Aval(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
     )
 
-    def str(self):
-        return f"{self.nombre} ({self.cuit})"
+    def __str__(self):
+        cuit = self.cuit if self.cuit is not None else "-"
+        return f"{self.nombre or 'Aval sin nombre'} ({cuit})"
 
     class Meta:
         verbose_name = "Aval"
