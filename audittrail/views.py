@@ -71,11 +71,7 @@ class AuditLogResolveMixin:
                 return mark_safe("<em>No cargado</em>")
             # Patrones tipo "app.Model.pk" -> "Model #pk"
             dotted = cleaned.split(".")
-            if (
-                len(dotted) >= 3
-                and re.fullmatch(r"[a-z_]+", dotted[0])
-                and dotted[1]
-            ):
+            if len(dotted) >= 3 and re.fullmatch(r"[a-z_]+", dotted[0]) and dotted[1]:
                 model_label = dotted[1].replace("_", " ").title()
                 pk_part = dotted[-1]
                 if pk_part.isdigit():
@@ -95,7 +91,9 @@ class AuditLogResolveMixin:
         return value
 
 
-class BaseAuditLogListView(AuditLogResolveMixin, LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class BaseAuditLogListView(
+    AuditLogResolveMixin, LoginRequiredMixin, PermissionRequiredMixin, ListView
+):
     model = LogEntry
     template_name = "audittrail/log_list.html"
     context_object_name = "entries"
@@ -176,6 +174,7 @@ class BaseAuditLogListView(AuditLogResolveMixin, LoginRequiredMixin, PermissionR
         context["querystring"] = params.urlencode()
         return context
 
+
 class AuditLogListView(BaseAuditLogListView):
     """Listado global de eventos de auditoría."""
 
@@ -207,7 +206,9 @@ class AuditLogInstanceView(BaseAuditLogListView):
 
     def get_queryset(self):
         ct = get_object_or_404(
-            ContentType, app_label=self.kwargs["app_label"], model=self.kwargs["model_name"]
+            ContentType,
+            app_label=self.kwargs["app_label"],
+            model=self.kwargs["model_name"],
         )
         qs = (
             LogEntry.objects.select_related("actor", "content_type")
@@ -225,7 +226,9 @@ class AuditLogInstanceView(BaseAuditLogListView):
         return context
 
 
-class AuditLogDetailView(AuditLogResolveMixin, LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class AuditLogDetailView(
+    AuditLogResolveMixin, LoginRequiredMixin, PermissionRequiredMixin, DetailView
+):
     model = LogEntry
     template_name = "audittrail/log_detail.html"
     context_object_name = "entry"

@@ -316,7 +316,7 @@ class ComedorForm(forms.ModelForm):
 
         # CRÍTICO: Preservar ultimo_estado antes de guardar
         # porque no está en el formulario y se puede perder
-        ultimo_estado_original = getattr(self.instance, 'ultimo_estado', None)
+        ultimo_estado_original = getattr(self.instance, "ultimo_estado", None)
 
         if commit:
             comedor.save()
@@ -330,7 +330,7 @@ class ComedorForm(forms.ModelForm):
             # Si no se creó un nuevo estado y teníamos uno original, restaurarlo
             if not comedor.ultimo_estado and ultimo_estado_original:
                 comedor.ultimo_estado = ultimo_estado_original
-                comedor.save(update_fields=['ultimo_estado'])
+                comedor.save(update_fields=["ultimo_estado"])
 
         return comedor
 
@@ -358,7 +358,7 @@ class ComedorForm(forms.ModelForm):
     class Meta:
         model = Comedor
         fields = "__all__"
-        exclude = ['ultimo_estado']  # IMPORTANTE: Excluir para que no se sobrescriba
+        exclude = ["ultimo_estado"]  # IMPORTANTE: Excluir para que no se sobrescriba
         labels = {
             "tipocomedor": "Tipo comedor",
         }
