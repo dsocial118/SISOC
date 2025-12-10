@@ -329,9 +329,13 @@ class ComedorCreateView(LoginRequiredMixin, CreateView):
         imagenes = self.request.FILES.getlist("imagenes")
 
         if referente_form.is_valid():
-            self.object = form.save(commit=False)
-            self.object.referente = referente_form.save()
-            self.object.save()
+            # Asignar el referente al form.instance ANTES de guardar
+            form.instance.referente = referente_form.save()
+
+            # Ahora llamar a save() que ejecutará toda la lógica del formulario
+            # incluyendo _sync_estado_historial
+            self.object = form.save()
+
             for imagen in imagenes:
                 try:
                     ComedorService.create_imagenes(imagen, self.object.pk)
@@ -742,10 +746,13 @@ class ComedorUpdateView(LoginRequiredMixin, UpdateView):
         dupla_original = self.object.dupla
 
         if referente_form.is_valid():
-            self.object = form.save(commit=False)
-            self.object.dupla = dupla_original
-            self.object.referente = referente_form.save()
-            self.object.save()
+            # Asignar dupla y referente al form.instance ANTES de guardar
+            form.instance.dupla = dupla_original
+            form.instance.referente = referente_form.save()
+
+            # Ahora llamar a save() que ejecutará toda la lógica del formulario
+            # incluyendo _sync_estado_historial
+            self.object = form.save()
 
             ComedorService.delete_images(self.request.POST)
             ComedorService.delete_legajo_photo(self.request.POST, self.object)
