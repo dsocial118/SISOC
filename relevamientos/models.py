@@ -430,7 +430,9 @@ class Espacio(models.Model):
         verbose_name_plural = "Espacios fisicos de comedores"
 
     def __str__(self):
-        tipo = self.tipo_espacio_fisico.nombre if self.tipo_espacio_fisico else "Sin tipo"
+        tipo = (
+            self.tipo_espacio_fisico.nombre if self.tipo_espacio_fisico else "Sin tipo"
+        )
         return f"Espacio ({tipo})"
 
 
@@ -1075,7 +1077,9 @@ class Relevamiento(models.Model):
             if isinstance(self.fecha_visita, datetime)
             else self.fecha_visita
         )
-        fecha_text = fecha.strftime("%Y-%m-%d") if hasattr(fecha, "strftime") else "sin fecha"
+        fecha_text = (
+            fecha.strftime("%Y-%m-%d") if hasattr(fecha, "strftime") else "sin fecha"
+        )
         return f"Relevamiento {fecha_text} - {comedor}"
 
 
