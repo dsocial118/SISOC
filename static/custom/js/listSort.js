@@ -1,10 +1,12 @@
 /**
- * Ordenamiento de tabla de comedores
- * Permite ordenar la tabla por columnas con clicks en los headers
+ * Ordenamiento genérico de tablas
+ * Permite ordenar cualquier tabla con headers .sortable por columnas con clicks
+ * Reutilizable para todos los listados
  */
 
 document.addEventListener("DOMContentLoaded", function () {
-  const table = document.querySelector(".table-comedor-moderno");
+  // Buscar tabla - priorizar .table-comedor-moderno, luego .table, luego .projects
+  const table = document.querySelector(".table-comedor-moderno, .table, .projects");
   if (!table) return;
 
   const tbody = table.querySelector("tbody");
@@ -79,44 +81,66 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // Obtener todas las filas (excluyendo la fila "empty")
+    // Obtener todas las filas (excluyendo filas de mensajes vacíos)
     const rows = Array.from(tbody.querySelectorAll("tr")).filter((row) => {
-      return !row.querySelector(".no-comedores-message");
+      return !row.querySelector(".no-comedores-message, .no-data-message, .empty-message") &&
+             !row.querySelector('td[colspan]');
     });
 
     // Ordenar las filas
     rows.sort((a, b) => {
       let aValue, bValue;
 
-      if (column === "nombre") {
-        aValue = a.querySelector('td[data-nombre]')?.getAttribute("data-nombre") || "";
-        bValue = b.querySelector('td[data-nombre]')?.getAttribute("data-nombre") || "";
+      // Buscar la celda con el atributo data-{column}
+      const dataAttr = `data-${column}`;
+      aValue = a.querySelector(`td[${dataAttr}]`)?.getAttribute(dataAttr) || "";
+      bValue = b.querySelector(`td[${dataAttr}]`)?.getAttribute(dataAttr) || "";
 
-        // Normalizar para comparación (minúsculas, sin acentos)
-        aValue = aValue.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        bValue = bValue.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      } else if (column === "validacion") {
-        aValue = a.querySelector('td[data-validacion]')?.getAttribute("data-validacion") || "";
-        bValue = b.querySelector('td[data-validacion]')?.getAttribute("data-validacion") || "";
+      // Si no hay atributo data-*, intentar obtener el texto de la celda
+      if (aValue === "" && bValue === "") {
+        const headerIndex = Array.from(sortableHeaders).findIndex(
+          h => h.getAttribute("data-column") === column
+        );
+        if (headerIndex !== -1) {
+          aValue = a.querySelectorAll("td")[headerIndex]?.textContent.trim() || "";
+          bValue = b.querySelectorAll("td")[headerIndex]?.textContent.trim() || "";
+        }
+      }
 
-        // Orden de prioridad: Validado > Pendiente > No Validado
-        const priority = {
-          "Validado": 3,
-          "Pendiente": 2,
-          "No Validado": 1,
-          "": 0
-        };
+      // Detectar tipo de valor
+      let isNumber = false;
+      let aNum = parseFloat(aValue);
+      let bNum = parseFloat(bValue);
 
-        aValue = priority[aValue] || 0;
-        bValue = priority[bValue] || 0;
+      if (!isNaN(aNum) && !isNaN(bNum) && aValue !== "" && bValue !== "") {
+        isNumber = true;
+      }
+
+      // Normalizar strings para comparación (minúsculas, sin acentos)
+      if (!isNumber) {
+        // Manejar casos especiales de validación
+        if (column === "validacion") {
+          const priority = {
+            "Validado": 3,
+            "Pendiente": 2,
+            "No Validado": 1,
+            "": 0
+          };
+          aNum = priority[aValue] || 0;
+          bNum = priority[bValue] || 0;
+          isNumber = true;
+        } else {
+          aValue = aValue.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          bValue = bValue.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
       }
 
       // Comparar valores
       let comparison = 0;
-      if (typeof aValue === "string") {
-        comparison = aValue.localeCompare(bValue, "es", { sensitivity: "base" });
+      if (isNumber) {
+        comparison = aNum - bNum;
       } else {
-        comparison = aValue - bValue;
+        comparison = aValue.localeCompare(bValue, "es", { sensitivity: "base" });
       }
 
       // Aplicar dirección
@@ -128,12 +152,11 @@ document.addEventListener("DOMContentLoaded", function () {
     rows.forEach((row) => tbody.appendChild(row));
 
     // Si había una fila "empty", agregarla de nuevo al final
-    const emptyRow = Array.from(tbody.querySelectorAll("tr")).find((row) =>
-      row.querySelector(".no-comedores-message")
+    const emptyRows = Array.from(tbody.querySelectorAll("tr")).filter((row) =>
+      row.querySelector(".no-comedores-message, .no-data-message, .empty-message") ||
+      row.querySelector('td[colspan]')
     );
-    if (emptyRow) {
-      tbody.appendChild(emptyRow);
-    }
+    emptyRows.forEach((row) => tbody.appendChild(row));
 
     // Agregar animación de fade in
     rows.forEach((row, index) => {

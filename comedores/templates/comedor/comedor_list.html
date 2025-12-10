@@ -5,8 +5,8 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    <!-- Estilos modernos del listado de comedores -->
-    <link rel="stylesheet" href="{% static 'custom/css/comedorListModerno.css' %}" />
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
     <div class="comedor-list-container">
         {% include 'components/search_bar.html' with titulo="Buscar Comedor/Merendero" placeholder="Buscar por nombre, provincia, municipio, localidad, barrio o calle" help_text="Ingresar nombre, provincia, municipio, localidad, barrio o calle." reset_url=reset_url add_url=add_url button_append=True comedores_filters_mode=True %}
@@ -15,5 +15,6 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script src="{% static 'custom/js/comedorListSort.js' %}"></script>
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}
