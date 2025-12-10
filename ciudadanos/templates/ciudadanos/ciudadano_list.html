@@ -1,9 +1,12 @@
 {% extends "includes/main.html" %}
+{% load static %}
 
 {% block title %}Ciudadanos{% endblock %}
 {% block titulo-pagina %}Ciudadanos{% endblock %}
 
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% with titulo_search='Buscar ciudadano' placeholder_text='Apellido, nombre o documento' help_text='Ingresá apellido, nombre o DNI' reset_url_name='ciudadanos' %}
         {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name query=filter_form.q.value show_add_button=True add_url='ciudadanos_crear' add_text='Nuevo ciudadano' %}
     {% endwith %}
@@ -38,22 +41,37 @@
                         <table class="table table-bordered table-striped projects mb-0">
                             <thead>
                                 <tr>
-                                    <th>Apellido</th>
-                                    <th>Nombre</th>
-                                    <th>Documento</th>
-                                    <th>Sexo</th>
-                                    <th>Provincia</th>
+                                    <th class="sortable" data-column="apellido">
+                                        Apellido
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-column="nombre">
+                                        Nombre
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-column="documento">
+                                        Documento
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-column="sexo">
+                                        Sexo
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
+                                    <th class="sortable" data-column="provincia">
+                                        Provincia
+                                        <i class="fas fa-sort sort-icon"></i>
+                                    </th>
                                     <th style="width: 15%" class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="ciudadanos-table-body">
                                 {% for ciudadano in object_list %}
                                     <tr>
-                                        <td>{{ ciudadano.apellido }}</td>
-                                        <td>{{ ciudadano.nombre }}</td>
-                                        <td>{{ ciudadano.documento|default:"-" }}</td>
-                                        <td>{{ ciudadano.sexo|default:"-" }}</td>
-                                        <td>{{ ciudadano.provincia|default:"-" }}</td>
+                                        <td data-apellido="{{ ciudadano.apellido }}">{{ ciudadano.apellido }}</td>
+                                        <td data-nombre="{{ ciudadano.nombre }}">{{ ciudadano.nombre }}</td>
+                                        <td data-documento="{{ ciudadano.documento|default:'' }}">{{ ciudadano.documento|default:"-" }}</td>
+                                        <td data-sexo="{{ ciudadano.sexo|default:'' }}">{{ ciudadano.sexo|default:"-" }}</td>
+                                        <td data-provincia="{{ ciudadano.provincia|default:'' }}">{{ ciudadano.provincia|default:"-" }}</td>
                                         <td class="text-center">
                                             <a href="{% url 'ciudadanos_ver' ciudadano.pk %}"
                                                class="btn btn-primary btn-sm">Ver detalle</a>
@@ -79,6 +97,9 @@
 {% endblock %}
 
 {% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const searchInput = document.getElementById("ajax-search-input");

@@ -1,16 +1,20 @@
 /* ============================================
-   COMEDOR LIST - ESTILOS MODERNOS
-   Listado de comedores profesional y espacioso
+   LIST MODERNO - ESTILOS REUTILIZABLES
+   Estilos modernos profesionales para todos los listados
    ============================================ */
 
 /* CONTENEDOR PRINCIPAL */
-.comedor-list-container {
+.list-container,
+.comedor-list-container,
+.ciudadano-list-container {
   background: transparent;
   padding: 0;
 }
 
 /* TÍTULO PRINCIPAL */
-.comedor-list-title {
+.list-title,
+.comedor-list-title,
+.ciudadano-list-title {
   color: #e5e7eb;
   font-size: 2.5rem;
   font-weight: 700;
@@ -95,59 +99,85 @@
    TABLA MODERNIZADA
    ============================================ */
 
-.comedor-table-card {
+/* TARJETA DE TABLA - Estilos genéricos para .card */
+.card {
   background: #2c3e50;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   border: 1px solid #374151;
-  margin-top: 2rem;
 }
 
-.comedor-table-card .card-body {
-  padding: 0;
-  overflow-x: auto;
+.card .card-header {
+  background: #34495e;
+  border-bottom: 2px solid #f39c12;
+  padding: 20px 24px;
 }
 
-.table-comedor-moderno {
+.card .card-title {
+  color: #f39c12;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.card .card-body {
+  background: #2c3e50;
+  padding: 28px;
+}
+
+/* TABLA MODERNA - Aplicable a cualquier tabla con .table o .projects */
+.table-comedor-moderno,
+.projects,
+.table {
   margin-bottom: 0;
   color: #e5e7eb;
   border-spacing: 0;
 }
 
-.table-comedor-moderno thead {
-  background: #1e2a3a;
-  border-bottom: 2px solid #374151;
+.table-comedor-moderno thead,
+.projects thead,
+.table thead {
+  background: #34495e;
+  border-bottom: 2px solid #f39c12;
 }
 
-.table-comedor-moderno thead th {
-  color: #d1d5db;
-  font-weight: 600;
+.table-comedor-moderno thead th,
+.projects thead th,
+.table thead th {
+  background: #34495e;
+  color: #f39c12;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 20px 20px;
+  padding: 20px 18px;
   border: none;
-  font-size: 13px;
+  font-size: 14px;
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #1e2a3a;
   cursor: pointer;
   user-select: none;
   transition: all 0.2s ease;
 }
 
-.table-comedor-moderno thead th:hover {
-  background: #253446;
-  color: #f39c12;
+.table-comedor-moderno thead th:hover,
+.projects thead th:hover,
+.table thead th:hover {
+  background: #3d4f63;
+  color: #fff;
 }
 
-.table-comedor-moderno thead th.sortable {
+.table-comedor-moderno thead th.sortable,
+.projects thead th.sortable,
+.table thead th.sortable {
   position: relative;
-  padding-right: 30px;
+  padding-right: 35px;
 }
 
-.table-comedor-moderno thead th .sort-icon {
+.table-comedor-moderno thead th .sort-icon,
+.projects thead th .sort-icon,
+.table thead th .sort-icon {
   position: absolute;
   right: 10px;
   top: 50%;
@@ -157,41 +187,58 @@
   transition: color 0.2s ease;
 }
 
-.table-comedor-moderno thead th:hover .sort-icon {
+.table-comedor-moderno thead th:hover .sort-icon,
+.projects thead th:hover .sort-icon,
+.table thead th:hover .sort-icon {
   color: #f39c12;
 }
 
 .table-comedor-moderno thead th.sort-asc .sort-icon,
-.table-comedor-moderno thead th.sort-desc .sort-icon {
+.table-comedor-moderno thead th.sort-desc .sort-icon,
+.projects thead th.sort-asc .sort-icon,
+.projects thead th.sort-desc .sort-icon,
+.table thead th.sort-asc .sort-icon,
+.table thead th.sort-desc .sort-icon {
   color: #f39c12;
 }
 
-.table-comedor-moderno tbody tr {
-  background: #34495e;
-  border-bottom: 1px solid #374151;
-  transition: all 0.2s ease;
+.table-comedor-moderno tbody tr,
+.projects tbody tr,
+.table tbody tr {
+  background: #1e2a3a;
+  border-bottom: 1px solid #2c3e50;
+  transition: all 0.3s ease;
 }
 
-.table-comedor-moderno tbody tr:nth-child(even) {
-  background: #2c3e50;
+.table-comedor-moderno tbody tr:hover,
+.projects tbody tr:hover,
+.table tbody tr:hover {
+  background: #253446;
+  transform: scale(1.01);
+  box-shadow: 0 2px 8px rgba(243, 156, 18, 0.15);
 }
 
-.table-comedor-moderno tbody tr:hover {
-  background: #3d566e;
-  border-left: 3px solid #f39c12;
+.table-comedor-moderno tbody tr:last-child,
+.projects tbody tr:last-child,
+.table tbody tr:last-child {
+  border-bottom: none;
 }
 
-.table-comedor-moderno tbody td {
-  padding: 20px;
+.table-comedor-moderno tbody td,
+.projects tbody td,
+.table tbody td {
+  color: #e5e7eb;
+  padding: 20px 18px;
   vertical-align: middle;
   border: none;
-  color: #d1d5db;
   font-size: 14px;
   line-height: 1.6;
 }
 
-/* Nombre del comedor (destacado sutilmente) */
-.table-comedor-moderno tbody td:first-child a {
+/* Primera columna destacada sutilmente */
+.table-comedor-moderno tbody td:first-child a,
+.projects tbody td:first-child a,
+.table tbody td:first-child a {
   color: #e5e7eb;
   font-weight: 600;
   text-decoration: none;
@@ -199,9 +246,21 @@
   transition: all 0.2s ease;
 }
 
-.table-comedor-moderno tbody td:first-child a:hover {
+.table-comedor-moderno tbody td:first-child a:hover,
+.projects tbody td:first-child a:hover,
+.table tbody td:first-child a:hover {
   color: #f39c12;
   text-decoration: underline;
+}
+
+/* Filas vacías */
+.table-comedor-moderno tbody tr td[colspan],
+.projects tbody tr td[colspan],
+.table tbody tr td[colspan] {
+  text-align: center;
+  color: #9ca3af;
+  font-style: italic;
+  padding: 40px 20px;
 }
 
 /* ============================================
@@ -255,19 +314,25 @@
    BOTONES DE ACCIÓN
    ============================================ */
 
-.comedor-actions {
+/* Contenedor de acciones genérico */
+.comedor-actions,
+.action-buttons,
+.btn-group {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
+/* Botones dentro de tablas - Estilo general para .btn-primary, .btn-ver, etc */
+.projects .btn,
+.table .btn,
 .comedor-actions .btn {
-  padding: 8px 14px;
-  font-size: 12px;
-  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 6px;
   font-weight: 600;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
+  transition: all 0.3s ease;
+  border: 2px solid;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   display: inline-flex;
@@ -275,62 +340,94 @@
   gap: 6px;
 }
 
+/* Botón Primary - Dorado */
+.projects .btn-primary,
+.table .btn-primary,
+.comedor-actions .btn-primary,
 .comedor-actions .btn-ver {
-  background: #3b82f6;
-  color: white;
-  border-color: #2563eb;
-}
-
-.comedor-actions .btn-ver:hover {
-  background: #2563eb;
-  border-color: #1d4ed8;
-}
-
-.comedor-actions .btn-editar {
   background: #f39c12;
   color: #1e2a3a;
-  border-color: #e67e22;
+  border-color: #f39c12;
 }
 
-.comedor-actions .btn-editar:hover {
+.projects .btn-primary:hover,
+.table .btn-primary:hover,
+.comedor-actions .btn-primary:hover,
+.comedor-actions .btn-ver:hover {
   background: #e67e22;
-  border-color: #d35400;
+  border-color: #e67e22;
+  color: #fff;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3);
 }
 
+/* Botón Editar - Azul */
+.projects .btn-editar,
+.table .btn-editar,
+.comedor-actions .btn-editar {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.projects .btn-editar:hover,
+.table .btn-editar:hover,
+.comedor-actions .btn-editar:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Botón Eliminar - Rojo */
+.projects .btn-eliminar,
+.table .btn-eliminar,
 .comedor-actions .btn-eliminar {
   background: #ef4444;
   color: white;
   border-color: #dc2626;
 }
 
+.projects .btn-eliminar:hover,
+.table .btn-eliminar:hover,
 .comedor-actions .btn-eliminar:hover {
   background: #dc2626;
   border-color: #b91c1c;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
 }
 
 /* Iconos en botones */
+.projects .btn i,
+.table .btn i,
 .comedor-actions .btn i {
   font-size: 12px;
 }
 
 /* ============================================
-   MENSAJE SIN COMEDORES
+   MENSAJE SIN DATOS - Genérico
    ============================================ */
 
-.no-comedores-message {
+.no-comedores-message,
+.no-data-message,
+.empty-message {
   text-align: center;
   padding: 60px 20px;
   color: #9ca3af;
 }
 
-.no-comedores-message h3 {
+.no-comedores-message h3,
+.no-data-message h3,
+.empty-message h3 {
   color: #d1d5db;
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 12px;
 }
 
-.no-comedores-message p {
+.no-comedores-message p,
+.no-data-message p,
+.empty-message p {
   color: #9ca3af;
   font-size: 15px;
 }
@@ -796,19 +893,104 @@ div.filters-row input:focus {
   margin-top: 8px !important;
 }
 
+/* ============================================
+   FILTROS ADICIONALES (ej: filtro de provincia en ciudadanos)
+   ============================================ */
+
+/* Formulario de filtro adicional (provincia, etc) */
+#province-filter-form,
+.additional-filter-form {
+  background: #1e2a3a;
+  border: 1px solid #3d4f63;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+#province-filter-form label,
+.additional-filter-form label {
+  color: #e5e7eb;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+#province-filter-form select,
+#province-filter-form .form-select,
+.additional-filter-form select,
+.additional-filter-form .form-select {
+  background: #253446 !important;
+  border: 2px solid #f39c12 !important;
+  color: #e5e7eb !important;
+  border-radius: 6px !important;
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+  transition: all 0.3s ease !important;
+}
+
+#province-filter-form select:hover,
+#province-filter-form .form-select:hover,
+.additional-filter-form select:hover,
+.additional-filter-form .form-select:hover {
+  background: #2c3e50 !important;
+  border-color: #e67e22 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(243, 156, 18, 0.2) !important;
+}
+
+#province-filter-form select:focus,
+#province-filter-form .form-select:focus,
+.additional-filter-form select:focus,
+.additional-filter-form .form-select:focus {
+  background: #2c3e50 !important;
+  border-color: #f39c12 !important;
+  box-shadow: 0 0 0 0.3rem rgba(243, 156, 18, 0.25) !important;
+  outline: none !important;
+  transform: translateY(-1px);
+}
+
+#province-filter-form button[type="submit"],
+.additional-filter-form button[type="submit"] {
+  background: #10b981 !important;
+  color: white !important;
+  border: 2px solid #059669 !important;
+  border-radius: 6px !important;
+  padding: 10px 20px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#province-filter-form button[type="submit"]:hover,
+.additional-filter-form button[type="submit"]:hover {
+  background: #059669 !important;
+  border-color: #047857 !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
 /* Responsive para filtros */
 @media (max-width: 768px) {
   h2.text-center.display-4 {
     font-size: 1.5rem !important;
   }
 
-  .filter-row {
+  .filter-row,
+  .filters-row {
     flex-direction: column;
     align-items: stretch;
   }
 
   .filter-row select,
-  .filter-row input[type="text"] {
+  .filter-row input[type="text"],
+  .filters-row select,
+  .filters-row input[type="text"] {
     width: 100%;
   }
 
@@ -818,5 +1000,10 @@ div.filters-row input:focus {
 
   .search-actions .btn {
     width: 100%;
+  }
+
+  #province-filter-form,
+  .additional-filter-form {
+    padding: 16px;
   }
 }
