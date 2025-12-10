@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "import_export",
     "multiselectfield",
+    "auditlog",
     "rest_framework",
     "rest_framework_api_key",
     "drf_spectacular",
@@ -78,6 +79,7 @@ INSTALLED_APPS = [
     "rendicioncuentasmensual",
     "centrodefamilia",
     "celiaquia",
+    "audittrail",
 ]
 
 # Middleware (orden CORS correcto)
@@ -88,6 +90,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.admindocs.middleware.XViewMiddleware",

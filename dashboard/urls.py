@@ -8,6 +8,15 @@ from dashboard.views import (
     DataCalleSaltaDashboardView,
     DataCalleMisionesDashboardView,
     DataCalleGeneralDashboardView,
+    DataCalleChubutDashboardView,
+    DataCalleSanLuisDashboardView,
+    DataCalleEntreRiosDashboardView,
+    DataCalleMendozaDashboardView,
+    DataCalleSanJuanDashboardView,
+    DataCalleSantaCruzDashboardView,
+    DataCalleSantaFeDashboardView,
+    DataCalleLaPampaDashboardView,
+    DataCalleCatamarcaDashboardView,
 )
 
 urlpatterns = [
@@ -40,5 +49,50 @@ urlpatterns = [
         "dashboard/datacalle-general/",
         login_required(DataCalleGeneralDashboardView.as_view()),
         name="dashboard_datacalle_general",
+    ),
+    path(
+        "dashboard/datacalle-general-chubut/",
+        login_required(DataCalleChubutDashboardView.as_view()),
+        name="dashboard_datacalle_chubut",
+    ),
+    path(
+        "dashboard/datacalle-general-sanluis/",
+        login_required(DataCalleSanLuisDashboardView.as_view()),
+        name="dashboard_datacalle_sanluis",
+    ),
+    path(
+        "dashboard/datacalle-general-entrerios/",
+        login_required(DataCalleEntreRiosDashboardView.as_view()),
+        name="dashboard_datacalle_entrerios",
+    ),
+    path(
+        "dashboard/datacalle-general-mendoza/",
+        login_required(DataCalleMendozaDashboardView.as_view()),
+        name="dashboard_datacalle_mendoza",
+    ),
+    path(
+        "dashboard/datacalle-general-sanjuan/",
+        login_required(DataCalleSanJuanDashboardView.as_view()),
+        name="dashboard_datacalle_sanjuan",
+    ),
+    path(
+        "dashboard/datacalle-general-santacruz/",
+        login_required(DataCalleSantaCruzDashboardView.as_view()),
+        name="dashboard_datacalle_santacruz",
+    ),
+    path(
+        "dashboard/datacalle-general-santafe/",
+        login_required(DataCalleSantaFeDashboardView.as_view()),
+        name="dashboard_datacalle_santafe",
+    ),
+    path(
+        "dashboard/datacalle-general-lapampa/",
+        login_required(DataCalleLaPampaDashboardView.as_view()),
+        name="dashboard_datacalle_lapampa",
+    ),
+    path(
+        "dashboard/datacalle-general-catamarca/",
+        login_required(DataCalleCatamarcaDashboardView.as_view()),
+        name="dashboard_datacalle_catamarca",
     ),
 ]

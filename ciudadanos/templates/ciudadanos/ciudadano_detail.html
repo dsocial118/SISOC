@@ -7,6 +7,10 @@
             <p class="text-muted mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
         </div>
         <div class="btn-group">
+            {% if perms.auditlog.view_logentry %}
+                <a href="{% url 'audittrail:log_instance' 'ciudadanos' 'ciudadano' ciudadano.pk %}"
+                   class="btn btn-outline-secondary">Historial</a>
+            {% endif %}
             <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
                class="btn btn-outline-primary">Editar</a>
             <a href="{% url 'ciudadanos_eliminar' ciudadano.pk %}"

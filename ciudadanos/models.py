@@ -184,6 +184,9 @@ class CiudadanoPrograma(models.Model):
         verbose_name_plural = "CiudadanosProgramas"
         unique_together = (("ciudadano", "programas"),)
 
+    def __str__(self) -> str:
+        return f"{self.ciudadano} - {self.programas}"
+
 
 class HistorialCiudadanoProgramas(models.Model):
     fecha = models.DateTimeField(auto_now_add=True)

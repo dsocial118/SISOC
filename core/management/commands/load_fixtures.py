@@ -69,9 +69,9 @@ class Command(BaseCommand):
                 model = obj.object.__class__
                 pk_field = obj.object._meta.pk.attname
                 pk_value = getattr(obj.object, pk_field, None)
-                existed_before = bool(pk_value) and model.objects.filter(
-                    pk=pk_value
-                ).exists()
+                existed_before = (
+                    bool(pk_value) and model.objects.filter(pk=pk_value).exists()
+                )
 
                 # Guardar cada objeto en su propia transacción para evitar que un
                 # error deje la conexión marcada para rollback y bloquee el resto.
