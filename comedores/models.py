@@ -83,6 +83,9 @@ class Referente(models.Model):
         self.full_clean()
         return super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f"{self.apellido}, {self.nombre}"
+
     class Meta:
         verbose_name = "Referente"
         verbose_name_plural = "Referentes"
@@ -164,6 +167,11 @@ class EstadoGeneral(models.Model):
         null=True,
     )
 
+    def __str__(self):
+        return (
+            f"{self.estado_actividad} - {self.estado_proceso} - {self.estado_detalle}"
+        )
+
 
 class EstadoHistorial(models.Model):
     comedor = models.ForeignKey(
@@ -182,6 +190,9 @@ class EstadoHistorial(models.Model):
         blank=True,
     )
     fecha_cambio = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.estado_general.__str__()
 
     class Meta:
         ordering = ["-fecha_cambio"]
@@ -466,6 +477,11 @@ class Nomina(models.Model):
         verbose_name_plural = "Nominas"
         indexes = [models.Index(fields=["comedor"])]
 
+    def __str__(self):
+        comedor = self.comedor.nombre if self.comedor else "Comedor sin nombre"
+        ciudadano = str(self.ciudadano) if self.ciudadano else "Ciudadano no asignado"
+        return f"{ciudadano} en {comedor} ({self.get_estado_display()})"
+
 
 class ImagenComedor(models.Model):
     comedor = models.ForeignKey(
@@ -498,11 +514,19 @@ class Observacion(models.Model):
         verbose_name = "Observacion"
         verbose_name_plural = "Observaciones"
 
+    def __str__(self):
+        comedor = self.comedor.nombre if self.comedor else "Comedor sin nombre"
+        fecha = self.fecha_visita.date() if self.fecha_visita else "sin fecha"
+        return f"Observación {fecha} - {comedor}"
+
 
 class ValorComida(models.Model):
     tipo = models.CharField(max_length=50)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     fecha = models.DateField()
+
+    def __str__(self):
+        return f"{self.tipo}: ${self.valor} ({self.fecha})"
 
 
 class CategoriaComedor(models.Model):
