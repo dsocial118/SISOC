@@ -62,7 +62,10 @@ class AuditLogResolveMixin:
         # Chequear valores vacíos o None
         if value in (None, "", [], ()) or (
             isinstance(value, str)
-            and (value.strip().lower() == "none" or value.strip().lower().endswith(".none"))
+            and (
+                value.strip().lower() == "none"
+                or value.strip().lower().endswith(".none")
+            )
         ):
             return mark_safe("<em>No cargado</em>")
 
