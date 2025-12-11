@@ -72,13 +72,60 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         ctx["grupo_form"] = GrupoFamiliarForm(ciudadano=ciudadano)
         
         # Programas de transferencia
-        from ciudadanos.models import ProgramaTransferencia
+        from ciudadanos.models import ProgramaTransferencia, HistorialTransferencia
         ctx['programas_directos'] = ciudadano.programas_transferencia.filter(
             activo=True, categoria=ProgramaTransferencia.CATEGORIA_DIRECTA
         )
         ctx['programas_indirectos'] = ciudadano.programas_transferencia.filter(
             activo=True, categoria=ProgramaTransferencia.CATEGORIA_INDIRECTA
         )
+        
+        # Historial de transferencias
+        from datetime import datetime
+        hoy = datetime.now()
+        historial = ciudadano.historial_transferencias.filter(
+            anio__gte=hoy.year - 1
+        ).order_by('anio', 'mes')
+        
+        meses_nombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+        labels = [f"{meses_nombres[h.mes]}" for h in historial]
+        auh = [float(h.monto_auh) for h in historial]
+        prestacion = [float(h.monto_prestacion_alimentar) for h in historial]
+        centro_familia = [float(h.monto_centro_familia) for h in historial]
+        comedor = [float(h.monto_comedor) for h in historial]
+        
+        ctx['historial_labels'] = labels
+        ctx['historial_auh'] = auh
+        ctx['historial_prestacion'] = prestacion
+        ctx['historial_centro_familia'] = centro_familia
+        ctx['historial_comedor'] = comedor
+        
+        # Interacciones
+        ctx['interacciones'] = ciudadano.interacciones.all()[:10]
+        
+        # Celiaquía - ExpedienteCiudadano
+        try:
+            from celiaquia.models import ExpedienteCiudadano
+            expedientes = ExpedienteCiudadano.objects.filter(ciudadano=ciudadano).select_related(
+                'expediente', 'estado'
+            ).order_by('-creado_en')
+            ctx['expedientes_celiaquia'] = expedientes
+            if expedientes.exists():
+                ctx['expediente_actual'] = expedientes.first()
+        except:
+            ctx['expedientes_celiaquia'] = []
+        
+        # Centro de Familia - ParticipanteActividad
+        try:
+            from centrodefamilia.models import ParticipanteActividad
+            participaciones = ParticipanteActividad.objects.filter(
+                ciudadano=ciudadano
+            ).select_related(
+                'actividad_centro__centro', 'actividad_centro__actividad'
+            ).order_by('-fecha_registro')
+            ctx['participaciones_cdf'] = participaciones
+        except:
+            ctx['participaciones_cdf'] = []
         
         return ctx
 
@@ -129,6 +176,10 @@ class GrupoFamiliarCreateView(LoginRequiredMixin, FormView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["ciudadano"] = self.ciudadano
+        if self.request.POST:
+            data = self.request.POST.copy()
+            data['ciudadano_2'] = data.get('ciudadano_2_id', '')
+            kwargs['data'] = data
         return kwargs
 
     def form_valid(self, form):

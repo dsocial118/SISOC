@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from django.core.validators import MaxValueValidator as MaxValidator
 
 from core.models import Localidad, Municipio, Nacionalidad, Programa, Provincia, Sexo
 
@@ -197,6 +198,39 @@ class GrupoFamiliar(models.Model):
         return reverse("ciudadanos_ver", kwargs={"pk": self.ciudadano_1_id})
 
 
+class Interaccion(models.Model):
+    """Registro de interacciones con el ciudadano."""
+    
+    ciudadano = models.ForeignKey(Ciudadano, related_name='interacciones', on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=255, help_text="Ej: Rendición de cuentas, Contacto por teléfono, Relevamiento")
+    fecha = models.DateField()
+    responsable = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    ESTADO_COMPLETO = 'completo'
+    ESTADO_EN_PLAN = 'en_plan'
+    ESTADO_PENDIENTE = 'pendiente'
+    
+    ESTADO_CHOICES = [
+        (ESTADO_COMPLETO, 'Completo'),
+        (ESTADO_EN_PLAN, 'En Plan'),
+        (ESTADO_PENDIENTE, 'Pendiente'),
+    ]
+    
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default=ESTADO_PENDIENTE)
+    notas = models.TextField(null=True, blank=True)
+    
+    creado = models.DateTimeField(default=timezone.now, editable=False)
+    modificado = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = 'Interacción'
+        verbose_name_plural = 'Interacciones'
+    
+    def __str__(self):
+        return f"{self.ciudadano} - {self.tipo} ({self.fecha})"
+
+
 class CiudadanoPrograma(models.Model):
     programas = models.ForeignKey(
         Programa, related_name="programa_ciudadano", on_delete=models.CASCADE
@@ -243,6 +277,35 @@ class HistorialCiudadanoProgramas(models.Model):
 
     def __str__(self):
         return f"{self.fecha} - {self.accion} - {self.programa} - {self.ciudadano}"
+
+
+class HistorialTransferencia(models.Model):
+    """Historial mensual de transferencias por ciudadano."""
+    
+    ciudadano = models.ForeignKey(Ciudadano, related_name='historial_transferencias', on_delete=models.CASCADE)
+    mes = models.IntegerField(validators=[MinValueValidator(1), MaxValidator(12)])
+    anio = models.IntegerField(validators=[MinValueValidator(2000)])
+    
+    monto_auh = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    monto_prestacion_alimentar = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    monto_centro_familia = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    monto_comedor = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    creado = models.DateTimeField(default=timezone.now, editable=False)
+    modificado = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-anio', '-mes']
+        verbose_name = 'Historial de Transferencia'
+        verbose_name_plural = 'Historial de Transferencias'
+        unique_together = ('ciudadano', 'mes', 'anio')
+    
+    def __str__(self):
+        return f"{self.ciudadano} - {self.mes}/{self.anio}"
+    
+    @property
+    def total_mes(self):
+        return self.monto_auh + self.monto_prestacion_alimentar + self.monto_centro_familia + self.monto_comedor
 
 
 class ProgramaTransferencia(models.Model):
