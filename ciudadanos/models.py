@@ -123,6 +123,13 @@ class Ciudadano(models.Model):
             return None
         hoy = timezone.now().date()
         return hoy.year - self.fecha_nacimiento.year - ((hoy.month, hoy.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day))
+    
+    @property
+    def monto_total_mes(self):
+        """Calcula el monto total de programas activos."""
+        from django.db.models import Sum
+        total = self.programas_transferencia.filter(activo=True, monto__isnull=False).aggregate(Sum('monto'))['monto__sum']
+        return total or 0
 
     def get_absolute_url(self):
         return reverse("ciudadanos_ver", kwargs={"pk": self.pk})
@@ -236,3 +243,47 @@ class HistorialCiudadanoProgramas(models.Model):
 
     def __str__(self):
         return f"{self.fecha} - {self.accion} - {self.programa} - {self.ciudadano}"
+
+
+class ProgramaTransferencia(models.Model):
+    """Programas de transferencia directa e indirecta."""
+    
+    TIPO_AUH = 'auh'
+    TIPO_PRESTACION_ALIMENTAR = 'prestacion_alimentar'
+    TIPO_CENTRO_FAMILIA = 'centro_familia'
+    TIPO_COMEDOR = 'comedor'
+    TIPO_ADUANA = 'aduana'
+    
+    TIPO_CHOICES = [
+        (TIPO_AUH, 'AUH'),
+        (TIPO_PRESTACION_ALIMENTAR, 'Prestación Alimentar'),
+        (TIPO_CENTRO_FAMILIA, 'Centro de Familia'),
+        (TIPO_COMEDOR, 'Asiste a comedor'),
+        (TIPO_ADUANA, 'Aduana'),
+    ]
+    
+    CATEGORIA_DIRECTA = 'directa'
+    CATEGORIA_INDIRECTA = 'indirecta'
+    
+    CATEGORIA_CHOICES = [
+        (CATEGORIA_DIRECTA, 'Transferencia Directa'),
+        (CATEGORIA_INDIRECTA, 'Transferencia Indirecta'),
+    ]
+    
+    ciudadano = models.ForeignKey(Ciudadano, related_name='programas_transferencia', on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=30, choices=TIPO_CHOICES)
+    categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES)
+    monto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cantidad_texto = models.CharField(max_length=100, null=True, blank=True, help_text="Ej: '2 colchones'")
+    activo = models.BooleanField(default=True)
+    
+    creado = models.DateTimeField(default=timezone.now, editable=False)
+    modificado = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['categoria', 'tipo']
+        verbose_name = 'Programa de Transferencia'
+        verbose_name_plural = 'Programas de Transferencia'
+    
+    def __str__(self):
+        return f"{self.ciudadano} - {self.get_tipo_display()}"

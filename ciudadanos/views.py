@@ -70,6 +70,16 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             familia.append((relacion, familiar))
         ctx["familia"] = familia
         ctx["grupo_form"] = GrupoFamiliarForm(ciudadano=ciudadano)
+        
+        # Programas de transferencia
+        from ciudadanos.models import ProgramaTransferencia
+        ctx['programas_directos'] = ciudadano.programas_transferencia.filter(
+            activo=True, categoria=ProgramaTransferencia.CATEGORIA_DIRECTA
+        )
+        ctx['programas_indirectos'] = ciudadano.programas_transferencia.filter(
+            activo=True, categoria=ProgramaTransferencia.CATEGORIA_INDIRECTA
+        )
+        
         return ctx
 
 
