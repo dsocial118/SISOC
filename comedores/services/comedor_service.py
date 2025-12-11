@@ -43,7 +43,13 @@ logger = logging.getLogger("django")
 
 from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
-from comedores.services.filter_config import FIELD_MAP, FIELD_TYPES, TEXT_OPS, NUM_OPS
+from comedores.services.filter_config import (
+    CHOICE_OPS,
+    FIELD_MAP,
+    FIELD_TYPES,
+    NUM_OPS,
+    TEXT_OPS,
+)
 
 
 COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -52,6 +58,7 @@ COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
     allowed_ops={
         "text": TEXT_OPS,
         "number": NUM_OPS,
+        "choice": CHOICE_OPS,
     },
     field_casts={
         "latitud": float,
@@ -141,6 +148,8 @@ class ComedorService:
                 "referente",
                 "tipocomedor",
                 "ultimo_estado__estado_general__estado_actividad",
+                "ultimo_estado__estado_general__estado_proceso",
+                "ultimo_estado__estado_general__estado_detalle",
             )
             .annotate(
                 estado_general=Coalesce(
@@ -209,6 +218,8 @@ class ComedorService:
                         "referente",
                         "tipocomedor",
                         "ultimo_estado__estado_general__estado_actividad",
+                        "ultimo_estado__estado_general__estado_proceso",
+                        "ultimo_estado__estado_general__estado_detalle",
                     )
                     .annotate(
                         estado_general=Coalesce(
