@@ -10,6 +10,8 @@
     </ol>
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3">
             {% if request.user|has_group:"CoordinadorCeliaquia" %}
@@ -41,14 +43,29 @@
     </form>
     <div class="card shadow-sm">
         <div class="table-responsive">
-            <table class="table table-hover table-striped mb-0">
+            <table class="table table-hover table-striped projects mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th>ID</th>
-                        <th>Número de Expediente</th>
-                        <th>Fecha creación</th>
-                        <th>Provincia</th>
-                        <th>Estado</th>
+                        <th class="sortable" data-column="id">
+                            ID
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-column="numero">
+                            Número de Expediente
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-column="fecha">
+                            Fecha creación
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-column="provincia">
+                            Provincia
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-column="estado">
+                            Estado
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
                         {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
                             <th>Técnico</th>
                         {% endif %}
@@ -58,11 +75,11 @@
                 <tbody>
                     {% for exp in expedientes %}
                         <tr data-exp-id="{{ exp.pk }}">
-                            <td>{{ exp.pk }}</td>
-                            <td>{{ exp.numero_expediente|default:"-" }}</td>
-                            <td>{{ exp.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                            <td>{{ exp.provincia }}</td>
-                            <td>
+                            <td data-id="{{ exp.pk }}">{{ exp.pk }}</td>
+                            <td data-numero="{{ exp.numero_expediente|default:'-' }}">{{ exp.numero_expediente|default:"-" }}</td>
+                            <td data-fecha="{{ exp.fecha_creacion|date:'Y-m-d H:i' }}">{{ exp.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                            <td data-provincia="{{ exp.provincia }}">{{ exp.provincia }}</td>
+                            <td data-estado="{{ exp.estado.display_name }}">
                                 <span class="badge {% if exp.estado.nombre == 'CREADO' %}bg-secondary {% elif exp.estado.nombre == 'EN_ESPERA' %}bg-info {% elif exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}bg-warning {% elif exp.estado.nombre == 'RECEPCIONADO' %}bg-secondary {% elif exp.estado.nombre == 'ASIGNADO' %}bg-primary {% elif exp.estado.nombre == 'PROCESO_DE_CRUCE' %}bg-dark {% elif exp.estado.nombre == 'CRUCE_FINALIZADO' %}bg-success {% else %}bg-body-tertiary text-body{% endif %}">
                                     {{ exp.estado.display_name }}
                                 </span>
@@ -207,4 +224,6 @@
 {% block customJS %}
     <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
     <script src="{% static 'custom/js/celiaquia_list.js' %}"></script>
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}
