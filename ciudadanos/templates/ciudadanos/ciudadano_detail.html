@@ -1,76 +1,397 @@
 {% extends "includes/main.html" %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="mb-0">{{ ciudadano.nombre }} {{ ciudadano.apellido }}</h1>
-            <p class="text-muted mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
-        </div>
-        <div class="btn-group">
-            {% if perms.auditlog.view_logentry %}
-                <a href="{% url 'audittrail:log_instance' 'ciudadanos' 'ciudadano' ciudadano.pk %}"
-                   class="btn btn-outline-secondary">Historial</a>
-            {% endif %}
-            <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
-               class="btn btn-outline-primary">Editar</a>
-            <a href="{% url 'ciudadanos_eliminar' ciudadano.pk %}"
-               class="btn btn-outline-danger">Eliminar</a>
+<style>
+:root {
+    --navy-dark: #2C3E5F;
+    --navy-medium: #3A5270;
+    --navy-light: #4A5F7F;
+    --gold: #F5A623;
+    --green: #28A745;
+    --red: #DC3545;
+}
+
+.app-content {
+    background: linear-gradient(135deg, #1a2332 0%, #2C3E5F 100%);
+    min-height: 100vh;
+}
+
+.legajo-header {
+    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-medium) 100%);
+    padding: 2rem;
+    border-radius: 0 0 8px 8px;
+    margin: -2rem -2rem 0 -2rem;
+    color: white;
+}
+
+.legajo-header h1 {
+    font-family: Georgia, serif;
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.legajo-header .subtitle {
+    color: rgba(255,255,255,0.5);
+}
+
+.datos-card {
+    background: var(--navy-medium);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.datos-card-content {
+    display: grid;
+    grid-template-columns: 180px 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+.datos-card-simple {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.datos-card-simple h5 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.datos-card label, .datos-card strong {
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 0;
+}
+
+.datos-card .value {
+    color: white;
+    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 0;
+}
+
+.datos-card .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.datos-card .info-row:last-child {
+    border-bottom: none;
+}
+
+.info-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.tabla-legajo {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.tabla-legajo h5 {
+    font-weight: 600;
+}
+
+.tabla-legajo table {
+    color: white;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.tabla-legajo thead {
+    background: var(--navy-dark);
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+
+.tabla-legajo tbody td, .tabla-legajo tbody th {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-top: none;
+}
+
+.btn-success {
+    background: var(--green) !important;
+    border: none !important;
+}
+
+.btn-danger {
+    background: var(--red) !important;
+    border: none !important;
+}
+
+.btn-outline-light:hover {
+    background: rgba(255,255,255,0.1) !important;
+}
+
+.foto-placeholder {
+    width: 180px;
+    height: 180px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+}
+
+.datos-card h5 {
+    margin-bottom: 1.25rem;
+    font-weight: 600;
+}
+
+.nav-tabs-legajo {
+    padding: 1rem 1.5rem 0.5rem 1.5rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    border-bottom: none;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.nav-tabs-legajo .nav-link {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    color: white;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.875rem;
+    transition: all 0.3s;
+    flex-shrink: 0;
+}
+
+.nav-tabs-legajo .nav-link.active {
+    background: var(--gold);
+    color: var(--navy-dark);
+    font-weight: 600;
+    border-color: var(--gold);
+}
+
+.nav-tabs-legajo .nav-link:hover:not(.active) {
+    background: rgba(255,255,255,0.1);
+}
+
+.btn-edit-card {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-edit-card:hover {
+    background: var(--gold);
+    color: var(--navy-dark);
+    border-color: var(--gold);
+}
+</style>
+
+<div class="container-fluid p-0">
+    <div class="legajo-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>{{ ciudadano.nombre }} {{ ciudadano.apellido }}</h1>
+                <p class="subtitle mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
+            </div>
+            <div class="btn-group">
+                <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">Volver</a>
+                {% if perms.auditlog.view_logentry %}
+                    <a href="{% url 'audittrail:log_instance' 'ciudadanos' 'ciudadano' ciudadano.pk %}" class="btn btn-outline-light">Historial</a>
+                {% endif %}
+                <a href="{% url 'ciudadanos_editar' ciudadano.pk %}" class="btn btn-outline-light">Editar</a>
+            </div>
         </div>
     </div>
 
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title">Contacto</h5>
-                    </div>
-                    {% if ciudadano.foto %}
-                        <div class="text-center mb-3">
-                            <img src="{{ ciudadano.foto.url }}"
-                                 alt="Foto de {{ ciudadano.nombre }} {{ ciudadano.apellido }}"
-                                 class="img-fluid rounded shadow-sm"
-                                 style="max-height: 260px;
-                                        object-fit: cover" />
+    <ul class="nav nav-tabs nav-tabs-legajo" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#datos-personales">Datos personales</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#socioeconomico">Socioeconómico</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#pas">PAS</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#prestacion-alimentar">Prestación Alimentar</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#comedor">Comedor</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#cdf">CDF</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#celiaquia">Celiaquía</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#fch">FCH</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#situacion-calle">Situación de Calle</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#aduana">Aduana</a>
+        </li>
+    </ul>
+
+    <div class="tab-content px-4">
+        <div class="tab-pane fade show active" id="datos-personales">
+            <div class="row">
+                <div class="col-12">
+                    <div class="datos-card" style="position: relative;">
+                        <a href="{% url 'ciudadanos_editar' ciudadano.pk %}" class="btn-edit-card">
+                            <i class="fas fa-pen"></i>
+                        </a>
+                        <h5>Datos Personales</h5>
+                        <div class="datos-card-content">
+                            <div>
+                                {% if ciudadano.latitud and ciudadano.longitud %}
+                                    <div class="foto-placeholder" style="background: none; padding: 0;">
+                                        <iframe width="180" height="180" frameborder="0" style="border:0; border-radius: 8px;"
+                                            src="https://www.openstreetmap.org/export/embed.html?bbox={{ ciudadano.longitud|add:'-0.01' }},{{ ciudadano.latitud|add:'-0.01' }},{{ ciudadano.longitud|add:'0.01' }},{{ ciudadano.latitud|add:'0.01' }}&marker={{ ciudadano.latitud }},{{ ciudadano.longitud }}" allowfullscreen></iframe>
+                                    </div>
+                                {% elif ciudadano.foto %}
+                                    <img src="{{ ciudadano.foto.url }}" alt="Foto" class="foto-placeholder" style="object-fit: cover;">
+                                {% else %}
+                                    <div class="foto-placeholder">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="info-column">
+                                <div class="info-row">
+                            <strong>CUIL/CUIT:</strong>
+                            <span class="value">{{ ciudadano.cuil_cuit|default:'-' }}</span>
                         </div>
-                    {% endif %}
-                    <p class="mb-1">
-                        <strong>Sexo:</strong> {{ ciudadano.sexo|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Nacionalidad:</strong> {{ ciudadano.nacionalidad|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Teléfono:</strong> {{ ciudadano.telefono|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Email:</strong> {{ ciudadano.email|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Dirección:</strong> {{ ciudadano.calle }} {{ ciudadano.altura }} {{ ciudadano.barrio }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Provincia:</strong> {{ ciudadano.provincia|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Municipio:</strong> {{ ciudadano.municipio|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Localidad:</strong> {{ ciudadano.localidad|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Código postal:</strong> {{ ciudadano.codigo_postal|default:'-' }}
-                    </p>
+                        <div class="info-row">
+                            <strong>Apellido:</strong>
+                            <span class="value">{{ ciudadano.apellido }}</span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Nombre:</strong>
+                            <span class="value">{{ ciudadano.nombre }}</span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Tipo de Documento:</strong>
+                            <span class="value">{{ ciudadano.get_tipo_documento_display }}</span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Número de Documento:</strong>
+                            <span class="value">{{ ciudadano.documento|default:'-' }}</span>
+                        </div>
+                                <div class="info-row">
+                                    <strong>Provincia:</strong>
+                                    <span class="value">{{ ciudadano.provincia|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Municipio:</strong>
+                                    <span class="value">{{ ciudadano.municipio|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Localidad:</strong>
+                                    <span class="value">{{ ciudadano.localidad|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Calle y Altura:</strong>
+                                    <span class="value">{% if ciudadano.calle %}{{ ciudadano.calle }} {{ ciudadano.altura }}{% else %}-{% endif %}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Código Postal:</strong>
+                                    <span class="value">{{ ciudadano.codigo_postal|default:'-' }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="info-column">
+                                <div class="info-row">
+                                    <strong>Fecha de nacimiento:</strong>
+                                    <span class="value">{{ ciudadano.fecha_nacimiento|date:"d/m/Y"|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Edad:</strong>
+                                    <span class="value">{{ ciudadano.edad|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Género:</strong>
+                                    <span class="value">{{ ciudadano.sexo|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Estado Civil:</strong>
+                                    <span class="value">{{ ciudadano.get_estado_civil_display|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Nacionalidad:</strong>
+                                    <span class="value">{{ ciudadano.nacionalidad|default:'-' }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="info-column">
+                                <div class="info-row">
+                                    <strong>Teléfono:</strong>
+                                    <span class="value">{{ ciudadano.telefono|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Teléfono alternativo:</strong>
+                                    <span class="value">{{ ciudadano.telefono_alternativo|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Email:</strong>
+                                    <span class="value">{{ ciudadano.email|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Fecha de actualización:</strong>
+                                    <span class="value">{{ ciudadano.modificado|date:"d/m/Y H:i" }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Origen del Dato:</strong>
+                                    <span class="value">{{ ciudadano.get_origen_dato_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-8">
-            <div class="card h-100">
-                <div class="card-body">
+            
+            <div class="row">
+                <div class="col-12">
+                <div class="tabla-legajo">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">Grupo familiar</h5>
-                        <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
-                           class="btn btn-sm btn-primary">Agregar familiar</a>
+                        <h5 class="mb-0">Grupo Familiar</h5>
+                        <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Agregar
+                        </a>
                     </div>
                     {% if familia %}
                         <table class="table table-sm">
@@ -78,7 +399,7 @@
                                 <tr>
                                     <th>Nombre</th>
                                     <th>Vínculo</th>
-                                    <th>Estado del vínculo</th>
+                                    <th>Estado</th>
                                     <th>Conviven</th>
                                     <th></th>
                                 </tr>
@@ -87,35 +408,101 @@
                                 {% for relacion, familiar in familia %}
                                     <tr>
                                         <td>
-                                            <a href="{% url 'ciudadanos_ver' familiar.pk %}">{{ familiar }}</a>
+                                            <a href="{% url 'ciudadanos_ver' familiar.pk %}" style="color: #F5A623;">{{ familiar }}</a>
                                         </td>
                                         <td>{{ relacion.get_vinculo_display }}</td>
                                         <td>{{ relacion.get_estado_relacion_display|default:"-" }}</td>
                                         <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
                                         <td class="text-end">
-                                            <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}?next={{ request.path }}"
-                                               class="btn btn-sm btn-outline-danger">Eliminar</a>
+                                            <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}?next={{ request.path }}" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
                                         </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     {% else %}
-                        <p class="text-muted">Aún no hay familiares cargados.</p>
+                        <p style="color: rgba(255,255,255,0.5);">Aún no hay familiares cargados.</p>
                     {% endif %}
                 </div>
+                </div>
+            </div>
+            
+            {% if ciudadano.observaciones %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="datos-card-simple">
+                            <h5>Observaciones</h5>
+                            <p class="mb-0">{{ ciudadano.observaciones }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="tab-pane fade" id="socioeconomico">
+            <div class="datos-card-simple">
+                <h5>Información Socioeconómica</h5>
+                <p class="text-muted">Contenido en desarrollo...</p>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="pas">
+            <div class="datos-card-simple">
+                <h5>PAS</h5>
+                <p class="text-muted">Contenido en desarrollo...</p>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="prestacion-alimentar">
+            <div class="datos-card-simple">
+                <h5>Prestación Alimentar</h5>
+                <p class="text-muted">Contenido en desarrollo...</p>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="comedor">
+            <div class="datos-card-simple">
+                <h5>Comedor</h5>
+                <p class="text-muted">Contenido en desarrollo...</p>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="cdf">
+            <div class="datos-card-simple">
+                <h5>Centro de Familia</h5>
+                <p class="text-muted">Contenido en desarrollo...</p>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="celiaquia">
+            <div class="datos-card-simple">
+                <h5>Celiaquía</h5>
+                <p class="text-muted">Contenido en desarrollo...</p>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="fch">
+            <div class="datos-card-simple">
+                <h5>FCH</h5>
+                <p class="text-muted">Contenido en desarrollo...</p>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="situacion-calle">
+            <div class="datos-card-simple">
+                <h5>Situación de Calle</h5>
+                <p class="text-muted">Contenido en desarrollo...</p>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="aduana">
+            <div class="datos-card-simple">
+                <h5>Aduana</h5>
+                <p class="text-muted">Contenido en desarrollo...</p>
             </div>
         </div>
     </div>
-
-    {% if ciudadano.observaciones %}
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title">Observaciones</h5>
-                </div>
-                <p class="mb-0">{{ ciudadano.observaciones }}</p>
-            </div>
-        </div>
-    {% endif %}
+</div>
 {% endblock %}
