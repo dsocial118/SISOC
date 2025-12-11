@@ -332,9 +332,7 @@
                         <div class="col-md-6 mb-3{% if 'provincia_poblacion_destinataria' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                             {{ form.provincia_poblacion_destinataria|as_crispy_field }}
                         </div>
-                        <div class="col-md-6 mb-3{% if 'if_relevamiento' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                            {{ form.if_relevamiento|as_crispy_field }}
-                        </div>
+
                         <div class="col-md-6 mb-3{% if 'fecha_vencimiento_mandatos' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                             {{ form.fecha_vencimiento_mandatos|as_crispy_field }}
                         </div>
@@ -368,6 +366,9 @@
                             <div class="col-md-6 mb-3{% if 'material_difusion_vinculado' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                                 {{ form.material_difusion_vinculado|as_crispy_field }}
                             </div>
+                            <div class="col-md-6 mb-3{% if 'if_relevamiento' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                                {{ form.if_relevamiento|as_crispy_field }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -388,8 +389,8 @@
                     </div>
                 </div>
             {% endif %}
-            <!-- Campos específicos según tipo -->
-            {% if admision.tipo == 'renovacion' %}
+            <!-- Campos específicos para Renovación -->
+            {% if admision.tipo and admision.tipo == 'renovacion' %}
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Resolución de pago</h5>
