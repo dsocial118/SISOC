@@ -10,7 +10,7 @@ from django.views.generic import DetailView, ListView
 from django.db.models import Q
 
 from auditlog.models import LogEntry
-from audittrail.constants import TRACKED_MODELS
+from audittrail.constants import TRACKED_MODELS, tracked_model_choices
 from audittrail.forms import AuditLogFilterForm
 
 
@@ -58,25 +58,32 @@ class AuditLogResolveMixin:
         return change
 
     @staticmethod
-    def _format_value(value, field):
-        if value in (None, "", [], ()):
+    def _format_value(value, field):  # pylint: disable=too-many-return-statements
+        # Chequear valores vacíos o None
+        if value in (None, "", [], ()) or (
+            isinstance(value, str)
+            and (value.strip().lower() == "none" or value.strip().lower().endswith(".none"))
+        ):
             return mark_safe("<em>No cargado</em>")
-        if isinstance(value, str) and value.strip().lower() == "none":
-            return mark_safe("<em>No cargado</em>")
+
+        # Formatear booleanos
         if isinstance(value, bool):
             return "Sí" if value else "No"
+
+        # Formatear strings con patrón "app.Model.pk"
         if isinstance(value, str):
             cleaned = value.strip()
-            if cleaned.lower().endswith(".none"):
-                return mark_safe("<em>No cargado</em>")
-            # Patrones tipo "app.Model.pk" -> "Model #pk"
             dotted = cleaned.split(".")
             if len(dotted) >= 3 and re.fullmatch(r"[a-z_]+", dotted[0]) and dotted[1]:
                 model_label = dotted[1].replace("_", " ").title()
                 pk_part = dotted[-1]
-                if pk_part.isdigit():
-                    return f"{model_label} #{pk_part}"
-                return f"{model_label} ({pk_part})"
+                return (
+                    f"{model_label} #{pk_part}"
+                    if pk_part.isdigit()
+                    else f"{model_label} ({pk_part})"
+                )
+
+        # Formatear ForeignKeys
         if field and isinstance(field, (models.ForeignKey, models.OneToOneField)):
             try:
                 obj = field.remote_field.model.objects.filter(pk=value).first()
@@ -87,7 +94,8 @@ class AuditLogResolveMixin:
                         return f"{model_name} #{value}"
                     return label
             except Exception:  # noqa: BLE001
-                return value
+                pass
+
         return value
 
 
