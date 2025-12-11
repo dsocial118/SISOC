@@ -65,7 +65,9 @@ class AuditLogResolveMixin:
     def _get_fk_cache_key(field, value):
         return (field.remote_field.model, value)
 
-    def _format_value(self, value, field, fk_cache):  # pylint: disable=too-many-return-statements
+    def _format_value(
+        self, value, field, fk_cache
+    ):  # pylint: disable=too-many-return-statements
         # Chequear valores vacíos o None
         if value in (None, "", [], ()) or (
             isinstance(value, str)

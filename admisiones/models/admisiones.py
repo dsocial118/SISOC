@@ -82,7 +82,7 @@ class Admision(models.Model):
         ("iniciada", "Iniciada"),
         ("convenio_seleccionado", "Convenio seleccionado"),
         ("documentacion_en_proceso", "Documentación en proceso"),
-        ("documentacion_finalizada", "Documentación finalizada"),
+        ("documentacion_finalizada", "Documentación cargada"),
         ("documentacion_aprobada", "Documentación aprobada"),
         ("expediente_cargado", "Expediente cargado"),
         ("informe_tecnico_en_proceso", "Informe técnico en proceso"),
