@@ -32,7 +32,7 @@ from comedores.utils import (
     preload_valores_comida_cache,
 )
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
-from core.models import Provincia, Municipio, Localidad
+from core.models import Provincia, Municipio, Localidad, Nacionalidad
 from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -560,8 +560,38 @@ class ComedorService:
         return normalized.title()
 
     @staticmethod
+    def _apply_geo_alias(value):
+        """Reemplaza alias conocidos de nombres geográficos."""
+        if not value:
+            return ""
+        alias_map = {
+            "ciudad de buenos aires": "ciudad autonoma de buenos aires",
+            "ciudad autonoma de buenos aires": "ciudad autonoma de buenos aires",
+            "caba": "ciudad autonoma de buenos aires",
+            "capital federal": "ciudad autonoma de buenos aires",
+        }
+        text = str(value).replace("_", " ").replace("-", " ").lower()
+        text = " ".join(text.split())
+        return alias_map.get(text, value)
+
+    @staticmethod
     def _normalize_geo_value(value):
         """Normaliza nombres geográficos para comparación contra base local."""
+        if not value:
+            return ""
+        text = ComedorService._apply_geo_alias(value)
+        text = str(text)
+        text = text.replace("_", " ").replace("-", " ").lower()
+        text = (
+            unicodedata.normalize("NFKD", text)
+            .encode("ascii", "ignore")
+            .decode("utf-8")
+        )
+        text = " ".join(text.split())
+        return ComedorService._replace_number_words(text)
+
+    @staticmethod
+    def _normalize_text(value):
         if not value:
             return ""
         text = str(value)
@@ -571,8 +601,7 @@ class ComedorService:
             .encode("ascii", "ignore")
             .decode("utf-8")
         )
-        text = " ".join(text.split())
-        return ComedorService._replace_number_words(text)
+        return " ".join(text.split())
 
     @staticmethod
     def _match_geo_by_name(queryset, valor_api):
@@ -626,6 +655,16 @@ class ComedorService:
             "municipio": municipio_obj,
             "localidad": localidad_obj,
         }
+
+    @staticmethod
+    def _match_nacionalidad(valor_api):
+        objetivo = ComedorService._normalize_text(valor_api)
+        if not objetivo:
+            return None
+        for nacionalidad in Nacionalidad.objects.all():
+            if ComedorService._normalize_text(nacionalidad.nombre) == objetivo:
+                return nacionalidad
+        return None
 
     @staticmethod
     def _consultar_renaper_por_dni(dni):
@@ -733,6 +772,12 @@ class ComedorService:
             ciudadano_data["municipio"] = ubicacion["municipio"]
         if ubicacion["localidad"]:
             ciudadano_data["localidad"] = ubicacion["localidad"]
+
+        nacionalidad_obj = ComedorService._match_nacionalidad(
+            datos.get("nacionalidad_api")
+        )
+        if nacionalidad_obj:
+            ciudadano_data["nacionalidad"] = nacionalidad_obj
 
         if user and getattr(user, "is_authenticated", False):
             ciudadano_data["creado_por"] = user

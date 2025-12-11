@@ -136,10 +136,11 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <label for="estado" class="form-label">Estado</label>
-                                <select name="estado" id="estado" class="form-control">
+                                <select name="estado" id="estado" class="form-control" required>
                                     <option value="">Seleccione un estado</option>
                                     {% for value,label in estados %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
                                 </select>
+                                <div class="invalid-feedback">Seleccione un estado.</div>
                             </div>
                             <div class="col-md-12 mt-3">
                                 <label for="observaciones" class="form-label">Observaciones</label>
@@ -169,7 +170,36 @@
                     document.getElementById("ciudadano_id").value = ciudadanoId;
                     document.getElementById("ciudadano_nombre_display").textContent =
                         "Ciudadano seleccionado: " + ciudadanoNombre;
+                    document.getElementById("estado").value = "";
+                    document.getElementById("observaciones").value = "";
+                    document.getElementById("form-nomina").classList.remove("was-validated");
+                    document.getElementById("estado").classList.remove("is-invalid");
                 });
+            });
+
+            const formNomina = document.getElementById("form-nomina");
+            const estadoSelect = document.getElementById("estado");
+            const ciudadanoIdInput = document.getElementById("ciudadano_id");
+
+            formNomina.addEventListener("submit", function(event) {
+                let valid = true;
+
+                if (!ciudadanoIdInput.value) {
+                    valid = false;
+                }
+
+                if (!estadoSelect.value) {
+                    estadoSelect.classList.add("is-invalid");
+                    valid = false;
+                } else {
+                    estadoSelect.classList.remove("is-invalid");
+                }
+
+                if (!valid) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    formNomina.classList.add("was-validated");
+                }
             });
         });
     </script>

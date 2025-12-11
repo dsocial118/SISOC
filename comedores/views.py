@@ -208,6 +208,8 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        # Ensure self.object exists for CreateView context handling
+        self.object = None
         ciudadano_id = request.POST.get("ciudadano_id")
 
         if ciudadano_id:
