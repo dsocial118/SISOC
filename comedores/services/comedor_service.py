@@ -1,5 +1,6 @@
-import re
 import logging
+import re
+from datetime import date, datetime
 from typing import Any
 
 from django.db.models import Q, Count, Prefetch, QuerySet, Value
@@ -29,6 +30,7 @@ from comedores.utils import (
     normalize_field,
     preload_valores_comida_cache,
 )
+from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -473,6 +475,138 @@ class ComedorService:
             .only("id", "nombre", "apellido", "documento")
             .order_by("documento")[:max_results]
         )
+
+    @staticmethod
+    def _parse_fecha_renaper(fecha_raw):
+        if not fecha_raw:
+            return None
+        if isinstance(fecha_raw, date):
+            return fecha_raw
+        if isinstance(fecha_raw, datetime):
+            return fecha_raw.date()
+
+        value = str(fecha_raw).strip()
+        formatos = ("%Y-%m-%d", "%d/%m/%Y", "%Y%m%d")
+        for fmt in formatos:
+            try:
+                return datetime.strptime(value, fmt).date()
+            except ValueError:
+                continue
+
+        try:
+            value_iso = value.replace("Z", "")
+            return datetime.fromisoformat(value_iso).date()
+        except ValueError:
+            logger.warning(
+                "No se pudo parsear fecha de nacimiento RENAPER: %s", value
+            )
+            return None
+
+    @staticmethod
+    def _consultar_renaper_por_dni(dni):
+        """
+        Consulta RENAPER probando con los sexos disponibles porque el formulario
+        de búsqueda no solicita el dato.
+        """
+        last_error = None
+        for sexo in ("M", "F", "X"):
+            resultado = consultar_datos_renaper(dni, sexo)
+            if resultado.get("success"):
+                return resultado
+            last_error = resultado.get("error") or last_error
+        return {
+            "success": False,
+            "error": last_error or "No se encontraron datos en RENAPER.",
+        }
+
+    @staticmethod
+    def crear_ciudadano_desde_renaper(dni, user=None):
+        """
+        Intenta crear un ciudadano a partir de una consulta a RENAPER.
+        Si ya existe, devuelve el registro actual sin crearlo nuevamente.
+        """
+        dni_str = str(dni or "").strip()
+        if not dni_str.isdigit() or len(dni_str) < 7:
+            return {
+                "success": False,
+                "message": "Ingrese un DNI numérico válido para consultar RENAPER.",
+            }
+
+        existente = Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_str)
+        ).first()
+        if existente:
+            return {
+                "success": True,
+                "ciudadano": existente,
+                "created": False,
+                "message": "El ciudadano ya existe en la base.",
+            }
+
+        resultado = ComedorService._consultar_renaper_por_dni(dni_str)
+        if not resultado.get("success"):
+            return {
+                "success": False,
+                "message": resultado.get(
+                    "error", "No se encontraron datos en RENAPER."
+                ),
+            }
+
+        datos = resultado.get("data") or {}
+        apellido = (datos.get("apellido") or "").strip()
+        nombre = (datos.get("nombre") or "").strip()
+        fecha_nacimiento = ComedorService._parse_fecha_renaper(
+            datos.get("fecha_nacimiento")
+        )
+
+        if not apellido or not nombre or not fecha_nacimiento:
+            return {
+                "success": False,
+                "message": "RENAPER no devolvió datos mínimos para crear el ciudadano.",
+            }
+
+        try:
+            documento_valor = int(datos.get("dni") or dni_str)
+        except (TypeError, ValueError):
+            return {
+                "success": False,
+                "message": "RENAPER devolvió un DNI inválido.",
+            }
+
+        ciudadano_data = {
+            "apellido": apellido,
+            "nombre": nombre,
+            "documento": documento_valor,
+            "tipo_documento": datos.get("tipo_documento")
+            or Ciudadano.DOCUMENTO_DNI,
+            "fecha_nacimiento": fecha_nacimiento,
+        }
+
+        if datos.get("sexo"):
+            ciudadano_data["sexo_id"] = datos["sexo"]
+
+        if user and getattr(user, "is_authenticated", False):
+            ciudadano_data["creado_por"] = user
+            ciudadano_data["modificado_por"] = user
+
+        try:
+            ciudadano = Ciudadano.objects.create(**ciudadano_data)
+        except Exception:
+            logger.exception(
+                "No se pudo crear ciudadano desde RENAPER",
+                extra={"dni": dni_str, "datos": ciudadano_data},
+            )
+            return {
+                "success": False,
+                "message": "No se pudo crear el ciudadano con los datos de RENAPER.",
+            }
+
+        return {
+            "success": True,
+            "ciudadano": ciudadano,
+            "created": True,
+            "message": "Ciudadano creado automáticamente con datos de RENAPER.",
+        }
 
     @staticmethod
     def agregar_ciudadano_a_nomina(
