@@ -173,9 +173,27 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
 
         query = self.request.GET.get("query", "")
-        ciudadanos = (
-            ComedorService.buscar_ciudadanos_por_documento(query) if query else []
-        )
+        query_clean = query.strip()
+        ciudadanos = []
+        if query:
+            ciudadanos = ComedorService.buscar_ciudadanos_por_documento(query)
+            if (
+                not ciudadanos
+                and query_clean.isdigit()
+                and len(query_clean) >= 7
+            ):
+                renaper_result = ComedorService.crear_ciudadano_desde_renaper(
+                    query_clean, user=self.request.user
+                )
+                if renaper_result.get("success") and renaper_result.get("ciudadano"):
+                    ciudadanos = [renaper_result["ciudadano"]]
+                    mensaje = renaper_result.get("message")
+                    if renaper_result.get("created") and mensaje:
+                        messages.success(self.request, mensaje)
+                    elif mensaje:
+                        messages.info(self.request, mensaje)
+                elif renaper_result.get("message"):
+                    messages.warning(self.request, renaper_result["message"])
 
         context.update(
             {
@@ -191,6 +209,8 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        # Ensure self.object exists for CreateView context handling
+        self.object = None
         ciudadano_id = request.POST.get("ciudadano_id")
 
         if ciudadano_id:
