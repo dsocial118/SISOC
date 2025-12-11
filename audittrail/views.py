@@ -27,6 +27,10 @@ class AuditLogResolveMixin:
         changes = getattr(entry, "changes_display_dict", None) or {}
         model_cls = entry.content_type.model_class()
         resolved = {}
+        fk_cache = getattr(self, "_audit_fk_cache", None)
+        if fk_cache is None:
+            fk_cache = {}
+            self._audit_fk_cache = fk_cache
 
         for field_name, change in changes.items():
             field = None
@@ -40,8 +44,8 @@ class AuditLogResolveMixin:
             new_val = self._extract_value(change, "new")
 
             resolved[field_name] = {
-                "old": self._format_value(old_val, field),
-                "new": self._format_value(new_val, field),
+                "old": self._format_value(old_val, field, fk_cache),
+                "new": self._format_value(new_val, field, fk_cache),
             }
 
         return resolved
@@ -58,7 +62,10 @@ class AuditLogResolveMixin:
         return change
 
     @staticmethod
-    def _format_value(value, field):  # pylint: disable=too-many-return-statements
+    def _get_fk_cache_key(field, value):
+        return (field.remote_field.model, value)
+
+    def _format_value(self, value, field, fk_cache):  # pylint: disable=too-many-return-statements
         # Chequear valores vacíos o None
         if value in (None, "", [], ()) or (
             isinstance(value, str)
@@ -88,8 +95,16 @@ class AuditLogResolveMixin:
 
         # Formatear ForeignKeys
         if field and isinstance(field, (models.ForeignKey, models.OneToOneField)):
+            fk_key = self._get_fk_cache_key(field, value)
+            obj = fk_cache.get(fk_key)
+            if fk_key not in fk_cache:
+                try:
+                    obj = field.remote_field.model.objects.filter(pk=value).first()
+                except Exception:  # noqa: BLE001
+                    obj = None
+                fk_cache[fk_key] = obj
+
             try:
-                obj = field.remote_field.model.objects.filter(pk=value).first()
                 if obj:
                     label = str(obj)
                     if "object (" in label and ")" in label:
