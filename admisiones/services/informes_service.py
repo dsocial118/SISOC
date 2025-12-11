@@ -354,7 +354,7 @@ class InformeService:
                     html_docx, getattr(informe, "pk", None)
                 )
 
-            # Guardar archivos
+            # Guardar archivos - PDF final (sin prefijo "borrador")
             base_filename = (
                 slugify(f"{tipo}-informe-{informe.id}") or f"informe-{informe.id}"
             )
@@ -425,15 +425,17 @@ class InformeService:
                 informe=informe
             ).values_list("campo", flat=True)
 
-            # Convertir nombres de campo a verbose names para el template
-            campos_a_subsanar = []
+            # Incluir tanto nombres de campo como verbose names para el template
+            campos_a_subsanar = list(campos_a_subsanar_db)
             field_to_verbose = {
                 field.name: field.verbose_name for field in informe._meta.fields
             }
 
+            # Agregar también los verbose names para mostrar en la interfaz
             for campo in campos_a_subsanar_db:
                 verbose_name = field_to_verbose.get(campo, campo)
-                campos_a_subsanar.append(verbose_name)
+                if verbose_name not in campos_a_subsanar:
+                    campos_a_subsanar.append(verbose_name)
 
             try:
                 observacion = ObservacionGeneralInforme.objects.get(informe=informe)
@@ -741,16 +743,25 @@ class InformeService:
                 pdf_bytes, name=f"borrador-{informe.tipo}-{informe.id}.pdf"
             )
 
-            pdf_borrador, created = InformeTecnicoPDF.objects.update_or_create(
-                admision=informe.admision,
-                defaults={
-                    "tipo": informe.tipo,
-                    "informe_id": informe.id,
-                    "comedor": informe.admision.comedor,
-                    "archivo": pdf_content,
-                },
-            )
-            return pdf_borrador
+            # Solo crear/actualizar si no existe un PDF final (validado)
+            if informe.estado != "Validado":
+                pdf_borrador, created = InformeTecnicoPDF.objects.update_or_create(
+                    admision=informe.admision,
+                    defaults={
+                        "tipo": informe.tipo,
+                        "informe_id": informe.id,
+                        "comedor": informe.admision.comedor,
+                        "archivo": pdf_content,
+                    },
+                )
+                return pdf_borrador
+            else:
+                # Si ya existe un PDF final, no sobrescribir
+                logger.info(
+                    "No se genera PDF borrador porque ya existe PDF final validado para informe %s",
+                    informe.id,
+                )
+                return None
 
         except Exception:
             logger.exception(

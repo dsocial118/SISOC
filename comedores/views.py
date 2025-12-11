@@ -177,11 +177,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         ciudadanos = []
         if query:
             ciudadanos = ComedorService.buscar_ciudadanos_por_documento(query)
-            if (
-                not ciudadanos
-                and query_clean.isdigit()
-                and len(query_clean) >= 7
-            ):
+            if not ciudadanos and query_clean.isdigit() and len(query_clean) >= 7:
                 renaper_result = ComedorService.crear_ciudadano_desde_renaper(
                     query_clean, user=self.request.user
                 )

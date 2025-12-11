@@ -19,7 +19,7 @@
             <div class="btn-group" role="group">
                 {% if comedor.admision_id %}
                     <a href="{% url 'admisiones_tecnicos_editar' comedor.admision_id %}"
-                       class="btn btn-warning btn-sm">
+                       class="btn btn-warning btn-sm position-relative">
                         {% if request.user|has_group:"Tecnico Comedor" %}Editar{% endif %}
                         {% if request.user|has_group:"Abogado Dupla" %}Ver{% endif %}
                         {% if comedor.estado_legales == "A Rectificar" %}

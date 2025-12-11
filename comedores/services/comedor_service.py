@@ -510,9 +510,7 @@ class ComedorService:
             value_iso = value.replace("Z", "")
             return datetime.fromisoformat(value_iso).date()
         except ValueError:
-            logger.warning(
-                "No se pudo parsear fecha de nacimiento RENAPER: %s", value
-            )
+            logger.warning("No se pudo parsear fecha de nacimiento RENAPER: %s", value)
             return None
 
     @staticmethod
@@ -624,7 +622,10 @@ class ComedorService:
         if not objetivo:
             return None
         for obj in queryset:
-            if ComedorService._normalize_geo_value(getattr(obj, "nombre", "")) == objetivo:
+            if (
+                ComedorService._normalize_geo_value(getattr(obj, "nombre", ""))
+                == objetivo
+            ):
                 return obj
         return None
 
@@ -651,7 +652,9 @@ class ComedorService:
             municipio_qs = Municipio.objects.all()
             if provincia_obj:
                 municipio_qs = municipio_qs.filter(provincia=provincia_obj)
-            municipio_obj = ComedorService._match_geo_by_name(municipio_qs, municipio_api)
+            municipio_obj = ComedorService._match_geo_by_name(
+                municipio_qs, municipio_api
+            )
 
         if localidad_api:
             localidad_qs = Localidad.objects.all()
@@ -659,7 +662,9 @@ class ComedorService:
                 localidad_qs = localidad_qs.filter(municipio=municipio_obj)
             elif provincia_obj:
                 localidad_qs = localidad_qs.filter(municipio__provincia=provincia_obj)
-            localidad_obj = ComedorService._match_geo_by_name(localidad_qs, localidad_api)
+            localidad_obj = ComedorService._match_geo_by_name(
+                localidad_qs, localidad_api
+            )
 
         return {
             "provincia": provincia_obj,
@@ -752,8 +757,7 @@ class ComedorService:
             "apellido": apellido,
             "nombre": nombre,
             "documento": documento_valor,
-            "tipo_documento": datos.get("tipo_documento")
-            or Ciudadano.DOCUMENTO_DNI,
+            "tipo_documento": datos.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI,
             "fecha_nacimiento": fecha_nacimiento,
         }
 
