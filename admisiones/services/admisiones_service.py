@@ -259,6 +259,8 @@ class AdmisionService:
                 else "-"
             )
 
+            from django.utils.safestring import mark_safe
+
             badge_html = ""
             if admision.estado_legales == "A Rectificar":
                 badge_html = '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">Rectificar</span>'
@@ -269,7 +271,7 @@ class AdmisionService:
                 {
                     "url": reverse("admisiones_tecnicos_editar", args=[admision.pk]),
                     "type": "warning",
-                    "label": "Ver" + badge_html,
+                    "label": mark_safe("Ver" + badge_html),
                     "class": "position-relative",
                 }
             ]
