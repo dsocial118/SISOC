@@ -798,7 +798,7 @@ class LegalesService:
                 messages.error(
                     request, "Error al guardar el formulario Proyecto de Convenio."
                 )
-                return redirect(request.path_info)
+                return redirect("admisiones_legales_ver", pk=admision.pk)
 
             # Preparar contexto para generación de documentos
             informe = (
