@@ -26,13 +26,16 @@
 
 .legajo-header h1 {
     font-family: Georgia, serif;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.5px;
 }
 
 .legajo-header .subtitle {
-    color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.7);
+    font-size: 1rem;
+    font-weight: 400;
 }
 
 .datos-card {
@@ -214,13 +217,111 @@
     color: var(--navy-dark);
     border-color: var(--gold);
 }
+
+.programa-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    color: white;
+}
+
+.programa-card.auh {
+    background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+}
+
+.programa-card.prestacion {
+    background: linear-gradient(135deg, #FF8C42 0%, #FFB84D 100%);
+}
+
+.programa-card.centro-familia {
+    background: linear-gradient(135deg, #FFB84D 0%, #FFC870 100%);
+}
+
+.programa-card.comedor {
+    background: linear-gradient(135deg, #D63384 0%, #E74C9C 100%);
+}
+
+.programa-card.aduana {
+    background: linear-gradient(135deg, #F8A5C2 0%, #FFC0D9 100%);
+}
+
+.programa-card .icono {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.programa-card .info {
+    flex: 1;
+}
+
+.programa-card .nombre {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.programa-card .monto {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.monto-total-widget {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy-medium);
+    border: 2px solid white;
+    border-radius: 8px;
+    padding: 1.75rem 1.5rem;
+    text-align: center;
+    z-index: 1000;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    min-width: 180px;
+}
+
+.monto-total-widget small {
+    display: block;
+    margin-bottom: 0.75rem;
+    opacity: 0.85;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.monto-total-widget .valor {
+    font-size: 2.2rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.programas-section {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.programas-section h6 {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+}
 </style>
 
 <div class="container-fluid p-0">
     <div class="legajo-header">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <h1>{{ ciudadano.nombre }} {{ ciudadano.apellido }}</h1>
+                <h1>{{ ciudadano.nombre }} {{ ciudadano.apellido }} |</h1>
                 <p class="subtitle mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
             </div>
             <div class="btn-group">
@@ -385,47 +486,95 @@
             </div>
             
             <div class="row">
-                <div class="col-12">
-                <div class="tabla-legajo">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">Grupo Familiar</h5>
-                        <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}" class="btn btn-success btn-sm">
-                            <i class="fas fa-plus"></i> Agregar
-                        </a>
-                    </div>
-                    {% if familia %}
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Vínculo</th>
-                                    <th>Estado</th>
-                                    <th>Conviven</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for relacion, familiar in familia %}
+                <div class="col-md-8">
+                    <div class="tabla-legajo">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Grupo Familiar</h5>
+                            <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}" class="btn btn-success btn-sm">
+                                <i class="fas fa-plus"></i> Agregar
+                            </a>
+                        </div>
+                        {% if familia %}
+                            <table class="table table-sm">
+                                <thead>
                                     <tr>
-                                        <td>
-                                            <a href="{% url 'ciudadanos_ver' familiar.pk %}" style="color: #F5A623;">{{ familiar }}</a>
-                                        </td>
-                                        <td>{{ relacion.get_vinculo_display }}</td>
-                                        <td>{{ relacion.get_estado_relacion_display|default:"-" }}</td>
-                                        <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
-                                        <td class="text-end">
-                                            <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}?next={{ request.path }}" class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </td>
+                                        <th>Nombre</th>
+                                        <th>Vínculo</th>
+                                        <th>Estado</th>
+                                        <th>Conviven</th>
+                                        <th></th>
                                     </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p style="color: rgba(255,255,255,0.5);">Aún no hay familiares cargados.</p>
-                    {% endif %}
+                                </thead>
+                                <tbody>
+                                    {% for relacion, familiar in familia %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'ciudadanos_ver' familiar.pk %}" style="color: #F5A623;">{{ familiar }}</a>
+                                            </td>
+                                            <td>{{ relacion.get_vinculo_display }}</td>
+                                            <td>{{ relacion.get_estado_relacion_display|default:"-" }}</td>
+                                            <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
+                                            <td class="text-end">
+                                                <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}?next={{ request.path }}" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p style="color: rgba(255,255,255,0.5);">Aún no hay familiares cargados.</p>
+                        {% endif %}
+                    </div>
                 </div>
+                
+                <div class="col-md-4">
+                    <div class="programas-section">
+                        <h6>Programas transferencia directa</h6>
+                        <div class="programa-card auh">
+                            <div class="icono"><i class="fas fa-users"></i></div>
+                            <div class="info">
+                                <div class="nombre">AUH</div>
+                                <div class="monto">$108.062,00</div>
+                            </div>
+                        </div>
+                        <div class="programa-card prestacion">
+                            <div class="icono"><i class="fas fa-utensils"></i></div>
+                            <div class="info">
+                                <div class="nombre">Prestación Alimentar</div>
+                                <div class="monto">$108.062,00</div>
+                            </div>
+                        </div>
+                        <div class="programa-card centro-familia">
+                            <div class="icono"><i class="fas fa-home"></i></div>
+                            <div class="info">
+                                <div class="nombre">Centro de Familia</div>
+                                <div class="monto">$72.000,00</div>
+                            </div>
+                        </div>
+                        
+                        <h6 style="margin-top: 1.5rem; margin-bottom: 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem;">Programas transferencia indirecta</h6>
+                        <div class="programa-card comedor">
+                            <div class="icono"><i class="fas fa-utensils"></i></div>
+                            <div class="info">
+                                <div class="nombre">Asiste a comedor</div>
+                                <div class="monto">$108.062,00</div>
+                            </div>
+                        </div>
+                        <div class="programa-card aduana">
+                            <div class="icono"><i class="fas fa-box"></i></div>
+                            <div class="info">
+                                <div class="nombre">Aduana</div>
+                                <div class="monto">2 colchones.</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 1rem; text-align: center; margin-top: 1.5rem;">
+                            <small style="display: block; margin-bottom: 0.5rem; opacity: 0.85; font-size: 0.8rem; font-weight: 500;">Monto total mes Dic 2025</small>
+                            <div style="font-size: 1.8rem; font-weight: bold; letter-spacing: 0.5px;">$318.124,00</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -504,5 +653,7 @@
             </div>
         </div>
     </div>
+    
+
 </div>
 {% endblock %}
