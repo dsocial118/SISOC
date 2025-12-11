@@ -1,14 +1,14 @@
 {% load custom_filters %}
 {% for organizacion in organizaciones %}
     <tr>
-        <td>
+        <td data-nombre="{{ organizacion.nombre }}">
             <a href="{% url 'organizacion_detalle' organizacion.id %}"
                class="font-weight-bold link-handler"
                title="Ver detalles">{{ organizacion.nombre }}</a>
         </td>
-        <td>{{ organizacion.cuit |default_if_none:"Sin información" }}</td>
-        <td>{{ organizacion.telefono | default_if_none:"Sin información" }}</td>
-        <td>{{ organizacion.email | default_if_none:"Sin información" }}</td>
+        <td data-cuit="{{ organizacion.cuit|default:'' }}">{{ organizacion.cuit |default_if_none:"Sin información" }}</td>
+        <td data-telefono="{{ organizacion.telefono|default:'' }}">{{ organizacion.telefono | default_if_none:"Sin información" }}</td>
+        <td data-email="{{ organizacion.email|default:'' }}">{{ organizacion.email | default_if_none:"Sin información" }}</td>
         <td class="project-actions text-right">
             <div class="btn-group" role="group">
                 <a href="{% url 'organizacion_detalle' organizacion.id %}"
