@@ -28,11 +28,24 @@ class ActividadCentroListView(LoginRequiredMixin, ListView):
             super()
             .get_queryset()
             .select_related("centro", "actividad", "actividad__categoria")
+            .order_by("centro__nombre", "actividad__nombre")
         )
         centro_id = self.request.GET.get("centro")
         if centro_id:
             queryset = queryset.filter(centro_id=centro_id)
         return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["table_headers"] = [
+            {"title": "Centro", "sortable": True, "sort_key": "centro"},
+            {"title": "Actividad", "sortable": True, "sort_key": "actividad"},
+            {"title": "Días", "sortable": True, "sort_key": "dias"},
+            {"title": "Horario Desde", "sortable": True, "sort_key": "horariosdesde"},
+            {"title": "Horario Hasta", "sortable": True, "sort_key": "horarioshasta"},
+            {"title": "Estado", "sortable": True, "sort_key": "estado"},
+        ]
+        return context
 
 
 class ActividadCentroCreateView(LoginRequiredMixin, CreateView):
