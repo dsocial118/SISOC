@@ -50,10 +50,30 @@ class Ciudadano(models.Model):
         Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
     codigo_postal = models.CharField(max_length=12, null=True, blank=True)
+    latitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     telefono = models.CharField(max_length=30, null=True, blank=True)
     telefono_alternativo = models.CharField(max_length=30, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
+
+    ESTADO_CIVIL_CHOICES = [
+        ('soltero', 'Soltero/a'),
+        ('casado', 'Casado/a'),
+        ('divorciado', 'Divorciado/a'),
+        ('viudo', 'Viudo/a'),
+        ('union_convivencial', 'Unión convivencial'),
+    ]
+    estado_civil = models.CharField(max_length=20, choices=ESTADO_CIVIL_CHOICES, null=True, blank=True)
+    cuil_cuit = models.CharField(max_length=13, null=True, blank=True)
+    
+    ORIGEN_DATO_CHOICES = [
+        ('anses', 'ANSES'),
+        ('renaper', 'RENAPER'),
+        ('manual', 'Carga Manual'),
+        ('migracion', 'Migración'),
+    ]
+    origen_dato = models.CharField(max_length=20, choices=ORIGEN_DATO_CHOICES, default='manual')
 
     observaciones = models.TextField(null=True, blank=True)
     foto = models.ImageField(upload_to="ciudadanos", blank=True, null=True)
@@ -95,6 +115,14 @@ class Ciudadano(models.Model):
     @property
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
+    
+    @property
+    def edad(self) -> int:
+        """Calcula la edad del ciudadano."""
+        if not self.fecha_nacimiento:
+            return None
+        hoy = timezone.now().date()
+        return hoy.year - self.fecha_nacimiento.year - ((hoy.month, hoy.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day))
 
     def get_absolute_url(self):
         return reverse("ciudadanos_ver", kwargs={"pk": self.pk})
