@@ -3,8 +3,12 @@
 {% block title %}Detalle auditoría{% endblock %}
 {% block titulo-pagina %}Detalle de auditoría{% endblock %}
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{% url 'inicio' %}">Inicio</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'audittrail:log_list' %}">Auditoría</a></li>
+    <li class="breadcrumb-item">
+        <a href="{% url 'inicio' %}">Inicio</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{% url 'audittrail:log_list' %}">Auditoría</a>
+    </li>
     <li class="breadcrumb-item active">Evento {{ entry.pk }}</li>
 {% endblock %}
 
@@ -18,7 +22,9 @@
                 <div class="card-body">
                     <dl class="row mb-0">
                         <dt class="col-sm-3">Fecha</dt>
-                        <dd class="col-sm-9">{{ entry.timestamp|date:"Y-m-d H:i:s" }}</dd>
+                        <dd class="col-sm-9">
+                            {{ entry.timestamp|date:"Y-m-d H:i:s" }}
+                        </dd>
 
                         <dt class="col-sm-3">Usuario</dt>
                         <dd class="col-sm-9">
@@ -30,16 +36,24 @@
                         </dd>
 
                         <dt class="col-sm-3">Modelo</dt>
-                        <dd class="col-sm-9">{{ entry.content_type.app_label }}.{{ entry.content_type.model }}</dd>
+                        <dd class="col-sm-9">
+                            {{ entry.content_type.app_label }}.{{ entry.content_type.model }}
+                        </dd>
 
                         <dt class="col-sm-3">ID de instancia</dt>
-                        <dd class="col-sm-9">#{{ entry.object_pk }}</dd>
+                        <dd class="col-sm-9">
+                            #{{ entry.object_pk }}
+                        </dd>
 
                         <dt class="col-sm-3">Evento</dt>
-                        <dd class="col-sm-9">{{ entry.get_action_display }}</dd>
+                        <dd class="col-sm-9">
+                            {{ entry.get_action_display }}
+                        </dd>
 
                         <dt class="col-sm-3">IP</dt>
-                        <dd class="col-sm-9">{{ entry.remote_addr|default:"-" }}</dd>
+                        <dd class="col-sm-9">
+                            {{ entry.remote_addr|default:"-" }}
+                        </dd>
                     </dl>
                 </div>
             </div>
