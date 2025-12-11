@@ -5,6 +5,8 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'cdi_ajax' as ajax_url %}
     <!-- Variables para evitar problemas de formateo -->
     {% with titulo_search='Buscar Centro Desarrollo Infantil' %}
@@ -29,7 +31,12 @@
                         <table class="table table-bordered table-striped projects">
                             <thead>
                                 <tr>
-                                    {% for header in table_headers %}<th>{{ header.title }}</th>{% endfor %}
+                                    {% for header in table_headers %}
+                                        <th {% if header.sortable %}class="sortable" data-column="{{ header.sort_key|default:header.title }}"{% endif %}>
+                                            {{ header.title }}
+                                            {% if header.sortable %}<i class="fas fa-sort sort-icon"></i>{% endif %}
+                                        </th>
+                                    {% endfor %}
                                     {% if show_actions %}
                                         <th style="width: 15%" class="notexport">Acciones</th>
                                     {% endif %}
@@ -39,7 +46,7 @@
                                 {% for item in centrodesarrolloinfantiles %}
                                     <tr>
                                         {% for field in fields %}
-                                            <td>
+                                            <td data-{{ field.name }}="{{ item|getattr:field.name }}">
                                                 {% if field.link_field %}
                                                     <a href="{% url field.link_url item.pk %}"
                                                        {% if field.link_class %}class="{{ field.link_class }}"{% endif %}
@@ -87,4 +94,7 @@
         {% endif %}
     </div>
 {% endblock %}
-{% block customJS %}{% endblock %}
+{% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}
