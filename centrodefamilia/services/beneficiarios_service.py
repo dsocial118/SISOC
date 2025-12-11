@@ -513,13 +513,13 @@ def get_beneficiarios_list_context():
     """Configuración para la lista de beneficiarios"""
     return {
         "table_headers": [
-            {"title": "CUIL", "width": "12%"},
-            {"title": "Apellido y Nombre", "width": "20%"},
-            {"title": "DNI", "width": "10%"},
-            {"title": "Género", "width": "8%"},
-            {"title": "Responsable", "width": "20%"},
-            {"title": "Provincia", "width": "15%"},
-            {"title": "Municipio", "width": "15%"},
+            {"title": "CUIL", "width": "12%", "sortable": True, "sort_key": "cuil"},
+            {"title": "Apellido y Nombre", "width": "20%", "sortable": True, "sort_key": "apellido_nombre"},
+            {"title": "DNI", "width": "10%", "sortable": True, "sort_key": "dni"},
+            {"title": "Género", "width": "8%", "sortable": True, "sort_key": "genero_display"},
+            {"title": "Responsable", "width": "20%", "sortable": True, "sort_key": "responsable_nombre"},
+            {"title": "Provincia", "width": "15%", "sortable": True, "sort_key": "provincia"},
+            {"title": "Municipio", "width": "15%", "sortable": True, "sort_key": "municipio"},
         ],
         "table_fields": [
             {"name": "cuil"},
@@ -545,13 +545,13 @@ def get_responsables_list_context():
     """Configuración para la lista de responsables"""
     return {
         "table_headers": [
-            {"title": "CUIL", "width": "15%"},
-            {"title": "Apellido y Nombre", "width": "25%"},
-            {"title": "DNI", "width": "10%"},
-            {"title": "Género", "width": "15%"},
-            {"title": "Beneficiarios", "width": "10%"},
-            {"title": "Provincia", "width": "15%"},
-            {"title": "Municipio", "width": "10%"},
+            {"title": "CUIL", "width": "15%", "sortable": True, "sort_key": "cuil"},
+            {"title": "Apellido y Nombre", "width": "25%", "sortable": True, "sort_key": "apellido_nombre"},
+            {"title": "DNI", "width": "10%", "sortable": True, "sort_key": "dni"},
+            {"title": "Género", "width": "15%", "sortable": True, "sort_key": "genero_display"},
+            {"title": "Beneficiarios", "width": "10%", "sortable": True, "sort_key": "cantidad_beneficiarios"},
+            {"title": "Provincia", "width": "15%", "sortable": True, "sort_key": "provincia"},
+            {"title": "Municipio", "width": "10%", "sortable": True, "sort_key": "municipio"},
         ],
         "table_fields": [
             {"name": "cuil"},
