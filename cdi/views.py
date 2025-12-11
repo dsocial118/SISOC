@@ -58,11 +58,11 @@ class CDIListView(LoginRequiredMixin, ListView):
 
         # Data table headers (formato compatible con data_table.html)
         context["table_headers"] = [
-            {"title": "Nombre"},
-            {"title": "Número Expediente"},
-            {"title": "Número Repi"},
-            {"title": "Organización"},
-            {"title": "Provincia"},
+            {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
+            {"title": "Número Expediente", "sortable": True, "sort_key": "numexpe"},
+            {"title": "Número Repi", "sortable": True, "sort_key": "numrepo"},
+            {"title": "Organización", "sortable": True, "sort_key": "organizacion"},
+            {"title": "Provincia", "sortable": True, "sort_key": "provincia"},
         ]
 
         # Fields para el componente data_table.html
@@ -149,11 +149,11 @@ def cdi_ajax(request):
             "centrodesarrolloinfantiles": page_obj,
             "request": request,
             "table_headers": [
-                {"title": "Nombre"},
-                {"title": "Número Expediente"},
-                {"title": "Número Repi"},
-                {"title": "Organización"},
-                {"title": "Provincia"},
+                {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
+                {"title": "Número Expediente", "sortable": True, "sort_key": "numexpe"},
+                {"title": "Número Repi", "sortable": True, "sort_key": "numrepo"},
+                {"title": "Organización", "sortable": True, "sort_key": "organizacion"},
+                {"title": "Provincia", "sortable": True, "sort_key": "provincia"},
             ],
             "fields": [
                 {"name": "nombre", "link_url": "cdi_detalle", "link_field": True},

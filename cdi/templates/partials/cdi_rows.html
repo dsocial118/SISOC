@@ -2,7 +2,7 @@
 {% for item in centrodesarrolloinfantiles %}
     <tr>
         {% for field in fields %}
-            <td>
+            <td data-{{ field.name }}="{{ item|getattr:field.name }}">
                 {% if field.link_field %}
                     <a href="{% url field.link_url item.pk %}"
                        {% if field.link_class %}class="{{ field.link_class }}"{% endif %}
