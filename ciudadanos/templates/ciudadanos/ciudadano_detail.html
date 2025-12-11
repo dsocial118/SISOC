@@ -3,8 +3,8 @@
 {% block content %}
 <style>
 :root {
-    --navy-dark: #2C3E5F;
-    --navy-medium: #3A5270;
+    --navy-dark: #232D4F;
+    --navy-medium: #232D4F;
     --navy-light: #4A5F7F;
     --gold: #F5A623;
     --green: #28A745;
@@ -12,30 +12,34 @@
 }
 
 .app-content {
-    background: linear-gradient(135deg, #1a2332 0%, #2C3E5F 100%);
+    background: linear-gradient(135deg, #3e5a7e 0%, #3e5a7e 100%);
     min-height: 100vh;
 }
 
 .legajo-header {
-    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy-medium) 100%);
-    padding: 2rem;
-    border-radius: 0 0 8px 8px;
-    margin: -2rem -2rem 0 -2rem;
+    background: #232D4F;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    margin: 0 0 1rem 0;
     color: white;
+    border-top: none;
+    margin-left: 1rem;
+    margin-right: 1rem;
 }
 
 .legajo-header h1 {
     font-family: Georgia, serif;
-    font-size: 2.5rem;
+    font-size: 1.8rem;
     font-weight: 600;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0;
     letter-spacing: 0.5px;
 }
 
 .legajo-header .subtitle {
-    color: rgba(255,255,255,0.7);
-    font-size: 1rem;
+    color: rgba(255,255,255,0.8);
+    font-size: 0.85rem;
     font-weight: 400;
+    display: none;
 }
 
 .datos-card {
@@ -171,24 +175,28 @@
     border-bottom: none;
     display: flex;
     gap: 0.5rem;
+    background: #3e5a7e;
 }
 
 .nav-tabs-legajo .nav-link {
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 20px;
+    background: #232D4F;
+    border: none;
+    border-radius: 6px;
     color: white;
-    padding: 0.5rem 1.25rem;
+    padding: 0.75rem 1.25rem;
     font-size: 0.875rem;
     transition: all 0.3s;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    height: auto;
 }
 
 .nav-tabs-legajo .nav-link.active {
     background: var(--gold);
-    color: var(--navy-dark);
+    color: #232D4F;
     font-weight: 600;
-    border-color: var(--gold);
+    border: none;
 }
 
 .nav-tabs-legajo .nav-link:hover:not(.active) {
@@ -310,10 +318,71 @@
 
 .programas-section h6 {
     color: white;
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 1.25rem;
     font-size: 0.95rem;
     letter-spacing: 0.3px;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+}
+
+.historial-card {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.historial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.historial-header h6 {
+    color: white;
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.periodo-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.periodo-selector .btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+.periodo-selector .btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--gold);
+}
+
+.mes-actual {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    min-width: 120px;
+    text-align: center;
+}
+
+.chart-container {
+    position: relative;
+    height: 600px;
+    margin-top: 1rem;
 }
 </style>
 
@@ -495,37 +564,38 @@
                             </a>
                         </div>
                         {% if familia %}
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Vínculo</th>
-                                        <th>Estado</th>
-                                        <th>Conviven</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for relacion, familiar in familia %}
-                                        <tr>
-                                            <td>
-                                                <a href="{% url 'ciudadanos_ver' familiar.pk %}" style="color: #F5A623;">{{ familiar }}</a>
-                                            </td>
-                                            <td>{{ relacion.get_vinculo_display }}</td>
-                                            <td>{{ relacion.get_estado_relacion_display|default:"-" }}</td>
-                                            <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
-                                            <td class="text-end">
-                                                <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}?next={{ request.path }}" class="btn btn-danger btn-sm">
-                                                    <i class="fas fa-trash"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 1rem; margin-bottom: 1rem;"></div>
+                            {% for relacion, familiar in familia %}
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <div>
+                                        <span style="color: rgba(255,255,255,0.7);">{{ relacion.get_vinculo_display }}:</span>
+                                        <span style="color: white; font-weight: 600; margin-left: 0.5rem;">{{ familiar.nombre }} {{ familiar.apellido }}</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 2rem;">
+                                        <span style="color: rgba(255,255,255,0.7);">Edad: <span style="color: white; font-weight: 600;">{{ familiar.edad|default:'-' }}</span></span>
+                                        <a href="{% url 'ciudadanos_ver' familiar.pk %}" style="color: #F5A623; text-decoration: underline; display: flex; align-items: center; gap: 0.5rem;">
+                                            Ver legajo <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         {% else %}
                             <p style="color: rgba(255,255,255,0.5);">Aún no hay familiares cargados.</p>
                         {% endif %}
+                    </div>
+                    
+                    <div class="historial-card">
+                        <div class="historial-header">
+                            <h6>Historial de Transferencia directa e indirecta</h6>
+                            <div class="periodo-selector">
+                                <button class="btn" onclick="cambiarMes(-1)"><i class="fas fa-chevron-left"></i></button>
+                                <span class="mes-actual" id="mes-actual">4 Diciembre 2025</span>
+                                <button class="btn" onclick="cambiarMes(1)"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="historialChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 
@@ -578,6 +648,57 @@
                 </div>
             </div>
             
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="tabla-legajo">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Interacciones</h5>
+                            <div class="d-flex gap-2">
+                                <input type="text" class="form-control form-control-sm" placeholder="Buscar" style="width: 200px; background: transparent; border-color: rgba(255,255,255,0.3); color: white;">
+                                <button class="btn btn-success btn-sm"><i class="fas fa-plus"></i></button>
+                                <button class="btn btn-outline-light btn-sm"><i class="fas fa-filter"></i></button>
+                            </div>
+                        </div>
+                        {% if interacciones %}
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Interacción</th>
+                                        <th>Fecha</th>
+                                        <th>Responsable</th>
+                                        <th>Estado</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for interaccion in interacciones %}
+                                        <tr>
+                                            <td>{{ interaccion.tipo }}</td>
+                                            <td><i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}</td>
+                                            <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                            <td>
+                                                {% if interaccion.estado == 'completo' %}
+                                                    <span class="badge" style="background: var(--green);">Completo</span>
+                                                {% elif interaccion.estado == 'en_plan' %}
+                                                    <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                {% else %}
+                                                    <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <button class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
             {% if ciudadano.observaciones %}
                 <div class="row mt-3">
                     <div class="col-12">
@@ -592,7 +713,7 @@
         
         <div class="tab-pane fade" id="socioeconomico">
             <div class="datos-card-simple">
-                <h5>Información Socioeconómica</h5>
+                <h5>Socioeconómico</h5>
                 <p class="text-muted">Contenido en desarrollo...</p>
             </div>
         </div>
@@ -621,14 +742,95 @@
         <div class="tab-pane fade" id="cdf">
             <div class="datos-card-simple">
                 <h5>Centro de Familia</h5>
-                <p class="text-muted">Contenido en desarrollo...</p>
+                {% if participaciones_cdf %}
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Centro</th>
+                                <th>Actividad</th>
+                                <th>Estado</th>
+                                <th>Fecha Registro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for participacion in participaciones_cdf %}
+                                <tr>
+                                    <td>{{ participacion.actividad_centro.centro.nombre }}</td>
+                                    <td>{{ participacion.actividad_centro.actividad.nombre }}</td>
+                                    <td>
+                                        {% if participacion.estado == 'inscrito' %}
+                                            <span class="badge" style="background: var(--green);">Inscrito</span>
+                                        {% elif participacion.estado == 'lista_espera' %}
+                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Lista Espera</span>
+                                        {% else %}
+                                            <span class="badge" style="background: rgba(255,255,255,0.2);">Dado de Baja</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ participacion.fecha_registro|date:"d/m/Y" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p style="color: rgba(255,255,255,0.5);">No hay participaciones registradas.</p>
+                {% endif %}
             </div>
         </div>
         
         <div class="tab-pane fade" id="celiaquia">
             <div class="datos-card-simple">
                 <h5>Celiaquía</h5>
-                <p class="text-muted">Contenido en desarrollo...</p>
+                {% if expediente_actual %}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <small style="color: rgba(255,255,255,0.7);">Estado Expediente</small>
+                            <div style="font-size: 0.95rem; color: white; margin-top: 0.25rem;">{{ expediente_actual.expediente.estado.nombre }}</div>
+                        </div>
+                        <div>
+                            <small style="color: rgba(255,255,255,0.7);">Estado Legajo</small>
+                            <div style="font-size: 0.95rem; color: white; margin-top: 0.25rem;">{{ expediente_actual.estado.nombre }}</div>
+                        </div>
+                        <div>
+                            <small style="color: rgba(255,255,255,0.7);">Resultado Cruce</small>
+                            <div style="font-size: 0.95rem; color: white; margin-top: 0.25rem;">{{ expediente_actual.get_resultado_sintys_display }}</div>
+                        </div>
+                        <div>
+                            <small style="color: rgba(255,255,255,0.7);">Estado Cupo</small>
+                            <div style="font-size: 0.95rem; color: white; margin-top: 0.25rem;">{{ expediente_actual.get_estado_cupo_display }}</div>
+                        </div>
+                        <div>
+                            <small style="color: rgba(255,255,255,0.7);">Titular Activo</small>
+                            <div style="font-size: 0.95rem; color: white; margin-top: 0.25rem;">{{ expediente_actual.es_titular_activo|yesno:"Si,No" }}</div>
+                        </div>
+                        <div>
+                            <small style="color: rgba(255,255,255,0.7);">Revision Tecnico</small>
+                            <div style="font-size: 0.95rem; color: white; margin-top: 0.25rem;">{{ expediente_actual.get_revision_tecnico_display }}</div>
+                        </div>
+                    </div>
+                    {% if expedientes_celiaquia.count > 1 %}
+                        <h6 style="margin-top: 1.5rem; margin-bottom: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">Historial de Expedientes</h6>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Estado</th>
+                                    <th>Cupo</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for exp in expedientes_celiaquia %}
+                                    <tr>
+                                        <td>{{ exp.estado.nombre }}</td>
+                                        <td>{{ exp.get_estado_cupo_display }}</td>
+                                        <td>{{ exp.creado_en|date:"d/m/Y H:i" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                {% else %}
+                    <p style="color: rgba(255,255,255,0.5);">No hay expedientes de celiaquía registrados.</p>
+                {% endif %}
             </div>
         </div>
         
@@ -656,4 +858,100 @@
     
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+let mesActual = new Date().getMonth() + 1;
+let anioActual = new Date().getFullYear();
+const mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+function cambiarMes(direccion) {
+    mesActual += direccion;
+    if (mesActual > 12) {
+        mesActual = 1;
+        anioActual++;
+    } else if (mesActual < 1) {
+        mesActual = 12;
+        anioActual--;
+    }
+    actualizarGrafico();
+}
+
+function actualizarGrafico() {
+    document.getElementById('mes-actual').textContent = mesActual + ' ' + mesesNombres[mesActual] + ' ' + anioActual;
+    
+    const ctx = document.getElementById('historialChart').getContext('2d');
+    if (window.historialChartInstance) {
+        window.historialChartInstance.destroy();
+    }
+    
+    window.historialChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ historial_labels|safe }},
+            datasets: [
+                {
+                    label: 'AUH',
+                    data: {{ historial_auh|safe }},
+                    backgroundColor: '#FF8C42',
+                    borderRadius: 0
+                },
+                {
+                    label: 'Prestación Alimentar',
+                    data: {{ historial_prestacion|safe }},
+                    backgroundColor: '#FFB84D',
+                    borderRadius: 0
+                },
+                {
+                    label: 'Centro de Familia',
+                    data: {{ historial_centro_familia|safe }},
+                    backgroundColor: '#D63384',
+                    borderRadius: 0
+                },
+                {
+                    label: 'Comedor',
+                    data: {{ historial_comedor|safe }},
+                    backgroundColor: '#F8A5C2',
+                    borderRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'x',
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        color: 'rgba(255,255,255,0.1)'
+                    },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.7)'
+                    }
+                },
+                y: {
+                    stacked: true,
+                    max: 500,
+                    grid: {
+                        color: 'rgba(255,255,255,0.1)'
+                    },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.7)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarGrafico();
+});
+</script>
 {% endblock %}
