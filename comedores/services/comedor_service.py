@@ -2,6 +2,7 @@ import logging
 import re
 from datetime import date, datetime
 from typing import Any
+import unicodedata
 
 from django.db.models import Q, Count, Prefetch, QuerySet, Value
 from django.db import transaction
@@ -31,6 +32,7 @@ from comedores.utils import (
     preload_valores_comida_cache,
 )
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from core.models import Provincia, Municipio, Localidad
 from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -503,6 +505,129 @@ class ComedorService:
             return None
 
     @staticmethod
+    def _replace_number_words(text):
+        """Convierte palabras de números al comienzo del string a dígitos."""
+        if not text:
+            return ""
+        numbers = {
+            "uno": "1",
+            "una": "1",
+            "dos": "2",
+            "tres": "3",
+            "cuatro": "4",
+            "cinco": "5",
+            "seis": "6",
+            "siete": "7",
+            "ocho": "8",
+            "nueve": "9",
+            "diez": "10",
+            "once": "11",
+            "doce": "12",
+            "trece": "13",
+            "catorce": "14",
+            "quince": "15",
+            "dieciseis": "16",
+            "dieciséis": "16",
+            "diecisiete": "17",
+            "dieciocho": "18",
+            "diecinueve": "19",
+            "veinte": "20",
+            "veintiuno": "21",
+            "veintidos": "22",
+            "veintidós": "22",
+            "veintitres": "23",
+            "veintitrés": "23",
+            "veinticuatro": "24",
+            "veinticinco": "25",
+            "veintiseis": "26",
+            "veintiséis": "26",
+            "veintisiete": "27",
+            "veintiocho": "28",
+            "veintinueve": "29",
+            "treinta": "30",
+        }
+        parts = text.split()
+        if parts and parts[0] in numbers:
+            parts[0] = numbers[parts[0]]
+        return " ".join(parts)
+
+    @staticmethod
+    def _to_camel_case(value):
+        """Normaliza espacios y aplica Title Case básico."""
+        if not value:
+            return ""
+        normalized = " ".join(str(value).strip().split())
+        return normalized.title()
+
+    @staticmethod
+    def _normalize_geo_value(value):
+        """Normaliza nombres geográficos para comparación contra base local."""
+        if not value:
+            return ""
+        text = str(value)
+        text = text.replace("_", " ").replace("-", " ").lower()
+        text = (
+            unicodedata.normalize("NFKD", text)
+            .encode("ascii", "ignore")
+            .decode("utf-8")
+        )
+        text = " ".join(text.split())
+        return ComedorService._replace_number_words(text)
+
+    @staticmethod
+    def _match_geo_by_name(queryset, valor_api):
+        """
+        Busca coincidencia exacta por nombre normalizado en un queryset pequeño
+        (provincias/municipios/localidades).
+        """
+        objetivo = ComedorService._normalize_geo_value(valor_api)
+        if not objetivo:
+            return None
+        for obj in queryset:
+            if ComedorService._normalize_geo_value(getattr(obj, "nombre", "")) == objetivo:
+                return obj
+        return None
+
+    @staticmethod
+    def _mapear_ubicacion_desde_renaper(datos):
+        """
+        Mapea provincia, municipio y localidad devolviendo instancias locales.
+        Usa coincidencia por nombre normalizado y un reemplazo básico de números.
+        """
+        provincia_api = datos.get("provincia_api")
+        municipio_api = datos.get("municipio_api")
+        localidad_api = datos.get("localidad_api")
+
+        provincia_obj = None
+        municipio_obj = None
+        localidad_obj = None
+
+        if provincia_api:
+            provincia_obj = ComedorService._match_geo_by_name(
+                Provincia.objects.all(), provincia_api
+            )
+
+        if municipio_api:
+            municipio_qs = Municipio.objects.all()
+            if provincia_obj:
+                municipio_qs = municipio_qs.filter(provincia=provincia_obj)
+            municipio_obj = ComedorService._match_geo_by_name(municipio_qs, municipio_api)
+
+        if localidad_api:
+            localidad_qs = Localidad.objects.all()
+            if municipio_obj:
+                localidad_qs = localidad_qs.filter(municipio=municipio_obj)
+            elif provincia_obj:
+                localidad_qs = localidad_qs.filter(municipio__provincia=provincia_obj)
+            localidad_obj = ComedorService._match_geo_by_name(localidad_qs, localidad_api)
+
+        return {
+            "provincia": provincia_obj,
+            "municipio": municipio_obj,
+            "localidad": localidad_obj,
+        }
+
+    @staticmethod
     def _consultar_renaper_por_dni(dni):
         """
         Consulta RENAPER probando con los sexos disponibles porque el formulario
@@ -553,8 +678,8 @@ class ComedorService:
             }
 
         datos = resultado.get("data") or {}
-        apellido = (datos.get("apellido") or "").strip()
-        nombre = (datos.get("nombre") or "").strip()
+        apellido = ComedorService._to_camel_case(datos.get("apellido"))
+        nombre = ComedorService._to_camel_case(datos.get("nombre"))
         fecha_nacimiento = ComedorService._parse_fecha_renaper(
             datos.get("fecha_nacimiento")
         )
@@ -585,6 +710,30 @@ class ComedorService:
         if datos.get("sexo"):
             ciudadano_data["sexo_id"] = datos["sexo"]
 
+        # Datos de contacto básicos desde RENAPER
+        ciudadano_data.update(
+            {
+                "calle": datos.get("calle") or None,
+                "altura": str(datos.get("altura")) if datos.get("altura") else None,
+                "piso_departamento": datos.get("piso_vivienda")
+                or datos.get("departamento_vivienda"),
+                "barrio": datos.get("barrio") or None,
+                "codigo_postal": (
+                    str(datos.get("codigo_postal"))
+                    if datos.get("codigo_postal")
+                    else None
+                ),
+            }
+        )
+
+        ubicacion = ComedorService._mapear_ubicacion_desde_renaper(datos)
+        if ubicacion["provincia"]:
+            ciudadano_data["provincia"] = ubicacion["provincia"]
+        if ubicacion["municipio"]:
+            ciudadano_data["municipio"] = ubicacion["municipio"]
+        if ubicacion["localidad"]:
+            ciudadano_data["localidad"] = ubicacion["localidad"]
+
         if user and getattr(user, "is_authenticated", False):
             ciudadano_data["creado_por"] = user
             ciudadano_data["modificado_por"] = user
@@ -606,6 +755,7 @@ class ComedorService:
             "ciudadano": ciudadano,
             "created": True,
             "message": "Ciudadano creado automáticamente con datos de RENAPER.",
+            "datos_api": resultado.get("datos_api"),
         }
 
     @staticmethod
