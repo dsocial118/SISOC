@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeCollapsibleSections();
     initializeRealTimeValidation();
     initializeProgressTracking();
+    moveTooltipsToLabels();
 });
 
 /**
@@ -379,6 +380,7 @@ function initializeRealTimeValidation() {
 
 /**
  * Valida un campo individual y actualiza su visualización
+ * SOLO APLICA A CAMPOS REQUERIDOS
  */
 function validateField(field, wrapper) {
     if (!wrapper) return;
@@ -386,17 +388,20 @@ function validateField(field, wrapper) {
     const value = field.value ? field.value.trim() : '';
     const isRequired = field.hasAttribute('required');
 
+    // Limpiar clases previas
     wrapper.classList.remove('field-validated', 'valid', 'invalid');
 
-    // Solo validar si el campo es realmente requerido
-    if (isRequired) {
-        if (value) {
-            wrapper.classList.add('field-validated', 'valid');
-        } else {
-            wrapper.classList.add('field-validated', 'invalid');
-        }
+    // CRÍTICO: Solo validar y mostrar indicador visual si el campo es requerido
+    if (!isRequired) {
+        return; // Salir temprano para campos opcionales
     }
-    // No agregar clases de validación a campos opcionales
+
+    // Aplicar validación solo a campos required
+    if (value) {
+        wrapper.classList.add('field-validated', 'valid');
+    } else {
+        wrapper.classList.add('field-validated', 'invalid');
+    }
 }
 
 // ============================================
@@ -601,6 +606,42 @@ function hideLoader(fieldName) {
         loader.classList.add('d-none');
         field.style.opacity = '1';
     }
+}
+
+// ============================================
+// MOVER TOOLTIPS AL LABEL
+// ============================================
+
+/**
+ * Mueve los tooltips desde debajo del input hasta junto al label
+ */
+function moveTooltipsToLabels() {
+    // Buscar todos los tooltips en el formulario
+    const tooltips = document.querySelectorAll('.field-tooltip');
+
+    tooltips.forEach(tooltip => {
+        // Encontrar el contenedor directo (la columna específica donde está el tooltip)
+        const directColumn = tooltip.closest('.col-md-2') ||
+                            tooltip.closest('.col-md-3') ||
+                            tooltip.closest('.col-md-4') ||
+                            tooltip.closest('.col-md-6');
+
+        if (directColumn) {
+            // Buscar el label SOLO dentro de esa columna específica
+            const label = directColumn.querySelector('label');
+
+            if (label) {
+                // Remover el tooltip de su posición actual
+                tooltip.remove();
+
+                // Insertarlo después del texto del label
+                label.appendChild(tooltip);
+
+                // Agregar clase para estilos específicos
+                tooltip.classList.add('tooltip-in-label');
+            }
+        }
+    });
 }
 
 // ============================================
