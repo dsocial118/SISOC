@@ -108,6 +108,13 @@
   border: 1px solid #374151;
 }
 
+/* Cards que contienen tablas necesitan overflow visible para el box-shadow del hover */
+.card:has(.table),
+.card:has(.projects),
+.card:has(.table-comedor-moderno) {
+  overflow: visible;
+}
+
 .card .card-header {
   background: #34495e;
   border-bottom: 2px solid #f39c12;
@@ -124,6 +131,7 @@
 .card .card-body {
   background: #2c3e50;
   padding: 28px;
+  overflow: visible;
 }
 
 /* TABLA MODERNA - Aplicable a cualquier tabla con .table o .projects */
@@ -133,6 +141,17 @@
   margin-bottom: 0;
   color: #e5e7eb;
   border-spacing: 0;
+}
+
+/* Fix para tablas con table-bordered y table-striped que cortan el box-shadow */
+.table-responsive {
+  overflow: visible !important;
+}
+
+.card-body.table-responsive,
+.card-body > .table-responsive {
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .table-comedor-moderno thead,
@@ -202,20 +221,29 @@
   color: #f39c12;
 }
 
+.table-comedor-moderno tbody,
+.projects tbody,
+.table tbody {
+  /* Dar espacio para el box-shadow del hover */
+  display: table-row-group;
+}
+
 .table-comedor-moderno tbody tr,
 .projects tbody tr,
 .table tbody tr {
   background: #1e2a3a;
   border-bottom: 1px solid #2c3e50;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .table-comedor-moderno tbody tr:hover,
 .projects tbody tr:hover,
 .table tbody tr:hover {
   background: #253446;
-  transform: scale(1.01);
-  box-shadow: 0 2px 8px rgba(243, 156, 18, 0.15);
+  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+  position: relative;
+  z-index: 1;
 }
 
 .table-comedor-moderno tbody tr:last-child,
@@ -357,7 +385,7 @@
   background: #e67e22;
   border-color: #e67e22;
   color: #fff;
-  transform: translateY(-2px) scale(1.05);
+  transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(243, 156, 18, 0.3);
 }
 
@@ -375,7 +403,7 @@
 .comedor-actions .btn-editar:hover {
   background: #2563eb;
   border-color: #2563eb;
-  transform: translateY(-2px) scale(1.05);
+  transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
@@ -393,7 +421,7 @@
 .comedor-actions .btn-eliminar:hover {
   background: #dc2626;
   border-color: #b91c1c;
-  transform: translateY(-2px) scale(1.05);
+  transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
 }
 
@@ -846,7 +874,7 @@ div.filters-row input:focus {
 .filters-row button[type="button"]:hover {
   background: #dc2626 !important;
   border-color: #b91c1c !important;
-  transform: translateY(-2px) scale(1.02) !important;
+  transform: translateY(-2px) !important;
   box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3) !important;
 }
 
@@ -967,7 +995,7 @@ div.filters-row input:focus {
 .additional-filter-form button[type="submit"]:hover {
   background: #059669 !important;
   border-color: #047857 !important;
-  transform: translateY(-2px) scale(1.02) !important;
+  transform: translateY(-2px) !important;
   box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3) !important;
 }
 
