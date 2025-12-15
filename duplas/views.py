@@ -57,11 +57,11 @@ class DuplaListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         # Data table config
         context["table_headers"] = [
-            {"title": "Nombre"},
-            {"title": "Coordinador"},
-            {"title": "Técnico/s"},
-            {"title": "Abogado"},
-            {"title": "Estado"},
+            {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
+            {"title": "Coordinador", "sortable": True, "sort_key": "coordinador_nombre"},
+            {"title": "Técnico/s", "sortable": True, "sort_key": "tecnicos_nombres"},
+            {"title": "Abogado", "sortable": True, "sort_key": "abogado_nombre"},
+            {"title": "Estado", "sortable": True, "sort_key": "estado"},
         ]
         context["table_fields"] = [
             {"name": "nombre", "link_field": True, "link_url": "dupla_detalle"},
@@ -71,8 +71,8 @@ class DuplaListView(LoginRequiredMixin, ListView):
             {"name": "estado"},
         ]
         context["table_actions"] = [
-            {"label": "Editar", "url_name": "dupla_editar", "type": "primary"},
-            {"label": "Eliminar", "url_name": "dupla_eliminar", "type": "danger"},
+            {"label": "Editar", "url_name": "dupla_editar", "type": "editar", "icon": "edit"},
+            {"label": "Eliminar", "url_name": "dupla_eliminar", "type": "eliminar", "icon": "trash-alt"},
         ]
 
         # Configuración para el search_bar con filtros avanzados
