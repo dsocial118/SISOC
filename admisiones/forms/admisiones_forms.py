@@ -91,6 +91,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         # dejando opcionales las resoluciones y montos (salvo renovaciones).
         campos_pago_opcionales = {f"resolucion_de_pago_{i}" for i in range(1, 7)}
         campos_pago_opcionales.update({f"monto_{i}" for i in range(1, 7)})
+        campos_pago_opcionales.add("if_relevamiento")
 
         for name, field in self.fields.items():
             if name in campos_pago_opcionales:
@@ -100,7 +101,8 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
 
         # Hacer obligatorios los campos de renovación si require_full es True y el tipo de admisión es 'renovacion'
         if admision and admision.tipo == "renovacion" and self.require_full:
-            for i in range(1, 7):
+            # Resoluciones 1-4 obligatorias, 5-6 opcionales
+            for i in range(1, 5):
                 if f"resolucion_de_pago_{i}" in self.fields:
                     self.fields[f"resolucion_de_pago_{i}"].required = True
                 if f"monto_{i}" in self.fields:
@@ -225,6 +227,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
         # dejando opcionales las resoluciones y montos (salvo renovaciones).
         campos_pago_opcionales = {f"resolucion_de_pago_{i}" for i in range(1, 7)}
         campos_pago_opcionales.update({f"monto_{i}" for i in range(1, 7)})
+        campos_pago_opcionales.add("if_relevamiento")
 
         for name, field in self.fields.items():
             if name in campos_pago_opcionales:
@@ -234,7 +237,8 @@ class InformeTecnicoBaseForm(forms.ModelForm):
 
         # Hacer obligatorios los campos de renovación si require_full es True y el tipo de admisión es 'renovacion'
         if admision and admision.tipo == "renovacion" and self.require_full:
-            for i in range(1, 7):
+            # Resoluciones 1-4 obligatorias, 5-6 opcionales
+            for i in range(1, 5):
                 if f"resolucion_de_pago_{i}" in self.fields:
                     self.fields[f"resolucion_de_pago_{i}"].required = True
                 if f"monto_{i}" in self.fields:
