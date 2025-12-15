@@ -134,21 +134,33 @@
                             {% endif %}
                             <td class="text-end">
                                 <a href="{% url 'expediente_detail' exp.pk %}"
-                                   class="btn btn-sm btn-outline-primary">Ver</a>
+                                   class="btn btn-primary"
+                                   title="Ver detalle del expediente">
+                                    <i class="fas fa-eye"></i>
+                                    Ver
+                                </a>
                                 <!-- PROVINCIA -->
                                 {% if request.user|has_group:"ProvinciaCeliaquia" %}
                                     {% if exp.estado.nombre == 'CREADO' %}
                                         <a href="{% url 'expediente_update' exp.pk %}"
-                                           class="btn btn-sm btn-outline-secondary">Editar</a>
+                                           class="btn btn-editar"
+                                           title="Editar expediente">
+                                            <i class="fas fa-edit"></i>
+                                            Editar
+                                        </a>
                                         <button type="button"
-                                                class="btn btn-sm btn-primary js-process"
-                                                data-process-url="{% url 'expediente_procesar' exp.pk %}">
+                                                class="btn btn-secondary js-process"
+                                                data-process-url="{% url 'expediente_procesar' exp.pk %}"
+                                                title="Procesar expediente">
+                                            <i class="fas fa-cog"></i>
                                             Procesar
                                         </button>
                                     {% elif exp.estado.nombre == 'EN_ESPERA' %}
                                         <button type="button"
-                                                class="btn btn-sm btn-success js-confirm"
-                                                data-confirm-url="{% url 'expediente_confirm' exp.pk %}">
+                                                class="btn btn-secondary js-confirm"
+                                                data-confirm-url="{% url 'expediente_confirm' exp.pk %}"
+                                                title="Confirmar envío">
+                                            <i class="fas fa-check-circle"></i>
                                             Confirmar Envío
                                         </button>
                                     {% endif %}
@@ -157,16 +169,20 @@
                                 {% if request.user|has_group:"CoordinadorCeliaquia" %}
                                     {% if exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}
                                         <button type="button"
-                                                class="btn btn-sm btn-outline-success js-recepcionar"
-                                                data-recepcionar-url="{% url 'expediente_recepcionar' exp.pk %}">
+                                                class="btn btn-secondary js-recepcionar"
+                                                data-recepcionar-url="{% url 'expediente_recepcionar' exp.pk %}"
+                                                title="Recepcionar expediente">
+                                            <i class="fas fa-inbox"></i>
                                             Recepcionar
                                         </button>
                                     {% endif %}
                                     <!-- Mostrar Asignar solo si RECEPCIONADO o ASIGNADO -->
                                     {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
                                         <button type="button"
-                                                class="btn btn-sm btn-primary js-assign"
-                                                data-assign-url="{% url 'expediente_asignar_tecnico' exp.pk %}">
+                                                class="btn btn-secondary js-assign"
+                                                data-assign-url="{% url 'expediente_asignar_tecnico' exp.pk %}"
+                                                title="Asignar técnico">
+                                            <i class="fas fa-user-plus"></i>
                                             Asignar
                                         </button>
                                     {% endif %}

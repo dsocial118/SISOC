@@ -74,7 +74,11 @@
                                         <td data-provincia="{{ ciudadano.provincia|default:'' }}">{{ ciudadano.provincia|default:"-" }}</td>
                                         <td class="text-center">
                                             <a href="{% url 'ciudadanos_ver' ciudadano.pk %}"
-                                               class="btn btn-primary btn-sm">Ver detalle</a>
+                                               class="btn btn-primary"
+                                               title="Ver detalle del ciudadano">
+                                                <i class="fas fa-eye"></i>
+                                                Ver
+                                            </a>
                                         </td>
                                     </tr>
                                 {% empty %}

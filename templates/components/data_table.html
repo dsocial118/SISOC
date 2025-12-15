@@ -62,10 +62,20 @@
                                             {% if custom_actions %}
                                                 <!-- Acciones personalizadas para cada item -->
                                                 {% if item.actions %}
-                                                    <div class="btn-group" role="group">
+                                                    <div class="action-buttons" role="group">
                                                         {% for action in item.actions %}
                                                             <a href="{{ action.url }}"
-                                                               class="btn btn-{{ action.type|default:'primary' }} btn-sm {{ action.class|default:'' }}">
+                                                               class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
+                                                               title="{{ action.title|default:action.label }}">
+                                                                {% if action.icon %}
+                                                                    <i class="fas fa-{{ action.icon }}"></i>
+                                                                {% elif action.label == 'Ver' or action.label == 'Ver detalle' %}
+                                                                    <i class="fas fa-eye"></i>
+                                                                {% elif action.label == 'Editar' %}
+                                                                    <i class="fas fa-edit"></i>
+                                                                {% elif action.label == 'Eliminar' %}
+                                                                    <i class="fas fa-trash-alt"></i>
+                                                                {% endif %}
                                                                 {{ action.label }}
                                                             </a>
                                                         {% endfor %}
@@ -74,10 +84,20 @@
                                             {% else %}
                                                 <!-- Acciones estándar -->
                                                 {% if actions %}
-                                                    <div class="btn-group" role="group">
+                                                    <div class="action-buttons" role="group">
                                                         {% for action in actions %}
                                                             <a href="{% url action.url_name item.pk %}"
-                                                               class="btn btn-{{ action.type|default:'primary' }} btn-sm {{ action.class|default:'' }}">
+                                                               class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
+                                                               title="{{ action.title|default:action.label }}">
+                                                                {% if action.icon %}
+                                                                    <i class="fas fa-{{ action.icon }}"></i>
+                                                                {% elif action.label == 'Ver' %}
+                                                                    <i class="fas fa-eye"></i>
+                                                                {% elif action.label == 'Editar' %}
+                                                                    <i class="fas fa-edit"></i>
+                                                                {% elif action.label == 'Eliminar' %}
+                                                                    <i class="fas fa-trash-alt"></i>
+                                                                {% endif %}
                                                                 {{ action.label }}
                                                             </a>
                                                         {% endfor %}

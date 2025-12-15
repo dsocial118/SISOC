@@ -349,12 +349,23 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Asegurar que los contenedores de acciones en tablas estén bien alineados */
+.projects .action-buttons,
+.table .action-buttons,
+.projects .comedor-actions,
+.table .comedor-actions {
+  min-width: fit-content;
 }
 
 /* Botones dentro de tablas - Estilo general para .btn-primary, .btn-ver, etc */
 .projects .btn,
 .table .btn,
-.comedor-actions .btn {
+.comedor-actions .btn,
+.action-buttons .btn {
   padding: 8px 16px;
   font-size: 13px;
   border-radius: 6px;
@@ -366,13 +377,25 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
-/* Botón Primary - Dorado */
+/* Remover btn-sm cuando está dentro de tablas */
+.projects .btn.btn-sm,
+.table .btn.btn-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+/* Botón Ver / Primary / Info - Dorado */
 .projects .btn-primary,
 .table .btn-primary,
+.projects .btn-info,
+.table .btn-info,
 .comedor-actions .btn-primary,
-.comedor-actions .btn-ver {
+.comedor-actions .btn-ver,
+.action-buttons .btn-primary,
+.action-buttons .btn-info {
   background: #f39c12;
   color: #1e2a3a;
   border-color: #f39c12;
@@ -380,8 +403,12 @@
 
 .projects .btn-primary:hover,
 .table .btn-primary:hover,
+.projects .btn-info:hover,
+.table .btn-info:hover,
 .comedor-actions .btn-primary:hover,
-.comedor-actions .btn-ver:hover {
+.comedor-actions .btn-ver:hover,
+.action-buttons .btn-primary:hover,
+.action-buttons .btn-info:hover {
   background: #e67e22;
   border-color: #e67e22;
   color: #fff;
@@ -407,10 +434,14 @@
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
-/* Botón Eliminar - Rojo */
+/* Botón Eliminar / Danger - Rojo */
 .projects .btn-eliminar,
 .table .btn-eliminar,
-.comedor-actions .btn-eliminar {
+.projects .btn-danger,
+.table .btn-danger,
+.comedor-actions .btn-eliminar,
+.action-buttons .btn-eliminar,
+.action-buttons .btn-danger {
   background: #ef4444;
   color: white;
   border-color: #dc2626;
@@ -418,11 +449,33 @@
 
 .projects .btn-eliminar:hover,
 .table .btn-eliminar:hover,
-.comedor-actions .btn-eliminar:hover {
+.projects .btn-danger:hover,
+.table .btn-danger:hover,
+.comedor-actions .btn-eliminar:hover,
+.action-buttons .btn-eliminar:hover,
+.action-buttons .btn-danger:hover {
   background: #dc2626;
   border-color: #b91c1c;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Botón Secondary - Gris */
+.projects .btn-secondary,
+.table .btn-secondary,
+.action-buttons .btn-secondary {
+  background: #6b7280;
+  color: white;
+  border-color: #4b5563;
+}
+
+.projects .btn-secondary:hover,
+.table .btn-secondary:hover,
+.action-buttons .btn-secondary:hover {
+  background: #4b5563;
+  border-color: #374151;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
 }
 
 /* Iconos en botones */
