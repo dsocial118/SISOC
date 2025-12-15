@@ -1,0 +1,163 @@
+[
+  {
+    "model": "core.nacionalidad",
+    "pk": 1,
+    "fields": {
+      "nacionalidad": "Argentina"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 2,
+    "fields": {
+      "nacionalidad": "Boliviana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 3,
+    "fields": {
+      "nacionalidad": "Brasileña"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 4,
+    "fields": {
+      "nacionalidad": "Chilena"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 5,
+    "fields": {
+      "nacionalidad": "Colombiana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 6,
+    "fields": {
+      "nacionalidad": "Cubana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 7,
+    "fields": {
+      "nacionalidad": "Ecuatoriana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 8,
+    "fields": {
+      "nacionalidad": "Española"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 9,
+    "fields": {
+      "nacionalidad": "Mexicana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 10,
+    "fields": {
+      "nacionalidad": "Paraguaya"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 11,
+    "fields": {
+      "nacionalidad": "Peruana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 12,
+    "fields": {
+      "nacionalidad": "Uruguaya"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 13,
+    "fields": {
+      "nacionalidad": "Venezolana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 14,
+    "fields": {
+      "nacionalidad": "Alemana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 15,
+    "fields": {
+      "nacionalidad": "Francesa"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 16,
+    "fields": {
+      "nacionalidad": "Italiana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 17,
+    "fields": {
+      "nacionalidad": "Portuguesa"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 18,
+    "fields": {
+      "nacionalidad": "China"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 19,
+    "fields": {
+      "nacionalidad": "Japonesa"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 20,
+    "fields": {
+      "nacionalidad": "Coreana"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 21,
+    "fields": {
+      "nacionalidad": "Estadounidense"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 22,
+    "fields": {
+      "nacionalidad": "Canadiense"
+    }
+  },
+  {
+    "model": "core.nacionalidad",
+    "pk": 23,
+    "fields": {
+      "nacionalidad": "Otra"
+    }
+  }
+]
