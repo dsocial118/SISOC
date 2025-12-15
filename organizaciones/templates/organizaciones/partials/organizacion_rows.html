@@ -10,13 +10,25 @@
         <td data-telefono="{{ organizacion.telefono|default:'' }}">{{ organizacion.telefono | default_if_none:"Sin información" }}</td>
         <td data-email="{{ organizacion.email|default:'' }}">{{ organizacion.email | default_if_none:"Sin información" }}</td>
         <td class="project-actions text-right">
-            <div class="btn-group" role="group">
+            <div class="action-buttons" role="group">
                 <a href="{% url 'organizacion_detalle' organizacion.id %}"
-                   class="btn btn-primary btn-sm ver link-handler">Ver</a>
+                   class="btn btn-primary link-handler"
+                   title="Ver detalle de la organización">
+                    <i class="fas fa-eye"></i>
+                    Ver
+                </a>
                 <a href="{% url 'organizacion_editar' organizacion.id %}"
-                   class="btn btn-primary btn-sm editar link-handler">Editar</a>
+                   class="btn btn-editar link-handler"
+                   title="Editar organización">
+                    <i class="fas fa-edit"></i>
+                    Editar
+                </a>
                 <a href="{% url 'organizacion_eliminar' organizacion.id %}"
-                   class="btn btn-danger btn-sm eliminar link-handler">Eliminar</a>
+                   class="btn btn-eliminar link-handler"
+                   title="Eliminar organización">
+                    <i class="fas fa-trash-alt"></i>
+                    Eliminar
+                </a>
             </div>
         </td>
     </tr>

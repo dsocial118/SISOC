@@ -17,19 +17,29 @@
             {% endif %}
         </td>
         <td>
-            <div class="btn-group" role="group">
+            <div class="action-buttons" role="group">
                 <a href="{% url 'centro_detail' centro.id %}"
-                   class="btn btn-primary btn-sm">Ver</a>
+                   class="btn btn-primary"
+                   title="Ver detalle del centro">
+                    <i class="fas fa-eye"></i>
+                    Ver
+                </a>
                 <a href="{% url 'centro_update' centro.id %}"
-                   class="btn btn-primary btn-sm">Editar</a>
+                   class="btn btn-editar"
+                   title="Editar centro">
+                    <i class="fas fa-edit"></i>
+                    Editar
+                </a>
                 {% if request.user.is_superuser or request.user.groups.all.0.name == 'CDF SSE' %}
                     <form method="post"
                           action="{% url 'centro_delete' centro.id %}"
                           style="display:inline">
                         {% csrf_token %}
                         <button type="submit"
-                                class="btn btn-danger btn-sm"
+                                class="btn btn-eliminar"
+                                title="Eliminar centro"
                                 onclick="return confirm('¿Estás seguro de que deseas eliminar este centro? Esta acción no se puede deshacer.');">
+                            <i class="fas fa-trash-alt"></i>
                             Eliminar
                         </button>
                     </form>
