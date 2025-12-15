@@ -54,8 +54,8 @@
 
 .datos-card-content {
     display: grid;
-    grid-template-columns: 180px 1fr 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: 220px 1fr 1fr;
+    gap: 1.5rem;
 }
 
 .datos-card-simple {
@@ -446,12 +446,9 @@
                         </a>
                         <h5>Datos Personales</h5>
                         <div class="datos-card-content">
-                            <div>
+                            <div style="display: flex; justify-content: center; align-items: center;">
                                 {% if ciudadano.latitud and ciudadano.longitud %}
-                                    <div class="foto-placeholder" style="background: none; padding: 0;">
-                                        <iframe width="180" height="180" frameborder="0" style="border:0; border-radius: 8px;"
-                                            src="https://www.openstreetmap.org/export/embed.html?bbox={{ ciudadano.longitud|add:'-0.01' }},{{ ciudadano.latitud|add:'-0.01' }},{{ ciudadano.longitud|add:'0.01' }},{{ ciudadano.latitud|add:'0.01' }}&marker={{ ciudadano.latitud }},{{ ciudadano.longitud }}" allowfullscreen></iframe>
-                                    </div>
+                                    <div id="map" style="width: 450px; height: 450px; border-radius: 8px;"></div>
                                 {% elif ciudadano.foto %}
                                     <img src="{{ ciudadano.foto.url }}" alt="Foto" class="foto-placeholder" style="object-fit: cover;">
                                 {% else %}
@@ -463,25 +460,25 @@
                             
                             <div class="info-column">
                                 <div class="info-row">
-                            <strong>CUIL/CUIT:</strong>
-                            <span class="value">{{ ciudadano.cuil_cuit|default:'-' }}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>Apellido:</strong>
-                            <span class="value">{{ ciudadano.apellido }}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>Nombre:</strong>
-                            <span class="value">{{ ciudadano.nombre }}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>Tipo de Documento:</strong>
-                            <span class="value">{{ ciudadano.get_tipo_documento_display }}</span>
-                        </div>
-                        <div class="info-row">
-                            <strong>Número de Documento:</strong>
-                            <span class="value">{{ ciudadano.documento|default:'-' }}</span>
-                        </div>
+                                    <strong>CUIL/CUIT:</strong>
+                                    <span class="value">{{ ciudadano.cuil_cuit|default:'-' }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Apellido:</strong>
+                                    <span class="value">{{ ciudadano.apellido }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Nombre:</strong>
+                                    <span class="value">{{ ciudadano.nombre }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Tipo de Documento:</strong>
+                                    <span class="value">{{ ciudadano.get_tipo_documento_display }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <strong>Número de Documento:</strong>
+                                    <span class="value">{{ ciudadano.documento|default:'-' }}</span>
+                                </div>
                                 <div class="info-row">
                                     <strong>Provincia:</strong>
                                     <span class="value">{{ ciudadano.provincia|default:'-' }}</span>
@@ -525,9 +522,6 @@
                                     <strong>Nacionalidad:</strong>
                                     <span class="value">{{ ciudadano.nacionalidad|default:'-' }}</span>
                                 </div>
-                            </div>
-                            
-                            <div class="info-column">
                                 <div class="info-row">
                                     <strong>Teléfono:</strong>
                                     <span class="value">{{ ciudadano.telefono|default:'-' }}</span>
@@ -699,16 +693,27 @@
                 </div>
             </div>
             
-            {% if ciudadano.observaciones %}
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <div class="datos-card-simple">
-                            <h5>Observaciones</h5>
-                            <p class="mb-0">{{ ciudadano.observaciones }}</p>
+                    <div class="tabla-legajo">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Observaciones</h5>
+                            <div class="d-flex gap-2">
+                                <input type="text" class="form-control form-control-sm" placeholder="Buscar" style="width: 200px; background: transparent; border-color: rgba(255,255,255,0.3); color: white;">
+                                <button class="btn btn-success btn-sm"><i class="fas fa-plus"></i></button>
+                                <button class="btn btn-outline-light btn-sm"><i class="fas fa-filter"></i></button>
+                            </div>
                         </div>
+                        {% if ciudadano.observaciones %}
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <td>{{ ciudadano.observaciones }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                        {% endif %}
                     </div>
-                </div>
-            {% endif %}
         </div>
         
         <div class="tab-pane fade" id="socioeconomico">
@@ -860,6 +865,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+{% if google_maps_api_key %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
+{% endif %}
 <script>
 let mesActual = new Date().getMonth() + 1;
 let anioActual = new Date().getFullYear();
@@ -952,6 +960,31 @@ function actualizarGrafico() {
 
 document.addEventListener('DOMContentLoaded', function() {
     actualizarGrafico();
+    
+    {% if ciudadano.latitud and ciudadano.longitud %}
+    const mapElement = document.getElementById('map');
+    if (mapElement) {
+        const map = new google.maps.Map(mapElement, {
+            zoom: 15,
+            center: {
+                lat: {{ ciudadano.latitud }},
+                lng: {{ ciudadano.longitud }}
+            },
+            mapTypeControl: false,
+            fullscreenControl: false,
+            streetViewControl: false
+        });
+        
+        new google.maps.Marker({
+            position: {
+                lat: {{ ciudadano.latitud }},
+                lng: {{ ciudadano.longitud }}
+            },
+            map: map,
+            title: '{{ ciudadano.nombre }} {{ ciudadano.apellido }}'
+        });
+    }
+    {% endif %}
 });
 </script>
 {% endblock %}

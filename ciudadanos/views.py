@@ -52,6 +52,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "ciudadano"
 
     def get_context_data(self, **kwargs):
+        from django.conf import settings
         ctx = super().get_context_data(**kwargs)
         ciudadano = self.object
         relaciones = (
@@ -70,6 +71,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             familia.append((relacion, familiar))
         ctx["familia"] = familia
         ctx["grupo_form"] = GrupoFamiliarForm(ciudadano=ciudadano)
+        ctx["google_maps_api_key"] = settings.GOOGLE_MAPS_API_KEY
         
         # Programas de transferencia
         from ciudadanos.models import ProgramaTransferencia, HistorialTransferencia
