@@ -58,7 +58,11 @@ class DuplaListView(LoginRequiredMixin, ListView):
         # Data table config
         context["table_headers"] = [
             {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
-            {"title": "Coordinador", "sortable": True, "sort_key": "coordinador_nombre"},
+            {
+                "title": "Coordinador",
+                "sortable": True,
+                "sort_key": "coordinador_nombre",
+            },
             {"title": "Técnico/s", "sortable": True, "sort_key": "tecnicos_nombres"},
             {"title": "Abogado", "sortable": True, "sort_key": "abogado_nombre"},
             {"title": "Estado", "sortable": True, "sort_key": "estado"},
@@ -71,8 +75,18 @@ class DuplaListView(LoginRequiredMixin, ListView):
             {"name": "estado"},
         ]
         context["table_actions"] = [
-            {"label": "Editar", "url_name": "dupla_editar", "type": "editar", "icon": "edit"},
-            {"label": "Eliminar", "url_name": "dupla_eliminar", "type": "eliminar", "icon": "trash-alt"},
+            {
+                "label": "Editar",
+                "url_name": "dupla_editar",
+                "type": "editar",
+                "icon": "edit",
+            },
+            {
+                "label": "Eliminar",
+                "url_name": "dupla_eliminar",
+                "type": "eliminar",
+                "icon": "trash-alt",
+            },
         ]
 
         # Configuración para el search_bar con filtros avanzados

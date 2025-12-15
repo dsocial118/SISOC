@@ -49,10 +49,30 @@ class UsuariosService:
         """Configuración para la lista de usuarios"""
         return {
             "table_headers": [
-                {"title": "Nombre", "width": "12%", "sortable": True, "sort_key": "first_name"},
-                {"title": "Apellido", "width": "20%", "sortable": True, "sort_key": "last_name"},
-                {"title": "Username", "width": "10%", "sortable": True, "sort_key": "username"},
-                {"title": "Email", "width": "8%", "sortable": True, "sort_key": "email"},
+                {
+                    "title": "Nombre",
+                    "width": "12%",
+                    "sortable": True,
+                    "sort_key": "first_name",
+                },
+                {
+                    "title": "Apellido",
+                    "width": "20%",
+                    "sortable": True,
+                    "sort_key": "last_name",
+                },
+                {
+                    "title": "Username",
+                    "width": "10%",
+                    "sortable": True,
+                    "sort_key": "username",
+                },
+                {
+                    "title": "Email",
+                    "width": "8%",
+                    "sortable": True,
+                    "sort_key": "email",
+                },
                 {"title": "Rol", "width": "20%", "sortable": True, "sort_key": "rol"},
             ],
             "table_fields": [

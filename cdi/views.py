@@ -76,9 +76,24 @@ class CDIListView(LoginRequiredMixin, ListView):
 
         # Actions para el componente data_table.html
         context["actions"] = [
-            {"url_name": "cdi_detalle", "label": "Ver", "type": "primary", "icon": "eye"},
-            {"url_name": "cdi_editar", "label": "Editar", "type": "editar", "icon": "edit"},
-            {"url_name": "cdi_eliminar", "label": "Eliminar", "type": "eliminar", "icon": "trash-alt"},
+            {
+                "url_name": "cdi_detalle",
+                "label": "Ver",
+                "type": "primary",
+                "icon": "eye",
+            },
+            {
+                "url_name": "cdi_editar",
+                "label": "Editar",
+                "type": "editar",
+                "icon": "edit",
+            },
+            {
+                "url_name": "cdi_eliminar",
+                "label": "Eliminar",
+                "type": "eliminar",
+                "icon": "trash-alt",
+            },
         ]
 
         context["show_actions"] = True
@@ -163,9 +178,24 @@ def cdi_ajax(request):
                 {"name": "provincia"},
             ],
             "actions": [
-                {"url_name": "cdi_detalle", "label": "Ver", "type": "primary", "icon": "eye"},
-                {"url_name": "cdi_editar", "label": "Editar", "type": "editar", "icon": "edit"},
-                {"url_name": "cdi_eliminar", "label": "Eliminar", "type": "eliminar", "icon": "trash-alt"},
+                {
+                    "url_name": "cdi_detalle",
+                    "label": "Ver",
+                    "type": "primary",
+                    "icon": "eye",
+                },
+                {
+                    "url_name": "cdi_editar",
+                    "label": "Editar",
+                    "type": "editar",
+                    "icon": "edit",
+                },
+                {
+                    "url_name": "cdi_eliminar",
+                    "label": "Eliminar",
+                    "type": "eliminar",
+                    "icon": "trash-alt",
+                },
             ],
             "show_actions": True,
         }
