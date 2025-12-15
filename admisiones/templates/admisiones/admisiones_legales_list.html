@@ -53,7 +53,9 @@
                                     <td data-tipo_convenio="{{ admision.tipo_convenio.nombre }}">{{ admision.tipo_convenio.nombre }}</td>
                                     <td data-expediente="{{ admision.num_expediente }}">{{ admision.num_expediente }}</td>
                                     <td data-modificado="{{ admision.modificado|date:'Y-m-d' }}">{{ admision.modificado|date:'d/m/Y' }}</td>
-                                    <td data-estado="{{ admision.get_estado_admision_display|default:'' }}">{{ admision.get_estado_admision_display| default_if_none:"Sin información" }}</td>
+                                    <td data-estado="{{ admision.get_estado_admision_display|default:'' }}">
+                                        {{ admision.get_estado_admision_display| default_if_none:"Sin información" }}
+                                    </td>
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'admisiones_legales_ver' admision.id %}"

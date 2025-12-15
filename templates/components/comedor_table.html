@@ -27,31 +27,19 @@
                                 <td data-nombre="{{ comedor.nombre }}">
                                     <a href="{% url 'comedor_detalle' comedor.id %}"
                                        class="link-handler"
-                                       title="Ver detalles de {{ comedor.nombre }}">
-                                        {{ comedor.nombre }}
-                                    </a>
+                                       title="Ver detalles de {{ comedor.nombre }}">{{ comedor.nombre }}</a>
                                 </td>
-                                <td>
-                                    {{ comedor.tipocomedor__nombre | default_if_none:"Sin información" }}
-                                </td>
+                                <td>{{ comedor.tipocomedor__nombre | default_if_none:"Sin información" }}</td>
                                 <td>
                                     <div class="ubicacion-info">
-                                        <div class="ubicacion-item">
-                                            {{ comedor.provincia__nombre | default_if_none:"Sin provincia" }}
-                                        </div>
+                                        <div class="ubicacion-item">{{ comedor.provincia__nombre | default_if_none:"Sin provincia" }}</div>
                                         <div class="ubicacion-item">
                                             {{ comedor.municipio__nombre | default_if_none:"Sin municipio" }} / {{ comedor.localidad__nombre | default_if_none:"Sin localidad" }}
                                         </div>
-                                        {% if comedor.barrio %}
-                                            <div class="ubicacion-item">
-                                                {{ comedor.barrio }}
-                                            </div>
-                                        {% endif %}
+                                        {% if comedor.barrio %}<div class="ubicacion-item">{{ comedor.barrio }}</div>{% endif %}
                                     </div>
                                 </td>
-                                <td>
-                                    {{ comedor.calle | default_if_none:"Sin calle" }} {{ comedor.numero | default_if_none:"S/N" }}
-                                </td>
+                                <td>{{ comedor.calle | default_if_none:"Sin calle" }} {{ comedor.numero | default_if_none:"S/N" }}</td>
                                 <td>
                                     {{ comedor.referente__nombre | default_if_none:"Sin" }} {{ comedor.referente__apellido | default_if_none:"información" }}
                                 </td>
