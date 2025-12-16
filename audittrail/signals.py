@@ -46,9 +46,7 @@ def _log_comedor_event(comedor: Comedor, changes: dict, action: int):
     transaction.on_commit(_create_log)
 
 
-def _log_organizacion_event(
-    organizacion: Organizacion, changes: dict, action: int
-):
+def _log_organizacion_event(organizacion: Organizacion, changes: dict, action: int):
     """
     Genera una entrada de auditoría para una organización con los cambios provistos.
     """
@@ -89,9 +87,7 @@ def log_admision_creation(sender, instance: Admision, created: bool, **kwargs):
 
 
 @receiver(post_save, sender=Intervencion)
-def log_intervencion_creation(
-    sender, instance: Intervencion, created: bool, **kwargs
-):
+def log_intervencion_creation(sender, instance: Intervencion, created: bool, **kwargs):
     """
     Registra la creación de intervenciones vinculadas a un comedor.
     """
@@ -111,9 +107,7 @@ def log_intervencion_creation(
 
 
 @receiver(post_save, sender=Relevamiento)
-def log_relevamiento_creation(
-    sender, instance: Relevamiento, created: bool, **kwargs
-):
+def log_relevamiento_creation(sender, instance: Relevamiento, created: bool, **kwargs):
     """
     Registra la creación de relevamientos vinculados a un comedor.
     """
@@ -160,7 +154,9 @@ def log_referente_update(sender, instance: Referente, created: bool, **kwargs):
     if created:
         return
 
-    previous = getattr(instance, "_previous_state", None)  # pylint: disable=protected-access
+    previous = getattr(
+        instance, "_previous_state", None
+    )  # pylint: disable=protected-access
     changes = {}
 
     if previous:
@@ -168,7 +164,9 @@ def log_referente_update(sender, instance: Referente, created: bool, **kwargs):
             old = getattr(previous, field_name, None)
             new = getattr(instance, field_name, None)
             if old != new:
-                verbose = sender._meta.get_field(field_name).verbose_name  # pylint: disable=protected-access
+                verbose = sender._meta.get_field(
+                    field_name
+                ).verbose_name  # pylint: disable=protected-access
                 changes[f"Referente: {verbose}"] = [old, new]
 
     # Limpiar referencia al estado previo para evitar fugas
@@ -202,9 +200,7 @@ def cache_imagen_comedor_state(sender, instance: ImagenComedor, **kwargs):
 
 
 @receiver(post_save, sender=ImagenComedor)
-def log_imagen_comedor_change(
-    sender, instance: ImagenComedor, created: bool, **kwargs
-):
+def log_imagen_comedor_change(sender, instance: ImagenComedor, created: bool, **kwargs):
     """
     Registra altas y modificaciones de imágenes asociadas a un comedor.
     """
@@ -218,7 +214,9 @@ def log_imagen_comedor_change(
         )
         return
 
-    previous = getattr(instance, "_previous_imagen", None)  # pylint: disable=protected-access
+    previous = getattr(
+        instance, "_previous_imagen", None
+    )  # pylint: disable=protected-access
     changes = {}
 
     if previous:
@@ -263,7 +261,9 @@ def cache_firmante_state(sender, instance: Firmante, **kwargs):
     try:
         instance._previous_state = sender.objects.select_related(  # type: ignore[attr-defined]  # pylint: disable=protected-access
             "rol", "organizacion"
-        ).get(pk=instance.pk)
+        ).get(
+            pk=instance.pk
+        )
     except sender.DoesNotExist:
         instance._previous_state = None  # type: ignore[attr-defined]  # pylint: disable=protected-access
 
@@ -285,7 +285,9 @@ def log_firmante_changes(sender, instance: Firmante, created: bool, **kwargs):
         )
         return
 
-    previous = getattr(instance, "_previous_state", None)  # pylint: disable=protected-access
+    previous = getattr(
+        instance, "_previous_state", None
+    )  # pylint: disable=protected-access
     changes = {}
 
     if previous:
@@ -303,9 +305,7 @@ def log_firmante_changes(sender, instance: Firmante, created: bool, **kwargs):
         delattr(instance, "_previous_state")  # pylint: disable=protected-access
 
     if changes:
-        _log_organizacion_event(
-            instance.organizacion, changes, LogEntry.Action.UPDATE
-        )
+        _log_organizacion_event(instance.organizacion, changes, LogEntry.Action.UPDATE)
 
 
 @receiver(pre_save, sender=Aval)
@@ -318,7 +318,9 @@ def cache_aval_state(sender, instance: Aval, **kwargs):
     try:
         instance._previous_state = sender.objects.select_related(  # type: ignore[attr-defined]  # pylint: disable=protected-access
             "organizacion"
-        ).get(pk=instance.pk)
+        ).get(
+            pk=instance.pk
+        )
     except sender.DoesNotExist:
         instance._previous_state = None  # type: ignore[attr-defined]  # pylint: disable=protected-access
 
@@ -339,7 +341,9 @@ def log_aval_changes(sender, instance: Aval, created: bool, **kwargs):
         )
         return
 
-    previous = getattr(instance, "_previous_state", None)  # pylint: disable=protected-access
+    previous = getattr(
+        instance, "_previous_state", None
+    )  # pylint: disable=protected-access
     changes = {}
 
     if previous:
@@ -352,6 +356,4 @@ def log_aval_changes(sender, instance: Aval, created: bool, **kwargs):
         delattr(instance, "_previous_state")  # pylint: disable=protected-access
 
     if changes:
-        _log_organizacion_event(
-            instance.organizacion, changes, LogEntry.Action.UPDATE
-        )
+        _log_organizacion_event(instance.organizacion, changes, LogEntry.Action.UPDATE)
