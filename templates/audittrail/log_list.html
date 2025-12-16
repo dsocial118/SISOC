@@ -107,7 +107,7 @@
                                     </td>
                                     {% if is_instance_view %}
                                         <td>
-                                            {% if entry.action == entry.Action.UPDATE and entry.resolved_changes %}
+                                            {% if entry.resolved_changes %}
                                                 {% for field, change in entry.resolved_changes.items|slice:":2" %}
                                                     <div>
                                                         <strong>{{ field }}</strong>: {{ change.old }} → {{ change.new }}
