@@ -120,14 +120,37 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         # Centro de Familia - ParticipanteActividad
         try:
             from centrodefamilia.models import ParticipanteActividad
+            from django.db.models import Sum
             participaciones = ParticipanteActividad.objects.filter(
                 ciudadano=ciudadano
             ).select_related(
                 'actividad_centro__centro', 'actividad_centro__actividad'
             ).order_by('-fecha_registro')
             ctx['participaciones_cdf'] = participaciones
+            costo_total_cdf = ParticipanteActividad.objects.filter(
+                ciudadano=ciudadano,
+                estado='inscrito'
+            ).aggregate(
+                total=Sum('actividad_centro__precio')
+            )['total'] or 0
+            ctx['costo_total_cdf'] = costo_total_cdf
         except:
             ctx['participaciones_cdf'] = []
+            ctx['costo_total_cdf'] = 0
+        
+        # Comedor - Nomina
+        try:
+            from comedores.models import Nomina
+            nominas = Nomina.objects.filter(
+                ciudadano=ciudadano
+            ).select_related(
+                'comedor__provincia', 'comedor__municipio', 'comedor__tipocomedor'
+            ).order_by('-fecha')
+            ctx['nominas_comedor'] = nominas
+            if nominas.exists():
+                ctx['nomina_actual'] = nominas.first()
+        except:
+            ctx['nominas_comedor'] = []
         
         return ctx
 

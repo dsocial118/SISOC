@@ -406,7 +406,7 @@ class ComedorService:
         resumen = qs_nomina.aggregate(
             cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
             cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
-            espera=Count("id", filter=Q(estado=Nomina.ESTADO_PENDIENTE)),
+            espera=Count("id", filter=Q(estado="pendiente")),
             cantidad_total=Count("id"),
         )
         paginator = Paginator(
@@ -488,7 +488,7 @@ class ComedorService:
                 Nomina.objects.create(
                     ciudadano=ciudadano,
                     comedor_id=comedor_id,
-                    estado=estado or Nomina.ESTADO_PENDIENTE,
+                    estado=estado or "pendiente",
                     observaciones=observaciones,
                 )
 

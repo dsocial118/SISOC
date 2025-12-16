@@ -40,10 +40,8 @@ def validar_cuit(cuit):
 
 
 def validar_ciudadano_en_rango_para_actividad(ciudadano, actividad_centro):
-    if actividad_centro.centro.tipo == "adherido" and not ciudadano.demo_centro_familia:
-        raise ValueError(
-            f"El ciudadano {ciudadano.apellido}, {ciudadano.nombre} no está habilitado para inscribirse en este centro adherido."
-        )
+    """Validación removida: ahora cualquiera puede inscribirse."""
+    return
 
 
 class ActividadService:
