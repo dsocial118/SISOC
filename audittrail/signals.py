@@ -1,5 +1,6 @@
 """
-Señales para crear entradas de auditoría adicionales asociadas a comedores.
+Señales para crear entradas de auditoría adicionales asociadas a comedores y
+organizaciones.
 """
 
 from django.db import transaction
@@ -11,6 +12,7 @@ from admisiones.models.admisiones import Admision
 from comedores.models import Comedor, ImagenComedor, Referente
 from config.middlewares.threadlocals import get_current_user
 from intervenciones.models.intervenciones import Intervencion
+from organizaciones.models import Aval, Firmante, Organizacion
 from relevamientos.models import Relevamiento
 
 
@@ -36,6 +38,28 @@ def _log_comedor_event(comedor: Comedor, changes: dict, action: int):
     def _create_log():
         LogEntry.objects.log_create(
             comedor,
+            action=action,
+            changes=changes,
+            actor=actor,
+        )
+
+    transaction.on_commit(_create_log)
+
+
+def _log_organizacion_event(
+    organizacion: Organizacion, changes: dict, action: int
+):
+    """
+    Genera una entrada de auditoría para una organización con los cambios provistos.
+    """
+    if not organizacion or not changes:
+        return
+
+    actor = _get_actor()
+
+    def _create_log():
+        LogEntry.objects.log_create(
+            organizacion,
             action=action,
             changes=changes,
             actor=actor,
@@ -227,3 +251,107 @@ def log_imagen_comedor_deletion(sender, instance: ImagenComedor, **kwargs):
         {"Imagen": [imagen_nombre, "Eliminada"]},
         LogEntry.Action.DELETE,
     )
+
+
+@receiver(pre_save, sender=Firmante)
+def cache_firmante_state(sender, instance: Firmante, **kwargs):
+    """
+    Guarda el estado previo del firmante para detectar cambios.
+    """
+    if not instance.pk:
+        return
+    try:
+        instance._previous_state = sender.objects.select_related(  # type: ignore[attr-defined]  # pylint: disable=protected-access
+            "rol", "organizacion"
+        ).get(pk=instance.pk)
+    except sender.DoesNotExist:
+        instance._previous_state = None  # type: ignore[attr-defined]  # pylint: disable=protected-access
+
+
+@receiver(post_save, sender=Firmante)
+def log_firmante_changes(sender, instance: Firmante, created: bool, **kwargs):
+    """
+    Registra creación y cambios de firmantes asociados a una organización.
+    """
+    if not instance.organizacion:
+        return
+
+    if created:
+        descripcion = str(instance)
+        _log_organizacion_event(
+            instance.organizacion,
+            {"Firmante": [None, descripcion]},
+            LogEntry.Action.CREATE,
+        )
+        return
+
+    previous = getattr(instance, "_previous_state", None)  # pylint: disable=protected-access
+    changes = {}
+
+    if previous:
+        if previous.nombre != instance.nombre:
+            changes["Firmante: Nombre"] = [previous.nombre, instance.nombre]
+        if previous.cuit != instance.cuit:
+            changes["Firmante: CUIT"] = [previous.cuit, instance.cuit]
+        if previous.rol_id != instance.rol_id:
+            changes["Firmante: Rol"] = [
+                str(previous.rol) if previous.rol else None,
+                str(instance.rol) if instance.rol else None,
+            ]
+
+    if hasattr(instance, "_previous_state"):  # pylint: disable=protected-access
+        delattr(instance, "_previous_state")  # pylint: disable=protected-access
+
+    if changes:
+        _log_organizacion_event(
+            instance.organizacion, changes, LogEntry.Action.UPDATE
+        )
+
+
+@receiver(pre_save, sender=Aval)
+def cache_aval_state(sender, instance: Aval, **kwargs):
+    """
+    Guarda el estado previo del aval para detectar cambios.
+    """
+    if not instance.pk:
+        return
+    try:
+        instance._previous_state = sender.objects.select_related(  # type: ignore[attr-defined]  # pylint: disable=protected-access
+            "organizacion"
+        ).get(pk=instance.pk)
+    except sender.DoesNotExist:
+        instance._previous_state = None  # type: ignore[attr-defined]  # pylint: disable=protected-access
+
+
+@receiver(post_save, sender=Aval)
+def log_aval_changes(sender, instance: Aval, created: bool, **kwargs):
+    """
+    Registra creación y cambios de avales asociados a una organización.
+    """
+    if not instance.organizacion:
+        return
+
+    if created:
+        _log_organizacion_event(
+            instance.organizacion,
+            {"Aval": [None, str(instance)]},
+            LogEntry.Action.CREATE,
+        )
+        return
+
+    previous = getattr(instance, "_previous_state", None)  # pylint: disable=protected-access
+    changes = {}
+
+    if previous:
+        if previous.nombre != instance.nombre:
+            changes["Aval: Nombre"] = [previous.nombre, instance.nombre]
+        if previous.cuit != instance.cuit:
+            changes["Aval: CUIT"] = [previous.cuit, instance.cuit]
+
+    if hasattr(instance, "_previous_state"):  # pylint: disable=protected-access
+        delattr(instance, "_previous_state")  # pylint: disable=protected-access
+
+    if changes:
+        _log_organizacion_event(
+            instance.organizacion, changes, LogEntry.Action.UPDATE
+        )
