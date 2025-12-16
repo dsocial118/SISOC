@@ -12,6 +12,12 @@ class OrganizacionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Asegura que el campo date cargue el valor previo (almacenado como DateTime)
+        fecha_vencimiento = getattr(self.instance, "fecha_vencimiento", None)
+        if not self.is_bound and fecha_vencimiento:
+            self.initial["fecha_vencimiento"] = fecha_vencimiento.date()
+        self.fields["fecha_vencimiento"].input_formats = ["%Y-%m-%d"]
+
         self.popular_campos_ubicacion()
 
     def popular_campos_ubicacion(self):
@@ -56,7 +62,8 @@ class OrganizacionForm(forms.ModelForm):
         fields = "__all__"
         widgets = {
             "fecha_vencimiento": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
+                attrs={"type": "date", "class": "form-control"},
+                format="%Y-%m-%d",
             ),
         }
 
