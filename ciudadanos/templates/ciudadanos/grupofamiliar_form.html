@@ -57,7 +57,7 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Familiar</h3>
-                                <p class="section-subtitle">Seleccioná a la persona relacionada</p>
+                                <p class="section-subtitle">Seleccioná la persona relacionada</p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -70,7 +70,14 @@
                         </div>
                     </div>
                     <div class="section-body collapse show" id="section-familiar">
-                        <div class="form-group">{{ form.ciudadano_2|as_crispy_field }}</div>
+                        <div class="form-group">
+                            <label for="id_ciudadano_2">{{ form.ciudadano_2.label }}</label>
+                            {{ form.ciudadano_2 }}
+                            <input type="hidden" id="id_ciudadano_2_id" name="ciudadano_2_id" />
+                            {% if form.ciudadano_2.errors %}
+                                <div class="text-danger small mt-1">{{ form.ciudadano_2.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
@@ -200,7 +207,7 @@
             }
 
             function updateProgress() {
-                const familiarValue = document.getElementById("id_ciudadano_2")?.value || "";
+                const familiarValue = document.getElementById("id_ciudadano_2_id")?.value || "";
                 const vinculoValue = document.getElementById("id_vinculo")?.value || "";
                 const estadoValue = document.getElementById("id_estado_relacion")?.value || "";
                 const convivenChecked = document.getElementById("id_conviven")?.checked;
@@ -284,5 +291,60 @@
                 body.classList.toggle("show");
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('id_ciudadano_2');
+            const hiddenId = document.getElementById('id_ciudadano_2_id');
+            if (!input) return;
+
+            let suggestionsDiv = document.createElement('div');
+            suggestionsDiv.id = 'ciudadano-suggestions';
+            suggestionsDiv.style.cssText = 'position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; z-index: 1000; min-width: 300px; display: none;';
+            input.parentElement.style.position = 'relative';
+            input.parentElement.appendChild(suggestionsDiv);
+
+            input.addEventListener('input', function() {
+                const query = this.value.trim();
+                if (query.length < 4) {
+                    suggestionsDiv.style.display = 'none';
+                    return;
+                }
+
+                fetch(`/api/ciudadanos/buscar/?q=${encodeURIComponent(query)}&exclude_id={{ ciudadano.pk }}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        suggestionsDiv.innerHTML = '';
+                        if (data.results.length === 0) {
+                            suggestionsDiv.innerHTML = '<div style="padding: 10px; color: #999;">No se encontraron resultados</div>';
+                        } else {
+                            data.results.forEach(result => {
+                                const div = document.createElement('div');
+                                div.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;';
+                                div.textContent = result.text;
+                                div.addEventListener('click', function() {
+                                    input.value = result.text;
+                                    hiddenId.value = result.id;
+                                    suggestionsDiv.style.display = 'none';
+                                    input.dispatchEvent(new Event('change'));
+                                });
+                                div.addEventListener('mouseover', function() {
+                                    this.style.backgroundColor = '#f0f0f0';
+                                });
+                                div.addEventListener('mouseout', function() {
+                                    this.style.backgroundColor = 'transparent';
+                                });
+                                suggestionsDiv.appendChild(div);
+                            });
+                        }
+                        suggestionsDiv.style.display = 'block';
+                    });
+            });
+
+            document.addEventListener('click', function(e) {
+                if (e.target !== input && e.target !== suggestionsDiv) {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+        });
     </script>
 {% endblock %}

@@ -1,121 +1,2075 @@
 {% extends "includes/main.html" %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="mb-0">{{ ciudadano.nombre }} {{ ciudadano.apellido }}</h1>
-            <p class="text-muted mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
-        </div>
-        <div class="btn-group">
-            {% if perms.auditlog.view_logentry %}
-                <a href="{% url 'audittrail:log_instance' 'ciudadanos' 'ciudadano' ciudadano.pk %}"
-                   class="btn btn-outline-secondary">Historial</a>
-            {% endif %}
-            <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
-               class="btn btn-outline-primary">Editar</a>
-            <a href="{% url 'ciudadanos_eliminar' ciudadano.pk %}"
-               class="btn btn-outline-danger">Eliminar</a>
-        </div>
-    </div>
+    <style>
+:root {
+    --navy-dark: #232D4F;
+    --navy-medium: #232D4F;
+    --navy-light: #4A5F7F;
+    --gold: #F5A623;
+    --green: #28A745;
+    --red: #DC3545;
+}
 
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title">Contacto</h5>
-                    </div>
-                    {% if ciudadano.foto %}
-                        <div class="text-center mb-3">
-                            <img src="{{ ciudadano.foto.url }}"
-                                 alt="Foto de {{ ciudadano.nombre }} {{ ciudadano.apellido }}"
-                                 class="img-fluid rounded shadow-sm"
-                                 style="max-height: 260px;
-                                        object-fit: cover" />
-                        </div>
+.app-content {
+    background: linear-gradient(135deg, #3e5a7e 0%, #3e5a7e 100%);
+    min-height: 100vh;
+}
+
+.legajo-header {
+    background: #232D4F;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    margin: 0 0 1rem 0;
+    color: white;
+    border-top: none;
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.legajo-header h1 {
+    font-family: Georgia, serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0;
+    letter-spacing: 0.5px;
+}
+
+.legajo-header .subtitle {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.85rem;
+    font-weight: 400;
+    display: none;
+}
+
+.datos-card {
+    background: var(--navy-medium);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.datos-card-content {
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.datos-card-simple {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.datos-card-simple h5 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.datos-card label, .datos-card strong {
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 0;
+}
+
+.datos-card .value {
+    color: white;
+    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 0;
+}
+
+.datos-card .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.datos-card .info-row:last-child {
+    border-bottom: none;
+}
+
+.info-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.tabla-legajo {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.tabla-legajo h5 {
+    font-weight: 600;
+}
+
+.tabla-legajo table {
+    color: white;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.tabla-legajo thead {
+    background: var(--navy-dark);
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+
+.tabla-legajo thead th {
+    color: white;
+    font-weight: 600;
+}
+
+.tabla-legajo tbody td, .tabla-legajo tbody th {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-top: none;
+    color: rgba(255,255,255,0.95);
+}
+
+.tabla-legajo tbody tr:hover td {
+    background: rgba(255,255,255,0.05);
+}
+
+.btn-success {
+    background: var(--green) !important;
+    border: none !important;
+}
+
+.btn-danger {
+    background: var(--red) !important;
+    border: none !important;
+}
+
+.btn-outline-light:hover {
+    background: rgba(255,255,255,0.1) !important;
+}
+
+.foto-placeholder {
+    width: 180px;
+    height: 180px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 3rem;
+}
+
+.datos-card h5 {
+    margin-bottom: 1.25rem;
+    font-weight: 600;
+}
+
+.nav-tabs-legajo {
+    padding: 1rem 1.5rem 0.5rem 1.5rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    border-bottom: none;
+    display: flex;
+    gap: 0.5rem;
+    background: #3e5a7e;
+}
+
+.nav-tabs-legajo .nav-link {
+    background: #232D4F;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    transition: all 0.3s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    height: auto;
+}
+
+.nav-tabs-legajo .nav-link.active {
+    background: var(--gold);
+    color: #232D4F;
+    font-weight: 600;
+    border: none;
+}
+
+.nav-tabs-legajo .nav-link:hover:not(.active) {
+    background: rgba(255,255,255,0.1);
+}
+
+.btn-edit-card {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-edit-card:hover {
+    background: var(--gold);
+    color: var(--navy-dark);
+    border-color: var(--gold);
+}
+
+.programa-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    color: white;
+}
+
+.programa-card.auh {
+    background: linear-gradient(135deg, #FF6B35 0%, #FF8C42 100%);
+}
+
+.programa-card.prestacion {
+    background: linear-gradient(135deg, #FF8C42 0%, #FFB84D 100%);
+}
+
+.programa-card.centro-familia {
+    background: linear-gradient(135deg, #FFB84D 0%, #FFC870 100%);
+}
+
+.programa-card.comedor {
+    background: linear-gradient(135deg, #D63384 0%, #E74C9C 100%);
+}
+
+.programa-card.aduana {
+    background: linear-gradient(135deg, #F8A5C2 0%, #FFC0D9 100%);
+}
+
+.programa-card .icono {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.programa-card .info {
+    flex: 1;
+}
+
+.programa-card .nombre {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.programa-card .monto {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.monto-total-widget {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--navy-medium);
+    border: 2px solid white;
+    border-radius: 8px;
+    padding: 1.75rem 1.5rem;
+    text-align: center;
+    z-index: 1000;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    min-width: 180px;
+}
+
+.monto-total-widget small {
+    display: block;
+    margin-bottom: 0.75rem;
+    opacity: 0.85;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.monto-total-widget .valor {
+    font-size: 2.2rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.programas-section {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.programas-section h6 {
+    color: white;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+}
+
+.historial-card {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.historial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.historial-header h6 {
+    color: white;
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.periodo-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.periodo-selector .btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+.periodo-selector .btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--gold);
+}
+
+.mes-actual {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    min-width: 120px;
+    text-align: center;
+}
+
+.chart-container {
+    position: relative;
+    height: 600px;
+    margin-top: 1rem;
+}
+    </style>
+
+    <div class="container-fluid p-0">
+        <div class="legajo-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>{{ ciudadano.nombre }} {{ ciudadano.apellido }} |</h1>
+                    <p class="subtitle mb-0">{{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento }}</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'ciudadanos' %}" class="btn btn-outline-light">Volver</a>
+                    {% if perms.auditlog.view_logentry %}
+                        <a href="{% url 'audittrail:log_instance' 'ciudadanos' 'ciudadano' ciudadano.pk %}"
+                           class="btn btn-outline-light">Historial</a>
                     {% endif %}
-                    <p class="mb-1">
-                        <strong>Sexo:</strong> {{ ciudadano.sexo|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Nacionalidad:</strong> {{ ciudadano.nacionalidad|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Teléfono:</strong> {{ ciudadano.telefono|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Email:</strong> {{ ciudadano.email|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Dirección:</strong> {{ ciudadano.calle }} {{ ciudadano.altura }} {{ ciudadano.barrio }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Provincia:</strong> {{ ciudadano.provincia|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Municipio:</strong> {{ ciudadano.municipio|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Localidad:</strong> {{ ciudadano.localidad|default:'-' }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Código postal:</strong> {{ ciudadano.codigo_postal|default:'-' }}
-                    </p>
+                    <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
+                       class="btn btn-outline-light">Editar</a>
                 </div>
             </div>
         </div>
-        <div class="col-md-8">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">Grupo familiar</h5>
-                        <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
-                           class="btn btn-sm btn-primary">Agregar familiar</a>
+
+        <ul class="nav nav-tabs nav-tabs-legajo" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#datos-personales">Datos personales</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#socioeconomico">Socioeconómico</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#pas">PAS</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#prestacion-alimentar">Prestación Alimentar</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#comedor">Comedor</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#cdf">CDF</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#celiaquia">Celiaquía</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#fch">FCH</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#situacion-calle">Situación de Calle</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#aduana">Aduana</a>
+            </li>
+        </ul>
+
+        <div class="tab-content px-4">
+            <div class="tab-pane fade show active" id="datos-personales">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="datos-card" style="position: relative;">
+                            <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
+                               class="btn-edit-card">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            <h5>Datos Personales</h5>
+                            <div class="datos-card-content">
+                                <div style="display: flex; justify-content: center; align-items: center;">
+                                    {% if ciudadano.latitud and ciudadano.longitud %}
+                                        <div id="map" style="width: 450px; height: 450px; border-radius: 8px;"></div>
+                                    {% elif ciudadano.foto %}
+                                        <img src="{{ ciudadano.foto.url }}"
+                                             alt="Foto"
+                                             class="foto-placeholder"
+                                             style="object-fit: cover" />
+                                    {% else %}
+                                        <div class="foto-placeholder">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+ 
+                                <div class="info-column">
+                                    <div class="info-row">
+                                        <strong>CUIL/CUIT:</strong>
+                                        <span class="value">{{ ciudadano.cuil_cuit|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Apellido:</strong>
+                                        <span class="value">{{ ciudadano.apellido }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Nombre:</strong>
+                                        <span class="value">{{ ciudadano.nombre }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Tipo de Documento:</strong>
+                                        <span class="value">{{ ciudadano.get_tipo_documento_display }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Número de Documento:</strong>
+                                        <span class="value">{{ ciudadano.documento|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Provincia:</strong>
+                                        <span class="value">{{ ciudadano.provincia|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Municipio:</strong>
+                                        <span class="value">{{ ciudadano.municipio|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Localidad:</strong>
+                                        <span class="value">{{ ciudadano.localidad|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Calle y Altura:</strong>
+                                        <span class="value">
+                                            {% if ciudadano.calle %}
+                                                {{ ciudadano.calle }} {{ ciudadano.altura }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Código Postal:</strong>
+                                        <span class="value">{{ ciudadano.codigo_postal|default:'-' }}</span>
+                                    </div>
+                                </div>
+ 
+                                <div class="info-column">
+                                    <div class="info-row">
+                                        <strong>Fecha de nacimiento:</strong>
+                                        <span class="value">{{ ciudadano.fecha_nacimiento|date:"d/m/Y"|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Edad:</strong>
+                                        <span class="value">{{ ciudadano.edad|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Género:</strong>
+                                        <span class="value">{{ ciudadano.sexo|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Estado Civil:</strong>
+                                        <span class="value">{{ ciudadano.get_estado_civil_display|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Nacionalidad:</strong>
+                                        <span class="value">{{ ciudadano.nacionalidad|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Teléfono:</strong>
+                                        <span class="value">{{ ciudadano.telefono|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Teléfono alternativo:</strong>
+                                        <span class="value">{{ ciudadano.telefono_alternativo|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Email:</strong>
+                                        <span class="value">{{ ciudadano.email|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Fecha de actualización:</strong>
+                                        <span class="value">{{ ciudadano.modificado|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Origen del Dato:</strong>
+                                        <span class="value">{{ ciudadano.get_origen_dato_display }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% if familia %}
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Vínculo</th>
-                                    <th>Estado del vínculo</th>
-                                    <th>Conviven</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                </div>
+ 
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Grupo Familiar</h5>
+                                <a href="{% url 'grupofamiliar_crear' ciudadano.pk %}"
+                                   class="btn btn-success btn-sm">
+                                    <i class="fas fa-plus"></i> Agregar
+                                </a>
+                            </div>
+                            {% if familia %}
+                                <div style="border-bottom: 1px solid rgba(255,255,255,0.2);
+                                            padding-bottom: 1rem;
+                                            margin-bottom: 1rem"></div>
                                 {% for relacion, familiar in familia %}
-                                    <tr>
-                                        <td>
-                                            <a href="{% url 'ciudadanos_ver' familiar.pk %}">{{ familiar }}</a>
-                                        </td>
-                                        <td>{{ relacion.get_vinculo_display }}</td>
-                                        <td>{{ relacion.get_estado_relacion_display|default:"-" }}</td>
-                                        <td>{{ relacion.conviven|yesno:"Sí,No" }}</td>
-                                        <td class="text-end">
-                                            <a href="{% url 'grupofamiliar_eliminar' relacion.pk %}?next={{ request.path }}"
-                                               class="btn btn-sm btn-outline-danger">Eliminar</a>
-                                        </td>
-                                    </tr>
+                                    <div style="display: flex;
+                                                justify-content: space-between;
+                                                align-items: center;
+                                                padding: 1rem 0;
+                                                border-bottom: 1px solid rgba(255,255,255,0.1)">
+                                        <div>
+                                            <span style="color: rgba(255,255,255,0.7);">{{ relacion.get_vinculo_display }}:</span>
+                                            <span style="color: white; font-weight: 600; margin-left: 0.5rem;">{{ familiar.nombre }} {{ familiar.apellido }}</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 2rem;">
+                                            <span style="color: rgba(255,255,255,0.7);">Edad: <span style="color: white; font-weight: 600;">{{ familiar.edad|default:'-' }}</span></span>
+                                            <a href="{% url 'ciudadanos_ver' familiar.pk %}"
+                                               style="color: #F5A623;
+                                                      text-decoration: underline;
+                                                      display: flex;
+                                                      align-items: center;
+                                                      gap: 0.5rem">
+                                                Ver legajo <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </div>
                                 {% endfor %}
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">Aún no hay familiares cargados.</p>
+                            {% endif %}
+                        </div>
+ 
+                        <div class="historial-card">
+                            <div class="historial-header">
+                                <h6>Historial de Transferencia directa e indirecta</h6>
+                                <div class="periodo-selector">
+                                    <button class="btn" onclick="cambiarMes(-1)">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <span class="mes-actual" id="mes-actual">4 Diciembre 2025</span>
+                                    <button class="btn" onclick="cambiarMes(1)">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="historialChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+ 
+                    <div class="col-md-4">
+                        <div class="programas-section">
+                            <h6>Programas transferencia directa</h6>
+                            <div class="programa-card auh">
+                                <div class="icono">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="info">
+                                    <div class="nombre">AUH</div>
+                                    <div class="monto">$108.062,00</div>
+                                </div>
+                            </div>
+                            <div class="programa-card prestacion">
+                                <div class="icono">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <div class="info">
+                                    <div class="nombre">Prestación Alimentar</div>
+                                    <div class="monto">$108.062,00</div>
+                                </div>
+                            </div>
+                            <div class="programa-card centro-familia">
+                                <div class="icono">
+                                    <i class="fas fa-home"></i>
+                                </div>
+                                <div class="info">
+                                    <div class="nombre">Centro de Familia</div>
+                                    <div class="monto">${{ costo_total_cdf|default:0|floatformat:2 }}</div>
+                                </div>
+                            </div>
+ 
+                            <h6 style="margin-top: 1.5rem;
+                                       margin-bottom: 1.25rem;
+                                       border-top: 1px solid rgba(255,255,255,0.1);
+                                       padding-top: 1.5rem">Programas transferencia indirecta</h6>
+                            <div class="programa-card comedor">
+                                <div class="icono">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <div class="info">
+                                    <div class="nombre">Asiste a comedor</div>
+                                    <div class="monto">$108.062,00</div>
+                                </div>
+                            </div>
+                            <div class="programa-card aduana">
+                                <div class="icono">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                                <div class="info">
+                                    <div class="nombre">Aduana</div>
+                                    <div class="monto">2 colchones.</div>
+                                </div>
+                            </div>
+ 
+                            <div style="background: rgba(255,255,255,0.05);
+                                        border-radius: 8px;
+                                        padding: 1rem;
+                                        text-align: center;
+                                        margin-top: 1.5rem">
+                                <small style="display: block;
+                                              margin-bottom: 0.5rem;
+                                              opacity: 0.85;
+                                              font-size: 0.8rem;
+                                              font-weight: 500">Monto total mes Dic 2025</small>
+                                <div style="font-size: 1.8rem; font-weight: bold; letter-spacing: 0.5px;">$318.124,00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+ 
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interacción</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+ 
+                <div class="tabla-legajo">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Observaciones</h5>
+                        <div class="d-flex gap-2">
+                            <input type="text"
+                                   class="form-control form-control-sm"
+                                   placeholder="Buscar"
+                                   style="width: 200px;
+                                          background: transparent;
+                                          border-color: rgba(255,255,255,0.3);
+                                          color: white" />
+                            <button class="btn btn-success btn-sm">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% if ciudadano.observaciones %}
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>{{ ciudadano.observaciones }}</td>
+                                </tr>
                             </tbody>
                         </table>
                     {% else %}
-                        <p class="text-muted">Aún no hay familiares cargados.</p>
+                        <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
                     {% endif %}
                 </div>
             </div>
-        </div>
-    </div>
-
-    {% if ciudadano.observaciones %}
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title">Observaciones</h5>
+ 
+            <div class="tab-pane fade" id="socioeconomico">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo">
+                            <h5 class="mb-3">Socioeconómico</h5>
+                            <p style="color: rgba(255,255,255,0.5);">Contenido en desarrollo...</p>
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interaccion</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Observaciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if ciudadano.observaciones %}
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ ciudadano.observaciones }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-                <p class="mb-0">{{ ciudadano.observaciones }}</p>
+            </div>
+ 
+            <div class="tab-pane fade" id="pas">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo">
+                            <h5 class="mb-3">PAS</h5>
+                            <p style="color: rgba(255,255,255,0.5);">Contenido en desarrollo...</p>
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interaccion</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Observaciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if ciudadano.observaciones %}
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ ciudadano.observaciones }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="tab-pane fade" id="prestacion-alimentar">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo">
+                            <h5 class="mb-3">Prestación Alimentar</h5>
+                            <p style="color: rgba(255,255,255,0.5);">Contenido en desarrollo...</p>
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interaccion</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Observaciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if ciudadano.observaciones %}
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ ciudadano.observaciones }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="tab-pane fade" id="comedor">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <h5 class="mb-3">
+                                <span>Comedores</span>
+                                {% if nomina_actual and nomina_actual.estado == 'activo' %}
+                                    <span class="badge"
+                                          style="background: rgba(46, 125, 51, 0.6);
+                                                 color: white;
+                                                 padding: 0.35rem 0.75rem;
+                                                 font-size: 0.75rem;
+                                                 margin-left: 0.5rem">Activo</span>
+                                {% endif %}
+                            </h5>
+                            {% if nomina_actual %}
+                                <div style="display: grid;
+                                            grid-template-columns: 1fr 1fr;
+                                            gap: 1rem;
+                                            margin-bottom: 1.5rem">
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Comedor</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            <a href="{% url 'comedor_detalle' nomina_actual.comedor.id %}"
+                                               style="color: #F5A623;
+                                                      text-decoration: underline">
+                                                {{ nomina_actual.comedor.nombre }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Tipo</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            {{ nomina_actual.comedor.tipocomedor.nombre|default:"-" }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Provincia</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            {{ nomina_actual.comedor.provincia.nombre|default:"-" }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Municipio</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            {{ nomina_actual.comedor.municipio.nombre|default:"-" }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Estado</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            {% if nomina_actual.estado == 'activo' %}
+                                                <span class="badge" style="background: var(--green);">Activo</span>
+                                            {% elif nomina_actual.estado == 'pendiente' %}
+                                                <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
+                                            {% else %}
+                                                <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Fecha Registro</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">{{ nomina_actual.fecha|date:"d/m/Y" }}</div>
+                                    </div>
+                                </div>
+                                {% if nominas_comedor.count > 1 %}
+                                    <h6 style="margin-top: 1.5rem;
+                                               margin-bottom: 1rem;
+                                               border-top: 1px solid rgba(255,255,255,0.1);
+                                               padding-top: 1rem">Historial de Comedores</h6>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Comedor</th>
+                                                <th>Estado</th>
+                                                <th>Fecha</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for nomina in nominas_comedor %}
+                                                <tr>
+                                                    <td>
+                                                        <a href="{% url 'comedor_detalle' nomina.comedor.id %}"
+                                                           style="color: #F5A623;
+                                                                  text-decoration: underline">
+                                                            {{ nomina.comedor.nombre }}
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        {% if nomina.estado == 'activo' %}
+                                                            <span class="badge" style="background: var(--green);">Activo</span>
+                                                        {% elif nomina.estado == 'pendiente' %}
+                                                            <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Pendiente</span>
+                                                        {% else %}
+                                                            <span class="badge" style="background: rgba(255,255,255,0.2);">Baja</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{{ nomina.fecha|date:"d/m/Y" }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                {% endif %}
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay registros de comedores.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interaccion</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Observaciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if ciudadano.observaciones %}
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ ciudadano.observaciones }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="tab-pane fade" id="cdf">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <h5 class="mb-3">Centro de Familia</h5>
+                            {% if participaciones_cdf %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Centro</th>
+                                            <th>Actividad</th>
+                                            <th>Estado</th>
+                                            <th>Fecha Registro</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for participacion in participaciones_cdf %}
+                                            <tr>
+                                                <td>{{ participacion.actividad_centro.centro.nombre }}</td>
+                                                <td>{{ participacion.actividad_centro.actividad.nombre }}</td>
+                                                <td>
+                                                    {% if participacion.estado == 'inscrito' %}
+                                                        <span class="badge" style="background: var(--green);">Inscrito</span>
+                                                    {% elif participacion.estado == 'lista_espera' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">Lista Espera</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Dado de Baja</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ participacion.fecha_registro|date:"d/m/Y" }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay participaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interaccion</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Observaciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if ciudadano.observaciones %}
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ ciudadano.observaciones }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="tab-pane fade" id="celiaquia">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <h5 class="mb-3">
+                                <span>Celiaquía</span> <span class="badge"
+       style="background: rgba(46, 125, 51, 0.6);
+              color: white;
+              padding: 0.35rem 0.75rem;
+              font-size: 0.75rem;
+              margin-left: 0.5rem">Activo</span>
+                            </h5>
+                            {% if expediente_actual %}
+                                <div style="display: grid;
+                                            grid-template-columns: 1fr 1fr;
+                                            gap: 1rem;
+                                            margin-bottom: 1.5rem">
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Estado Expediente</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            {{ expediente_actual.expediente.estado.nombre }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Estado Legajo</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">{{ expediente_actual.estado.nombre }}</div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Resultado Cruce</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            {{ expediente_actual.get_resultado_sintys_display }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Estado Cupo</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            {{ expediente_actual.get_estado_cupo_display }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Titular Activo</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            {{ expediente_actual.es_titular_activo|yesno:"Si,No" }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Revision Tecnico</small>
+                                        <div style="font-size: 0.95rem;
+                                                    color: rgba(255,255,255,0.95);
+                                                    margin-top: 0.25rem">
+                                            {{ expediente_actual.get_revision_tecnico_display }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if expedientes_celiaquia.count > 1 %}
+                                    <h6 style="margin-top: 1.5rem;
+                                               margin-bottom: 1rem;
+                                               border-top: 1px solid rgba(255,255,255,0.1);
+                                               padding-top: 1rem">Historial de Expedientes</h6>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Estado</th>
+                                                <th>Cupo</th>
+                                                <th>Fecha</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for exp in expedientes_celiaquia %}
+                                                <tr>
+                                                    <td>{{ exp.estado.nombre }}</td>
+                                                    <td>{{ exp.get_estado_cupo_display }}</td>
+                                                    <td>{{ exp.creado_en|date:"d/m/Y H:i" }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                {% endif %}
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay expedientes de celiaquía registrados.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interaccion</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Observaciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if ciudadano.observaciones %}
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ ciudadano.observaciones }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="tab-pane fade" id="fch">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo">
+                            <h5 class="mb-3">FCH</h5>
+                            <p style="color: rgba(255,255,255,0.5);">Contenido en desarrollo...</p>
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interaccion</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Observaciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if ciudadano.observaciones %}
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ ciudadano.observaciones }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="tab-pane fade" id="situacion-calle">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo">
+                            <h5 class="mb-3">Situación de Calle</h5>
+                            <p style="color: rgba(255,255,255,0.5);">Contenido en desarrollo...</p>
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interaccion</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Observaciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if ciudadano.observaciones %}
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ ciudadano.observaciones }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div class="tab-pane fade" id="aduana">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo">
+                            <h5 class="mb-3">Aduana</h5>
+                            <p style="color: rgba(255,255,255,0.5);">Contenido en desarrollo...</p>
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Interacciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if interacciones %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Interaccion</th>
+                                            <th>Fecha</th>
+                                            <th>Responsable</th>
+                                            <th>Estado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for interaccion in interacciones %}
+                                            <tr>
+                                                <td>{{ interaccion.tipo }}</td>
+                                                <td>
+                                                    <i class="fas fa-calendar"></i> {{ interaccion.fecha|date:"d M Y" }}
+                                                </td>
+                                                <td>{{ interaccion.responsable.get_full_name|default:"Sin asignar" }}</td>
+                                                <td>
+                                                    {% if interaccion.estado == 'completo' %}
+                                                        <span class="badge" style="background: var(--green);">Completo</span>
+                                                    {% elif interaccion.estado == 'en_plan' %}
+                                                        <span class="badge" style="background: #FFB84D; color: var(--navy-dark);">En Plan</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">Pendiente</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay interacciones registradas.</p>
+                            {% endif %}
+                        </div>
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Observaciones</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Buscar"
+                                           style="width: 200px;
+                                                  background: transparent;
+                                                  border-color: rgba(255,255,255,0.3);
+                                                  color: white" />
+                                    <button class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    <button class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% if ciudadano.observaciones %}
+                                <table class="table table-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ ciudadano.observaciones }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay observaciones registradas.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+ 
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    {% if google_maps_api_key %}
+        <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
     {% endif %}
+    <script>
+let mesActual = new Date().getMonth() + 1;
+let anioActual = new Date().getFullYear();
+const mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+function cambiarMes(direccion) {
+    mesActual += direccion;
+    if (mesActual > 12) {
+        mesActual = 1;
+        anioActual++;
+    } else if (mesActual < 1) {
+        mesActual = 12;
+        anioActual--;
+    }
+    actualizarGrafico();
+}
+
+function actualizarGrafico() {
+    document.getElementById('mes-actual').textContent = mesActual + ' ' + mesesNombres[mesActual] + ' ' + anioActual;
+    
+    const ctx = document.getElementById('historialChart').getContext('2d');
+    if (window.historialChartInstance) {
+        window.historialChartInstance.destroy();
+    }
+    
+    window.historialChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: {{ historial_labels|safe }},
+            datasets: [
+                {
+                    label: 'AUH',
+                    data: {{ historial_auh|safe }},
+                    backgroundColor: '#FF8C42',
+                    borderRadius: 0
+                },
+                {
+                    label: 'Prestación Alimentar',
+                    data: {{ historial_prestacion|safe }},
+                    backgroundColor: '#FFB84D',
+                    borderRadius: 0
+                },
+                {
+                    label: 'Centro de Familia',
+                    data: {{ historial_centro_familia|safe }},
+                    backgroundColor: '#D63384',
+                    borderRadius: 0
+                },
+                {
+                    label: 'Comedor',
+                    data: {{ historial_comedor|safe }},
+                    backgroundColor: '#F8A5C2',
+                    borderRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'x',
+            scales: {
+                x: {
+                    stacked: true,
+                    grid: {
+                        color: 'rgba(255,255,255,0.1)'
+                    },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.7)'
+                    }
+                },
+                y: {
+                    stacked: true,
+                    max: 500,
+                    grid: {
+                        color: 'rgba(255,255,255,0.1)'
+                    },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.7)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarGrafico();
+    
+    {% if ciudadano.latitud and ciudadano.longitud %}
+    const mapElement = document.getElementById('map');
+    if (mapElement) {
+        const map = new google.maps.Map(mapElement, {
+            zoom: 15,
+            center: {
+                lat: {{ ciudadano.latitud }},
+                lng: {{ ciudadano.longitud }}
+            },
+            mapTypeControl: false,
+            fullscreenControl: false,
+            streetViewControl: false
+        });
+        
+        new google.maps.Marker({
+            position: {
+                lat: {{ ciudadano.latitud }},
+                lng: {{ ciudadano.longitud }}
+            },
+            map: map,
+            title: '{{ ciudadano.nombre }} {{ ciudadano.apellido }}'
+        });
+    }
+    {% endif %}
+});
+    </script>
 {% endblock %}

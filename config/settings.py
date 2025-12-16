@@ -238,6 +238,7 @@ DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 # IPs internas
 INTERNAL_IPS = ["127.0.0.1", "::1"]
