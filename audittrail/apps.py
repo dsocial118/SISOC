@@ -8,6 +8,6 @@ class AudittrailConfig(AppConfig):
 
     def ready(self):
         # Registro centralizado de modelos auditados.
-        from audittrail.registry import register_tracked_models  # pylint: disable=import-outside-toplevel
+        from audittrail.registry import register_tracked_models
 
         register_tracked_models()

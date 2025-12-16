@@ -10,7 +10,7 @@ from django.views.generic import DetailView, ListView
 from django.db.models import Q
 
 from auditlog.models import LogEntry
-from audittrail.constants import TRACKED_MODELS
+from audittrail.constants import TRACKED_MODELS, tracked_model_choices
 from audittrail.forms import AuditLogFilterForm
 
 
@@ -27,6 +27,10 @@ class AuditLogResolveMixin:
         changes = getattr(entry, "changes_display_dict", None) or {}
         model_cls = entry.content_type.model_class()
         resolved = {}
+        fk_cache = getattr(self, "_audit_fk_cache", None)
+        if fk_cache is None:
+            fk_cache = {}
+            self._audit_fk_cache = fk_cache
 
         for field_name, change in changes.items():
             field = None
@@ -40,8 +44,8 @@ class AuditLogResolveMixin:
             new_val = self._extract_value(change, "new")
 
             resolved[field_name] = {
-                "old": self._format_value(old_val, field),
-                "new": self._format_value(new_val, field),
+                "old": self._format_value(old_val, field, fk_cache),
+                "new": self._format_value(new_val, field, fk_cache),
             }
 
         return resolved
@@ -58,32 +62,51 @@ class AuditLogResolveMixin:
         return change
 
     @staticmethod
-    def _format_value(value, field):
-        if value in (None, "", [], ()):
+    def _get_fk_cache_key(field, value):
+        return (field.remote_field.model, value)
+
+    def _format_value(
+        self, value, field, fk_cache
+    ):  # pylint: disable=too-many-return-statements
+        # Chequear valores vacíos o None
+        if value in (None, "", [], ()) or (
+            isinstance(value, str)
+            and (
+                value.strip().lower() == "none"
+                or value.strip().lower().endswith(".none")
+            )
+        ):
             return mark_safe("<em>No cargado</em>")
-        if isinstance(value, str) and value.strip().lower() == "none":
-            return mark_safe("<em>No cargado</em>")
+
+        # Formatear booleanos
         if isinstance(value, bool):
             return "Sí" if value else "No"
+
+        # Formatear strings con patrón "app.Model.pk"
         if isinstance(value, str):
             cleaned = value.strip()
-            if cleaned.lower().endswith(".none"):
-                return mark_safe("<em>No cargado</em>")
-            # Patrones tipo "app.Model.pk" -> "Model #pk"
             dotted = cleaned.split(".")
-            if (
-                len(dotted) >= 3
-                and re.fullmatch(r"[a-z_]+", dotted[0])
-                and dotted[1]
-            ):
+            if len(dotted) >= 3 and re.fullmatch(r"[a-z_]+", dotted[0]) and dotted[1]:
                 model_label = dotted[1].replace("_", " ").title()
                 pk_part = dotted[-1]
-                if pk_part.isdigit():
-                    return f"{model_label} #{pk_part}"
-                return f"{model_label} ({pk_part})"
+                return (
+                    f"{model_label} #{pk_part}"
+                    if pk_part.isdigit()
+                    else f"{model_label} ({pk_part})"
+                )
+
+        # Formatear ForeignKeys
         if field and isinstance(field, (models.ForeignKey, models.OneToOneField)):
+            fk_key = self._get_fk_cache_key(field, value)
+            obj = fk_cache.get(fk_key)
+            if fk_key not in fk_cache:
+                try:
+                    obj = field.remote_field.model.objects.filter(pk=value).first()
+                except Exception:  # noqa: BLE001
+                    obj = None
+                fk_cache[fk_key] = obj
+
             try:
-                obj = field.remote_field.model.objects.filter(pk=value).first()
                 if obj:
                     label = str(obj)
                     if "object (" in label and ")" in label:
@@ -91,11 +114,14 @@ class AuditLogResolveMixin:
                         return f"{model_name} #{value}"
                     return label
             except Exception:  # noqa: BLE001
-                return value
+                pass
+
         return value
 
 
-class BaseAuditLogListView(AuditLogResolveMixin, LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class BaseAuditLogListView(
+    AuditLogResolveMixin, LoginRequiredMixin, PermissionRequiredMixin, ListView
+):
     model = LogEntry
     template_name = "audittrail/log_list.html"
     context_object_name = "entries"
@@ -176,6 +202,7 @@ class BaseAuditLogListView(AuditLogResolveMixin, LoginRequiredMixin, PermissionR
         context["querystring"] = params.urlencode()
         return context
 
+
 class AuditLogListView(BaseAuditLogListView):
     """Listado global de eventos de auditoría."""
 
@@ -207,7 +234,9 @@ class AuditLogInstanceView(BaseAuditLogListView):
 
     def get_queryset(self):
         ct = get_object_or_404(
-            ContentType, app_label=self.kwargs["app_label"], model=self.kwargs["model_name"]
+            ContentType,
+            app_label=self.kwargs["app_label"],
+            model=self.kwargs["model_name"],
         )
         qs = (
             LogEntry.objects.select_related("actor", "content_type")
@@ -225,7 +254,9 @@ class AuditLogInstanceView(BaseAuditLogListView):
         return context
 
 
-class AuditLogDetailView(AuditLogResolveMixin, LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class AuditLogDetailView(
+    AuditLogResolveMixin, LoginRequiredMixin, PermissionRequiredMixin, DetailView
+):
     model = LogEntry
     template_name = "audittrail/log_detail.html"
     context_object_name = "entry"
