@@ -49,11 +49,31 @@ class UsuariosService:
         """Configuración para la lista de usuarios"""
         return {
             "table_headers": [
-                {"title": "Nombre", "width": "12%"},
-                {"title": "Apellido", "width": "20%"},
-                {"title": "Username", "width": "10%"},
-                {"title": "Email", "width": "8%"},
-                {"title": "Rol", "width": "20%"},
+                {
+                    "title": "Nombre",
+                    "width": "12%",
+                    "sortable": True,
+                    "sort_key": "first_name",
+                },
+                {
+                    "title": "Apellido",
+                    "width": "20%",
+                    "sortable": True,
+                    "sort_key": "last_name",
+                },
+                {
+                    "title": "Username",
+                    "width": "10%",
+                    "sortable": True,
+                    "sort_key": "username",
+                },
+                {
+                    "title": "Email",
+                    "width": "8%",
+                    "sortable": True,
+                    "sort_key": "email",
+                },
+                {"title": "Rol", "width": "20%", "sortable": True, "sort_key": "rol"},
             ],
             "table_fields": [
                 {"name": "first_name"},
@@ -66,14 +86,14 @@ class UsuariosService:
                 {
                     "label": "Editar",
                     "url_name": "usuario_editar",
-                    "type": "primary",
-                    "class": "editar",
+                    "type": "editar",
+                    "icon": "edit",
                 },
                 {
                     "label": "Eliminar",
                     "url_name": "usuario_borrar",
-                    "type": "danger",
-                    "class": "eliminar",
+                    "type": "eliminar",
+                    "icon": "trash-alt",
                 },
             ],
             "breadcrumb_items": [
