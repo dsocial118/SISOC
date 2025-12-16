@@ -125,14 +125,16 @@ class CiudadanoForm(forms.ModelForm):
 
 class GrupoFamiliarForm(forms.ModelForm):
     ciudadano_2 = forms.CharField(
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "Buscar por documento (4+ dígitos)",
-            "autocomplete": "off",
-        }),
-        label="Familiar"
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Buscar por documento (4+ dígitos)",
+                "autocomplete": "off",
+            }
+        ),
+        label="Familiar",
     )
-    
+
     class Meta:
         model = GrupoFamiliar
         fields = [
@@ -164,15 +166,15 @@ class GrupoFamiliarForm(forms.ModelForm):
         familiar_id = self.cleaned_data.get("ciudadano_2")
         if not familiar_id:
             raise forms.ValidationError("Debe seleccionar un familiar.")
-        
+
         try:
             familiar = Ciudadano.objects.get(pk=int(familiar_id))
-        except (Ciudadano.DoesNotExist, ValueError, TypeError):
-            raise forms.ValidationError("Familiar no válido.")
-        
+        except (Ciudadano.DoesNotExist, ValueError, TypeError) as exc:
+            raise forms.ValidationError("Familiar no válido.") from exc
+
         if familiar == self.ciudadano:
             raise forms.ValidationError("No puede autoreferenciarse.")
-        
+
         ya_existe = GrupoFamiliar.objects.filter(
             Q(ciudadano_1=self.ciudadano, ciudadano_2=familiar)
             | Q(ciudadano_1=familiar, ciudadano_2=self.ciudadano)

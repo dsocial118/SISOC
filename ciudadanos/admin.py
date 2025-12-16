@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from ciudadanos.models import Ciudadano, GrupoFamiliar, ProgramaTransferencia, HistorialTransferencia, Interaccion
+from ciudadanos.models import (
+    Ciudadano,
+    GrupoFamiliar,
+    ProgramaTransferencia,
+    HistorialTransferencia,
+    Interaccion,
+)
 
 
 @admin.register(Ciudadano)
@@ -26,7 +32,14 @@ class GrupoFamiliarAdmin(admin.ModelAdmin):
 
 @admin.register(ProgramaTransferencia)
 class ProgramaTransferenciaAdmin(admin.ModelAdmin):
-    list_display = ("ciudadano", "tipo", "categoria", "monto", "cantidad_texto", "activo")
+    list_display = (
+        "ciudadano",
+        "tipo",
+        "categoria",
+        "monto",
+        "cantidad_texto",
+        "activo",
+    )
     search_fields = ("ciudadano__apellido", "ciudadano__nombre", "ciudadano__documento")
     list_filter = ("tipo", "categoria", "activo")
     autocomplete_fields = ("ciudadano",)
@@ -35,7 +48,15 @@ class ProgramaTransferenciaAdmin(admin.ModelAdmin):
 
 @admin.register(HistorialTransferencia)
 class HistorialTransferenciaAdmin(admin.ModelAdmin):
-    list_display = ("ciudadano", "mes", "anio", "monto_auh", "monto_prestacion_alimentar", "monto_centro_familia", "monto_comedor")
+    list_display = (
+        "ciudadano",
+        "mes",
+        "anio",
+        "monto_auh",
+        "monto_prestacion_alimentar",
+        "monto_centro_familia",
+        "monto_comedor",
+    )
     search_fields = ("ciudadano__apellido", "ciudadano__nombre", "ciudadano__documento")
     list_filter = ("anio", "mes")
     autocomplete_fields = ("ciudadano",)
