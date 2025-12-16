@@ -6,9 +6,9 @@
 
 {% block content %}
     <link rel="stylesheet"
-          href="{% static 'custom/css/comedorRelevamiento.css' %}"/>
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <link rel="stylesheet"
-          href="{% static 'custom/css/comedorFormModerno.css' %}"/>
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
 
     <div class="d-flex justify-content-between mb-3">
         <div>
@@ -73,8 +73,10 @@
                         <div class="form-group">
                             <label for="id_ciudadano_2">{{ form.ciudadano_2.label }}</label>
                             {{ form.ciudadano_2 }}
-                            <input type="hidden" id="id_ciudadano_2_id" name="ciudadano_2_id">
-                            {% if form.ciudadano_2.errors %}<div class="text-danger small mt-1">{{ form.ciudadano_2.errors|join:", " }}</div>{% endif %}
+                            <input type="hidden" id="id_ciudadano_2_id" name="ciudadano_2_id" />
+                            {% if form.ciudadano_2.errors %}
+                                <div class="text-danger small mt-1">{{ form.ciudadano_2.errors|join:", " }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

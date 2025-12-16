@@ -1,6 +1,9 @@
+from datetime import datetime
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -50,11 +53,39 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
     model = Ciudadano
     template_name = "ciudadanos/ciudadano_detail.html"
     context_object_name = "ciudadano"
+    MESES_NOMBRES = [
+        "",
+        "Ene",
+        "Feb",
+        "Mar",
+        "Abr",
+        "May",
+        "Jun",
+        "Jul",
+        "Ago",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dic",
+    ]
 
     def get_context_data(self, **kwargs):
-        from django.conf import settings
         ctx = super().get_context_data(**kwargs)
         ciudadano = self.object
+        ctx.update(
+            familia=self.build_familia(ciudadano),
+            grupo_form=GrupoFamiliarForm(ciudadano=ciudadano),
+            google_maps_api_key=settings.GOOGLE_MAPS_API_KEY,
+            interacciones=ciudadano.interacciones.all()[:10],
+        )
+        ctx.update(self.get_programas_context(ciudadano))
+        ctx.update(self.get_historial_context(ciudadano))
+        ctx.update(self.get_celiaquia_context(ciudadano))
+        ctx.update(self.get_cdf_context(ciudadano))
+        ctx.update(self.get_comedor_context(ciudadano))
+        return ctx
+
+    def build_familia(self, ciudadano):
         relaciones = (
             GrupoFamiliar.objects.filter(
                 Q(ciudadano_1=ciudadano) | Q(ciudadano_2=ciudadano)
@@ -64,95 +95,101 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         )
         familia = []
         for relacion in relaciones:
-            if relacion.ciudadano_1_id == ciudadano.id:
-                familiar = relacion.ciudadano_2
-            else:
-                familiar = relacion.ciudadano_1
+            familiar = (
+                relacion.ciudadano_2
+                if relacion.ciudadano_1_id == ciudadano.id
+                else relacion.ciudadano_1
+            )
             familia.append((relacion, familiar))
-        ctx["familia"] = familia
-        ctx["grupo_form"] = GrupoFamiliarForm(ciudadano=ciudadano)
-        ctx["google_maps_api_key"] = settings.GOOGLE_MAPS_API_KEY
-        
-        # Programas de transferencia
-        from ciudadanos.models import ProgramaTransferencia, HistorialTransferencia
-        ctx['programas_directos'] = ciudadano.programas_transferencia.filter(
-            activo=True, categoria=ProgramaTransferencia.CATEGORIA_DIRECTA
-        )
-        ctx['programas_indirectos'] = ciudadano.programas_transferencia.filter(
-            activo=True, categoria=ProgramaTransferencia.CATEGORIA_INDIRECTA
-        )
-        
-        # Historial de transferencias
-        from datetime import datetime
-        hoy = datetime.now()
+        return familia
+
+    def get_programas_context(self, ciudadano):
+        from ciudadanos.models import ProgramaTransferencia
+
+        programas = ciudadano.programas_transferencia.filter(activo=True)
+        return {
+            "programas_directos": programas.filter(
+                categoria=ProgramaTransferencia.CATEGORIA_DIRECTA
+            ),
+            "programas_indirectos": programas.filter(
+                categoria=ProgramaTransferencia.CATEGORIA_INDIRECTA
+            ),
+        }
+
+    def get_historial_context(self, ciudadano):
         historial = ciudadano.historial_transferencias.filter(
-            anio__gte=hoy.year - 1
-        ).order_by('anio', 'mes')
-        
-        meses_nombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-        labels = [f"{meses_nombres[h.mes]}" for h in historial]
-        auh = [float(h.monto_auh) for h in historial]
-        prestacion = [float(h.monto_prestacion_alimentar) for h in historial]
-        centro_familia = [float(h.monto_centro_familia) for h in historial]
-        comedor = [float(h.monto_comedor) for h in historial]
-        
-        ctx['historial_labels'] = labels
-        ctx['historial_auh'] = auh
-        ctx['historial_prestacion'] = prestacion
-        ctx['historial_centro_familia'] = centro_familia
-        ctx['historial_comedor'] = comedor
-        
-        # Interacciones
-        ctx['interacciones'] = ciudadano.interacciones.all()[:10]
-        
-        # Celiaquía - ExpedienteCiudadano
+            anio__gte=datetime.now().year - 1
+        ).order_by("anio", "mes")
+
+        return {
+            "historial_labels": [self.MESES_NOMBRES[h.mes] for h in historial],
+            "historial_auh": [float(h.monto_auh) for h in historial],
+            "historial_prestacion": [
+                float(h.monto_prestacion_alimentar) for h in historial
+            ],
+            "historial_centro_familia": [
+                float(h.monto_centro_familia) for h in historial
+            ],
+            "historial_comedor": [float(h.monto_comedor) for h in historial],
+        }
+
+    def get_celiaquia_context(self, ciudadano):
         try:
             from celiaquia.models import ExpedienteCiudadano
-            expedientes = ExpedienteCiudadano.objects.filter(ciudadano=ciudadano).select_related(
-                'expediente', 'estado'
-            ).order_by('-creado_en')
-            ctx['expedientes_celiaquia'] = expedientes
-            if expedientes.exists():
-                ctx['expediente_actual'] = expedientes.first()
-        except:
-            ctx['expedientes_celiaquia'] = []
-        
-        # Centro de Familia - ParticipanteActividad
+        except Exception:
+            return {"expedientes_celiaquia": []}
+
+        expedientes = (
+            ExpedienteCiudadano.objects.filter(ciudadano=ciudadano)
+            .select_related("expediente", "estado")
+            .order_by("-creado_en")
+        )
+        contexto = {"expedientes_celiaquia": expedientes}
+        expediente_actual = expedientes.first()
+        if expediente_actual:
+            contexto["expediente_actual"] = expediente_actual
+        return contexto
+
+    def get_cdf_context(self, ciudadano):
         try:
             from centrodefamilia.models import ParticipanteActividad
-            from django.db.models import Sum
-            participaciones = ParticipanteActividad.objects.filter(
-                ciudadano=ciudadano
-            ).select_related(
-                'actividad_centro__centro', 'actividad_centro__actividad'
-            ).order_by('-fecha_registro')
-            ctx['participaciones_cdf'] = participaciones
-            costo_total_cdf = ParticipanteActividad.objects.filter(
-                ciudadano=ciudadano,
-                estado='inscrito'
-            ).aggregate(
-                total=Sum('actividad_centro__precio')
-            )['total'] or 0
-            ctx['costo_total_cdf'] = costo_total_cdf
-        except:
-            ctx['participaciones_cdf'] = []
-            ctx['costo_total_cdf'] = 0
-        
-        # Comedor - Nomina
+        except Exception:
+            return {"participaciones_cdf": [], "costo_total_cdf": 0}
+
+        participaciones = (
+            ParticipanteActividad.objects.filter(ciudadano=ciudadano)
+            .select_related("actividad_centro__centro", "actividad_centro__actividad")
+            .order_by("-fecha_registro")
+        )
+        costo_total_cdf = (
+            ParticipanteActividad.objects.filter(
+                ciudadano=ciudadano, estado="inscrito"
+            ).aggregate(total=Sum("actividad_centro__precio"))["total"]
+            or 0
+        )
+        return {
+            "participaciones_cdf": participaciones,
+            "costo_total_cdf": costo_total_cdf,
+        }
+
+    def get_comedor_context(self, ciudadano):
         try:
             from comedores.models import Nomina
-            nominas = Nomina.objects.filter(
-                ciudadano=ciudadano
-            ).select_related(
-                'comedor__provincia', 'comedor__municipio', 'comedor__tipocomedor'
-            ).order_by('-fecha')
-            ctx['nominas_comedor'] = nominas
-            if nominas.exists():
-                ctx['nomina_actual'] = nominas.first()
-        except:
-            ctx['nominas_comedor'] = []
-        
-        return ctx
+        except Exception:
+            return {"nominas_comedor": []}
+
+        nominas = (
+            Nomina.objects.filter(ciudadano=ciudadano)
+            .select_related(
+                "comedor__provincia", "comedor__municipio", "comedor__tipocomedor"
+            )
+            .order_by("-fecha")
+        )
+        contexto = {"nominas_comedor": nominas}
+        nomina_actual = nominas.first()
+        if nomina_actual:
+            contexto["nomina_actual"] = nomina_actual
+        return contexto
 
 
 class CiudadanosCreateView(LoginRequiredMixin, CreateView):
@@ -203,8 +240,8 @@ class GrupoFamiliarCreateView(LoginRequiredMixin, FormView):
         kwargs["ciudadano"] = self.ciudadano
         if self.request.POST:
             data = self.request.POST.copy()
-            data['ciudadano_2'] = data.get('ciudadano_2_id', '')
-            kwargs['data'] = data
+            data["ciudadano_2"] = data.get("ciudadano_2_id", "")
+            kwargs["data"] = data
         return kwargs
 
     def form_valid(self, form):
