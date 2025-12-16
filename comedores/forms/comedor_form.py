@@ -284,9 +284,11 @@ class ComedorForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+
         estado_actividad = cleaned_data.get("estado_general")
         estado_proceso = cleaned_data.get("subestado")
         estado_detalle = cleaned_data.get("motivo")
+
         if not estado_actividad:
             self.add_error("estado_general", "Seleccione un estado general.")
             return cleaned_data
@@ -311,12 +313,25 @@ class ComedorForm(forms.ModelForm):
         estado_actividad = self.cleaned_data.get("estado_general")
         estado_proceso = self.cleaned_data.get("subestado")
         estado_detalle = self.cleaned_data.get("motivo")
+
+        # CRÍTICO: Preservar ultimo_estado antes de guardar
+        # porque no está en el formulario y se puede perder
+        ultimo_estado_original = getattr(self.instance, "ultimo_estado", None)
+
         if commit:
             comedor.save()
             self.save_m2m()
+
+            # Sincronizar estados (creará nuevo historial solo si cambió)
             self._sync_estado_historial(
                 comedor, estado_actividad, estado_proceso, estado_detalle
             )
+
+            # Si no se creó un nuevo estado y teníamos uno original, restaurarlo
+            if not comedor.ultimo_estado and ultimo_estado_original:
+                comedor.ultimo_estado = ultimo_estado_original
+                comedor.save(update_fields=["ultimo_estado"])
+
         return comedor
 
     def _sync_estado_historial(self, comedor, actividad, proceso, detalle):
@@ -328,8 +343,10 @@ class ComedorForm(forms.ModelForm):
             proceso.id if proceso else None,
             detalle.id if detalle else None,
         )
+
         if previous == current:
             return
+
         registrar_cambio_estado(
             comedor=comedor,
             actividad=actividad,
@@ -341,6 +358,7 @@ class ComedorForm(forms.ModelForm):
     class Meta:
         model = Comedor
         fields = "__all__"
+        exclude = ["ultimo_estado"]  # IMPORTANTE: Excluir para que no se sobrescriba
         labels = {
             "tipocomedor": "Tipo comedor",
         }

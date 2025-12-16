@@ -4,7 +4,9 @@
 {% block title %}Auditoría{% endblock %}
 {% block titulo-pagina %}{{ title }}{% endblock %}
 {% block breadcrumb %}
-    <li class="breadcrumb-item"><a href="{% url 'inicio' %}">Inicio</a></li>
+    <li class="breadcrumb-item">
+        <a href="{% url 'inicio' %}">Inicio</a>
+    </li>
     <li class="breadcrumb-item active">Auditoría</li>
 {% endblock %}
 
@@ -73,9 +75,7 @@
                                     <th>Instancia</th>
                                 {% endif %}
                                 <th>Evento</th>
-                                {% if is_instance_view %}
-                                    <th>Cambios</th>
-                                {% endif %}
+                                {% if is_instance_view %}<th>Cambios</th>{% endif %}
                                 <th></th>
                             </tr>
                         </thead>
@@ -95,13 +95,23 @@
                                         <td>#{{ entry.object_pk }}</td>
                                     {% endif %}
                                     <td>
-                                        {% if entry.action == entry.Action.CREATE %}Creación{% elif entry.action == entry.Action.UPDATE %}Actualización{% elif entry.action == entry.Action.DELETE %}Eliminación{% else %}{{ entry.get_action_display }}{% endif %}
+                                        {% if entry.action == entry.Action.CREATE %}
+                                            Creación
+                                        {% elif entry.action == entry.Action.UPDATE %}
+                                            Actualización
+                                        {% elif entry.action == entry.Action.DELETE %}
+                                            Eliminación
+                                        {% else %}
+                                            {{ entry.get_action_display }}
+                                        {% endif %}
                                     </td>
                                     {% if is_instance_view %}
                                         <td>
                                             {% if entry.action == entry.Action.UPDATE and entry.resolved_changes %}
                                                 {% for field, change in entry.resolved_changes.items|slice:":2" %}
-                                                    <div><strong>{{ field }}</strong>: {{ change.old }} → {{ change.new }}</div>
+                                                    <div>
+                                                        <strong>{{ field }}</strong>: {{ change.old }} → {{ change.new }}
+                                                    </div>
                                                 {% endfor %}
                                                 {% if entry.resolved_changes|length > 2 %}
                                                     <div class="text-muted">+ {{ entry.resolved_changes|length|add:"-2" }} más</div>
@@ -112,12 +122,14 @@
                                         </td>
                                     {% endif %}
                                     <td class="text-end">
-                                        <a href="{% url 'audittrail:log_detail' entry.pk %}" class="btn btn-sm btn-outline-secondary">Ver</a>
+                                        <a href="{% url 'audittrail:log_detail' entry.pk %}"
+                                           class="btn btn-sm btn-outline-secondary">Ver</a>
                                     </td>
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="{% if is_instance_view %}5{% else %}6{% endif %}" class="text-center">No hay eventos para los filtros seleccionados.</td>
+                                    <td colspan="{% if is_instance_view %}5{% else %}6{% endif %}"
+                                        class="text-center">No hay eventos para los filtros seleccionados.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -127,13 +139,27 @@
                     <div class="card-footer clearfix">
                         <ul class="pagination pagination-sm m-0 float-end">
                             {% if page_obj.has_previous %}
-                                <li class="page-item"><a class="page-link" href="?page=1{% if querystring %}&{{ querystring }}{% endif %}">«</a></li>
-                                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">‹</a></li>
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?page=1{% if querystring %}&{{ querystring }}{% endif %}">«</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">‹</a>
+                                </li>
                             {% endif %}
-                            <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                            </li>
                             {% if page_obj.has_next %}
-                                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">›</a></li>
-                                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if querystring %}&{{ querystring }}{% endif %}">»</a></li>
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}">›</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?page={{ page_obj.paginator.num_pages }}{% if querystring %}&{{ querystring }}{% endif %}">»</a>
+                                </li>
                             {% endif %}
                         </ul>
                     </div>

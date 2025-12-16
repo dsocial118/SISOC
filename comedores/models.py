@@ -449,10 +449,14 @@ class AuditComedorPrograma(models.Model):
 
 
 class Nomina(models.Model):
+    ESTADO_PENDIENTE = "pendiente"
+    ESTADO_ACTIVO = "activo"
+    ESTADO_BAJA = "baja"
+
     ESTADO_CHOICES = [
-        ("pendiente", "Pendiente"),
-        ("activo", "Activo"),
-        ("baja", "Baja"),
+        (ESTADO_PENDIENTE, "Pendiente"),
+        (ESTADO_ACTIVO, "Activo"),
+        (ESTADO_BAJA, "Baja"),
     ]
 
     comedor = models.ForeignKey("Comedor", on_delete=models.SET_NULL, null=True)
@@ -467,7 +471,7 @@ class Nomina(models.Model):
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CHOICES,
-        default="pendiente",
+        default=ESTADO_PENDIENTE,
     )
     observaciones = models.TextField(blank=True, null=True)
 

@@ -5,6 +5,8 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% include 'components/search_bar.html' with titulo='Expedientes' placeholder='Buscar por nombre, ubicación, referente, etc.' help_text='Buscar por nombre, ubicación, referente, etc.' reset_url='admisiones_legales_listar' query=query show_add_button=False %}
     <div class="row mt-5">
         <div class="col-12">
@@ -13,18 +15,33 @@
                     <table class="table table-bordered table-striped projects">
                         <thead>
                             <tr>
-                                <th>Comedor</th>
-                                <th>Tipo convenio</th>
-                                <th>Num Expediente</th>
-                                <th>Modificado</th>
-                                <th>Estado</th>
+                                <th class="sortable" data-column="comedor">
+                                    Comedor
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="tipo_convenio">
+                                    Tipo convenio
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="expediente">
+                                    Num Expediente
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="modificado">
+                                    Modificado
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="estado">
+                                    Estado
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
                                 <th style="width: 10%" class="notexport">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for admision in admisiones %}
                                 <tr>
-                                    <td>
+                                    <td data-comedor="{{ admision.comedor.nombre|default:'' }}">
                                         {% if admision.comedor and admision.comedor.id %}
                                             <a href="{% url 'comedor_detalle' admision.comedor.id %}"
                                                class="font-weight-bold link-handler"
@@ -33,10 +50,12 @@
                                             <span class="text-muted">Sin comedor asignado</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ admision.tipo_convenio.nombre }}</td>
-                                    <td>{{ admision.num_expediente }}</td>
-                                    <td>{{ admision.modificado|date:'d/m/Y' }}</td>
-                                    <td>{{ admision.get_estado_admision_display| default_if_none:"Sin información" }}</td>
+                                    <td data-tipo_convenio="{{ admision.tipo_convenio.nombre }}">{{ admision.tipo_convenio.nombre }}</td>
+                                    <td data-expediente="{{ admision.num_expediente }}">{{ admision.num_expediente }}</td>
+                                    <td data-modificado="{{ admision.modificado|date:'Y-m-d' }}">{{ admision.modificado|date:'d/m/Y' }}</td>
+                                    <td data-estado="{{ admision.get_estado_admision_display|default:'' }}">
+                                        {{ admision.get_estado_admision_display| default_if_none:"Sin información" }}
+                                    </td>
                                     <td>
                                         <div class="btn-group" role="group">
                                             <a href="{% url 'admisiones_legales_ver' admision.id %}"
@@ -60,5 +79,7 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
     <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
 {% endblock %}

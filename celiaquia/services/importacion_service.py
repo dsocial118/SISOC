@@ -647,13 +647,18 @@ class ImportacionService:
                 if nacionalidad_val:
                     # Intentar resolver por nombre
                     from core.models import Nacionalidad
+
                     nacionalidad_obj = Nacionalidad.objects.filter(
                         nacionalidad__iexact=str(nacionalidad_val).strip()
                     ).first()
                     if nacionalidad_obj:
                         payload["nacionalidad"] = nacionalidad_obj.pk
                     else:
-                        add_warning(offset, "nacionalidad", f"'{nacionalidad_val}' no encontrada")
+                        add_warning(
+                            offset,
+                            "nacionalidad",
+                            f"'{nacionalidad_val}' no encontrada",
+                        )
                         payload.pop("nacionalidad", None)
                 else:
                     payload.pop("nacionalidad", None)
