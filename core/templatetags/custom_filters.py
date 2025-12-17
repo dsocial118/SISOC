@@ -45,7 +45,7 @@ def getattr(obj, attr_name):
     try:
         value = builtins.getattr(obj, attr_name, None)
         if value is None:
-            return ""
+            return "-"
 
         # Manejar relaciones M2M haciendo join de sus elementos
         try:
@@ -58,7 +58,7 @@ def getattr(obj, attr_name):
 
         return str(value)
     except (AttributeError, TypeError):
-        return ""
+        return "-"
 
 
 @register.filter
