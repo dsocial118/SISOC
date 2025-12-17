@@ -7,9 +7,7 @@
                title="Ver detalles">{{ organizacion.nombre }}</a>
         </td>
         <td data-cuit="{{ organizacion.cuit|default:'' }}">{{ organizacion.cuit |default_if_none:"-" }}</td>
-        <td data-telefono="{{ organizacion.telefono|default:'' }}">
-            {{ organizacion.telefono | default_if_none:"-" }}
-        </td>
+        <td data-telefono="{{ organizacion.telefono|default:'' }}">{{ organizacion.telefono | default_if_none:"-" }}</td>
         <td data-email="{{ organizacion.email|default:'' }}">{{ organizacion.email | default_if_none:"-" }}</td>
         <td class="project-actions text-right">
             <div class="action-buttons" role="group">
