@@ -12,8 +12,9 @@
                                 <tr>
                                     {% for header in headers %}
                                         <th {% if header.width %}style="width: {{ header.width }}"{% endif %}
-                                            {% if header.class %}class="{{ header.class }}"{% endif %}>
+                                            {% if header.sortable %}class="sortable {{ header.class|default:'' }}" data-column="{{ header.sort_key|default:header.title }}"{% elif header.class %}class="{{ header.class }}"{% endif %}>
                                             {{ header.title|default:header }}
+                                            {% if header.sortable %}<i class="fas fa-sort sort-icon"></i>{% endif %}
                                         </th>
                                     {% endfor %}
                                     {% if show_actions %}
@@ -28,7 +29,7 @@
                                     {% if custom_cells %}
                                         <!-- Modo personalizado - permite definir las celdas manualmente -->
                                         {% for cell in item.cells %}
-                                            <td {% if cell.class %}class="{{ cell.class }}"{% endif %}>
+                                            <td {% if cell.class %}class="{{ cell.class }}"{% endif %}{% if cell.data_attr %} data-{{ cell.data_attr }}="{{ cell.data_value|default:cell.content }}"{% endif %}>
                                                 {% if cell.link_url and not disable_links %}
                                                     <a href="{{ cell.link_url }}"
                                                        {% if cell.link_class %}class="{{ cell.link_class }}"{% endif %}
@@ -61,10 +62,20 @@
                                             {% if custom_actions %}
                                                 <!-- Acciones personalizadas para cada item -->
                                                 {% if item.actions %}
-                                                    <div class="btn-group" role="group">
+                                                    <div class="action-buttons" role="group">
                                                         {% for action in item.actions %}
                                                             <a href="{{ action.url }}"
-                                                               class="btn btn-{{ action.type|default:'primary' }} btn-sm {{ action.class|default:'' }}">
+                                                               class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
+                                                               title="{{ action.title|default:action.label }}">
+                                                                {% if action.icon %}
+                                                                    <i class="fas fa-{{ action.icon }}"></i>
+                                                                {% elif action.label == 'Ver' or action.label == 'Ver detalle' %}
+                                                                    <i class="fas fa-eye"></i>
+                                                                {% elif action.label == 'Editar' %}
+                                                                    <i class="fas fa-edit"></i>
+                                                                {% elif action.label == 'Eliminar' %}
+                                                                    <i class="fas fa-trash-alt"></i>
+                                                                {% endif %}
                                                                 {{ action.label }}
                                                             </a>
                                                         {% endfor %}
@@ -73,10 +84,20 @@
                                             {% else %}
                                                 <!-- Acciones estándar -->
                                                 {% if actions %}
-                                                    <div class="btn-group" role="group">
+                                                    <div class="action-buttons" role="group">
                                                         {% for action in actions %}
                                                             <a href="{% url action.url_name item.pk %}"
-                                                               class="btn btn-{{ action.type|default:'primary' }} btn-sm {{ action.class|default:'' }}">
+                                                               class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
+                                                               title="{{ action.title|default:action.label }}">
+                                                                {% if action.icon %}
+                                                                    <i class="fas fa-{{ action.icon }}"></i>
+                                                                {% elif action.label == 'Ver' %}
+                                                                    <i class="fas fa-eye"></i>
+                                                                {% elif action.label == 'Editar' %}
+                                                                    <i class="fas fa-edit"></i>
+                                                                {% elif action.label == 'Eliminar' %}
+                                                                    <i class="fas fa-trash-alt"></i>
+                                                                {% endif %}
                                                                 {{ action.label }}
                                                             </a>
                                                         {% endfor %}

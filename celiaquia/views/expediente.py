@@ -198,7 +198,13 @@ class ExpedienteListView(ListView):
                 Q(id__icontains=search_query)
                 | Q(numero_expediente__icontains=search_query)
                 | Q(estado__nombre__icontains=search_query)
-            )
+                | Q(
+                    usuario_provincia__profile__provincia__nombre__icontains=search_query
+                )
+                | Q(asignaciones_tecnicos__tecnico__first_name__icontains=search_query)
+                | Q(asignaciones_tecnicos__tecnico__last_name__icontains=search_query)
+                | Q(asignaciones_tecnicos__tecnico__username__icontains=search_query)
+            ).distinct()
 
         return qs
 
@@ -1397,14 +1403,17 @@ class ReprocesarRegistrosErroneosView(View):
                                             registro.fila_excel,
                                             warning,
                                         )
-                                    
+
                                     # Crear legajo del responsable
                                     ExpedienteCiudadano.objects.get_or_create(
                                         expediente=expediente,
                                         ciudadano=responsable,
-                                        defaults={"estado": estado_inicial, "rol": ExpedienteCiudadano.ROLE_RESPONSABLE},
+                                        defaults={
+                                            "estado": estado_inicial,
+                                            "rol": ExpedienteCiudadano.ROLE_RESPONSABLE,
+                                        },
                                     )
-                                    
+
                                     # Crear GrupoFamiliar
                                     relaciones_crear.append(
                                         {

@@ -79,15 +79,25 @@ textarea:focus {
 .select2-results__option {
   background-color: #1e2a3a !important;
   color: #e5e7eb !important;
+  padding: 8px 12px !important;
 }
 
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
   background-color: #f39c12 !important; /* Dorado al hacer hover */
-  color: #1e2a3a !important;
+  color: #1e2a3a !important; /* Texto oscuro sobre fondo dorado */
+  font-weight: 500;
 }
 
 .select2-container--default .select2-results__option[aria-selected=true] {
   background-color: #2c3e50 !important; /* Similar al sidebar */
+  color: #f39c12 !important; /* Texto dorado para opción seleccionada */
+  font-weight: 500;
+}
+
+/* Opción seleccionada Y con hover - priorizar el hover */
+.select2-container--default .select2-results__option--highlighted[aria-selected=true] {
+  background-color: #f39c12 !important; /* Dorado al hacer hover */
+  color: #1e2a3a !important; /* Texto oscuro sobre fondo dorado */
 }
 
 .select2-container--default .select2-selection--single .select2-selection__placeholder {
@@ -755,6 +765,12 @@ label {
   display: inline-block;
   margin-left: 6px;
   cursor: help;
+  vertical-align: middle;
+}
+
+/* Tooltip dentro del label */
+.field-tooltip.tooltip-in-label {
+  margin-left: 8px;
 }
 
 .field-tooltip i {
@@ -785,6 +801,7 @@ label {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   border: 1px solid #374151;
   transition: all 0.2s ease;
+  pointer-events: none; /* Evitar que el tooltip interfiera con el mouse */
 }
 
 .tooltip-text::after {
@@ -801,6 +818,13 @@ label {
 .field-tooltip:hover .tooltip-text {
   visibility: visible;
   opacity: 1;
+}
+
+/* Asegurar que el label con tooltip no rompa el layout */
+label:has(.field-tooltip) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* ============================================

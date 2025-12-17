@@ -1,10 +1,73 @@
 {% extends "includes/main.html" %}
+{% load static %}
 {% block title %}Actividades{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <h2 class="text-center display-4 mb-4">{{ page_title }}</h2>
     {% include 'components/action_buttons.html' with buttons=action_buttons class="row mt-3" %}
-    {% include 'components/actividad_table.html' with headers=table_headers objects=actividades empty_message='No hay actividades registradas.' %}
+
+    <!-- Actividad Data Table -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped projects">
+                            <thead>
+                                <tr>
+                                    {% for header in table_headers %}
+                                        <th {% if header.sortable %}class="sortable {{ header.class|default:'' }}" data-column="{{ header.sort_key|default:header.title }}"{% elif header.class %}class="{{ header.class }}"{% endif %}
+                                            {% if header.style %}style="{{ header.style }}"{% endif %}>
+                                            {{ header.title }}
+                                            {% if header.sortable %}<i class="fas fa-sort sort-icon"></i>{% endif %}
+                                        </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for actividad in actividades %}
+                                    <tr>
+                                        <td data-centro="{{ actividad.centro.nombre }}">{{ actividad.centro.nombre }}</td>
+                                        <td data-actividad="{{ actividad.actividad.nombre }}">
+                                            {% if actividad.id %}
+                                                <a href="{% url 'actividadcentro_detail' centro_id=actividad.centro.id pk=actividad.id %}"
+                                                   class="text-decoration-none">{{ actividad.actividad.nombre }}</a>
+                                            {% else %}
+                                                {{ actividad.actividad.nombre }}
+                                            {% endif %}
+                                        </td>
+                                        <td data-dias="{% for dia in actividad.dias.all %}{{ dia.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                                            {% for dia in actividad.dias.all %}
+                                                {{ dia.nombre }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% empty %}
+                                                {{ actividad.dias }}
+                                            {% endfor %}
+                                        </td>
+                                        <td data-horariosdesde="{{ actividad.horariosdesde }}">{{ actividad.horariosdesde }}</td>
+                                        <td data-horarioshasta="{{ actividad.horarioshasta }}">{{ actividad.horarioshasta }}</td>
+                                        <td data-estado="{{ actividad.get_estado_display }}">
+                                            <span class="badge badge-info">{{ actividad.get_estado_display }}</span>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="{{ table_headers|length }}" class="text-center">No hay actividades registradas.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}

@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeCollapsibleSections();
     initializeRealTimeValidation();
     initializeProgressTracking();
+    moveTooltipsToLabels();
 });
 
 /**
@@ -55,11 +56,8 @@ function initializeEstadoTree() {
         const desiredValue = preservedValue ?? select.value;
         const $select = $(select);
 
-        console.log(`[renderOptions] Iniciando para ${select.id}, opciones: ${options.length}`);
-
         // IMPORTANTE: Destruir Select2 COMPLETAMENTE antes de manipular el DOM
         if (typeof $.fn.select2 !== 'undefined' && $select.data('select2')) {
-            console.log(`[renderOptions] Destruyendo Select2 existente en ${select.id}`);
             try {
                 $select.select2('destroy');
                 // Remover cualquier elemento select2 huérfano
@@ -104,7 +102,6 @@ function initializeEstadoTree() {
         // Solo inicializar Select2 si hay opciones disponibles
         if (options.length > 0 && typeof initializeSelect2 === 'function') {
             const selectId = select.id;
-            console.log(`[renderOptions] Reinicializando Select2 para ${selectId} con ${options.length} opciones`);
             // Pequeño delay para asegurar que el DOM esté limpio
             setTimeout(() => {
                 initializeSelect2(selectId, {
@@ -112,8 +109,6 @@ function initializeEstadoTree() {
                     allowClear: selectId === 'id_motivo'
                 });
             }, 50);
-        } else if (options.length === 0) {
-            console.log(`[renderOptions] No se reinicializa Select2 para ${select.id}: no hay opciones`);
         }
     }
 
@@ -126,24 +121,15 @@ function initializeEstadoTree() {
     }
 
     function getDetalles(actividadId, procesoId) {
-        console.log(`getDetalles llamado con actividadId=${actividadId}, procesoId=${procesoId}`);
-
         if (!actividadId || !procesoId) {
-            console.log(`→ Retornando [] porque actividadId o procesoId están vacíos`);
             return [];
         }
 
         const procesos = getProcesos(actividadId);
-        console.log(`→ Procesos obtenidos:`, procesos);
-
         const proceso = procesos.find(
             (item) => String(item.id) === String(procesoId)
         );
-        console.log(`→ Proceso encontrado con id=${procesoId}:`, proceso);
-
         const detalles = proceso ? proceso.detalles : [];
-        console.log(`→ Detalles retornados:`, detalles);
-
         return detalles;
     }
 
@@ -168,21 +154,15 @@ function initializeEstadoTree() {
         const procesoId = subestadoSelect.value;
         const detalles = getDetalles(actividadId, procesoId);
 
-        console.log(`=== refreshMotivos ===`);
-        console.log(`actividadId: ${actividadId}, procesoId: ${procesoId}`);
-        console.log(`detalles encontrados: ${detalles.length}`, detalles);
-
         if (detalles.length === 0) {
             // No hay opciones: limpiar, deshabilitar y NO inicializar Select2
             motivoSelect.innerHTML = '<option value="">---------</option>';
             motivoSelect.value = "";
             setDisabled(motivoSelect, true);
-            console.log(`→ Motivo deshabilitado (no hay detalles)`);
         } else {
             // Hay opciones: renderizar e inicializar Select2
             setDisabled(motivoSelect, false);
             renderOptions(motivoSelect, detalles, motivoPlaceholder, preservedMotivo);
-            console.log(`→ Motivo habilitado con ${detalles.length} opciones`);
         }
     }
 
@@ -190,36 +170,26 @@ function initializeEstadoTree() {
         const actividadId = estadoSelect.value;
         const procesos = getProcesos(actividadId);
 
-        console.log(`=== refreshSubestados ===`);
-        console.log(`actividadId: ${actividadId}`);
-        console.log(`procesos encontrados: ${procesos.length}`, procesos);
-
         if (procesos.length === 0) {
             // No hay opciones: limpiar, deshabilitar y NO inicializar Select2
             subestadoSelect.innerHTML = '<option value="">---------</option>';
             subestadoSelect.value = "";
             setDisabled(subestadoSelect, true);
-            console.log(`→ Subestado deshabilitado (no hay procesos)`);
         } else {
             // Hay opciones: renderizar e inicializar Select2
             setDisabled(subestadoSelect, false);
             renderOptions(subestadoSelect, procesos, subestadoPlaceholder, preservedSubestado);
-            console.log(`→ Subestado habilitado con ${procesos.length} opciones`);
         }
 
         refreshMotivos(preservedMotivo);
     }
 
     // Usar eventos de Select2 en lugar de eventos nativos
-    $(estadoSelect).on('select2:select change', function (e) {
-        const value = $(this).val();
-        console.log('Estado general cambió a:', value, 'Tipo de evento:', e.type);
+    $(estadoSelect).on('select2:select change', function () {
         refreshSubestados("", "");
     });
 
-    $(subestadoSelect).on('select2:select change', function (e) {
-        const value = $(this).val();
-        console.log('Subestado cambió a:', value, 'Tipo de evento:', e.type);
+    $(subestadoSelect).on('select2:select change', function () {
         refreshMotivos("");
     });
 
@@ -236,26 +206,44 @@ function initializeEstadoTree() {
  */
 function initializeSelect2Fields() {
     $(document).ready(function() {
-        console.log('=== DEBUG SELECT2 ===');
-        console.log('jQuery version:', $.fn.jquery);
-        console.log('Select2 disponible:', typeof $.fn.select2 !== 'undefined');
-        console.log('initializeSelect2 función disponible:', typeof initializeSelect2 !== 'undefined');
-
-        // Verificar que los elementos existen
-        console.log('Elemento organizacion existe:', $('#id_organizacion').length > 0);
-        console.log('Elemento provincia existe:', $('#id_provincia').length > 0);
-
         // Esperar a que el archivo externo esté completamente cargado
         setTimeout(async function () {
-            console.log('Iniciando Select2 usando initializeSelect2()...');
-
             try {
-                // Usar la función initializeSelect2 del archivo comedorform.js
-                initializeSelect2('id_organizacion', {
+                // Configurar Select2 con AJAX para organizaciones
+                $('#id_organizacion').select2({
+                    ajax: {
+                        url: ajaxLoadOrganizacionesUrl,
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return {
+                                q: params.term,
+                                page: params.page || 1
+                            };
+                        },
+                        processResults: function (data, params) {
+                            params.page = params.page || 1;
+                            return {
+                                results: data.results,
+                                pagination: {
+                                    more: data.pagination.more
+                                }
+                            };
+                        },
+                        cache: true
+                    },
                     placeholder: "Seleccione una organización",
+                    allowClear: true,
+                    minimumInputLength: 0,
+                    width: '100%'
+                });
+
+                // IMPORTANTE: Inicializar Select2 en provincia ANTES del gestor de ubicación
+                // para asegurar que las opciones del select estén disponibles
+                initializeSelect2('id_provincia', {
+                    placeholder: "Seleccione una provincia",
                     allowClear: true
                 });
-                console.log('✓ Select2 inicializado en organizacion');
 
                 if (typeof window.initUbicacionSelects === 'function') {
                     await window.initUbicacionSelects({
@@ -272,34 +260,25 @@ function initializeSelect2Fields() {
                         },
                         autoPrefetch: true
                     });
-                    console.log('✓ Gestor de ubicación inicializado (con Select2 exclusivo)');
-                } else {
-                    console.warn('initUbicacionSelects no está disponible');
                 }
 
                 initializeSelect2('id_estado_general', {
                     placeholder: "Seleccione un estado general",
                     allowClear: false
                 });
-                console.log('✓ Select2 inicializado en estado_general');
 
                 initializeSelect2('id_subestado', {
                     placeholder: "Seleccione un subestado",
                     allowClear: false
                 });
-                console.log('✓ Select2 inicializado en subestado');
 
                 initializeSelect2('id_motivo', {
                     placeholder: "Seleccione un motivo",
                     allowClear: true
                 });
-                console.log('✓ Select2 inicializado en motivo');
-
-                console.log('✓✓✓ Todos los Select2 inicializados correctamente ✓✓✓');
 
             } catch (error) {
                 console.error('ERROR al inicializar Select2:', error);
-                console.error('Stack trace:', error.stack);
             }
         }, 500);
     });
@@ -401,6 +380,7 @@ function initializeRealTimeValidation() {
 
 /**
  * Valida un campo individual y actualiza su visualización
+ * SOLO APLICA A CAMPOS REQUERIDOS
  */
 function validateField(field, wrapper) {
     if (!wrapper) return;
@@ -408,17 +388,20 @@ function validateField(field, wrapper) {
     const value = field.value ? field.value.trim() : '';
     const isRequired = field.hasAttribute('required');
 
+    // Limpiar clases previas
     wrapper.classList.remove('field-validated', 'valid', 'invalid');
 
-    // Solo validar si el campo es realmente requerido
-    if (isRequired) {
-        if (value) {
-            wrapper.classList.add('field-validated', 'valid');
-        } else {
-            wrapper.classList.add('field-validated', 'invalid');
-        }
+    // CRÍTICO: Solo validar y mostrar indicador visual si el campo es requerido
+    if (!isRequired) {
+        return; // Salir temprano para campos opcionales
     }
-    // No agregar clases de validación a campos opcionales
+
+    // Aplicar validación solo a campos required
+    if (value) {
+        wrapper.classList.add('field-validated', 'valid');
+    } else {
+        wrapper.classList.add('field-validated', 'invalid');
+    }
 }
 
 // ============================================
@@ -623,6 +606,42 @@ function hideLoader(fieldName) {
         loader.classList.add('d-none');
         field.style.opacity = '1';
     }
+}
+
+// ============================================
+// MOVER TOOLTIPS AL LABEL
+// ============================================
+
+/**
+ * Mueve los tooltips desde debajo del input hasta junto al label
+ */
+function moveTooltipsToLabels() {
+    // Buscar todos los tooltips en el formulario
+    const tooltips = document.querySelectorAll('.field-tooltip');
+
+    tooltips.forEach(tooltip => {
+        // Encontrar el contenedor directo (la columna específica donde está el tooltip)
+        const directColumn = tooltip.closest('.col-md-2') ||
+                            tooltip.closest('.col-md-3') ||
+                            tooltip.closest('.col-md-4') ||
+                            tooltip.closest('.col-md-6');
+
+        if (directColumn) {
+            // Buscar el label SOLO dentro de esa columna específica
+            const label = directColumn.querySelector('label');
+
+            if (label) {
+                // Remover el tooltip de su posición actual
+                tooltip.remove();
+
+                // Insertarlo después del texto del label
+                label.appendChild(tooltip);
+
+                // Agregar clase para estilos específicos
+                tooltip.classList.add('tooltip-in-label');
+            }
+        }
+    });
 }
 
 // ============================================

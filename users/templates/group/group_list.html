@@ -12,5 +12,11 @@
     </ol>
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% include 'components/data_table.html' with headers=table_headers items=groups show_actions=False empty_message='No hay grupos disponibles.' fields=table_fields %}
 {% endblock content %}
+{% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

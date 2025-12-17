@@ -124,6 +124,17 @@ class CiudadanoForm(forms.ModelForm):
 
 
 class GrupoFamiliarForm(forms.ModelForm):
+    ciudadano_2 = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Buscar por documento (4+ dígitos)",
+                "autocomplete": "off",
+            }
+        ),
+        label="Familiar",
+    )
+
     class Meta:
         model = GrupoFamiliar
         fields = [
@@ -141,10 +152,7 @@ class GrupoFamiliarForm(forms.ModelForm):
     def __init__(self, ciudadano: Ciudadano, *args, **kwargs):
         self.ciudadano = ciudadano
         super().__init__(*args, **kwargs)
-        self.fields["ciudadano_2"].queryset = Ciudadano.objects.exclude(pk=ciudadano.pk)
-        self.fields["ciudadano_2"].label = "Familiar"
-        # Estilos consistentes con los formularios modernos
-        for name in ("ciudadano_2", "vinculo", "estado_relacion"):
+        for name in ("vinculo", "estado_relacion"):
             css = self.fields[name].widget.attrs.get("class", "")
             self.fields[name].widget.attrs["class"] = f"{css} form-select".strip()
         for name in ("observaciones",):
@@ -155,10 +163,18 @@ class GrupoFamiliarForm(forms.ModelForm):
             self.fields[name].widget.attrs["class"] = f"{css} form-check-input".strip()
 
     def clean_ciudadano_2(self):
-        familiar = self.cleaned_data["ciudadano_2"]
+        familiar_id = self.cleaned_data.get("ciudadano_2")
+        if not familiar_id:
+            raise forms.ValidationError("Debe seleccionar un familiar.")
+
+        try:
+            familiar = Ciudadano.objects.get(pk=int(familiar_id))
+        except (Ciudadano.DoesNotExist, ValueError, TypeError) as exc:
+            raise forms.ValidationError("Familiar no válido.") from exc
+
         if familiar == self.ciudadano:
             raise forms.ValidationError("No puede autoreferenciarse.")
-        # Evitar duplicados (en cualquier dirección) antes de golpear la BD
+
         ya_existe = GrupoFamiliar.objects.filter(
             Q(ciudadano_1=self.ciudadano, ciudadano_2=familiar)
             | Q(ciudadano_1=familiar, ciudadano_2=self.ciudadano)
@@ -172,6 +188,7 @@ class GrupoFamiliarForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.ciudadano_1 = self.ciudadano
+        instance.ciudadano_2 = self.cleaned_data["ciudadano_2"]
         if commit:
             instance.save()
         return instance

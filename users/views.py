@@ -62,7 +62,7 @@ class GroupListView(AdminRequiredMixin, ListView):
 
         # Configuración para el componente data_table
         context["table_headers"] = [
-            {"title": "Nombre"},
+            {"title": "Nombre", "sortable": True, "sort_key": "name"},
         ]
 
         context["table_fields"] = [

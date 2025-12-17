@@ -64,33 +64,27 @@ class Command(BaseCommand):
             return
 
         created, updated, failed = 0, 0, 0
-        with transaction.atomic():
-            for obj in objects:
-                try:
-                    # obj.object tiene pk si viene en el fixture
-                    pk_exists = bool(
-                        getattr(obj.object, obj.object._meta.pk.attname, None)
-                    )
-                    # save() hará INSERT o UPDATE según existencia en DB
+        for obj in objects:
+            try:
+                model = obj.object.__class__
+                pk_field = obj.object._meta.pk.attname
+                pk_value = getattr(obj.object, pk_field, None)
+                existed_before = (
+                    bool(pk_value) and model.objects.filter(pk=pk_value).exists()
+                )
+
+                # Guardar cada objeto en su propia transacción para evitar que un
+                # error deje la conexión marcada para rollback y bloquee el resto.
+                with transaction.atomic():
                     obj.save()  # maneja FKs y M2M luego del save
-                    # Heurística de conteo:
-                    # si venía con PK y ese PK ya existía en BD → updated; si no → created
-                    if (
-                        pk_exists
-                        and obj.object.__class__.objects.filter(
-                            pk=obj.object.pk
-                        ).exists()
-                    ):
-                        # No sabemos si existía antes del save sin otra query previa.
-                        # Compromiso: contamos como updated si ya había PK en defaults.
-                        updated += 1
-                    else:
-                        created += 1
-                except Exception as e:
-                    failed += 1
-                    self.stderr.write(
-                        f"⚠️  Falló guardar registro de {fixture_path}: {e}"
-                    )
+
+                if existed_before:
+                    updated += 1
+                else:
+                    created += 1
+            except Exception as e:
+                failed += 1
+                self.stderr.write(f"⚠️  Falló guardar registro de {fixture_path}: {e}")
 
         self.stdout.write(
             f"✅ {fixture_path}: created={created}, updated≈{updated}, failed={failed}"
