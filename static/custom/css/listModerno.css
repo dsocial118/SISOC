@@ -348,7 +348,7 @@
 .btn-group {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
 }
@@ -359,6 +359,13 @@
 .projects .comedor-actions,
 .table .comedor-actions {
   min-width: fit-content;
+}
+
+/* Evitar que la celda de acciones envuelva su contenido */
+.projects td.project-actions,
+.table td.project-actions {
+  white-space: nowrap;
+  min-width: 280px;
 }
 
 /* Botones dentro de tablas - Estilo general para .btn-primary, .btn-ver, etc */
