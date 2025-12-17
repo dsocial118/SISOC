@@ -421,7 +421,7 @@ class ComedorService:
         resumen = qs_nomina.aggregate(
             cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
             cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
-            espera=Count("id", filter=Q(estado="pendiente")),
+            espera=Count("id", filter=Q(estado=Nomina.ESTADO_PENDIENTE)),
             cantidad_total=Count("id"),
         )
         paginator = Paginator(
@@ -678,7 +678,7 @@ class ComedorService:
         if not objetivo:
             return None
         for nacionalidad in Nacionalidad.objects.all():
-            if ComedorService._normalize_text(nacionalidad.nombre) == objetivo:
+            if ComedorService._normalize_text(nacionalidad.nacionalidad) == objetivo:
                 return nacionalidad
         return None
 
@@ -832,7 +832,7 @@ class ComedorService:
                 Nomina.objects.create(
                     ciudadano=ciudadano,
                     comedor_id=comedor_id,
-                    estado=estado or "pendiente",
+                    estado=estado or Nomina.ESTADO_PENDIENTE,
                     observaciones=observaciones,
                 )
 
