@@ -352,7 +352,13 @@ function initializeRealTimeValidation() {
     allFields.forEach(field => {
         // Solo agregar validación si el campo tiene el atributo required del HTML
         if (field.hasAttribute('required')) {
-            const wrapper = field.closest('.form-group');
+            // Buscar el contenedor MÁS ESPECÍFICO (columna, no el form-group row)
+            const wrapper = field.closest('.col-md-2') ||
+                           field.closest('.col-md-3') ||
+                           field.closest('.col-md-4') ||
+                           field.closest('.col-md-6') ||
+                           field.closest('.col-12') ||
+                           field.closest('.form-group');
 
             field.addEventListener('blur', function() {
                 validateField(this, wrapper);
@@ -371,7 +377,13 @@ function initializeRealTimeValidation() {
         const originalSelect = $(this);
         if (originalSelect.prop('required')) {
             originalSelect.on('select2:select select2:unselect', function() {
-                const wrapper = $(this).closest('.form-group')[0];
+                // Buscar el contenedor MÁS ESPECÍFICO (columna, no el form-group row)
+                const wrapper = $(this).closest('.col-md-2')[0] ||
+                               $(this).closest('.col-md-3')[0] ||
+                               $(this).closest('.col-md-4')[0] ||
+                               $(this).closest('.col-md-6')[0] ||
+                               $(this).closest('.col-12')[0] ||
+                               $(this).closest('.form-group')[0];
                 validateField(this, wrapper);
             });
         }
