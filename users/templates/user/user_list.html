@@ -3,6 +3,8 @@
 {% block title %}Usuarios{% endblock %}
 {% block titulo-pagina %}Usuarios{% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% include 'components/search_bar.html' with titulo="Buscar Usuario" reset_url=reset_url filters_mode=filters_mode filters_js=filters_js filters_action=filters_action show_add_button=show_add_button %}
 
     <div class="row d-flex justify-content-between my-3 mx-sm-2">
@@ -13,3 +15,7 @@
     </div>
     {% include 'components/data_table.html' with headers=table_headers items=users show_actions=True actions=table_actions empty_message='No hay usuarios disponibles.' fields=table_fields %}
 {% endblock content %}
+{% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

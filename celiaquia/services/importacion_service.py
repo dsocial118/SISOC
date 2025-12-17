@@ -642,9 +642,25 @@ class ImportacionService:
                 else:
                     payload.pop("sexo", None)
 
-                # Nacionalidad se guarda como string en Ciudadano.nacionalidad
+                # Resolver nacionalidad
                 nacionalidad_val = payload.get("nacionalidad")
-                if not nacionalidad_val:
+                if nacionalidad_val:
+                    # Intentar resolver por nombre
+                    from core.models import Nacionalidad
+
+                    nacionalidad_obj = Nacionalidad.objects.filter(
+                        nacionalidad__iexact=str(nacionalidad_val).strip()
+                    ).first()
+                    if nacionalidad_obj:
+                        payload["nacionalidad"] = nacionalidad_obj.pk
+                    else:
+                        add_warning(
+                            offset,
+                            "nacionalidad",
+                            f"'{nacionalidad_val}' no encontrada",
+                        )
+                        payload.pop("nacionalidad", None)
+                else:
                     payload.pop("nacionalidad", None)
 
                 # Validar email
@@ -832,7 +848,7 @@ class ImportacionService:
                             ),
                             "provincia": provincia_usuario_id,
                         }
-                        
+
                         # Resolver sexo del responsable
                         sexo_resp_val = payload.get("sexo_responsable")
                         if sexo_resp_val:
@@ -930,10 +946,11 @@ class ImportacionService:
                                         payload.get("fecha_nacimiento"),
                                     )
                                 )
-                                if error_edad:
-                                    add_error(offset, "edad_responsable", error_edad)
+                                # Agregar warnings ANTES de verificar errores
                                 for warning in edad_warnings:
                                     add_warning(offset, "edad", warning)
+                                if error_edad:
+                                    add_error(offset, "edad_responsable", error_edad)
 
                                 # Crear legajo del responsable si no existe ya
                                 if cid_resp not in existentes_ids:
@@ -1007,7 +1024,8 @@ class ImportacionService:
                                     GrupoFamiliar(
                                         ciudadano_1_id=rel["responsable_id"],
                                         ciudadano_2_id=rel["hijo_id"],
-                                        vinculo=GrupoFamiliar.RELACION_HIJO,
+                                        vinculo=GrupoFamiliar.RELACION_PADRE,
+                                        estado_relacion=GrupoFamiliar.ESTADO_BUENO,
                                         conviven=True,
                                         cuidador_principal=True,
                                     )

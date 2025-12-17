@@ -33,7 +33,7 @@ class ActividadCentroSerializer(serializers.ModelSerializer):
     centro_nombre = serializers.CharField(source="centro.nombre", read_only=True)
     dias_nombres = serializers.SerializerMethodField()
 
-    def get_dias_nombres(self, obj):
+    def get_dias_nombres(self, obj: ActividadCentro) -> list[str]:
         return [dia.nombre for dia in obj.dias.all()]
 
     class Meta:

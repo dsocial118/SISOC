@@ -2,9 +2,13 @@
 {% load static %}
 {% block title %}Comedores en Acompañamiento{% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% include 'components/search_bar.html' with titulo='Comedores en Acompañamiento' placeholder='Buscar por nombre, ubicación, referente, etc.' help_text='Buscar por nombre, ubicación, referente, etc.' reset_url='lista_comedores_acompanamiento' query=query show_add_button=False %}
     {% include 'components/data_table.html' with headers=table_headers items=comedores custom_cells=custom_cells custom_actions=custom_actions show_actions=True empty_message="No se encontraron comedores." include_pagination=True %}
 {% endblock %}
 {% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
     <script src="{% static 'custom/js/filtroadmisiones.js' %}"></script>
 {% endblock %}

@@ -15,6 +15,7 @@ logger = logging.getLogger("django")
 
 
 class RelevamientoApiView(APIView):
+    serializer_class = RelevamientoSerializer
     permission_classes = [HasAPIKeyOrToken]
 
     def patch(self, request):

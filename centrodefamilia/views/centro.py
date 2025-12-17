@@ -94,11 +94,11 @@ class CentroListView(LoginRequiredMixin, ListView):
         )
 
         ctx["table_headers"] = [
-            {"title": "Nombre"},
-            {"title": "Tipo"},
-            {"title": "Dirección"},
-            {"title": "Teléfono"},
-            {"title": "Estado"},
+            {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
+            {"title": "Tipo", "sortable": True, "sort_key": "tipo"},
+            {"title": "Dirección", "sortable": True, "sort_key": "calle"},
+            {"title": "Teléfono", "sortable": True, "sort_key": "telefono"},
+            {"title": "Estado", "sortable": True, "sort_key": "activo"},
             {"title": "Acciones"},
         ]
 
@@ -407,11 +407,11 @@ def centros_ajax(request):
             "request": request,
             "can_add": can_add,
             "table_headers": [
-                {"title": "Nombre"},
-                {"title": "Tipo"},
-                {"title": "Dirección"},
-                {"title": "Teléfono"},
-                {"title": "Estado"},
+                {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
+                {"title": "Tipo", "sortable": True, "sort_key": "tipo"},
+                {"title": "Dirección", "sortable": True, "sort_key": "calle"},
+                {"title": "Teléfono", "sortable": True, "sort_key": "telefono"},
+                {"title": "Estado", "sortable": True, "sort_key": "activo"},
                 {"title": "Acciones"},
             ],
         }
