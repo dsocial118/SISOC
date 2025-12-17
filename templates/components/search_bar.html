@@ -42,7 +42,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
         {% if filters_config %}{{ filters_config|json_script:"filters-config-json" }}{% endif %}
         <form method="GET"
               action="{{ filters_action|default:'' }}"
-              id="filters-form"
+              id="filters-form" class="ms-5"
               {% if filters_config %}data-config-id="filters-config-json"{% endif %}>
             <div class="row">
                 <div class="col-md-10 offset-md-1">
@@ -59,7 +59,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                                     id="add-filter"
                                     class="btn btn-sm btn-outline-success ms-2">Agregar filtro</button>
                         </div>
-                        <div id="filters-rows" class="mb-2 ms-5"></div>
+                        <div id="filters-rows" class="mb-2"></div>
                         <input type="hidden" name="filters" id="filters-input" />
                     </div>
                 </div>

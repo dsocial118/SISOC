@@ -168,6 +168,7 @@
   color: #e7ba61;
   font-weight: 700;
   text-transform: uppercase;
+  text-align: center;
   letter-spacing: 0.5px;
   padding: 20px 18px;
   border: none;
@@ -258,6 +259,7 @@
   color: #e5e7eb;
   padding: 20px 18px;
   vertical-align: middle;
+  text-align: center;
   border: none;
   font-size: 14px;
   line-height: 1.6;
@@ -350,7 +352,7 @@
   gap: 8px;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 /* Asegurar que los contenedores de acciones en tablas estén bien alineados */
