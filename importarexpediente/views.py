@@ -40,9 +40,9 @@ HEADER_MAP = {
 
 
 class ImportExpedientesView(FormView):
-    template_name = "importarexpedientes/upload.html"
+    template_name = "upload.html"
     form_class = CSVUploadForm
-    success_url = reverse_lazy("importarexpedientes:upload")
+    success_url = reverse_lazy("upload")
 
     def parse_date(self, value):
         if not value:
