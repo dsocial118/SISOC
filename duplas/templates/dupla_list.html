@@ -6,10 +6,16 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% include 'components/search_bar.html' with titulo="Buscar Equipo Técnico" reset_url=reset_url add_url=add_url filters_mode=filters_mode filters_config=filters_config filters_action=filters_action show_add_button=show_add_button %}
 
     <div class="container mt-4">
-        {% include 'components/data_table.html' with headers=table_headers items=duplas show_actions=True actions=table_actions empty_message='No hay equipos técnicos disponibles.' fields=table_fields disable_links=True %}
+        {% include 'components/data_table.html' with headers=table_headers items=duplas show_actions=True actions=table_actions actions_width='20%' empty_message='No hay equipos técnicos disponibles.' fields=table_fields disable_links=True %}
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Anterior' next_text='Siguiente' %}
     </div>
+{% endblock %}
+{% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}

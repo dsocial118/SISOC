@@ -1,4 +1,6 @@
 # pylint: disable=too-many-lines
+from datetime import datetime
+
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.forms import ValidationError
@@ -215,6 +217,9 @@ class EspacioCocina(models.Model):
         verbose_name = "Espacio de cocina y almacenamiento de alimentos"
         verbose_name_plural = "Espacios de cocina y almacenamiento de alimentos"
 
+    def __str__(self):
+        return f"Cocina #{self.pk or 'sin id'}"
+
 
 class TipoModalidadPrestacion(models.Model):
     """
@@ -257,6 +262,15 @@ class FuncionamientoPrestacion(models.Model):
     class Meta:
         verbose_name = "Funcionamiento de comedor"
         verbose_name_plural = "Funcionamientos de comedores"
+
+    def __str__(self):
+        modalidad = (
+            self.modalidad_prestacion.nombre
+            if self.modalidad_prestacion
+            else "Sin modalidad"
+        )
+        turnos = self.cantidad_turnos if self.cantidad_turnos is not None else "-"
+        return f"{modalidad} (turnos: {turnos})"
 
 
 class FrecuenciaLimpieza(models.Model):
@@ -357,6 +371,9 @@ class EspacioPrestacion(models.Model):
             "Espacios donde se brinda la prestacion del Comedor/Merendero"
         )
 
+    def __str__(self):
+        return f"Espacio de prestación #{self.pk or 'sin id'}"
+
 
 class TipoEspacio(models.Model):
     """
@@ -412,6 +429,12 @@ class Espacio(models.Model):
         verbose_name = "Espacio fisico de comedor"
         verbose_name_plural = "Espacios fisicos de comedores"
 
+    def __str__(self):
+        tipo = (
+            self.tipo_espacio_fisico.nombre if self.tipo_espacio_fisico else "Sin tipo"
+        )
+        return f"Espacio ({tipo})"
+
 
 class CantidadColaboradores(models.Model):
     """
@@ -463,6 +486,14 @@ class Colaboradores(models.Model):
             "incluyendo acoso sexual, explotación sexual y abuso infantil?"
         ),
     )
+
+    def __str__(self):
+        cantidad = (
+            self.cantidad_colaboradores.nombre
+            if self.cantidad_colaboradores
+            else "Sin dato"
+        )
+        return f"Colaboradores: {cantidad}"
 
 
 class FrecuenciaRecepcionRecursos(models.Model):
@@ -623,6 +654,9 @@ class FuenteRecursos(models.Model):
         verbose_name = "Fuente de recursos"
         verbose_name_plural = "Fuentes de recursos"
 
+    def __str__(self):
+        return f"Recursos #{self.pk or 'sin id'}"
+
 
 class FuenteCompras(models.Model):
     """
@@ -643,6 +677,9 @@ class FuenteCompras(models.Model):
     class Meta:
         verbose_name = "Fuente de compras"
         verbose_name_plural = "Fuentes de compras"
+
+    def __str__(self):
+        return f"Compras #{self.pk or 'sin id'}"
 
 
 class Prestacion(models.Model):
@@ -756,6 +793,9 @@ class Prestacion(models.Model):
         verbose_name = "Prestacion"
         verbose_name_plural = "Prestaciones"
 
+    def __str__(self):
+        return f"Prestación #{self.pk or 'sin id'}"
+
 
 class Anexo(models.Model):
     """
@@ -836,6 +876,10 @@ class Anexo(models.Model):
         verbose_name = "Anexo"
         verbose_name_plural = "Anexos"
 
+    def __str__(self):
+        insumo = self.tipo_insumo.nombre if self.tipo_insumo else "Sin insumo"
+        return f"Anexo ({insumo})"
+
 
 class MotivoExcepcion(models.Model):
     """
@@ -874,6 +918,10 @@ class Excepcion(models.Model):
     class Meta:
         verbose_name = "Excepcion de comedor"
         verbose_name_plural = "Excepciones de comedor"
+
+    def __str__(self):
+        motivo = self.motivo.nombre if self.motivo else "Sin motivo"
+        return f"Excepción: {motivo}"
 
 
 class PuntoEntregas(models.Model):
@@ -929,6 +977,10 @@ class PuntoEntregas(models.Model):
     registran_entrega_bolsones = models.BooleanField(
         default=False, blank=True, null=True
     )
+
+    def __str__(self):
+        tipo = self.tipo_comedor.nombre if self.tipo_comedor else "Sin tipo"
+        return f"Punto de entregas ({tipo})"
 
 
 class Relevamiento(models.Model):
@@ -1017,6 +1069,18 @@ class Relevamiento(models.Model):
         unique_together = [["comedor", "fecha_visita"]]
         verbose_name = "Relevamiento"
         verbose_name_plural = "Relevamientos"
+
+    def __str__(self):
+        comedor = self.comedor.nombre if self.comedor else "Comedor sin nombre"
+        fecha = (
+            self.fecha_visita.date()
+            if isinstance(self.fecha_visita, datetime)
+            else self.fecha_visita
+        )
+        fecha_text = (
+            fecha.strftime("%Y-%m-%d") if hasattr(fecha, "strftime") else "sin fecha"
+        )
+        return f"Relevamiento {fecha_text} - {comedor}"
 
 
 class ClasificacionComedor(models.Model):

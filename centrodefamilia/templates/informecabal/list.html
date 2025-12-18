@@ -2,6 +2,8 @@
 {% load static %}
 {% block title %}Informe Cabal - Historial{% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="mb-0">Historial de Archivos CABAL</h3>
@@ -28,27 +30,45 @@
         {% endif %}
         <div class="card">
             <div class="card-body table-responsive">
-                <table class="table table-striped table-bordered">
+                <table class="table table-striped table-bordered projects">
                     <thead>
                         <tr>
-                            <th>Archivo</th>
-                            <th>Fecha</th>
-                            <th>Usuario</th>
-                            <th>Total</th>
-                            <th>Válidas</th>
-                            <th>Inválidas</th>
+                            <th class="sortable" data-column="archivo">
+                                Archivo
+                                <i class="fas fa-sort sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-column="fecha">
+                                Fecha
+                                <i class="fas fa-sort sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-column="usuario">
+                                Usuario
+                                <i class="fas fa-sort sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-column="total">
+                                Total
+                                <i class="fas fa-sort sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-column="validas">
+                                Válidas
+                                <i class="fas fa-sort sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-column="invalidas">
+                                Inválidas
+                                <i class="fas fa-sort sort-icon"></i>
+                            </th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for a in archivos %}
                             <tr>
-                                <td>{{ a.nombre_original }}</td>
-                                <td>{{ a.fecha_subida|date:"d/m/Y H:i" }}</td>
-                                <td>{{ a.usuario.username }}</td>
-                                <td>{{ a.total_filas }}</td>
-                                <td>{{ a.total_validas }}</td>
-                                <td>{{ a.total_invalidas }}</td>
+                                <td data-archivo="{{ a.nombre_original }}">{{ a.nombre_original }}</td>
+                                <td data-fecha="{{ a.fecha_subida|date:'Y-m-d H:i' }}">{{ a.fecha_subida|date:"d/m/Y H:i" }}</td>
+                                <td data-usuario="{{ a.usuario.username }}">{{ a.usuario.username }}</td>
+                                <td data-total="{{ a.total_filas }}">{{ a.total_filas }}</td>
+                                <td data-validas="{{ a.total_validas }}">{{ a.total_validas }}</td>
+                                <td data-invalidas="{{ a.total_invalidas }}">{{ a.total_invalidas }}</td>
                                 <td>
                                     <a href="{% url 'informecabal_archivo_detail' a.id %}"
                                        class="btn btn-sm btn-info">Ver detalle</a>
@@ -191,4 +211,6 @@
   }
     </script>
     <script src="{% static 'custom/js/informecabal.js' %}"></script>
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}

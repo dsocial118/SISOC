@@ -10,6 +10,7 @@ from ciudadanos.views import (
     GrupoFamiliarCreateView,
     GrupoFamiliarDeleteView,
 )
+from ciudadanos.api_views import buscar_ciudadanos
 
 urlpatterns = [
     path(
@@ -46,5 +47,10 @@ urlpatterns = [
         "ciudadanos/familiares/<int:pk>/eliminar",
         login_required(GrupoFamiliarDeleteView.as_view()),
         name="grupofamiliar_eliminar",
+    ),
+    path(
+        "api/ciudadanos/buscar/",
+        login_required(buscar_ciudadanos),
+        name="api_buscar_ciudadanos",
     ),
 ]

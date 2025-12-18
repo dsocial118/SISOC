@@ -1,6 +1,9 @@
+from datetime import datetime
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -50,10 +53,39 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
     model = Ciudadano
     template_name = "ciudadanos/ciudadano_detail.html"
     context_object_name = "ciudadano"
+    MESES_NOMBRES = [
+        "",
+        "Ene",
+        "Feb",
+        "Mar",
+        "Abr",
+        "May",
+        "Jun",
+        "Jul",
+        "Ago",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dic",
+    ]
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ciudadano = self.object
+        ctx.update(
+            familia=self.build_familia(ciudadano),
+            grupo_form=GrupoFamiliarForm(ciudadano=ciudadano),
+            google_maps_api_key=settings.GOOGLE_MAPS_API_KEY,
+            interacciones=ciudadano.interacciones.all()[:10],
+        )
+        ctx.update(self.get_programas_context(ciudadano))
+        ctx.update(self.get_historial_context(ciudadano))
+        ctx.update(self.get_celiaquia_context(ciudadano))
+        ctx.update(self.get_cdf_context(ciudadano))
+        ctx.update(self.get_comedor_context(ciudadano))
+        return ctx
+
+    def build_familia(self, ciudadano):
         relaciones = (
             GrupoFamiliar.objects.filter(
                 Q(ciudadano_1=ciudadano) | Q(ciudadano_2=ciudadano)
@@ -63,14 +95,101 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         )
         familia = []
         for relacion in relaciones:
-            if relacion.ciudadano_1_id == ciudadano.id:
-                familiar = relacion.ciudadano_2
-            else:
-                familiar = relacion.ciudadano_1
+            familiar = (
+                relacion.ciudadano_2
+                if relacion.ciudadano_1_id == ciudadano.id
+                else relacion.ciudadano_1
+            )
             familia.append((relacion, familiar))
-        ctx["familia"] = familia
-        ctx["grupo_form"] = GrupoFamiliarForm(ciudadano=ciudadano)
-        return ctx
+        return familia
+
+    def get_programas_context(self, ciudadano):
+        from ciudadanos.models import ProgramaTransferencia
+
+        programas = ciudadano.programas_transferencia.filter(activo=True)
+        return {
+            "programas_directos": programas.filter(
+                categoria=ProgramaTransferencia.CATEGORIA_DIRECTA
+            ),
+            "programas_indirectos": programas.filter(
+                categoria=ProgramaTransferencia.CATEGORIA_INDIRECTA
+            ),
+        }
+
+    def get_historial_context(self, ciudadano):
+        historial = ciudadano.historial_transferencias.filter(
+            anio__gte=datetime.now().year - 1
+        ).order_by("anio", "mes")
+
+        return {
+            "historial_labels": [self.MESES_NOMBRES[h.mes] for h in historial],
+            "historial_auh": [float(h.monto_auh) for h in historial],
+            "historial_prestacion": [
+                float(h.monto_prestacion_alimentar) for h in historial
+            ],
+            "historial_centro_familia": [
+                float(h.monto_centro_familia) for h in historial
+            ],
+            "historial_comedor": [float(h.monto_comedor) for h in historial],
+        }
+
+    def get_celiaquia_context(self, ciudadano):
+        try:
+            from celiaquia.models import ExpedienteCiudadano
+        except Exception:
+            return {"expedientes_celiaquia": []}
+
+        expedientes = (
+            ExpedienteCiudadano.objects.filter(ciudadano=ciudadano)
+            .select_related("expediente", "estado")
+            .order_by("-creado_en")
+        )
+        contexto = {"expedientes_celiaquia": expedientes}
+        expediente_actual = expedientes.first()
+        if expediente_actual:
+            contexto["expediente_actual"] = expediente_actual
+        return contexto
+
+    def get_cdf_context(self, ciudadano):
+        try:
+            from centrodefamilia.models import ParticipanteActividad
+        except Exception:
+            return {"participaciones_cdf": [], "costo_total_cdf": 0}
+
+        participaciones = (
+            ParticipanteActividad.objects.filter(ciudadano=ciudadano)
+            .select_related("actividad_centro__centro", "actividad_centro__actividad")
+            .order_by("-fecha_registro")
+        )
+        costo_total_cdf = (
+            ParticipanteActividad.objects.filter(
+                ciudadano=ciudadano, estado="inscrito"
+            ).aggregate(total=Sum("actividad_centro__precio"))["total"]
+            or 0
+        )
+        return {
+            "participaciones_cdf": participaciones,
+            "costo_total_cdf": costo_total_cdf,
+        }
+
+    def get_comedor_context(self, ciudadano):
+        try:
+            from comedores.models import Nomina
+        except Exception:
+            return {"nominas_comedor": []}
+
+        nominas = (
+            Nomina.objects.filter(ciudadano=ciudadano)
+            .select_related(
+                "comedor__provincia", "comedor__municipio", "comedor__tipocomedor"
+            )
+            .order_by("-fecha")
+        )
+        contexto = {"nominas_comedor": nominas}
+        nomina_actual = nominas.first()
+        if nomina_actual:
+            contexto["nomina_actual"] = nomina_actual
+        return contexto
 
 
 class CiudadanosCreateView(LoginRequiredMixin, CreateView):
@@ -119,6 +238,10 @@ class GrupoFamiliarCreateView(LoginRequiredMixin, FormView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["ciudadano"] = self.ciudadano
+        if self.request.POST:
+            data = self.request.POST.copy()
+            data["ciudadano_2"] = data.get("ciudadano_2_id", "")
+            kwargs["data"] = data
         return kwargs
 
     def form_valid(self, form):

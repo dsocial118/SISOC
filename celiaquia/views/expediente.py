@@ -198,7 +198,9 @@ class ExpedienteListView(ListView):
                 Q(id__icontains=search_query)
                 | Q(numero_expediente__icontains=search_query)
                 | Q(estado__nombre__icontains=search_query)
-                | Q(usuario_provincia__profile__provincia__nombre__icontains=search_query)
+                | Q(
+                    usuario_provincia__profile__provincia__nombre__icontains=search_query
+                )
                 | Q(asignaciones_tecnicos__tecnico__first_name__icontains=search_query)
                 | Q(asignaciones_tecnicos__tecnico__last_name__icontains=search_query)
                 | Q(asignaciones_tecnicos__tecnico__username__icontains=search_query)

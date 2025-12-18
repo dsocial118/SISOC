@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "import_export",
     "multiselectfield",
+    "auditlog",
     "rest_framework",
     "rest_framework_api_key",
     "drf_spectacular",
@@ -78,6 +79,7 @@ INSTALLED_APPS = [
     "rendicioncuentasmensual",
     "centrodefamilia",
     "celiaquia",
+    "audittrail",
 ]
 
 # Middleware (orden CORS correcto)
@@ -88,6 +90,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.admindocs.middleware.XViewMiddleware",
@@ -217,8 +220,16 @@ SPECTACULAR_SETTINGS = {
     },
     "SECURITY": [{"ApiKeyAuth": []}],
     "ENUM_NAME_OVERRIDES": {
-        "ActividadCentroEstadoEnum": ["planificada", "en_curso", "finalizada"],
-        "ParticipanteActividadEstadoEnum": ["inscrito", "lista_espera", "dado_baja"],
+        "ActividadCentroEstadoEnum": [
+            ("planificada", "Planificada"),
+            ("en_curso", "En curso"),
+            ("finalizada", "Finalizada"),
+        ],
+        "ParticipanteActividadEstadoEnum": [
+            ("inscrito", "Inscrito"),
+            ("lista_espera", "Lista de Espera"),
+            ("dado_baja", "Dado de Baja"),
+        ],
     },
 }
 
@@ -227,6 +238,7 @@ DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 # IPs internas
 INTERNAL_IPS = ["127.0.0.1", "::1"]

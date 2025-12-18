@@ -166,6 +166,7 @@ def consultar_datos_renaper(dni, sexo):
                 else None
             ),
             "monoblock": datos.get("monoblock") or None,
+            "nacionalidad_api": datos.get("pais") or "",
         }
 
         return {"success": True, "data": datos_mapeados, "datos_api": datos}

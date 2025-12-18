@@ -642,9 +642,25 @@ class ImportacionService:
                 else:
                     payload.pop("sexo", None)
 
-                # Nacionalidad se guarda como string en Ciudadano.nacionalidad
+                # Resolver nacionalidad
                 nacionalidad_val = payload.get("nacionalidad")
-                if not nacionalidad_val:
+                if nacionalidad_val:
+                    # Intentar resolver por nombre
+                    from core.models import Nacionalidad
+
+                    nacionalidad_obj = Nacionalidad.objects.filter(
+                        nacionalidad__iexact=str(nacionalidad_val).strip()
+                    ).first()
+                    if nacionalidad_obj:
+                        payload["nacionalidad"] = nacionalidad_obj.pk
+                    else:
+                        add_warning(
+                            offset,
+                            "nacionalidad",
+                            f"'{nacionalidad_val}' no encontrada",
+                        )
+                        payload.pop("nacionalidad", None)
+                else:
                     payload.pop("nacionalidad", None)
 
                 # Validar email
@@ -1009,6 +1025,7 @@ class ImportacionService:
                                         ciudadano_1_id=rel["responsable_id"],
                                         ciudadano_2_id=rel["hijo_id"],
                                         vinculo=GrupoFamiliar.RELACION_PADRE,
+                                        estado_relacion=GrupoFamiliar.ESTADO_BUENO,
                                         conviven=True,
                                         cuidador_principal=True,
                                     )

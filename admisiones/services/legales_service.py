@@ -788,83 +788,101 @@ class LegalesService:
     @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
         try:
-            with transaction.atomic():
-                formulario_existente = FormularioProyectoDeConvenio.objects.filter(
-                    admision=admision
-                ).first()
-                form = ProyectoConvenioForm(request.POST, instance=formulario_existente)
+            # Primero validar y guardar el formulario sin transacción
+            formulario_existente = FormularioProyectoDeConvenio.objects.filter(
+                admision=admision
+            ).first()
+            form = ProyectoConvenioForm(request.POST, instance=formulario_existente)
 
-                if not form.is_valid():
-                    messages.error(
-                        request, "Error al guardar el formulario Proyecto de Convenio."
-                    )
-                    return redirect(request.path_info)
+            if not form.is_valid():
+                messages.error(
+                    request, "Error al guardar el formulario Proyecto de Convenio."
+                )
+                return redirect("admisiones_legales_ver", pk=admision.pk)
 
-                nuevo_formulario = form.save(commit=False)
-                nuevo_formulario.admision = admision
-                if request.user.is_authenticated:
-                    nuevo_formulario.creado_por = request.user
-                nuevo_formulario.save()
+            # Preparar contexto para generación de documentos
+            informe = (
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+            )
 
-                informe = (
-                    InformeTecnico.objects.filter(admision=admision)
-                    .order_by("-id")
-                    .first()
+            tipo_admision = admision.tipo or "incorporacion"
+            tipo_convenio = normalizar(
+                admision.tipo_convenio.nombre if admision.tipo_convenio else ""
+            )
+
+            if "base" in tipo_convenio:
+                convenio_suffix = "base"
+            elif "eclesi" in tipo_convenio:
+                convenio_suffix = "juridica_eclesiastica"
+            elif "juridica" in tipo_convenio:
+                convenio_suffix = "juridica"
+            else:
+                raise ValueError(
+                    f"Tipo de convenio no reconocido: '{admision.tipo_convenio.nombre}'"
                 )
 
-                context = {
-                    "admision": admision,
-                    "formulario": nuevo_formulario,
-                    "informe": informe,
-                }
+            # Generar documentos fuera de la transacción para evitar timeouts
+            pdf_template_name = f"admisiones/pdf/{tipo_admision}_pdf_proyecto_convenio_{convenio_suffix}.html"
+            docx_template_name = (
+                f"{tipo_admision}_docx_proyecto_convenio_{convenio_suffix}.docx"
+            )
 
-                tipo_admision = admision.tipo or "incorporacion"
-                tipo_convenio = normalizar(
-                    admision.tipo_convenio.nombre if admision.tipo_convenio else ""
+            # Crear formulario temporal para el contexto
+            temp_formulario = form.save(commit=False)
+            temp_formulario.admision = admision
+            if request.user.is_authenticated:
+                temp_formulario.creado_por = request.user
+
+            context = {
+                "admision": admision,
+                "formulario": temp_formulario,
+                "informe": informe,
+            }
+
+            # Generar PDF
+            html_pdf = render_to_string(pdf_template_name, context)
+            if not html_pdf.strip():
+                raise ValueError(
+                    f"El template {pdf_template_name} devolvió contenido vacío."
                 )
 
-                if "base" in tipo_convenio:
-                    convenio_suffix = "base"
-                elif "eclesi" in tipo_convenio:
-                    convenio_suffix = "juridica_eclesiastica"
-                elif "juridica" in tipo_convenio:
-                    convenio_suffix = "juridica"
-                else:
-                    raise ValueError(
-                        f"Tipo de convenio no reconocido: '{admision.tipo_convenio.nombre}'"
-                    )
-
-                pdf_template_name = f"admisiones/pdf/{tipo_admision}_pdf_proyecto_convenio_{convenio_suffix}.html"
-                docx_template_name = (
-                    f"{tipo_admision}_docx_proyecto_convenio_{convenio_suffix}.docx"
+            base_url = str(
+                getattr(settings, "STATIC_ROOT", "")
+                or getattr(settings, "BASE_DIR", "")
+                or "."
+            )
+            pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
+            if not pdf_bytes:
+                raise ValueError(
+                    "WeasyPrint no devolvió contenido para el PDF generado."
                 )
+            pdf_content = ContentFile(pdf_bytes)
 
-                html_pdf = render_to_string(pdf_template_name, context)
-                if not html_pdf.strip():
-                    raise ValueError(
-                        f"El template {pdf_template_name} devolvió contenido vacío."
-                    )
-
-                base_url = str(
-                    getattr(settings, "STATIC_ROOT", "")
-                    or getattr(settings, "BASE_DIR", "")
-                    or "."
-                )
-                pdf_bytes = HTML(string=html_pdf, base_url=base_url).write_pdf()
-                if not pdf_bytes:
-                    raise ValueError(
-                        "WeasyPrint no devolvió contenido para el PDF generado."
-                    )
-                pdf_content = ContentFile(pdf_bytes)
-
+            # Generar DOCX con timeout más corto
+            try:
                 docx_content = DocumentTemplateService.generar_docx(
                     template_name=docx_template_name,
                     context=context,
                     app_name="admisiones",
                 )
-
                 if not docx_content:
-                    raise ValueError("El servicio de generación de DOCX devolvió None.")
+                    logger.warning(
+                        "DOCX generation returned None, continuing with PDF only"
+                    )
+                    docx_content = None
+            except Exception as docx_error:
+                logger.warning(
+                    f"DOCX generation failed: {docx_error}, continuing with PDF only"
+                )
+                docx_content = None
+
+            # Ahora guardar todo en una transacción rápida
+            with transaction.atomic():
+                nuevo_formulario = form.save(commit=False)
+                nuevo_formulario.admision = admision
+                if request.user.is_authenticated:
+                    nuevo_formulario.creado_por = request.user
+                nuevo_formulario.save()
 
                 nombre_comedor = (
                     admision.comedor.nombre
@@ -877,29 +895,39 @@ class LegalesService:
                     or f"convenio-{fecha_actual}"
                 )
 
+                # Guardar archivos
                 if nuevo_formulario.archivo:
                     nuevo_formulario.archivo.delete(save=False)
                 nuevo_formulario.archivo.save(
                     f"{base_filename}.pdf", pdf_content, save=False
                 )
 
-                if nuevo_formulario.archivo_docx:
-                    nuevo_formulario.archivo_docx.delete(save=False)
-                nuevo_formulario.archivo_docx.save(
-                    f"{base_filename}.docx", docx_content, save=False
-                )
+                if docx_content:
+                    if nuevo_formulario.archivo_docx:
+                        nuevo_formulario.archivo_docx.delete(save=False)
+                    nuevo_formulario.archivo_docx.save(
+                        f"{base_filename}.docx", docx_content, save=False
+                    )
 
-                nuevo_formulario.save(update_fields=["archivo", "archivo_docx"])
+                update_fields = ["archivo"]
+                if docx_content:
+                    update_fields.append("archivo_docx")
+                nuevo_formulario.save(update_fields=update_fields)
 
                 LegalesService.actualizar_estado_por_accion(
                     admision, "formulario_convenio"
                 )
 
-                messages.success(
-                    request,
-                    "Formulario guardado y documentos generados correctamente.",
+            success_msg = "Formulario guardado y PDF generado correctamente."
+            if docx_content:
+                success_msg = (
+                    "Formulario guardado y documentos generados correctamente."
                 )
-                return redirect(request.path_info)
+            else:
+                success_msg += " (DOCX no disponible)"
+
+            messages.success(request, success_msg)
+            return redirect(request.path_info)
 
         except Exception as e:
             logger.exception(
@@ -908,7 +936,7 @@ class LegalesService:
             )
             messages.error(
                 request,
-                f"❌ Error inesperado al guardar el formulario Proyecto de Convenio: {str(e)}",
+                f"Error inesperado al guardar formulario Proyecto de Convenio: {str(e)}",
             )
             return redirect(request.path_info)
 

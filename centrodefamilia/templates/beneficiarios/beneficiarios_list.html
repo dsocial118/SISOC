@@ -6,6 +6,8 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% include 'components/search_bar.html' with titulo="Buscar Beneficiario" reset_url=reset_url add_url=add_url add_text=add_text filters_mode=filters_mode filters_js=filters_js filters_action=filters_action %}
     <div class="container mt-4">
         <h2>Listado de Preinscriptos</h2>
@@ -13,4 +15,8 @@
         {% include 'components/data_table.html' with headers=table_headers items=beneficiarios show_actions=True actions=table_actions empty_message='No hay beneficiarios disponibles.' fields=table_fields %}
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Anterior' next_text='Siguiente' %}
     </div>
+{% endblock %}
+{% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}
