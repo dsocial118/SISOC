@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from django.core.validators import MaxValueValidator as MaxValidator
 
 from core.models import Localidad, Municipio, Nacionalidad, Programa, Provincia, Sexo
 
@@ -50,10 +51,36 @@ class Ciudadano(models.Model):
         Localidad, on_delete=models.SET_NULL, null=True, blank=True
     )
     codigo_postal = models.CharField(max_length=12, null=True, blank=True)
+    latitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitud = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
 
     telefono = models.CharField(max_length=30, null=True, blank=True)
     telefono_alternativo = models.CharField(max_length=30, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
+
+    ESTADO_CIVIL_CHOICES = [
+        ("soltero", "Soltero/a"),
+        ("casado", "Casado/a"),
+        ("divorciado", "Divorciado/a"),
+        ("viudo", "Viudo/a"),
+        ("union_convivencial", "Unión convivencial"),
+    ]
+    estado_civil = models.CharField(
+        max_length=20, choices=ESTADO_CIVIL_CHOICES, null=True, blank=True
+    )
+    cuil_cuit = models.CharField(max_length=13, null=True, blank=True)
+
+    ORIGEN_DATO_CHOICES = [
+        ("anses", "ANSES"),
+        ("renaper", "RENAPER"),
+        ("manual", "Carga Manual"),
+        ("migracion", "Migración"),
+    ]
+    origen_dato = models.CharField(
+        max_length=20, choices=ORIGEN_DATO_CHOICES, default="manual"
+    )
 
     observaciones = models.TextField(null=True, blank=True)
     foto = models.ImageField(upload_to="ciudadanos", blank=True, null=True)
@@ -95,6 +122,31 @@ class Ciudadano(models.Model):
     @property
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
+
+    @property
+    def edad(self) -> int:
+        """Calcula la edad del ciudadano."""
+        if not self.fecha_nacimiento:
+            return None
+        hoy = timezone.now().date()
+        return (
+            hoy.year
+            - self.fecha_nacimiento.year
+            - (
+                (hoy.month, hoy.day)
+                < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
+            )
+        )
+
+    @property
+    def monto_total_mes(self):
+        """Calcula el monto total de programas activos."""
+        from django.db.models import Sum
+
+        total = self.programas_transferencia.filter(
+            activo=True, monto__isnull=False
+        ).aggregate(Sum("monto"))["monto__sum"]
+        return total or 0
 
     def get_absolute_url(self):
         return reverse("ciudadanos_ver", kwargs={"pk": self.pk})
@@ -162,6 +214,48 @@ class GrupoFamiliar(models.Model):
         return reverse("ciudadanos_ver", kwargs={"pk": self.ciudadano_1_id})
 
 
+class Interaccion(models.Model):
+    """Registro de interacciones con el ciudadano."""
+
+    ciudadano = models.ForeignKey(
+        Ciudadano, related_name="interacciones", on_delete=models.CASCADE
+    )
+    tipo = models.CharField(
+        max_length=255,
+        help_text="Ej: Rendición de cuentas, Contacto por teléfono, Relevamiento",
+    )
+    fecha = models.DateField()
+    responsable = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    ESTADO_COMPLETO = "completo"
+    ESTADO_EN_PLAN = "en_plan"
+    ESTADO_PENDIENTE = "pendiente"
+
+    ESTADO_CHOICES = [
+        (ESTADO_COMPLETO, "Completo"),
+        (ESTADO_EN_PLAN, "En Plan"),
+        (ESTADO_PENDIENTE, "Pendiente"),
+    ]
+
+    estado = models.CharField(
+        max_length=20, choices=ESTADO_CHOICES, default=ESTADO_PENDIENTE
+    )
+    notas = models.TextField(null=True, blank=True)
+
+    creado = models.DateTimeField(default=timezone.now, editable=False)
+    modificado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-fecha"]
+        verbose_name = "Interacción"
+        verbose_name_plural = "Interacciones"
+
+    def __str__(self):
+        return f"{self.ciudadano} - {self.tipo} ({self.fecha})"
+
+
 class CiudadanoPrograma(models.Model):
     programas = models.ForeignKey(
         Programa, related_name="programa_ciudadano", on_delete=models.CASCADE
@@ -184,6 +278,9 @@ class CiudadanoPrograma(models.Model):
         verbose_name_plural = "CiudadanosProgramas"
         unique_together = (("ciudadano", "programas"),)
 
+    def __str__(self) -> str:
+        return f"{self.ciudadano} - {self.programas}"
+
 
 class HistorialCiudadanoProgramas(models.Model):
     fecha = models.DateTimeField(auto_now_add=True)
@@ -205,3 +302,91 @@ class HistorialCiudadanoProgramas(models.Model):
 
     def __str__(self):
         return f"{self.fecha} - {self.accion} - {self.programa} - {self.ciudadano}"
+
+
+class HistorialTransferencia(models.Model):
+    """Historial mensual de transferencias por ciudadano."""
+
+    ciudadano = models.ForeignKey(
+        Ciudadano, related_name="historial_transferencias", on_delete=models.CASCADE
+    )
+    mes = models.IntegerField(validators=[MinValueValidator(1), MaxValidator(12)])
+    anio = models.IntegerField(validators=[MinValueValidator(2000)])
+
+    monto_auh = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    monto_prestacion_alimentar = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0
+    )
+    monto_centro_familia = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0
+    )
+    monto_comedor = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    creado = models.DateTimeField(default=timezone.now, editable=False)
+    modificado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-anio", "-mes"]
+        verbose_name = "Historial de Transferencia"
+        verbose_name_plural = "Historial de Transferencias"
+        unique_together = ("ciudadano", "mes", "anio")
+
+    def __str__(self):
+        return f"{self.ciudadano} - {self.mes}/{self.anio}"
+
+    @property
+    def total_mes(self):
+        return (
+            self.monto_auh
+            + self.monto_prestacion_alimentar
+            + self.monto_centro_familia
+            + self.monto_comedor
+        )
+
+
+class ProgramaTransferencia(models.Model):
+    """Programas de transferencia directa e indirecta."""
+
+    TIPO_AUH = "auh"
+    TIPO_PRESTACION_ALIMENTAR = "prestacion_alimentar"
+    TIPO_CENTRO_FAMILIA = "centro_familia"
+    TIPO_COMEDOR = "comedor"
+    TIPO_ADUANA = "aduana"
+
+    TIPO_CHOICES = [
+        (TIPO_AUH, "AUH"),
+        (TIPO_PRESTACION_ALIMENTAR, "Prestación Alimentar"),
+        (TIPO_CENTRO_FAMILIA, "Centro de Familia"),
+        (TIPO_COMEDOR, "Asiste a comedor"),
+        (TIPO_ADUANA, "Aduana"),
+    ]
+
+    CATEGORIA_DIRECTA = "directa"
+    CATEGORIA_INDIRECTA = "indirecta"
+
+    CATEGORIA_CHOICES = [
+        (CATEGORIA_DIRECTA, "Transferencia Directa"),
+        (CATEGORIA_INDIRECTA, "Transferencia Indirecta"),
+    ]
+
+    ciudadano = models.ForeignKey(
+        Ciudadano, related_name="programas_transferencia", on_delete=models.CASCADE
+    )
+    tipo = models.CharField(max_length=30, choices=TIPO_CHOICES)
+    categoria = models.CharField(max_length=20, choices=CATEGORIA_CHOICES)
+    monto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    cantidad_texto = models.CharField(
+        max_length=100, null=True, blank=True, help_text="Ej: '2 colchones'"
+    )
+    activo = models.BooleanField(default=True)
+
+    creado = models.DateTimeField(default=timezone.now, editable=False)
+    modificado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["categoria", "tipo"]
+        verbose_name = "Programa de Transferencia"
+        verbose_name_plural = "Programas de Transferencia"
+
+    def __str__(self):
+        return f"{self.ciudadano} - {self.get_tipo_display()}"

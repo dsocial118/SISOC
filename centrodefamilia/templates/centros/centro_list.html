@@ -10,6 +10,8 @@
     </ol>
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'centros_ajax' as ajax_url %}
     <!-- Variables para evitar problemas de formateo -->
     {% with titulo_search='Buscar Centro' %}
@@ -34,9 +36,10 @@
                         <thead>
                             <tr>
                                 {% for header in table_headers %}
-                                    <th {% if header.class %}class="{{ header.class }}"{% endif %}
+                                    <th {% if header.sortable %}class="sortable {{ header.class|default:'' }}" data-column="{{ header.sort_key|default:header.title }}"{% elif header.class %}class="{{ header.class }}"{% endif %}
                                         {% if header.style %}style="{{ header.style }}"{% endif %}>
                                         {{ header.title }}
+                                        {% if header.sortable %}<i class="fas fa-sort sort-icon"></i>{% endif %}
                                     </th>
                                 {% endfor %}
                             </tr>
@@ -44,15 +47,15 @@
                         <tbody id="centros-table-body">
                             {% for centro in centros %}
                                 <tr>
-                                    <td>
+                                    <td data-nombre="{{ centro.nombre }}">
                                         <a href="{% url 'centro_detail' centro.id %}"
                                            class="font-weight-bold link-handler"
                                            title="Ver detalles">{{ centro.nombre }}</a>
                                     </td>
-                                    <td>{{ centro.get_tipo_display }}</td>
-                                    <td>{{ centro.calle }}</td>
-                                    <td>{{ centro.telefono }} / {{ centro.celular }}</td>
-                                    <td>
+                                    <td data-tipo="{{ centro.get_tipo_display }}">{{ centro.get_tipo_display }}</td>
+                                    <td data-calle="{{ centro.calle }}">{{ centro.calle }}</td>
+                                    <td data-telefono="{{ centro.telefono }}">{{ centro.telefono }} / {{ centro.celular }}</td>
+                                    <td data-activo="{% if centro.activo %}Activo{% else %}Inactivo{% endif %}">
                                         {% if centro.activo %}
                                             <span class="badge badge-success">Activo</span>
                                         {% else %}
@@ -60,19 +63,29 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <div class="btn-group" role="group">
+                                        <div class="action-buttons" role="group">
                                             <a href="{% url 'centro_detail' centro.id %}"
-                                               class="btn btn-primary btn-sm">Ver</a>
+                                               class="btn btn-primary"
+                                               title="Ver detalle del centro">
+                                                <i class="fas fa-eye"></i>
+                                                Ver
+                                            </a>
                                             <a href="{% url 'centro_update' centro.id %}"
-                                               class="btn btn-primary btn-sm">Editar</a>
+                                               class="btn btn-editar"
+                                               title="Editar centro">
+                                                <i class="fas fa-edit"></i>
+                                                Editar
+                                            </a>
                                             {% if request.user.is_superuser or request.user.groups.all.0.name == 'CDF SSE' %}
                                                 <form method="post"
                                                       action="{% url 'centro_delete' centro.id %}"
                                                       style="display:inline">
                                                     {% csrf_token %}
                                                     <button type="submit"
-                                                            class="btn btn-danger btn-sm"
+                                                            class="btn btn-eliminar"
+                                                            title="Eliminar centro"
                                                             onclick="return confirm('¿Estás seguro de que deseas eliminar este centro? Esta acción no se puede deshacer.');">
+                                                        <i class="fas fa-trash-alt"></i>
                                                         Eliminar
                                                     </button>
                                                 </form>
@@ -95,4 +108,7 @@
         </div>
     </div>
 {% endblock %}
-{% block customJS %}{% endblock %}
+{% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

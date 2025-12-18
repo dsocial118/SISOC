@@ -10,6 +10,8 @@
     </ol>
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'organizaciones_ajax' as ajax_url %}
     {% include 'components/search_bar.html' with titulo='Buscar Organizacion' placeholder='Buscar por nombre, CUIT, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='organizaciones' add_url='organizacion_crear' add_text='Agregar' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='organizaciones-tbody' query=query %}
     <div class="row mt-5 max-width-100">
@@ -19,11 +21,23 @@
                     <table class="table table-bordered table-striped projects">
                         <thead>
                             <tr>
-                                <th>Nombre</th>
-                                <th>CUIT</th>
-                                <th>Telefono</th>
-                                <th>Email</th>
-                                <th style="width: 15%" class="notexport">Acciones</th>
+                                <th class="sortable" data-column="nombre">
+                                    Nombre
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="cuit">
+                                    CUIT
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="telefono">
+                                    Teléfono
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th class="sortable" data-column="email">
+                                    Email
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
+                                <th style="width: 20%" class="notexport">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="organizaciones-tbody">
@@ -38,4 +52,7 @@
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
     </div>
 {% endblock %}
-{% block customJS %}{% endblock %}
+{% block customJS %}
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}

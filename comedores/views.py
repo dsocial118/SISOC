@@ -8,6 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.conf import settings
+from django.db import transaction
 from django.db.models.base import Model
 from django.forms import BaseModelForm, ValidationError
 from django.http import HttpResponse, JsonResponse
@@ -172,9 +173,23 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
 
         query = self.request.GET.get("query", "")
-        ciudadanos = (
-            ComedorService.buscar_ciudadanos_por_documento(query) if query else []
-        )
+        query_clean = query.strip()
+        ciudadanos = []
+        if query:
+            ciudadanos = ComedorService.buscar_ciudadanos_por_documento(query)
+            if not ciudadanos and query_clean.isdigit() and len(query_clean) >= 7:
+                renaper_result = ComedorService.crear_ciudadano_desde_renaper(
+                    query_clean, user=self.request.user
+                )
+                if renaper_result.get("success") and renaper_result.get("ciudadano"):
+                    ciudadanos = [renaper_result["ciudadano"]]
+                    mensaje = renaper_result.get("message")
+                    if renaper_result.get("created") and mensaje:
+                        messages.success(self.request, mensaje)
+                    elif mensaje:
+                        messages.info(self.request, mensaje)
+                elif renaper_result.get("message"):
+                    messages.warning(self.request, renaper_result["message"])
 
         context.update(
             {
@@ -190,6 +205,8 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        # Ensure self.object exists for CreateView context handling
+        self.object = None
         ciudadano_id = request.POST.get("ciudadano_id")
 
         if ciudadano_id:
@@ -329,18 +346,24 @@ class ComedorCreateView(LoginRequiredMixin, CreateView):
         imagenes = self.request.FILES.getlist("imagenes")
 
         if referente_form.is_valid():
-            self.object = form.save(commit=False)
-            self.object.referente = referente_form.save()
-            self.object.save()
-            for imagen in imagenes:
-                try:
-                    ComedorService.create_imagenes(imagen, self.object.pk)
-                except Exception:
-                    return self.form_invalid(form)
+            try:
+                with transaction.atomic():
+                    # Asignar el referente al form.instance ANTES de guardar
+                    form.instance.referente = referente_form.save()
+
+                    # Ahora llamar a save() que ejecutará toda la lógica del formulario
+                    # incluyendo _sync_estado_historial
+                    self.object = form.save()
+
+                    for imagen in imagenes:
+                        ComedorService.create_imagenes(imagen, self.object.pk)
+            except Exception as exc:  # noqa: BLE001
+                form.add_error(None, f"Error al guardar el comedor: {exc}")
+                return self.form_invalid(form)
 
             return super().form_valid(form)
-        else:
-            return self.form_invalid(form)
+
+        return self.form_invalid(form)
 
 
 class ComedorDetailView(LoginRequiredMixin, DetailView):
@@ -742,23 +765,28 @@ class ComedorUpdateView(LoginRequiredMixin, UpdateView):
         dupla_original = self.object.dupla
 
         if referente_form.is_valid():
-            self.object = form.save(commit=False)
-            self.object.dupla = dupla_original
-            self.object.referente = referente_form.save()
-            self.object.save()
+            try:
+                with transaction.atomic():
+                    # Asignar dupla y referente al form.instance ANTES de guardar
+                    form.instance.dupla = dupla_original
+                    form.instance.referente = referente_form.save()
 
-            ComedorService.delete_images(self.request.POST)
-            ComedorService.delete_legajo_photo(self.request.POST, self.object)
+                    # Ahora llamar a save() que ejecutará toda la lógica del formulario
+                    # incluyendo _sync_estado_historial
+                    self.object = form.save()
 
-            for imagen in imagenes:
-                try:
-                    ComedorService.create_imagenes(imagen, self.object.pk)
-                except Exception:
-                    return self.form_invalid(form)
+                    ComedorService.delete_images(self.request.POST)
+                    ComedorService.delete_legajo_photo(self.request.POST, self.object)
+
+                    for imagen in imagenes:
+                        ComedorService.create_imagenes(imagen, self.object.pk)
+            except Exception as exc:  # noqa: BLE001
+                form.add_error(None, f"Error al actualizar el comedor: {exc}")
+                return self.form_invalid(form)
 
             return super().form_valid(form)
-        else:
-            return self.form_invalid(form)
+
+        return self.form_invalid(form)
 
 
 class ComedorDeleteView(LoginRequiredMixin, DeleteView):

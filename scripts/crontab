@@ -1,0 +1,5 @@
+
+0 0 * * * python3 /home/admin-ssies/SISOC-Backoffice/cron_logs/borrar_logs.py
+0 3 * * 0 /usr/bin/docker system prune -af --filter "until=24h" --volumes
+*/5 * * * * bash /etc/hetrixtools/hetrixtools_agent.sh >> /etc/hetrixtools/hetrixtools_cron.log 2>&1
+0 3 * * * cd /opt/ssies/SISOC-Backoffice && /usr/bin/docker compose exec -T django python manage.py purge_auditlog --days=180 >> /var/log/purge_auditlog.log 2>&1

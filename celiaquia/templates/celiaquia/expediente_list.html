@@ -10,6 +10,8 @@
     </ol>
 {% endblock %}
 {% block content %}
+    <!-- Estilos modernos reutilizables para listados -->
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3">
             {% if request.user|has_group:"CoordinadorCeliaquia" %}
@@ -41,14 +43,29 @@
     </form>
     <div class="card shadow-sm">
         <div class="table-responsive">
-            <table class="table table-hover table-striped mb-0">
+            <table class="table table-hover table-striped projects mb-0">
                 <thead class="table-dark">
                     <tr>
-                        <th>ID</th>
-                        <th>Número de Expediente</th>
-                        <th>Fecha creación</th>
-                        <th>Provincia</th>
-                        <th>Estado</th>
+                        <th class="sortable" data-column="id">
+                            ID
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-column="numero">
+                            Número de Expediente
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-column="fecha">
+                            Fecha creación
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-column="provincia">
+                            Provincia
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th class="sortable" data-column="estado">
+                            Estado
+                            <i class="fas fa-sort sort-icon"></i>
+                        </th>
                         {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
                             <th>Técnico</th>
                         {% endif %}
@@ -58,11 +75,11 @@
                 <tbody>
                     {% for exp in expedientes %}
                         <tr data-exp-id="{{ exp.pk }}">
-                            <td>{{ exp.pk }}</td>
-                            <td>{{ exp.numero_expediente|default:"-" }}</td>
-                            <td>{{ exp.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                            <td>{{ exp.provincia }}</td>
-                            <td>
+                            <td data-id="{{ exp.pk }}">{{ exp.pk }}</td>
+                            <td data-numero="{{ exp.numero_expediente|default:'-' }}">{{ exp.numero_expediente|default:"-" }}</td>
+                            <td data-fecha="{{ exp.fecha_creacion|date:'Y-m-d H:i' }}">{{ exp.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                            <td data-provincia="{{ exp.provincia }}">{{ exp.provincia }}</td>
+                            <td data-estado="{{ exp.estado.display_name }}">
                                 <span class="badge {% if exp.estado.nombre == 'CREADO' %}bg-secondary {% elif exp.estado.nombre == 'EN_ESPERA' %}bg-info {% elif exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}bg-warning {% elif exp.estado.nombre == 'RECEPCIONADO' %}bg-secondary {% elif exp.estado.nombre == 'ASIGNADO' %}bg-primary {% elif exp.estado.nombre == 'PROCESO_DE_CRUCE' %}bg-dark {% elif exp.estado.nombre == 'CRUCE_FINALIZADO' %}bg-success {% else %}bg-body-tertiary text-body{% endif %}">
                                     {{ exp.estado.display_name }}
                                 </span>
@@ -117,21 +134,33 @@
                             {% endif %}
                             <td class="text-end">
                                 <a href="{% url 'expediente_detail' exp.pk %}"
-                                   class="btn btn-sm btn-outline-primary">Ver</a>
+                                   class="btn btn-primary"
+                                   title="Ver detalle del expediente">
+                                    <i class="fas fa-eye"></i>
+                                    Ver
+                                </a>
                                 <!-- PROVINCIA -->
                                 {% if request.user|has_group:"ProvinciaCeliaquia" %}
                                     {% if exp.estado.nombre == 'CREADO' %}
                                         <a href="{% url 'expediente_update' exp.pk %}"
-                                           class="btn btn-sm btn-outline-secondary">Editar</a>
+                                           class="btn btn-editar"
+                                           title="Editar expediente">
+                                            <i class="fas fa-edit"></i>
+                                            Editar
+                                        </a>
                                         <button type="button"
-                                                class="btn btn-sm btn-primary js-process"
-                                                data-process-url="{% url 'expediente_procesar' exp.pk %}">
+                                                class="btn btn-secondary js-process"
+                                                data-process-url="{% url 'expediente_procesar' exp.pk %}"
+                                                title="Procesar expediente">
+                                            <i class="fas fa-cog"></i>
                                             Procesar
                                         </button>
                                     {% elif exp.estado.nombre == 'EN_ESPERA' %}
                                         <button type="button"
-                                                class="btn btn-sm btn-success js-confirm"
-                                                data-confirm-url="{% url 'expediente_confirm' exp.pk %}">
+                                                class="btn btn-secondary js-confirm"
+                                                data-confirm-url="{% url 'expediente_confirm' exp.pk %}"
+                                                title="Confirmar envío">
+                                            <i class="fas fa-check-circle"></i>
                                             Confirmar Envío
                                         </button>
                                     {% endif %}
@@ -140,16 +169,20 @@
                                 {% if request.user|has_group:"CoordinadorCeliaquia" %}
                                     {% if exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}
                                         <button type="button"
-                                                class="btn btn-sm btn-outline-success js-recepcionar"
-                                                data-recepcionar-url="{% url 'expediente_recepcionar' exp.pk %}">
+                                                class="btn btn-secondary js-recepcionar"
+                                                data-recepcionar-url="{% url 'expediente_recepcionar' exp.pk %}"
+                                                title="Recepcionar expediente">
+                                            <i class="fas fa-inbox"></i>
                                             Recepcionar
                                         </button>
                                     {% endif %}
                                     <!-- Mostrar Asignar solo si RECEPCIONADO o ASIGNADO -->
                                     {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
                                         <button type="button"
-                                                class="btn btn-sm btn-primary js-assign"
-                                                data-assign-url="{% url 'expediente_asignar_tecnico' exp.pk %}">
+                                                class="btn btn-secondary js-assign"
+                                                data-assign-url="{% url 'expediente_asignar_tecnico' exp.pk %}"
+                                                title="Asignar técnico">
+                                            <i class="fas fa-user-plus"></i>
                                             Asignar
                                         </button>
                                     {% endif %}
@@ -207,4 +240,6 @@
 {% block customJS %}
     <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
     <script src="{% static 'custom/js/celiaquia_list.js' %}"></script>
+    <!-- Script de ordenamiento reutilizable para tablas -->
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}

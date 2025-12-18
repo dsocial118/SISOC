@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeCollapsibleSections();
     initializeRealTimeValidation();
     initializeProgressTracking();
+    moveTooltipsToLabels();
 });
 
 /**
@@ -351,7 +352,13 @@ function initializeRealTimeValidation() {
     allFields.forEach(field => {
         // Solo agregar validación si el campo tiene el atributo required del HTML
         if (field.hasAttribute('required')) {
-            const wrapper = field.closest('.form-group');
+            // Buscar el contenedor MÁS ESPECÍFICO (columna, no el form-group row)
+            const wrapper = field.closest('.col-md-2') ||
+                           field.closest('.col-md-3') ||
+                           field.closest('.col-md-4') ||
+                           field.closest('.col-md-6') ||
+                           field.closest('.col-12') ||
+                           field.closest('.form-group');
 
             field.addEventListener('blur', function() {
                 validateField(this, wrapper);
@@ -370,7 +377,13 @@ function initializeRealTimeValidation() {
         const originalSelect = $(this);
         if (originalSelect.prop('required')) {
             originalSelect.on('select2:select select2:unselect', function() {
-                const wrapper = $(this).closest('.form-group')[0];
+                // Buscar el contenedor MÁS ESPECÍFICO (columna, no el form-group row)
+                const wrapper = $(this).closest('.col-md-2')[0] ||
+                               $(this).closest('.col-md-3')[0] ||
+                               $(this).closest('.col-md-4')[0] ||
+                               $(this).closest('.col-md-6')[0] ||
+                               $(this).closest('.col-12')[0] ||
+                               $(this).closest('.form-group')[0];
                 validateField(this, wrapper);
             });
         }
@@ -379,6 +392,7 @@ function initializeRealTimeValidation() {
 
 /**
  * Valida un campo individual y actualiza su visualización
+ * SOLO APLICA A CAMPOS REQUERIDOS
  */
 function validateField(field, wrapper) {
     if (!wrapper) return;
@@ -386,17 +400,20 @@ function validateField(field, wrapper) {
     const value = field.value ? field.value.trim() : '';
     const isRequired = field.hasAttribute('required');
 
+    // Limpiar clases previas
     wrapper.classList.remove('field-validated', 'valid', 'invalid');
 
-    // Solo validar si el campo es realmente requerido
-    if (isRequired) {
-        if (value) {
-            wrapper.classList.add('field-validated', 'valid');
-        } else {
-            wrapper.classList.add('field-validated', 'invalid');
-        }
+    // CRÍTICO: Solo validar y mostrar indicador visual si el campo es requerido
+    if (!isRequired) {
+        return; // Salir temprano para campos opcionales
     }
-    // No agregar clases de validación a campos opcionales
+
+    // Aplicar validación solo a campos required
+    if (value) {
+        wrapper.classList.add('field-validated', 'valid');
+    } else {
+        wrapper.classList.add('field-validated', 'invalid');
+    }
 }
 
 // ============================================
@@ -601,6 +618,42 @@ function hideLoader(fieldName) {
         loader.classList.add('d-none');
         field.style.opacity = '1';
     }
+}
+
+// ============================================
+// MOVER TOOLTIPS AL LABEL
+// ============================================
+
+/**
+ * Mueve los tooltips desde debajo del input hasta junto al label
+ */
+function moveTooltipsToLabels() {
+    // Buscar todos los tooltips en el formulario
+    const tooltips = document.querySelectorAll('.field-tooltip');
+
+    tooltips.forEach(tooltip => {
+        // Encontrar el contenedor directo (la columna específica donde está el tooltip)
+        const directColumn = tooltip.closest('.col-md-2') ||
+                            tooltip.closest('.col-md-3') ||
+                            tooltip.closest('.col-md-4') ||
+                            tooltip.closest('.col-md-6');
+
+        if (directColumn) {
+            // Buscar el label SOLO dentro de esa columna específica
+            const label = directColumn.querySelector('label');
+
+            if (label) {
+                // Remover el tooltip de su posición actual
+                tooltip.remove();
+
+                // Insertarlo después del texto del label
+                label.appendChild(tooltip);
+
+                // Agregar clase para estilos específicos
+                tooltip.classList.add('tooltip-in-label');
+            }
+        }
+    });
 }
 
 // ============================================
