@@ -1,135 +1,203 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
 {% block title %}Agregar Intervención{% endblock %}
 {% block content %}
-    <style>
-        /* ESTILOS PERSONALIZADOS PARA SELECT2 - TEMA OSCURO */
-        .select2-container--default .select2-selection--single {
-            height: 38px;
-            background-color: #1e2a3a !important;
-            border: 1px solid #3d4f63 !important;
-            border-radius: 0.25rem;
-        }
+    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/intervencionForm.css' %}" />
 
-        .select2-container--default.select2-container--focus .select2-selection--single {
-            background-color: #253446 !important;
-            border-color: #f39c12 !important;
-            box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15) !important;
-        }
+    <!-- Encabezado con botones de acción -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Nueva Intervención</h3>
+            <p class="text-muted mb-0">Complete los datos de la intervención en 2 pasos</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'comedor_intervencion_ver' pk=object.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i>
+                Volver
+            </a>
+        </div>
+    </div>
 
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 36px;
-            color: #e5e7eb !important;
-            background-color: transparent !important;
-            padding-left: 12px;
-        }
+    <!-- Indicador de progreso -->
+    <div class="progress-indicator">
+        <div class="progress-header">
+            <h4 class="progress-title">
+                <i class="fas fa-clipboard-check mr-2"></i>
+                Progreso del Formulario
+            </h4>
+            <span class="progress-stats">
+                <span id="current-step">1</span>/<span id="total-steps">2</span> pasos
+            </span>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 50%"></div>
+        </div>
+    </div>
 
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 36px;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow b {
-            border-color: #9ca3af transparent transparent transparent;
-        }
-
-        .select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
-            border-color: transparent transparent #9ca3af transparent;
-        }
-
-        .select2-container {
-            width: 100% !important;
-        }
-
-        .select2-dropdown {
-            background-color: #1e2a3a !important;
-            border: 1px solid #3d4f63;
-            z-index: 1045 !important;
-            max-width: 100vw !important;
-            box-sizing: border-box !important;
-        }
-
-        .select2-search--dropdown .select2-search__field {
-            background-color: #253446 !important;
-            border: 1px solid #3d4f63 !important;
-            border-radius: 0.25rem;
-            color: #e5e7eb !important;
-        }
-
-        .select2-results__option {
-            background-color: #1e2a3a !important;
-            color: #e5e7eb !important;
-            padding: 8px 12px !important;
-        }
-
-        .select2-container--default .select2-results__option--highlighted[aria-selected] {
-            background-color: #f39c12 !important;
-            color: #1e2a3a !important;
-            font-weight: 500;
-        }
-
-        .select2-container--default .select2-results__option[aria-selected=true] {
-            background-color: #2c3e50 !important;
-            color: #f39c12 !important;
-            font-weight: 500;
-        }
-
-        .select2-container--default .select2-results__option--highlighted[aria-selected=true] {
-            background-color: #f39c12 !important;
-            color: #1e2a3a !important;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__placeholder {
-            color: #9ca3af !important;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__clear {
-            color: #9ca3af !important;
-            margin-right: 10px;
-        }
-
-        /* Estilos para Select2 inválido */
-        .select2-container.is-invalid .select2-selection,
-        .select2-container.is-invalid .select2-selection--single {
-            border-color: #dc3545 !important;
-        }
-
-        /* Prevenir overflow horizontal cuando Select2 está abierto */
-        body.select2-container--open {
-            overflow-x: hidden !important;
-        }
-
-        .select2-container--default .select2-dropdown {
-            max-width: calc(100vw - 40px) !important;
-        }
-    </style>
     <div class="row">
-        <div class="col">
-            <form method="POST" enctype="multipart/form-data">
+        <div class="col-12">
+            <form method="POST" id="intervencionForm" enctype="multipart/form-data" novalidate>
                 {% csrf_token %}
-                <!-- Paso 1 -->
-                <div id="step-1">
-                    <h3>Paso 1 - Datos Iniciales</h3>
-                    <div class="form-group">{{ form.tipo_intervencion|as_crispy_field }}</div>
-                    <div class="form-group">{{ form.subintervencion|as_crispy_field }}</div>
-                    <div class="form-group">{{ form.destinatario|as_crispy_field }}</div>
-                    <button type="button" id="next-step" class="btn btn-primary">Siguiente</button>
+
+                <!-- Paso 1 - Datos Iniciales -->
+                <div id="step-1" class="step-container">
+                    <div class="section-card">
+                        <div class="section-header active">
+                            <div class="section-header-left">
+                                <div class="section-icon">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                                <div class="section-title-group">
+                                    <h3 class="section-title">Paso 1 - Datos Iniciales</h3>
+                                    <p class="section-subtitle">Tipo de intervención y destinatario</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-body show">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.tipo_intervencion.id_for_label }}">
+                                            {{ form.tipo_intervencion.label }}
+                                            {% if form.tipo_intervencion.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ form.tipo_intervencion }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.subintervencion.id_for_label }}">
+                                            {{ form.subintervencion.label }}
+                                            {% if form.subintervencion.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ form.subintervencion }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ form.destinatario.id_for_label }}">
+                                            {{ form.destinatario.label }}
+                                            {% if form.destinatario.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ form.destinatario }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sticky-actions" style="justify-content: flex-end;">
+                        <div>
+                            <button type="button" id="next-step" class="btn btn-primary">
+                                <i class="fas fa-arrow-right mr-1"></i>
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <!-- Paso 2 -->
-                <div id="step-2" class="d-none">
-                    <h3>Paso 2 - Datos de Contacto</h3>
-                    <div class="form-group">
-                        {{ form.fecha|as_crispy_field }}
-                        <div id="fecha-error" class="invalid-feedback" style="display: none;"></div>
+
+                <!-- Paso 2 - Datos de Contacto y Documentación -->
+                <div id="step-2" class="step-container d-none">
+                    <div class="section-card">
+                        <div class="section-header active">
+                            <div class="section-header-left">
+                                <div class="section-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="section-title-group">
+                                    <h3 class="section-title">Paso 2 - Datos de Contacto</h3>
+                                    <p class="section-subtitle">Fecha, forma de contacto y observaciones</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-body show">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.fecha.id_for_label }}">
+                                            {{ form.fecha.label }}
+                                            {% if form.fecha.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ form.fecha }}
+                                        <div id="fecha-error" class="invalid-feedback" style="display: none;"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.forma_contacto.id_for_label }}">
+                                            {{ form.forma_contacto.label }}
+                                            {% if form.forma_contacto.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ form.forma_contacto }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ form.observaciones.id_for_label }}">
+                                            {{ form.observaciones.label }}
+                                            {% if form.observaciones.field.required %}
+                                                <span class="text-danger">*</span>
+                                            {% endif %}
+                                        </label>
+                                        {{ form.observaciones }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group mb-3">
+                                        <div class="custom-control custom-checkbox" style="padding-left: 1.5rem;">
+                                            {{ form.tiene_documentacion }}
+                                            <label class="custom-control-label" for="{{ form.tiene_documentacion.id_for_label }}" style="cursor: pointer; user-select: none;">
+                                                {{ form.tiene_documentacion.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row d-none" id="documentacion-field">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ form.documentacion.id_for_label }}">
+                                            {{ form.documentacion.label }}
+                                        </label>
+                                        {{ form.documentacion }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">{{ form.forma_contacto|as_crispy_field }}</div>
-                    <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
-                    <div class="form-group">{{ form.tiene_documentacion|as_crispy_field }}</div>
-                    <div class="form-group d-none" id="documentacion-field">
-                        <label for="documentacion"></label>
-                        {{ form.documentacion|as_crispy_field }}
+
+                    <div class="sticky-actions">
+                        <div>
+                            <button type="button" id="prev-step" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i>
+                                Anterior
+                            </button>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save mr-1"></i>
+                                Guardar Intervención
+                            </button>
+                        </div>
                     </div>
-                    <button type="button" id="prev-step" class="btn btn-secondary">Anterior</button>
-                    <button type="submit" class="btn btn-success">Guardar</button>
                 </div>
             </form>
         </div>
@@ -284,6 +352,9 @@
             if (isValid) {
                 step1.classList.add("d-none");
                 step2.classList.remove("d-none");
+                // Update progress indicator
+                document.getElementById('current-step').textContent = '2';
+                document.getElementById('progressBarFill').style.width = '100%';
             } else {
                 formStep1.forEach(input => {
                     if (input.tagName === "SELECT") {
@@ -314,6 +385,9 @@
         prevStep.addEventListener("click", function () {
             step2.classList.add("d-none");
             step1.classList.remove("d-none");
+            // Update progress indicator
+            document.getElementById('current-step').textContent = '1';
+            document.getElementById('progressBarFill').style.width = '50%';
         });
 
         tieneDocumentacion.addEventListener("change", function () {
