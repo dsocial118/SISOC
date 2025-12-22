@@ -8,10 +8,19 @@ from django.urls import reverse_lazy
 from django.db import transaction
 from django.contrib import messages
 from django.shortcuts import redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
 from .forms import CSVUploadForm
 from expedientespagos.models import ExpedientePago
 from comedores.models import Comedor
+from .models import ArchivosImportados
 
 
 DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
@@ -161,3 +170,35 @@ class ImportExpedientesView(FormView):
         else:
             messages.success(self.request, f"{len(instances)} expedientes importados correctamente.")
         return redirect(self.success_url)
+    
+class ImportarExpedienteListView(LoginRequiredMixin, ListView):
+    model = ArchivosImportados
+    template_name = "importarexpedientes/list.html"
+    context_object_name = "archivos_importados"
+    paginate_by = 10
+
+    def get_queryset(self):
+        query = self.request.GET.get("busqueda")
+        qs = super().get_queryset().order_by("-fecha_subida")
+        if query:
+            qs = qs.filter(usuario__username__icontains=query)
+        return qs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["query"] = self.request.GET.get("busqueda", "")
+        return context
+    
+class ImportarExpedienteDetailView(LoginRequiredMixin, DetailView):
+    model = ArchivosImportados
+    template_name = "importarexpedientes/detail.html"
+    context_object_name = "archivo_importado"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
+
+class ImportarExpedienteDeleteView(LoginRequiredMixin, DeleteView):
+    model = ArchivosImportados
+    template_name = "importarexpedientes/confirm_delete.html"
+    success_url = reverse_lazy("importarexpedientes:list")

@@ -1,0 +1,65 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Organizacion: {{ organizacion.nombre }}{% endblock %}
+{% block titulo-pagina %}
+    {{ organizacion.nombre }}
+    <span class="ml-2 h5">| {{ organizacion.cuit | default_if_none:"Sin información" }}</span>
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'organizaciones' %}">Organizaciones</a>
+        </div>
+        <div class="breadcrumb-item active">{{ organizacion.nombre }}</div>
+    </ol>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <div class="row justify-content-between d-print-none mx-1 mb-3">
+        <div class="col-auto">
+            <a href="{% url 'organizaciones' %}"
+               class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
+        </div>
+        <div class="col-auto">
+            {% if perms.auditlog.view_logentry %}
+                <a href="{% url 'audittrail:log_instance' 'organizaciones' 'organizacion' organizacion.pk %}"
+                   class="btn btn-outline-secondary mr-1">Historial</a>
+            {% endif %}
+            <a href="{% url 'organizacion_editar' organizacion.id %}"
+               class="btn btn-primary mr-1">Editar</a>
+            <a href="{% url 'organizacion_eliminar' organizacion.id %}"
+               class="btn btn-danger">Eliminar</a>
+        </div>
+    </div>
+    {% include 'components/info_card.html' with title='Información de la organizacion' items=data_items list_style=True col_class="col-md-6" card_class="card-outline card-primary h-100" %}
+    <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
+        <div class="col-auto">
+            <h4 style="display: inline;">Firmantes</h4>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'firmante_crear' organizacion.id %}"
+               class="btn btn-primary mr-1">Agregar Firmante</a>
+        </div>
+    </div>
+    {% include 'components/data_table.html' with headers=table_headers items=firmantes fields=table_fields actions=actions show_actions=show_actions empty_message='No hay firmantes registrados.' %}
+    {% if is_paginated %}
+        {% include 'components/pagination.html' %}
+    {% endif %}
+    {% if avales %}
+        <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
+            <div class="col-auto">
+                <h4 style="display: inline;">Aval</h4>
+            </div>
+            <div class="col-auto">
+                <a href="{% url 'aval_crear' organizacion.id %}"
+                   class="btn btn-primary mr-1">Agregar Aval</a>
+            </div>
+        </div>
+        {% include 'components/data_table.html' with headers=table_headers_avales items=avales_data fields=table_fields_avales actions=actions_avales show_actions=show_actions empty_message='No hay avales registrados.' %}
+        {% if is_paginated %}
+            {% include 'components/pagination.html' %}
+        {% endif %}
+    {% endif %}
+{% endblock %}
