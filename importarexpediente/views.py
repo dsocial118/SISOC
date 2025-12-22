@@ -118,18 +118,22 @@ class ImportExpedientesView(FormView):
 
         instances = []
         errors = []
+        expected_cols = len(headers)
         with transaction.atomic():
             for i, row in enumerate(data_rows, start=2):
-                if len(row) < len(headers):
-                    # completar con vacíos
-                    row = row + [""] * (len(headers) - len(row))
+                # normalizar cantidad de columnas
+                if len(row) < expected_cols:
+                    row = row + [""] * (expected_cols - len(row))
+                elif len(row) > expected_cols:
+                    # recortar columnas extra para evitar IndexError
+                    row = row[:expected_cols]
                 kwargs = {}
                 comedor_obj = None
                 for col_idx, cell in enumerate(row):
                     field = mapped[col_idx]
                     if not field:
                         continue
-                    val = cell.strip()
+                    val = (cell or "").strip()
                     if field == "monto":
                         kwargs[field] = self.parse_decimal(val)
                     elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
