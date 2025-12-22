@@ -49,6 +49,39 @@
                class="btn btn-outline-secondary">Cancelar</a>
         </div>
     </div>
+    {% if not object %}
+        <div class="card mb-3">
+            <div class="card-header font-weight-bold">Buscar Ciudadano</div>
+            <div class="card-body">
+                <form method="get" class="form-inline">
+                    <div class="form-group mr-2">
+                        <label for="busqueda-dni" class="sr-only">DNI</label>
+                        <input type="text"
+                               class="form-control"
+                               name="dni"
+                               id="busqueda-dni"
+                               placeholder="Ingrese DNI (7-8 digitos)"
+                               value="{{ request.GET.dni }}" />
+                    </div>
+                    <div class="form-group mr-2">
+                        <label for="busqueda-sexo" class="sr-only">Sexo</label>
+                        <select name="sexo" id="busqueda-sexo" class="form-control">
+                            {% for value,label in sexo_busqueda_choices %}
+                                <option value="{{ value }}"
+                                        {% if sexo_busqueda == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary mt-3" type="submit">Buscar</button>
+                </form>
+                <small class="form-text text-muted mt-2">
+                    Si existe, se abrira el legajo para edicion. Si no existe, se precargara el formulario con datos de RENAPER.
+                </small>
+            </div>
+        </div>
+    {% endif %}
 
     <div class="row comedor-form">
         <div class="col-12">
