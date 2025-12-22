@@ -110,8 +110,17 @@
         window.jQuery(document).ready(function() {
             // MÉTODO 1: Listener global para capturar todos los eventos select2:open
             window.jQuery(document).on('select2:open', function() {
+                // Agregar clase al body para prevenir overflow horizontal
+                document.body.classList.add('select2-container--open');
+
                 // Ejecutar el enfoque de manera inmediata y con retry
                 focusSelect2SearchField();
+            });
+
+            // Listener para cuando se cierra el Select2
+            window.jQuery(document).on('select2:close', function() {
+                // Remover clase del body
+                document.body.classList.remove('select2-container--open');
             });
 
             // MÉTODO 2: Observer para detectar nuevos dropdowns de Select2 en el DOM
