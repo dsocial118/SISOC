@@ -17,7 +17,13 @@ class IntervencionForm(forms.ModelForm):
             "documentacion",
         ]
         widgets = {
+            "tipo_intervencion": forms.Select(attrs={"class": "form-control"}),
+            "subintervencion": forms.Select(attrs={"class": "form-control"}),
+            "destinatario": forms.Select(attrs={"class": "form-control"}),
             "fecha": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "forma_contacto": forms.Select(attrs={"class": "form-control"}),
+            "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+            "documentacion": forms.FileInput(attrs={"class": "form-control"}),
         }
         labels = {
             "tipo_intervencion": "Tipo de Intervención",
