@@ -700,6 +700,108 @@ class ComedorService:
         }
 
     @staticmethod
+    def _build_ciudadano_data_from_renaper(datos, dni_str):
+        """Mapea datos de RENAPER a campos de Ciudadano."""
+        apellido = ComedorService._to_camel_case(datos.get("apellido"))
+        nombre = ComedorService._to_camel_case(datos.get("nombre"))
+        fecha_nacimiento = ComedorService._parse_fecha_renaper(
+            datos.get("fecha_nacimiento")
+        )
+
+        if not apellido or not nombre or not fecha_nacimiento:
+            return (
+                None,
+                "RENAPER no devolvió datos mínimos para crear el ciudadano.",
+            )
+
+        try:
+            documento_valor = int(datos.get("dni") or dni_str)
+        except (TypeError, ValueError):
+            return (None, "RENAPER devolvió un DNI inválido.")
+
+        ciudadano_data = {
+            "apellido": apellido,
+            "nombre": nombre,
+            "documento": documento_valor,
+            "tipo_documento": datos.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI,
+            "fecha_nacimiento": fecha_nacimiento,
+        }
+
+        if datos.get("sexo"):
+            ciudadano_data["sexo"] = datos["sexo"]
+
+        # Datos de contacto básicos desde RENAPER
+        ciudadano_data.update(
+            {
+                "calle": datos.get("calle") or None,
+                "altura": str(datos.get("altura")) if datos.get("altura") else None,
+                "piso_departamento": datos.get("piso_vivienda")
+                or datos.get("departamento_vivienda"),
+                "barrio": datos.get("barrio") or None,
+                "codigo_postal": (
+                    str(datos.get("codigo_postal"))
+                    if datos.get("codigo_postal")
+                    else None
+                ),
+            }
+        )
+
+        ubicacion = ComedorService._mapear_ubicacion_desde_renaper(datos)
+        if ubicacion["provincia"]:
+            ciudadano_data["provincia"] = ubicacion["provincia"].pk
+        if ubicacion["municipio"]:
+            ciudadano_data["municipio"] = ubicacion["municipio"].pk
+        if ubicacion["localidad"]:
+            ciudadano_data["localidad"] = ubicacion["localidad"].pk
+
+        nacionalidad_obj = ComedorService._match_nacionalidad(
+            datos.get("nacionalidad_api")
+        )
+        if nacionalidad_obj:
+            ciudadano_data["nacionalidad"] = nacionalidad_obj.pk
+
+        return (ciudadano_data, None)
+
+    @staticmethod
+    def obtener_datos_ciudadano_desde_renaper(dni, sexo=None):
+        """
+        Consulta RENAPER y devuelve datos listos para precargar un formulario.
+        """
+        dni_str = str(dni or "").strip()
+        if not dni_str.isdigit() or len(dni_str) < 7:
+            return {
+                "success": False,
+                "message": "Ingrese un DNI numérico válido para consultar RENAPER.",
+            }
+
+        sexo_value = (sexo or "").upper()
+        if sexo_value in ("M", "F", "X"):
+            resultado = consultar_datos_renaper(dni_str, sexo_value)
+        else:
+            resultado = ComedorService._consultar_renaper_por_dni(dni_str)
+
+        if not resultado.get("success"):
+            return {
+                "success": False,
+                "message": resultado.get(
+                    "error", "No se encontraron datos en RENAPER."
+                ),
+            }
+
+        ciudadano_data, error = ComedorService._build_ciudadano_data_from_renaper(
+            resultado.get("data") or {}, dni_str
+        )
+        if not ciudadano_data:
+            return {"success": False, "message": error}
+
+        return {
+            "success": True,
+            "data": ciudadano_data,
+            "message": "Datos obtenidos desde RENAPER.",
+            "datos_api": resultado.get("datos_api"),
+        }
+
+    @staticmethod
     def crear_ciudadano_desde_renaper(dni, user=None):
         """
         Intenta crear un ciudadano a partir de una consulta a RENAPER.
@@ -723,76 +825,16 @@ class ComedorService:
                 "message": "El ciudadano ya existe en la base.",
             }
 
-        resultado = ComedorService._consultar_renaper_por_dni(dni_str)
+        resultado = ComedorService.obtener_datos_ciudadano_desde_renaper(dni_str)
         if not resultado.get("success"):
             return {
                 "success": False,
                 "message": resultado.get(
-                    "error", "No se encontraron datos en RENAPER."
+                    "message", "No se encontraron datos en RENAPER."
                 ),
             }
 
-        datos = resultado.get("data") or {}
-        apellido = ComedorService._to_camel_case(datos.get("apellido"))
-        nombre = ComedorService._to_camel_case(datos.get("nombre"))
-        fecha_nacimiento = ComedorService._parse_fecha_renaper(
-            datos.get("fecha_nacimiento")
-        )
-
-        if not apellido or not nombre or not fecha_nacimiento:
-            return {
-                "success": False,
-                "message": "RENAPER no devolvió datos mínimos para crear el ciudadano.",
-            }
-
-        try:
-            documento_valor = int(datos.get("dni") or dni_str)
-        except (TypeError, ValueError):
-            return {
-                "success": False,
-                "message": "RENAPER devolvió un DNI inválido.",
-            }
-
-        ciudadano_data = {
-            "apellido": apellido,
-            "nombre": nombre,
-            "documento": documento_valor,
-            "tipo_documento": datos.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI,
-            "fecha_nacimiento": fecha_nacimiento,
-        }
-
-        if datos.get("sexo"):
-            ciudadano_data["sexo_id"] = datos["sexo"]
-
-        # Datos de contacto básicos desde RENAPER
-        ciudadano_data.update(
-            {
-                "calle": datos.get("calle") or None,
-                "altura": str(datos.get("altura")) if datos.get("altura") else None,
-                "piso_departamento": datos.get("piso_vivienda")
-                or datos.get("departamento_vivienda"),
-                "barrio": datos.get("barrio") or None,
-                "codigo_postal": (
-                    str(datos.get("codigo_postal"))
-                    if datos.get("codigo_postal")
-                    else None
-                ),
-            }
-        )
-
-        ubicacion = ComedorService._mapear_ubicacion_desde_renaper(datos)
-        if ubicacion["provincia"]:
-            ciudadano_data["provincia"] = ubicacion["provincia"]
-        if ubicacion["municipio"]:
-            ciudadano_data["municipio"] = ubicacion["municipio"]
-        if ubicacion["localidad"]:
-            ciudadano_data["localidad"] = ubicacion["localidad"]
-
-        nacionalidad_obj = ComedorService._match_nacionalidad(
-            datos.get("nacionalidad_api")
-        )
-        if nacionalidad_obj:
-            ciudadano_data["nacionalidad"] = nacionalidad_obj
+        ciudadano_data = dict(resultado.get("data") or {})
 
         if user and getattr(user, "is_authenticated", False):
             ciudadano_data["creado_por"] = user
