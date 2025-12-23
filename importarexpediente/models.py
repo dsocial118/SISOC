@@ -8,6 +8,6 @@ class ArchivosImportados(models.Model):
     fecha_subida = models.DateTimeField(auto_now_add=True)
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     error = models.TextField(blank=True, null=True)
-
+    id_archivo = models.IntegerField(blank=True, null=True)
     def __str__(self):
         return f"Archivo importado {self.archivo.name} por {self.usuario.username} el {self.fecha_subida}"
