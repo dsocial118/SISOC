@@ -173,7 +173,7 @@ class ImportExpedientesView(FormView):
     
 class ImportarExpedienteListView(LoginRequiredMixin, ListView):
     model = ArchivosImportados
-    template_name = "importarexpedientes/list.html"
+    template_name = "importarexpediente_list.html"
     context_object_name = "archivos_importados"
     paginate_by = 10
 
@@ -191,7 +191,7 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
     
 class ImportarExpedienteDetailView(LoginRequiredMixin, DetailView):
     model = ArchivosImportados
-    template_name = "importarexpedientes/detail.html"
+    template_name = "importarexpediente_detail.html"
     context_object_name = "archivo_importado"
 
     def get_context_data(self, **kwargs):
@@ -200,5 +200,5 @@ class ImportarExpedienteDetailView(LoginRequiredMixin, DetailView):
 
 class ImportarExpedienteDeleteView(LoginRequiredMixin, DeleteView):
     model = ArchivosImportados
-    template_name = "importarexpedientes/confirm_delete.html"
+    template_name = "iimportarexpediente_confirm_delete.html"
     success_url = reverse_lazy("importarexpedientes:list")
