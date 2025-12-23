@@ -68,9 +68,7 @@
                         <select name="sexo" id="busqueda-sexo" class="form-control">
                             {% for value,label in sexo_busqueda_choices %}
                                 <option value="{{ value }}"
-                                        {% if sexo_busqueda == value %}selected{% endif %}>
-                                    {{ label }}
-                                </option>
+                                        {% if sexo_busqueda == value %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>
