@@ -4,7 +4,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
-            <a href="{% url 'importarexpedientes' %}">Importar Expedientes</a>
+            <a href="{% url 'importarexpedientes_list' %}">Importar Expedientes</a>
         </li>
         <li class="breadcrumb-item active">Listar</li>
     </ol>
@@ -13,7 +13,7 @@
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'importarexpedientes_ajax' as ajax_url %}
-    {% include 'components/search_bar.html' with titulo='Buscar Importar Expediente' placeholder='Buscar por Usuario' help_text='Ingresar Usuario.' reset_url='importarexpediente' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
+    {% include 'components/search_bar.html' with titulo='Buscar Importar Expediente' placeholder='Buscar por Usuario' help_text='Ingresar Usuario.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
     <div class="row mt-5 max-width-100">
         <div class="col-12">
             <div class="card">
@@ -41,7 +41,7 @@
                             </tr>
                         </thead>
                         <tbody id="importarexpedientes-tbody">
-                            {% include 'importarexpediente/partials/importarexpediente_rows.html' with importarexpedientes=importarexpedientes %}
+                            {% include 'partials/importarexpediente_rows.html' with importarexpedientes=importarexpedientes %}
                         </tbody>
                     </table>
                 </div>

@@ -524,6 +524,29 @@
                     </ul>
                 </li>
             {% endif %}
+
+            {% if request.user|has_group:"Importar Expediente" %}
+                <li class="nav-item {% if 'importarexpediente' in pagina_actual %}menu-open{% endif %}">
+                    <a href="#"
+                       class="nav-link nav-dot ms-2 {% if 'importarexpediente' in pagina_actual %}active{% endif %}">
+                        <p>
+                            Importar Expediente
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="{% url 'importarexpedientes_list' %}"
+                               class="nav-link ms-4 {% if 'importarexpediente/listar' in pagina_actual %}active{% endif %}">
+                                <i class="nav-icon bi bi-arrow-return-right"></i>
+                                <p>Ver Importar Expediente</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            {% endif %}
+
+
             <!-- CDI -->
             {% if request.user|has_group:"CDI" %}
                 <li class="nav-item {% if 'cdi' in pagina_actual %}menu-open{% endif %}">
