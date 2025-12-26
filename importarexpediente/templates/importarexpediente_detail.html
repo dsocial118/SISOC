@@ -10,10 +10,47 @@
     </ol>
 {% endblock %}
 {% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'importarexpedientes_ajax' as ajax_url %}
-    {% include 'components/search_bar.html' with titulo='Buscar Importar Expediente' placeholder='Buscar por Usuario' help_text='Ingresar Usuario.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
+    {% include 'components/search_bar.html' with titulo='Buscar Errores' placeholder='Buscar por Fila' help_text='Ingresar una Fila.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
+    
+    <div class="row text-center mb-3">
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-clipboard fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ exito_count }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Exitos</h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-clipboard fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ error_count }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Errores</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="row mt-5 max-width-100">
         <div class="col-12">
             <div class="card">
@@ -25,12 +62,8 @@
                                     Archivo
                                     <i class="fas fa-sort sort-icon"></i>
                                 </th>
-                                <th class="sortable" data-column="cuit">
-                                    Usuario
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
                                 <th class="sortable" data-column="telefono">
-                                    Fecha de Subida
+                                    Fila
                                     <i class="fas fa-sort sort-icon"></i>
                                 </th>
                                 <th class="sortable" data-column="email">

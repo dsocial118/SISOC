@@ -10,10 +10,11 @@
         <td data-telefono="{{ expediente.telefono|default:'' }}">
             {{ expediente.fecha_subida | default_if_none:"Sin información" }}
         </td>
-        <td data-email="{{ expediente.email|default:'' }}">{{ expediente.error_count | default_if_none:"Sin información" }}</td>
+        <td data-email="{{ expediente.email|default:'' }}">{{ expediente.count_exitos | default_if_none:"Sin información" }}</td>
+        <td data-email="{{ expediente.email|default:'' }}">{{ expediente.count_errores | default_if_none:"Sin información" }}</td>
         <td class="project-actions text-right">
             <div class="action-buttons" role="group">
-                <a href="{% url 'importarexpediente_detail' expediente.id_archivo %}"
+                <a href="{% url 'importarexpediente_detail' expediente.id %}"
                    class="btn btn-primary link-handler"
                    title="Ver detalle de la organización">
                     <i class="fas fa-eye"></i>
