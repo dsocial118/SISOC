@@ -4,13 +4,12 @@
         <td data-nombre="{{ organizacion.nombre }}">
             <a href="{% url 'importarexpediente_detail' expediente.id %}"
                class="font-weight-bold link-handler"
-               title="Ver detalles">{{ expediente.archivo }}</a>
+               title="Ver detalles">{{ expediente.archivo_importado }}</a>
         </td>
-        <td data-cuit="{{ expediente.cuit|default:'' }}">{{ expediente.usuario.username |default_if_none:"Sin información" }}</td>
         <td data-telefono="{{ expediente.telefono|default:'' }}">
-            {{ expediente.fecha_subida | default_if_none:"Sin información" }}
+            {{ expediente.fila | default_if_none:"Sin información" }}
         </td>
-        <td data-email="{{ expediente.email|default:'' }}">{{ expediente.error | default_if_none:"Sin información" }}</td>
+        <td data-email="{{ expediente.email|default:'' }}">{{ expediente.mensaje | default_if_none:"Sin información" }}</td>
     </tr>
 {% empty %}
     <tr>

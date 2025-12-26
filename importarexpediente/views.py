@@ -19,7 +19,12 @@ from django.db.models.functions import Coalesce
 from .forms import CSVUploadForm
 from expedientespagos.models import ExpedientePago
 from comedores.models import Comedor
-from .models import ArchivosImportados
+from .models import (
+    ArchivosImportados,
+    ErroresImportacion,
+    ExitoImportacion,
+    RegistroImportado,
+)
 
 
 DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
@@ -29,9 +34,8 @@ HEADER_MAP = {
     "expediente": "expediente_pago",
     "expediente de pago": "expediente_pago",
     "resolucion": "resolucion_pago",
-    "resolución": "resolucion_pago",
     "resolución de pago": "resolucion_pago",
-    "anexo": "anexo",
+    "COMEDOR": "anexo",
     "if cantidad de prestaciones": "if_cantidad_de_prestaciones",
     "if pagado": "if_pagado",
     "monto": "monto",
@@ -42,8 +46,7 @@ HEADER_MAP = {
     "fecha acreditacion": "fecha_acreditacion",
     "fecha de acreditación": "fecha_acreditacion",
     "observaciones": "observaciones",
-    "comedor": "comedor",
-    "comedor_id": "comedor",
+    "ID": "comedor",
 }
 
 
@@ -106,10 +109,11 @@ class ImportExpedientesView(FormView):
                 pass
             base_upload = ArchivosImportados(usuario=self.request.user)
             base_upload.archivo.save(f.name, f, save=True)
-            # Identificador único del lote = PK del maestro
+            # Identificador único del lote = PK del maestro (si el modelo tiene el campo id_archivo, lo seteamos)
             batch_id = base_upload.pk
-            base_upload.id_archivo = batch_id
-            base_upload.save(update_fields=["id_archivo"])
+            if hasattr(base_upload, "id_archivo"):
+                base_upload.id_archivo = batch_id
+                base_upload.save(update_fields=["id_archivo"])
         except Exception as e:
             messages.error(self.request, f"No se pudo guardar el archivo: {e}")
             return redirect(self.success_url)
@@ -127,11 +131,20 @@ class ImportExpedientesView(FormView):
         rows = list(reader)
 
         if not rows:
-            # Registrar error por archivo vacío
+            # Registrar error por archivo vacío (no se guardan datos en ExpedientePago)
             err_msg = "CSV vacío."
-            err = ArchivosImportados(usuario=self.request.user, error=err_msg, id_archivo=batch_id)
-            err.archivo.name = base_upload.archivo.name
-            err.save()
+            ErroresImportacion.objects.create(
+                archivo_importado=base_upload,
+                fila=0,
+                mensaje=err_msg,
+            )
+            # Actualizar contadores en el maestro
+            try:
+                base_upload.count_errores = 1
+                base_upload.count_exitos = 0
+                base_upload.save(update_fields=["count_errores", "count_exitos"])
+            except Exception:
+                pass
             messages.error(self.request, err_msg)
             return redirect(self.success_url)
 
@@ -141,9 +154,18 @@ class ImportExpedientesView(FormView):
             data_rows = rows[1:]
         else:
             err_msg = "CSV sin cabecera no soportado por defecto."
-            err = ArchivosImportados(usuario=self.request.user, error=err_msg, id_archivo=batch_id)
-            err.archivo.name = base_upload.archivo.name
-            err.save()
+            ErroresImportacion.objects.create(
+                archivo_importado=base_upload,
+                fila=0,
+                mensaje=err_msg,
+            )
+            # Actualizar contadores en el maestro
+            try:
+                base_upload.count_errores = 1
+                base_upload.count_exitos = 0
+                base_upload.save(update_fields=["count_errores", "count_exitos"])
+            except Exception:
+                pass
             messages.error(self.request, err_msg)
             return redirect(self.success_url)
 
@@ -153,8 +175,8 @@ class ImportExpedientesView(FormView):
             key = h.replace('"', "").replace("'", "").strip().lower()
             mapped.append(HEADER_MAP.get(key, None))
 
-        instances = []
-        errors = []
+        success_count = 0
+        error_count = 0
         expected_cols = len(headers)
 
         with transaction.atomic():
@@ -185,34 +207,52 @@ class ImportExpedientesView(FormView):
                     if comedor_obj:
                         kwargs["comedor"] = comedor_obj
 
+                    # Validar sin guardar en ExpedientePago
                     inst = ExpedientePago(**kwargs)
-                    inst.full_clean()
-                    instances.append(inst)
+                    inst.full_clean()  # si falla, cae al except
+
+                    # Registrar éxito (no se persiste ExpedientePago)
+                    exito = ExitoImportacion.objects.create(
+                        archivo_importado=base_upload,
+                        fila=i,
+                        mensaje="Fila válida",
+                    )
+                    success_count += 1
 
                 except Exception as e:
-                    # 3) Guardar un registro por cada error
+                    # Registrar un error por cada fila inválida
                     msg = f"Línea {i}: {e}"
-                    errors.append(msg)
-                    err = ArchivosImportados(
-                        usuario=self.request.user,
-                        error=msg,
-                        id_archivo=batch_id,
+                    ErroresImportacion.objects.create(
+                        archivo_importado=base_upload,
+                        fila=i,
+                        mensaje=msg,
                     )
-                    # Reutilizamos el mismo archivo sin duplicarlo en el storage
-                    err.archivo.name = base_upload.archivo.name
-                    err.save()
+                    error_count += 1
 
-            if instances:
-                ExpedientePago.objects.bulk_create(instances)
+            # No se guarda nada en ExpedientePago por requerimiento
 
-        if errors:
+        if error_count:
+            # Persistir contadores finales en el maestro
+            try:
+                base_upload.count_errores = error_count
+                base_upload.count_exitos = success_count
+                base_upload.save(update_fields=["count_errores", "count_exitos"])
+            except Exception:
+                pass
             messages.warning(
                 self.request,
-                f"Import parcial: {len(instances)} creados, {len(errors)} errores."
+                f"Validación parcial: {success_count} filas válidas, {error_count} errores."
             )
         else:
+            # Persistir contadores finales en el maestro
+            try:
+                base_upload.count_errores = error_count
+                base_upload.count_exitos = success_count
+                base_upload.save(update_fields=["count_errores", "count_exitos"])
+            except Exception:
+                pass
             messages.success(
-                self.request, f"{len(instances)} expedientes importados correctamente."
+                self.request, f"{success_count} filas válidas."
             )
         return redirect(self.success_url)
     
@@ -223,52 +263,15 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        query = self.request.GET.get("busqueda")
-        base_qs = ArchivosImportados.objects.all()
+        qs = (
+            ArchivosImportados.objects
+            .select_related("usuario")
+            .order_by("-fecha_subida")
+        )
+        query = self.request.GET.get("busqueda", "").strip()
         if query:
-            base_qs = base_qs.filter(usuario__username__icontains=query)
-
-            # subquery con el id más reciente por cada archivo
-            latest_ids = (
-                base_qs.order_by()  # importante: limpiar order_by para la agregación
-                .values("archivo")
-                .annotate(latest_id=Max("id"))
-                .values("latest_id")
-            )
-            error_count_sq = (
-            ArchivosImportados.objects.filter(archivo=OuterRef("archivo"))
-            .order_by()
-            .values("archivo")
-            .annotate(
-                errs=Count(
-                    "id",
-                    filter=Q(error__isnull=False) & ~Q(error=""),
-                )
-            )
-            .values("errs")
-        )
-            queryset = ArchivosImportados.objects.filter(id__in=Subquery(latest_ids)).annotate(error_count=Coalesce(Subquery(error_count_sq), 0)).order_by("-fecha_subida")
-        else:
-            latest_ids = (
-                base_qs.order_by()  # importante: limpiar order_by para la agregación
-                .values("archivo")
-                .annotate(latest_id=Max("id"))
-                .values("latest_id")
-            )
-            error_count_sq = (
-            ArchivosImportados.objects.filter(archivo=OuterRef("archivo"))
-            .order_by()
-            .values("archivo")
-            .annotate(
-                errs=Count(
-                    "id",
-                    filter=Q(error__isnull=False) & ~Q(error=""),
-                )
-            )
-            .values("errs")
-        )
-            queryset = ArchivosImportados.objects.filter(id__in=Subquery(latest_ids)).annotate(error_count=Coalesce(Subquery(error_count_sq), 0)).order_by("-fecha_subida")
-        return queryset
+            qs = qs.filter(archivo__icontains=query)
+        return qs
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -279,7 +282,7 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
     """
     Lista todos los registros (maestro + errores) de un mismo lote (id_archivo).
     """
-    model = ArchivosImportados
+    model = ErroresImportacion
     template_name = "importarexpediente_detail.html"
     context_object_name = "registros_del_archivo"
     paginate_by = 20
@@ -289,33 +292,24 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        qs = (
-            ArchivosImportados.objects
-            .filter(id_archivo=self.batch_id)
-            .select_related("usuario")
-            .order_by("-fecha_subida")
-        )
-        if not qs.exists():
-            # Intentar caer al “maestro” por PK si no hubo registros con id_archivo
-            maestro = ArchivosImportados.objects.filter(id=self.batch_id).first()
-            if maestro:
-                qs = (
-                    ArchivosImportados.objects
-                    .filter(id_archivo=maestro.id_archivo or maestro.id)
-                    .select_related("usuario")
-                    .order_by("-fecha_subida")
-                )
-        if not qs.exists():
-            raise Http404("Lote no encontrado")
-        self._qs = qs
-        return qs
+        # Mostrar solo el archivo maestro correspondiente al id recibido en la URL
+        query = self.request.GET.get("busqueda")
+        if query:
+            queryset = ErroresImportacion.objects.filter(archivo_importado_id=self.batch_id)
+            return queryset
+        else:
+            queryset = ErroresImportacion.objects.filter(archivo_importado_id=self.batch_id)
+        return queryset
 
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        maestro = ArchivosImportados.objects.filter(id=self.batch_id).first()
-        ctx["batch_id"] = self.batch_id
-        ctx["archivo_maestro"] = maestro
-        # cantidad total de errores en el lote
-        qs = getattr(self, "_qs", self.get_queryset())
-        ctx["error_count"] = qs.exclude(error__isnull=True).exclude(error="").count()
-        return ctx
+        context = super().get_context_data(**kwargs)
+        errores = ErroresImportacion.objects.filter(
+            archivo_importado_id=self.batch_id
+        ).order_by("fila")
+        exitos = ExitoImportacion.objects.filter(
+            archivo_importado_id=self.batch_id
+        ).order_by("fila")
+        context["query"] = self.request.GET.get("busqueda", "")
+        context["error_count"] = errores.count()
+        context["exito_count"] = exitos.count()
+        return context
