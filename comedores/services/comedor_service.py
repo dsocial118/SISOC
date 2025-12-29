@@ -480,14 +480,7 @@ class ComedorService:
 
     @staticmethod
     def buscar_ciudadanos_por_documento(query, max_results=10):
-        cleaned = (query or "").strip()
-        if len(cleaned) < 4 or not cleaned.isdigit():
-            return []
-        return list(
-            Ciudadano.objects.filter(documento__startswith=cleaned)
-            .only("id", "nombre", "apellido", "documento")
-            .order_by("documento")[:max_results]
-        )
+        return list(Ciudadano.buscar_por_documento(query, max_results=max_results))
 
     @staticmethod
     def _parse_fecha_renaper(fecha_raw):
@@ -759,6 +752,7 @@ class ComedorService:
             "documento": documento_valor,
             "tipo_documento": datos.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI,
             "fecha_nacimiento": fecha_nacimiento,
+            "origen_dato": "renaper",
         }
 
         if datos.get("sexo"):

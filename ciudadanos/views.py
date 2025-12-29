@@ -1,4 +1,4 @@
-from datetime import datetime
+import logging
 
 from django.conf import settings
 from django.contrib import messages
@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import (
     CreateView,
@@ -18,6 +19,8 @@ from django.views.generic import (
 
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
 from ciudadanos.models import Ciudadano, GrupoFamiliar
+
+logger = logging.getLogger("django")
 
 
 class CiudadanosListView(LoginRequiredMixin, ListView):
@@ -118,7 +121,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
 
     def get_historial_context(self, ciudadano):
         historial = ciudadano.historial_transferencias.filter(
-            anio__gte=datetime.now().year - 1
+            anio__gte=timezone.now().year - 1
         ).order_by("anio", "mes")
 
         return {
@@ -136,14 +139,20 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
     def get_celiaquia_context(self, ciudadano):
         try:
             from celiaquia.models import ExpedienteCiudadano
-        except Exception:
+        except ImportError:
             return {"expedientes_celiaquia": []}
 
-        expedientes = (
-            ExpedienteCiudadano.objects.filter(ciudadano=ciudadano)
-            .select_related("expediente", "estado")
-            .order_by("-creado_en")
-        )
+        try:
+            expedientes = (
+                ExpedienteCiudadano.objects.filter(ciudadano=ciudadano)
+                .select_related("expediente", "estado")
+                .order_by("-creado_en")
+            )
+        except Exception:
+            logger.exception(
+                "Error cargando expedientes celiaquia para ciudadano %s", ciudadano.pk
+            )
+            return {"expedientes_celiaquia": []}
         contexto = {"expedientes_celiaquia": expedientes}
         expediente_actual = expedientes.first()
         if expediente_actual:
@@ -153,20 +162,26 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
     def get_cdf_context(self, ciudadano):
         try:
             from centrodefamilia.models import ParticipanteActividad
-        except Exception:
+        except ImportError:
             return {"participaciones_cdf": [], "costo_total_cdf": 0}
 
-        participaciones = (
-            ParticipanteActividad.objects.filter(ciudadano=ciudadano)
-            .select_related("actividad_centro__centro", "actividad_centro__actividad")
-            .order_by("-fecha_registro")
-        )
-        costo_total_cdf = (
-            ParticipanteActividad.objects.filter(
-                ciudadano=ciudadano, estado="inscrito"
-            ).aggregate(total=Sum("actividad_centro__precio"))["total"]
-            or 0
-        )
+        try:
+            participaciones = (
+                ParticipanteActividad.objects.filter(ciudadano=ciudadano)
+                .select_related("actividad_centro__centro", "actividad_centro__actividad")
+                .order_by("-fecha_registro")
+            )
+            costo_total_cdf = (
+                ParticipanteActividad.objects.filter(
+                    ciudadano=ciudadano, estado="inscrito"
+                ).aggregate(total=Sum("actividad_centro__precio"))["total"]
+                or 0
+            )
+        except Exception:
+            logger.exception(
+                "Error cargando participaciones CDF para ciudadano %s", ciudadano.pk
+            )
+            return {"participaciones_cdf": [], "costo_total_cdf": 0}
         return {
             "participaciones_cdf": participaciones,
             "costo_total_cdf": costo_total_cdf,
@@ -175,16 +190,22 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
     def get_comedor_context(self, ciudadano):
         try:
             from comedores.models import Nomina
-        except Exception:
+        except ImportError:
             return {"nominas_comedor": []}
 
-        nominas = (
-            Nomina.objects.filter(ciudadano=ciudadano)
-            .select_related(
-                "comedor__provincia", "comedor__municipio", "comedor__tipocomedor"
+        try:
+            nominas = (
+                Nomina.objects.filter(ciudadano=ciudadano)
+                .select_related(
+                    "comedor__provincia", "comedor__municipio", "comedor__tipocomedor"
+                )
+                .order_by("-fecha")
             )
-            .order_by("-fecha")
-        )
+        except Exception:
+            logger.exception(
+                "Error cargando nominas de comedor para ciudadano %s", ciudadano.pk
+            )
+            return {"nominas_comedor": []}
         contexto = {"nominas_comedor": nominas}
         nomina_actual = nominas.first()
         if nomina_actual:
