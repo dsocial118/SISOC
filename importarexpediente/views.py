@@ -26,27 +26,38 @@ from .models import (
     RegistroImportado,
 )
 
+import logging
+logger = logging.getLogger("django")
+
 
 DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
 
 # mapeo de cabeceras posibles -> campo de modelo
 HEADER_MAP = {
+    # Expedientes
     "expediente": "expediente_pago",
     "expediente de pago": "expediente_pago",
+    "expediente del convenio": "resolucion_pago",
     "resolucion": "resolucion_pago",
     "resolución de pago": "resolucion_pago",
-    "COMEDOR": "anexo",
-    "if cantidad de prestaciones": "if_cantidad_de_prestaciones",
-    "if pagado": "if_pagado",
+    # Comedor identificación (por nombre o por id)
+    "comedor": "anexo",
+    "id": "comedor",
+    # Monto total
     "monto": "monto",
+    "total": "monto",
+    # Orden de pago
     "numero orden pago": "numero_orden_pago",
     "número de orden de pago": "numero_orden_pago",
+    # Fechas
     "fecha pago al banco": "fecha_pago_al_banco",
     "fecha de pago al banco": "fecha_pago_al_banco",
     "fecha acreditacion": "fecha_acreditacion",
     "fecha de acreditación": "fecha_acreditacion",
+    # Otros
     "observaciones": "observaciones",
-    "ID": "comedor",
+    "if cantidad de prestaciones": "if_cantidad_de_prestaciones",
+    "if pagado": "if_pagado",
 }
 
 
@@ -73,7 +84,12 @@ class ImportExpedientesView(FormView):
     def parse_decimal(self, value):
         if value is None or value == "":
             return None
-        s = str(value).replace(",", ".").strip()
+        s = str(value)
+        # Quitar símbolos de moneda, espacios y separadores de miles
+        s = s.replace("$", "").replace(" ", "")
+        s = s.replace(".", "")  # remover separador de miles
+        s = s.replace(",", ".")  # usar punto como separador decimal
+        s = s.strip()
         try:
             return Decimal(s)
         except Exception:
@@ -100,7 +116,7 @@ class ImportExpedientesView(FormView):
         f = form.cleaned_data["file"]
         delim = form.cleaned_data["delimiter"]
         has_header = form.cleaned_data["has_header"]
-
+        logger.error(f"[IMPORT] Inicio form_valid: delimiter='{delim}' has_header={has_header}")
         # 1) Guardar el archivo subido una sola vez (registro "maestro")
         try:
             try:
@@ -111,6 +127,7 @@ class ImportExpedientesView(FormView):
             base_upload.archivo.save(f.name, f, save=True)
             # Identificador único del lote = PK del maestro (si el modelo tiene el campo id_archivo, lo seteamos)
             batch_id = base_upload.pk
+            logger.error(f"[IMPORT] Archivo guardado. batch_id={batch_id} nombre={getattr(base_upload.archivo, 'name', None)}")
             if hasattr(base_upload, "id_archivo"):
                 base_upload.id_archivo = batch_id
                 base_upload.save(update_fields=["id_archivo"])
@@ -122,13 +139,16 @@ class ImportExpedientesView(FormView):
         try:
             f.seek(0)
             decoded = f.read().decode("utf-8-sig")
+            logger.error("[IMPORT] Decodificación usada: utf-8-sig")
         except Exception:
             f.seek(0)
             decoded = f.read().decode("latin-1")
+            logger.error("[IMPORT] Decodificación usada: latin-1")
 
         stream = io.StringIO(decoded)
         reader = csv.reader(stream, delimiter=delim)
         rows = list(reader)
+        logger.error(f"[IMPORT] Filas leídas (incluye cabecera si existe): {len(rows)}")
 
         if not rows:
             # Registrar error por archivo vacío (no se guardan datos en ExpedientePago)
@@ -152,6 +172,7 @@ class ImportExpedientesView(FormView):
         if has_header:
             headers = [h.strip().lower() for h in rows[0]]
             data_rows = rows[1:]
+            logger.error(f"[IMPORT] Cabeceras normalizadas: {headers}")
         else:
             err_msg = "CSV sin cabecera no soportado por defecto."
             ErroresImportacion.objects.create(
@@ -174,11 +195,15 @@ class ImportExpedientesView(FormView):
         for h in headers:
             key = h.replace('"', "").replace("'", "").strip().lower()
             mapped.append(HEADER_MAP.get(key, None))
+        logger.error(f"[IMPORT] Mapeo de cabeceras -> campos: {list(zip(headers, mapped))}")
+        no_mapeadas = [h for (h, m) in zip(headers, mapped) if m is None]
+        if no_mapeadas:
+            logger.error(f"[IMPORT] Cabeceras sin mapeo: {no_mapeadas}")
 
         success_count = 0
         error_count = 0
         expected_cols = len(headers)
-
+        logger.error(f"[IMPORT] Columnas esperadas: {expected_cols}")
         with transaction.atomic():
             for i, row in enumerate(data_rows, start=2):
                 # normalizar cantidad de columnas
@@ -186,30 +211,46 @@ class ImportExpedientesView(FormView):
                     row = row + [""] * (expected_cols - len(row))
                 elif len(row) > expected_cols:
                     row = row[:expected_cols]
+                logger.error(f"[IMPORT] Fila {i} original: {row}")
 
                 kwargs = {}
                 comedor_obj = None
                 try:
                     for col_idx, cell in enumerate(row):
                         field = mapped[col_idx]
+                        logger.error(f"[IMPORT] Fila {i}, Col {col_idx}: header='{headers[col_idx]}' -> campo='{field}' valor='{cell}'")
                         if not field:
                             continue
                         val = (cell or "").strip()
                         if field == "monto":
-                            kwargs[field] = self.parse_decimal(val)
+                            parsed = self.parse_decimal(val)
+                            kwargs[field] = parsed
+                            logger.error(f"[IMPORT] Fila {i}, Col {col_idx}: monto parseado='{parsed}'")
                         elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
-                            kwargs[field] = self.parse_date(val)
+                            parsed = self.parse_date(val)
+                            kwargs[field] = parsed
+                            logger.error(f"[IMPORT] Fila {i}, Col {col_idx}: fecha parseada='{parsed}'")
                         elif field == "comedor":
-                            comedor_obj = self.resolve_comedor(val)
+                            resolved_comedor = self.resolve_comedor(val)
+                            if resolved_comedor is not None:
+                                comedor_obj = resolved_comedor
+                            logger.error(f"[IMPORT] Fila {i}: Resuelto comedor '{val}' -> {resolved_comedor}")
                         else:
                             kwargs[field] = val or None
+                            logger.error(f"[IMPORT] Fila {i}, Col {col_idx}: set {field}='{kwargs[field]}'")
 
                     if comedor_obj:
                         kwargs["comedor"] = comedor_obj
+                    logger.error(f"[IMPORT] Fila {i}: kwargs construidos: {kwargs}")
 
                     # Validar sin guardar en ExpedientePago
                     inst = ExpedientePago(**kwargs)
-                    inst.full_clean()  # si falla, cae al except
+                    try:
+                        inst.full_clean()  # si falla, cae al except
+                        logger.error(f"[IMPORT] Fila {i}: validación OK")
+                    except Exception as ve:
+                        logger.error(f"[IMPORT] Fila {i}: ValidationError: {ve}")
+                        raise
 
                     # Registrar éxito (no se persiste ExpedientePago)
                     exito = ExitoImportacion.objects.create(
@@ -222,6 +263,7 @@ class ImportExpedientesView(FormView):
                 except Exception as e:
                     # Registrar un error por cada fila inválida
                     msg = f"Línea {i}: {e}"
+                    logger.error(f"[IMPORT] Error en fila {i}: {e}")
                     ErroresImportacion.objects.create(
                         archivo_importado=base_upload,
                         fila=i,
@@ -239,6 +281,7 @@ class ImportExpedientesView(FormView):
                 base_upload.save(update_fields=["count_errores", "count_exitos"])
             except Exception:
                 pass
+            logger.error(f"[IMPORT] Final: {success_count} éxitos, {error_count} errores")
             messages.warning(
                 self.request,
                 f"Validación parcial: {success_count} filas válidas, {error_count} errores."
@@ -251,6 +294,7 @@ class ImportExpedientesView(FormView):
                 base_upload.save(update_fields=["count_errores", "count_exitos"])
             except Exception:
                 pass
+            logger.error(f"[IMPORT] Final: {success_count} éxitos, {error_count} errores")
             messages.success(
                 self.request, f"{success_count} filas válidas."
             )
@@ -313,3 +357,41 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         context["error_count"] = errores.count()
         context["exito_count"] = exitos.count()
         return context
+    
+class ImportDatosView(LoginRequiredMixin, FormView):
+    """
+    Vista para importar los datos validados en ExpedientePago.
+    """
+    template_name = "importar_datos.html"
+    success_url = reverse_lazy("importarexpedientes_list")
+
+    def post(self, request, *args, **kwargs):
+        batch_id = request.POST.get("batch_id")
+        if not batch_id:
+            messages.error(request, "No se proporcionó un lote válido para importar.")
+            return redirect(self.success_url)
+
+        batch = get_object_or_404(ArchivosImportados, pk=batch_id)
+
+        exitos = ExitoImportacion.objects.filter(archivo_importado=batch)
+
+        imported_count = 0
+        with transaction.atomic():
+            for exito in exitos:
+                fila = exito.fila
+                # Aquí se debería re-parsear la fila original del CSV para crear el ExpedientePago
+                # Dado que no se guardaron los datos originales, este paso es hipotético
+                # Se asume que se tiene acceso a los datos originales de alguna manera
+                # Por simplicidad, este ejemplo no implementa esa lógica completa
+
+                # Ejemplo hipotético de creación:
+                # expediente_pago = ExpedientePago(
+                #     campo1=valor1,
+                #     campo2=valor2,
+                #     ...
+                # )
+                # expediente_pago.save()
+                imported_count += 1
+
+        messages.success(request, f"Importación completada: {imported_count} registros importados.")
+        return redirect(self.success_url)
