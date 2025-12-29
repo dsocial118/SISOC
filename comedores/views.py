@@ -474,6 +474,26 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             else self.object.relevamiento_set.count()
         )
 
+        relevamiento_actual = relevamientos[0] if relevamientos else None
+        anexo = (
+            getattr(relevamiento_actual, "anexo", None) if relevamiento_actual else None
+        )
+        actividades_comunitarias_count = 0
+        if anexo:
+            actividades_flags = [
+                anexo.apoyo_escolar,
+                anexo.promocion_salud,
+                anexo.actividades_recreativas,
+                anexo.actividades_religiosas,
+                anexo.actividades_jardin_maternal,
+                anexo.alfabetizacion_terminalidad,
+                anexo.actividades_huerta,
+                anexo.actividades_culturales,
+            ]
+            actividades_comunitarias_count = sum(
+                1 for flag in actividades_flags if flag
+            )
+
         comedor_categoria = (
             self.object.clasificaciones_optimized[0]
             if hasattr(self.object, "clasificaciones_optimized")
@@ -668,6 +688,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "relevamientos": relevamientos,
             "observaciones": observaciones,
             "count_relevamientos": count_relevamientos,
+            "actividades_comunitarias_count": actividades_comunitarias_count,
             "imagenes": imagenes,
             "comedor_categoria": comedor_categoria,
             "rendicion_cuentas_final_activo": True,  # rendiciones_mensuales >= 5, (esta validación se saca temporalmente)
