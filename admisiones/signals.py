@@ -1,6 +1,11 @@
-from django.db.models.signals import pre_save
+from django.db import transaction
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from admisiones.models.admisiones import Admision, AdmisionHistorial
+from admisiones.models.admisiones import (
+    Admision,
+    AdmisionHistorial,
+    HistorialEstadosAdmision,
+)
 from config.middlewares.threadlocals import get_current_user
 
 
@@ -50,3 +55,37 @@ def guardar_historial_admision(sender, instance, **kwargs):
                 valor_nuevo=valor_nuevo,
                 usuario=usuario,
             )
+
+
+@receiver(pre_save, sender=Admision)
+def cache_estado_admision(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+    instance._prev_estado_admision = (  # pylint: disable=protected-access
+        Admision.objects.filter(pk=instance.pk)
+        .values_list("estado_admision", flat=True)
+        .first()
+    )
+
+
+@receiver(post_save, sender=Admision)
+def guardar_historial_estado_admision(sender, instance, created, **kwargs):
+    if created:
+        return
+    estado_anterior = getattr(
+        instance, "_prev_estado_admision", None
+    )  # pylint: disable=protected-access
+    if estado_anterior == instance.estado_admision:
+        return
+
+    usuario = get_current_user()
+
+    def _crear_historial():
+        HistorialEstadosAdmision.objects.create(
+            admision=instance,
+            estado_anterior=estado_anterior,
+            estado_nuevo=instance.estado_admision,
+            usuario=usuario,
+        )
+
+    transaction.on_commit(_crear_historial)
