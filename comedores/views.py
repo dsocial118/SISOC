@@ -174,32 +174,47 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
 
         query = self.request.GET.get("query", "")
         query_clean = query.strip()
+        form_ciudadano = kwargs.get("form_ciudadano")
         ciudadanos = []
+        renaper_data = None
         if query:
             ciudadanos = ComedorService.buscar_ciudadanos_por_documento(query)
-            if not ciudadanos and query_clean.isdigit() and len(query_clean) >= 7:
-                renaper_result = ComedorService.crear_ciudadano_desde_renaper(
-                    query_clean, user=self.request.user
+            if (
+                not ciudadanos
+                and query_clean.isdigit()
+                and len(query_clean) >= 7
+                and not form_ciudadano
+            ):
+                renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(
+                    query_clean
                 )
-                if renaper_result.get("success") and renaper_result.get("ciudadano"):
-                    ciudadanos = [renaper_result["ciudadano"]]
+                if renaper_result.get("success"):
+                    renaper_data = renaper_result.get("data") or {}
                     mensaje = renaper_result.get("message")
-                    if renaper_result.get("created") and mensaje:
-                        messages.success(self.request, mensaje)
-                    elif mensaje:
+                    if mensaje:
                         messages.info(self.request, mensaje)
                 elif renaper_result.get("message"):
                     messages.warning(self.request, renaper_result["message"])
+
+        if not form_ciudadano:
+            if renaper_data:
+                form_ciudadano = CiudadanoFormParaNomina(initial=renaper_data)
+            else:
+                form_ciudadano = CiudadanoFormParaNomina()
+
+        renaper_precarga = bool(renaper_data) or (
+            self.request.POST.get("origen_dato") == "renaper"
+        )
 
         context.update(
             {
                 "ciudadanos": ciudadanos,
                 "no_resultados": bool(query) and not ciudadanos,
-                "form_ciudadano": kwargs.get("form_ciudadano")
-                or CiudadanoFormParaNomina(),
+                "form_ciudadano": form_ciudadano,
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(),
                 "estados": Nomina.ESTADO_CHOICES,
+                "renaper_precarga": renaper_precarga,
             }
         )
         return context
@@ -248,9 +263,12 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
                 estado = form_nomina_extra.cleaned_data.get("estado")
                 observaciones = form_nomina_extra.cleaned_data.get("observaciones")
+                ciudadano_data = dict(form_ciudadano.cleaned_data)
+                if request.POST.get("origen_dato") == "renaper":
+                    ciudadano_data["origen_dato"] = "renaper"
 
                 ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
-                    ciudadano_data=form_ciudadano.cleaned_data,
+                    ciudadano_data=ciudadano_data,
                     comedor_id=self.kwargs["pk"],
                     user=request.user,
                     estado=estado,

@@ -23,12 +23,32 @@ from admisiones.forms.admisiones_forms import (
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from .docx_service import DocumentTemplateService, TextFormatterService
+from core.services.advanced_filters import AdvancedFilterEngine
+from admisiones.services.admisiones_filter_config import (
+    FIELD_MAP as ADMISION_FILTER_MAP,
+    FIELD_TYPES as ADMISION_FIELD_TYPES,
+    TEXT_OPS as ADMISION_TEXT_OPS,
+    NUM_OPS as ADMISION_NUM_OPS,
+    DATE_OPS as ADMISION_DATE_OPS,
+    CHOICE_OPS as ADMISION_CHOICE_OPS,
+)
 
 from django.db.models import Q
 import logging
 
 
 logger = logging.getLogger("django")
+
+ADMISION_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=ADMISION_FILTER_MAP,
+    field_types=ADMISION_FIELD_TYPES,
+    allowed_ops={
+        "text": ADMISION_TEXT_OPS,
+        "number": ADMISION_NUM_OPS,
+        "date": ADMISION_DATE_OPS,
+        "choice": ADMISION_CHOICE_OPS,
+    },
+)
 
 
 class AdmisionService:
@@ -176,7 +196,25 @@ class AdmisionService:
         }
 
     @staticmethod
-    def get_admisiones_tecnicos_queryset(user, query=""):
+    def _apply_admisiones_text_search(queryset, query):
+        query = (query or "").strip()
+        if not query:
+            return queryset
+
+        query = query.lower()
+        return queryset.filter(
+            Q(comedor__nombre__icontains=query)
+            | Q(comedor__provincia__nombre__icontains=query)
+            | Q(comedor__tipocomedor__nombre__icontains=query)
+            | Q(comedor__calle__icontains=query)
+            | Q(comedor__numero__icontains=query)
+            | Q(comedor__referente__nombre__icontains=query)
+            | Q(comedor__referente__apellido__icontains=query)
+            | Q(comedor__referente__celular__icontains=query)
+        )
+
+    @staticmethod
+    def get_admisiones_tecnicos_queryset(user, request_or_query=None):
         if user.is_superuser:
             queryset = Admision.objects.select_related(
                 "comedor",
@@ -218,25 +256,35 @@ class AdmisionService:
                     "estado",
                 )
 
-        if query:
-            query = query.strip().lower()
-            queryset = queryset.filter(
-                Q(comedor__nombre__icontains=query)
-                | Q(comedor__provincia__nombre__icontains=query)
-                | Q(comedor__tipocomedor__nombre__icontains=query)
-                | Q(comedor__calle__icontains=query)
-                | Q(comedor__numero__icontains=query)
-                | Q(comedor__referente__nombre__icontains=query)
-                | Q(comedor__referente__apellido__icontains=query)
-                | Q(comedor__referente__celular__icontains=query)
-            )
-
         queryset = queryset.exclude(
             Q(enviado_acompaniamiento=True)
             | Q(enviada_a_archivo=True)
             | Q(activa=False)
-        ).distinct()
-        return queryset.order_by("-creado")
+        )
+
+        if request_or_query is not None:
+            if hasattr(request_or_query, "GET"):
+                queryset = ADMISION_ADVANCED_FILTER.filter_queryset(
+                    queryset, request_or_query
+                )
+                queryset = AdmisionService._apply_admisiones_text_search(
+                    queryset, request_or_query.GET.get("busqueda", "")
+                )
+            elif hasattr(request_or_query, "get") and not isinstance(
+                request_or_query, str
+            ):
+                queryset = ADMISION_ADVANCED_FILTER.filter_queryset(
+                    queryset, request_or_query
+                )
+                queryset = AdmisionService._apply_admisiones_text_search(
+                    queryset, request_or_query.get("busqueda", "")
+                )
+            else:
+                queryset = AdmisionService._apply_admisiones_text_search(
+                    queryset, request_or_query
+                )
+
+        return queryset.distinct().order_by("-creado")
 
     @staticmethod
     def get_admisiones_tecnicos_table_data(admisiones, user):
