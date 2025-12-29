@@ -364,34 +364,148 @@ class ImportDatosView(LoginRequiredMixin, FormView):
     """
     template_name = "importar_datos.html"
     success_url = reverse_lazy("importarexpedientes_list")
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Tomar el id desde la URL
+        self.batch_id = int(self.kwargs.get("id_archivo"))
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        batch_id = request.POST.get("batch_id")
-        if not batch_id:
-            messages.error(request, "No se proporcionó un lote válido para importar.")
+        # Usar el id de la URL
+        batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
+
+        # Abrir y decodificar el archivo CSV almacenado
+        try:
+            batch.archivo.open("rb")
+            data = batch.archivo.read()
+        finally:
+            batch.archivo.close()
+
+        try:
+            decoded = data.decode("utf-8-sig")
+        except Exception:
+            decoded = data.decode("latin-1")
+
+        # Intento simple de detección de delimitador (default ';', fallback ',')
+        first_line = decoded.splitlines()[0] if decoded else ""
+        delim = ";" if ";" in first_line else ","
+
+        stream = io.StringIO(decoded)
+        reader = csv.reader(stream, delimiter=delim)
+        rows = list(reader)
+        if not rows:
+            messages.error(request, "El archivo CSV está vacío.")
             return redirect(self.success_url)
 
-        batch = get_object_or_404(ArchivosImportados, pk=batch_id)
+        # Cabeceras y mapeo
+        headers = [h.strip().lower() for h in rows[0]]
+        data_rows = rows[1:]
+        mapped = []
+        for h in headers:
+            key = h.replace('"', "").replace("'", "").strip().lower()
+            mapped.append(HEADER_MAP.get(key, None))
 
-        exitos = ExitoImportacion.objects.filter(archivo_importado=batch)
-
+        expected_cols = len(headers)
         imported_count = 0
+        error_count = 0
+
         with transaction.atomic():
-            for exito in exitos:
-                fila = exito.fila
-                # Aquí se debería re-parsear la fila original del CSV para crear el ExpedientePago
-                # Dado que no se guardaron los datos originales, este paso es hipotético
-                # Se asume que se tiene acceso a los datos originales de alguna manera
-                # Por simplicidad, este ejemplo no implementa esa lógica completa
+            for i, row in enumerate(data_rows, start=2):
+                if len(row) < expected_cols:
+                    row = row + [""] * (expected_cols - len(row))
+                elif len(row) > expected_cols:
+                    row = row[:expected_cols]
 
-                # Ejemplo hipotético de creación:
-                # expediente_pago = ExpedientePago(
-                #     campo1=valor1,
-                #     campo2=valor2,
-                #     ...
-                # )
-                # expediente_pago.save()
-                imported_count += 1
+                kwargs = {}
+                comedor_obj = None
+                try:
+                    for col_idx, cell in enumerate(row):
+                        field = mapped[col_idx]
+                        if not field:
+                            continue
+                        val = (cell or "").strip()
+                        if field == "monto":
+                            # Reutilizar parseo de moneda
+                            s = val.replace("$", "").replace(" ", "")
+                            s = s.replace(".", "")
+                            s = s.replace(",", ".")
+                            try:
+                                kwargs[field] = Decimal(s)
+                            except Exception:
+                                kwargs[field] = None
+                        elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
+                            # Parseo de fechas (formatos comunes)
+                            parsed = None
+                            for fmt in DATE_FORMATS:
+                                try:
+                                    parsed = datetime.strptime(val, fmt).date()
+                                    break
+                                except Exception:
+                                    continue
+                            if parsed is None:
+                                try:
+                                    parsed = datetime.fromisoformat(val).date()
+                                except Exception:
+                                    parsed = None
+                            kwargs[field] = parsed
+                        elif field == "comedor":
+                            # Resolver FK por id o nombre
+                            r = val.strip()
+                            resolved = None
+                            if r:
+                                if r.isdigit():
+                                    try:
+                                        resolved = Comedor.objects.get(pk=int(r))
+                                    except Comedor.DoesNotExist:
+                                        resolved = None
+                                if resolved is None:
+                                    resolved = Comedor.objects.filter(nombre__iexact=r).first()
+                            if resolved is not None:
+                                comedor_obj = resolved
+                        else:
+                            kwargs[field] = val or None
 
-        messages.success(request, f"Importación completada: {imported_count} registros importados.")
+                    if comedor_obj:
+                        kwargs["comedor"] = comedor_obj
+
+                    # Crear y validar instancia
+                    inst = ExpedientePago(**kwargs)
+                    inst.full_clean()
+                    inst.save()
+
+                    # Vincular con el éxito de la misma fila (si existe) y registrar el id
+                    exito = ExitoImportacion.objects.filter(
+                        archivo_importado=batch,
+                        fila=i,
+                    ).first()
+                    if exito is None:
+                        exito = ExitoImportacion.objects.create(
+                            archivo_importado=batch,
+                            fila=i,
+                            mensaje="Importado",
+                        )
+                    RegistroImportado.objects.create(
+                        exito_importacion=exito,
+                        id_expediente=inst.id,
+                    )
+                    imported_count += 1
+
+                except Exception as e:
+                    error_count += 1
+                    ErroresImportacion.objects.create(
+                        archivo_importado=batch,
+                        fila=i,
+                        mensaje=f"Import error: {e}",
+                    )
+
+        if error_count:
+            messages.warning(
+                request,
+                f"Importación finalizada: {imported_count} registros importados, {error_count} errores.",
+            )
+        else:
+            messages.success(
+                request,
+                f"Importación completada: {imported_count} registros importados.",
+            )
         return redirect(self.success_url)
