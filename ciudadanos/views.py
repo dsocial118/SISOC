@@ -170,7 +170,9 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         try:
             participaciones = (
                 ParticipanteActividad.objects.filter(ciudadano=ciudadano)
-                .select_related("actividad_centro__centro", "actividad_centro__actividad")
+                .select_related(
+                    "actividad_centro__centro", "actividad_centro__actividad"
+                )
                 .order_by("-fecha_registro")
             )
             costo_total_cdf = (
