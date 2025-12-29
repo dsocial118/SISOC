@@ -234,9 +234,7 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
         if not resultado.get("success"):
             messages.warning(
                 request,
-                resultado.get(
-                    "message", "No se encontraron datos en RENAPER."
-                ),
+                resultado.get("message", "No se encontraron datos en RENAPER."),
             )
             return super().get(request, *args, **kwargs)
 
