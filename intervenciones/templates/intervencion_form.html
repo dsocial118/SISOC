@@ -1,35 +1,198 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
 {% block title %}Agregar Intervención{% endblock %}
 {% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/intervencionForm.css' %}" />
+
+    <!-- Encabezado con botones de acción -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h3 class="mb-1">Nueva Intervención</h3>
+            <p class="text-muted mb-0">Complete los datos de la intervención en 2 pasos</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'comedor_intervencion_ver' pk=object.pk %}"
+               class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Indicador de progreso -->
+    <div class="progress-indicator">
+        <div class="progress-header">
+            <h4 class="progress-title">
+                <i class="fas fa-clipboard-check mr-2"></i>
+                Progreso del Formulario
+            </h4>
+            <span class="progress-stats">
+                <span id="current-step">1</span>/<span id="total-steps">2</span> pasos
+            </span>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 50%"></div>
+        </div>
+    </div>
+
     <div class="row">
-        <div class="col">
-            <form method="POST" enctype="multipart/form-data">
+        <div class="col-12">
+            <form method="POST"
+                  id="intervencionForm"
+                  enctype="multipart/form-data"
+                  novalidate>
                 {% csrf_token %}
-                <!-- Paso 1 -->
-                <div id="step-1">
-                    <h3>Paso 1 - Datos Iniciales</h3>
-                    <div class="form-group">{{ form.tipo_intervencion|as_crispy_field }}</div>
-                    <div class="form-group">{{ form.subintervencion|as_crispy_field }}</div>
-                    <div class="form-group">{{ form.destinatario|as_crispy_field }}</div>
-                    <button type="button" id="next-step" class="btn btn-primary">Siguiente</button>
+
+                <!-- Paso 1 - Datos Iniciales -->
+                <div id="step-1" class="step-container">
+                    <div class="section-card">
+                        <div class="section-header active">
+                            <div class="section-header-left">
+                                <div class="section-icon">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                                <div class="section-title-group">
+                                    <h3 class="section-title">Paso 1 - Datos Iniciales</h3>
+                                    <p class="section-subtitle">Tipo de intervención y destinatario</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-body show">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.tipo_intervencion.id_for_label }}">
+                                            {{ form.tipo_intervencion.label }}
+                                            {% if form.tipo_intervencion.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ form.tipo_intervencion }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.subintervencion.id_for_label }}">
+                                            {{ form.subintervencion.label }}
+                                            {% if form.subintervencion.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ form.subintervencion }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ form.destinatario.id_for_label }}">
+                                            {{ form.destinatario.label }}
+                                            {% if form.destinatario.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ form.destinatario }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sticky-actions" style="justify-content: flex-end;">
+                        <div>
+                            <button type="button" id="next-step" class="btn btn-primary">
+                                <i class="fas fa-arrow-right mr-1"></i>
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <!-- Paso 2 -->
-                <div id="step-2" class="d-none">
-                    <h3>Paso 2 - Datos de Contacto</h3>
-                    <div class="form-group">
-                        {{ form.fecha|as_crispy_field }}
-                        <div id="fecha-error" class="invalid-feedback" style="display: none;"></div>
+
+                <!-- Paso 2 - Datos de Contacto y Documentación -->
+                <div id="step-2" class="step-container d-none">
+                    <div class="section-card">
+                        <div class="section-header active">
+                            <div class="section-header-left">
+                                <div class="section-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="section-title-group">
+                                    <h3 class="section-title">Paso 2 - Datos de Contacto</h3>
+                                    <p class="section-subtitle">Fecha, forma de contacto y observaciones</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-body show">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.fecha.id_for_label }}">
+                                            {{ form.fecha.label }}
+                                            {% if form.fecha.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ form.fecha }}
+                                        <div id="fecha-error" class="invalid-feedback" style="display: none;"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.forma_contacto.id_for_label }}">
+                                            {{ form.forma_contacto.label }}
+                                            {% if form.forma_contacto.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ form.forma_contacto }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ form.observaciones.id_for_label }}">
+                                            {{ form.observaciones.label }}
+                                            {% if form.observaciones.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ form.observaciones }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="form-group mb-3">
+                                        <div class="custom-control custom-checkbox" style="padding-left: 1.5rem;">
+                                            {{ form.tiene_documentacion }}
+                                            <label class="custom-control-label"
+                                                   for="{{ form.tiene_documentacion.id_for_label }}"
+                                                   style="cursor: pointer;
+                                                          user-select: none">
+                                                {{ form.tiene_documentacion.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row d-none" id="documentacion-field">
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="{{ form.documentacion.id_for_label }}">{{ form.documentacion.label }}</label>
+                                        {{ form.documentacion }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">{{ form.forma_contacto|as_crispy_field }}</div>
-                    <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
-                    <div class="form-group">{{ form.tiene_documentacion|as_crispy_field }}</div>
-                    <div class="form-group d-none" id="documentacion-field">
-                        <label for="documentacion"></label>
-                        {{ form.documentacion|as_crispy_field }}
+
+                    <div class="sticky-actions">
+                        <div>
+                            <button type="button" id="prev-step" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i>
+                                Anterior
+                            </button>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save mr-1"></i>
+                                Guardar Intervención
+                            </button>
+                        </div>
                     </div>
-                    <button type="button" id="prev-step" class="btn btn-secondary">Anterior</button>
-                    <button type="submit" class="btn btn-success">Guardar</button>
                 </div>
             </form>
         </div>
@@ -46,6 +209,93 @@
         const subIntervencionSelect = document.getElementById("id_subintervencion");
         const fechaInput = document.getElementById("id_fecha");
         const fechaError = document.getElementById("fecha-error");
+
+        // ============================================
+        // FUNCIONES DE AUTO FOCUS PARA SELECT2
+        // ============================================
+        function focusSelect2SearchField() {
+            attemptFocus();
+            setTimeout(attemptFocus, 10);
+            setTimeout(attemptFocus, 50);
+        }
+
+        function attemptFocus() {
+            const searchFields = document.querySelectorAll('.select2-search__field');
+            for (let field of searchFields) {
+                const isVisible = field.offsetParent !== null &&
+                                 window.getComputedStyle(field).display !== 'none' &&
+                                 window.getComputedStyle(field).visibility !== 'hidden';
+                if (isVisible) {
+                    field.focus();
+                    return;
+                }
+            }
+        }
+
+        // ============================================
+        // INICIALIZAR SELECT2 EN TIPO DE INTERVENCIÓN
+        // ============================================
+        function initializeSelect2Fields() {
+            if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+                return;
+            }
+
+            // Verificar que los elementos existan
+            const $tipoIntervencion = jQuery('#id_tipo_intervencion');
+            const $subIntervencion = jQuery('#id_subintervencion');
+
+            if ($tipoIntervencion.length === 0) {
+                return;
+            }
+
+            // Inicializar Select2 en tipo de intervención
+            $tipoIntervencion.select2({
+                placeholder: "Seleccione un tipo de intervención",
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Inicializar Select2 en subintervención
+            $subIntervencion.select2({
+                placeholder: "Seleccione una subintervención",
+                allowClear: true,
+                width: '100%'
+            });
+
+            // ============================================
+            // AUTO FOCUS EN SELECT2 SEARCH
+            // ============================================
+            jQuery(document).on('select2:open', function() {
+                document.body.classList.add('select2-container--open');
+                focusSelect2SearchField();
+            });
+
+            jQuery(document).on('select2:close', function() {
+                document.body.classList.remove('select2-container--open');
+            });
+
+            // Observer para detectar nuevos dropdowns
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                        if (node.nodeType === 1 && node.classList) {
+                            if (node.classList.contains('select2-container--open') ||
+                                node.classList.contains('select2-dropdown')) {
+                                focusSelect2SearchField();
+                            }
+                        }
+                    });
+                });
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+
+        // Llamar a la inicialización después de un pequeño delay
+        setTimeout(initializeSelect2Fields, 100);
 
         // Configurar atributos min y max para el campo fecha
         if (fechaInput) {
@@ -97,13 +347,24 @@
             if (isValid) {
                 step1.classList.add("d-none");
                 step2.classList.remove("d-none");
+                // Update progress indicator
+                document.getElementById('current-step').textContent = '2';
+                document.getElementById('progressBarFill').style.width = '100%';
             } else {
                 formStep1.forEach(input => {
                     if (input.tagName === "SELECT") {
                         if (input.value === "") {
                             input.classList.add("is-invalid");
+                            // Si es Select2, también marcar el contenedor
+                            if (typeof jQuery !== 'undefined' && jQuery(input).data('select2')) {
+                                jQuery(input).next('.select2-container').addClass('is-invalid');
+                            }
                         } else {
                             input.classList.remove("is-invalid");
+                            // Si es Select2, también limpiar el contenedor
+                            if (typeof jQuery !== 'undefined' && jQuery(input).data('select2')) {
+                                jQuery(input).next('.select2-container').removeClass('is-invalid');
+                            }
                         }
                     } else {
                         if (!input.checkValidity()) {
@@ -119,6 +380,9 @@
         prevStep.addEventListener("click", function () {
             step2.classList.add("d-none");
             step1.classList.remove("d-none");
+            // Update progress indicator
+            document.getElementById('current-step').textContent = '1';
+            document.getElementById('progressBarFill').style.width = '50%';
         });
 
         tieneDocumentacion.addEventListener("change", function () {
@@ -129,14 +393,21 @@
             }
         });
 
-        tipoIntervencionSelect.addEventListener("change", function () {
-            cargarTipoIntervencion.call(this);
-        });
-
-        function cargarTipoIntervencion() {
-            const tipoIntervencionId = this.value;
+        // ============================================
+        // CARGAR SUBINTERVENCIONES DINÁMICAMENTE
+        // ============================================
+        function cargarTipoIntervencion(tipoIntervencionId) {
+            // Limpiar opciones actuales
             subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
             subIntervencionSelect.removeAttribute("required");
+
+            // Si Select2 está disponible, destruirlo antes de modificar
+            if (typeof jQuery !== 'undefined' && jQuery.fn.select2 !== 'undefined') {
+                const $subSelect = jQuery('#id_subintervencion');
+                if ($subSelect.data('select2')) {
+                    $subSelect.select2('destroy');
+                }
+            }
 
             if (tipoIntervencionId) {
                 fetch(`/comedores/ajax/load-subestadosintervenciones/?id=${tipoIntervencionId}`)
@@ -150,12 +421,47 @@
                                 subIntervencionSelect.appendChild(option);
                             });
                         }
+
+                        // Reinicializar Select2 después de cargar opciones
+                        if (typeof jQuery !== 'undefined' && jQuery.fn.select2 !== 'undefined') {
+                            jQuery('#id_subintervencion').select2({
+                                placeholder: "Seleccione una subintervención",
+                                allowClear: true,
+                                width: '100%'
+                            });
+                        }
                     })
                     .catch(error => console.error("Error al cargar subintervenciones:", error));
+            } else {
+                // Reinicializar Select2 aunque no haya datos
+                if (typeof jQuery !== 'undefined' && jQuery.fn.select2 !== 'undefined') {
+                    jQuery('#id_subintervencion').select2({
+                        placeholder: "Seleccione una subintervención",
+                        allowClear: true,
+                        width: '100%'
+                    });
+                }
             }
         }
 
-        cargarTipoIntervencion.call(tipoIntervencionSelect);
+        // Registrar evento de cambio
+        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+            // Usar evento de Select2
+            jQuery('#id_tipo_intervencion').on('select2:select select2:clear', function (e) {
+                const value = e.params && e.params.data ? e.params.data.id : '';
+                cargarTipoIntervencion(value);
+            });
+        } else {
+            // Fallback a evento nativo
+            tipoIntervencionSelect.addEventListener("change", function () {
+                cargarTipoIntervencion(this.value);
+            });
+        }
+
+        // Cargar subintervenciones iniciales si hay un valor preseleccionado
+        if (tipoIntervencionSelect.value) {
+            cargarTipoIntervencion(tipoIntervencionSelect.value);
+        }
 
         // Validar fecha antes de enviar el formulario
         const form = document.querySelector("form");
