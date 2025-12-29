@@ -70,7 +70,9 @@
     <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
         <!-- panel 1 -->
         <div class="accordion-panel open">
-            <div class="accordion-header h5" style="background-color: #F79D00; color: white;">Ubicación</div>
+            <div class="accordion-header h5"
+                 style="background-color: #F79D00;
+                        color: white">Ubicación</div>
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-12 col-lg-5">
@@ -87,7 +89,8 @@
                         {% else %}
                             <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
                                 <div class="d-flex align-items-center justify-content-center text-white rounded-circle mx-2 me-3"
-                                     style="width: 60px; height: 60px">
+                                     style="width: 60px;
+                                            height: 60px">
                                     <i class="bi bi-geo fs-1"></i>
                                 </div>
                                 <div>
@@ -137,7 +140,9 @@
         </div>
         <!-- panel 2 -->
         <div class="accordion-panel">
-            <div class="accordion-header h5" style="background-color: #6A1B99; color: white;">Responsables</div>
+            <div class="accordion-header h5"
+                 style="background-color: #6A1B99;
+                        color: white">Responsables</div>
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-6">
@@ -147,7 +152,9 @@
                             <img src="{% static 'custom/img/default.png' %}"
                                  alt="Imagen del comedor"
                                  class="img-fluid rounded"
-                                 style="max-width: 100%; height: auto; max-height: 370px" />
+                                 style="max-width: 100%;
+                                        height: auto;
+                                        max-height: 370px" />
                         {% endif %}
                     </div>
                     <div class="col-6 overflow-auto" style="max-height: 370px;">
@@ -180,14 +187,14 @@
                         <p class="mb-2">
                             <i class="bi bi-envelope me-2"></i><strong>Mail de contacto organización:</strong> {{ comedor.organizacion.email | default_if_none:"-" }}
                         </p>
-                        <hr class="my-3">
+                        <hr class="my-3" />
                         <p class="mb-2">
                             <i class="bi bi-credit-card me-2"></i><strong>Responsable de la tarjeta del cobro:</strong> {{ comedor.responsable_tarjeta.nombre | default_if_none:"-" }} {{ comedor.responsable_tarjeta.apellido | default_if_none:"" }}
                         </p>
                         <p class="mb-2">
                             <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.responsable_tarjeta.documento | default_if_none:"-" }}
                         </p>
-                        <hr class="my-3">
+                        <hr class="my-3" />
                         <p class="mb-2">
                             <i class="bi bi-shield-check me-2"></i><strong>Aval 1:</strong> {{ comedor.aval_1 | default_if_none:"-" }}
                         </p>
@@ -200,7 +207,9 @@
         </div>
         <!-- panel 3 -->
         <div class="accordion-panel">
-            <div class="accordion-header h5" style="background-color: #2E7D33; color: white;">Prestaciones</div>
+            <div class="accordion-header h5"
+                 style="background-color: #2E7D33;
+                        color: white">Prestaciones</div>
             <div class="accordion-content">
                 <h2 class="border-bottom border-3 mb-4 fw-bold">Prestaciones</h2>
                 {% with prestacion=relevamientos.0.prestacion %}
@@ -233,7 +242,13 @@
                                     <div class="fs-2 mb-1">
                                         <i class="bi bi-cup-hot"></i>
                                     </div>
-                                    <div class="fw-bold fs-3 mb-0">{% if prestacion %}{{ count_beneficiarios|default_if_none:"-" }}{% else %}-{% endif %}</div>
+                                    <div class="fw-bold fs-3 mb-0">
+                                        {% if prestacion %}
+                                            {{ count_beneficiarios|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
                                     <div class="fw-bold fs-6">Prestaciones mensuales</div>
                                 </div>
                             </div>
@@ -277,53 +292,263 @@
                             <tbody>
                                 <tr>
                                     <th scope="row" class="text-start">Desayuno</th>
-                                    <td>{% if prestacion %}{{ prestacion.lunes_desayuno_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.martes_desayuno_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.miercoles_desayuno_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.jueves_desayuno_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.viernes_desayuno_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.sabado_desayuno_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.domingo_desayuno_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.lunes_desayuno_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.martes_desayuno_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.miercoles_desayuno_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.jueves_desayuno_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.viernes_desayuno_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.sabado_desayuno_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.domingo_desayuno_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start">Almuerzo</th>
-                                    <td>{% if prestacion %}{{ prestacion.lunes_almuerzo_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.martes_almuerzo_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.miercoles_almuerzo_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.jueves_almuerzo_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.viernes_almuerzo_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.sabado_almuerzo_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.domingo_almuerzo_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.lunes_almuerzo_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.martes_almuerzo_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.miercoles_almuerzo_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.jueves_almuerzo_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.viernes_almuerzo_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.sabado_almuerzo_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.domingo_almuerzo_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start">Merienda</th>
-                                    <td>{% if prestacion %}{{ prestacion.lunes_merienda_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.martes_merienda_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.miercoles_merienda_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.jueves_merienda_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.viernes_merienda_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.sabado_merienda_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.domingo_merienda_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.lunes_merienda_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.martes_merienda_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.miercoles_merienda_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.jueves_merienda_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.viernes_merienda_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.sabado_merienda_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.domingo_merienda_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start">Merienda reforzada</th>
-                                    <td>{% if prestacion %}{{ prestacion.lunes_merienda_reforzada_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.martes_merienda_reforzada_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.miercoles_merienda_reforzada_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.jueves_merienda_reforzada_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.viernes_merienda_reforzada_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.sabado_merienda_reforzada_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.domingo_merienda_reforzada_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.lunes_merienda_reforzada_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.martes_merienda_reforzada_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.miercoles_merienda_reforzada_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.jueves_merienda_reforzada_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.viernes_merienda_reforzada_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.sabado_merienda_reforzada_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.domingo_merienda_reforzada_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start">Cena</th>
-                                    <td>{% if prestacion %}{{ prestacion.lunes_cena_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.martes_cena_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.miercoles_cena_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.jueves_cena_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.viernes_cena_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.sabado_cena_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                                    <td>{% if prestacion %}{{ prestacion.domingo_cena_actual|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.lunes_cena_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.martes_cena_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.miercoles_cena_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.jueves_cena_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.viernes_cena_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.sabado_cena_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if prestacion %}
+                                            {{ prestacion.domingo_cena_actual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -333,7 +558,9 @@
         </div>
         <!-- panel 4 -->
         <div class="accordion-panel">
-            <div class="accordion-header h5" style="background-color: #50B7B2; color: white;">Relevamientos</div>
+            <div class="accordion-header h5"
+                 style="background-color: #50B7B2;
+                        color: white">Relevamientos</div>
             <div class="accordion-content">
                 <h2 class="border-bottom border-3 mb-4 fw-bold">Relevamientos</h2>
                 {% with relevamiento=relevamientos.0 %}
@@ -471,15 +698,33 @@
                             {% if relevamiento and relevamiento.anexo %}
                                 {% with anexo=relevamiento.anexo %}
                                     {% if anexo.apoyo_escolar or anexo.promocion_salud or anexo.actividades_recreativas or anexo.actividades_religiosas or anexo.actividades_jardin_maternal or anexo.alfabetizacion_terminalidad or anexo.actividades_huerta or anexo.actividades_culturales %}
-                                        {% if anexo.apoyo_escolar %}<span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Apoyo escolar</span>{% endif %}
-                                        {% if anexo.promocion_salud %}<span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Promocion de la salud</span>{% endif %}
-                                        {% if anexo.actividades_recreativas %}<span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Recreacion</span>{% endif %}
-                                        {% if anexo.actividades_recreativas %}<span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Deportes</span>{% endif %}
-                                        {% if anexo.actividades_religiosas %}<span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades religiosas</span>{% endif %}
-                                        {% if anexo.actividades_jardin_maternal %}<span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Jardin Maternal</span>{% endif %}
-                                        {% if anexo.alfabetizacion_terminalidad %}<span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Terminalidad educativa</span>{% endif %}
-                                        {% if anexo.actividades_huerta %}<span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Huerta</span>{% endif %}
-                                        {% if anexo.actividades_culturales %}<span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades culturales</span>{% endif %}
+                                        {% if anexo.apoyo_escolar %}
+                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Apoyo escolar</span>
+                                        {% endif %}
+                                        {% if anexo.promocion_salud %}
+                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Promocion de la salud</span>
+                                        {% endif %}
+                                        {% if anexo.actividades_recreativas %}
+                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Recreacion</span>
+                                        {% endif %}
+                                        {% if anexo.actividades_recreativas %}
+                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Deportes</span>
+                                        {% endif %}
+                                        {% if anexo.actividades_religiosas %}
+                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades religiosas</span>
+                                        {% endif %}
+                                        {% if anexo.actividades_jardin_maternal %}
+                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Jardin Maternal</span>
+                                        {% endif %}
+                                        {% if anexo.alfabetizacion_terminalidad %}
+                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Terminalidad educativa</span>
+                                        {% endif %}
+                                        {% if anexo.actividades_huerta %}
+                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Huerta</span>
+                                        {% endif %}
+                                        {% if anexo.actividades_culturales %}
+                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades culturales</span>
+                                        {% endif %}
                                     {% else %}
                                         <span class="text-white">-</span>
                                     {% endif %}
@@ -577,7 +822,13 @@
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-graph-up-arrow"></i>
                             </h3>
-                            <h4 class="fw-bold my-1">{% if admision %}{{ admision|length }}{% else %}0{% endif %}</h4>
+                            <h4 class="fw-bold my-1">
+                                {% if admision %}
+                                    {{ admision|length }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </h4>
                             <p class="fw-bold fs-7">Numero de Convenio</p>
                         </div>
                     </div>

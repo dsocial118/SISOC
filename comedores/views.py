@@ -475,7 +475,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         )
 
         relevamiento_actual = relevamientos[0] if relevamientos else None
-        anexo = getattr(relevamiento_actual, "anexo", None) if relevamiento_actual else None
+        anexo = (
+            getattr(relevamiento_actual, "anexo", None) if relevamiento_actual else None
+        )
         actividades_comunitarias_count = 0
         if anexo:
             actividades_flags = [
@@ -488,7 +490,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 anexo.actividades_huerta,
                 anexo.actividades_culturales,
             ]
-            actividades_comunitarias_count = sum(1 for flag in actividades_flags if flag)
+            actividades_comunitarias_count = sum(
+                1 for flag in actividades_flags if flag
+            )
 
         comedor_categoria = (
             self.object.clasificaciones_optimized[0]
