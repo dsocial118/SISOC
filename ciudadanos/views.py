@@ -19,6 +19,8 @@ from django.views.generic import (
 
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
 from ciudadanos.models import Ciudadano, GrupoFamiliar
+from comedores.services.comedor_service import ComedorService
+from core.models import Localidad, Municipio
 
 logger = logging.getLogger("django")
 
@@ -217,6 +219,132 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
     model = Ciudadano
     form_class = CiudadanoForm
     template_name = "ciudadanos/ciudadano_form.html"
+    SEXO_BUSQUEDA_CHOICES = (
+        ("M", "Masculino"),
+        ("F", "Femenino"),
+        ("X", "X"),
+        ("D", "Desconocido"),
+    )
+
+    def get(self, request, *args, **kwargs):
+        dni = (request.GET.get("dni") or "").strip()
+        if dni:
+            return self._handle_ciudadano_busqueda(request, dni, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
+
+    def _handle_ciudadano_busqueda(self, request, dni, *args, **kwargs):
+        dni_clean = str(dni or "").strip()
+        if not dni_clean.isdigit() or len(dni_clean) < 7:
+            messages.warning(request, "Ingrese un DNI numérico válido para buscar.")
+            return super().get(request, *args, **kwargs)
+
+        ciudadano = Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_clean)
+        ).first()
+        if ciudadano:
+            messages.info(request, "El ciudadano ya existe. Puede editar su legajo.")
+            return redirect("ciudadanos_editar", pk=ciudadano.pk)
+
+        sexo = (request.GET.get("sexo") or "M").upper()
+        if sexo not in {"M", "F", "X"}:
+            sexo = None
+
+        resultado = ComedorService.obtener_datos_ciudadano_desde_renaper(
+            dni_clean, sexo=sexo
+        )
+        if not resultado.get("success"):
+            messages.warning(
+                request,
+                resultado.get("message", "No se encontraron datos en RENAPER."),
+            )
+            return super().get(request, *args, **kwargs)
+
+        prefill = dict(resultado.get("data") or {})
+        fecha_nacimiento = prefill.get("fecha_nacimiento")
+        if hasattr(fecha_nacimiento, "isoformat"):
+            prefill["fecha_nacimiento"] = fecha_nacimiento.isoformat()
+        request.session["ciudadano_prefill"] = prefill
+        request.session.modified = True
+
+        messages.success(
+            request,
+            "Datos cargados desde RENAPER. Complete el formulario del ciudadano.",
+        )
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        sexo_selected = (self.request.GET.get("sexo") or "M").upper()
+        allowed_sexo = {choice[0] for choice in self.SEXO_BUSQUEDA_CHOICES}
+        if sexo_selected not in allowed_sexo:
+            sexo_selected = "M"
+        ctx["sexo_busqueda_choices"] = self.SEXO_BUSQUEDA_CHOICES
+        ctx["sexo_busqueda"] = sexo_selected
+        return ctx
+
+    def get_initial(self):
+        initial = super().get_initial()
+        prefill = self.request.session.pop("ciudadano_prefill", None)
+        if prefill:
+            initial.update(prefill)
+            self._prefill_ciudadano = prefill
+        return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        prefill = getattr(self, "_prefill_ciudadano", None)
+        if prefill:
+            provincia_id = self._safe_int(prefill.get("provincia"))
+            municipio_id = self._safe_int(prefill.get("municipio"))
+            localidad_id = self._safe_int(prefill.get("localidad"))
+
+            if localidad_id:
+                localidad_obj = (
+                    Localidad.objects.select_related("municipio__provincia")
+                    .filter(pk=localidad_id)
+                    .first()
+                )
+                if localidad_obj:
+                    municipio_id = municipio_id or localidad_obj.municipio_id
+                    if localidad_obj.municipio and not provincia_id:
+                        provincia_id = localidad_obj.municipio.provincia_id
+
+            if municipio_id and not provincia_id:
+                municipio_obj = (
+                    Municipio.objects.select_related("provincia")
+                    .filter(pk=municipio_id)
+                    .first()
+                )
+                if municipio_obj and not provincia_id:
+                    provincia_id = municipio_obj.provincia_id
+
+            if provincia_id:
+                form.fields["provincia"].initial = provincia_id
+                form.fields["municipio"].queryset = Municipio.objects.filter(
+                    provincia_id=provincia_id
+                ).order_by("nombre")
+            elif municipio_id:
+                form.fields["municipio"].queryset = Municipio.objects.filter(
+                    pk=municipio_id
+                )
+
+            if municipio_id:
+                form.fields["municipio"].initial = municipio_id
+                form.fields["localidad"].queryset = Localidad.objects.filter(
+                    municipio_id=municipio_id
+                ).order_by("nombre")
+
+            if localidad_id:
+                form.fields["localidad"].initial = localidad_id
+
+        return form
+
+    @staticmethod
+    def _safe_int(value):
+        try:
+            return int(value) if value not in (None, "") else None
+        except (TypeError, ValueError):
+            return None
 
     def form_valid(self, form):
         ciudadano = form.save(commit=False)

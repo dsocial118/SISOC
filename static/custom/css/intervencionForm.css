@@ -1,0 +1,20 @@
+#id_observaciones {
+    min-height: 180px;
+    resize: vertical;
+}
+
+.form-check input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 0.15rem;
+    cursor: pointer;
+}
+
+.custom-control-label {
+    font-weight: 500;
+}
+
+/* Mejorar el espaciado de los campos */
+.form-group {
+    margin-bottom: 1.5rem;
+}
