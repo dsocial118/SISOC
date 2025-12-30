@@ -74,11 +74,17 @@ textarea:focus {
 /* Prevenir overflow horizontal cuando Select2 está abierto */
 body.select2-container--open {
   overflow-x: hidden !important;
+  overflow-y: hidden !important;
 }
 
 /* Prevenir overflow horizontal a nivel global del HTML */
 html {
   overflow-x: hidden !important;
+}
+
+/* Prevenir overflow en app-content cuando select2 está abierto */
+body.select2-container--open .app-content {
+  overflow: visible !important;
 }
 
 /* Asegurar que el contenedor de Select2 no cause overflow */

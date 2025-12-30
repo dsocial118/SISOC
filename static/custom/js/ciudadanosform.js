@@ -117,6 +117,12 @@
                 document.documentElement.style.overflowX = 'hidden';
                 document.body.style.overflowX = 'hidden';
 
+                // Prevenir overflow en app-content
+                const appContent = document.querySelector('.app-content');
+                if (appContent) {
+                    appContent.style.overflow = 'visible';
+                }
+
                 // Ejecutar el enfoque de manera inmediata y con retry
                 focusSelect2SearchField();
             });
@@ -129,6 +135,12 @@
                 // Restaurar overflow
                 document.documentElement.style.overflowX = '';
                 document.body.style.overflowX = '';
+
+                // Restaurar overflow en app-content
+                const appContent = document.querySelector('.app-content');
+                if (appContent) {
+                    appContent.style.overflow = '';
+                }
             });
 
             // MÉTODO 2: Observer para detectar nuevos dropdowns de Select2 en el DOM
