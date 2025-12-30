@@ -422,11 +422,22 @@
         $select.select2(options);
 
         $select.on("select2:open", function () {
-            const $dropdown = $(".select2-dropdown");
-            $dropdown.removeClass("select2-dropdown--above").addClass("select2-dropdown--below");
+            // Pequeño delay para asegurar que el DOM esté completamente renderizado
+            setTimeout(function() {
+                // Obtener el dropdown específico de este select2
+                const selectId = $select.attr('id');
+                const $dropdown = $(`[aria-controls="${selectId}"]`).closest('.select2-container').next('.select2-dropdown');
 
-            const $container = $(".select2-container--open");
-            $container.removeClass("select2-container--above").addClass("select2-container--below");
+                // Si no se encuentra por aria-controls, buscar el último dropdown abierto
+                const $targetDropdown = $dropdown.length > 0 ? $dropdown : $('.select2-dropdown:last');
+                $targetDropdown.removeClass("select2-dropdown--above").addClass("select2-dropdown--below");
+
+                // Obtener el contenedor específico de este select2
+                const $container = $select.data('select2').$container;
+                if ($container) {
+                    $container.removeClass("select2-container--above").addClass("select2-container--below");
+                }
+            }, 10);
         });
 
         if (currentValue) {

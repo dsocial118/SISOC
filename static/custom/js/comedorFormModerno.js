@@ -672,6 +672,10 @@ function initializeSelect2AutoFocus() {
             // Agregar clase al body para prevenir overflow horizontal
             document.body.classList.add('select2-container--open');
 
+            // También aplicar al html para doble seguridad
+            document.documentElement.style.overflowX = 'hidden';
+            document.body.style.overflowX = 'hidden';
+
             // Ejecutar el enfoque de manera inmediata y con retry
             focusSelect2SearchField();
         });
@@ -680,6 +684,10 @@ function initializeSelect2AutoFocus() {
         $(document).on('select2:close', function() {
             // Remover clase del body
             document.body.classList.remove('select2-container--open');
+
+            // Restaurar overflow
+            document.documentElement.style.overflowX = '';
+            document.body.style.overflowX = '';
         });
 
         // MÉTODO 2: Observer para detectar nuevos dropdowns de Select2 en el DOM
