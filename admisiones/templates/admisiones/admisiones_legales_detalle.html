@@ -130,16 +130,6 @@
                         {% else %}
                             <li class="nav-item">
                                 <div class="comment-text">
-                                    Informe SGA:
-                                    {% if admision.informe_sga %}
-                                        <i class="bi bi-check-circle-fill text-success"></i>
-                                    {% else %}
-                                        <i class="bi bi-x-circle-fill text-danger"></i>
-                                    {% endif %}
-                                </div>
-                            </li>
-                            <li class="nav-item">
-                                <div class="comment-text">
                                     Convenio:
                                     {% if admision.numero_convenio %}
                                         <a href="{{ admision.archivo_convenio.url }}" target="_blank">
@@ -358,32 +348,6 @@
                 <div class="card-body p-0">
                     {% include 'components/data_table.html' with headers=historial_headers items=historial_cambios custom_cells=True show_actions=False empty_message='No hay movimientos registrados' include_pagination=True page_obj=historial_page_obj is_paginated=historial_is_paginated page_param=historial_page_param %}
                 </div>
-            </div>
-        </div>
-    </div>
-    <!-- Modal para modificar Informe SGA -->
-    <div class="modal fade"
-         id="modalInformeSGA"
-         tabindex="-1"
-         aria-labelledby="modalInformeSGALabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form id="informeSGAForm" method="POST" action="">
-                    {% csrf_token %}
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalInformeSGALabel">Informe SGA</h5>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">¿Desea modificar el estado del Informe SGA?</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" name="BtnInformeSGA" class="btn btn-primary">Confirmar</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

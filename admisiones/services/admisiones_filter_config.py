@@ -70,8 +70,9 @@ def get_filters_ui_config() -> Dict[str, Any]:
             ],
             "tipo_convenio": [
                 {"value": value, "label": value}
-                for value in TipoConvenio.objects.order_by("nombre")
-                .values_list("nombre", flat=True)
+                for value in TipoConvenio.objects.order_by("nombre").values_list(
+                    "nombre", flat=True
+                )
                 if value
             ],
         }
