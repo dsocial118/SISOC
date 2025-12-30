@@ -102,5 +102,5 @@ class ImportarExpedienteViewsTests(TestCase):
 		# Debe existir un RegistroImportado enlazado a la fila y al éxito creado/ubicado
 		self.assertGreater(RegistroImportado.objects.count(), 0)
 		reg = RegistroImportado.objects.first()
-		self.assertEqual(reg.id_expediente, exp.id)
+		self.assertEqual(reg.expediente_pago_id, exp.id)
 
