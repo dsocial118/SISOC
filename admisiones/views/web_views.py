@@ -22,6 +22,7 @@ from admisiones.models.admisiones import (
     InformeComplementario,
 )
 from admisiones.services.admisiones_service import AdmisionService
+from admisiones.services.admisiones_filter_config import get_filters_ui_config
 from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
 from django.views.generic.edit import FormMixin
@@ -234,7 +235,7 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return AdmisionService.get_admisiones_tecnicos_queryset(
-            self.request.user, self.request.GET.get("busqueda", "")
+            self.request.user, self.request
         )
 
     def get_context_data(self, **kwargs):
@@ -246,11 +247,14 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
 
         context.update(
             {
-                "query": self.request.GET.get("busqueda", ""),
                 "breadcrumb_items": [
                     {"name": "Admisiones", "url": "admisiones_tecnicos_listar"},
                     {"name": "Listar", "active": True},
                 ],
+                "reset_url": reverse("admisiones_tecnicos_listar"),
+                "filters_mode": True,
+                "filters_config": get_filters_ui_config(),
+                "filters_action": reverse("admisiones_tecnicos_listar"),
                 "table_headers": [
                     {"title": "ID"},
                     {"title": "Nombre"},
