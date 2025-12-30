@@ -510,3 +510,43 @@ class ImportDatosView(LoginRequiredMixin, FormView):
     # Permitir importación vía GET (desde el botón en el detalle)
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
+    
+
+class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
+    """
+    Vista para borrar los datos importados de un lote específico.
+    """
+    template_name = "borrar_datos_importados.html"
+    success_url = reverse_lazy("importarexpedientes_list")
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Tomar el id desde la URL
+        self.batch_id = int(self.kwargs.get("id_archivo"))
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        # Usar el id de la URL
+        batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
+
+        registros_qs = (
+            RegistroImportado.objects
+            .filter(exito_importacion__archivo_importado=batch)
+        )
+        # Capturar los IDs de expedientes antes de borrar los registros
+        expediente_ids = list(registros_qs.values_list("expediente_pago_id", flat=True))
+
+        with transaction.atomic():
+            # Primero borrar los registros hijos para respetar las FK (DO_NOTHING)
+            reg_deleted, _ = registros_qs.delete()
+            # Luego borrar los expedientes creados por el lote
+            exp_deleted, _ = ExpedientePago.objects.filter(id__in=expediente_ids).delete()
+
+        messages.success(
+            request,
+            f"Borrado completado: {reg_deleted} registros y {exp_deleted} expedientes eliminados.",
+        )
+        return redirect(self.success_url)
+
+    # Permitir borrado vía GET (desde el botón en el detalle)
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)
