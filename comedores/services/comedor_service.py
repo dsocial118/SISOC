@@ -915,6 +915,18 @@ class ComedorService:
             messages.error(request, "Debe seleccionar un tipo de admisión.")
             return redirect(request.path)
 
+        if (
+            tipo_admision == "renovacion"
+            and not Admision.objects.filter(
+                comedor=comedor, tipo="incorporacion"
+            ).exists()
+        ):
+            messages.warning(
+                request,
+                "No se puede crear una admisión de Renovación sin una Incorporación previa.",
+            )
+            return redirect(request.path)
+
         # Verificar si existe una admisión del mismo tipo activa
         if Admision.objects.filter(
             comedor=comedor, tipo=tipo_admision, activa=True

@@ -43,6 +43,7 @@ class Admision(models.Model):
         ("IF Disposición Asignado", "IF Disposición Asignado"),
         ("Juridicos: Validado", "Juridicos: Validado"),
         ("Juridicos: Rechazado", "Juridicos: Rechazado"),
+        ("Disposición Firmada", "Disposición Firmada"),
         ("Informe SGA Generado", "Informe SGA Generado"),
         ("Convenio Firmado", "Convenio Firmado"),
         ("Acompañamiento Pendiente", "Acompañamiento Pendiente"),
