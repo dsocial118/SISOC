@@ -486,18 +486,15 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                         )
                     RegistroImportado.objects.create(
                         exito_importacion=exito,
-                        id_expediente=inst.id,
+                        expediente_pago=inst,
                     )
                     imported_count += 1
 
                 except Exception as e:
                     error_count += 1
-                    ErroresImportacion.objects.create(
-                        archivo_importado=batch,
-                        fila=i,
-                        mensaje=f"Import error: {e}",
-                    )
-
+                    logger.error(f"[IMPORT] Fila {i} error al importar: {e}")
+                    messages.error(request, f"Error al importar fila {i}: {e}")
+                    
         if error_count:
             messages.warning(
                 request,
@@ -509,3 +506,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                 f"Importación completada: {imported_count} registros importados.",
             )
         return redirect(self.success_url)
+
+    # Permitir importación vía GET (desde el botón en el detalle)
+    def get(self, request, *args, **kwargs):
+        return self.post(request, *args, **kwargs)
