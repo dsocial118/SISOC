@@ -174,17 +174,15 @@ class LegalesService:
             if puede_rectificar and not formulario_proyecto and not formulario_reso:
                 botones.append("rectificar")
 
-        elif (
+        if not admision.numero_disposicion and (
             admision.estado_legales == "Juridicos: Validado"
-            and not admision.informe_sga
+            or admision.informe_sga
+            or admision.numero_convenio
         ):
-            botones.append("informe_sga")
-
-        if admision.informe_sga and not admision.numero_convenio:
-            botones.append("convenio")
-
-        if admision.numero_convenio and not admision.numero_disposicion:
             botones.append("disposicion")
+
+        if admision.numero_disposicion and not admision.numero_convenio:
+            botones.append("convenio")
 
         if (
             not admision.enviada_a_archivo
@@ -218,6 +216,7 @@ class LegalesService:
                 "if_convenio": "IF Convenio Asignado",
                 "formulario_disposicion": "Formulario Disposición Creado",
                 "if_disposicion": "IF Disposición Asignado",
+                "disposicion_firmada": "Disposición Firmada",
                 "informe_sga": "Informe SGA Generado",
                 "convenio": "Convenio Firmado",
                 "disposicion": "Acompañamiento Pendiente",
@@ -347,7 +346,10 @@ class LegalesService:
             form = ConvenioForm(request.POST, request.FILES, instance=admision)
             if form.is_valid():
                 form.save()
-                LegalesService.actualizar_estado_por_accion(admision, "convenio")
+                if admision.numero_disposicion:
+                    LegalesService.actualizar_estado_por_accion(admision, "disposicion")
+                else:
+                    LegalesService.actualizar_estado_por_accion(admision, "convenio")
                 messages.success(request, "Convenio guardado correctamente.")
             else:
                 logger.error("Errores en ConvenioForm: %s", form.errors)
@@ -366,7 +368,12 @@ class LegalesService:
             form = DisposicionForm(request.POST, request.FILES, instance=admision)
             if form.is_valid():
                 form.save()
-                LegalesService.actualizar_estado_por_accion(admision, "disposicion")
+                if admision.numero_convenio:
+                    LegalesService.actualizar_estado_por_accion(admision, "disposicion")
+                else:
+                    LegalesService.actualizar_estado_por_accion(
+                        admision, "disposicion_firmada"
+                    )
                 messages.success(request, "Disposición guardada correctamente.")
             else:
                 logger.error("Errores en DisposicionForm: %s", form.errors)
@@ -983,9 +990,6 @@ class LegalesService:
 
             if "BtnIntervencionJuridicos" in request.POST:
                 return LegalesService.guardar_intervencion_juridicos(request, admision)
-
-            if "BtnInformeSGA" in request.POST:
-                return LegalesService.guardar_informe_sga(request, admision)
 
             if "btnConvenio" in request.POST:
                 return LegalesService.guardar_convenio(request, admision)
