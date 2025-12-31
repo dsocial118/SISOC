@@ -698,14 +698,6 @@ class AdmisionService:
 
             admision = get_object_or_404(Admision, pk=admision_id)
 
-            estado_actual = (
-                getattr(getattr(admision, "estado", None), "nombre", "") or ""
-            )
-
-            if estado_actual.lower() == "finalizada":
-
-                return None, "La admision esta finalizada."
-
             if not usuario.is_superuser:
 
                 comedor = admision.comedor
