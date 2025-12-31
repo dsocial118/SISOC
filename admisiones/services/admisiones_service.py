@@ -327,8 +327,16 @@ class AdmisionService:
             table_items.append(
                 {
                     "cells": [
-                        # ID
+                        # ID Comedor
                         {"content": str(comedor.id) if comedor else "-"},
+                        # Tipo
+                        {
+                            "content": (
+                                str(admision.get_tipo_display())
+                                if admision.tipo
+                                else "-"
+                            )
+                        },
                         # Nombre
                         {
                             "content": comedor_nombre,
@@ -354,18 +362,10 @@ class AdmisionService:
                         },
                         # Provincia
                         {"content": provincia_display},
-                        # Dupla
+                        # Equipo tecnico
                         {
                             "content": (
                                 str(comedor.dupla) if comedor and comedor.dupla else "-"
-                            )
-                        },
-                        # Tipo
-                        {
-                            "content": (
-                                str(admision.get_tipo_display())
-                                if admision.tipo
-                                else "-"
                             )
                         },
                         # Estado

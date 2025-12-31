@@ -1,4 +1,4 @@
-"""Configuracion para filtros combinables en admisiones tecnicos."""
+"""Configuracion para filtros combinables en admisiones legales."""
 
 from typing import Any, Dict
 
@@ -12,7 +12,7 @@ FIELD_MAP: Dict[str, str] = {
     "num_expediente": "num_expediente",
     "provincia": "comedor__provincia__nombre",
     "equipo_tecnico": "comedor__dupla__nombre",
-    "estado": "estado_admision",
+    "estado": "estado_legales",
     "fecha_modificado": "modificado",
 }
 
@@ -85,7 +85,7 @@ def get_filters_ui_config() -> Dict[str, Any]:
         choices_by_field = {
             "estado": [
                 {"value": value, "label": label}
-                for value, label in Admision.ESTADOS_ADMISION
+                for value, label in Admision.ESTADOS_LEGALES
             ],
             "tipo_admision": [
                 {"value": value, "label": label}
@@ -100,9 +100,7 @@ def get_filters_ui_config() -> Dict[str, Any]:
             ],
             "equipo_tecnico": [
                 {"value": value, "label": value}
-                for value in TipoConvenio.objects.order_by("nombre").values_list(
-                    "nombre", flat=True
-                )
+                for value in Dupla.objects.activas().values_list("nombre", flat=True)
                 if value
             ],
         }
