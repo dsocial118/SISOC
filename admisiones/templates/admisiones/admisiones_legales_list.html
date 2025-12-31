@@ -7,76 +7,8 @@
 {% block content %}
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
-    {% include 'components/search_bar.html' with titulo='Expedientes' placeholder='Buscar por nombre, ubicación, referente, etc.' help_text='Buscar por nombre, ubicación, referente, etc.' reset_url='admisiones_legales_listar' query=query show_add_button=False %}
-    <div class="row mt-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <table class="table table-bordered table-striped projects">
-                        <thead>
-                            <tr>
-                                <th class="sortable" data-column="comedor">
-                                    Comedor
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable" data-column="tipo_convenio">
-                                    Tipo convenio
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable" data-column="expediente">
-                                    Num Expediente
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable" data-column="modificado">
-                                    Modificado
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th class="sortable" data-column="estado">
-                                    Estado
-                                    <i class="fas fa-sort sort-icon"></i>
-                                </th>
-                                <th style="width: 10%" class="notexport">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for admision in admisiones %}
-                                <tr>
-                                    <td data-comedor="{{ admision.comedor.nombre|default:'' }}">
-                                        {% if admision.comedor and admision.comedor.id %}
-                                            <a href="{% url 'comedor_detalle' admision.comedor.id %}"
-                                               class="font-weight-bold link-handler"
-                                               title="Ver detalles">{{ admision.comedor.nombre }}</a>
-                                        {% else %}
-                                            <span class="text-muted">Sin comedor asignado</span>
-                                        {% endif %}
-                                    </td>
-                                    <td data-tipo_convenio="{{ admision.tipo_convenio.nombre }}">{{ admision.tipo_convenio.nombre }}</td>
-                                    <td data-expediente="{{ admision.num_expediente }}">{{ admision.num_expediente }}</td>
-                                    <td data-modificado="{{ admision.modificado|date:'Y-m-d' }}">{{ admision.modificado|date:'d/m/Y' }}</td>
-                                    <td data-estado="{{ admision.get_estado_legales_display|default:'' }}">
-                                        {{ admision.get_estado_legales_display| default_if_none:"Sin información" }}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a href="{% url 'admisiones_legales_ver' admision.id %}"
-                                               class="btn btn-primary btn-sm">Ver</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center">No hay expedientes registrados.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    {% if is_paginated %}
-                        {% include 'components/pagination.html' %}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'components/search_bar.html' with titulo=titulo_busqueda reset_url=reset_url filters_mode=filters_mode filters_config=filters_config filters_action=filters_action show_add_button=False %}
+    {% include 'components/data_table.html' with headers=table_headers items=table_items show_actions=True custom_cells=True custom_actions=True empty_message='No hay expedientes registrados.' include_pagination=True %}
 {% endblock %}
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
