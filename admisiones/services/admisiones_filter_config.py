@@ -100,7 +100,9 @@ def get_filters_ui_config() -> Dict[str, Any]:
             ],
             "equipo_tecnico": [
                 {"value": value, "label": value}
-                for value in Dupla.objects.activas().values_list("nombre", flat=True)
+                for value in TipoConvenio.objects.order_by("nombre").values_list(
+                    "nombre", flat=True
+                )
                 if value
             ],
         }

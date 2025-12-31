@@ -74,17 +74,43 @@ textarea:focus {
 /* Prevenir overflow horizontal cuando Select2 está abierto */
 body.select2-container--open {
   overflow-x: hidden !important;
+  overflow-y: hidden !important;
+}
+
+/* Prevenir overflow horizontal a nivel global del HTML */
+html {
+  overflow-x: hidden !important;
+}
+
+/* Prevenir overflow en app-content cuando select2 está abierto */
+body.select2-container--open .app-content {
+  overflow: visible !important;
 }
 
 /* Asegurar que el contenedor de Select2 no cause overflow */
-.select2-container--open .select2-dropdown {
+/* COMENTADO: Esta regla estaba causando que los dropdowns se posicionen incorrectamente
+   y generen scrollbar horizontal al forzar left: 0 */
+/* .select2-container--open .select2-dropdown {
   left: 0 !important;
   right: auto !important;
-}
+} */
 
 /* Limitar el ancho del dropdown según el contenedor padre */
 .select2-container--default .select2-dropdown {
   max-width: calc(100vw - 40px) !important; /* 20px de margen a cada lado */
+}
+
+/* Asegurar que el dropdown no se posicione fuera del viewport */
+.select2-dropdown {
+  position: absolute !important;
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+}
+
+/* Prevenir que el contenedor del select2 cause overflow */
+.select2-container {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .select2-search--dropdown .select2-search__field {
