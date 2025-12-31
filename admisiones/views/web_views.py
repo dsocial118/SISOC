@@ -22,7 +22,12 @@ from admisiones.models.admisiones import (
     InformeComplementario,
 )
 from admisiones.services.admisiones_service import AdmisionService
-from admisiones.services.admisiones_filter_config import get_filters_ui_config
+from admisiones.services.admisiones_filter_config import (
+    get_filters_ui_config as get_tecnicos_filters_ui_config,
+)
+from admisiones.services.legales_filter_config import (
+    get_filters_ui_config as get_legales_filters_ui_config,
+)
 from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
 from django.views.generic.edit import FormMixin
@@ -253,16 +258,17 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
                 ],
                 "reset_url": reverse("admisiones_tecnicos_listar"),
                 "filters_mode": True,
-                "filters_config": get_filters_ui_config(),
+                "filters_config": get_tecnicos_filters_ui_config(),
                 "filters_action": reverse("admisiones_tecnicos_listar"),
+                "titulo_busqueda": "Admisiones - Equipos técnicos",
                 "table_headers": [
-                    {"title": "ID"},
+                    {"title": "ID Comedor"},
+                    {"title": "Tipo"},
                     {"title": "Nombre"},
                     {"title": "Organización"},
                     {"title": "N° Expediente"},
                     {"title": "Provincia"},
-                    {"title": "Dupla"},
-                    {"title": "Tipo"},
+                    {"title": "Equipo técnico"},
                     {"title": "Estado"},
                     {"title": "Última Modificación"},
                 ],
@@ -775,18 +781,38 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return LegalesService.get_admisiones_legales_filtradas(
-            self.request.GET.get("busqueda", ""), self.request.user
+            self.request, self.request.user
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        table_items = LegalesService.get_admisiones_legales_table_data(
+            context["admisiones"]
+        )
+
         context.update(
             {
-                "query": self.request.GET.get("busqueda", ""),
                 "breadcrumb_items": [
                     {"name": "Expedientes", "url": "admisiones_legales_listar"},
                     {"name": "Listar", "active": True},
                 ],
+                "reset_url": reverse("admisiones_legales_listar"),
+                "filters_mode": True,
+                "filters_config": get_legales_filters_ui_config(),
+                "filters_action": reverse("admisiones_legales_listar"),
+                "titulo_busqueda": "Expedientes - Legales",
+                "table_headers": [
+                    {"title": "ID Comedor"},
+                    {"title": "Tipo"},
+                    {"title": "Nombre"},
+                    {"title": "Organización"},
+                    {"title": "N° Expediente"},
+                    {"title": "Provincia"},
+                    {"title": "Equipo técnico"},
+                    {"title": "Estado"},
+                    {"title": "Última Modificación"},
+                ],
+                "table_items": table_items,
             }
         )
         return context
