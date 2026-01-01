@@ -12,8 +12,8 @@ class DuplaForm(forms.ModelForm):
             attrs={
                 "class": "form-control js-tecnico",
                 "data-role": "select2",
-                "data-placeholder": "Selecciona hasta 2 técnicos",
-                "aria-label": "Selecciona hasta 2 técnicos",
+                "data-placeholder": "Selecciona técnicos",
+                "aria-label": "Selecciona técnicos",
             }
         ),
     )
@@ -34,13 +34,8 @@ class DuplaForm(forms.ModelForm):
     def filtrar_campos_tecnico_abogado(self):
         grupo_tecnico = Group.objects.filter(name="Tecnico Comedor").first()
         if grupo_tecnico:
-            usuarios_asignados = Dupla.objects.exclude(pk=self.instance.pk).values_list(
-                "tecnico", flat=True
-            )
-            usuarios_asignados = [u for u in usuarios_asignados if u is not None]
-            self.fields["tecnico"].queryset = grupo_tecnico.user_set.exclude(
-                id__in=usuarios_asignados
-            )
+            # Permitir que cualquier técnico pueda ser asignado a múltiples duplas
+            self.fields["tecnico"].queryset = grupo_tecnico.user_set.all()
         else:
             self.fields["tecnico"].queryset = self.fields["tecnico"].queryset.none()
 
@@ -71,15 +66,3 @@ class DuplaForm(forms.ModelForm):
             "abogado": "Abogado",
             "estado": "Estado",
         }
-
-    def clean_tecnico(self):
-        """Valida que se seleccionen como máximo 2 técnicos.
-
-        Select2 evita más de 2 en el UI, pero reforzamos la validación
-        del lado del servidor por seguridad y consistencia.
-        """
-        tecnicos = self.cleaned_data.get("tecnico")
-        # `tecnicos` es un QuerySet/iterable de usuarios seleccionados
-        if tecnicos is not None and len(tecnicos) > 2:
-            raise forms.ValidationError("Selecciona como máximo 2 técnicos.")
-        return tecnicos
