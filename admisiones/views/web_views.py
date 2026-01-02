@@ -558,6 +558,32 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             messages.success(request, "La admisión ha sido cerrada forzadamente.")
             return redirect(request.path_info)
 
+        # Manejar carga de archivos adicionales
+        if request.FILES.get("archivo") or request.POST.get("nombre"):
+            if not (request.FILES.get("archivo") and request.POST.get("nombre")):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "El archivo y el nombre son obligatorios.",
+                    },
+                    status=400,
+                )
+
+            admision = self.get_object()
+            archivo = request.FILES.get("archivo")
+            nombre = request.POST.get("nombre")
+
+            archivo_admision, error = AdmisionService.crear_documento_personalizado(
+                admision.id, nombre, archivo, request.user
+            )
+
+            if archivo_admision:
+                return JsonResponse({"success": True})
+            return JsonResponse(
+                {"success": False, "error": error or "Error al subir archivo"},
+                status=400,
+            )
+
         return super().get(request, *args, **kwargs)
 
 
@@ -616,7 +642,7 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
         action = self.request.POST.get("action")
 
         resultado = InformeService.guardar_informe(
-            form, self.admision_obj, es_creacion=True, action=action
+            form, self.admision_obj, es_creacion=True, action=action, usuario=self.request.user
         )
 
         if not resultado.get("success"):
@@ -706,6 +732,7 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
             form.instance.admision,
             es_creacion=False,
             action=self.request.POST.get("action"),
+            usuario=self.request.user
         )
 
         if not resultado.get("success"):

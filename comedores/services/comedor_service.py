@@ -921,9 +921,11 @@ class ComedorService:
                 comedor=comedor, tipo="incorporacion"
             ).exists()
         ):
-            messages.warning(
+            messages.error(
                 request,
-                "No se puede crear una admisión de Renovación sin una Incorporación previa.",
+                "No se puede crear una admisión de Renovación sin una Incorporación previa. "
+                "Debe existir al menos una admisión de Incorporación para este comedor, "
+                "independientemente de su estado.",
             )
             return redirect(request.path)
 
