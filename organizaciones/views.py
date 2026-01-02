@@ -435,11 +435,7 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
 
         # Obtener comedores asociados a la organización
         comedores = self.object.comedor_set.select_related(
-            "tipocomedor",
-            "provincia",
-            "municipio",
-            "localidad",
-            "referente"
+            "tipocomedor", "provincia", "municipio", "localidad", "referente"
         ).all()
         context["comedores"] = comedores
         context["comedores_count"] = comedores.count()

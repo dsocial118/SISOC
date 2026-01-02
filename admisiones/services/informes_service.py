@@ -474,13 +474,13 @@ class InformeService:
 
             informe = form.save(commit=False)
             informe.admision = admision
-            
+
             # Set creado_por and modificado_por fields
             if usuario:
                 if es_creacion:
                     informe.creado_por = usuario
                 informe.modificado_por = usuario
-            
+
             informe.save()
             if hasattr(form, "save_m2m"):
                 form.save_m2m()
