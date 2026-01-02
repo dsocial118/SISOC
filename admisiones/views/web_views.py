@@ -559,19 +559,30 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             return redirect(request.path_info)
 
         # Manejar carga de archivos adicionales
-        if request.FILES.get("archivo") and request.POST.get("nombre"):
+        if request.FILES.get("archivo") or request.POST.get("nombre"):
+            if not (request.FILES.get("archivo") and request.POST.get("nombre")):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "El archivo y el nombre son obligatorios.",
+                    },
+                    status=400,
+                )
+
             admision = self.get_object()
             archivo = request.FILES.get("archivo")
             nombre = request.POST.get("nombre")
-            
+
             archivo_admision, error = AdmisionService.crear_documento_personalizado(
                 admision.id, nombre, archivo, request.user
             )
-            
+
             if archivo_admision:
                 return JsonResponse({"success": True})
-            else:
-                return JsonResponse({"success": False, "error": error or "Error al subir archivo"}, status=400)
+            return JsonResponse(
+                {"success": False, "error": error or "Error al subir archivo"},
+                status=400,
+            )
 
         return super().get(request, *args, **kwargs)
 
