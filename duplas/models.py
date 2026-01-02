@@ -22,6 +22,11 @@ class Dupla(models.Model):
     Cuando se elimina un coordinador, la dupla queda sin coordinador (coordinador=NULL).
     La sincronización entre Dupla.coordinador y Profile.duplas_asignadas se maneja
     automáticamente mediante signals.
+    
+    Técnicos:
+    ---------
+    - Un equipo técnico puede tener N técnicos asignados (sin límite)
+    - Un técnico puede formar parte de múltiples equipos técnicos
     """
 
     nombre = models.CharField(max_length=255)
