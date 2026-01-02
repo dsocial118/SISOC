@@ -501,14 +501,12 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
             {"url_name": "aval_editar", "label": "Editar", "type": "primary"},
             {"url_name": "aval_eliminar", "label": "Eliminar", "type": "danger"},
         ]
-        try:
-            if self.object.tipo_entidad.nombre == "Asociación de hecho":
-                context["avales"] = True
-            else:
-                context["avales"] = False
-        except Exception:
-            context["tipo_entidad"] = None
-            context["avales"] = False
+        tipo_entidad = getattr(self.object, "tipo_entidad", None)
+        context["tipo_entidad"] = tipo_entidad
+        context["avales"] = bool(
+            tipo_entidad
+            and getattr(tipo_entidad, "nombre", "") == "Asociación de hecho"
+        )
 
         return context
 
