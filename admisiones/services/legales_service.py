@@ -7,6 +7,7 @@ from weasyprint import HTML
 import os
 from django.conf import settings
 from django.db.models import Q
+from django.urls import reverse
 import logging
 from io import BytesIO
 import tempfile
@@ -21,6 +22,7 @@ from .docx_service import DocumentTemplateService, TextFormatterService
 from django.db import transaction
 import unicodedata
 import traceback
+from core.services.advanced_filters import AdvancedFilterEngine
 
 logger = logging.getLogger("django")
 
@@ -33,6 +35,14 @@ from admisiones.models.admisiones import (
     Documentacion,
     InformeTecnico,
     InformeComplementario,
+)
+from admisiones.services.legales_filter_config import (
+    FIELD_MAP as LEGALES_FILTER_MAP,
+    FIELD_TYPES as LEGALES_FIELD_TYPES,
+    TEXT_OPS as LEGALES_TEXT_OPS,
+    NUM_OPS as LEGALES_NUM_OPS,
+    DATE_OPS as LEGALES_DATE_OPS,
+    CHOICE_OPS as LEGALES_CHOICE_OPS,
 )
 from admisiones.forms.admisiones_forms import (
     LegalesNumIFForm,
@@ -48,6 +58,17 @@ from admisiones.forms.admisiones_forms import (
     ReinicioExpedienteForm,
     SolicitarInformeComplementarioForm,
     DocumentosExpedienteForm,
+)
+
+LEGALES_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=LEGALES_FILTER_MAP,
+    field_types=LEGALES_FIELD_TYPES,
+    allowed_ops={
+        "text": LEGALES_TEXT_OPS,
+        "number": LEGALES_NUM_OPS,
+        "date": LEGALES_DATE_OPS,
+        "choice": LEGALES_CHOICE_OPS,
+    },
 )
 
 
@@ -174,17 +195,15 @@ class LegalesService:
             if puede_rectificar and not formulario_proyecto and not formulario_reso:
                 botones.append("rectificar")
 
-        elif (
+        if not admision.numero_disposicion and (
             admision.estado_legales == "Juridicos: Validado"
-            and not admision.informe_sga
+            or admision.informe_sga
+            or admision.numero_convenio
         ):
-            botones.append("informe_sga")
-
-        if admision.informe_sga and not admision.numero_convenio:
-            botones.append("convenio")
-
-        if admision.numero_convenio and not admision.numero_disposicion:
             botones.append("disposicion")
+
+        if admision.numero_disposicion and not admision.numero_convenio:
+            botones.append("convenio")
 
         if (
             not admision.enviada_a_archivo
@@ -218,6 +237,7 @@ class LegalesService:
                 "if_convenio": "IF Convenio Asignado",
                 "formulario_disposicion": "Formulario Disposición Creado",
                 "if_disposicion": "IF Disposición Asignado",
+                "disposicion_firmada": "Disposición Firmada",
                 "informe_sga": "Informe SGA Generado",
                 "convenio": "Convenio Firmado",
                 "disposicion": "Acompañamiento Pendiente",
@@ -347,7 +367,10 @@ class LegalesService:
             form = ConvenioForm(request.POST, request.FILES, instance=admision)
             if form.is_valid():
                 form.save()
-                LegalesService.actualizar_estado_por_accion(admision, "convenio")
+                if admision.numero_disposicion:
+                    LegalesService.actualizar_estado_por_accion(admision, "disposicion")
+                else:
+                    LegalesService.actualizar_estado_por_accion(admision, "convenio")
                 messages.success(request, "Convenio guardado correctamente.")
             else:
                 logger.error("Errores en ConvenioForm: %s", form.errors)
@@ -366,7 +389,12 @@ class LegalesService:
             form = DisposicionForm(request.POST, request.FILES, instance=admision)
             if form.is_valid():
                 form.save()
-                LegalesService.actualizar_estado_por_accion(admision, "disposicion")
+                if admision.numero_convenio:
+                    LegalesService.actualizar_estado_por_accion(admision, "disposicion")
+                else:
+                    LegalesService.actualizar_estado_por_accion(
+                        admision, "disposicion_firmada"
+                    )
                 messages.success(request, "Disposición guardada correctamente.")
             else:
                 logger.error("Errores en DisposicionForm: %s", form.errors)
@@ -941,13 +969,19 @@ class LegalesService:
             return redirect(request.path_info)
 
     @staticmethod
-    def get_admisiones_legales_filtradas(query="", user=None):
+    def get_admisiones_legales_filtradas(request_or_query="", user=None):
         try:
             from users.services import UserPermissionService
 
             queryset = Admision.objects.filter(
                 enviado_legales=True, activa=True
-            ).select_related("comedor", "tipo_convenio")
+            ).select_related(
+                "comedor",
+                "comedor__dupla",
+                "comedor__organizacion",
+                "comedor__provincia",
+                "tipo_convenio",
+            )
 
             # Filtrar por duplas si es coordinador
             if user and not user.is_superuser:
@@ -959,6 +993,23 @@ class LegalesService:
                         queryset = queryset.none()
                     else:
                         queryset = queryset.filter(comedor__dupla_id__in=duplas_ids)
+
+            query = ""
+            if request_or_query is not None:
+                if hasattr(request_or_query, "GET"):
+                    queryset = LEGALES_ADVANCED_FILTER.filter_queryset(
+                        queryset, request_or_query
+                    )
+                    query = request_or_query.GET.get("busqueda", "")
+                elif hasattr(request_or_query, "get") and not isinstance(
+                    request_or_query, str
+                ):
+                    queryset = LEGALES_ADVANCED_FILTER.filter_queryset(
+                        queryset, request_or_query
+                    )
+                    query = request_or_query.get("busqueda", "")
+                else:
+                    query = request_or_query
 
             if query:
                 query = query.strip().lower()
@@ -976,6 +1027,97 @@ class LegalesService:
             return Admision.objects.none()
 
     @staticmethod
+    def get_admisiones_legales_table_data(admisiones):
+        table_items = []
+        for admision in admisiones:
+            comedor = admision.comedor
+
+            comedor_nombre = comedor.nombre if comedor else "-"
+            comedor_link_url = (
+                reverse("comedor_detalle", args=[comedor.id]) if comedor else None
+            )
+            provincia_display = (
+                str(comedor.provincia)
+                if comedor and getattr(comedor, "provincia", None)
+                else "-"
+            )
+
+            actions = [
+                {
+                    "url": reverse("admisiones_legales_ver", args=[admision.pk]),
+                    "type": "primary",
+                    "label": "Ver",
+                }
+            ]
+
+            table_items.append(
+                {
+                    "cells": [
+                        # ID Comedor
+                        {"content": str(comedor.id) if comedor else "-"},
+                        # Tipo
+                        {
+                            "content": (
+                                str(admision.get_tipo_display())
+                                if admision.tipo
+                                else "-"
+                            )
+                        },
+                        # Nombre
+                        {
+                            "content": comedor_nombre,
+                            "link_url": comedor_link_url,
+                            "link_class": "font-weight-bold link-handler",
+                            "link_title": "Ver detalles",
+                        },
+                        # Organización
+                        {
+                            "content": (
+                                comedor.organizacion.nombre
+                                if comedor and comedor.organizacion
+                                else "-"
+                            )
+                        },
+                        # N° Expediente
+                        {
+                            "content": (
+                                admision.num_expediente
+                                if admision and admision.num_expediente
+                                else "-"
+                            )
+                        },
+                        # Provincia
+                        {"content": provincia_display},
+                        # Equipo tecnico
+                        {
+                            "content": (
+                                str(comedor.dupla) if comedor and comedor.dupla else "-"
+                            )
+                        },
+                        # Estado
+                        {
+                            "content": (
+                                str(admision.get_estado_legales_display())
+                                if admision.estado_legales
+                                else "-"
+                            )
+                        },
+                        # Última Modificación
+                        {
+                            "content": (
+                                admision.modificado.strftime("%d/%m/%Y")
+                                if admision.modificado
+                                else "-"
+                            )
+                        },
+                    ],
+                    "actions": actions,
+                }
+            )
+
+        return table_items
+
+    @staticmethod
     def procesar_post_legales(request, admision):
         try:
             if "btnLegalesNumIF" in request.POST:
@@ -983,9 +1125,6 @@ class LegalesService:
 
             if "BtnIntervencionJuridicos" in request.POST:
                 return LegalesService.guardar_intervencion_juridicos(request, admision)
-
-            if "BtnInformeSGA" in request.POST:
-                return LegalesService.guardar_informe_sga(request, admision)
 
             if "btnConvenio" in request.POST:
                 return LegalesService.guardar_convenio(request, admision)

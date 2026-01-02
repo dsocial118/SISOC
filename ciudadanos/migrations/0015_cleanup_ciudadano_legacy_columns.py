@@ -50,9 +50,7 @@ def drop_legacy_columns(apps, schema_editor):
         "circuito_id",
         "escalera_manzana",
         "torre_pasillo",
-        "latitud",
-        "longitud",
-        "estado_civil_id",
+        # latitud/longitud/estado_civil_id se preservan para migrar datos en 0016.
     ]
 
     for column in legacy_columns:
