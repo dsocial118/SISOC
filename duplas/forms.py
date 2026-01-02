@@ -30,6 +30,7 @@ class DuplaForm(forms.ModelForm):
         # Aplicar el label personalizado
         self.fields["tecnico"].label_from_instance = self.label_from_instance_custom
         self.fields["abogado"].label_from_instance = self.label_from_instance_custom
+        self.fields["tecnico"].help_text = "Un técnico puede integrarse en varias duplas."
 
     def filtrar_campos_tecnico_abogado(self):
         grupo_tecnico = Group.objects.filter(name="Tecnico Comedor").first()
