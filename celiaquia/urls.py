@@ -49,6 +49,7 @@ from celiaquia.views.cupo import (
     CupoReactivarLegajoView,
     CupoSuspenderLegajoView,
 )
+from celiaquia.views.reporter_provincias import ReporterProvinciasView
 
 urlpatterns = [
     path(
