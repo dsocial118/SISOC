@@ -642,7 +642,11 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
         action = self.request.POST.get("action")
 
         resultado = InformeService.guardar_informe(
-            form, self.admision_obj, es_creacion=True, action=action, usuario=self.request.user
+            form,
+            self.admision_obj,
+            es_creacion=True,
+            action=action,
+            usuario=self.request.user,
         )
 
         if not resultado.get("success"):
@@ -732,7 +736,7 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
             form.instance.admision,
             es_creacion=False,
             action=self.request.POST.get("action"),
-            usuario=self.request.user
+            usuario=self.request.user,
         )
 
         if not resultado.get("success"):
