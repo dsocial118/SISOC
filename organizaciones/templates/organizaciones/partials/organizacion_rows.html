@@ -1,12 +1,15 @@
 {% load custom_filters %}
 {% for organizacion in organizaciones %}
     <tr>
+        <td data-cuit="{{ organizacion.cuit|default:'' }}">{{ organizacion.cuit |default_if_none:"-" }}</td>
         <td data-nombre="{{ organizacion.nombre }}">
             <a href="{% url 'organizacion_detalle' organizacion.id %}"
                class="font-weight-bold link-handler"
                title="Ver detalles">{{ organizacion.nombre }}</a>
         </td>
-        <td data-cuit="{{ organizacion.cuit|default:'' }}">{{ organizacion.cuit |default_if_none:"-" }}</td>
+        <td data-comedores="{{ organizacion.comedores_count|default:0 }}">{{ organizacion.comedores_count | default:0 }}</td>
+        <td data-tipo_entidad="{% if organizacion.tipo_entidad %}{{ organizacion.tipo_entidad.nombre }}{% endif %}">{% if organizacion.tipo_entidad %}{{ organizacion.tipo_entidad.nombre }}{% else %}-{% endif %}</td>
+        <td data-subtipo_entidad="{% if organizacion.subtipo_entidad %}{{ organizacion.subtipo_entidad.nombre }}{% endif %}">{% if organizacion.subtipo_entidad %}{{ organizacion.subtipo_entidad.nombre }}{% else %}-{% endif %}</td>
         <td data-telefono="{{ organizacion.telefono|default:'' }}">{{ organizacion.telefono | default_if_none:"-" }}</td>
         <td data-email="{{ organizacion.email|default:'' }}">{{ organizacion.email | default_if_none:"-" }}</td>
         <td class="project-actions text-right">
@@ -34,6 +37,6 @@
     </tr>
 {% empty %}
     <tr>
-        <td colspan="5" class="text-center text-muted py-4">No hay organizaciones disponibles.</td>
+        <td colspan="8" class="text-center text-muted py-4">No hay organizaciones disponibles.</td>
     </tr>
 {% endfor %}
