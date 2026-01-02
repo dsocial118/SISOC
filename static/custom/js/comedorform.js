@@ -54,19 +54,28 @@ function initializeSelect2(selectId, options = {}) {
 
   // Forzar que el dropdown siempre se abra hacia abajo
   selectElement.on('select2:open', function() {
-    // Obtener el dropdown
-    const $dropdown = $('.select2-dropdown');
+    // Pequeño delay para asegurar que el DOM esté completamente renderizado
+    setTimeout(function() {
+      // Obtener el dropdown específico de este select2 usando el ID del select
+      const selectId = selectElement.attr('id');
+      const $dropdown = $(`[aria-controls="${selectId}"]`).closest('.select2-container').next('.select2-dropdown');
 
-    // Remover clases de posicionamiento hacia arriba
-    $dropdown.removeClass('select2-dropdown--above');
+      // Si no se encuentra por aria-controls, buscar el último dropdown abierto
+      const $targetDropdown = $dropdown.length > 0 ? $dropdown : $('.select2-dropdown:last');
 
-    // Agregar clase de posicionamiento hacia abajo
-    $dropdown.addClass('select2-dropdown--below');
+      // Remover clases de posicionamiento hacia arriba
+      $targetDropdown.removeClass('select2-dropdown--above');
 
-    // Forzar la posición del contenedor
-    const $container = $('.select2-container--open');
-    $container.removeClass('select2-container--above');
-    $container.addClass('select2-container--below');
+      // Agregar clase de posicionamiento hacia abajo
+      $targetDropdown.addClass('select2-dropdown--below');
+
+      // Forzar la posición del contenedor específico
+      const $container = selectElement.data('select2').$container;
+      if ($container) {
+        $container.removeClass('select2-container--above');
+        $container.addClass('select2-container--below');
+      }
+    }, 10);
   });
 
   // Restaurar el valor si existía

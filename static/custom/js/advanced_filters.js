@@ -51,6 +51,7 @@
         {
             text: 'contains',
             number: 'eq',
+            date: 'eq',
             boolean: 'eq',
             choice: 'eq',
         },
@@ -78,6 +79,7 @@
         {
             text: ['contains', 'ncontains', 'eq', 'ne', 'empty'],
             number: ['eq', 'ne', 'gt', 'lt', 'empty'],
+            date: ['eq', 'ne', 'gt', 'lt', 'empty'],
             boolean: ['eq', 'ne'],
             choice: ['eq', 'ne'],
         },
@@ -159,6 +161,15 @@
             input.type = 'number';
             const attrs = fieldDef.input || {};
             input.step = attrs.step || '1';
+            if (attrs.min !== undefined) {
+                input.min = attrs.min;
+            }
+            if (attrs.max !== undefined) {
+                input.max = attrs.max;
+            }
+        } else if (fieldDef.type === 'date') {
+            input.type = 'date';
+            const attrs = fieldDef.input || {};
             if (attrs.min !== undefined) {
                 input.min = attrs.min;
             }
@@ -254,7 +265,10 @@
                 valueInput.style.display = 'none';
                 selectValue.style.display = 'none';
                 emptyModeSel.style.display = 'inline-block';
-                disableBlankOption(emptyModeSel, type === 'number' || type === 'boolean');
+                disableBlankOption(
+                    emptyModeSel,
+                    type === 'number' || type === 'boolean' || type === 'date'
+                );
                 return;
             }
 
@@ -395,4 +409,3 @@
         addRow();
     }
 })();
-

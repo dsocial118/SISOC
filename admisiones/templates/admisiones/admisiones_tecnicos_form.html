@@ -336,7 +336,7 @@
                                                 {% for doc in documentos_personalizados %}
                                                     {% include "admisiones/includes/documento_row.html" %}
                                                 {% endfor %}
-                                                {% if request.user|has_group:"Tecnico Comedor" and not admision.enviada_a_archivo and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
+                                                {% if request.user|has_group:"Tecnico Comedor" and not admision.enviada_a_archivo and admision.estado.nombre != "Descartado" %}
                                                     <tr id="fila-agregar-documento"
                                                         data-documentacion-id=""
                                                         data-archivo-id="">

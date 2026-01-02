@@ -10,13 +10,9 @@
     }
 
     $el.select2({
-      maximumSelectionLength: 2,
       width: '100%',
-      placeholder: $el.data('placeholder') || 'Selecciona hasta 2 técnicos',
+      placeholder: $el.data('placeholder') || 'Selecciona técnicos',
       language: {
-        maximumSelected: function () {
-          return 'Puedes seleccionar hasta 2 técnicos';
-        },
         noResults: function () { return 'Sin resultados'; },
         searching: function () { return 'Buscando…'; }
       }

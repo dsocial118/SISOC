@@ -22,6 +22,12 @@ from admisiones.models.admisiones import (
     InformeComplementario,
 )
 from admisiones.services.admisiones_service import AdmisionService
+from admisiones.services.admisiones_filter_config import (
+    get_filters_ui_config as get_tecnicos_filters_ui_config,
+)
+from admisiones.services.legales_filter_config import (
+    get_filters_ui_config as get_legales_filters_ui_config,
+)
 from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
 from django.views.generic.edit import FormMixin
@@ -234,7 +240,7 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return AdmisionService.get_admisiones_tecnicos_queryset(
-            self.request.user, self.request.GET.get("busqueda", "")
+            self.request.user, self.request
         )
 
     def get_context_data(self, **kwargs):
@@ -246,19 +252,23 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
 
         context.update(
             {
-                "query": self.request.GET.get("busqueda", ""),
                 "breadcrumb_items": [
                     {"name": "Admisiones", "url": "admisiones_tecnicos_listar"},
                     {"name": "Listar", "active": True},
                 ],
+                "reset_url": reverse("admisiones_tecnicos_listar"),
+                "filters_mode": True,
+                "filters_config": get_tecnicos_filters_ui_config(),
+                "filters_action": reverse("admisiones_tecnicos_listar"),
+                "titulo_busqueda": "Admisiones - Equipos técnicos",
                 "table_headers": [
-                    {"title": "ID"},
+                    {"title": "ID Comedor"},
+                    {"title": "Tipo"},
                     {"title": "Nombre"},
                     {"title": "Organización"},
                     {"title": "N° Expediente"},
                     {"title": "Provincia"},
-                    {"title": "Dupla"},
-                    {"title": "Tipo"},
+                    {"title": "Equipo técnico"},
                     {"title": "Estado"},
                     {"title": "Última Modificación"},
                 ],
@@ -548,6 +558,32 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             messages.success(request, "La admisión ha sido cerrada forzadamente.")
             return redirect(request.path_info)
 
+        # Manejar carga de archivos adicionales
+        if request.FILES.get("archivo") or request.POST.get("nombre"):
+            if not (request.FILES.get("archivo") and request.POST.get("nombre")):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "El archivo y el nombre son obligatorios.",
+                    },
+                    status=400,
+                )
+
+            admision = self.get_object()
+            archivo = request.FILES.get("archivo")
+            nombre = request.POST.get("nombre")
+
+            archivo_admision, error = AdmisionService.crear_documento_personalizado(
+                admision.id, nombre, archivo, request.user
+            )
+
+            if archivo_admision:
+                return JsonResponse({"success": True})
+            return JsonResponse(
+                {"success": False, "error": error or "Error al subir archivo"},
+                status=400,
+            )
+
         return super().get(request, *args, **kwargs)
 
 
@@ -606,7 +642,11 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
         action = self.request.POST.get("action")
 
         resultado = InformeService.guardar_informe(
-            form, self.admision_obj, es_creacion=True, action=action
+            form,
+            self.admision_obj,
+            es_creacion=True,
+            action=action,
+            usuario=self.request.user,
         )
 
         if not resultado.get("success"):
@@ -696,6 +736,7 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
             form.instance.admision,
             es_creacion=False,
             action=self.request.POST.get("action"),
+            usuario=self.request.user,
         )
 
         if not resultado.get("success"):
@@ -771,18 +812,38 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return LegalesService.get_admisiones_legales_filtradas(
-            self.request.GET.get("busqueda", ""), self.request.user
+            self.request, self.request.user
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        table_items = LegalesService.get_admisiones_legales_table_data(
+            context["admisiones"]
+        )
+
         context.update(
             {
-                "query": self.request.GET.get("busqueda", ""),
                 "breadcrumb_items": [
                     {"name": "Expedientes", "url": "admisiones_legales_listar"},
                     {"name": "Listar", "active": True},
                 ],
+                "reset_url": reverse("admisiones_legales_listar"),
+                "filters_mode": True,
+                "filters_config": get_legales_filters_ui_config(),
+                "filters_action": reverse("admisiones_legales_listar"),
+                "titulo_busqueda": "Expedientes - Legales",
+                "table_headers": [
+                    {"title": "ID Comedor"},
+                    {"title": "Tipo"},
+                    {"title": "Nombre"},
+                    {"title": "Organización"},
+                    {"title": "N° Expediente"},
+                    {"title": "Provincia"},
+                    {"title": "Equipo técnico"},
+                    {"title": "Estado"},
+                    {"title": "Última Modificación"},
+                ],
+                "table_items": table_items,
             }
         )
         return context
