@@ -495,6 +495,8 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             )
 
         historial_estados_items = []
+        from admisiones.templatetags.estado_filters import format_estado
+
         for record in historial_estados_page.object_list:
             usuario = record.usuario
             usuario_display = (
@@ -505,8 +507,6 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             )
 
             # Aplicar formato a los estados
-            from admisiones.templatetags.estado_filters import format_estado
-
             estado_anterior_formatted = (
                 format_estado(record.estado_anterior) if record.estado_anterior else "-"
             )
