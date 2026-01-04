@@ -61,31 +61,73 @@ def guardar_historial_admision(sender, instance, **kwargs):
 def cache_estado_admision(sender, instance, **kwargs):
     if not instance.pk:
         return
-    instance._prev_estado_admision = (  # pylint: disable=protected-access
+    prev_data = (
         Admision.objects.filter(pk=instance.pk)
-        .values_list("estado_admision", flat=True)
+        .values("estado_admision", "estado_legales", "enviado_legales")
         .first()
     )
+    if prev_data:
+        instance._prev_estado_admision = prev_data["estado_admision"]
+        instance._prev_estado_legales = prev_data["estado_legales"]
+        instance._prev_enviado_legales = prev_data["enviado_legales"]
 
 
 @receiver(post_save, sender=Admision)
 def guardar_historial_estado_admision(sender, instance, created, **kwargs):
     if created:
+        # Crear registro inicial para nueva admisión
+        usuario = get_current_user()
+        def _crear_historial_inicial():
+            HistorialEstadosAdmision.objects.create(
+                admision=instance,
+                estado_anterior=None,
+                estado_nuevo=instance.estado_admision or "iniciada",
+                usuario=usuario,
+            )
+        transaction.on_commit(_crear_historial_inicial)
         return
-    estado_anterior = getattr(
-        instance, "_prev_estado_admision", None
-    )  # pylint: disable=protected-access
-    if estado_anterior == instance.estado_admision:
-        return
-
+    
     usuario = get_current_user()
-
-    def _crear_historial():
-        HistorialEstadosAdmision.objects.create(
-            admision=instance,
-            estado_anterior=estado_anterior,
-            estado_nuevo=instance.estado_admision,
-            usuario=usuario,
-        )
-
-    transaction.on_commit(_crear_historial)
+    
+    # Trackear cambios en estado_admision (solo si no está enviado a legales)
+    estado_anterior = getattr(instance, "_prev_estado_admision", None)
+    if estado_anterior != instance.estado_admision and not instance.enviado_legales:
+        def _crear_historial_admision():
+            estado_anterior_display = dict(instance.ESTADOS_ADMISION).get(estado_anterior, estado_anterior) if estado_anterior else None
+            estado_nuevo_display = dict(instance.ESTADOS_ADMISION).get(instance.estado_admision, instance.estado_admision)
+            
+            HistorialEstadosAdmision.objects.create(
+                admision=instance,
+                estado_anterior=estado_anterior_display,
+                estado_nuevo=estado_nuevo_display,
+                usuario=usuario,
+            )
+        transaction.on_commit(_crear_historial_admision)
+    
+    # Trackear cambios en estado_legales
+    estado_legales_anterior = getattr(instance, "_prev_estado_legales", None)
+    if estado_legales_anterior != instance.estado_legales:
+        def _crear_historial_legales():
+            estado_anterior_display = dict(instance.ESTADOS_LEGALES).get(estado_legales_anterior, estado_legales_anterior) if estado_legales_anterior else None
+            estado_nuevo_display = dict(instance.ESTADOS_LEGALES).get(instance.estado_legales, instance.estado_legales) if instance.estado_legales else None
+            
+            HistorialEstadosAdmision.objects.create(
+                admision=instance,
+                estado_anterior=estado_anterior_display,
+                estado_nuevo=estado_nuevo_display,
+                usuario=usuario,
+            )
+        transaction.on_commit(_crear_historial_legales)
+    
+    # Caso especial: cuando se envía a legales por primera vez
+    enviado_legales_anterior = getattr(instance, "_prev_enviado_legales", False)
+    if not enviado_legales_anterior and instance.enviado_legales:
+        def _crear_historial_envio_legales():
+            estado_actual = dict(instance.ESTADOS_ADMISION).get(instance.estado_admision, instance.estado_admision)
+            HistorialEstadosAdmision.objects.create(
+                admision=instance,
+                estado_anterior=estado_actual,
+                estado_nuevo="Enviado a Legales",
+                usuario=usuario,
+            )
+        transaction.on_commit(_crear_historial_envio_legales)
