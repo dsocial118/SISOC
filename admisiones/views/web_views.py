@@ -347,7 +347,11 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 "estado",
                 "tipo_convenio",
             )
-            .prefetch_related("comedor__dupla__tecnico", "historial__usuario", "historial_estados__usuario")
+            .prefetch_related(
+                "comedor__dupla__tecnico",
+                "historial__usuario",
+                "historial_estados__usuario",
+            )
         )
         return queryset
 
@@ -440,9 +444,13 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             admision.historial_estados.select_related("usuario").order_by("-fecha")
         )
         historial_estados_page_param = "historial_estados_page"
-        historial_estados_page_number = self.request.GET.get(historial_estados_page_param) or 1
+        historial_estados_page_number = (
+            self.request.GET.get(historial_estados_page_param) or 1
+        )
         historial_estados_paginator = Paginator(historial_estados_records, 10)
-        historial_estados_page = historial_estados_paginator.get_page(historial_estados_page_number)
+        historial_estados_page = historial_estados_paginator.get_page(
+            historial_estados_page_number
+        )
 
         historial_headers = [
             {"title": "Fecha"},
@@ -451,14 +459,14 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             {"title": "Valor nuevo"},
             {"title": "Valor anterior"},
         ]
-        
+
         historial_estados_headers = [
             {"title": "Fecha"},
             {"title": "Estado nuevo"},
             {"title": "Estado anterior"},
             {"title": "Usuario"},
         ]
-        
+
         historial_items = []
         for record in historial_page.object_list:
             usuario = record.usuario
@@ -485,7 +493,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                     ]
                 }
             )
-            
+
         historial_estados_items = []
         for record in historial_estados_page.object_list:
             usuario = record.usuario
@@ -495,12 +503,17 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 if usuario
                 else "-"
             )
-            
+
             # Aplicar formato a los estados
             from admisiones.templatetags.estado_filters import format_estado
-            estado_anterior_formatted = format_estado(record.estado_anterior) if record.estado_anterior else "-"
-            estado_nuevo_formatted = format_estado(record.estado_nuevo) if record.estado_nuevo else "-"
-            
+
+            estado_anterior_formatted = (
+                format_estado(record.estado_anterior) if record.estado_anterior else "-"
+            )
+            estado_nuevo_formatted = (
+                format_estado(record.estado_nuevo) if record.estado_nuevo else "-"
+            )
+
             historial_estados_items.append(
                 {
                     "cells": [
