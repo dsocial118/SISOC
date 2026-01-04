@@ -1201,12 +1201,25 @@ class LegalesService:
             page_number = request.GET.get("historial_page", 1) if request else 1
             historial_page = paginator.get_page(page_number)
 
+            # Historial de estados de admisión
+            historial_estados_queryset = admision.historial_estados.all().order_by("-fecha")
+            estados_paginator = Paginator(historial_estados_queryset, 10)
+            estados_page_number = request.GET.get("historial_estados_page", 1) if request else 1
+            historial_estados_page = estados_paginator.get_page(estados_page_number)
+
             # Preparar datos para el componente data_table
             historial_headers = [
                 {"title": "Fecha", "width": "20%"},
                 {"title": "Campo", "width": "25%"},
                 {"title": "Valor", "width": "35%"},
                 {"title": "Usuario", "width": "20%"},
+            ]
+            
+            historial_estados_headers = [
+                {"title": "Fecha", "width": "25%"},
+                {"title": "Estado anterior", "width": "30%"},
+                {"title": "Estado nuevo", "width": "30%"},
+                {"title": "Usuario", "width": "15%"},
             ]
 
             # Formatear datos del historial para el componente
@@ -1226,6 +1239,29 @@ class LegalesService:
                             {"content": cambio.fecha.strftime("%d/%m/%Y %H:%M")},
                             {"content": cambio.campo},
                             {"content": valor_formateado},
+                            {
+                                "content": (
+                                    cambio.usuario.username if cambio.usuario else "-"
+                                )
+                            },
+                        ]
+                    }
+                )
+                
+            # Formatear datos del historial de estados
+            historial_estados_cambios = []
+            for cambio in historial_estados_page:
+                # Aplicar formato a los estados
+                from admisiones.templatetags.estado_filters import format_estado
+                estado_anterior_formatted = format_estado(cambio.estado_anterior) if cambio.estado_anterior else "-"
+                estado_nuevo_formatted = format_estado(cambio.estado_nuevo) if cambio.estado_nuevo else "-"
+                
+                historial_estados_cambios.append(
+                    {
+                        "cells": [
+                            {"content": cambio.fecha.strftime("%d/%m/%Y %H:%M")},
+                            {"content": estado_anterior_formatted},
+                            {"content": estado_nuevo_formatted},
                             {
                                 "content": (
                                     cambio.usuario.username if cambio.usuario else "-"
@@ -1307,6 +1343,11 @@ class LegalesService:
                 "historial_page_obj": historial_page,
                 "historial_is_paginated": historial_page.has_other_pages(),
                 "historial_page_param": "historial_page",
+                "historial_estados_cambios": historial_estados_cambios,
+                "historial_estados_headers": historial_estados_headers,
+                "historial_estados_page_obj": historial_estados_page,
+                "historial_estados_is_paginated": historial_estados_page.has_other_pages(),
+                "historial_estados_page_param": "historial_estados_page",
                 "pdf_url": (
                     getattr(admision, "informe_pdf", None).archivo.url
                     if getattr(admision, "informe_pdf", None)

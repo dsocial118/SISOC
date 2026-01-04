@@ -1,6 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% load admisiones_tags %}
+{% load estado_filters %}
 
 {% block title %}Admision {{ admision.id }}{% endblock %}
 {% block titulo-pagina %}
@@ -416,10 +417,10 @@
 
     <div class="card card-outline card-secondary mb-4">
         <div class="card-header">
-            <h3 class="card-title">Historial legales</h3>
+            <h3 class="card-title">Historial de estados</h3>
         </div>
         <div class="card-body">
-            {% include 'components/data_table.html' with headers=admision_historial_headers items=admision_historial_items custom_cells=True show_actions=False empty_message='No se registran eventos de historial.' include_pagination=True page_obj=admision_historial_page_obj is_paginated=admision_historial_is_paginated page_param=admision_historial_page_param %}
+            {% include 'components/data_table.html' with headers=historial_estados_headers items=historial_estados_items custom_cells=True show_actions=False empty_message='No se registran cambios de estado.' include_pagination=True page_obj=historial_estados_page_obj is_paginated=historial_estados_is_paginated page_param=historial_estados_page_param %}
         </div>
     </div>
 

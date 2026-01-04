@@ -3,6 +3,7 @@
 {% load crispy_forms_tags %}
 {% load static custom_filters %}
 {% load admisiones_tags %}
+{% load estado_filters %}
 ;
 {% block title %}Expediente: {{ admision.num_expediente }}{% endblock %}
 ;
@@ -130,12 +131,12 @@
                         {% else %}
                             <li class="nav-item">
                                 <div class="comment-text">
-                                    Convenio:
-                                    {% if admision.numero_convenio %}
-                                        <a href="{{ admision.archivo_convenio.url }}" target="_blank">
+                                    Disposición:
+                                    {% if admision.numero_disposicion %}
+                                        <a href="{{ admision.archivo_disposicion.url }}" target="_blank">
                                             <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
                                         </a>
-                                        <span class="fw-bold">{{ admision.numero_convenio }}</span>
+                                        <span class="fw-bold">{{ admision.numero_disposicion }}</span>
                                         <i class="bi bi-check-circle-fill text-success"></i>
                                     {% else %}
                                         <i class="bi bi-x-circle-fill text-danger"></i>
@@ -144,12 +145,12 @@
                             </li>
                             <li class="nav-item">
                                 <div class="comment-text">
-                                    Disposición:
-                                    {% if admision.numero_disposicion %}
-                                        <a href="{{ admision.archivo_disposicion.url }}" target="_blank">
+                                    Convenio:
+                                    {% if admision.numero_convenio %}
+                                        <a href="{{ admision.archivo_convenio.url }}" target="_blank">
                                             <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
                                         </a>
-                                        <span class="fw-bold">{{ admision.numero_disposicion }}</span>
+                                        <span class="fw-bold">{{ admision.numero_convenio }}</span>
                                         <i class="bi bi-check-circle-fill text-success"></i>
                                     {% else %}
                                         <i class="bi bi-x-circle-fill text-danger"></i>
@@ -343,10 +344,10 @@
         <div class="col-12 mt-3">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title fw-bold fs-3">Historial de movimientos</h2>
+                    <h2 class="card-title fw-bold fs-3">Historial de estados</h2>
                 </div>
                 <div class="card-body p-0">
-                    {% include 'components/data_table.html' with headers=historial_headers items=historial_cambios custom_cells=True show_actions=False empty_message='No hay movimientos registrados' include_pagination=True page_obj=historial_page_obj is_paginated=historial_is_paginated page_param=historial_page_param %}
+                    {% include 'components/data_table.html' with headers=historial_estados_headers items=historial_estados_cambios custom_cells=True show_actions=False empty_message='No hay cambios de estado registrados' include_pagination=True page_obj=historial_estados_page_obj is_paginated=historial_estados_is_paginated page_param=historial_estados_page_param %}
                 </div>
             </div>
         </div>
