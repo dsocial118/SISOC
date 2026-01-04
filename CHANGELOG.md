@@ -1,6 +1,15 @@
 # CHANGELOG
 Todas las versiones desplegadas deberan estar aca con su descripcion de cambios. Ordenar de mas a menos reciente,
 
+## Despliegue: 2026.01.02
+### Added
+- Filtros avanzados combinables para los listados de Admisiones (equipos técnicos y Legales), con configuración de campos/opciones desde backend y UI reutilizable en las tablas.
+- Campos de georreferenciación, estado civil y origen de dato para ciudadanos, integrados en formularios y vistas.
+
+### Changed
+- Detalle de comedores rediseñado con layout modular, nuevo CSS/JS y secciones de información ampliadas.
+- Estados de admisión unificados con estado visible automático y lógica de activación/inactivación centralizada.
+
 ## Despliegue: 2025.12.18
 ### Added
 - Auditoría con django-auditlog: app `audittrail`, middleware, señales para comedores/organizaciones y vistas de listado/detalle accesibles desde el menú
