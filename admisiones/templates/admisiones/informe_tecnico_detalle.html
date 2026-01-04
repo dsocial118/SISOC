@@ -44,7 +44,7 @@
                             <h6 class="mb-1">{{ nombre }}</h6>
                             <p class="mb-1">{{ valor }}</p>
                         </div>
-                        {% if request.user|has_group:"Abogado Dupla" or request.user.is_superuser and object.estado != "Validado" %}
+                        {% if (request.user|has_group:"Abogado Dupla" or request.user.is_superuser) and object.estado != "Validado" %}
                             <div class="form-check">
                                 <input class="form-check-input campo-subsanar"
                                        type="checkbox"

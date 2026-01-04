@@ -1254,9 +1254,20 @@ class LegalesService:
 
             # Formatear datos del historial de estados
             historial_estados_cambios = []
+            from admisiones.templatetags.estado_filters import format_estado
+
             for cambio in historial_estados_page:
                 # Aplicar formato a los estados
                 from admisiones.templatetags.estado_filters import format_estado
+
+                estado_anterior_formatted = (
+                    format_estado(cambio.estado_anterior)
+                    if cambio.estado_anterior
+                    else "-"
+                )
+                estado_nuevo_formatted = (
+                    format_estado(cambio.estado_nuevo) if cambio.estado_nuevo else "-"
+                )
 
                 estado_anterior_formatted = (
                     format_estado(cambio.estado_anterior)
