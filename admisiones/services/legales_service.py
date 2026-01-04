@@ -1202,9 +1202,13 @@ class LegalesService:
             historial_page = paginator.get_page(page_number)
 
             # Historial de estados de admisión
-            historial_estados_queryset = admision.historial_estados.all().order_by("-fecha")
+            historial_estados_queryset = admision.historial_estados.all().order_by(
+                "-fecha"
+            )
             estados_paginator = Paginator(historial_estados_queryset, 10)
-            estados_page_number = request.GET.get("historial_estados_page", 1) if request else 1
+            estados_page_number = (
+                request.GET.get("historial_estados_page", 1) if request else 1
+            )
             historial_estados_page = estados_paginator.get_page(estados_page_number)
 
             # Preparar datos para el componente data_table
@@ -1214,7 +1218,7 @@ class LegalesService:
                 {"title": "Valor", "width": "35%"},
                 {"title": "Usuario", "width": "20%"},
             ]
-            
+
             historial_estados_headers = [
                 {"title": "Fecha", "width": "25%"},
                 {"title": "Estado anterior", "width": "30%"},
@@ -1247,15 +1251,22 @@ class LegalesService:
                         ]
                     }
                 )
-                
+
             # Formatear datos del historial de estados
             historial_estados_cambios = []
             for cambio in historial_estados_page:
                 # Aplicar formato a los estados
                 from admisiones.templatetags.estado_filters import format_estado
-                estado_anterior_formatted = format_estado(cambio.estado_anterior) if cambio.estado_anterior else "-"
-                estado_nuevo_formatted = format_estado(cambio.estado_nuevo) if cambio.estado_nuevo else "-"
-                
+
+                estado_anterior_formatted = (
+                    format_estado(cambio.estado_anterior)
+                    if cambio.estado_anterior
+                    else "-"
+                )
+                estado_nuevo_formatted = (
+                    format_estado(cambio.estado_nuevo) if cambio.estado_nuevo else "-"
+                )
+
                 historial_estados_cambios.append(
                     {
                         "cells": [

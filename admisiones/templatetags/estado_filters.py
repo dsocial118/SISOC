@@ -2,12 +2,13 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter
 def format_estado(value):
     """Convierte códigos de estado a nombres legibles"""
     if not value:
         return value
-    
+
     # Mapeo de códigos a nombres legibles
     estados_map = {
         # Estados de admisión
@@ -26,7 +27,6 @@ def format_estado(value):
         "enviado_a_acompaniamiento": "Enviado a acompañamiento",
         "inactivada": "Inactivada",
         "descartado": "Descartado",
-        
         # Estados legales
         "Enviado a Legales": "Enviado a Legales",
         "A Rectificar": "A Rectificar",
@@ -51,5 +51,5 @@ def format_estado(value):
         "Descartado": "Descartado",
         "Inactivada": "Inactivada",
     }
-    
+
     return estados_map.get(value, value)
