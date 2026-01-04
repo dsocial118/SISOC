@@ -347,7 +347,11 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 "estado",
                 "tipo_convenio",
             )
-            .prefetch_related("comedor__dupla__tecnico", "historial__usuario")
+            .prefetch_related(
+                "comedor__dupla__tecnico",
+                "historial__usuario",
+                "historial_estados__usuario",
+            )
         )
         return queryset
 
@@ -435,6 +439,19 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         historial_paginator = Paginator(historial_records, 10)
         historial_page = historial_paginator.get_page(historial_page_number)
 
+        # Historial de estados de admisión
+        historial_estados_records = list(
+            admision.historial_estados.select_related("usuario").order_by("-fecha")
+        )
+        historial_estados_page_param = "historial_estados_page"
+        historial_estados_page_number = (
+            self.request.GET.get(historial_estados_page_param) or 1
+        )
+        historial_estados_paginator = Paginator(historial_estados_records, 10)
+        historial_estados_page = historial_estados_paginator.get_page(
+            historial_estados_page_number
+        )
+
         historial_headers = [
             {"title": "Fecha"},
             {"title": "Usuario"},
@@ -442,6 +459,14 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             {"title": "Valor nuevo"},
             {"title": "Valor anterior"},
         ]
+
+        historial_estados_headers = [
+            {"title": "Fecha"},
+            {"title": "Estado nuevo"},
+            {"title": "Estado anterior"},
+            {"title": "Usuario"},
+        ]
+
         historial_items = []
         for record in historial_page.object_list:
             usuario = record.usuario
@@ -465,6 +490,43 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                         {"content": record.campo or "-"},
                         {"content": record.valor_nuevo or "-"},
                         {"content": record.valor_anterior or "-"},
+                    ]
+                }
+            )
+
+        historial_estados_items = []
+        from admisiones.templatetags.estado_filters import format_estado
+
+        for record in historial_estados_page.object_list:
+            usuario = record.usuario
+            usuario_display = (
+                getattr(usuario, "get_full_name", lambda: "")()
+                or getattr(usuario, "username", None)
+                if usuario
+                else "-"
+            )
+
+            # Aplicar formato a los estados
+            estado_anterior_formatted = (
+                format_estado(record.estado_anterior) if record.estado_anterior else "-"
+            )
+            estado_nuevo_formatted = (
+                format_estado(record.estado_nuevo) if record.estado_nuevo else "-"
+            )
+
+            historial_estados_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": (
+                                record.fecha.strftime("%d/%m/%Y %H:%M")
+                                if record.fecha
+                                else "-"
+                            )
+                        },
+                        {"content": estado_nuevo_formatted},
+                        {"content": estado_anterior_formatted},
+                        {"content": usuario_display or "-"},
                     ]
                 }
             )
@@ -502,6 +564,11 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 "admision_historial_page_obj": historial_page,
                 "admision_historial_is_paginated": historial_page.has_other_pages(),
                 "admision_historial_page_param": historial_page_param,
+                "historial_estados_headers": historial_estados_headers,
+                "historial_estados_items": historial_estados_items,
+                "historial_estados_page_obj": historial_estados_page,
+                "historial_estados_is_paginated": historial_estados_page.has_other_pages(),
+                "historial_estados_page_param": historial_estados_page_param,
             }
         )
 

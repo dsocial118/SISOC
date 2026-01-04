@@ -240,9 +240,7 @@ class Command(BaseCommand):
     ) -> EstadoProceso:
         raw_value = row.get("estado_proceso")
         if raw_value is None or not str(raw_value).strip():
-            raise ValueError(
-                f"Línea {line_number}: el campo 'Subestado' está vacío."
-            )
+            raise ValueError(f"Línea {line_number}: el campo 'Subestado' está vacío.")
 
         key = (actividad.id, str(raw_value).strip().casefold())
         if key in self._proceso_cache:
@@ -261,9 +259,7 @@ class Command(BaseCommand):
                     f"Línea {line_number}: el Subestado '{raw_value}' no pertenece "
                     f"al Estado General '{actividad.estado}'."
                 )
-            raise ValueError(
-                f"Línea {line_number}: no existe Subestado '{raw_value}'."
-            )
+            raise ValueError(f"Línea {line_number}: no existe Subestado '{raw_value}'.")
         if count > 1:
             raise ValueError(
                 f"Línea {line_number}: hay {count} Subestados llamados "
@@ -303,9 +299,7 @@ class Command(BaseCommand):
                     f"Subestado '{proceso.estado}' del Estado General "
                     f"'{actividad.estado}'."
                 )
-            raise ValueError(
-                f"Línea {line_number}: no existe Motivo '{raw_value}'."
-            )
+            raise ValueError(f"Línea {line_number}: no existe Motivo '{raw_value}'.")
         if count > 1:
             raise ValueError(
                 f"Línea {line_number}: hay {count} Motivos llamados '{raw_value}' "
