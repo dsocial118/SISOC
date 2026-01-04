@@ -500,12 +500,14 @@ class InformeTecnico(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name="admisiones_informes_tecnicos_creados",
     )
     modificado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name="admisiones_informes_tecnicos_modificados",
     )
     solicitudes_desayuno_lunes = models.IntegerField(
