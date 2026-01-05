@@ -366,6 +366,12 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         admision = self.object
         comedor = admision.comedor
+        def _format_datetime(value):
+            if not value:
+                return "-"
+            if timezone.is_aware(value):
+                value = timezone.localtime(value)
+            return value.strftime("%d/%m/%Y %H:%M")
 
         dupla = getattr(comedor, "dupla", None)
         if dupla:
@@ -481,9 +487,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                     "cells": [
                         {
                             "content": (
-                                record.fecha.strftime("%d/%m/%Y %H:%M")
-                                if record.fecha
-                                else "-"
+                                _format_datetime(record.fecha)
                             )
                         },
                         {"content": usuario_display or "-"},
@@ -519,9 +523,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                     "cells": [
                         {
                             "content": (
-                                record.fecha.strftime("%d/%m/%Y %H:%M")
-                                if record.fecha
-                                else "-"
+                                _format_datetime(record.fecha)
                             )
                         },
                         {"content": estado_nuevo_formatted},
