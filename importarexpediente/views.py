@@ -64,7 +64,7 @@ HEADER_MAP = {
 class ImportExpedientesView(FormView):
     template_name = "upload.html"
     form_class = CSVUploadForm
-    success_url = reverse_lazy("upload")
+    success_url = reverse_lazy("importarexpedientes_list")
 
     def parse_date(self, value):
         if not value:
@@ -374,6 +374,14 @@ class ImportDatosView(LoginRequiredMixin, FormView):
     def post(self, request, *args, **kwargs):
         # Usar el id de la URL
         batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
+
+        # Importar solo si el lote NO está marcado como completado
+        if getattr(batch, "importacion_completada", False):
+            messages.warning(
+                request,
+                "Este archivo ya fue importado. Primero borre los datos importados para reintentar.",
+            )
+            return redirect(self.success_url)
 
         # Abrir y decodificar el archivo CSV almacenado
         try:
