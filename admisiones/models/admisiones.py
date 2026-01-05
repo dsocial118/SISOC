@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.utils import timezone
 from users.models import User
@@ -713,12 +715,60 @@ class InformeTecnico(models.Model):
     resolucion_de_pago_6 = models.CharField(
         "Resolución de pago 6", max_length=150, null=True, blank=True
     )
-    monto_1 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_2 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_3 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_4 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_5 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_6 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_1 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_2 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_3 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_4 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_5 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_6 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
 
     def __str__(self):
         return f"{self.nombre_organizacion} - {self.expediente_nro}"
