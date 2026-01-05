@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from django.conf import settings
 from django.db import models
 from django.db import transaction
@@ -294,7 +295,7 @@ class AdmisionService:
         def _format_date(value):
             if not value:
                 return "-"
-            if timezone.is_aware(value):
+            if isinstance(value, datetime) and timezone.is_aware(value):
                 value = timezone.localtime(value)
             return value.strftime("%d/%m/%Y")
 
