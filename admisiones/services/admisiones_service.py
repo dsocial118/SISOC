@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.core.files.base import ContentFile
 from io import BytesIO
+from django.utils import timezone
 
 from admisiones.models.admisiones import (
     Admision,
@@ -289,6 +290,14 @@ class AdmisionService:
     @staticmethod
     def get_admisiones_tecnicos_table_data(admisiones, user):
         table_items = []
+
+        def _format_date(value):
+            if not value:
+                return "-"
+            if timezone.is_aware(value):
+                value = timezone.localtime(value)
+            return value.strftime("%d/%m/%Y")
+
         for admision in admisiones:
             comedor = admision.comedor
 
@@ -378,11 +387,7 @@ class AdmisionService:
                         },
                         # Última Modificación
                         {
-                            "content": (
-                                admision.modificado.strftime("%d/%m/%Y")
-                                if admision.modificado
-                                else "-"
-                            )
+                            "content": _format_date(admision.modificado)
                         },
                     ],
                     "actions": actions,

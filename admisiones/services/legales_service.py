@@ -16,6 +16,7 @@ from datetime import date
 from django.core.files.base import ContentFile
 from django.utils.html import strip_tags
 from django.utils.text import slugify
+from django.utils import timezone
 from docx import Document
 from htmldocx import HtmlToDocx
 from .docx_service import DocumentTemplateService, TextFormatterService
@@ -81,6 +82,14 @@ def normalizar(texto):
         unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("utf-8")
     )
     return texto
+
+
+def _format_datetime(value, fmt):
+    if not value:
+        return "-"
+    if timezone.is_aware(value):
+        value = timezone.localtime(value)
+    return value.strftime(fmt)
 
 
 class LegalesService:
@@ -1104,10 +1113,8 @@ class LegalesService:
                         },
                         # Última Modificación
                         {
-                            "content": (
-                                admision.modificado.strftime("%d/%m/%Y")
-                                if admision.modificado
-                                else "-"
+                            "content": _format_datetime(
+                                admision.modificado, "%d/%m/%Y"
                             )
                         },
                     ],
@@ -1240,7 +1247,11 @@ class LegalesService:
                 historial_cambios.append(
                     {
                         "cells": [
-                            {"content": cambio.fecha.strftime("%d/%m/%Y %H:%M")},
+                            {
+                                "content": _format_datetime(
+                                    cambio.fecha, "%d/%m/%Y %H:%M"
+                                )
+                            },
                             {"content": cambio.campo},
                             {"content": valor_formateado},
                             {
@@ -1281,7 +1292,11 @@ class LegalesService:
                 historial_estados_cambios.append(
                     {
                         "cells": [
-                            {"content": cambio.fecha.strftime("%d/%m/%Y %H:%M")},
+                            {
+                                "content": _format_datetime(
+                                    cambio.fecha, "%d/%m/%Y %H:%M"
+                                )
+                            },
                             {"content": estado_anterior_formatted},
                             {"content": estado_nuevo_formatted},
                             {
