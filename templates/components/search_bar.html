@@ -43,12 +43,22 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
         <form method="GET"
               action="{{ filters_action|default:'' }}"
               id="filters-form"
+              class="ms-5"
               {% if filters_config %}data-config-id="filters-config-json"{% endif %}>
             <div class="row">
                 <div class="col-md-10 offset-md-1">
                     <div class="form-group">
                         <div class="d-flex align-items-center mb-2">
-                            <label class="me-2 mb-0">Combinar filtros con</label>
+                            <label class="me-2 mb-0">
+                                Combinar filtros con
+                                <span class="field-tooltip tooltip-in-label">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">
+                                        <p>AND: deben cumplirse todos los filtros.</p>
+                                        <p>OR: basta con que se cumpla solo un filtro.</p>
+                                    </span>
+                                </span>
+                            </label>
                             <select id="filters-logic"
                                     class="form-select form-select-sm"
                                     style="width: auto">

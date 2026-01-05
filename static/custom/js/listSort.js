@@ -147,15 +147,17 @@ document.addEventListener("DOMContentLoaded", function () {
       return direction === "asc" ? comparison : -comparison;
     });
 
-    // Limpiar tbody y agregar filas ordenadas
-    tbody.innerHTML = "";
-    rows.forEach((row) => tbody.appendChild(row));
-
-    // Si había una fila "empty", agregarla de nuevo al final
+    // Si había una fila "empty", guardarla para reinsertar
     const emptyRows = Array.from(tbody.querySelectorAll("tr")).filter((row) =>
       row.querySelector(".no-comedores-message, .no-data-message, .empty-message") ||
       row.querySelector('td[colspan]')
     );
+
+    // Limpiar tbody y agregar filas ordenadas
+    tbody.innerHTML = "";
+    rows.forEach((row) => tbody.appendChild(row));
+
+    // Reinsertar fila "empty" al final
     emptyRows.forEach((row) => tbody.appendChild(row));
 
     // Agregar animación de fade in

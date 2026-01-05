@@ -64,13 +64,15 @@
                     </a>
                     <ul class="nav nav-treeview" style="display: none;">
                         <li class="nav-item">
-                            <a href="{% url 'admisiones_tecnicos_listar' %}" class="nav-link ms-3">
+                            <a href="{% url 'admisiones_tecnicos_listar' %}"
+                               class="nav-link ms-3 {% if 'admisiones/tecnicos' in pagina_actual or 'admisiones_tecnicos' in pagina_actual %}active{% endif %}">
                                 <i class="far fa-dot-circle nav-icon"></i>
                                 <p>Técnicos</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{% url 'admisiones_legales_listar' %}" class="nav-link ms-3">
+                            <a href="{% url 'admisiones_legales_listar' %}"
+                               class="nav-link ms-3 {% if 'admisiones/legales' in pagina_actual or 'admisiones_legales' in pagina_actual %}active{% endif %}">
                                 <i class="far fa-dot-circle nav-icon"></i>
                                 <p>Legales</p>
                             </a>

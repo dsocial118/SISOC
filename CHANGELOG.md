@@ -1,6 +1,38 @@
 # CHANGELOG
 Todas las versiones desplegadas deberan estar aca con su descripcion de cambios. Ordenar de mas a menos reciente,
 
+## Despliegue: 2026.01.02
+### Added
+- Filtros avanzados combinables para los listados de Admisiones (equipos técnicos y Legales), con configuración de campos/opciones desde backend y UI reutilizable en las tablas.
+- Campos de georreferenciación, estado civil y origen de dato para ciudadanos, integrados en formularios y vistas.
+
+### Changed
+- Detalle de comedores rediseñado con layout modular, nuevo CSS/JS y secciones de información ampliadas.
+- Estados de admisión unificados con estado visible automático y lógica de activación/inactivación centralizada.
+
+## Despliegue: 2025.12.18
+### Added
+- Auditoría con django-auditlog: app `audittrail`, middleware, señales para comedores/organizaciones y vistas de listado/detalle accesibles desde el menú
+    (permite trazar altas, cambios y bajas con el usuario actor)
+- Tableros DataCalle provinciales con rutas y grupos dedicados
+    (desbloquea visualizaciones segmentadas por jurisdicción)
+- Ciudadanos enriquecidos: geodatos, estado civil, programas de transferencia, historial mensual e interacciones más API de búsqueda y detalle estilo dashboard
+    (centraliza la información y agiliza la gestión de casos)
+- Integración RENAPER desde comedores para crear ciudadanos automáticamente normalizando dirección y nacionalidad (fixtures de nacionalidades incluidas)
+    (reduce carga manual y mejora la calidad de datos)
+- Documentación reorganizada con índice en `docs/index.md` y nuevas guías de arquitectura/operaciones/flows
+    (mejora la referencia técnica y operativa)
+### Changed
+- Tabla y estilos de comedores modernizados con badges, sorting y acciones claras; nuevos CSS/JS de listas
+    (mejora la usabilidad en búsqueda y gestión)
+- Configuración ajustada: enums más legibles en Swagger, nueva env `GOOGLE_MAPS_API_KEY`, filtros choice y grupos creados para los nuevos tableros
+    (prepara la plataforma para las nuevas funciones y dashboards)
+- Sidebar actualizado con acceso a auditoría y tableros provinciales
+    (alineado con los nuevos permisos y vistas)
+### Removed
+- `DEPLOY_WEBP.md`
+    (se elimina documentación obsoleta)
+
 ## Tag: `2025.09.03-rcX` - Despliegue: 2025.09.03
 ### Added
 - Búsqueda avanzada y módulo de comedores con componentes reutilizables de interfaz

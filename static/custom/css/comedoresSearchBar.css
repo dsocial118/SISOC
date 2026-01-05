@@ -17,3 +17,70 @@
   white-space: nowrap;
 }
 
+/* Tooltips como en formulario de comedores */
+.field-tooltip {
+  position: relative;
+  display: inline-block;
+  margin-left: 6px;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.field-tooltip.tooltip-in-label {
+  margin-left: 8px;
+}
+
+.field-tooltip i {
+  color: #60a5fa;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.field-tooltip:hover i {
+  color: #3b82f6;
+  transform: scale(1.1);
+}
+
+.tooltip-text {
+  display: none;
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  z-index: 1000;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: #e5e7eb;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border: 1px solid #374151;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
+.field-tooltip:hover .tooltip-text {
+  display: inline-block;
+  visibility: visible;
+  opacity: 1;
+}
+
+label:has(.field-tooltip) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
