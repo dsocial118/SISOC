@@ -1,6 +1,6 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title %}Organizaciones{% endblock %}
+{% block title %}Importar Expedientes{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -48,26 +48,38 @@
                 </div>
             </div>
         </div>
-
-        <div class="action-buttons">
-            <a href="{% url 'importar_datos' 4036%}"
-                class="btn btn-primary"
-                title="Importar datos">
-                <i class="fas fa-upload"></i>
-                Importar Datos
-            </a>
-        </div>
-
-        <div class="action-buttons">
-            <a href="{% url 'borrar_datos_importados' 4036%}"
-                class="btn btn-primary"
-                title="Importar datos">
-                <i class="fas fa-upload"></i>
-                Borrar Datos
-            </a>
-        </div>
     </div>
 
+    <div class="row">
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="row">
+                <div class="col-12">
+                <div class="action-buttons d-flex gap-2">
+                    <form method="post" action="{% url 'importar_datos' batch_id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-primary flex-grow-1"
+                                title="Importar datos"
+                                onclick="return confirm('¿Confirmar importación del lote?');">
+                            <i class="fas fa-upload"></i>
+                            Importar
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'borrar_datos_importados' batch_id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="btn btn-danger flex-grow-1"
+                                title="Borrar datos"
+                                onclick="return confirm('¿Confirmar borrado de datos importados del lote?');">
+                            <i class="fas fa-trash"></i>
+                            Borrar
+                        </button>
+                    </form>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="row mt-5 max-width-100">
         <div class="col-12">

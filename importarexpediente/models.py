@@ -10,6 +10,7 @@ class ArchivosImportados(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     count_errores = models.IntegerField(default=0)
     count_exitos = models.IntegerField(default=0)
+    importacion_completada = models.BooleanField(default=False)
     def __str__(self):
         return f"Archivo importado {self.archivo.name} por {self.usuario.username} el {self.fecha_subida}"
     

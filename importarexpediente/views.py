@@ -354,6 +354,7 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
             archivo_importado_id=self.batch_id
         ).order_by("fila")
         context["query"] = self.request.GET.get("busqueda", "")
+        context["batch_id"] = self.batch_id
         context["error_count"] = errores.count()
         context["exito_count"] = exitos.count()
         return context
@@ -495,6 +496,14 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                     logger.error(f"[IMPORT] Fila {i} error al importar: {e}")
                     messages.error(request, f"Error al importar fila {i}: {e}")
                     
+        # Marcar el lote como importado si se creó al menos un registro
+        try:
+            if imported_count > 0:
+                batch.importacion_completada = True
+                batch.save(update_fields=["importacion_completada"])
+        except Exception as e:
+            logger.error(f"[IMPORT] No se pudo marcar el lote como completado: {e}")
+
         if error_count:
             messages.warning(
                 request,
@@ -540,6 +549,13 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
             reg_deleted, _ = registros_qs.delete()
             # Luego borrar los expedientes creados por el lote
             exp_deleted, _ = ExpedientePago.objects.filter(id__in=expediente_ids).delete()
+
+        # Resetear el estado de importación del lote
+        try:
+            batch.importacion_completada = False
+            batch.save(update_fields=["importacion_completada"])
+        except Exception as e:
+            logger.error(f"[IMPORT] No se pudo resetear importacion_completada: {e}")
 
         messages.success(
             request,
