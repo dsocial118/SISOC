@@ -45,6 +45,31 @@ def _if_relevamiento_a_pac(fields, admision):
     return fields
 
 
+class MontoDecimalField(forms.DecimalField):
+    widget = forms.TextInput
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.widget.attrs.setdefault("inputmode", "decimal")
+        self.widget.attrs.setdefault("autocomplete", "off")
+
+    def to_python(self, value):
+        if isinstance(value, str):
+            value = value.strip()
+            if value:
+                value = value.replace(" ", "")
+                if "," in value:
+                    value = value.replace(".", "").replace(",", ".")
+                else:
+                    if value.count(".") > 1:
+                        value = value.replace(".", "")
+                    elif value.count(".") == 1:
+                        entero, decimales = value.split(".")
+                        if entero and len(decimales) == 3:
+                            value = f"{entero}{decimales}"
+        return super().to_python(value)
+
+
 class AdmisionForm(forms.ModelForm):
     class Meta:
         model = Admision
@@ -82,6 +107,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 },
             )
         }
+        field_classes = {f"monto_{i}": MontoDecimalField for i in range(1, 7)}
 
     def __init__(self, *args, **kwargs):
         admision = kwargs.pop("admision", None)
@@ -222,6 +248,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 },
             ),
         }
+        field_classes = {f"monto_{i}": MontoDecimalField for i in range(1, 7)}
 
     def __init__(self, *args, **kwargs):
         admision = kwargs.pop("admision", None)
