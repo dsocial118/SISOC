@@ -25,7 +25,7 @@ class DailyFileHandler(logging.FileHandler):
             delay: Retrasar la creación del archivo hasta el primer registro.
         """
 
-        current_date = datetime.now().strftime("%Y-%m-%d")
+        current_date = timezone.localtime().strftime("%Y-%m-%d")
         daily_folder = Path(filename).parent / current_date
         daily_folder.mkdir(parents=True, exist_ok=True)
         daily_filename = daily_folder / Path(filename).name
