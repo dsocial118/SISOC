@@ -23,6 +23,8 @@ services:
     build:
       context: .
       dockerfile: ./docker/django/Dockerfile
+    environment:
+      TZ: America/Argentina/Buenos_Aires
     env_file:
       - .env
     ports:

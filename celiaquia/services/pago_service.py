@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import io
 import logging
-from datetime import datetime
 
 import pandas as pd
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
+from django.utils import timezone
 
 from core.models import Provincia
 from celiaquia.models import (
@@ -79,7 +79,7 @@ class PagoService:
         """
         Crea el expediente de pago en BORRADOR y adjunta Excel de envío con la nómina actual activa.
         """
-        periodo = periodo or datetime.now().strftime("%Y-%m")
+        periodo = periodo or timezone.localtime().strftime("%Y-%m")
         pago = PagoExpediente.objects.create(
             provincia=provincia,
             periodo=periodo,
