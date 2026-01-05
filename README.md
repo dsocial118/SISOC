@@ -3,6 +3,8 @@
 Sistema de gestión basado en **Django** y **MySQL**, desplegable mediante **Docker** y **Docker Compose**.  
 Cada aplicación del repositorio representa un módulo funcional (ej. `comedores`, `relevamientos`, `users`).
 
+> Documentación organizada: ver `docs/index.md` para el índice y referencias detalladas.
+
 ---
 
 ## Tabla de Contenidos

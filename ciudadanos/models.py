@@ -123,6 +123,18 @@ class Ciudadano(models.Model):
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
 
+    @classmethod
+    def buscar_por_documento(cls, query, max_results=10, exclude_id=None):
+        cleaned = (query or "").strip()
+        if len(cleaned) < 4 or not cleaned.isdigit():
+            return cls.objects.none()
+        qs = cls.objects.filter(documento__startswith=cleaned)
+        if exclude_id:
+            qs = qs.exclude(pk=exclude_id)
+        return qs.only("id", "nombre", "apellido", "documento").order_by("documento")[
+            :max_results
+        ]
+
     @property
     def edad(self) -> int:
         """Calcula la edad del ciudadano."""

@@ -1,6 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% load admisiones_tags %}
+{% load estado_filters %}
 
 {% block title %}Admision {{ admision.id }}{% endblock %}
 {% block titulo-pagina %}
@@ -220,6 +221,72 @@
 
     <div class="card card-outline card-secondary mb-4">
         <div class="card-header">
+            <h3 class="card-title">Archivos adicionales</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover table-sm"
+                       id="tablaArchivosAdicionales">
+                    <thead>
+                        <tr>
+                            <th>Documento</th>
+                            <th>Archivo</th>
+                            <th>Número de GDE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaArchivosAdicionalesBody">
+                        {% for doc in documentos_personalizados %}
+                            <tr>
+                                <td>{{ doc.nombre }}</td>
+                                <td class="text-center">
+                                    {% if doc.archivo_url %}
+                                        <a href="{{ doc.archivo_url }}"
+                                           class="btn btn-outline-primary btn-sm"
+                                           target="_blank"
+                                           rel="noopener">Descargar</a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ doc.numero_gde|default:"-" }}</td>
+                            </tr>
+                        {% endfor %}
+                        {% if admision.activa %}
+                            <tr id="fila-agregar-archivo-adicional">
+                                <td class="ps-1">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           id="nuevoArchivoNombre"
+                                           placeholder="Nombre del archivo adicional" />
+                                </td>
+                                <td>
+                                    <input type="file" id="nuevoArchivoFile" class="d-none" />
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-primary"
+                                            id="btnAbrirArchivoFile">Adjuntar</button>
+                                    <div class="progress mt-2"
+                                         id="progress-container-archivo"
+                                         style="display:none;
+                                                height:3px">
+                                        <div class="progress-bar progress-bar-striped"
+                                             role="progressbar"
+                                             id="progress-bar-archivo"
+                                             style="width:0%">0%</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="text-muted">-</span>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-outline card-secondary mb-4">
+        <div class="card-header">
             <h3 class="card-title">Informes tecnicos</h3>
         </div>
         <div class="card-body">
@@ -352,10 +419,10 @@
 
     <div class="card card-outline card-secondary mb-4">
         <div class="card-header">
-            <h3 class="card-title">Historial legales</h3>
+            <h3 class="card-title">Historial de estados</h3>
         </div>
         <div class="card-body">
-            {% include 'components/data_table.html' with headers=admision_historial_headers items=admision_historial_items custom_cells=True show_actions=False empty_message='No se registran eventos de historial.' include_pagination=True page_obj=admision_historial_page_obj is_paginated=admision_historial_is_paginated page_param=admision_historial_page_param %}
+            {% include 'components/data_table.html' with headers=historial_estados_headers items=historial_estados_items custom_cells=True show_actions=False empty_message='No se registran cambios de estado.' include_pagination=True page_obj=historial_estados_page_obj is_paginated=historial_estados_is_paginated page_param=historial_estados_page_param %}
         </div>
     </div>
 
@@ -654,4 +721,83 @@
             </div>
         </div>
     </div>
+
+    <!-- Token CSRF para JavaScript -->
+    <form style="display: none;">
+        {% csrf_token %}
+    </form>
+{% endblock %}
+
+{% block customJS %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Funcionalidad para archivos adicionales
+            const btnAbrirArchivoFile = document.getElementById('btnAbrirArchivoFile');
+            const nuevoArchivoFile = document.getElementById('nuevoArchivoFile');
+            const nuevoArchivoNombre = document.getElementById('nuevoArchivoNombre');
+            const progressContainer = document.getElementById('progress-container-archivo');
+            const progressBar = document.getElementById('progress-bar-archivo');
+
+            if (btnAbrirArchivoFile) {
+                btnAbrirArchivoFile.addEventListener('click', function() {
+                    nuevoArchivoFile.click();
+                });
+            }
+
+            if (nuevoArchivoFile) {
+                nuevoArchivoFile.addEventListener('change', function() {
+                    const file = this.files[0];
+                    const nombre = nuevoArchivoNombre.value.trim();
+                    
+                    if (!file) return;
+                    
+                    if (!nombre) {
+                        alert('Por favor ingrese un nombre para el archivo');
+                        return;
+                    }
+
+                    // Mostrar barra de progreso
+                    progressContainer.style.display = 'block';
+                    progressBar.style.width = '0%';
+                    progressBar.textContent = '0%';
+
+                    // Crear FormData
+                    const formData = new FormData();
+                    formData.append('archivo', file);
+                    formData.append('nombre', nombre);
+                    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+                    // Realizar upload
+                    const xhr = new XMLHttpRequest();
+                    
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percentComplete = (e.loaded / e.total) * 100;
+                            progressBar.style.width = percentComplete + '%';
+                            progressBar.textContent = Math.round(percentComplete) + '%';
+                        }
+                    });
+
+                    xhr.addEventListener('load', function() {
+                        if (xhr.status === 200) {
+                            // Recargar la página para mostrar el nuevo archivo
+                            location.reload();
+                        } else {
+                            alert('Error al subir el archivo');
+                            progressContainer.style.display = 'none';
+                        }
+                    });
+
+                    xhr.addEventListener('error', function() {
+                        alert('Error al subir el archivo');
+                        progressContainer.style.display = 'none';
+                    });
+
+                    // Enviar la petición a la misma URL de la página
+                    xhr.open('POST', window.location.href);
+                    xhr.send(formData);
+                });
+            }
+        });
+    </script>
 {% endblock %}

@@ -22,6 +22,12 @@ from admisiones.models.admisiones import (
     InformeComplementario,
 )
 from admisiones.services.admisiones_service import AdmisionService
+from admisiones.services.admisiones_filter_config import (
+    get_filters_ui_config as get_tecnicos_filters_ui_config,
+)
+from admisiones.services.legales_filter_config import (
+    get_filters_ui_config as get_legales_filters_ui_config,
+)
 from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
 from django.views.generic.edit import FormMixin
@@ -234,7 +240,7 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return AdmisionService.get_admisiones_tecnicos_queryset(
-            self.request.user, self.request.GET.get("busqueda", "")
+            self.request.user, self.request
         )
 
     def get_context_data(self, **kwargs):
@@ -246,19 +252,23 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
 
         context.update(
             {
-                "query": self.request.GET.get("busqueda", ""),
                 "breadcrumb_items": [
                     {"name": "Admisiones", "url": "admisiones_tecnicos_listar"},
                     {"name": "Listar", "active": True},
                 ],
+                "reset_url": reverse("admisiones_tecnicos_listar"),
+                "filters_mode": True,
+                "filters_config": get_tecnicos_filters_ui_config(),
+                "filters_action": reverse("admisiones_tecnicos_listar"),
+                "titulo_busqueda": "Admisiones - Equipos técnicos",
                 "table_headers": [
-                    {"title": "ID"},
+                    {"title": "ID Comedor"},
+                    {"title": "Tipo"},
                     {"title": "Nombre"},
                     {"title": "Organización"},
                     {"title": "N° Expediente"},
                     {"title": "Provincia"},
-                    {"title": "Dupla"},
-                    {"title": "Tipo"},
+                    {"title": "Equipo técnico"},
                     {"title": "Estado"},
                     {"title": "Última Modificación"},
                 ],
@@ -337,7 +347,11 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 "estado",
                 "tipo_convenio",
             )
-            .prefetch_related("comedor__dupla__tecnico", "historial__usuario")
+            .prefetch_related(
+                "comedor__dupla__tecnico",
+                "historial__usuario",
+                "historial_estados__usuario",
+            )
         )
         return queryset
 
@@ -352,6 +366,12 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         admision = self.object
         comedor = admision.comedor
+        def _format_datetime(value):
+            if not value:
+                return "-"
+            if timezone.is_aware(value):
+                value = timezone.localtime(value)
+            return value.strftime("%d/%m/%Y %H:%M")
 
         dupla = getattr(comedor, "dupla", None)
         if dupla:
@@ -425,6 +445,19 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         historial_paginator = Paginator(historial_records, 10)
         historial_page = historial_paginator.get_page(historial_page_number)
 
+        # Historial de estados de admisión
+        historial_estados_records = list(
+            admision.historial_estados.select_related("usuario").order_by("-fecha")
+        )
+        historial_estados_page_param = "historial_estados_page"
+        historial_estados_page_number = (
+            self.request.GET.get(historial_estados_page_param) or 1
+        )
+        historial_estados_paginator = Paginator(historial_estados_records, 10)
+        historial_estados_page = historial_estados_paginator.get_page(
+            historial_estados_page_number
+        )
+
         historial_headers = [
             {"title": "Fecha"},
             {"title": "Usuario"},
@@ -432,6 +465,14 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             {"title": "Valor nuevo"},
             {"title": "Valor anterior"},
         ]
+
+        historial_estados_headers = [
+            {"title": "Fecha"},
+            {"title": "Estado nuevo"},
+            {"title": "Estado anterior"},
+            {"title": "Usuario"},
+        ]
+
         historial_items = []
         for record in historial_page.object_list:
             usuario = record.usuario
@@ -446,15 +487,48 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                     "cells": [
                         {
                             "content": (
-                                record.fecha.strftime("%d/%m/%Y %H:%M")
-                                if record.fecha
-                                else "-"
+                                _format_datetime(record.fecha)
                             )
                         },
                         {"content": usuario_display or "-"},
                         {"content": record.campo or "-"},
                         {"content": record.valor_nuevo or "-"},
                         {"content": record.valor_anterior or "-"},
+                    ]
+                }
+            )
+
+        historial_estados_items = []
+        from admisiones.templatetags.estado_filters import format_estado
+
+        for record in historial_estados_page.object_list:
+            usuario = record.usuario
+            usuario_display = (
+                getattr(usuario, "get_full_name", lambda: "")()
+                or getattr(usuario, "username", None)
+                if usuario
+                else "-"
+            )
+
+            # Aplicar formato a los estados
+            estado_anterior_formatted = (
+                format_estado(record.estado_anterior) if record.estado_anterior else "-"
+            )
+            estado_nuevo_formatted = (
+                format_estado(record.estado_nuevo) if record.estado_nuevo else "-"
+            )
+
+            historial_estados_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": (
+                                _format_datetime(record.fecha)
+                            )
+                        },
+                        {"content": estado_nuevo_formatted},
+                        {"content": estado_anterior_formatted},
+                        {"content": usuario_display or "-"},
                     ]
                 }
             )
@@ -492,6 +566,11 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 "admision_historial_page_obj": historial_page,
                 "admision_historial_is_paginated": historial_page.has_other_pages(),
                 "admision_historial_page_param": historial_page_param,
+                "historial_estados_headers": historial_estados_headers,
+                "historial_estados_items": historial_estados_items,
+                "historial_estados_page_obj": historial_estados_page,
+                "historial_estados_is_paginated": historial_estados_page.has_other_pages(),
+                "historial_estados_page_param": historial_estados_page_param,
             }
         )
 
@@ -547,6 +626,32 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
 
             messages.success(request, "La admisión ha sido cerrada forzadamente.")
             return redirect(request.path_info)
+
+        # Manejar carga de archivos adicionales
+        if request.FILES.get("archivo") or request.POST.get("nombre"):
+            if not (request.FILES.get("archivo") and request.POST.get("nombre")):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "El archivo y el nombre son obligatorios.",
+                    },
+                    status=400,
+                )
+
+            admision = self.get_object()
+            archivo = request.FILES.get("archivo")
+            nombre = request.POST.get("nombre")
+
+            archivo_admision, error = AdmisionService.crear_documento_personalizado(
+                admision.id, nombre, archivo, request.user
+            )
+
+            if archivo_admision:
+                return JsonResponse({"success": True})
+            return JsonResponse(
+                {"success": False, "error": error or "Error al subir archivo"},
+                status=400,
+            )
 
         return super().get(request, *args, **kwargs)
 
@@ -606,7 +711,11 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
         action = self.request.POST.get("action")
 
         resultado = InformeService.guardar_informe(
-            form, self.admision_obj, es_creacion=True, action=action
+            form,
+            self.admision_obj,
+            es_creacion=True,
+            action=action,
+            usuario=self.request.user,
         )
 
         if not resultado.get("success"):
@@ -696,6 +805,7 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
             form.instance.admision,
             es_creacion=False,
             action=self.request.POST.get("action"),
+            usuario=self.request.user,
         )
 
         if not resultado.get("success"):
@@ -771,18 +881,38 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return LegalesService.get_admisiones_legales_filtradas(
-            self.request.GET.get("busqueda", ""), self.request.user
+            self.request, self.request.user
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        table_items = LegalesService.get_admisiones_legales_table_data(
+            context["admisiones"]
+        )
+
         context.update(
             {
-                "query": self.request.GET.get("busqueda", ""),
                 "breadcrumb_items": [
                     {"name": "Expedientes", "url": "admisiones_legales_listar"},
                     {"name": "Listar", "active": True},
                 ],
+                "reset_url": reverse("admisiones_legales_listar"),
+                "filters_mode": True,
+                "filters_config": get_legales_filters_ui_config(),
+                "filters_action": reverse("admisiones_legales_listar"),
+                "titulo_busqueda": "Expedientes - Legales",
+                "table_headers": [
+                    {"title": "ID Comedor"},
+                    {"title": "Tipo"},
+                    {"title": "Nombre"},
+                    {"title": "Organización"},
+                    {"title": "N° Expediente"},
+                    {"title": "Provincia"},
+                    {"title": "Equipo técnico"},
+                    {"title": "Estado"},
+                    {"title": "Última Modificación"},
+                ],
+                "table_items": table_items,
             }
         )
         return context
