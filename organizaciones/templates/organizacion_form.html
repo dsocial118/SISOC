@@ -6,13 +6,219 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    {% include 'components/action_buttons.html' with back_button=back_button buttons=action_buttons button_group=True %}
-    {% include 'components/form_card.html' with title="Datos de la organización" %}
+    <!-- CSS Moderno para formularios -->
+    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            {% if object.id %}
+                <a href="{% url 'organizacion_detalle' object.id %}" class="btn btn-secondary">Volver</a>
+            {% else %}
+                <a href="{% url 'organizaciones' %}" class="btn btn-secondary">Volver</a>
+            {% endif %}
+        </div>
+        <div>
+            <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </div>
+
+    <div class="row comedor-form">
+        <div class="col-12">
+            <form method="post" id="organizacionForm" class="w-100" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Indicador de progreso global -->
+                <div class="progress-indicator">
+                    <div class="progress-header">
+                        <h4 class="progress-title">
+                            <i class="fas fa-clipboard-check mr-2"></i>
+                            Progreso del Formulario
+                        </h4>
+                        <span class="progress-stats">
+                            <span id="completedSections">0</span>/4 secciones completadas
+                        </span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Sección 1: Información Básica -->
+                <div class="section-card" data-section="basic">
+                    <div class="section-header" onclick="toggleSection('basic')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Información Básica</h3>
+                                <p class="section-subtitle">Datos generales de la organización</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-basic">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-basic">
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.cuit|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">CUIT de 11 dígitos</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.tipo_entidad|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.subtipo_entidad|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Contacto -->
+                <div class="section-card" data-section="contacto">
+                    <div class="section-header" onclick="toggleSection('contacto')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-phone-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Contacto</h3>
+                                <p class="section-subtitle">Datos de comunicación</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-contacto">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-contacto">
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.telefono|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.email|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 3: Ubicación -->
+                <div class="section-card" data-section="ubicacion">
+                    <div class="section-header" onclick="toggleSection('ubicacion')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Ubicación y Domicilio</h3>
+                                <p class="section-subtitle">Datos de geolocalización y dirección</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-ubicacion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-ubicacion">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                            <div class="col-md-4">
+                                <div id="municipio-loader" class="skeleton-loader d-none"></div>
+                                <div id="municipio-field">{{ form.municipio|as_crispy_field }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="localidad-loader" class="skeleton-loader d-none"></div>
+                                <div id="localidad-field">{{ form.localidad|as_crispy_field }}</div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.partido|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.domicilio|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 4: Vigencia -->
+                <div class="section-card" data-section="vigencia">
+                    <div class="section-header" onclick="toggleSection('vigencia')">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Vigencia</h3>
+                                <p class="section-subtitle">Fecha de vencimiento de la organización</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-vigencia">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-vigencia">
+                        <div class="form-group row">
+                            <div class="col-md-6">
+                                {{ form.fecha_vencimiento|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Fecha de vencimiento del convenio o acuerdo</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones sticky -->
+                <div class="sticky-actions">
+                    <div>
+                        {% if object.id %}
+                            <a href="{% url 'organizacion_detalle' object.id %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i> Volver
+                            </a>
+                        {% else %}
+                            <a href="{% url 'organizaciones' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left mr-1"></i> Volver
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <button type="button" onclick="window.history.back();" class="btn btn-secondary mr-2">
+                            <i class="fas fa-times mr-1"></i> Cancelar
+                        </button>
+                        <button class="btn btn-success" type="submit">
+                            <i class="fas fa-save mr-1"></i> Guardar organización
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}
 {% block customJS %}
+    <!-- URLs de Django para AJAX -->
     <script>
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
+
+    <!-- Scripts externos -->
+    <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
     <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
 {% endblock %}
