@@ -11,7 +11,7 @@ from django.urls import reverse
 import logging
 from io import BytesIO
 import tempfile
-from datetime import date
+from datetime import date, datetime
 
 from django.core.files.base import ContentFile
 from django.utils.html import strip_tags
@@ -87,7 +87,7 @@ def normalizar(texto):
 def _format_datetime(value, fmt):
     if not value:
         return "-"
-    if timezone.is_aware(value):
+    if isinstance(value, datetime) and timezone.is_aware(value):
         value = timezone.localtime(value)
     return value.strftime(fmt)
 
