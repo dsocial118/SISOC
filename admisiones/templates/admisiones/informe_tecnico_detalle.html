@@ -19,7 +19,7 @@
                    class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
             </div>
             <div class="col-auto">
-                {% if request.user|has_group:"Abogado Dupla" %}
+                {% if request.user|has_group:"Abogado Dupla" or request.user.is_superuser %}
                     {% if object.estado != "Validado" %}
                         <a href="#"
                            class="btn btn-primary mr-1"
@@ -44,15 +44,17 @@
                             <h6 class="mb-1">{{ nombre }}</h6>
                             <p class="mb-1">{{ valor }}</p>
                         </div>
-                        {% if request.user|has_group:"Abogado Dupla" and object.estado != "Validado" %}
-                            <div class="form-check">
-                                <input class="form-check-input campo-subsanar"
-                                       type="checkbox"
-                                       name="campos_subsanar"
-                                       value="{{ nombre }}"
-                                       id="check_{{ forloop.counter }}" />
-                                <label class="form-check-label" for="check_{{ forloop.counter }}">Subsanar</label>
-                            </div>
+                        {% if object.estado != "Validado" %}
+                            {% if request.user|has_group:"Abogado Dupla" or request.user.is_superuser %}
+                                <div class="form-check">
+                                    <input class="form-check-input campo-subsanar"
+                                           type="checkbox"
+                                           name="campos_subsanar"
+                                           value="{{ nombre }}"
+                                           id="check_{{ forloop.counter }}" />
+                                    <label class="form-check-label" for="check_{{ forloop.counter }}">Subsanar</label>
+                                </div>
+                            {% endif %}
                         {% endif %}
                     </div>
                 {% endfor %}
