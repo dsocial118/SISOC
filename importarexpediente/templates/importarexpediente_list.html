@@ -15,9 +15,9 @@
     {% url 'importarexpedientes_ajax' as ajax_url %}
     {% include 'components/search_bar.html' with titulo='Buscar Importar Expediente' placeholder='Buscar por Usuario' help_text='Ingresar Usuario.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
     <div class="action-buttons">
-        <a href="{% url 'upload'%}"
-            class="btn btn-primary"
-            title="Importar Nuevo Archivo">
+        <a href="{% url 'upload' %}"
+           class="btn btn-primary"
+           title="Importar Nuevo Archivo">
             <i class="fas fa-upload"></i>
             Importar Nuevo Archivo
         </a>
