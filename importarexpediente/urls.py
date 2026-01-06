@@ -3,6 +3,8 @@ from .views import (
     ImportExpedientesView,
     ImportarExpedienteListView,
     ImportarExpedienteDetalleListView,
+    importarexpedientes_ajax,
+    importarexpediente_detail_ajax,
     ImportDatosView,
     BorrarDatosImportadosView,
 )
@@ -15,9 +17,19 @@ urlpatterns = [
         name="importarexpedientes_list",
     ),
     path(
+        "importarexpedientes/ajax/",
+        importarexpedientes_ajax,
+        name="importarexpedientes_ajax",
+    ),
+    path(
         "importarexpedientes/<int:id_archivo>/",
         ImportarExpedienteDetalleListView.as_view(),
         name="importarexpediente_detail",
+    ),
+    path(
+        "importarexpedientes/<int:id_archivo>/ajax/",
+        importarexpediente_detail_ajax,
+        name="importarexpediente_detail_ajax",
     ),
     path(
         "importarexpedientes/<int:id_archivo>/importar_datos/",

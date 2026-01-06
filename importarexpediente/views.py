@@ -8,9 +8,12 @@ from django.urls import reverse_lazy
 from django.db import transaction
 from django.contrib import messages
 from django.shortcuts import redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
-from django.http import Http404
+from django.http import Http404, JsonResponse
+from django.core.paginator import Paginator
+from django.template.loader import render_to_string
 from django.db.models import Max, Subquery
 from django.db.models import OuterRef, Q, Count
 from django.db.models.functions import Coalesce
@@ -329,13 +332,68 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
         )
         query = self.request.GET.get("busqueda", "").strip()
         if query:
-            qs = qs.filter(archivo__icontains=query)
+            qs = qs.filter(
+                Q(archivo__icontains=query) | Q(usuario__username__icontains=query)
+            )
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
         return context
+
+
+@login_required
+def importarexpedientes_ajax(request):
+    """
+    Endpoint AJAX para búsqueda dinámica de importaciones.
+    """
+    query = request.GET.get("busqueda", "").strip()
+    page = request.GET.get("page", 1)
+
+    queryset = ArchivosImportados.objects.select_related("usuario").order_by(
+        "-fecha_subida"
+    )
+    if query:
+        queryset = queryset.filter(
+            Q(archivo__icontains=query) | Q(usuario__username__icontains=query)
+        )
+
+    paginator = Paginator(queryset, 10)
+    try:
+        page_obj = paginator.get_page(page)
+    except (ValueError, TypeError):
+        page_obj = paginator.get_page(1)
+
+    table_html = render_to_string(
+        "partials/importarexpediente_list_rows.html",
+        {"importarexpedientes": page_obj.object_list},
+        request=request,
+    )
+
+    pagination_html = render_to_string(
+        "components/pagination.html",
+        {
+            "is_paginated": page_obj.has_other_pages(),
+            "page_obj": page_obj,
+            "query": query,
+            "prev_text": "Volver",
+            "next_text": "Continuar",
+        },
+        request=request,
+    )
+
+    return JsonResponse(
+        {
+            "html": table_html,
+            "pagination_html": pagination_html,
+            "count": paginator.count,
+            "current_page": page_obj.number,
+            "total_pages": paginator.num_pages,
+            "has_previous": page_obj.has_previous(),
+            "has_next": page_obj.has_next(),
+        }
+    )
 
 
 class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
@@ -354,16 +412,15 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         # Mostrar solo el archivo maestro correspondiente al id recibido en la URL
-        query = self.request.GET.get("busqueda")
+        query = self.request.GET.get("busqueda", "").strip()
+        queryset = ErroresImportacion.objects.filter(
+            archivo_importado_id=self.batch_id
+        ).order_by("fila")
         if query:
-            queryset = ErroresImportacion.objects.filter(
-                archivo_importado_id=self.batch_id
-            )
-            return queryset
-        else:
-            queryset = ErroresImportacion.objects.filter(
-                archivo_importado_id=self.batch_id
-            )
+            if query.isdigit():
+                queryset = queryset.filter(fila=int(query))
+            else:
+                queryset = queryset.filter(mensaje__icontains=query)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -379,6 +436,62 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         context["error_count"] = errores.count()
         context["exito_count"] = exitos.count()
         return context
+
+
+@login_required
+def importarexpediente_detail_ajax(request, id_archivo):
+    """
+    Endpoint AJAX para búsqueda dinámica de errores por lote.
+    """
+    query = request.GET.get("busqueda", "").strip()
+    page = request.GET.get("page", 1)
+
+    queryset = (
+        ErroresImportacion.objects.filter(archivo_importado_id=id_archivo)
+        .select_related("archivo_importado")
+        .order_by("fila")
+    )
+    if query:
+        if query.isdigit():
+            queryset = queryset.filter(fila=int(query))
+        else:
+            queryset = queryset.filter(mensaje__icontains=query)
+
+    paginator = Paginator(queryset, 20)
+    try:
+        page_obj = paginator.get_page(page)
+    except (ValueError, TypeError):
+        page_obj = paginator.get_page(1)
+
+    table_html = render_to_string(
+        "partials/importarexpediente_detail_rows.html",
+        {"importarexpedientes": page_obj.object_list},
+        request=request,
+    )
+
+    pagination_html = render_to_string(
+        "components/pagination.html",
+        {
+            "is_paginated": page_obj.has_other_pages(),
+            "page_obj": page_obj,
+            "query": query,
+            "prev_text": "Volver",
+            "next_text": "Continuar",
+        },
+        request=request,
+    )
+
+    return JsonResponse(
+        {
+            "html": table_html,
+            "pagination_html": pagination_html,
+            "count": paginator.count,
+            "current_page": page_obj.number,
+            "total_pages": paginator.num_pages,
+            "has_previous": page_obj.has_previous(),
+            "has_next": page_obj.has_next(),
+        }
+    )
 
 
 class ImportDatosView(LoginRequiredMixin, FormView):
