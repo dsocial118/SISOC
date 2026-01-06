@@ -387,9 +387,7 @@ class AdmisionService:
                             )
                         },
                         # Última Modificación
-                        {
-                            "content": _format_date(admision.modificado)
-                        },
+                        {"content": _format_date(admision.modificado)},
                     ],
                     "actions": actions,
                 }

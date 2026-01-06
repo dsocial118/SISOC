@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'importarexpedientes_ajax' as ajax_url %}
     {% include 'components/search_bar.html' with titulo='Buscar Errores' placeholder='Buscar por Fila' help_text='Ingresar una Fila.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
-    
+ 
     <div class="row text-center mb-3">
         <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
             <div class="info-card bg-card">
@@ -54,28 +54,32 @@
         <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
             <div class="row">
                 <div class="col-12">
-                <div class="action-buttons d-flex gap-2">
-                    <form method="post" action="{% url 'importar_datos' batch_id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit"
-                                class="btn btn-primary flex-grow-1"
-                                title="Importar datos"
-                                onclick="return confirm('¿Confirmar importación del lote?');">
-                            <i class="fas fa-upload"></i>
-                            Importar
-                        </button>
-                    </form>
-                    <form method="post" action="{% url 'borrar_datos_importados' batch_id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit"
-                                class="btn btn-danger flex-grow-1"
-                                title="Borrar datos"
-                                onclick="return confirm('¿Confirmar borrado de datos importados del lote?');">
-                            <i class="fas fa-trash"></i>
-                            Borrar
-                        </button>
-                    </form>
-                </div>
+                    <div class="action-buttons d-flex gap-2">
+                        <form method="post"
+                              action="{% url 'importar_datos' batch_id %}"
+                              class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-primary flex-grow-1"
+                                    title="Importar datos"
+                                    onclick="return confirm('¿Confirmar importación del lote?');">
+                                <i class="fas fa-upload"></i>
+                                Importar
+                            </button>
+                        </form>
+                        <form method="post"
+                              action="{% url 'borrar_datos_importados' batch_id %}"
+                              class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="btn btn-danger flex-grow-1"
+                                    title="Borrar datos"
+                                    onclick="return confirm('¿Confirmar borrado de datos importados del lote?');">
+                                <i class="fas fa-trash"></i>
+                                Borrar
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

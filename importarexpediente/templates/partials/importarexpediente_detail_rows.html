@@ -6,9 +6,7 @@
                class="font-weight-bold link-handler"
                title="Ver detalles">{{ expediente.archivo_importado }}</a>
         </td>
-        <td data-telefono="{{ expediente.telefono|default:'' }}">
-            {{ expediente.fila | default_if_none:"Sin información" }}
-        </td>
+        <td data-telefono="{{ expediente.telefono|default:'' }}">{{ expediente.fila | default_if_none:"Sin información" }}</td>
         <td data-email="{{ expediente.email|default:'' }}">{{ expediente.mensaje | default_if_none:"Sin información" }}</td>
     </tr>
 {% empty %}

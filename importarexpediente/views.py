@@ -7,11 +7,9 @@ from django.views.generic import FormView
 from django.urls import reverse_lazy
 from django.db import transaction
 from django.contrib import messages
-from django.shortcuts import redirect,get_object_or_404
+from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import (
-    ListView
-)
+from django.views.generic import ListView
 from django.http import Http404
 from django.db.models import Max, Subquery
 from django.db.models import OuterRef, Q, Count
@@ -27,6 +25,7 @@ from .models import (
 )
 
 import logging
+
 logger = logging.getLogger("django")
 
 
@@ -111,12 +110,13 @@ class ImportExpedientesView(FormView):
         except Exception:
             return None
 
-    
     def form_valid(self, form):
         f = form.cleaned_data["file"]
         delim = form.cleaned_data["delimiter"]
         has_header = form.cleaned_data["has_header"]
-        logger.error(f"[IMPORT] Inicio form_valid: delimiter='{delim}' has_header={has_header}")
+        logger.error(
+            f"[IMPORT] Inicio form_valid: delimiter='{delim}' has_header={has_header}"
+        )
         # 1) Guardar el archivo subido una sola vez (registro "maestro")
         try:
             try:
@@ -127,7 +127,9 @@ class ImportExpedientesView(FormView):
             base_upload.archivo.save(f.name, f, save=True)
             # Identificador único del lote = PK del maestro (si el modelo tiene el campo id_archivo, lo seteamos)
             batch_id = base_upload.pk
-            logger.error(f"[IMPORT] Archivo guardado. batch_id={batch_id} nombre={getattr(base_upload.archivo, 'name', None)}")
+            logger.error(
+                f"[IMPORT] Archivo guardado. batch_id={batch_id} nombre={getattr(base_upload.archivo, 'name', None)}"
+            )
             if hasattr(base_upload, "id_archivo"):
                 base_upload.id_archivo = batch_id
                 base_upload.save(update_fields=["id_archivo"])
@@ -195,7 +197,9 @@ class ImportExpedientesView(FormView):
         for h in headers:
             key = h.replace('"', "").replace("'", "").strip().lower()
             mapped.append(HEADER_MAP.get(key, None))
-        logger.error(f"[IMPORT] Mapeo de cabeceras -> campos: {list(zip(headers, mapped))}")
+        logger.error(
+            f"[IMPORT] Mapeo de cabeceras -> campos: {list(zip(headers, mapped))}"
+        )
         no_mapeadas = [h for (h, m) in zip(headers, mapped) if m is None]
         if no_mapeadas:
             logger.error(f"[IMPORT] Cabeceras sin mapeo: {no_mapeadas}")
@@ -218,26 +222,36 @@ class ImportExpedientesView(FormView):
                 try:
                     for col_idx, cell in enumerate(row):
                         field = mapped[col_idx]
-                        logger.error(f"[IMPORT] Fila {i}, Col {col_idx}: header='{headers[col_idx]}' -> campo='{field}' valor='{cell}'")
+                        logger.error(
+                            f"[IMPORT] Fila {i}, Col {col_idx}: header='{headers[col_idx]}' -> campo='{field}' valor='{cell}'"
+                        )
                         if not field:
                             continue
                         val = (cell or "").strip()
                         if field == "monto":
                             parsed = self.parse_decimal(val)
                             kwargs[field] = parsed
-                            logger.error(f"[IMPORT] Fila {i}, Col {col_idx}: monto parseado='{parsed}'")
+                            logger.error(
+                                f"[IMPORT] Fila {i}, Col {col_idx}: monto parseado='{parsed}'"
+                            )
                         elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
                             parsed = self.parse_date(val)
                             kwargs[field] = parsed
-                            logger.error(f"[IMPORT] Fila {i}, Col {col_idx}: fecha parseada='{parsed}'")
+                            logger.error(
+                                f"[IMPORT] Fila {i}, Col {col_idx}: fecha parseada='{parsed}'"
+                            )
                         elif field == "comedor":
                             resolved_comedor = self.resolve_comedor(val)
                             if resolved_comedor is not None:
                                 comedor_obj = resolved_comedor
-                            logger.error(f"[IMPORT] Fila {i}: Resuelto comedor '{val}' -> {resolved_comedor}")
+                            logger.error(
+                                f"[IMPORT] Fila {i}: Resuelto comedor '{val}' -> {resolved_comedor}"
+                            )
                         else:
                             kwargs[field] = val or None
-                            logger.error(f"[IMPORT] Fila {i}, Col {col_idx}: set {field}='{kwargs[field]}'")
+                            logger.error(
+                                f"[IMPORT] Fila {i}, Col {col_idx}: set {field}='{kwargs[field]}'"
+                            )
 
                     if comedor_obj:
                         kwargs["comedor"] = comedor_obj
@@ -281,10 +295,12 @@ class ImportExpedientesView(FormView):
                 base_upload.save(update_fields=["count_errores", "count_exitos"])
             except Exception:
                 pass
-            logger.error(f"[IMPORT] Final: {success_count} éxitos, {error_count} errores")
+            logger.error(
+                f"[IMPORT] Final: {success_count} éxitos, {error_count} errores"
+            )
             messages.warning(
                 self.request,
-                f"Validación parcial: {success_count} filas válidas, {error_count} errores."
+                f"Validación parcial: {success_count} filas válidas, {error_count} errores.",
             )
         else:
             # Persistir contadores finales en el maestro
@@ -294,12 +310,13 @@ class ImportExpedientesView(FormView):
                 base_upload.save(update_fields=["count_errores", "count_exitos"])
             except Exception:
                 pass
-            logger.error(f"[IMPORT] Final: {success_count} éxitos, {error_count} errores")
-            messages.success(
-                self.request, f"{success_count} filas válidas."
+            logger.error(
+                f"[IMPORT] Final: {success_count} éxitos, {error_count} errores"
             )
+            messages.success(self.request, f"{success_count} filas válidas.")
         return redirect(self.success_url)
-    
+
+
 class ImportarExpedienteListView(LoginRequiredMixin, ListView):
     model = ArchivosImportados
     template_name = "importarexpediente_list.html"
@@ -307,25 +324,25 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        qs = (
-            ArchivosImportados.objects
-            .select_related("usuario")
-            .order_by("-fecha_subida")
+        qs = ArchivosImportados.objects.select_related("usuario").order_by(
+            "-fecha_subida"
         )
         query = self.request.GET.get("busqueda", "").strip()
         if query:
             qs = qs.filter(archivo__icontains=query)
         return qs
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["query"] = self.request.GET.get("busqueda", "")
         return context
-    
+
+
 class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
     """
     Lista todos los registros (maestro + errores) de un mismo lote (id_archivo).
     """
+
     model = ErroresImportacion
     template_name = "importarexpediente_detail.html"
     context_object_name = "registros_del_archivo"
@@ -339,10 +356,14 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         # Mostrar solo el archivo maestro correspondiente al id recibido en la URL
         query = self.request.GET.get("busqueda")
         if query:
-            queryset = ErroresImportacion.objects.filter(archivo_importado_id=self.batch_id)
+            queryset = ErroresImportacion.objects.filter(
+                archivo_importado_id=self.batch_id
+            )
             return queryset
         else:
-            queryset = ErroresImportacion.objects.filter(archivo_importado_id=self.batch_id)
+            queryset = ErroresImportacion.objects.filter(
+                archivo_importado_id=self.batch_id
+            )
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -358,14 +379,16 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         context["error_count"] = errores.count()
         context["exito_count"] = exitos.count()
         return context
-    
+
+
 class ImportDatosView(LoginRequiredMixin, FormView):
     """
     Vista para importar los datos validados en ExpedientePago.
     """
+
     template_name = "importar_datos.html"
     success_url = reverse_lazy("importarexpedientes_list")
-    
+
     def dispatch(self, request, *args, **kwargs):
         # Tomar el id desde la URL
         self.batch_id = int(self.kwargs.get("id_archivo"))
@@ -468,7 +491,9 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                                     except Comedor.DoesNotExist:
                                         resolved = None
                                 if resolved is None:
-                                    resolved = Comedor.objects.filter(nombre__iexact=r).first()
+                                    resolved = Comedor.objects.filter(
+                                        nombre__iexact=r
+                                    ).first()
                             if resolved is not None:
                                 comedor_obj = resolved
                         else:
@@ -503,7 +528,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                     error_count += 1
                     logger.error(f"[IMPORT] Fila {i} error al importar: {e}")
                     messages.error(request, f"Error al importar fila {i}: {e}")
-                    
+
         # Marcar el lote como importado si se creó al menos un registro
         try:
             if imported_count > 0:
@@ -527,15 +552,16 @@ class ImportDatosView(LoginRequiredMixin, FormView):
     # Permitir importación vía GET (desde el botón en el detalle)
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
-    
+
 
 class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
     """
     Vista para borrar los datos importados de un lote específico.
     """
+
     template_name = "borrar_datos_importados.html"
     success_url = reverse_lazy("importarexpedientes_list")
-    
+
     def dispatch(self, request, *args, **kwargs):
         # Tomar el id desde la URL
         self.batch_id = int(self.kwargs.get("id_archivo"))
@@ -545,9 +571,8 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
         # Usar el id de la URL
         batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
 
-        registros_qs = (
-            RegistroImportado.objects
-            .filter(exito_importacion__archivo_importado=batch)
+        registros_qs = RegistroImportado.objects.filter(
+            exito_importacion__archivo_importado=batch
         )
         # Capturar los IDs de expedientes antes de borrar los registros
         expediente_ids = list(registros_qs.values_list("expediente_pago_id", flat=True))
@@ -556,7 +581,9 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
             # Primero borrar los registros hijos para respetar las FK (DO_NOTHING)
             reg_deleted, _ = registros_qs.delete()
             # Luego borrar los expedientes creados por el lote
-            exp_deleted, _ = ExpedientePago.objects.filter(id__in=expediente_ids).delete()
+            exp_deleted, _ = ExpedientePago.objects.filter(
+                id__in=expediente_ids
+            ).delete()
 
         # Resetear el estado de importación del lote
         try:
