@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
-    {% url 'importarexpedientes_ajax' as ajax_url %}
+    {% url 'importarexpediente_detail_ajax' batch_id as ajax_url %}
     {% include 'components/search_bar.html' with titulo='Buscar Errores' placeholder='Buscar por Fila' help_text='Ingresar una Fila.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
  
     <div class="row text-center mb-3">
