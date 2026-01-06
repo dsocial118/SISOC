@@ -1,4 +1,3 @@
-import io
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -37,9 +36,9 @@ class ImportarExpedienteViewsTests(TestCase):
         def side_effect():
             # Usar un contador externo vía attribute
             if not hasattr(mock_full_clean, "_calls"):
-                mock_full_clean._calls = 0
+                mock_full_clean._calls = 0  # pylint: disable=protected-access
             mock_full_clean._calls += 1
-            if mock_full_clean._calls == 2:
+            if mock_full_clean._calls == 2:  # pylint: disable=protected-access
                 raise ValidationError("Fila inválida en prueba")
 
         mock_full_clean.side_effect = side_effect
