@@ -1,4 +1,5 @@
 from unittest.mock import patch
+
 """
 Legacy tests relocated to importarexpediente/tests/.
 This placeholder prevents pytest from collecting this module.

@@ -4,7 +4,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from comedores.models import Comedor
-from importarexpediente.models import ArchivosImportados, ErroresImportacion, ExitoImportacion
+from importarexpediente.models import (
+    ArchivosImportados,
+    ErroresImportacion,
+    ExitoImportacion,
+)
 
 User = get_user_model()
 
@@ -32,7 +36,9 @@ def tmp_media(settings, tmp_path):
 def test_upload_without_header_is_rejected(client_logged, tmp_media):
     comedor = Comedor.objects.create(nombre="C")
     content = "EXP,Comedor,ID\nX,Anexo,{}\n".format(comedor.pk)
-    uploaded = SimpleUploadedFile("x.csv", content.encode("utf-8"), content_type="text/csv")
+    uploaded = SimpleUploadedFile(
+        "x.csv", content.encode("utf-8"), content_type="text/csv"
+    )
 
     resp = client_logged.post(
         reverse("upload"),
@@ -52,7 +58,9 @@ def test_upload_with_invalid_dates_and_amounts_creates_error(client_logged, tmp_
         "Expediente,Comedor,ID,Monto,Fecha pago al banco\n"
         "EXP-ERR,Anexo Norte,9999,ABC,31/31/2024\n"
     )
-    uploaded = SimpleUploadedFile("bad.csv", content.encode("utf-8"), content_type="text/csv")
+    uploaded = SimpleUploadedFile(
+        "bad.csv", content.encode("utf-8"), content_type="text/csv"
+    )
 
     resp = client_logged.post(
         reverse("upload"),
