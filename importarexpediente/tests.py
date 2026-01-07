@@ -1,14 +1,10 @@
-from unittest.mock import patch
-
 """
 Legacy tests relocated to importarexpediente/tests/.
 This placeholder prevents pytest from collecting this module.
 """
 
+from unittest.mock import patch
 import pytest
-
-
-pytestmark = pytest.mark.skip(reason="Legacy tests moved; skip module collection.")
 from django.test import TestCase
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -23,6 +19,9 @@ from importarexpediente.models import (
 )
 from comedores.models import Comedor
 from expedientespagos.models import ExpedientePago
+
+
+pytestmark = pytest.mark.skip(reason="Legacy tests moved; skip module collection.")
 
 
 User = get_user_model()
