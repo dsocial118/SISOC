@@ -17,9 +17,9 @@ from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.db.models import Q
 from django.core.exceptions import ValidationError
-from importarexpediente.forms import CSVUploadForm
 from expedientespagos.models import ExpedientePago
 from comedores.models import Comedor
+from importarexpediente.forms import CSVUploadForm
 from importarexpediente.models import (
     ArchivosImportados,
     ErroresImportacion,
@@ -144,6 +144,7 @@ class ImportExpedientesView(FormView):
         except Exception:
             return None
 
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def form_valid(self, form):
         f = form.cleaned_data["file"]
         delim = form.cleaned_data["delimiter"]
@@ -221,7 +222,7 @@ class ImportExpedientesView(FormView):
         for h in headers:
             key = h.replace('"', "").replace("'", "").strip().lower()
             mapped.append(HEADER_MAP.get(key, None))
-        no_mapeadas = [h for (h, m) in zip(headers, mapped) if m is None]
+        # Nota: cabeceras no mapeadas se omiten si no son requeridas en la importación
 
         success_count = 0
         error_count = 0
@@ -260,13 +261,10 @@ class ImportExpedientesView(FormView):
 
                     # Validar sin guardar en ExpedientePago
                     inst = ExpedientePago(**kwargs)
-                    try:
-                        inst.full_clean()  # si falla, cae al except
-                    except Exception as ve:
-                        raise
+                    inst.full_clean()  # si falla, cae al except general
 
                     # Registrar éxito (no se persiste ExpedientePago)
-                    exito = ExitoImportacion.objects.create(
+                    ExitoImportacion.objects.create(
                         archivo_importado=base_upload,
                         fila=i,
                         mensaje="Fila válida",
@@ -498,6 +496,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         self.batch_id = int(self.kwargs.get("id_archivo"))
         return super().dispatch(request, *args, **kwargs)
 
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-nested-blocks
     def post(self, request, *args, **kwargs):
         # Usar el id de la URL
         batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
