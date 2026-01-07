@@ -546,7 +546,7 @@
                 </li>
             {% endif %}
             <!-- CENTRO DE FAMILIA -->
-            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" %}
+            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or request.user|has_group:"CDF SSE" %}
                 <li class="nav-item {% if 'centros' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot {% if 'centros' in pagina_actual %}active{% endif %} ms-2">

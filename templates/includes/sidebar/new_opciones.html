@@ -125,7 +125,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or user %}
+            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or request.user|has_group:"CDF SSE" %}
                 <li class="nav-item">
                     <a href="{% url 'centro_list' %}"
                        class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %}">
