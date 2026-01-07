@@ -31,3 +31,13 @@ class AdmisionServiceTest(TestCase):
 
         admisiones_ids = list(queryset.values_list("id", flat=True))
         self.assertEqual(admisiones_ids, [self.admision.id])
+
+    def test_table_data_removes_duplicate_admisiones(self):
+        queryset = AdmisionService.get_admisiones_tecnicos_queryset(self.abogado)
+        duplicated = list(queryset) + list(queryset)
+
+        table_items = AdmisionService.get_admisiones_tecnicos_table_data(
+            duplicated, self.abogado
+        )
+
+        self.assertEqual(len(table_items), 1)
