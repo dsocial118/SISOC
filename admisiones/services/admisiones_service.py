@@ -285,6 +285,7 @@ class AdmisionService:
     @staticmethod
     def get_admisiones_tecnicos_table_data(admisiones, user):
         table_items = []
+        admisiones_ids = set()
 
         def _format_date(value):
             if not value:
@@ -384,9 +385,7 @@ class AdmisionService:
                             )
                         },
                         # Última Modificación
-                        {
-                            "content": _format_date(admision.modificado)
-                        },
+                        {"content": _format_date(admision.modificado)},
                     ],
                     "actions": actions,
                 }
