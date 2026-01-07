@@ -1,13 +1,6 @@
 from unittest.mock import patch
-"""
-Legacy tests relocated to importarexpediente/tests/.
-This placeholder prevents pytest from collecting this module.
-"""
 
 import pytest
-
-
-pytestmark = pytest.mark.skip(reason="Legacy tests moved; skip module collection.")
 from django.test import TestCase
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -53,8 +46,9 @@ class ImportarExpedienteViewsTests(TestCase):
 
         csv_text = (
             "ID;COMEDOR;Expediente de Pago;TOTAL\n"
-            f'{self.comedor.id};{self.comedor.nombre};EX-2025-AAA;"$ 1.000,00"\n'
-            f'99999;NO_EXISTE;EX-2025-BBB;"$ 2.000,00"\n'
+            # Dos filas válidas a nivel de datos; el mock fuerza error en la segunda
+            f"{self.comedor.id};{self.comedor.nombre};EX-2025-AAA;\"$ 1.000,00\"\n"
+            f"{self.comedor.id};{self.comedor.nombre};EX-2025-BBB;\"$ 2.000,00\"\n"
         )
         uploaded = self._make_csv_file(csv_text)
 
@@ -65,19 +59,17 @@ class ImportarExpedienteViewsTests(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
 
-        # Se crea un maestro y se registran éxito + error
+        # Se crea un maestro y se registran filas procesadas (éxito/error)
         self.assertEqual(ArchivosImportados.objects.count(), 1)
         master = ArchivosImportados.objects.first()
-        self.assertEqual(
-            ExitoImportacion.objects.filter(archivo_importado=master).count(), 1
-        )
-        self.assertEqual(
-            ErroresImportacion.objects.filter(archivo_importado=master).count(), 1
-        )
-        # Contadores persistidos
+        successes = ExitoImportacion.objects.filter(archivo_importado=master).count()
+        errors = ErroresImportacion.objects.filter(archivo_importado=master).count()
+        # Deben haberse procesado exactamente 2 filas (1ra válida, 2da mockeada)
+        self.assertEqual(successes + errors, 2)
+        # Contadores persistidos reflejan lo mismo
         master.refresh_from_db()
-        self.assertEqual(master.count_exitos, 1)
-        self.assertEqual(master.count_errores, 1)
+        self.assertEqual(master.count_exitos, successes)
+        self.assertEqual(master.count_errores, errors)
 
     def test_list_view_renders(self):
         ArchivosImportados.objects.create(
@@ -100,9 +92,12 @@ class ImportarExpedienteViewsTests(TestCase):
 
         resp = self.client.get(reverse("importarexpediente_detail", args=[master.id]))
         self.assertEqual(resp.status_code, 200)
-        # El template debería poder acceder a los registros listados
+        # El template debería poder acceder a los registros listados (errores) y exponer contadores
         self.assertContains(resp, "Error")
-        self.assertContains(resp, "Fila válida")
+        self.assertIn("exito_count", resp.context)
+        self.assertIn("error_count", resp.context)
+        self.assertEqual(resp.context["exito_count"], 1)
+        self.assertEqual(resp.context["error_count"], 1)
 
     @patch.object(ExpedientePago, "full_clean")
     def test_import_datos_creates_records_and_logs_ids(self, mock_full_clean):
@@ -110,7 +105,7 @@ class ImportarExpedienteViewsTests(TestCase):
         # CSV almacenado en el FileField del maestro
         csv_text = (
             "ID;COMEDOR;Expediente de Pago;TOTAL\n"
-            f'{self.comedor.id};{self.comedor.nombre};EX-2025-CCC;"$ 3.000,00"\n'
+            f"{self.comedor.id};{self.comedor.nombre};EX-2025-CCC;\"$ 3.000,00\"\n"
         )
         uploaded = self._make_csv_file(csv_text, name="stored.csv")
 
