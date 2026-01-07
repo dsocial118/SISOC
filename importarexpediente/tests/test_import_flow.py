@@ -45,12 +45,14 @@ def _make_csv(comedor_pk):
     # Use comma delimiter and quote localized decimal to avoid column split
     content = (
         "Expediente,Comedor,ID,Monto,Fecha pago al banco,Fecha acreditacion,Numero Orden Pago,Observaciones\n"
-        f"EXP-001,Anexo Norte,{comedor_pk},\"1.234,56\",05/01/2024,10/01/2024,OP-9,Observación de prueba\n"
+        f'EXP-001,Anexo Norte,{comedor_pk},"1.234,56",05/01/2024,10/01/2024,OP-9,Observación de prueba\n'
     )
     return content
 
 
-def test_upload_validation_success_creates_batch_and_logs_success(client_logged, tmp_media, db):
+def test_upload_validation_success_creates_batch_and_logs_success(
+    client_logged, tmp_media, db
+):
     comedor = Comedor.objects.create(nombre="Comedor Uno")
 
     csv_bytes = _make_csv(comedor.pk).encode("utf-8")
@@ -83,10 +85,10 @@ def test_upload_validation_success_creates_batch_and_logs_success(client_logged,
     assert batch.count_errores == 0
 
 
-def test_upload_validation_empty_csv_logs_error_and_counters(client_logged, tmp_media, db):
-    uploaded = SimpleUploadedFile(
-        "vacio.csv", b"", content_type="text/csv"
-    )
+def test_upload_validation_empty_csv_logs_error_and_counters(
+    client_logged, tmp_media, db
+):
+    uploaded = SimpleUploadedFile("vacio.csv", b"", content_type="text/csv")
     url = reverse("upload")
     resp = client_logged.post(
         url,
@@ -107,12 +109,12 @@ def test_upload_validation_empty_csv_logs_error_and_counters(client_logged, tmp_
     batch.refresh_from_db()
     assert batch.count_exitos == 0
     assert batch.count_errores == 1
-    assert ErroresImportacion.objects.filter(
-        archivo_importado=batch, fila=0
-    ).exists()
+    assert ErroresImportacion.objects.filter(archivo_importado=batch, fila=0).exists()
 
 
-def test_import_persists_expedientepago_and_marks_completed(client_logged, tmp_media, db):
+def test_import_persists_expedientepago_and_marks_completed(
+    client_logged, tmp_media, db
+):
     comedor = Comedor.objects.create(nombre="Comedor Dos")
 
     # Step 1: upload to create batch and success log
