@@ -174,11 +174,76 @@
         "fields": {
             "nombre": "DataCalle - Catamarca",
             "slug": "datacalle-general-catamarca",
-            "url": "",
-            "mensaje_construccion": "El tablero de DataCalle para Catamarca estará disponible próximamente.",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiYTQyY2NjOTYtMzdlYS00ZTk2LTkzZWMtNDNlNDgzZmY5MTc3IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
             "orden": 14,
             "activo": true,
             "permisos": ["Tablero DataCalle Catamarca"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 15,
+        "fields": {
+            "nombre": "DataCalle - Rio Negro",
+            "slug": "datacalle-general-rionegro",
+            "url": "https://app.powerbi.com/reportEmbed?reportId=153af58c-5db6-4e71-a7b7-f8f19163cb8b&autoAuth=true&ctid=4f822cf4-6867-43fa-ae4a-03a39fe9309c",
+            "mensaje_construccion": "",
+            "orden": 15,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Rio Negro"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 16,
+        "fields": {
+            "nombre": "DataCalle - Cordoba - Capital",
+            "slug": "datacalle-general-cordoba-capital",
+            "url": "https://app.powerbi.com/reportEmbed?reportId=68d1be45-ee57-4335-b2ce-6393ac71b425&autoAuth=true&ctid=4f822cf4-6867-43fa-ae4a-03a39fe9309c",
+            "mensaje_construccion": "",
+            "orden": 16,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Cordoba - Capital"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 17,
+        "fields": {
+            "nombre": "DataCalle - Cordoba - San Francisco",
+            "slug": "datacalle-general-cordoba-san-francisco",
+            "url": "https://app.powerbi.com/reportEmbed?reportId=06c9eb19-7e3f-47b7-b08e-fb3df86954d3&autoAuth=true&ctid=4f822cf4-6867-43fa-ae4a-03a39fe9309c",
+            "mensaje_construccion": "",
+            "orden": 17,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Cordoba - San Francisco"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 18,
+        "fields": {
+            "nombre": "DataCalle - Cordoba - Alta Gracia",
+            "slug": "datacalle-general-cordoba-alta-gracia",
+            "url": "https://app.powerbi.com/reportEmbed?reportId=822968a2-97df-40ce-946a-2f58223a3970&autoAuth=true&ctid=4f822cf4-6867-43fa-ae4a-03a39fe9309c",
+            "mensaje_construccion": "",
+            "orden": 18,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Cordoba - Alta Gracia"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 19,
+        "fields": {
+            "nombre": "DataCalle - Tucuman",
+            "slug": "datacalle-general-tucuman",
+            "url": "https://app.powerbi.com/reportEmbed?reportId=7a187b3a-5fc1-46c9-8533-452f7c919e6a&autoAuth=true&ctid=4f822cf4-6867-43fa-ae4a-03a39fe9309c",
+            "mensaje_construccion": "",
+            "orden": 19,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Tucuman"]
         }
     }
 ]
