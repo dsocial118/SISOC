@@ -1,23 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.urls import path
 
-from dashboard.views import (
-    DashboardView,
-    DataCalleChacoDashboardView,
-    DataCalleCorrientesDashboardView,
-    DataCalleSaltaDashboardView,
-    DataCalleMisionesDashboardView,
-    DataCalleGeneralDashboardView,
-    DataCalleChubutDashboardView,
-    DataCalleSanLuisDashboardView,
-    DataCalleEntreRiosDashboardView,
-    DataCalleMendozaDashboardView,
-    DataCalleSanJuanDashboardView,
-    DataCalleSantaCruzDashboardView,
-    DataCalleSantaFeDashboardView,
-    DataCalleLaPampaDashboardView,
-    DataCalleCatamarcaDashboardView,
-)
+from dashboard.views import DashboardView, TableroEmbedView
 
 urlpatterns = [
     path(
@@ -26,73 +10,8 @@ urlpatterns = [
         name="dashboard",
     ),
     path(
-        "dashboard/datacalle-general-chaco/",
-        login_required(DataCalleChacoDashboardView.as_view()),
-        name="dashboard_datacalle_chaco",
-    ),
-    path(
-        "dashboard/datacalle-general-salta/",
-        login_required(DataCalleSaltaDashboardView.as_view()),
-        name="dashboard_datacalle_salta",
-    ),
-    path(
-        "dashboard/datacalle-general-corrientes/",
-        login_required(DataCalleCorrientesDashboardView.as_view()),
-        name="dashboard_datacalle_corrientes",
-    ),
-    path(
-        "dashboard/datacalle-general-misiones/",
-        login_required(DataCalleMisionesDashboardView.as_view()),
-        name="dashboard_datacalle_misiones",
-    ),
-    path(
-        "dashboard/datacalle-general/",
-        login_required(DataCalleGeneralDashboardView.as_view()),
-        name="dashboard_datacalle_general",
-    ),
-    path(
-        "dashboard/datacalle-general-chubut/",
-        login_required(DataCalleChubutDashboardView.as_view()),
-        name="dashboard_datacalle_chubut",
-    ),
-    path(
-        "dashboard/datacalle-general-sanluis/",
-        login_required(DataCalleSanLuisDashboardView.as_view()),
-        name="dashboard_datacalle_sanluis",
-    ),
-    path(
-        "dashboard/datacalle-general-entrerios/",
-        login_required(DataCalleEntreRiosDashboardView.as_view()),
-        name="dashboard_datacalle_entrerios",
-    ),
-    path(
-        "dashboard/datacalle-general-mendoza/",
-        login_required(DataCalleMendozaDashboardView.as_view()),
-        name="dashboard_datacalle_mendoza",
-    ),
-    path(
-        "dashboard/datacalle-general-sanjuan/",
-        login_required(DataCalleSanJuanDashboardView.as_view()),
-        name="dashboard_datacalle_sanjuan",
-    ),
-    path(
-        "dashboard/datacalle-general-santacruz/",
-        login_required(DataCalleSantaCruzDashboardView.as_view()),
-        name="dashboard_datacalle_santacruz",
-    ),
-    path(
-        "dashboard/datacalle-general-santafe/",
-        login_required(DataCalleSantaFeDashboardView.as_view()),
-        name="dashboard_datacalle_santafe",
-    ),
-    path(
-        "dashboard/datacalle-general-lapampa/",
-        login_required(DataCalleLaPampaDashboardView.as_view()),
-        name="dashboard_datacalle_lapampa",
-    ),
-    path(
-        "dashboard/datacalle-general-catamarca/",
-        login_required(DataCalleCatamarcaDashboardView.as_view()),
-        name="dashboard_datacalle_catamarca",
+        "dashboard/<slug:slug>/",
+        login_required(TableroEmbedView.as_view()),
+        name="dashboard_tablero",
     ),
 ]
