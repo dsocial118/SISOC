@@ -291,6 +291,7 @@ class AdmisionService:
     @staticmethod
     def get_admisiones_tecnicos_table_data(admisiones, user):
         table_items = []
+        admisiones_ids = set()
 
         def _format_date(value):
             if not value:
@@ -300,6 +301,9 @@ class AdmisionService:
             return value.strftime("%d/%m/%Y")
 
         for admision in admisiones:
+            if admision.id in admisiones_ids:
+                continue
+            admisiones_ids.add(admision.id)
             comedor = admision.comedor
 
             comedor_nombre = comedor.nombre if comedor else "-"
