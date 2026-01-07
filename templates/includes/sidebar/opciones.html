@@ -1,4 +1,4 @@
-{% load static custom_filters %}
+{% load static custom_filters dashboard_tags %}
 {% with pagina_actual=request.resolver_match.route %}
     <!-- INFORMACIÓN DE USUARIO -->
     <li class="nav-item user-info mb-2 mt-2">
@@ -82,8 +82,9 @@
             </ul>
         </li>
     {% endif %}
-    {% with has_dashboard_cf=request.user|has_group:"Dashboard Centrodefamilia" has_datacalle=request.user|has_group:"Tablero DataCalle Chaco" has_datacalle_general=request.user|has_group:"Tablero DataCalle General" has_datacalle_misiones=request.user|has_group:"Tablero DataCalle Misiones" has_datacalle_chubut=request.user|has_group:"Tablero DataCalle Chubut" has_datacalle_sanluis=request.user|has_group:"Tablero DataCalle San Lus" has_datacalle_entrerios=request.user|has_group:"Tablero DataCalle Entre Ríos" has_datacalle_mendoza=request.user|has_group:"Tablero DataCalle Mendoza" has_datacalle_sanjuan=request.user|has_group:"Tablero DataCalle San Juan" has_datacalle_santacruz=request.user|has_group:"Tablero DataCalle Santa Cruz" has_datacalle_santafe=request.user|has_group:"Tablero DataCalle Santa Fe" has_datacalle_lapampa=request.user|has_group:"Tablero DataCalle La Pampa" has_datacalle_catamarca=request.user|has_group:"Tablero DataCalle Catamarca" has_admin=request.user|has_group:"Administrador" %}
-        {% if has_dashboard_cf or has_datacalle or has_datacalle_general or has_datacalle_misiones or has_datacalle_chubut or has_datacalle_sanluis or has_datacalle_entrerios or has_datacalle_mendoza or has_datacalle_sanjuan or has_datacalle_santacruz or has_datacalle_santafe or has_datacalle_lapampa or has_datacalle_catamarca or has_admin %}
+    {% tableros_para_sidebar as tableros %}
+    {% with has_dashboard_cf=request.user|has_group:"Dashboard Centrodefamilia" %}
+        {% if has_dashboard_cf or tableros %}
             <!-- Tableros -->
             <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
                 <a href="#" class="nav-link">
@@ -114,286 +115,28 @@
                             </ul>
                         </li>
                     {% endif %}
-                    {% if has_datacalle_general or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_general' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-chaco/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-chaco/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Chaco
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_chaco' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-chaco/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_misiones or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-misiones/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-misiones/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Misiones
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_misiones' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-misiones/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_salta or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-salta/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-salta/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Salta
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_salta' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-salta/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_corrientes or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-corrientes/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-corrientes/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Corrientes
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_corrientes' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-corrientes/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_chubut or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-chubut/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-chubut/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Chubut
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_chubut' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-chubut/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_sanluis or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-sanluis/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-sanluis/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - San Luis
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_sanluis' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-sanluis/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_entrerios or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-entrerios/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-entrerios/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Entre Ríos
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_entrerios' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-entrerios/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_mendoza or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-mendoza/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-mendoza/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Mendoza
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_mendoza' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-mendoza/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_sanjuan or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-sanjuan/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-sanjuan/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - San Juan
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_sanjuan' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-sanjuan/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_santacruz or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-santacruz/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-santacruz/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Santa Cruz
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_santacruz' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-santacruz/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_santafe or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-santafe/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-santafe/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Santa Fe
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_santafe' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-santafe/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_lapampa or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-lapampa/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-lapampa/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - La Pampa
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_lapampa' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-lapampa/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
-                    {% if has_datacalle_catamarca or has_admin %}
-                        <li class="nav-item {% if 'dashboard/datacalle-general-catamarca/' in pagina_actual %}menu-open{% endif %}">
-                            <a href="#"
-                               class="nav-link nav-dot ms-2 {% if 'dashboard/datacalle-general-catamarca/' in pagina_actual %}active{% endif %}">
-                                <p>
-                                    DataCalle - Catamarca
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{% url 'dashboard_datacalle_catamarca' %}"
-                                       class="nav-link ms-4 {% if 'dashboard/datacalle-general-catamarca/' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Ver</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                    {% endif %}
+                    {% for tablero in tableros %}
+                        {% with tablero_url=tablero.get_absolute_url %}
+                            <li class="nav-item {% if request.path == tablero_url %}menu-open{% endif %}">
+                                <a href="#"
+                                   class="nav-link nav-dot ms-2 {% if request.path == tablero_url %}active{% endif %}">
+                                    <p>
+                                        {{ tablero.nombre }}
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    <li class="nav-item">
+                                        <a href="{{ tablero_url }}"
+                                           class="nav-link ms-4 {% if request.path == tablero_url %}active{% endif %}">
+                                            <i class="nav-icon bi bi-arrow-return-right"></i>
+                                            <p>Ver</p>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% endwith %}
+                    {% endfor %}
                 </ul>
             </li>
         {% endif %}
@@ -569,7 +312,7 @@
                 </li>
             {% endif %}
             <!-- CENTRO DE FAMILIA -->
-            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" %}
+            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or request.user|has_group:"CDF SSE" %}
                 <li class="nav-item {% if 'centros' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot {% if 'centros' in pagina_actual %}active{% endif %} ms-2">

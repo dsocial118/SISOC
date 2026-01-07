@@ -218,13 +218,7 @@ class AdmisionService:
     @staticmethod
     def get_admisiones_tecnicos_queryset(user, request_or_query=None):
         if user.is_superuser:
-            queryset = Admision.objects.select_related(
-                "comedor",
-                "comedor__provincia",
-                "comedor__tipocomedor",
-                "comedor__referente",
-                "estado",
-            )
+            queryset = Admision.objects.all()
         else:
             from users.services import UserPermissionService
 
@@ -238,24 +232,12 @@ class AdmisionService:
                 queryset = Admision.objects.filter(
                     comedor__dupla_id__in=duplas_ids,
                     comedor__dupla__estado="Activo",
-                ).select_related(
-                    "comedor",
-                    "comedor__provincia",
-                    "comedor__tipocomedor",
-                    "comedor__referente",
-                    "estado",
                 )
             else:
                 # Técnico o Abogado: ver admisiones donde está asignado
                 queryset = Admision.objects.filter(
                     Q(comedor__dupla__tecnico=user) | Q(comedor__dupla__abogado=user),
                     comedor__dupla__estado="Activo",
-                ).select_related(
-                    "comedor",
-                    "comedor__provincia",
-                    "comedor__tipocomedor",
-                    "comedor__referente",
-                    "estado",
                 )
 
         queryset = queryset.exclude(
@@ -286,11 +268,24 @@ class AdmisionService:
                     queryset, request_or_query
                 )
 
-        return queryset.distinct().order_by("-creado")
+        distinct_ids = queryset.values_list("id", flat=True).distinct()
+
+        return (
+            Admision.objects.filter(id__in=distinct_ids)
+            .select_related(
+                "comedor",
+                "comedor__provincia",
+                "comedor__tipocomedor",
+                "comedor__referente",
+                "estado",
+            )
+            .order_by("-creado")
+        )
 
     @staticmethod
     def get_admisiones_tecnicos_table_data(admisiones, user):
         table_items = []
+        admisiones_ids = set()
 
         def _format_date(value):
             if not value:
@@ -300,6 +295,9 @@ class AdmisionService:
             return value.strftime("%d/%m/%Y")
 
         for admision in admisiones:
+            if admision.id in admisiones_ids:
+                continue
+            admisiones_ids.add(admision.id)
             comedor = admision.comedor
 
             comedor_nombre = comedor.nombre if comedor else "-"
