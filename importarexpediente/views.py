@@ -17,6 +17,7 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 from importarexpediente.forms import CSVUploadForm
 from expedientespagos.models import ExpedientePago
 from comedores.models import Comedor
@@ -61,6 +62,21 @@ HEADER_MAP = {
     "if pagado": "if_pagado",
 }
 
+# etiquetas amigables para usuarios no técnicos
+FIELD_LABELS = {
+    "expediente_pago": "Expediente de pago",
+    "resolucion_pago": "Resolución de pago",
+    "comedor": "Comedor",
+    "anexo": "Comedor (anexo)",
+    "monto": "Monto",
+    "numero_orden_pago": "Número de orden de pago",
+    "fecha_pago_al_banco": "Fecha de pago al banco",
+    "fecha_acreditacion": "Fecha de acreditación",
+    "observaciones": "Observaciones",
+    "if_cantidad_de_prestaciones": "IF cantidad de prestaciones",
+    "if_pagado": "IF pagado",
+}
+
 
 class ImportExpedientesView(FormView):
     template_name = "upload.html"
@@ -99,6 +115,25 @@ class ImportExpedientesView(FormView):
     def resolve_comedor(self, raw):
         if not raw:
             return None
+
+    def _humanize_validation_error(self, exc: Exception) -> str:
+        """Devuelve un texto claro para usuarios finales a partir de una excepción de validación."""
+        # ValidationError con detalles por campo
+        if isinstance(exc, ValidationError):
+            # message_dict: {campo: [mensajes]}
+            if hasattr(exc, "message_dict") and exc.message_dict:
+                partes = []
+                for campo, mensajes in exc.message_dict.items():
+                    etiqueta = FIELD_LABELS.get(campo, campo)
+                    # Unir mensajes del mismo campo en una sola línea
+                    detalle = "; ".join(str(m) for m in mensajes)
+                    partes.append(f"{etiqueta}: {detalle}")
+                return ". ".join(partes)
+            # message: lista simple de mensajes
+            if hasattr(exc, "messages"):
+                return "; ".join(str(m) for m in exc.messages)
+        # Cualquier otro error genérico
+        return str(exc)
         r = str(raw).strip()
         # si es pk
         if r.isdigit():
@@ -156,7 +191,10 @@ class ImportExpedientesView(FormView):
 
         if not rows:
             # Registrar error por archivo vacío (no se guardan datos en ExpedientePago)
-            err_msg = "CSV vacío."
+            err_msg = (
+                "El archivo de Excel está vacío. Asegúrate de que la primera fila contenga "
+                "los nombres de las columnas y que haya al menos una fila de datos."
+            )
             ErroresImportacion.objects.create(
                 archivo_importado=base_upload,
                 fila=0,
@@ -178,7 +216,10 @@ class ImportExpedientesView(FormView):
             data_rows = rows[1:]
             logger.error(f"[IMPORT] Cabeceras normalizadas: {headers}")
         else:
-            err_msg = "CSV sin cabecera no soportado por defecto."
+            err_msg = (
+                "El archivo de Excel debe incluir una fila de encabezados en la fila 1 "
+                "(nombres de columnas). Agrega los encabezados y vuelve a intentar."
+            )
             ErroresImportacion.objects.create(
                 archivo_importado=base_upload,
                 fila=0,
@@ -277,9 +318,10 @@ class ImportExpedientesView(FormView):
                     success_count += 1
 
                 except Exception as e:
-                    # Registrar un error por cada fila inválida
-                    msg = f"Línea {i}: {e}"
-                    logger.error(f"[IMPORT] Error en fila {i}: {e}")
+                    # Registrar un error por cada fila inválida con un mensaje claro para Excel
+                    friendly = self._humanize_validation_error(e)
+                    msg = f"Fila {i} (Excel): {friendly}"
+                    logger.error(f"[IMPORT] Error en fila {i}: {friendly}")
                     ErroresImportacion.objects.create(
                         archivo_importado=base_upload,
                         fila=i,
