@@ -1,0 +1,184 @@
+[
+    {
+        "model": "dashboard.tablero",
+        "pk": 1,
+        "fields": {
+            "nombre": "DataCalle",
+            "slug": "datacalle-general",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiOWQ3OGQ3NzUtOTRjOC00MWM3LWFmOWMtMWU3ZDM3MDEyMzkwIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
+            "orden": 1,
+            "activo": true,
+            "permisos": ["Tablero DataCalle General"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 2,
+        "fields": {
+            "nombre": "DataCalle - Chaco",
+            "slug": "datacalle-general-chaco",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiNTdlYmE4ZWQtNzI0OC00MjMzLTkzYzgtNTA2ZDM4ZjZlMDg2IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
+            "orden": 2,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Chaco"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 3,
+        "fields": {
+            "nombre": "DataCalle - Misiones",
+            "slug": "datacalle-general-misiones",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiNTRiOGE0ZmEtMTk2Yi00MjAyLTgyNDktZDI0YmY2ZDU2NzdmIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
+            "orden": 3,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Misiones"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 4,
+        "fields": {
+            "nombre": "DataCalle - Salta",
+            "slug": "datacalle-general-salta",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiZWM5YzZkYjAtMDhmMi00YTk2LTk1NTItODVjYTI0Yzk3YTQ2IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
+            "orden": 4,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Salta"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 5,
+        "fields": {
+            "nombre": "DataCalle - Corrientes",
+            "slug": "datacalle-general-corrientes",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiNjAxODJlN2EtNDZjNy00YjI4LWE3MzctZDUxNTM1YWUzNjM2IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
+            "orden": 5,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Corrientes"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 6,
+        "fields": {
+            "nombre": "DataCalle - Chubut",
+            "slug": "datacalle-general-chubut",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiMzY4ZmYzOWYtYjUxNC00NDEyLWE1MjAtZmZjYWI5NmQ2NGZmIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
+            "orden": 6,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Chubut"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 7,
+        "fields": {
+            "nombre": "DataCalle - San Luis",
+            "slug": "datacalle-general-sanluis",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiOWFlOTVkNTAtY2E4MS00MGQ5LWI5ZjYtZjJkODNlNmExZWExIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
+            "orden": 7,
+            "activo": true,
+            "permisos": ["Tablero DataCalle San Lus"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 8,
+        "fields": {
+            "nombre": "DataCalle - Entre Ríos",
+            "slug": "datacalle-general-entrerios",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiYzViZTQ0YjItN2ExNS00ZmNiLThkYTYtZmU2NmU4YjM4Mzg3IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
+            "orden": 8,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Entre Ríos"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 9,
+        "fields": {
+            "nombre": "DataCalle - Mendoza",
+            "slug": "datacalle-general-mendoza",
+            "url": "",
+            "mensaje_construccion": "El tablero de DataCalle para Mendoza estará disponible próximamente.",
+            "orden": 9,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Mendoza"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 10,
+        "fields": {
+            "nombre": "DataCalle - San Juan",
+            "slug": "datacalle-general-sanjuan",
+            "url": "https://app.powerbi.com/view?r=eyJrIjoiNTVjZGFmMGQtYjk1Zi00MDU4LThmMWYtY2U2ZmVmMGM2ODI5IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
+            "mensaje_construccion": "",
+            "orden": 10,
+            "activo": true,
+            "permisos": ["Tablero DataCalle San Juan"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 11,
+        "fields": {
+            "nombre": "DataCalle - Santa Cruz",
+            "slug": "datacalle-general-santacruz",
+            "url": "",
+            "mensaje_construccion": "El tablero de DataCalle para Santa Cruz estará disponible próximamente.",
+            "orden": 11,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Santa Cruz"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 12,
+        "fields": {
+            "nombre": "DataCalle - Santa Fe",
+            "slug": "datacalle-general-santafe",
+            "url": "",
+            "mensaje_construccion": "El tablero de DataCalle para Santa Fe estará disponible próximamente.",
+            "orden": 12,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Santa Fe"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 13,
+        "fields": {
+            "nombre": "DataCalle - La Pampa",
+            "slug": "datacalle-general-lapampa",
+            "url": "",
+            "mensaje_construccion": "El tablero de DataCalle para La Pampa estará disponible próximamente.",
+            "orden": 13,
+            "activo": true,
+            "permisos": ["Tablero DataCalle La Pampa"]
+        }
+    },
+    {
+        "model": "dashboard.tablero",
+        "pk": 14,
+        "fields": {
+            "nombre": "DataCalle - Catamarca",
+            "slug": "datacalle-general-catamarca",
+            "url": "",
+            "mensaje_construccion": "El tablero de DataCalle para Catamarca estará disponible próximamente.",
+            "orden": 14,
+            "activo": true,
+            "permisos": ["Tablero DataCalle Catamarca"]
+        }
+    }
+]
