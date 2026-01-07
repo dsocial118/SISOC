@@ -516,7 +516,7 @@
       1
     ],
     "orden": 5,
-    "obligatorio": true
+    "obligatorio": false
   }
 },
 {
@@ -528,7 +528,7 @@
       1
     ],
     "orden": 6,
-    "obligatorio": true
+    "obligatorio": false
   }
 },
 {
@@ -540,14 +540,14 @@
       1
     ],
     "orden": 7,
-    "obligatorio": true
+    "obligatorio": false
   }
 },
 {
   "model": "admisiones.documentacion",
   "pk": 44,
   "fields": {
-    "nombre": "Acta Designación - Aval 1",
+    "nombre": "Acta Designación Aval 1 - Designación de cargo Aval 1 (persona física)",
     "convenios": [
       1
     ],
@@ -559,7 +559,7 @@
   "model": "admisiones.documentacion",
   "pk": 45,
   "fields": {
-    "nombre": "DNI Autoridad Máxima - Aval 1",
+    "nombre": "DNI Autoridad Máxima Aval 1- DNI Aval 1 (persona física)",
     "convenios": [
       1
     ],
@@ -576,7 +576,7 @@
       1
     ],
     "orden": 10,
-    "obligatorio": true
+    "obligatorio": false
   }
 },
 {
@@ -588,7 +588,7 @@
       1
     ],
     "orden": 11,
-    "obligatorio": true
+    "obligatorio": false
   }
 },
 {
@@ -600,14 +600,14 @@
       1
     ],
     "orden": 12,
-    "obligatorio": true
+    "obligatorio": false
   }
 },
 {
   "model": "admisiones.documentacion",
   "pk": 49,
   "fields": {
-    "nombre": "Acta Designación - Aval 2",
+    "nombre": "Acta Designación Aval 2 - Designación de cargo Aval 2 (persona física)",
     "convenios": [
       1
     ],
@@ -619,7 +619,7 @@
   "model": "admisiones.documentacion",
   "pk": 50,
   "fields": {
-    "nombre": "DNI Autoridad Máxima - Aval 2",
+    "nombre": "DNI Autoridad Máxima Aval 2 - DNI Aval 2 (persona física)",
     "convenios": [
       1
     ],
@@ -631,7 +631,7 @@
   "model": "admisiones.documentacion",
   "pk": 51,
   "fields": {
-    "nombre": "Aval 1",
+    "nombre": "Nota Aval 1",
     "convenios": [
       1
     ],
@@ -643,7 +643,7 @@
   "model": "admisiones.documentacion",
   "pk": 52,
   "fields": {
-    "nombre": "Aval 2",
+    "nombre": "Nota Aval 2",
     "convenios": [
       1
     ],
