@@ -8,7 +8,8 @@
         </td>
         <td data-telefono="{{ expediente.telefono|default:'' }}">{{ expediente.fila | default_if_none:"Sin información" }}</td>
         <td data-email="{{ expediente.email|default:'' }}">
-            <div class="alert alert-danger py-1 px-2 mb-0 d-inline-flex align-items-center" role="alert">
+            <div class="alert alert-danger py-1 px-2 mb-0 d-inline-flex align-items-center"
+                 role="alert">
                 <i class="fas fa-exclamation-circle mr-2" aria-hidden="true"></i>
                 <span>{{ expediente.mensaje | default_if_none:"Sin información" }}</span>
             </div>
