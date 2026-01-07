@@ -7,10 +7,15 @@
                title="Ver detalles">{{ expediente.archivo_importado }}</a>
         </td>
         <td data-telefono="{{ expediente.telefono|default:'' }}">{{ expediente.fila | default_if_none:"Sin información" }}</td>
-        <td data-email="{{ expediente.email|default:'' }}">{{ expediente.mensaje | default_if_none:"Sin información" }}</td>
+        <td data-email="{{ expediente.email|default:'' }}">
+            <div class="alert alert-danger py-1 px-2 mb-0 d-inline-flex align-items-center" role="alert">
+                <i class="fas fa-exclamation-circle mr-2" aria-hidden="true"></i>
+                <span>{{ expediente.mensaje | default_if_none:"Sin información" }}</span>
+            </div>
+        </td>
     </tr>
 {% empty %}
     <tr>
-        <td colspan="5" class="text-center text-muted py-4">No hay organizaciones disponibles.</td>
+        <td colspan="5" class="text-center text-muted py-4">No hay errores registrados para este archivo.</td>
     </tr>
 {% endfor %}
