@@ -253,7 +253,7 @@
                     <p class="subtitle mb-0">
                         CUIT: {{ organizacion.cuit|default:"Sin información" }} |
                         {{ organizacion.tipo_entidad|default:"Sin tipo de entidad" }}
-                        {% if organizacion.subtipo_entidad %} - {{ organizacion.subtipo_entidad }}{% endif %}
+                        {% if organizacion.subtipo_entidad %}- {{ organizacion.subtipo_entidad }}{% endif %}
                     </p>
                 </div>
                 <div class="btn-group">
@@ -272,7 +272,9 @@
 
         <ul class="nav nav-tabs nav-tabs-legajo" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#informacion-general">Información General</a>
+                <a class="nav-link active"
+                   data-bs-toggle="tab"
+                   href="#informacion-general">Información General</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#comedores">Comedores Asociados ({{ comedores_count }})</a>
@@ -401,7 +403,10 @@
                                                 <td>{{ firmante.nombre }}</td>
                                                 <td>
                                                     {% if firmante.rol %}
-                                                        <span class="badge" style="background: rgba(245, 166, 35, 0.2); color: var(--gold); border: 1px solid var(--gold);">
+                                                        <span class="badge"
+                                                              style="background: rgba(245, 166, 35, 0.2);
+                                                                     color: var(--gold);
+                                                                     border: 1px solid var(--gold)">
                                                             {{ firmante.rol.nombre }}
                                                         </span>
                                                     {% else %}
@@ -412,12 +417,16 @@
                                                 <td class="text-end">
                                                     <a href="{% url 'firmante_editar' firmante.pk %}"
                                                        class="btn btn-sm"
-                                                       style="background: rgba(40, 167, 69, 0.2); color: var(--green); border: 1px solid var(--green);">
+                                                       style="background: rgba(40, 167, 69, 0.2);
+                                                              color: var(--green);
+                                                              border: 1px solid var(--green)">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <a href="{% url 'firmante_eliminar' firmante.pk %}"
                                                        class="btn btn-sm"
-                                                       style="background: rgba(220, 53, 69, 0.2); color: var(--red); border: 1px solid var(--red);">
+                                                       style="background: rgba(220, 53, 69, 0.2);
+                                                              color: var(--red);
+                                                              border: 1px solid var(--red)">
                                                         <i class="fas fa-trash"></i>
                                                     </a>
                                                 </td>
@@ -461,12 +470,16 @@
                                                     <td class="text-end">
                                                         <a href="{% url 'aval_editar' aval.pk %}"
                                                            class="btn btn-sm"
-                                                           style="background: rgba(40, 167, 69, 0.2); color: var(--green); border: 1px solid var(--green);">
+                                                           style="background: rgba(40, 167, 69, 0.2);
+                                                                  color: var(--green);
+                                                                  border: 1px solid var(--green)">
                                                             <i class="fas fa-edit"></i>
                                                         </a>
                                                         <a href="{% url 'aval_eliminar' aval.pk %}"
                                                            class="btn btn-sm"
-                                                           style="background: rgba(220, 53, 69, 0.2); color: var(--red); border: 1px solid var(--red);">
+                                                           style="background: rgba(220, 53, 69, 0.2);
+                                                                  color: var(--red);
+                                                                  border: 1px solid var(--red)">
                                                             <i class="fas fa-trash"></i>
                                                         </a>
                                                     </td>
@@ -490,9 +503,13 @@
                         <div class="tabla-legajo" style="border: 2px solid var(--gold);">
                             <h5 class="mb-3">
                                 <span>Comedores Asociados</span>
-                                <span class="badge" style="background: rgba(245, 166, 35, 0.2); color: var(--gold); border: 1px solid var(--gold); padding: 0.35rem 0.75rem; font-size: 0.75rem; margin-left: 0.5rem;">
-                                    {{ comedores_count }} Total
-                                </span>
+                                <span class="badge"
+                                      style="background: rgba(245, 166, 35, 0.2);
+                                             color: var(--gold);
+                                             border: 1px solid var(--gold);
+                                             padding: 0.35rem 0.75rem;
+                                             font-size: 0.75rem;
+                                             margin-left: 0.5rem">{{ comedores_count }} Total</span>
                             </h5>
                             {% if comedores %}
                                 <table class="table table-sm">
@@ -512,9 +529,8 @@
                                             <tr>
                                                 <td>
                                                     <a href="{% url 'comedor_detalle' comedor.id %}"
-                                                       style="color: #F5A623; text-decoration: underline;">
-                                                        {{ comedor.nombre }}
-                                                    </a>
+                                                       style="color: #F5A623;
+                                                              text-decoration: underline">{{ comedor.nombre }}</a>
                                                 </td>
                                                 <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>
                                                 <td>
@@ -535,15 +551,23 @@
                                                 </td>
                                                 <td>
                                                     {% if comedor.estado_validacion == "Validado" %}
-                                                        <span class="badge" style="background: rgba(40, 167, 69, 0.2); color: var(--green); border: 1px solid var(--green);">
+                                                        <span class="badge"
+                                                              style="background: rgba(40, 167, 69, 0.2);
+                                                                     color: var(--green);
+                                                                     border: 1px solid var(--green)">
                                                             <i class="fas fa-check-circle"></i> Validado
                                                         </span>
                                                     {% elif comedor.estado_validacion == "No Validado" %}
-                                                        <span class="badge" style="background: rgba(220, 53, 69, 0.2); color: var(--red); border: 1px solid var(--red);">
+                                                        <span class="badge"
+                                                              style="background: rgba(220, 53, 69, 0.2);
+                                                                     color: var(--red);
+                                                                     border: 1px solid var(--red)">
                                                             <i class="fas fa-times-circle"></i> No Validado
                                                         </span>
                                                     {% else %}
-                                                        <span class="badge" style="background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7);">
+                                                        <span class="badge"
+                                                              style="background: rgba(255,255,255,0.1);
+                                                                     color: rgba(255,255,255,0.7)">
                                                             <i class="fas fa-clock"></i> Pendiente
                                                         </span>
                                                     {% endif %}
@@ -551,7 +575,9 @@
                                                 <td class="text-end">
                                                     <a href="{% url 'comedor_detalle' comedor.id %}"
                                                        class="btn btn-sm"
-                                                       style="background: rgba(52, 152, 219, 0.2); color: #3498db; border: 1px solid #3498db;">
+                                                       style="background: rgba(52, 152, 219, 0.2);
+                                                              color: #3498db;
+                                                              border: 1px solid #3498db">
                                                         <i class="fas fa-eye"></i> Ver
                                                     </a>
                                                 </td>

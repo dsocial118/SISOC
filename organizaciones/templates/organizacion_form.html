@@ -7,12 +7,14 @@
 {% endblock %}
 {% block content %}
     <!-- CSS Moderno para formularios -->
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
 
     <div class="d-flex justify-content-between mb-3">
         <div>
             {% if object.id %}
-                <a href="{% url 'organizacion_detalle' object.id %}" class="btn btn-secondary">Volver</a>
+                <a href="{% url 'organizacion_detalle' object.id %}"
+                   class="btn btn-secondary">Volver</a>
             {% else %}
                 <a href="{% url 'organizaciones' %}" class="btn btn-secondary">Volver</a>
             {% endif %}
@@ -24,7 +26,10 @@
 
     <div class="row comedor-form">
         <div class="col-12">
-            <form method="post" id="organizacionForm" class="w-100" enctype="multipart/form-data">
+            <form method="post"
+                  id="organizacionForm"
+                  class="w-100"
+                  enctype="multipart/form-data">
                 {% csrf_token %}
 
                 <!-- Indicador de progreso global -->
@@ -189,7 +194,8 @@
                 <div class="sticky-actions">
                     <div>
                         {% if object.id %}
-                            <a href="{% url 'organizacion_detalle' object.id %}" class="btn btn-secondary">
+                            <a href="{% url 'organizacion_detalle' object.id %}"
+                               class="btn btn-secondary">
                                 <i class="fas fa-arrow-left mr-1"></i> Volver
                             </a>
                         {% else %}
@@ -199,7 +205,9 @@
                         {% endif %}
                     </div>
                     <div>
-                        <button type="button" onclick="window.history.back();" class="btn btn-secondary mr-2">
+                        <button type="button"
+                                onclick="window.history.back();"
+                                class="btn btn-secondary mr-2">
                             <i class="fas fa-times mr-1"></i> Cancelar
                         </button>
                         <button class="btn btn-success" type="submit">
