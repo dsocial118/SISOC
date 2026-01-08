@@ -929,18 +929,26 @@ class ComedorService:
             )
             return redirect(request.path)
 
-        # Verificar si existe una admisión del mismo tipo activa
-        if Admision.objects.filter(
-            comedor=comedor, tipo=tipo_admision, activa=True
-        ).exists():
-            tipo_display = (
-                "Incorporación" if tipo_admision == "incorporacion" else "Renovación"
-            )
-            messages.warning(
-                request,
-                f"Ya existe una admisión del tipo {tipo_display} activa para este comedor.",
-            )
-            return redirect(request.path)
+        if tipo_admision == "incorporacion":
+            if Admision.objects.filter(
+                comedor=comedor, tipo="incorporacion", activa=True
+            ).exists():
+                messages.warning(
+                    request,
+                    "Ya existe una admision de Incorporacion activa para este comedor.",
+                )
+                return redirect(request.path)
+        else:
+            renovaciones_activas = Admision.objects.filter(
+                comedor=comedor, tipo="renovacion", activa=True
+            ).count()
+            if renovaciones_activas >= 4:
+                messages.warning(
+                    request,
+                    "Ya existen 4 admisiones de Renovacion activas para este comedor.",
+                )
+                return redirect(request.path)
+
 
         nueva_admision = Admision.objects.create(
             comedor=comedor,
