@@ -272,24 +272,17 @@
 
         <ul class="nav nav-tabs nav-tabs-legajo" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#datos-generales">Datos Generales</a>
+                <a class="nav-link active" data-bs-toggle="tab" href="#informacion-general">Información General</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#firmantes">Firmantes</a>
-            </li>
-            {% if avales %}
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#avales">Avales</a>
-                </li>
-            {% endif %}
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#comedores">Comedores ({{ comedores_count }})</a>
+                <a class="nav-link" data-bs-toggle="tab" href="#comedores">Comedores Asociados ({{ comedores_count }})</a>
             </li>
         </ul>
 
         <div class="tab-content px-4">
-            <!-- TAB: Datos Generales -->
-            <div class="tab-pane fade show active" id="datos-generales">
+            <!-- TAB: Información General -->
+            <div class="tab-pane fade show active" id="informacion-general">
+                <!-- Card de Datos de la Organización -->
                 <div class="row">
                     <div class="col-12">
                         <div class="datos-card" style="position: relative;">
@@ -380,10 +373,8 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- TAB: Firmantes -->
-            <div class="tab-pane fade" id="firmantes">
+                <!-- Tabla de Firmantes -->
                 <div class="row">
                     <div class="col-12">
                         <div class="tabla-legajo">
@@ -440,11 +431,9 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- TAB: Avales (solo si existe) -->
-            {% if avales %}
-                <div class="tab-pane fade" id="avales">
+                <!-- Tabla de Avales (solo si existen) -->
+                {% if avales %}
                     <div class="row">
                         <div class="col-12">
                             <div class="tabla-legajo">
@@ -491,8 +480,8 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
 
             <!-- TAB: Comedores -->
             <div class="tab-pane fade" id="comedores">
