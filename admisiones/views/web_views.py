@@ -366,6 +366,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         admision = self.object
         comedor = admision.comedor
+
         def _format_datetime(value):
             if not value:
                 return "-"
@@ -485,11 +486,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             historial_items.append(
                 {
                     "cells": [
-                        {
-                            "content": (
-                                _format_datetime(record.fecha)
-                            )
-                        },
+                        {"content": (_format_datetime(record.fecha))},
                         {"content": usuario_display or "-"},
                         {"content": record.campo or "-"},
                         {"content": record.valor_nuevo or "-"},
@@ -521,11 +518,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             historial_estados_items.append(
                 {
                     "cells": [
-                        {
-                            "content": (
-                                _format_datetime(record.fecha)
-                            )
-                        },
+                        {"content": (_format_datetime(record.fecha))},
                         {"content": estado_nuevo_formatted},
                         {"content": estado_anterior_formatted},
                         {"content": usuario_display or "-"},
