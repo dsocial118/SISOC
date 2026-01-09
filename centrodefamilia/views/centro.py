@@ -290,7 +290,8 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-        if not (centro.referente_id == user.id or user.is_superuser):
+        es_cdf_sse = user.groups.filter(name="CDF SSE").exists()
+        if not (centro.referente_id == user.id or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -310,7 +311,8 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-        if not (centro.referente_id == user.id or user.is_superuser):
+        es_cdf_sse = user.groups.filter(name="CDF SSE").exists()
+        if not (centro.referente_id == user.id or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
