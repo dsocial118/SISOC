@@ -319,6 +319,7 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
         qs = ArchivosImportados.objects.select_related("usuario").order_by(
             "-fecha_subida"
         )
+        qs = qs.filter(usuario=self.request.user)
         query = self.request.GET.get("busqueda", "").strip()
         if query:
             qs = qs.filter(
@@ -403,7 +404,8 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         # Mostrar solo el archivo maestro correspondiente al id recibido en la URL
         query = self.request.GET.get("busqueda", "").strip()
         queryset = ErroresImportacion.objects.filter(
-            archivo_importado_id=self.batch_id
+            archivo_importado_id=self.batch_id,
+            archivo_importado__usuario=self.request.user,
         ).order_by("fila")
         if query:
             if query.isdigit():
@@ -415,10 +417,12 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         errores = ErroresImportacion.objects.filter(
-            archivo_importado_id=self.batch_id
+            archivo_importado_id=self.batch_id,
+            archivo_importado__usuario=self.request.user,
         ).order_by("fila")
         exitos = ExitoImportacion.objects.filter(
-            archivo_importado_id=self.batch_id
+            archivo_importado_id=self.batch_id,
+            archivo_importado__usuario=self.request.user,
         ).order_by("fila")
         context["query"] = self.request.GET.get("busqueda", "")
         context["batch_id"] = self.batch_id
