@@ -58,6 +58,7 @@ def _resolve_comedor_cached(raw, cache_by_id, cache_by_name):
     cache_by_name[key] = obj
     return obj
 
+
 # mapeo de cabeceras posibles -> campo de modelo
 HEADER_MAP = {
     # Expedientes
@@ -376,9 +377,11 @@ def importarexpedientes_ajax(request):
     query = request.GET.get("busqueda", "").strip()
     page = request.GET.get("page", 1)
 
-    queryset = ArchivosImportados.objects.select_related("usuario").filter(
-        usuario=request.user
-    ).order_by("-fecha_subida")
+    queryset = (
+        ArchivosImportados.objects.select_related("usuario")
+        .filter(usuario=request.user)
+        .order_by("-fecha_subida")
+    )
     if query:
         queryset = queryset.filter(
             Q(archivo__icontains=query) | Q(usuario__username__icontains=query)
@@ -456,9 +459,9 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         errores = ErroresImportacion.objects.filter(
             archivo_importado=self.batch
         ).order_by("fila")
-        exitos = ExitoImportacion.objects.filter(
-            archivo_importado=self.batch
-        ).order_by("fila")
+        exitos = ExitoImportacion.objects.filter(archivo_importado=self.batch).order_by(
+            "fila"
+        )
         context["query"] = self.request.GET.get("busqueda", "")
         context["batch_id"] = self.batch_id
         context["error_count"] = errores.count()
