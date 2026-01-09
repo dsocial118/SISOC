@@ -905,7 +905,7 @@ class ComedorService:
 
         Regla:
         - Solo puede haber una admisión de tipo 'incorporacion' por comedor.
-        - Puede haber múltiples admisiones de tipo 'renovacion'.
+        - Puede haber hasta 4 admisiones de tipo 'renovacion' activas.
         Luego redirige nuevamente al detalle del comedor.
         """
 
@@ -913,7 +913,7 @@ class ComedorService:
 
         if not tipo_admision:
             messages.error(request, "Debe seleccionar un tipo de admisión.")
-            return redirect(request.path)
+            return redirect("comedor_detalle", pk=comedor.pk)
 
         if (
             tipo_admision == "renovacion"
@@ -927,20 +927,27 @@ class ComedorService:
                 "Debe existir al menos una admisión de Incorporación para este comedor, "
                 "independientemente de su estado.",
             )
-            return redirect(request.path)
+            return redirect("comedor_detalle", pk=comedor.pk)
 
-        # Verificar si existe una admisión del mismo tipo activa
-        if Admision.objects.filter(
-            comedor=comedor, tipo=tipo_admision, activa=True
-        ).exists():
-            tipo_display = (
-                "Incorporación" if tipo_admision == "incorporacion" else "Renovación"
-            )
-            messages.warning(
-                request,
-                f"Ya existe una admisión del tipo {tipo_display} activa para este comedor.",
-            )
-            return redirect(request.path)
+        if tipo_admision == "incorporacion":
+            if Admision.objects.filter(
+                comedor=comedor, tipo="incorporacion", activa=True
+            ).exists():
+                messages.warning(
+                    request,
+                    "Ya existe una admision de Incorporacion activa para este comedor.",
+                )
+                return redirect("comedor_detalle", pk=comedor.pk)
+        else:
+            renovaciones_activas = Admision.objects.filter(
+                comedor=comedor, tipo="renovacion", activa=True
+            ).count()
+            if renovaciones_activas >= 4:
+                messages.warning(
+                    request,
+                    "Ya existen 4 admisiones de Renovacion activas para este comedor.",
+                )
+                return redirect(request.path)
 
         nueva_admision = Admision.objects.create(
             comedor=comedor,
