@@ -6,6 +6,16 @@ import django.core.validators
 from django.db import migrations, models
 
 
+def cap_montos(apps, schema_editor):
+    informe_tecnico = apps.get_model("admisiones", "InformeTecnico")
+    max_value = 99_000_000
+    fields = ("monto_1", "monto_2", "monto_3", "monto_4", "monto_5", "monto_6")
+    for field in fields:
+        informe_tecnico.objects.filter(**{f"{field}__gt": max_value}).update(
+            **{field: max_value}
+        )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -13,6 +23,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(cap_montos, migrations.RunPython.noop),
         migrations.AlterField(
             model_name="informetecnico",
             name="monto_1",
