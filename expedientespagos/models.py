@@ -36,7 +36,7 @@ class ExpedientePago(models.Model):
     )
     comedor = models.ForeignKey(
         Comedor,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         related_name="expedientes_pagos",
         null=True,
     )

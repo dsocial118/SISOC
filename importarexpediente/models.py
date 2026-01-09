@@ -7,6 +7,7 @@ User = get_user_model()
 
 class ArchivosImportados(models.Model):
     archivo = models.FileField(upload_to="importados/")
+    delimiter = models.CharField(max_length=1, default=",")
     fecha_subida = models.DateTimeField(auto_now_add=True)
     usuario = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     count_errores = models.IntegerField(default=0)
