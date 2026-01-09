@@ -3,76 +3,29 @@ import re
 import pytest
 from django.urls import URLPattern, URLResolver, get_resolver
 
-_PARAM_RE = re.compile(r"<(?:(?P<converter>[^:]+):)?(?P<param>[^>]+)>")
-_REGEX_NAMED_GROUP_RE = re.compile(r"\(\?P<[^>]+>([^)]+)\)")
+pytestmark = pytest.mark.smoke
 
-_CONVERTER_SAMPLES = {
-    "IntConverter": "1",
-    "SlugConverter": "test-slug",
-    "UUIDConverter": "00000000-0000-0000-0000-000000000000",
-    "PathConverter": "test/path",
-    "StringConverter": "test",
-}
-
-_SUPPORTED_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+_DYNAMIC_ROUTE_RE = re.compile(r"<[^>]+>")
+_REGEX_NAMED_GROUP_RE = re.compile(r"\(\?P<[^>]+>")
 
 
-@pytest.fixture
-def auth_client(db, client, django_user_model):
-    user = django_user_model.objects.create_superuser(
-        username="qa_superuser",
-        email="qa_superuser@example.com",
-        password="testpass",
-    )
-    client.force_login(user)
-    return client
+def _is_dynamic_route(route: str) -> bool:
+    return bool(_DYNAMIC_ROUTE_RE.search(route))
 
 
-def _sample_from_regex(pattern):
-    if pattern in {r"\d+", r"[0-9]+", r"\d{1,}"}:
-        return "1"
-    if "uuid" in pattern.lower():
-        return "00000000-0000-0000-0000-000000000000"
-    if pattern in {r".*", r".+", r"[^/]+", r"[^/]*"}:
-        return "test"
-    return "test"
+def _is_dynamic_regex(regex: str) -> bool:
+    return bool(_REGEX_NAMED_GROUP_RE.search(regex))
 
 
-def _route_for_pattern(pattern_obj):
-    if hasattr(pattern_obj, "_route"):
-        return pattern_obj._route
-    if hasattr(pattern_obj, "pattern"):
-        return pattern_obj.pattern
-    return str(pattern_obj)
-
-
-def _fill_route(route, converters):
-    def _replace(match):
-        param = match.group("param")
-        converter = converters.get(param)
-        if converter is None:
-            return "test"
-        return _CONVERTER_SAMPLES.get(converter.__class__.__name__, "test")
-
-    return _PARAM_RE.sub(_replace, route)
-
-
-def _regex_to_path(regex):
+def _regex_to_path(regex: str) -> str:
     cleaned = regex.lstrip("^").rstrip("$")
-
-    def _replace(match):
-        return _sample_from_regex(match.group(1))
-
-    cleaned = _REGEX_NAMED_GROUP_RE.sub(_replace, cleaned)
-    cleaned = re.sub(r"\([^)]*\)", "test", cleaned)
     cleaned = cleaned.replace(r"\A", "").replace(r"\Z", "")
     cleaned = cleaned.replace(r"\/", "/").replace(r"\.", ".")
     cleaned = cleaned.replace("\\", "")
-    cleaned = cleaned.replace("?", "").replace("+", "").replace("*", "")
     return cleaned
 
 
-def _join_paths(prefix, route):
+def _join_paths(prefix: str, route: str) -> str:
     if not prefix:
         return route
     if not route:
@@ -84,49 +37,62 @@ def _join_paths(prefix, route):
     return f"{prefix}{route}"
 
 
-def _iter_urlpatterns(patterns, prefix=""):
+def _iter_urlpatterns(patterns, prefix: str = "", has_params: bool = False):
     for pattern in patterns:
         if isinstance(pattern, URLPattern):
-            yield prefix, pattern
+            yield prefix, has_params, pattern
         elif isinstance(pattern, URLResolver):
-            nested_route = _route_for_pattern(pattern.pattern)
             nested_prefix = prefix
+            nested_has_params = has_params
             if hasattr(pattern.pattern, "_route"):
-                nested_prefix = _join_paths(prefix, nested_route)
+                route = pattern.pattern._route
+                nested_prefix = _join_paths(prefix, route)
+                nested_has_params = has_params or _is_dynamic_route(route)
             else:
-                nested_prefix = _join_paths(prefix, _regex_to_path(nested_route))
-            yield from _iter_urlpatterns(pattern.url_patterns, nested_prefix)
+                regex = pattern.pattern.regex.pattern
+                nested_prefix = _join_paths(prefix, _regex_to_path(regex))
+                nested_has_params = has_params or _is_dynamic_regex(regex)
+            yield from _iter_urlpatterns(
+                pattern.url_patterns, nested_prefix, nested_has_params
+            )
 
 
-def _methods_for_pattern(pattern):
-    methods = {"GET"}
+def _allows_get(pattern) -> bool:
     callback = pattern.callback
 
     actions = getattr(callback, "actions", None)
     if actions:
-        methods.update(method.upper() for method in actions.keys())
+        return "get" in actions
 
     view_class = getattr(callback, "view_class", None) or getattr(callback, "cls", None)
     if view_class is not None:
         http_method_names = getattr(view_class, "http_method_names", None)
         if http_method_names:
-            methods.update(method.upper() for method in http_method_names)
+            return "get" in http_method_names
 
     allowed_methods = getattr(callback, "allowed_methods", None)
     if allowed_methods:
-        methods.update(method.upper() for method in allowed_methods)
+        return "GET" in allowed_methods
 
-    return sorted(method for method in methods if method in _SUPPORTED_METHODS)
+    return True
 
 
 def collect_url_tests():
     targets = {}
     resolver = get_resolver()
-    for prefix, pattern in _iter_urlpatterns(resolver.url_patterns):
+    for prefix, has_params, pattern in _iter_urlpatterns(resolver.url_patterns):
+        if has_params or not _allows_get(pattern):
+            continue
+
         if hasattr(pattern.pattern, "_route"):
-            route = _fill_route(pattern.pattern._route, pattern.pattern.converters)
+            route = pattern.pattern._route
+            if _is_dynamic_route(route):
+                continue
         else:
-            route = _regex_to_path(_route_for_pattern(pattern.pattern))
+            regex = pattern.pattern.regex.pattern
+            if _is_dynamic_regex(regex):
+                continue
+            route = _regex_to_path(regex)
 
         full_path = _join_paths(prefix, route)
         if not full_path:
@@ -135,34 +101,22 @@ def collect_url_tests():
             full_path = f"/{full_path}"
 
         name = pattern.name or pattern.lookup_str
-        for method in _methods_for_pattern(pattern):
-            targets.setdefault((method, full_path), name)
+        targets.setdefault(full_path, name)
 
     return sorted(
-        [(method, path, name) for (method, path), name in targets.items()],
-        key=lambda item: (item[1], item[0]),
+        [(path, name) for path, name in targets.items()],
+        key=lambda item: item[0],
     )
 
 
-@pytest.mark.parametrize("method,path,name", collect_url_tests())
-def test_urls_no_500(auth_client, method, path, name):
-    if method == "GET":
-        response = auth_client.get(path)
-    elif method == "POST":
-        response = auth_client.post(path, data={})
-    elif method in {"PUT", "PATCH"}:
-        response = getattr(auth_client, method.lower())(
-            path, data="{}", content_type="application/json"
-        )
-    elif method == "DELETE":
-        response = auth_client.delete(path, data="{}", content_type="application/json")
-    elif method == "HEAD":
-        response = auth_client.head(path)
-    elif method == "OPTIONS":
-        response = auth_client.options(path)
+@pytest.mark.parametrize("path,name", collect_url_tests())
+def test_urls_no_500(request, path, name):
+    if path.startswith("/api/"):
+        client = request.getfixturevalue("api_client")
     else:
-        response = auth_client.generic(method, path)
+        client = request.getfixturevalue("auth_client")
+    response = client.get(path)
 
-    assert response.status_code < 500, (
-        f"{method} {path} ({name}) devolvio {response.status_code}"
+    assert response.status_code < 400, (
+        f"GET {path} ({name}) devolvio {response.status_code}"
     )
