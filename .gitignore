@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/django,python,node
 # Edit at https://www.toptal.com/developers/gitignore?templates=django,python,node
 
+.DS_Store
+
 ### Django ###
 *.log
 *.pot
