@@ -905,7 +905,7 @@ class ComedorService:
 
         Regla:
         - Solo puede haber una admisión de tipo 'incorporacion' por comedor.
-        - Puede haber múltiples admisiones de tipo 'renovacion'.
+        - Puede haber hasta 4 admisiones de tipo 'renovacion' activas.
         Luego redirige nuevamente al detalle del comedor.
         """
 
