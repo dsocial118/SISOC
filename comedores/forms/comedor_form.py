@@ -103,7 +103,7 @@ class ComedorForm(forms.ModelForm):
         empty_label="Seleccione un motivo",
         widget=forms.Select(attrs={"data-placeholder": "Seleccione un motivo"}),
     )
-    comienzo = forms.IntegerField(min_value=1900, required=False)
+    comienzo = forms.IntegerField(min_value=1900, max_value=2026, required=False)
     longitud = forms.FloatField(min_value=-180, max_value=180, required=False)
     latitud = forms.FloatField(min_value=-90, max_value=90, required=False)
     codigo_postal = forms.IntegerField(min_value=1000, max_value=999999, required=False)
