@@ -358,7 +358,10 @@ class ComedorForm(forms.ModelForm):
     class Meta:
         model = Comedor
         fields = "__all__"
-        exclude = ["ultimo_estado", "fecha_validado"]  # IMPORTANTE: Excluir para que no se sobrescriba
+        exclude = [
+            "ultimo_estado",
+            "fecha_validado",
+        ]  # IMPORTANTE: Excluir para que no se sobrescriba
         labels = {
             "tipocomedor": "Tipo comedor",
         }

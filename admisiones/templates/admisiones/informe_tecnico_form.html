@@ -338,9 +338,7 @@
                             {% if form.permite_no_corresponde_fecha_vencimiento %}
                                 <div class="form-check mt-2">
                                     {{ form.no_corresponde_fecha_vencimiento }}
-                                    <label class="form-check-label" for="no_corresponde_fecha_vencimiento">
-                                        No corresponde
-                                    </label>
+                                    <label class="form-check-label" for="no_corresponde_fecha_vencimiento">No corresponde</label>
                                 </div>
                             {% endif %}
                         </div>
@@ -473,7 +471,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
+    <script>
 $(document).ready(function() {
     const fechaField = $('#id_fecha_vencimiento_mandatos');
     const noCorrespondeCheckbox = $('#no_corresponde_fecha_vencimiento');
@@ -493,5 +491,5 @@ $(document).ready(function() {
     // Ejecutar cuando cambie el checkbox
     noCorrespondeCheckbox.on('change', toggleFechaField);
 });
-</script>
+    </script>
 {% endblock %}

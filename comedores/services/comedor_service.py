@@ -949,7 +949,6 @@ class ComedorService:
                 )
                 return redirect(request.path)
 
-
         nueva_admision = Admision.objects.create(
             comedor=comedor,
             tipo=tipo_admision,

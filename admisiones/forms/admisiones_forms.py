@@ -280,7 +280,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
 
         if no_corresponde:
             cleaned_data["fecha_vencimiento_mandatos"] = None
-        
+
         return cleaned_data
 
 
@@ -456,7 +456,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
 
         if no_corresponde:
             cleaned_data["fecha_vencimiento_mandatos"] = None
-        
+
         return cleaned_data
 
 
