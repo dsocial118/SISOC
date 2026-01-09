@@ -1,12 +1,14 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from duplas.models import Dupla
 
 
 class DuplaForm(forms.ModelForm):
+    _user_model = get_user_model()
     # Sobrescribimos los campos para personalizar la visualización
     tecnico = forms.ModelMultipleChoiceField(
-        queryset=None,
+        queryset=_user_model.objects.none(),
         required=True,
         widget=forms.SelectMultiple(
             attrs={
@@ -19,7 +21,7 @@ class DuplaForm(forms.ModelForm):
     )
 
     abogado = forms.ModelChoiceField(
-        queryset=None,
+        queryset=_user_model.objects.none(),
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
     )

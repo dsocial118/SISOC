@@ -19,7 +19,10 @@ def test_localidades_lookup_filters(client):
     Localidad.objects.create(nombre="Cba Centro", municipio=muni2)
 
     user = User.objects.create_user(username="prov", password="pass")
-    Profile.objects.create(user=user, es_usuario_provincial=True, provincia=prov1)
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.es_usuario_provincial = True
+    profile.provincia = prov1
+    profile.save()
     user.groups.add(grupo)
     client.force_login(user)
 

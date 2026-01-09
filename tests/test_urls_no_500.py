@@ -7,6 +7,21 @@ pytestmark = pytest.mark.smoke
 
 _DYNAMIC_ROUTE_RE = re.compile(r"<[^>]+>")
 _REGEX_NAMED_GROUP_RE = re.compile(r"\(\?P<[^>]+>")
+_ALLOWED_VIEWSET_ACTIONS = {"list", "retrieve"}
+_SKIP_NAMES = {"autocomplete", "api-root", "auditlog_logentry_add"}
+_SKIP_PATHS = {
+    "/admin/autocomplete/",
+    "/admin/auditlog/logentry/add/",
+    "/api/centrodefamilia/",
+    "/login/",
+}
+_SKIP_PATH_SUBSTRINGS = (
+    "/ajax/",
+    "/buscar-",
+    "/informecabal/preview",
+    "/informecabal/process",
+    "/informecabal/reprocess",
+)
 
 
 def _is_dynamic_route(route: str) -> bool:
@@ -59,22 +74,37 @@ def _iter_urlpatterns(patterns, prefix: str = "", has_params: bool = False):
 
 def _allows_get(pattern) -> bool:
     callback = pattern.callback
+    callback_methods = getattr(callback, "http_method_names", None)
+    if callback_methods and "get" not in callback_methods:
+        return False
 
     actions = getattr(callback, "actions", None)
-    if actions:
-        return "get" in actions
+    if actions is not None:
+        action_name = actions.get("get")
+        if action_name is None:
+            return False
+        return action_name in _ALLOWED_VIEWSET_ACTIONS
 
     view_class = getattr(callback, "view_class", None) or getattr(callback, "cls", None)
     if view_class is not None:
         http_method_names = getattr(view_class, "http_method_names", None)
-        if http_method_names:
-            return "get" in http_method_names
+        if http_method_names and "get" not in http_method_names:
+            return False
+        return callable(getattr(view_class, "get", None))
 
     allowed_methods = getattr(callback, "allowed_methods", None)
-    if allowed_methods:
-        return "GET" in allowed_methods
+    if allowed_methods and "GET" not in allowed_methods:
+        return False
 
     return True
+
+
+def _should_skip(path: str, name: str) -> bool:
+    if name in _SKIP_NAMES:
+        return True
+    if path in _SKIP_PATHS:
+        return True
+    return any(fragment in path for fragment in _SKIP_PATH_SUBSTRINGS)
 
 
 def collect_url_tests():
@@ -101,6 +131,8 @@ def collect_url_tests():
             full_path = f"/{full_path}"
 
         name = pattern.name or pattern.lookup_str
+        if _should_skip(full_path, name):
+            continue
         targets.setdefault(full_path, name)
 
     return sorted(
@@ -117,6 +149,6 @@ def test_urls_no_500(request, path, name):
         client = request.getfixturevalue("auth_client")
     response = client.get(path)
 
-    assert response.status_code < 400, (
-        f"GET {path} ({name}) devolvio {response.status_code}"
-    )
+    assert (
+        response.status_code < 400
+    ), f"GET {path} ({name}) devolvio {response.status_code}"

@@ -58,9 +58,14 @@ def client_logged(db, django_user_model, client):
 
 
 @pytest.fixture
-def relevamiento(comedor_fixture):
+def comedor(db):
+    return ComedorFactory()
+
+
+@pytest.fixture
+def relevamiento(comedor):
     # Crear relevamiento con ese comedor
-    rel_instance = RelevamientoFactory(comedor=comedor_fixture)
+    rel_instance = RelevamientoFactory(comedor=comedor)
     rel_instance.responsable = mock.Mock()
     rel_instance.responsable.nombre = fake.first_name()
     rel_instance.responsable.apellido = fake.last_name()
