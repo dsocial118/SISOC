@@ -1,162 +1,597 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Organizacion: {{ organizacion.nombre }}{% endblock %}
-{% block titulo-pagina %}
-    {{ organizacion.nombre }}
-    <span class="ml-2 h5">| {{ organizacion.cuit | default_if_none:"Sin información" }}</span>
-{% endblock %}
-{% block breadcrumb %}
-    <ol class="breadcrumb float-sm-right">
-        <div class="breadcrumb-item">
-            <a href="{% url 'organizaciones' %}">Organizaciones</a>
-        </div>
-        <div class="breadcrumb-item active">{{ organizacion.nombre }}</div>
-    </ol>
-{% endblock %}
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
-    <link rel="stylesheet"
-          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
-    <div class="row justify-content-between d-print-none mx-1 mb-3">
-        <div class="col-auto">
-            <a href="{% url 'organizaciones' %}"
-               class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
-        </div>
-        <div class="col-auto">
-            {% if perms.auditlog.view_logentry %}
-                <a href="{% url 'audittrail:log_instance' 'organizaciones' 'organizacion' organizacion.pk %}"
-                   class="btn btn-outline-secondary mr-1">Historial</a>
-            {% endif %}
-            <a href="{% url 'organizacion_editar' organizacion.id %}"
-               class="btn btn-primary mr-1">Editar</a>
-            <a href="{% url 'organizacion_eliminar' organizacion.id %}"
-               class="btn btn-danger">Eliminar</a>
-        </div>
-    </div>
-    {% include 'components/info_card.html' with title='Información de la organizacion' items=data_items list_style=True col_class="col-md-6" card_class="card-outline card-primary h-100" %}
-    <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
-        <div class="col-auto">
-            <h4 style="display: inline;">Firmantes</h4>
-        </div>
-        <div class="col-auto">
-            <a href="{% url 'firmante_crear' organizacion.id %}"
-               class="btn btn-primary mr-1">Agregar Firmante</a>
-        </div>
-    </div>
-    {% include 'components/data_table.html' with headers=table_headers items=firmantes fields=table_fields actions=actions show_actions=show_actions empty_message='No hay firmantes registrados.' %}
-    {% if is_paginated %}
-        {% include 'components/pagination.html' %}
-    {% endif %}
-    {% if avales %}
-        <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
-            <div class="col-auto">
-                <h4 style="display: inline;">Aval</h4>
+    <style>
+:root {
+    --navy-dark: #232D4F;
+    --navy-medium: #232D4F;
+    --navy-light: #4A5F7F;
+    --gold: #F5A623;
+    --green: #28A745;
+    --red: #DC3545;
+}
+
+.app-content {
+    background: linear-gradient(135deg, #3e5a7e 0%, #3e5a7e 100%);
+    min-height: 100vh;
+}
+
+.legajo-header {
+    background: #232D4F;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    margin: 0 0 1rem 0;
+    color: white;
+    border-top: none;
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.legajo-header h1 {
+    font-family: Georgia, serif;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 0;
+    letter-spacing: 0.5px;
+}
+
+.legajo-header .subtitle {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.datos-card {
+    background: var(--navy-medium);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.datos-card-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.datos-card label, .datos-card strong {
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 0;
+}
+
+.datos-card .value {
+    color: white;
+    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 0;
+}
+
+.datos-card .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.datos-card .info-row:last-child {
+    border-bottom: none;
+}
+
+.info-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.tabla-legajo {
+    background: var(--navy-medium);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.tabla-legajo h5 {
+    font-weight: 600;
+}
+
+.tabla-legajo table {
+    color: white;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.tabla-legajo thead {
+    background: var(--navy-dark);
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+}
+
+.tabla-legajo thead th {
+    color: white;
+    font-weight: 600;
+}
+
+.tabla-legajo tbody td, .tabla-legajo tbody th {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-top: none;
+    color: rgba(255,255,255,0.95);
+}
+
+.tabla-legajo tbody tr:hover td {
+    background: rgba(255,255,255,0.05);
+}
+
+.btn-success {
+    background: var(--green) !important;
+    border: none !important;
+}
+
+.btn-danger {
+    background: var(--red) !important;
+    border: none !important;
+}
+
+.btn-outline-light:hover {
+    background: rgba(255,255,255,0.1) !important;
+}
+
+.datos-card h5 {
+    margin-bottom: 1.25rem;
+    font-weight: 600;
+}
+
+.nav-tabs-legajo {
+    padding: 1rem 1.5rem 0.5rem 1.5rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    white-space: nowrap;
+    border-bottom: none;
+    display: flex;
+    gap: 0.5rem;
+    background: #3e5a7e;
+}
+
+.nav-tabs-legajo .nav-link {
+    background: #232D4F;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    transition: all 0.3s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    height: auto;
+}
+
+.nav-tabs-legajo .nav-link.active {
+    background: var(--gold);
+    color: #232D4F;
+    font-weight: 600;
+    border: none;
+}
+
+.nav-tabs-legajo .nav-link:hover:not(.active) {
+    background: rgba(255,255,255,0.1);
+}
+
+.btn-edit-card {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-edit-card:hover {
+    background: var(--gold);
+    color: var(--navy-dark);
+    border-color: var(--gold);
+}
+
+.icon-placeholder {
+    width: 180px;
+    height: 180px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 4rem;
+}
+
+.badge-status {
+    padding: 0.35rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.badge-status.vigente {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--green);
+    border: 1px solid var(--green);
+}
+
+.badge-status.vencido {
+    background: rgba(220, 53, 69, 0.2);
+    color: var(--red);
+    border: 1px solid var(--red);
+}
+    </style>
+
+    <div class="container-fluid p-0">
+        <div class="legajo-header mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>{{ organizacion.nombre }}</h1>
+                    <p class="subtitle mb-0">
+                        CUIT: {{ organizacion.cuit|default:"Sin información" }} |
+                        {{ organizacion.tipo_entidad|default:"Sin tipo de entidad" }}
+                        {% if organizacion.subtipo_entidad %}- {{ organizacion.subtipo_entidad }}{% endif %}
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'organizaciones' %}" class="btn btn-outline-light">Volver</a>
+                    {% if perms.auditlog.view_logentry %}
+                        <a href="{% url 'audittrail:log_instance' 'organizaciones' 'organizacion' organizacion.pk %}"
+                           class="btn btn-outline-light">Historial</a>
+                    {% endif %}
+                    <a href="{% url 'organizacion_editar' organizacion.id %}"
+                       class="btn btn-outline-light">Editar</a>
+                    <a href="{% url 'organizacion_eliminar' organizacion.id %}"
+                       class="btn btn-danger">Eliminar</a>
+                </div>
             </div>
-            <div class="col-auto">
-                <a href="{% url 'aval_crear' organizacion.id %}"
-                   class="btn btn-primary mr-1">Agregar Aval</a>
+        </div>
+
+        <ul class="nav nav-tabs nav-tabs-legajo" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active"
+                   data-bs-toggle="tab"
+                   href="#informacion-general">Información General</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#comedores">Comedores Asociados ({{ comedores_count }})</a>
+            </li>
+        </ul>
+
+        <div class="tab-content px-4">
+            <!-- TAB: Información General -->
+            <div class="tab-pane fade show active" id="informacion-general">
+                <!-- Card de Datos de la Organización -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="datos-card" style="position: relative;">
+                            <a href="{% url 'organizacion_editar' organizacion.id %}"
+                               class="btn-edit-card">
+                                <i class="fas fa-pen"></i>
+                            </a>
+                            <h5>Información de la Organización</h5>
+                            <div class="datos-card-content">
+                                <div style="display: flex; justify-content: center; align-items: center;">
+                                    <div class="icon-placeholder">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                </div>
+
+                                <div class="info-column">
+                                    <div class="info-row">
+                                        <strong>Nombre:</strong>
+                                        <span class="value">{{ organizacion.nombre }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>CUIT:</strong>
+                                        <span class="value">{{ organizacion.cuit|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Tipo de Entidad:</strong>
+                                        <span class="value">{{ organizacion.tipo_entidad|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Subtipo de Entidad:</strong>
+                                        <span class="value">{{ organizacion.subtipo_entidad|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Teléfono:</strong>
+                                        <span class="value">{{ organizacion.telefono|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Email:</strong>
+                                        <span class="value">{{ organizacion.email|default:'-' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="info-column">
+                                    <div class="info-row">
+                                        <strong>Provincia:</strong>
+                                        <span class="value">{{ organizacion.provincia|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Municipio:</strong>
+                                        <span class="value">{{ organizacion.municipio|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Localidad:</strong>
+                                        <span class="value">{{ organizacion.localidad|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Partido:</strong>
+                                        <span class="value">{{ organizacion.partido|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Domicilio:</strong>
+                                        <span class="value">{{ organizacion.domicilio|default:'-' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Fecha de Vencimiento:</strong>
+                                        <span class="value">
+                                            {{ organizacion.fecha_vencimiento|date:"d/m/Y"|default:'-' }}
+                                            {% if organizacion.fecha_vencimiento %}
+                                                {% now "Y-m-d" as today %}
+                                                {% if organizacion.fecha_vencimiento|date:"Y-m-d" >= today %}
+                                                    <span class="badge-status vigente">
+                                                        <i class="fas fa-check-circle"></i> Vigente
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge-status vencido">
+                                                        <i class="fas fa-exclamation-circle"></i> Vencido
+                                                    </span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Fecha de Creación:</strong>
+                                        <span class="value">{{ organizacion.fecha_creacion|date:"d/m/Y H:i"|default:'-' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Firmantes -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Firmantes de la Organización</h5>
+                                <a href="{% url 'firmante_crear' organizacion.id %}"
+                                   class="btn btn-success btn-sm">
+                                    <i class="fas fa-plus"></i> Agregar Firmante
+                                </a>
+                            </div>
+                            {% if firmantes %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Rol</th>
+                                            <th>CUIT</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for firmante in firmantes %}
+                                            <tr>
+                                                <td>{{ firmante.nombre }}</td>
+                                                <td>
+                                                    {% if firmante.rol %}
+                                                        <span class="badge"
+                                                              style="background: rgba(245, 166, 35, 0.2);
+                                                                     color: var(--gold);
+                                                                     border: 1px solid var(--gold)">
+                                                            {{ firmante.rol.nombre }}
+                                                        </span>
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ firmante.cuit|default:'-' }}</td>
+                                                <td class="text-end">
+                                                    <a href="{% url 'firmante_editar' firmante.pk %}"
+                                                       class="btn btn-sm"
+                                                       style="background: rgba(40, 167, 69, 0.2);
+                                                              color: var(--green);
+                                                              border: 1px solid var(--green)">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'firmante_eliminar' firmante.pk %}"
+                                                       class="btn btn-sm"
+                                                       style="background: rgba(220, 53, 69, 0.2);
+                                                              color: var(--red);
+                                                              border: 1px solid var(--red)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay firmantes registrados.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Avales (solo si existen) -->
+                {% if avales %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="tabla-legajo">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0">Avales</h5>
+                                    <a href="{% url 'aval_crear' organizacion.id %}"
+                                       class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i> Agregar Aval
+                                    </a>
+                                </div>
+                                {% if avales_data %}
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>CUIT</th>
+                                                <th class="text-end">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for aval in avales_data %}
+                                                <tr>
+                                                    <td>{{ aval.nombre|default:'-' }}</td>
+                                                    <td>{{ aval.cuit|default:'-' }}</td>
+                                                    <td class="text-end">
+                                                        <a href="{% url 'aval_editar' aval.pk %}"
+                                                           class="btn btn-sm"
+                                                           style="background: rgba(40, 167, 69, 0.2);
+                                                                  color: var(--green);
+                                                                  border: 1px solid var(--green)">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <a href="{% url 'aval_eliminar' aval.pk %}"
+                                                           class="btn btn-sm"
+                                                           style="background: rgba(220, 53, 69, 0.2);
+                                                                  color: var(--red);
+                                                                  border: 1px solid var(--red)">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                {% else %}
+                                    <p style="color: rgba(255,255,255,0.5);">No hay avales registrados.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
-        </div>
-        {% include 'components/data_table.html' with headers=table_headers_avales items=avales_data fields=table_fields_avales actions=actions_avales show_actions=show_actions empty_message='No hay avales registrados.' %}
-        {% if is_paginated %}
-            {% include 'components/pagination.html' %}
-        {% endif %}
-    {% endif %}
-    <div class="row justify-content-between d-print-none mx-1 mb-3 mt-4">
-        <div class="col-auto">
-            <h4 style="display: inline;">Comedores asociados: {{ comedores_count }}</h4>
-        </div>
-    </div>
-    {% if comedores %}
-        <div class="row mt-3 max-width-100">
-            <div class="col-12">
-                <div class="card comedor-table-card">
-                    <div class="card-body">
-                        <table class="table table-comedor-moderno">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Tipo</th>
-                                    <th>Ubicación</th>
-                                    <th>Dirección</th>
-                                    <th>Referente</th>
-                                    <th>Validación</th>
-                                    <th class="notexport">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for comedor in comedores %}
-                                    <tr>
-                                        <td>
-                                            <a href="{% url 'comedor_detalle' comedor.id %}"
-                                               class="link-handler"
-                                               title="Ver detalles de {{ comedor.nombre }}">{{ comedor.nombre }}</a>
-                                        </td>
-                                        <td>{{ comedor.tipocomedor.nombre | default_if_none:"Sin información" }}</td>
-                                        <td>
-                                            <div class="ubicacion-info">
-                                                <div class="ubicacion-item">{{ comedor.provincia.nombre | default_if_none:"Sin provincia" }}</div>
-                                                <div class="ubicacion-item">
-                                                    {{ comedor.municipio.nombre | default_if_none:"Sin municipio" }} / {{ comedor.localidad.nombre | default_if_none:"Sin localidad" }}
-                                                </div>
-                                                {% if comedor.barrio %}<div class="ubicacion-item">{{ comedor.barrio }}</div>{% endif %}
-                                            </div>
-                                        </td>
-                                        <td>{{ comedor.calle | default_if_none:"Sin calle" }} {{ comedor.numero | default_if_none:"S/N" }}</td>
-                                        <td>
-                                            {% if comedor.referente %}
-                                                {{ comedor.referente.nombre | default_if_none:"Sin" }} {{ comedor.referente.apellido | default_if_none:"información" }}
-                                            {% else %}
-                                                Sin información
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if comedor.estado_validacion == "Validado" %}
-                                                <span class="badge-validacion validado">
-                                                    <i class="fas fa-check-circle"></i>
-                                                    Validado
-                                                </span>
-                                                {% if comedor.fecha_validado %}
-                                                    <small class="fecha-validacion">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
-                                                {% endif %}
-                                            {% elif comedor.estado_validacion == "No Validado" %}
-                                                <span class="badge-validacion no-validado">
-                                                    <i class="fas fa-times-circle"></i>
-                                                    No Validado
-                                                </span>
-                                                {% if comedor.fecha_validado %}
-                                                    <small class="fecha-validacion">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
-                                                {% endif %}
-                                            {% else %}
-                                                <span class="badge-validacion pendiente">
-                                                    <i class="fas fa-clock"></i>
-                                                    Pendiente
-                                                </span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="comedor-actions">
-                                                <a href="{% url 'comedor_detalle' comedor.id %}"
-                                                   class="btn btn-ver link-handler"
-                                                   title="Ver detalles">
-                                                    <i class="fas fa-eye"></i>
-                                                    Ver
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+
+            <!-- TAB: Comedores -->
+            <div class="tab-pane fade" id="comedores">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <h5 class="mb-3">
+                                <span>Comedores Asociados</span>
+                                <span class="badge"
+                                      style="background: rgba(245, 166, 35, 0.2);
+                                             color: var(--gold);
+                                             border: 1px solid var(--gold);
+                                             padding: 0.35rem 0.75rem;
+                                             font-size: 0.75rem;
+                                             margin-left: 0.5rem">{{ comedores_count }} Total</span>
+                            </h5>
+                            {% if comedores %}
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Tipo</th>
+                                            <th>Ubicación</th>
+                                            <th>Dirección</th>
+                                            <th>Referente</th>
+                                            <th>Estado</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for comedor in comedores %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'comedor_detalle' comedor.id %}"
+                                                       style="color: #F5A623;
+                                                              text-decoration: underline">{{ comedor.nombre }}</a>
+                                                </td>
+                                                <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>
+                                                <td>
+                                                    <div>
+                                                        <div style="font-size: 0.9rem;">{{ comedor.provincia.nombre|default:'-' }}</div>
+                                                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">
+                                                            {{ comedor.municipio.nombre|default:'-' }} / {{ comedor.localidad.nombre|default:'-' }}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ comedor.calle|default:'-' }} {{ comedor.numero|default:'S/N' }}</td>
+                                                <td>
+                                                    {% if comedor.referente %}
+                                                        {{ comedor.referente.nombre }} {{ comedor.referente.apellido }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if comedor.estado_validacion == "Validado" %}
+                                                        <span class="badge"
+                                                              style="background: rgba(40, 167, 69, 0.2);
+                                                                     color: var(--green);
+                                                                     border: 1px solid var(--green)">
+                                                            <i class="fas fa-check-circle"></i> Validado
+                                                        </span>
+                                                    {% elif comedor.estado_validacion == "No Validado" %}
+                                                        <span class="badge"
+                                                              style="background: rgba(220, 53, 69, 0.2);
+                                                                     color: var(--red);
+                                                                     border: 1px solid var(--red)">
+                                                            <i class="fas fa-times-circle"></i> No Validado
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge"
+                                                              style="background: rgba(255,255,255,0.1);
+                                                                     color: rgba(255,255,255,0.7)">
+                                                            <i class="fas fa-clock"></i> Pendiente
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-end">
+                                                    <a href="{% url 'comedor_detalle' comedor.id %}"
+                                                       class="btn btn-sm"
+                                                       style="background: rgba(52, 152, 219, 0.2);
+                                                              color: #3498db;
+                                                              border: 1px solid #3498db">
+                                                        <i class="fas fa-eye"></i> Ver
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <p style="color: rgba(255,255,255,0.5);">No hay comedores asociados a esta organización.</p>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    {% else %}
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="alert alert-info">No hay comedores asociados a esta organización.</div>
-            </div>
-        </div>
-    {% endif %}
+    </div>
 {% endblock %}
