@@ -913,7 +913,7 @@ class ComedorService:
 
         if not tipo_admision:
             messages.error(request, "Debe seleccionar un tipo de admisión.")
-            return redirect(request.path)
+            return redirect("comedor_detalle", pk=comedor.pk)
 
         if (
             tipo_admision == "renovacion"
@@ -927,7 +927,7 @@ class ComedorService:
                 "Debe existir al menos una admisión de Incorporación para este comedor, "
                 "independientemente de su estado.",
             )
-            return redirect(request.path)
+            return redirect("comedor_detalle", pk=comedor.pk)
 
         if tipo_admision == "incorporacion":
             if Admision.objects.filter(
@@ -937,7 +937,7 @@ class ComedorService:
                     request,
                     "Ya existe una admision de Incorporacion activa para este comedor.",
                 )
-                return redirect(request.path)
+                return redirect("comedor_detalle", pk=comedor.pk)
         else:
             renovaciones_activas = Admision.objects.filter(
                 comedor=comedor, tipo="renovacion", activa=True
