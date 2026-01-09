@@ -12,7 +12,7 @@ from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseNotAllowed
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -652,9 +652,8 @@ class ImportDatosView(LoginRequiredMixin, FormView):
             )
         return redirect(self.success_url)
 
-    # Permitir importación vía GET (desde el botón en el detalle)
     def get(self, request, *args, **kwargs):
-        return self.post(request, *args, **kwargs)
+        return HttpResponseNotAllowed(["POST"])
 
 
 class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
@@ -701,6 +700,5 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
         )
         return redirect(self.success_url)
 
-    # Permitir borrado vía GET (desde el botón en el detalle)
     def get(self, request, *args, **kwargs):
-        return self.post(request, *args, **kwargs)
+        return HttpResponseNotAllowed(["POST"])
