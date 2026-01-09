@@ -335,6 +335,12 @@
 
                         <div class="col-md-6 mb-3{% if 'fecha_vencimiento_mandatos' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                             {{ form.fecha_vencimiento_mandatos|as_crispy_field }}
+                            {% if form.permite_no_corresponde_fecha_vencimiento %}
+                                <div class="form-check mt-2">
+                                    {{ form.no_corresponde_fecha_vencimiento }}
+                                    <label class="form-check-label" for="no_corresponde_fecha_vencimiento">No corresponde</label>
+                                </div>
+                            {% endif %}
                         </div>
                         <div class="col-12 mb-3{% if 'conclusiones' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
                             {{ form.conclusiones|as_crispy_field }}
@@ -462,4 +468,28 @@
             </div>
         </form>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+$(document).ready(function() {
+    const fechaField = $('#id_fecha_vencimiento_mandatos');
+    const noCorrespondeCheckbox = $('#no_corresponde_fecha_vencimiento');
+    
+    // Función para manejar el estado del campo fecha
+    function toggleFechaField() {
+        if (noCorrespondeCheckbox.is(':checked')) {
+            fechaField.val('').prop('disabled', true);
+        } else {
+            fechaField.prop('disabled', false);
+        }
+    }
+    
+    // Ejecutar al cargar la página
+    toggleFechaField();
+    
+    // Ejecutar cuando cambie el checkbox
+    noCorrespondeCheckbox.on('change', toggleFechaField);
+});
+    </script>
 {% endblock %}
