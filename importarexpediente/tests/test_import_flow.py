@@ -134,7 +134,7 @@ def test_import_persists_expedientepago_and_marks_completed(
 
     # Step 2: import
     import_url = reverse("importar_datos", kwargs={"id_archivo": batch.id})
-    resp = client_logged.get(import_url)
+    resp = client_logged.post(import_url)
     assert resp.status_code in (302, 200)
 
     # One ExpedientePago created
@@ -167,11 +167,11 @@ def test_import_is_idempotent_when_completed(client_logged, tmp_media, db):
     batch = ArchivosImportados.objects.latest("id")
 
     # First import
-    client_logged.get(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    client_logged.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
     assert ExpedientePago.objects.count() == 1
 
     # Second import should not create more
-    resp = client_logged.get(
+    resp = client_logged.post(
         reverse("importar_datos", kwargs={"id_archivo": batch.id}), follow=True
     )
     assert resp.status_code == 200
@@ -190,13 +190,13 @@ def test_delete_resets_flag_and_removes_records(client_logged, tmp_media, db):
     batch = ArchivosImportados.objects.latest("id")
 
     # Import to create records
-    client_logged.get(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    client_logged.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
     assert ExpedientePago.objects.count() == 1
     batch.refresh_from_db()
     assert batch.importacion_completada is True
 
     # Delete imported data
-    resp = client_logged.get(
+    resp = client_logged.post(
         reverse("borrar_datos_importados", kwargs={"id_archivo": batch.id})
     )
     assert resp.status_code in (302, 200)
