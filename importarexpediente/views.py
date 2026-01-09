@@ -94,7 +94,7 @@ def _friendly_error_message(exc: Exception) -> str:
     )
 
 
-class ImportExpedientesView(FormView):
+class ImportExpedientesView(LoginRequiredMixin, FormView):
     template_name = "upload.html"
     form_class = CSVUploadForm
     success_url = reverse_lazy("importarexpedientes_list")
