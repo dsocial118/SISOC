@@ -647,7 +647,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         validaciones_headers = [
             {"title": "Fecha"},
             {"title": "Usuario"},
-            {"title": "Estado"},
+            {"title": "¿Fue validado?"},
             {"title": "Opciones"},
             {"title": "Comentario"},
         ]
