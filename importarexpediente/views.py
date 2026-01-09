@@ -155,7 +155,10 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                 f.seek(0)
             except Exception:
                 pass
-            base_upload = ArchivosImportados(usuario=self.request.user)
+            base_upload = ArchivosImportados(
+                usuario=self.request.user,
+                delimiter=delim,
+            )
             base_upload.archivo.save(f.name, f, save=True)
             # Identificador único del lote = PK del maestro (si el modelo tiene el campo id_archivo, lo seteamos)
             batch_id = base_upload.pk
@@ -173,6 +176,17 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
         except Exception:
             f.seek(0)
             decoded = f.read().decode("latin-1")
+
+        first_line = decoded.splitlines()[0] if decoded else ""
+        detected_delim = ";" if ";" in first_line else ","
+        if first_line and detected_delim != delim:
+            messages.warning(
+                self.request,
+                (
+                    f"El delimitador seleccionado fue '{delim}', pero el archivo "
+                    f"parece usar '{detected_delim}'. Se usara '{delim}'."
+                ),
+            )
 
         stream = io.StringIO(decoded)
         reader = csv.reader(stream, delimiter=delim)
@@ -505,14 +519,6 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         # Usar el id de la URL
         batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
 
-        # Importar solo si el lote NO está marcado como completado
-        if getattr(batch, "importacion_completada", False):
-            messages.warning(
-                request,
-                "Este archivo ya fue importado. Primero borre los datos importados para reintentar.",
-            )
-            return redirect(self.success_url)
-
         # Abrir y decodificar el archivo CSV almacenado
         try:
             batch.archivo.open("rb")
@@ -525,9 +531,19 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         except Exception:
             decoded = data.decode("latin-1")
 
-        # Intento simple de detección de delimitador (default ';', fallback ',')
+        # Detectar delimitador para alertar si difiere del elegido
         first_line = decoded.splitlines()[0] if decoded else ""
-        delim = ";" if ";" in first_line else ","
+        detected_delim = ";" if ";" in first_line else ","
+        chosen_delim = getattr(batch, "delimiter", ",") or ","
+        if first_line and detected_delim != chosen_delim:
+            messages.warning(
+                request,
+                (
+                    f"El delimitador seleccionado fue '{chosen_delim}', pero el archivo "
+                    f"parece usar '{detected_delim}'. Se usara '{chosen_delim}'."
+                ),
+            )
+        delim = chosen_delim
 
         stream = io.StringIO(decoded)
         reader = csv.reader(stream, delimiter=delim)
@@ -549,6 +565,14 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         error_count = 0
 
         with transaction.atomic():
+            batch = ArchivosImportados.objects.select_for_update().get(pk=self.batch_id)
+            # Importar solo si el lote NO está marcado como completado
+            if getattr(batch, "importacion_completada", False):
+                messages.warning(
+                    request,
+                    "Este archivo ya fue importado. Primero borre los datos importados para reintentar.",
+                )
+                return redirect(self.success_url)
             for i, row in enumerate(data_rows, start=2):
                 if len(row) < expected_cols:
                     row = row + [""] * (expected_cols - len(row))
@@ -636,13 +660,15 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                     friendly = _friendly_error_message(e)
                     messages.error(request, f"Fila {i} (Excel): {friendly}")
 
-        # Marcar el lote como importado si se creó al menos un registro
-        try:
-            if imported_count > 0:
-                batch.importacion_completada = True
-                batch.save(update_fields=["importacion_completada"])
-        except Exception as e:
-            messages.error(request, f"No se pudo marcar el lote como completado: {e}")
+            # Marcar el lote como importado si se creó al menos un registro
+            try:
+                if imported_count > 0:
+                    batch.importacion_completada = True
+                    batch.save(update_fields=["importacion_completada"])
+            except Exception as e:
+                messages.error(
+                    request, f"No se pudo marcar el lote como completado: {e}"
+                )
 
         if error_count:
             messages.warning(
