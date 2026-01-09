@@ -1112,11 +1112,7 @@ class LegalesService:
                             )
                         },
                         # Última Modificación
-                        {
-                            "content": _format_datetime(
-                                admision.modificado, "%d/%m/%Y"
-                            )
-                        },
+                        {"content": _format_datetime(admision.modificado, "%d/%m/%Y")},
                     ],
                     "actions": actions,
                 }

@@ -163,7 +163,9 @@ class Command(BaseCommand):
                 )
             )
 
-            self.stdout.write(self.style.SUCCESS(f"FIN. Éxitos: {success}  Fallos: {fail}"))
+            self.stdout.write(
+                self.style.SUCCESS(f"FIN. Éxitos: {success}  Fallos: {fail}")
+            )
 
         if verbose:
             if not out_file:
