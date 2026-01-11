@@ -12,6 +12,7 @@ from centrodefamilia.models import (
     CabalArchivo,
     InformeCabalRegistro,
 )
+from core.models import Provincia, Municipio, Localidad
 
 
 class CategoriaSerializer(serializers.ModelSerializer):
@@ -61,6 +62,14 @@ class CentroSerializer(serializers.ModelSerializer):
     provincia_nombre = serializers.CharField(source="provincia.nombre", read_only=True)
     municipio_nombre = serializers.CharField(source="municipio.nombre", read_only=True)
     localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
+    categorias_actividades = serializers.SerializerMethodField()
+
+    def get_categorias_actividades(self, obj):
+        """Obtiene las categorías de actividades asociadas al centro"""
+        categorias = Categoria.objects.filter(
+            actividad__actividadcentro__centro=obj
+        ).distinct()
+        return CategoriaSerializer(categorias, many=True).data
 
     class Meta:
         model = Centro
@@ -84,6 +93,7 @@ class CentroSerializer(serializers.ModelSerializer):
             "correo",
             "nombre_referente",
             "apellido_referente",
+            "categorias_actividades",
         ]
 
 
@@ -250,3 +260,27 @@ class CabalArchivoSerializer(serializers.ModelSerializer):
             "total_invalidas",
             "registros",
         ]
+
+
+# Serializers de Ubicación
+class ProvinciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Provincia
+        fields = ["id", "nombre"]
+
+
+class MunicipioSerializer(serializers.ModelSerializer):
+    provincia_nombre = serializers.CharField(source="provincia.nombre", read_only=True)
+
+    class Meta:
+        model = Municipio
+        fields = ["id", "nombre", "provincia", "provincia_nombre"]
+
+
+class LocalidadSerializer(serializers.ModelSerializer):
+    municipio_nombre = serializers.CharField(source="municipio.nombre", read_only=True)
+    provincia_nombre = serializers.CharField(source="municipio.provincia.nombre", read_only=True)
+
+    class Meta:
+        model = Localidad
+        fields = ["id", "nombre", "municipio", "municipio_nombre", "provincia_nombre"]
