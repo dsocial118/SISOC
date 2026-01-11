@@ -11,6 +11,9 @@ from centrodefamilia.api_views import (
     BeneficiarioResponsableViewSet,
     InformeCabalRegistroViewSet,
     CabalArchivoViewSet,
+    ProvinciaViewSet,
+    MunicipioViewSet,
+    LocalidadViewSet,
 )
 
 router = DefaultRouter()
@@ -34,6 +37,11 @@ router.register(
     r"cabal-registros", InformeCabalRegistroViewSet, basename="api-cabal-registro"
 )
 router.register(r"cabal-archivos", CabalArchivoViewSet, basename="api-cabal-archivo")
+
+# Ubicación
+router.register(r"provincias", ProvinciaViewSet, basename="api-provincia")
+router.register(r"municipios", MunicipioViewSet, basename="api-municipio")
+router.register(r"localidades", LocalidadViewSet, basename="api-localidad")
 
 urlpatterns = [
     path("", include(router.urls)),
