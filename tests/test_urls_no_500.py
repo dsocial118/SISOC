@@ -8,6 +8,7 @@ pytestmark = pytest.mark.smoke
 _DYNAMIC_ROUTE_RE = re.compile(r"<[^>]+>")
 _REGEX_NAMED_GROUP_RE = re.compile(r"\(\?P<[^>]+>")
 _ALLOWED_VIEWSET_ACTIONS = {"list", "retrieve"}
+_HTTP_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "TRACE"}
 _SKIP_NAMES = {"autocomplete", "api-root", "auditlog_logentry_add"}
 _SKIP_PATHS = {
     "/admin/autocomplete/",
@@ -81,6 +82,21 @@ def _iter_wrapped_callbacks(callback):
         current = getattr(current, "__wrapped__", None)
 
 
+def _get_required_methods(callback):
+    closure = callback.__closure__ or ()
+    for cell in closure:
+        try:
+            value = cell.cell_contents
+        except ValueError:
+            continue
+        if isinstance(value, (list, tuple, set, frozenset)) and value:
+            if all(isinstance(method, str) for method in value):
+                normalized = {method.upper() for method in value}
+                if normalized <= _HTTP_METHODS:
+                    return normalized
+    return None
+
+
 def _allows_get(pattern) -> bool:
     for callback in _iter_wrapped_callbacks(pattern.callback):
         callback_methods = getattr(callback, "http_method_names", None)
@@ -106,6 +122,10 @@ def _allows_get(pattern) -> bool:
 
         allowed_methods = getattr(callback, "allowed_methods", None)
         if allowed_methods and "GET" not in allowed_methods:
+            return False
+
+        required_methods = _get_required_methods(callback)
+        if required_methods and "GET" not in required_methods:
             return False
 
     return True
