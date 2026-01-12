@@ -170,7 +170,9 @@
         });
     }
 
-    async function cargarFavoritos() {
+    async function cargarFavoritos(opciones) {
+        const ajustes = opciones || {};
+        const forzar = Boolean(ajustes.forzar);
         if (!listaNodo || !vacioNodo) {
             return;
         }
@@ -181,7 +183,7 @@
         listaNodo.innerHTML = '';
 
         try {
-            const url = `${urlListado}?seccion=${encodeURIComponent(seccion)}`;
+            const url = `${urlListado}?seccion=${encodeURIComponent(seccion)}${forzar ? '&refrescar=1' : ''}`;
             const respuesta = await fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -235,7 +237,7 @@
                 throw new Error(data.error || 'No se pudo guardar el favorito.');
             }
             inputNombre.value = '';
-            await cargarFavoritos();
+            await cargarFavoritos({ forzar: true });
         } catch (error) {
             mostrarError(error.message || 'No se pudo guardar el favorito.');
         }
