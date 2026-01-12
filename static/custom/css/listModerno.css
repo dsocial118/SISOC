@@ -830,6 +830,28 @@ h2.text-center.display-4 {
   box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3) !important;
 }
 
+/* Botón "Favoritos" */
+#favorite-filters-open {
+  background: #e7ba61 !important;
+  color: #1f2937 !important;
+  border: 2px solid #e7ba61 !important;
+  border-radius: 6px !important;
+  padding: 6px 16px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  transition: all 0.3s ease !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.3px !important;
+  box-shadow: 0 2px 4px rgba(231, 186, 97, 0.2) !important;
+}
+
+#favorite-filters-open:hover {
+  background: #d9a24f !important;
+  border-color: #d9a24f !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 12px rgba(231, 186, 97, 0.3) !important;
+}
+
 /* Filas de filtros */
 #filters-rows {
   margin-top: 1rem;
