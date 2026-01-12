@@ -72,29 +72,41 @@ def _iter_urlpatterns(patterns, prefix: str = "", has_params: bool = False):
             )
 
 
+def _iter_wrapped_callbacks(callback):
+    seen = set()
+    current = callback
+    while current and id(current) not in seen:
+        yield current
+        seen.add(id(current))
+        current = getattr(current, "__wrapped__", None)
+
+
 def _allows_get(pattern) -> bool:
-    callback = pattern.callback
-    callback_methods = getattr(callback, "http_method_names", None)
-    if callback_methods and "get" not in callback_methods:
-        return False
-
-    actions = getattr(callback, "actions", None)
-    if actions is not None:
-        action_name = actions.get("get")
-        if action_name is None:
+    for callback in _iter_wrapped_callbacks(pattern.callback):
+        callback_methods = getattr(callback, "http_method_names", None)
+        if callback_methods and "get" not in callback_methods:
             return False
-        return action_name in _ALLOWED_VIEWSET_ACTIONS
 
-    view_class = getattr(callback, "view_class", None) or getattr(callback, "cls", None)
-    if view_class is not None:
-        http_method_names = getattr(view_class, "http_method_names", None)
-        if http_method_names and "get" not in http_method_names:
+        actions = getattr(callback, "actions", None)
+        if actions is not None:
+            action_name = actions.get("get")
+            if action_name is None:
+                return False
+            if action_name not in _ALLOWED_VIEWSET_ACTIONS:
+                return False
+            continue
+
+        view_class = getattr(callback, "view_class", None) or getattr(callback, "cls", None)
+        if view_class is not None:
+            http_method_names = getattr(view_class, "http_method_names", None)
+            if http_method_names and "get" not in http_method_names:
+                return False
+            if not callable(getattr(view_class, "get", None)):
+                return False
+
+        allowed_methods = getattr(callback, "allowed_methods", None)
+        if allowed_methods and "GET" not in allowed_methods:
             return False
-        return callable(getattr(view_class, "get", None))
-
-    allowed_methods = getattr(callback, "allowed_methods", None)
-    if allowed_methods and "GET" not in allowed_methods:
-        return False
 
     return True
 
