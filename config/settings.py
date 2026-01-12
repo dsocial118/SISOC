@@ -168,9 +168,12 @@ DATABASES = {
     }
 }
 
-if (
+# DB para testing
+RUNNING_TESTS = (
     any("pytest" in arg for arg in sys.argv) or os.environ.get("PYTEST_RUNNING") == "1"
-):  # DB para testing
+)
+USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
+if RUNNING_TESTS and (USE_SQLITE_FOR_TESTS or not os.environ.get("DATABASE_HOST")):
     DATABASES = {
         "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
     }
