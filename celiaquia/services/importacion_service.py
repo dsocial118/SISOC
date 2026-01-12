@@ -415,9 +415,7 @@ class ImportacionService:
         if municipio_ids:
             municipios_qs = Municipio.objects.filter(pk__in=municipio_ids)
             if provincia_usuario_id:
-                municipios_qs = municipios_qs.filter(
-                    provincia_id=provincia_usuario_id
-                )
+                municipios_qs = municipios_qs.filter(provincia_id=provincia_usuario_id)
             for m in municipios_qs:
                 municipios_cache[m.pk] = m.pk
 

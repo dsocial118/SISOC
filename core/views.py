@@ -13,7 +13,6 @@ from core.models import (
     Localidad,
     Municipio,
 )
-from organizaciones.models import Organizacion
 from core.services.favorite_filters import (
     TTL_CACHE_FILTROS_FAVORITOS,
     clave_cache_filtros_favoritos,
@@ -21,6 +20,7 @@ from core.services.favorite_filters import (
     obtener_configuracion_seccion,
     obtener_items_obsoletos,
 )
+from organizaciones.models import Organizacion
 
 
 @login_required
@@ -79,16 +79,13 @@ def _parsear_datos_request(request):
     return request.POST
 
 
-@login_required
-@require_http_methods(["GET", "POST"])
-def filtros_favoritos(request):
-    """Lista o crea filtros favoritos para el usuario actual."""
-    if request.method == "GET":
-        seccion = str(request.GET.get("seccion") or "").strip()
-        configuracion = obtener_configuracion_seccion(seccion)
-        if not seccion or configuracion is None:
-            return JsonResponse({"error": "Seccion invalida."}, status=400)
-
+def _filtros_favoritos_get(request):
+    seccion = str(request.GET.get("seccion") or "").strip()
+    configuracion = obtener_configuracion_seccion(seccion)
+    if not seccion or configuracion is None:
+        response_data = {"error": "Seccion invalida."}
+        status_code = 400
+    else:
         clave_cache = clave_cache_filtros_favoritos(request.user.id, seccion)
         favoritos_cacheados = cache.get(clave_cache)
         if favoritos_cacheados is None:
@@ -106,57 +103,74 @@ def filtros_favoritos(request):
                 for favorito in favoritos
             ]
             cache.set(clave_cache, favoritos_cacheados, TTL_CACHE_FILTROS_FAVORITOS)
+        response_data = {"seccion": seccion, "favoritos": favoritos_cacheados}
+        status_code = 200
 
-        return JsonResponse({"seccion": seccion, "favoritos": favoritos_cacheados})
+    return JsonResponse(response_data, status=status_code)
 
+
+def _filtros_favoritos_post(request):
     datos = _parsear_datos_request(request)
     seccion = str(datos.get("seccion") or "").strip()
     nombre = str(datos.get("nombre") or "").strip()
     configuracion = obtener_configuracion_seccion(seccion)
+    response_data = None
+    status_code = 400
+    carga = None
+
     if not seccion or configuracion is None:
-        return JsonResponse({"error": "Seccion invalida."}, status=400)
-    if not nombre:
-        return JsonResponse({"error": "El nombre es obligatorio."}, status=400)
-    if FiltroFavorito.objects.filter(
+        response_data = {"error": "Seccion invalida."}
+    elif not nombre:
+        response_data = {"error": "El nombre es obligatorio."}
+    elif FiltroFavorito.objects.filter(
         usuario=request.user, seccion=seccion, nombre__iexact=nombre
     ).exists():
-        return JsonResponse({"error": "El nombre ya existe."}, status=400)
+        response_data = {"error": "El nombre ya existe."}
+    else:
+        carga = normalizar_carga(datos.get("filtros"))
+        if carga is None:
+            response_data = {"error": "Filtros invalidos."}
+        else:
+            items_obsoletos = obtener_items_obsoletos(carga, configuracion)
+            if items_obsoletos:
+                response_data = {
+                    "error": "El filtro contiene parametros obsoletos.",
+                    "items_obsoletos": items_obsoletos,
+                }
+                status_code = 409
 
-    carga = normalizar_carga(datos.get("filtros"))
-    if carga is None:
-        return JsonResponse({"error": "Filtros invalidos."}, status=400)
+    if response_data is None:
+        try:
+            favorito = FiltroFavorito.objects.create(
+                usuario=request.user,
+                seccion=seccion,
+                nombre=nombre,
+                filtros=carga,
+            )
+        except IntegrityError:
+            response_data = {"error": "El nombre ya existe."}
+            status_code = 400
+        else:
+            cache.delete(clave_cache_filtros_favoritos(request.user.id, seccion))
+            response_data = {
+                "id": favorito.id,
+                "nombre": favorito.nombre,
+                "fecha_creacion": favorito.fecha_creacion.isoformat(),
+                "seccion": seccion,
+            }
+            status_code = 201
 
-    items_obsoletos = obtener_items_obsoletos(carga, configuracion)
-    if items_obsoletos:
-        return JsonResponse(
-            {
-                "error": "El filtro contiene parametros obsoletos.",
-                "items_obsoletos": items_obsoletos,
-            },
-            status=409,
-        )
+    return JsonResponse(response_data, status=status_code)
 
-    try:
-        favorito = FiltroFavorito.objects.create(
-            usuario=request.user,
-            seccion=seccion,
-            nombre=nombre,
-            filtros=carga,
-        )
-    except IntegrityError:
-        return JsonResponse({"error": "El nombre ya existe."}, status=400)
 
-    cache.delete(clave_cache_filtros_favoritos(request.user.id, seccion))
+@login_required
+@require_http_methods(["GET", "POST"])
+def filtros_favoritos(request):
+    """Lista o crea filtros favoritos para el usuario actual."""
+    if request.method == "GET":
+        return _filtros_favoritos_get(request)
 
-    return JsonResponse(
-        {
-            "id": favorito.id,
-            "nombre": favorito.nombre,
-            "fecha_creacion": favorito.fecha_creacion.isoformat(),
-            "seccion": seccion,
-        },
-        status=201,
-    )
+    return _filtros_favoritos_post(request)
 
 
 @login_required

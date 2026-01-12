@@ -14,8 +14,8 @@ def user(db):
     )
 
 
-@pytest.fixture
-def superuser(db):
+@pytest.fixture(name="superuser")
+def superuser_fixture(db):
     user_model = get_user_model()
     return user_model.objects.create_superuser(
         username="smoke_admin",
@@ -30,9 +30,9 @@ def auth_client(client, superuser):
     return client
 
 
-@pytest.fixture
-def api_key(db):
-    api_key, key = APIKey.objects.create_key(name="smoke-tests")
+@pytest.fixture(name="api_key")
+def api_key_fixture(db):
+    _, key = APIKey.objects.create_key(name="smoke-tests")
     return key
 
 
