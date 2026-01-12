@@ -5,7 +5,6 @@ from django.urls import URLPattern, URLResolver, get_resolver
 
 pytestmark = pytest.mark.smoke
 
-_DYNAMIC_ROUTE_RE = re.compile(r"<[^>]+>")
 _REGEX_NAMED_GROUP_RE = re.compile(r"\(\?P<[^>]+>")
 _ALLOWED_VIEWSET_ACTIONS = {"list", "retrieve"}
 _HTTP_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "TRACE"}
@@ -23,10 +22,6 @@ _SKIP_PATH_SUBSTRINGS = (
     "/informecabal/process",
     "/informecabal/reprocess",
 )
-
-
-def _is_dynamic_route(route: str) -> bool:
-    return bool(_DYNAMIC_ROUTE_RE.search(route))
 
 
 def _is_dynamic_regex(regex: str) -> bool:
@@ -58,16 +53,9 @@ def _iter_urlpatterns(patterns, prefix: str = "", has_params: bool = False):
         if isinstance(pattern, URLPattern):
             yield prefix, has_params, pattern
         elif isinstance(pattern, URLResolver):
-            nested_prefix = prefix
-            nested_has_params = has_params
-            if hasattr(pattern.pattern, "_route"):
-                route = pattern.pattern._route
-                nested_prefix = _join_paths(prefix, route)
-                nested_has_params = has_params or _is_dynamic_route(route)
-            else:
-                regex = pattern.pattern.regex.pattern
-                nested_prefix = _join_paths(prefix, _regex_to_path(regex))
-                nested_has_params = has_params or _is_dynamic_regex(regex)
+            regex = pattern.pattern.regex.pattern
+            nested_prefix = _join_paths(prefix, _regex_to_path(regex))
+            nested_has_params = has_params or _is_dynamic_regex(regex)
             yield from _iter_urlpatterns(
                 pattern.url_patterns, nested_prefix, nested_has_params
             )
@@ -80,6 +68,32 @@ def _iter_wrapped_callbacks(callback):
         yield current
         seen.add(id(current))
         current = getattr(current, "__wrapped__", None)
+
+
+def _callback_allows_get(callback) -> bool:
+    callback_methods = getattr(callback, "http_method_names", None)
+    if callback_methods and "get" not in callback_methods:
+        return False
+
+    actions = getattr(callback, "actions", None)
+    if actions is not None:
+        action_name = actions.get("get")
+        return action_name in _ALLOWED_VIEWSET_ACTIONS
+
+    view_class = getattr(callback, "view_class", None) or getattr(callback, "cls", None)
+    if view_class is not None:
+        http_method_names = getattr(view_class, "http_method_names", None)
+        if http_method_names and "get" not in http_method_names:
+            return False
+        if not callable(getattr(view_class, "get", None)):
+            return False
+
+    allowed_methods = getattr(callback, "allowed_methods", None)
+    required_methods = _get_required_methods(callback)
+    return not (
+        (allowed_methods and "GET" not in allowed_methods)
+        or (required_methods and "GET" not in required_methods)
+    )
 
 
 def _get_required_methods(callback):
@@ -99,35 +113,8 @@ def _get_required_methods(callback):
 
 def _allows_get(pattern) -> bool:
     for callback in _iter_wrapped_callbacks(pattern.callback):
-        callback_methods = getattr(callback, "http_method_names", None)
-        if callback_methods and "get" not in callback_methods:
+        if not _callback_allows_get(callback):
             return False
-
-        actions = getattr(callback, "actions", None)
-        if actions is not None:
-            action_name = actions.get("get")
-            if action_name is None:
-                return False
-            if action_name not in _ALLOWED_VIEWSET_ACTIONS:
-                return False
-            continue
-
-        view_class = getattr(callback, "view_class", None) or getattr(callback, "cls", None)
-        if view_class is not None:
-            http_method_names = getattr(view_class, "http_method_names", None)
-            if http_method_names and "get" not in http_method_names:
-                return False
-            if not callable(getattr(view_class, "get", None)):
-                return False
-
-        allowed_methods = getattr(callback, "allowed_methods", None)
-        if allowed_methods and "GET" not in allowed_methods:
-            return False
-
-        required_methods = _get_required_methods(callback)
-        if required_methods and "GET" not in required_methods:
-            return False
-
     return True
 
 
@@ -146,15 +133,10 @@ def collect_url_tests():
         if has_params or not _allows_get(pattern):
             continue
 
-        if hasattr(pattern.pattern, "_route"):
-            route = pattern.pattern._route
-            if _is_dynamic_route(route):
-                continue
-        else:
-            regex = pattern.pattern.regex.pattern
-            if _is_dynamic_regex(regex):
-                continue
-            route = _regex_to_path(regex)
+        regex = pattern.pattern.regex.pattern
+        if _is_dynamic_regex(regex):
+            continue
+        route = _regex_to_path(regex)
 
         full_path = _join_paths(prefix, route)
         if not full_path:
@@ -167,10 +149,7 @@ def collect_url_tests():
             continue
         targets.setdefault(full_path, name)
 
-    return sorted(
-        [(path, name) for path, name in targets.items()],
-        key=lambda item: item[0],
-    )
+    return sorted(list(targets.items()), key=lambda item: item[0])
 
 
 @pytest.mark.parametrize("path,name", collect_url_tests())

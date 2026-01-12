@@ -57,8 +57,8 @@ def client_logged(db, django_user_model, client):
     return client
 
 
-@pytest.fixture
-def comedor(db):
+@pytest.fixture(name="comedor")
+def comedor_fixture(db):
     return ComedorFactory()
 
 
