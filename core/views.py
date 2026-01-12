@@ -1,14 +1,26 @@
-# Create your views here.
+# Crea tus vistas aqui.
+import json
+
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
+from django.db import IntegrityError
 from django.http import JsonResponse
-from django.shortcuts import render
-from django.views.decorators.http import require_GET
+from django.shortcuts import get_object_or_404, render
+from django.views.decorators.http import require_GET, require_http_methods
 
 from core.models import (
+    FiltroFavorito,
     Localidad,
     Municipio,
 )
 from organizaciones.models import Organizacion
+from core.services.favorite_filters import (
+    TTL_CACHE_FILTROS_FAVORITOS,
+    clave_cache_filtros_favoritos,
+    normalizar_carga,
+    obtener_configuracion_seccion,
+    obtener_items_obsoletos,
+)
 
 
 @login_required
@@ -38,24 +50,156 @@ def load_localidad(request):
 @require_GET
 def load_organizaciones(request):
     """Carga organizaciones con búsqueda para Select2."""
-    search = request.GET.get("q", "").strip()
-    page = int(request.GET.get("page", 1))
-    page_size = 30
+    busqueda = request.GET.get("q", "").strip()
+    pagina = int(request.GET.get("page", 1))
+    tamano_pagina = 30
 
     organizaciones = Organizacion.objects.all().order_by("nombre")
 
-    if search:
-        organizaciones = organizaciones.filter(nombre__icontains=search)
+    if busqueda:
+        organizaciones = organizaciones.filter(nombre__icontains=busqueda)
 
     # Paginación
-    start = (page - 1) * page_size
-    end = start + page_size
-    total_count = organizaciones.count()
-    organizaciones_page = organizaciones[start:end]
+    inicio = (pagina - 1) * tamano_pagina
+    fin = inicio + tamano_pagina
+    total = organizaciones.count()
+    organizaciones_pagina = organizaciones[inicio:fin]
 
-    results = [{"id": org.id, "text": org.nombre} for org in organizaciones_page]
+    resultados = [{"id": org.id, "text": org.nombre} for org in organizaciones_pagina]
 
-    return JsonResponse({"results": results, "pagination": {"more": end < total_count}})
+    return JsonResponse({"results": resultados, "pagination": {"more": fin < total}})
+
+
+def _parsear_datos_request(request):
+    if request.body:
+        try:
+            return json.loads(request.body.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            pass
+    return request.POST
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def filtros_favoritos(request):
+    """Lista o crea filtros favoritos para el usuario actual."""
+    if request.method == "GET":
+        seccion = str(request.GET.get("seccion") or "").strip()
+        configuracion = obtener_configuracion_seccion(seccion)
+        if not seccion or configuracion is None:
+            return JsonResponse({"error": "Seccion invalida."}, status=400)
+
+        clave_cache = clave_cache_filtros_favoritos(request.user.id, seccion)
+        favoritos_cacheados = cache.get(clave_cache)
+        if favoritos_cacheados is None:
+            favoritos = (
+                FiltroFavorito.objects.filter(usuario=request.user, seccion=seccion)
+                .order_by("fecha_creacion")
+                .only("id", "nombre", "fecha_creacion")
+            )
+            favoritos_cacheados = [
+                {
+                    "id": favorito.id,
+                    "nombre": favorito.nombre,
+                    "fecha_creacion": favorito.fecha_creacion.isoformat(),
+                }
+                for favorito in favoritos
+            ]
+            cache.set(clave_cache, favoritos_cacheados, TTL_CACHE_FILTROS_FAVORITOS)
+
+        return JsonResponse({"seccion": seccion, "favoritos": favoritos_cacheados})
+
+    datos = _parsear_datos_request(request)
+    seccion = str(datos.get("seccion") or "").strip()
+    nombre = str(datos.get("nombre") or "").strip()
+    configuracion = obtener_configuracion_seccion(seccion)
+    if not seccion or configuracion is None:
+        return JsonResponse({"error": "Seccion invalida."}, status=400)
+    if not nombre:
+        return JsonResponse({"error": "El nombre es obligatorio."}, status=400)
+    if FiltroFavorito.objects.filter(
+        usuario=request.user, seccion=seccion, nombre__iexact=nombre
+    ).exists():
+        return JsonResponse({"error": "El nombre ya existe."}, status=400)
+
+    carga = normalizar_carga(datos.get("filtros"))
+    if carga is None:
+        return JsonResponse({"error": "Filtros invalidos."}, status=400)
+
+    items_obsoletos = obtener_items_obsoletos(carga, configuracion)
+    if items_obsoletos:
+        return JsonResponse(
+            {
+                "error": "El filtro contiene parametros obsoletos.",
+                "items_obsoletos": items_obsoletos,
+            },
+            status=409,
+        )
+
+    try:
+        favorito = FiltroFavorito.objects.create(
+            usuario=request.user,
+            seccion=seccion,
+            nombre=nombre,
+            filtros=carga,
+        )
+    except IntegrityError:
+        return JsonResponse({"error": "El nombre ya existe."}, status=400)
+
+    cache.delete(clave_cache_filtros_favoritos(request.user.id, seccion))
+
+    return JsonResponse(
+        {
+            "id": favorito.id,
+            "nombre": favorito.nombre,
+            "fecha_creacion": favorito.fecha_creacion.isoformat(),
+            "seccion": seccion,
+        },
+        status=201,
+    )
+
+
+@login_required
+@require_http_methods(["GET", "DELETE"])
+def detalle_filtro_favorito(request, pk):
+    """Devuelve o elimina un filtro favorito."""
+    favorito = get_object_or_404(FiltroFavorito, pk=pk, usuario=request.user)
+
+    if request.method == "DELETE":
+        seccion = favorito.seccion
+        favorito.delete()
+        cache.delete(clave_cache_filtros_favoritos(request.user.id, seccion))
+        return JsonResponse({"exito": True})
+
+    seccion = str(request.GET.get("seccion") or favorito.seccion).strip()
+    if seccion != favorito.seccion:
+        return JsonResponse({"error": "Seccion invalida."}, status=400)
+
+    configuracion = obtener_configuracion_seccion(favorito.seccion)
+    if configuracion is None:
+        return JsonResponse({"error": "Seccion invalida."}, status=400)
+
+    carga = normalizar_carga(favorito.filtros)
+    if carga is None:
+        return JsonResponse({"error": "Filtros invalidos."}, status=400)
+
+    items_obsoletos = obtener_items_obsoletos(carga, configuracion)
+    if items_obsoletos:
+        return JsonResponse(
+            {
+                "error": "El filtro contiene parametros obsoletos.",
+                "items_obsoletos": items_obsoletos,
+            },
+            status=409,
+        )
+
+    return JsonResponse(
+        {
+            "id": favorito.id,
+            "nombre": favorito.nombre,
+            "filtros": carga,
+        }
+    )
 
 
 @login_required

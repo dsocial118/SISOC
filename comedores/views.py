@@ -46,6 +46,7 @@ from comedores.models import (
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
 from comedores.services.validacion_service import ValidacionService
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from duplas.dupla_service import DuplaService
 from relevamientos.service import RelevamientoService
 
@@ -220,7 +221,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        # Ensure self.object exists for CreateView context handling
+        # Asegura que self.object exista para el contexto de CreateView
         self.object = None
         ciudadano_id = request.POST.get("ciudadano_id")
 
@@ -325,13 +326,14 @@ class ComedorListView(LoginRequiredMixin, ListView):
                     {"text": "Comedores", "url": reverse("comedores")},
                     {"text": "Listar", "active": True},
                 ],
-                # Search bar
+                # Barra de busqueda
                 "reset_url": reverse("comedores"),
                 "add_url": reverse("comedor_crear"),
                 "filters_mode": True,
                 "filters_js": "custom/js/advanced_filters.js",
                 "filters_action": reverse("comedores"),
                 "filters_config": get_filters_ui_config(),
+                "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.COMEDORES,
             }
         )
 
@@ -643,7 +645,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         page_obj = paginator.get_page(page_number)
         historial_validaciones = list(page_obj)
 
-        # Preparar datos para data_table component
+        # Preparar datos para el componente data_table
         validaciones_headers = [
             {"title": "Fecha"},
             {"title": "Usuario"},
@@ -654,7 +656,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
         validaciones_items = []
         for validacion in historial_validaciones:
-            # Badge para estado
+            # Etiqueta para estado
             if validacion.estado_validacion == "Validado":
                 estado_badge = format_html(
                     '<span class="badge bg-success">{}</span>', "Validado"
