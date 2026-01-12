@@ -833,7 +833,7 @@ h2.text-center.display-4 {
 /* Botón "Favoritos" */
 #favorite-filters-open {
   background: #e7ba61 !important;
-  color: #1f2937 !important;
+  color: #ffffff !important;
   border: 2px solid #e7ba61 !important;
   border-radius: 6px !important;
   padding: 6px 16px !important;
