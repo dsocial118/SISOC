@@ -7,9 +7,64 @@ on:
     pull_request:
         branches:
             - development
+    push:
+        branches:
+            - development
 
 jobs:
+    smoke:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4.1.7
+
+            - name: Create .env for CI
+              run: |
+                  cat > .env <<'EOF'
+                  DJANGO_DEBUG=False
+                  DJANGO_SECRET_KEY=ci-secret-key
+                  DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
+                  DATABASE_HOST=mysql
+                  DATABASE_PORT=3306
+                  DATABASE_USER=root
+                  DATABASE_PASSWORD=root1-password2
+                  DATABASE_NAME=sisoc-local
+                  WAIT_FOR_DB=true
+                  DOCKER_MYSQL_PORT_FORWARD=3307
+                  DOCKER_MYSQL_PORT=3306
+                  DOCKER_DJANGO_PORT_FORWARD=8000
+                  DOCKER_DJANGO_PORT=8000
+                  DOCKER_DEBUGGER_PORT_FORWARD=5678
+                  DOCKER_DEBUGGER_PORT=5678
+                  EOF
+
+            - name: Build and start services
+              run: docker compose up -d --build
+
+            - name: Wait for MySQL
+              run: |
+                  for i in {1..20}; do
+                      if docker compose exec -T mysql mysqladmin ping -h "localhost" -P 3306 --silent; then
+                          echo "MySQL is ready!"
+                          exit 0
+                      fi
+                      echo "Waiting for MySQL..."
+                      sleep 5
+                  done
+                  echo "MySQL did not become ready in time."
+                  docker compose logs mysql
+                  exit 1
+
+            - name: Run smoke tests
+              run: docker compose exec -T django pytest -m smoke
+
+            - name: Shutdown services
+              if: always()
+              run: docker compose down -v
+
     tests:
+        if: github.event_name == 'pull_request'
         runs-on: ubuntu-latest
 
         steps:

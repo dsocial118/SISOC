@@ -14,7 +14,10 @@ def test_descargar_plantilla_excel(client):
     grupo = Group.objects.create(name="ProvinciaCeliaquia")
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_user(username="prov", password="pass")
-    Profile.objects.create(user=user, es_usuario_provincial=True, provincia=provincia)
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.es_usuario_provincial = True
+    profile.provincia = provincia
+    profile.save()
     user.groups.add(grupo)
 
     client.force_login(user)

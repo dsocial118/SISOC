@@ -7,6 +7,7 @@ import unicodedata
 from django.db.models import Q, Count, Prefetch, QuerySet, Value
 from django.db import transaction
 from django.core.paginator import Paginator
+from django.core.files.storage import default_storage
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -115,9 +116,10 @@ class ComedorService:
     def delete_legajo_photo(post, comedor_instance):
         """Eliminar la foto del legajo si está marcada para borrar"""
         if "foto_legajo_borrar" in post and comedor_instance.foto_legajo:
-            if comedor_instance.foto_legajo:
+            archivo = comedor_instance.foto_legajo.name
+            if archivo:
                 try:
-                    comedor_instance.foto_legajo.delete(save=False)
+                    default_storage.delete(archivo)
                 except Exception:
                     logger.exception(
                         "Error al eliminar la foto de legajo del comedor %s",

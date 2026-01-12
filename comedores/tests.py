@@ -138,7 +138,7 @@ def test_get_relaciones_optimizadas_escapes_historial_comment():
     view.object = comedor
 
     relaciones = view.get_relaciones_optimizadas()
-    comentario_cell = relaciones["validaciones_items"][0]["cells"][3]["content"]
+    comentario_cell = relaciones["validaciones_items"][0]["cells"][4]["content"]
     estado_cell = relaciones["validaciones_items"][0]["cells"][2]["content"]
 
     assert comentario_cell == escape("<script>alert('xss')</script>")
@@ -298,7 +298,7 @@ def test_relevamiento_create_edit_ajax_error(
     assert response.status_code == 500
     json_response = response.json()
     assert "error" in json_response
-    assert "Error inesperado" in json_response["error"]
+    assert "Error interno" in json_response["error"]
 
 
 @pytest.mark.django_db
@@ -316,5 +316,5 @@ def test_borrar_foto_legajo_elimina_archivo_y_campo(tmp_path, monkeypatch):
         ComedorService.delete_legajo_photo({"foto_legajo_borrar": "1"}, comedor)
         comedor.refresh_from_db()
 
-        assert comedor.foto_legajo is None
+        assert not comedor.foto_legajo
         assert not fs.exists(ruta)

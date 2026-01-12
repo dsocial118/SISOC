@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from users.users_filter_config import (
     FIELD_MAP as BENEFICIARIO_FILTER_MAP,
     FIELD_TYPES as BENEFICIARIO_FIELD_TYPES,
@@ -105,6 +106,7 @@ class UsuariosService:
             "filters_mode": True,
             "filters_config": get_filters_ui_config(),
             "filters_action": reverse("usuarios"),
+            "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.USUARIOS,
             "show_add_button": True,
         }
 
