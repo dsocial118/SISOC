@@ -87,7 +87,8 @@ def _filtros_favoritos_get(request):
         status_code = 400
     else:
         clave_cache = clave_cache_filtros_favoritos(request.user.id, seccion)
-        favoritos_cacheados = cache.get(clave_cache)
+        refrescar = str(request.GET.get("refrescar") or "") == "1"
+        favoritos_cacheados = None if refrescar else cache.get(clave_cache)
         if favoritos_cacheados is None:
             favoritos = (
                 FiltroFavorito.objects.filter(usuario=request.user, seccion=seccion)
