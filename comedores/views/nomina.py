@@ -41,7 +41,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
         comedor_pk = self.kwargs["pk"]
         page = self.request.GET.get("page", 1)
 
-        page_obj, nomina_m, nomina_f, espera, total = ComedorService.get_nomina_detail(
+        page_obj, nomina_m, nomina_f, nomina_x, espera, total, rangos = ComedorService.get_nomina_detail(
             comedor_pk, page
         )
 
@@ -52,8 +52,10 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "nomina": page_obj,
                 "nominaM": nomina_m,
                 "nominaF": nomina_f,
+                "nominaX": nomina_x,
                 "espera": espera,
                 "cantidad_nomina": total,
+                "nomina_rangos": rangos,
                 "object": comedor,
             }
         )
