@@ -444,7 +444,9 @@ class ComedorService:
             cantidad_nomina_x=Count("id", filter=Q(ciudadano__sexo__sexo="X")),
             espera=Count("id", filter=Q(estado=Nomina.ESTADO_PENDIENTE)),
             cantidad_total=Count("id"),
-            rango_ninos=Count("id", filter=Q(edad__lte=13, estado=Nomina.ESTADO_ACTIVO)),
+            rango_ninos=Count(
+                "id", filter=Q(edad__lte=13, estado=Nomina.ESTADO_ACTIVO)
+            ),
             rango_adolescentes=Count(
                 "id", filter=Q(edad__gte=14, edad__lte=17, estado=Nomina.ESTADO_ACTIVO)
             ),

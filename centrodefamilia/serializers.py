@@ -279,7 +279,9 @@ class MunicipioSerializer(serializers.ModelSerializer):
 
 class LocalidadSerializer(serializers.ModelSerializer):
     municipio_nombre = serializers.CharField(source="municipio.nombre", read_only=True)
-    provincia_nombre = serializers.CharField(source="municipio.provincia.nombre", read_only=True)
+    provincia_nombre = serializers.CharField(
+        source="municipio.provincia.nombre", read_only=True
+    )
 
     class Meta:
         model = Localidad
