@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static l10n %}
 {% block title %}Nómina – {{ object.nombre }}{% endblock %}
 {% block titulo-pagina %}
     Nómina de {{ object.nombre }}
@@ -49,30 +49,31 @@
     <!-- Contadores de Nómina -->
     <div class="row text-center mb-3">
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
-            <div class="info-card"
+            <div class="info-card h-100 d-flex flex-column"
                  style="background-color: #3498db;
                         color: #ffffff;
                         border-radius: 10px;
                         padding: 15px;
                         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)">
-                <div class="row">
-                    <div class="col-3">
-                        <i class="fa fa-users fa-2x"></i>
-                    </div>
-                    <div class="col-9 text-start">
-                        <p>{{ cantidad_nomina }}</p>
-                    </div>
-                </div>
-                <div class="row info-card-label"
-                     style="margin: 0 -15px -15px;
-                            background-color: #2980b9;
-                            border-radius: 0 0 10px 10px">
-                    <h5 class="mt-2">Total en Nómina</h5>
-                </div>
+        <div class="row">
+            <div class="col-3">
+                <i class="fa fa-users fa-2x"></i>
+            </div>
+            <div class="col-9 text-start">
+                <p><i class="fa fa-users me-1"></i>Activos: {{ cantidad_nomina }}</p>
+                <p><i class="fa fa-clock me-1"></i>En espera: {{ espera }}</p>
             </div>
         </div>
+        <div class="row info-card-label mt-auto"
+             style="margin: 0 -15px -15px;
+                    background-color: #2980b9;
+                    border-radius: 0 0 10px 10px">
+            <h5 class="mt-2">Total en Nómina</h5>
+        </div>
+    </div>
+</div>
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
-            <div class="info-card"
+            <div class="info-card h-100 d-flex flex-column"
                  style="background-color: #9b59b6;
                         color: #ffffff;
                         border-radius: 10px;
@@ -80,67 +81,103 @@
                         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)">
                 <div class="row">
                     <div class="col-3">
-                        <i class="fa fa-male fa-2x"></i>
+                        <i class="fa fa-venus-mars fa-2x"></i>
                     </div>
                     <div class="col-9 text-start">
-                        <p>{{ nominaM }}</p>
+                        <p><i class="fa fa-male me-1"></i>Masculino: {{ nominaM }}</p>
+                        <p><i class="fa fa-female me-1"></i>Femenino: {{ nominaF }}</p>
+                        <p><i class="fa fa-user me-1"></i>X: {{ nominaX }}</p>
                     </div>
                 </div>
-                <div class="row info-card-label"
+                <div class="row info-card-label mt-auto"
                      style="margin: 0 -15px -15px;
                             background-color: #8e44ad;
                             border-radius: 0 0 10px 10px">
-                    <h5 class="mt-2">Masculino</h5>
+                    <h5 class="mt-2">Sexo</h5>
                 </div>
             </div>
         </div>
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
-            <div class="info-card"
-                 style="background-color: #e74c3c;
+            <div class="info-card h-100 d-flex flex-column"
+                 style="background-color: #2c3e50;
                         color: #ffffff;
                         border-radius: 10px;
                         padding: 15px;
                         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)">
                 <div class="row">
                     <div class="col-3">
-                        <i class="fa fa-female fa-2x"></i>
+                        <i class="fa fa-chart-bar fa-2x"></i>
                     </div>
                     <div class="col-9 text-start">
-                        <p>{{ nominaF }}</p>
+                        <div class="small d-flex justify-content-between">
+                            <span>Niños (0-13)</span>
+                            <span>{{ nomina_rangos.ninos }} ({{ nomina_rangos.pct_ninos }}%)</span>
+                        </div>
+                        <div class="mb-2" style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ nomina_rangos.pct_ninos }}% !important; background-color: #00bcd4;"></div>
+                        </div>
+                        <div class="small d-flex justify-content-between">
+                            <span>Adolescentes (14-17)</span>
+                            <span>{{ nomina_rangos.adolescentes }} ({{ nomina_rangos.pct_adolescentes }}%)</span>
+                        </div>
+                        <div style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ nomina_rangos.pct_adolescentes }}% !important; background-color: #00bcd4;"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="row info-card-label"
+                <div class="row info-card-label mt-auto"
                      style="margin: 0 -15px -15px;
-                            background-color: #c0392b;
+                            background-color: #1f2d3a;
                             border-radius: 0 0 10px 10px">
-                    <h5 class="mt-2">Femenino</h5>
+                    <h5 class="mt-2">Rango etareo 0-17</h5>
                 </div>
             </div>
         </div>
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
-            <div class="info-card"
-                 style="background-color: #f39c12;
+            <div class="info-card h-100 d-flex flex-column"
+                 style="background-color: #2c3e50;
                         color: #ffffff;
                         border-radius: 10px;
                         padding: 15px;
                         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)">
                 <div class="row">
                     <div class="col-3">
-                        <i class="fa fa-clock fa-2x"></i>
+                        <i class="fa fa-chart-bar fa-2x"></i>
                     </div>
                     <div class="col-9 text-start">
-                        <p>{{ espera }}</p>
+                        <div class="small d-flex justify-content-between">
+                            <span>Adultos (18-49)</span>
+                            <span>{{ nomina_rangos.adultos }} ({{ nomina_rangos.pct_adultos }}%)</span>
+                        </div>
+                        <div class="mb-2" style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ nomina_rangos.pct_adultos }}% !important; background-color: #00bcd4;"></div>
+                        </div>
+                        <div class="small d-flex justify-content-between">
+                            <span>Adultos mayores (50-65)</span>
+                            <span>{{ nomina_rangos.adultos_mayores }} ({{ nomina_rangos.pct_adultos_mayores }}%)</span>
+                        </div>
+                        <div class="mb-2" style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ nomina_rangos.pct_adultos_mayores }}% !important; background-color: #00bcd4;"></div>
+                        </div>
+                        <div class="small d-flex justify-content-between">
+                            <span>Adulto mayor avanzado (66+)</span>
+                            <span>{{ nomina_rangos.adulto_mayor_avanzado }} ({{ nomina_rangos.pct_adulto_mayor_avanzado }}%)</span>
+                        </div>
+                        <div style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ nomina_rangos.pct_adulto_mayor_avanzado }}% !important; background-color: #00bcd4;"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="row info-card-label"
+                <div class="row info-card-label mt-auto"
                      style="margin: 0 -15px -15px;
-                            background-color: #e67e22;
+                            background-color: #1f2d3a;
                             border-radius: 0 0 10px 10px">
-                    <h5 class="mt-2">Lista de Espera</h5>
+                    <h5 class="mt-2">Rango etareo +18</h5>
                 </div>
             </div>
         </div>
     </div>
+
 
     <!-- Tabla de Nómina -->
     <div class="row relevamiento-container">
