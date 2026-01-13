@@ -40,18 +40,18 @@ from core.utils import format_serializer_errors
 logger = logging.getLogger("django")
 
 
-@extend_schema(tags=['Centros'])
+@extend_schema(tags=["Centros"])
 class CentroViewSet(viewsets.ModelViewSet):
     """
     API para gestionar Centros de Familia.
-    
+
     Información que devuelve:
     - Datos básicos del centro (nombre, código, tipo)
     - Información de contacto (teléfono, celular, correo)
     - Ubicación geográfica (provincia, municipio, localidad)
     - Referente asignado
     - Categorías de actividades disponibles en el centro
-    
+
     Filtros disponibles:
     - activo: true/false
     - provincia_id: ID de provincia
@@ -68,31 +68,31 @@ class CentroViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
         # Filtro por estado activo
         activo = self.request.query_params.get("activo")
         if activo is not None:
             queryset = queryset.filter(activo=activo.lower() == "true")
-        
+
         # Filtros de ubicación
         provincia_id = self.request.query_params.get("provincia_id")
         municipio_id = self.request.query_params.get("municipio_id")
         localidad_id = self.request.query_params.get("localidad_id")
-        
+
         if provincia_id:
             queryset = queryset.filter(provincia_id=provincia_id)
         if municipio_id:
             queryset = queryset.filter(municipio_id=municipio_id)
         if localidad_id:
             queryset = queryset.filter(localidad_id=localidad_id)
-        
+
         # Filtro por categoría de actividad
         categoria_id = self.request.query_params.get("categoria_id")
         if categoria_id:
             queryset = queryset.filter(
                 actividadcentro__actividad__categoria_id=categoria_id
             ).distinct()
-        
+
         return queryset
 
     @action(detail=False, methods=["get"])
@@ -103,16 +103,16 @@ class CentroViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-@extend_schema(tags=['Actividades'])
+@extend_schema(tags=["Actividades"])
 class ActividadViewSet(viewsets.ModelViewSet):
     """
     API para gestionar Actividades.
-    
+
     Información que devuelve:
     - Nombre de la actividad
     - Categoría a la que pertenece
     - ID único de la actividad
-    
+
     Filtros disponibles:
     - categoria_id: Filtrar actividades por categoría
     """
@@ -129,11 +129,11 @@ class ActividadViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-@extend_schema(tags=['Categorías'])
+@extend_schema(tags=["Categorías"])
 class CategoriaViewSet(viewsets.ModelViewSet):
     """
     API para gestionar Categorías de Actividades.
-    
+
     Información que devuelve:
     - ID de la categoría
     - Nombre de la categoría (ej: Deportiva, Cultural, Educativa)
@@ -144,11 +144,11 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]
 
 
-@extend_schema(tags=['Actividades por Centro'])
+@extend_schema(tags=["Actividades por Centro"])
 class ActividadCentroViewSet(viewsets.ModelViewSet):
     """
     API para gestionar Actividades por Centro.
-    
+
     Información que devuelve:
     - Actividad específica de un centro
     - Horarios (desde/hasta)
@@ -157,7 +157,7 @@ class ActividadCentroViewSet(viewsets.ModelViewSet):
     - Estado (planificada, en_curso, finalizada)
     - Precio de la actividad
     - Información del centro y actividad asociada
-    
+
     Filtros disponibles:
     - centro_id: Actividades de un centro específico
     - estado: Estado de la actividad
@@ -184,21 +184,21 @@ class ActividadCentroViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name='centro_id',
+                name="centro_id",
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
                 required=True,
-                description='ID del centro para filtrar actividades'
+                description="ID del centro para filtrar actividades",
             ),
             OpenApiParameter(
-                name='estado',
+                name="estado",
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY,
                 required=False,
-                description='Estado de la actividad (planificada, en_curso, finalizada)'
+                description="Estado de la actividad (planificada, en_curso, finalizada)",
             ),
         ],
-        description='Listar actividades de un centro específico'
+        description="Listar actividades de un centro específico",
     )
     @action(detail=False, methods=["get"])
     def por_centro(self, request):
@@ -212,28 +212,28 @@ class ActividadCentroViewSet(viewsets.ModelViewSet):
 
         # Usar queryset base sin filtros aplicados y filtrar directamente
         actividades = self.queryset.filter(centro_id=centro_id)
-        
+
         # Aplicar filtros adicionales si existen
         estado = request.query_params.get("estado")
         if estado:
             actividades = actividades.filter(estado=estado)
-            
+
         serializer = self.get_serializer(actividades, many=True)
         return Response(serializer.data)
 
 
-@extend_schema(tags=['Participantes'])
+@extend_schema(tags=["Participantes"])
 class ParticipanteActividadViewSet(viewsets.ModelViewSet):
     """
     API para gestionar Participantes en Actividades.
-    
+
     Información que devuelve:
     - Datos del ciudadano participante
     - Actividad en la que está inscrito
     - Estado de inscripción (inscrito, lista_espera, dado_baja)
     - Fechas de registro y modificación
     - Historial de cambios de estado
-    
+
     Filtros disponibles:
     - actividad_centro_id: Participantes de una actividad específica
     - estado: Estado de inscripción
@@ -300,11 +300,11 @@ class ParticipanteActividadViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-@extend_schema(tags=['Beneficiarios'])
+@extend_schema(tags=["Beneficiarios"])
 class BeneficiarioViewSet(viewsets.ModelViewSet):
     """
     API para gestionar Beneficiarios.
-    
+
     Información que devuelve:
     - Datos personales (nombre, apellido, DNI, CUIL, género)
     - Fecha de nacimiento
@@ -313,7 +313,7 @@ class BeneficiarioViewSet(viewsets.ModelViewSet):
     - Actividades preferidas y extracurriculares
     - Datos del responsable asociado
     - Información de contacto
-    
+
     Filtros disponibles:
     - responsable_id: Beneficiarios de un responsable específico
     - dni: Búsqueda por DNI
@@ -340,14 +340,14 @@ class BeneficiarioViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name='responsable_id',
+                name="responsable_id",
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
                 required=True,
-                description='ID del responsable para filtrar beneficiarios'
+                description="ID del responsable para filtrar beneficiarios",
             ),
         ],
-        description='Listar beneficiarios de un responsable específico'
+        description="Listar beneficiarios de un responsable específico",
     )
     @action(detail=False, methods=["get"])
     def por_responsable(self, request):
@@ -364,11 +364,11 @@ class BeneficiarioViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-@extend_schema(tags=['Responsables'])
+@extend_schema(tags=["Responsables"])
 class ResponsableViewSet(viewsets.ModelViewSet):
     """
     API para gestionar Responsables.
-    
+
     Información que devuelve:
     - Datos personales (nombre, apellido, DNI, CUIL, género)
     - Fecha de nacimiento
@@ -376,7 +376,7 @@ class ResponsableViewSet(viewsets.ModelViewSet):
     - Domicilio completo (provincia, municipio, localidad, dirección)
     - Información de contacto (celular, teléfono fijo, correo)
     - Fechas de creación y modificación
-    
+
     Filtros disponibles:
     - dni: Búsqueda por DNI
     - cuil: Búsqueda por CUIL
@@ -399,11 +399,11 @@ class ResponsableViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-@extend_schema(tags=['Vínculos'])
+@extend_schema(tags=["Vínculos"])
 class BeneficiarioResponsableViewSet(viewsets.ModelViewSet):
     """
     API para gestionar vínculos Beneficiario-Responsable.
-    
+
     Información que devuelve:
     - Relación entre beneficiario y responsable
     - Tipo de vínculo parental
@@ -418,11 +418,11 @@ class BeneficiarioResponsableViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]
 
 
-@extend_schema(tags=['Informes CABAL'])
+@extend_schema(tags=["Informes CABAL"])
 class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API para consultar Registros de Informe CABAL.
-    
+
     Información que devuelve:
     - Datos de transacciones CABAL por centro
     - Número de tarjeta y autorización
@@ -430,7 +430,7 @@ class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
     - Razón social del comercio
     - Estado de coincidencia con centros
     - Número de fila del archivo original
-    
+
     Filtros disponibles:
     - archivo_id: Registros de un archivo específico
     - centro_id: Registros de un centro específico
@@ -459,14 +459,14 @@ class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name='centro_id',
+                name="centro_id",
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
                 required=True,
-                description='ID del centro para filtrar registros CABAL'
+                description="ID del centro para filtrar registros CABAL",
             ),
         ],
-        description='Listar registros CABAL de un centro específico'
+        description="Listar registros CABAL de un centro específico",
     )
     @action(detail=False, methods=["get"])
     def por_centro(self, request):
@@ -483,11 +483,11 @@ class InformeCabalRegistroViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
-@extend_schema(tags=['Archivos CABAL'])
+@extend_schema(tags=["Archivos CABAL"])
 class CabalArchivoViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API para consultar Archivos CABAL.
-    
+
     Información que devuelve:
     - Información del archivo subido (nombre original, fecha)
     - Usuario que subió el archivo
@@ -504,72 +504,77 @@ class CabalArchivoViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 # ViewSets de Ubicación
-@extend_schema(tags=['Ubicación'])
+@extend_schema(tags=["Ubicación"])
 class ProvinciaViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API para consultar Provincias.
-    
+
     Información que devuelve:
     - Lista completa de provincias de Argentina
     - ID único y nombre de cada provincia
     - Ordenadas alfabéticamente
     """
-    queryset = Provincia.objects.all().order_by('nombre')
+
+    queryset = Provincia.objects.all().order_by("nombre")
     serializer_class = ProvinciaSerializer
     permission_classes = [HasAPIKey]
 
 
-@extend_schema(tags=['Ubicación'])
+@extend_schema(tags=["Ubicación"])
 class MunicipioViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API para consultar Municipios.
-    
+
     Información que devuelve:
     - Lista de municipios con su provincia asociada
     - ID único, nombre del municipio y nombre de la provincia
     - Ordenados alfabéticamente
-    
+
     Filtros disponibles:
     - provincia_id: Municipios de una provincia específica
     """
-    queryset = Municipio.objects.select_related('provincia').order_by('nombre')
+
+    queryset = Municipio.objects.select_related("provincia").order_by("nombre")
     serializer_class = MunicipioSerializer
     permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        provincia_id = self.request.query_params.get('provincia_id')
+        provincia_id = self.request.query_params.get("provincia_id")
         if provincia_id:
             queryset = queryset.filter(provincia_id=provincia_id)
         return queryset
 
 
-@extend_schema(tags=['Ubicación'])
+@extend_schema(tags=["Ubicación"])
 class LocalidadViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API para consultar Localidades.
-    
+
     Información que devuelve:
     - Lista de localidades con municipio y provincia asociados
     - ID único, nombre de localidad, municipio y provincia
     - Ordenadas alfabéticamente
-    
+
     Filtros disponibles:
     - municipio_id: Localidades de un municipio específico
     - provincia_id: Localidades de una provincia específica
     """
-    queryset = Localidad.objects.select_related('municipio__provincia').order_by('nombre')
+
+    queryset = Localidad.objects.select_related("municipio__provincia").order_by(
+        "nombre"
+    )
     serializer_class = LocalidadSerializer
     permission_classes = [HasAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        municipio_id = self.request.query_params.get('municipio_id')
-        provincia_id = self.request.query_params.get('provincia_id')
-        
+        municipio_id = self.request.query_params.get("municipio_id")
+        provincia_id = self.request.query_params.get("provincia_id")
+
         if municipio_id:
             queryset = queryset.filter(municipio_id=municipio_id)
         elif provincia_id:
             queryset = queryset.filter(municipio__provincia_id=provincia_id)
-            
+
         return queryset

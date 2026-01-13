@@ -55,23 +55,27 @@
                         border-radius: 10px;
                         padding: 15px;
                         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)">
-        <div class="row">
-            <div class="col-3">
-                <i class="fa fa-users fa-2x"></i>
-            </div>
-            <div class="col-9 text-start">
-                <p><i class="fa fa-users me-1"></i>Activos: {{ cantidad_nomina }}</p>
-                <p><i class="fa fa-clock me-1"></i>En espera: {{ espera }}</p>
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-users fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>
+                            <i class="fa fa-users me-1"></i>Activos: {{ cantidad_nomina }}
+                        </p>
+                        <p>
+                            <i class="fa fa-clock me-1"></i>En espera: {{ espera }}
+                        </p>
+                    </div>
+                </div>
+                <div class="row info-card-label mt-auto"
+                     style="margin: 0 -15px -15px;
+                            background-color: #2980b9;
+                            border-radius: 0 0 10px 10px">
+                    <h5 class="mt-2">Total en Nómina</h5>
+                </div>
             </div>
         </div>
-        <div class="row info-card-label mt-auto"
-             style="margin: 0 -15px -15px;
-                    background-color: #2980b9;
-                    border-radius: 0 0 10px 10px">
-            <h5 class="mt-2">Total en Nómina</h5>
-        </div>
-    </div>
-</div>
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
             <div class="info-card h-100 d-flex flex-column"
                  style="background-color: #9b59b6;
@@ -84,9 +88,15 @@
                         <i class="fa fa-venus-mars fa-2x"></i>
                     </div>
                     <div class="col-9 text-start">
-                        <p><i class="fa fa-male me-1"></i>Masculino: {{ nominaM }}</p>
-                        <p><i class="fa fa-female me-1"></i>Femenino: {{ nominaF }}</p>
-                        <p><i class="fa fa-user me-1"></i>X: {{ nominaX }}</p>
+                        <p>
+                            <i class="fa fa-male me-1"></i>Masculino: {{ nominaM }}
+                        </p>
+                        <p>
+                            <i class="fa fa-female me-1"></i>Femenino: {{ nominaF }}
+                        </p>
+                        <p>
+                            <i class="fa fa-user me-1"></i>X: {{ nominaX }}
+                        </p>
                     </div>
                 </div>
                 <div class="row info-card-label mt-auto"
@@ -113,15 +123,26 @@
                             <span>Niños (0-13)</span>
                             <span>{{ nomina_rangos.ninos }} ({{ nomina_rangos.pct_ninos }}%)</span>
                         </div>
-                        <div class="mb-2" style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
-                            <div style="height: 100%; width: {{ nomina_rangos.pct_ninos }}% !important; background-color: #00bcd4;"></div>
+                        <div class="mb-2"
+                             style="height: 6px;
+                                    background-color: rgba(255, 255, 255, 0.15);
+                                    border-radius: 4px;
+                                    overflow: hidden">
+                            <div style="height: 100%;
+                                        width: {{ nomina_rangos.pct_ninos }}% !important;
+                                        background-color: #00bcd4"></div>
                         </div>
                         <div class="small d-flex justify-content-between">
                             <span>Adolescentes (14-17)</span>
                             <span>{{ nomina_rangos.adolescentes }} ({{ nomina_rangos.pct_adolescentes }}%)</span>
                         </div>
-                        <div style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
-                            <div style="height: 100%; width: {{ nomina_rangos.pct_adolescentes }}% !important; background-color: #00bcd4;"></div>
+                        <div style="height: 6px;
+                                    background-color: rgba(255, 255, 255, 0.15);
+                                    border-radius: 4px;
+                                    overflow: hidden">
+                            <div style="height: 100%;
+                                        width: {{ nomina_rangos.pct_adolescentes }}% !important;
+                                        background-color: #00bcd4"></div>
                         </div>
                     </div>
                 </div>
@@ -149,22 +170,39 @@
                             <span>Adultos (18-49)</span>
                             <span>{{ nomina_rangos.adultos }} ({{ nomina_rangos.pct_adultos }}%)</span>
                         </div>
-                        <div class="mb-2" style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
-                            <div style="height: 100%; width: {{ nomina_rangos.pct_adultos }}% !important; background-color: #00bcd4;"></div>
+                        <div class="mb-2"
+                             style="height: 6px;
+                                    background-color: rgba(255, 255, 255, 0.15);
+                                    border-radius: 4px;
+                                    overflow: hidden">
+                            <div style="height: 100%;
+                                        width: {{ nomina_rangos.pct_adultos }}% !important;
+                                        background-color: #00bcd4"></div>
                         </div>
                         <div class="small d-flex justify-content-between">
                             <span>Adultos mayores (50-65)</span>
                             <span>{{ nomina_rangos.adultos_mayores }} ({{ nomina_rangos.pct_adultos_mayores }}%)</span>
                         </div>
-                        <div class="mb-2" style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
-                            <div style="height: 100%; width: {{ nomina_rangos.pct_adultos_mayores }}% !important; background-color: #00bcd4;"></div>
+                        <div class="mb-2"
+                             style="height: 6px;
+                                    background-color: rgba(255, 255, 255, 0.15);
+                                    border-radius: 4px;
+                                    overflow: hidden">
+                            <div style="height: 100%;
+                                        width: {{ nomina_rangos.pct_adultos_mayores }}% !important;
+                                        background-color: #00bcd4"></div>
                         </div>
                         <div class="small d-flex justify-content-between">
                             <span>Adulto mayor avanzado (66+)</span>
                             <span>{{ nomina_rangos.adulto_mayor_avanzado }} ({{ nomina_rangos.pct_adulto_mayor_avanzado }}%)</span>
                         </div>
-                        <div style="height: 6px; background-color: rgba(255, 255, 255, 0.15); border-radius: 4px; overflow: hidden;">
-                            <div style="height: 100%; width: {{ nomina_rangos.pct_adulto_mayor_avanzado }}% !important; background-color: #00bcd4;"></div>
+                        <div style="height: 6px;
+                                    background-color: rgba(255, 255, 255, 0.15);
+                                    border-radius: 4px;
+                                    overflow: hidden">
+                            <div style="height: 100%;
+                                        width: {{ nomina_rangos.pct_adulto_mayor_avanzado }}% !important;
+                                        background-color: #00bcd4"></div>
                         </div>
                     </div>
                 </div>
