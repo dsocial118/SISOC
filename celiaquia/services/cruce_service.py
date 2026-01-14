@@ -16,7 +16,6 @@ import csv
 import io
 import logging
 import re
-from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 
@@ -25,6 +24,7 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.text import slugify
 
 try:
@@ -330,7 +330,7 @@ class CruceService:
             "expediente": expediente,
             "tecnico": tecnico_txt,
             "resumen": resumen_html,
-            "ahora": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "ahora": timezone.localtime().strftime("%d/%m/%Y %H:%M"),
         }
         html_string = render_to_string("celiaquia/pdf_prd_cruce.html", context)
         return WPHTML(string=html_string).write_pdf()
@@ -372,7 +372,11 @@ class CruceService:
             c.drawString(margin_x, y, f"Técnico asignado: {tecnico_txt}")
             y -= 15
 
-        c.drawString(margin_x, y, f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        c.drawString(
+            margin_x,
+            y,
+            f"Fecha: {timezone.localtime().strftime('%d/%m/%Y %H:%M')}",
+        )
         y -= 25
 
         total_legajos = int(resumen.get("total_legajos", 0) or 0)
@@ -541,7 +545,7 @@ class CruceService:
         writer = csv.writer(buffer)
         writer.writerow(["PRD - Resultado de Cruce por CUIT/DNI"])
 
-        writer.writerow(["Fecha", datetime.now().strftime("%d/%m/%Y %H:%M")])
+        writer.writerow(["Fecha", timezone.localtime().strftime("%d/%m/%Y %H:%M")])
         writer.writerow([])
         writer.writerow(["Resumen"])
         writer.writerow(["total_legajos", resumen.get("total_legajos", 0)])
@@ -842,7 +846,9 @@ class CruceService:
             "detalle_fuera_cupo": detalle_fuera,
         }
 
-        nombre_base = slugify(f"prd-cruce-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+        nombre_base = slugify(
+            f"prd-cruce-{timezone.localtime().strftime('%Y%m%d-%H%M%S')}"
+        )
         try:
             pdf_bytes = CruceService._generar_prd_pdf(expediente, resumen)
             expediente.documento.save(

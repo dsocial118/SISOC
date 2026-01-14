@@ -14,6 +14,13 @@
         <li class="breadcrumb-item active">Acompañamiento</li>
     </ol>
 {% endblock %}
+{% block app-header %}
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-0">{{ comedor.nombre }}</h2>
+        </div>
+    </div>
+{% endblock %}
 {% block content %}
     <div class="row">
         <div class="col-auto">

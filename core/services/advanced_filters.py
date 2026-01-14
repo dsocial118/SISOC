@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date, datetime
 from typing import Any, Callable, Dict, Iterable, Mapping, MutableMapping, Optional
 
 from django.db.models import Q, QuerySet
@@ -27,7 +28,7 @@ class AdvancedFilterEngine:
     Args:
         field_map: Mapea el identificador expuesto a lookups de Django ORM.
         field_types: Define el tipo lógico de cada campo (por ejemplo ``text``,
-            ``choice``, ``number`` o ``boolean``). Se usa para validar
+            ``choice``, ``number``, ``date`` o ``boolean``). Se usa para validar
             operadores y castear valores.
         allowed_ops: Opcional. Permite personalizar los operadores permitidos por
             tipo. Si no se provee se espera ``{"text": {...}, "number": {...}}``.
@@ -237,6 +238,16 @@ class AdvancedFilterEngine:
                 lookup = f"{mapped_field}__gt"
             elif op == "lt":
                 lookup = f"{mapped_field}__lt"
+        elif field_type == "date":
+            if op == "eq":
+                lookup = f"{mapped_field}__exact"
+            elif op == "ne":
+                lookup = f"{mapped_field}__exact"
+                negate = True
+            elif op == "gt":
+                lookup = f"{mapped_field}__gt"
+            elif op == "lt":
+                lookup = f"{mapped_field}__lt"
         elif field_type == "boolean":
             if op == "eq":
                 lookup = f"{mapped_field}__exact"
@@ -266,6 +277,27 @@ class AdvancedFilterEngine:
                 return True, int(value)
             except (TypeError, ValueError):
                 return False, None
+        if field_type == "date":
+            if isinstance(value, date) and not isinstance(value, datetime):
+                return True, value
+            if isinstance(value, datetime):
+                return True, value.date()
+            if isinstance(value, str):
+                cleaned = value.strip()
+                if not cleaned:
+                    return False, None
+                if cleaned.endswith("Z"):
+                    cleaned = cleaned[:-1]
+                try:
+                    return True, datetime.fromisoformat(cleaned).date()
+                except ValueError:
+                    pass
+                for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"):
+                    try:
+                        return True, datetime.strptime(cleaned, fmt).date()
+                    except ValueError:
+                        continue
+            return False, None
         if field_type == "boolean":
             truthy = {True, 1, "1", "true", "t", "yes", "y"}
             falsy = {False, 0, "0", "false", "f", "no", "n"}

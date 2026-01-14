@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.utils import timezone
 from users.models import User
@@ -43,6 +45,7 @@ class Admision(models.Model):
         ("IF Disposición Asignado", "IF Disposición Asignado"),
         ("Juridicos: Validado", "Juridicos: Validado"),
         ("Juridicos: Rechazado", "Juridicos: Rechazado"),
+        ("Disposición Firmada", "Disposición Firmada"),
         ("Informe SGA Generado", "Informe SGA Generado"),
         ("Convenio Firmado", "Convenio Firmado"),
         ("Acompañamiento Pendiente", "Acompañamiento Pendiente"),
@@ -309,6 +312,18 @@ class ArchivoAdmision(models.Model):
     )
     creado = models.DateField(auto_now_add=True, null=True, blank=True)
     modificado = models.DateField(auto_now=True, null=True, blank=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admisiones_archivos_creados",
+    )
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admisiones_archivos_modificados",
+    )
 
     def delete(self, *args, **kwargs):
         if self.rectificar:
@@ -449,6 +464,9 @@ class InformeTecnico(models.Model):
     fecha_vencimiento_mandatos = models.DateField(
         "Fecha de vencimiento de mandatos", null=True, blank=True
     )
+    no_corresponde_fecha_vencimiento = models.BooleanField(
+        "No corresponde fecha de vencimiento", default=False
+    )
 
     # Exclusivos de organizacion de Base
     declaracion_jurada_recepcion_subsidios = models.CharField(
@@ -480,6 +498,22 @@ class InformeTecnico(models.Model):
         max_length=20,
         choices=ESTADOS,
         verbose_name="Estado del Informe",
+    )
+    creado = models.DateField(auto_now_add=True, null=True, blank=True)
+    modificado = models.DateField(auto_now=True, null=True, blank=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admisiones_informes_tecnicos_creados",
+    )
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admisiones_informes_tecnicos_modificados",
     )
     solicitudes_desayuno_lunes = models.IntegerField(
         default=0, validators=[MinValueValidator(0)]
@@ -684,12 +718,60 @@ class InformeTecnico(models.Model):
     resolucion_de_pago_6 = models.CharField(
         "Resolución de pago 6", max_length=150, null=True, blank=True
     )
-    monto_1 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_2 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_3 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_4 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_5 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    monto_6 = models.IntegerField(default=0, validators=[MinValueValidator(0)])
+    monto_1 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_2 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_3 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_4 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_5 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
+    monto_6 = models.DecimalField(
+        default=Decimal("0.00"),
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(Decimal("99000000.00")),
+        ],
+    )
 
     def __str__(self):
         return f"{self.nombre_organizacion} - {self.expediente_nro}"
@@ -832,6 +914,27 @@ class AdmisionHistorial(models.Model):
 
     def __str__(self):
         return f"{self.campo} cambiado por {self.usuario} el {self.fecha.strftime('%d/%m/%Y %H:%M')}"
+
+
+class HistorialEstadosAdmision(models.Model):
+    admision = models.ForeignKey(
+        "Admision", on_delete=models.CASCADE, related_name="historial_estados"
+    )
+    estado_anterior = models.CharField(max_length=40, null=True, blank=True)
+    estado_nuevo = models.CharField(max_length=40)
+    usuario = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="admisiones_historial_estados",
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return (
+            f"Estado {self.estado_anterior} -> {self.estado_nuevo} "
+            f"por {self.usuario} el {self.fecha.strftime('%d/%m/%Y %H:%M')}"
+        )
 
 
 class FormularioProyectoDisposicion(models.Model):

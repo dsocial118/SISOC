@@ -3,13 +3,13 @@ import os
 import time
 import json
 import logging
-from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 from django.core.management.base import BaseCommand
 from django.db import reset_queries
 from django.db.models import Q
+from django.utils import timezone
 
 from comedores.models import Comedor
 from comedores.tasks import build_comedor_payload
@@ -163,14 +163,16 @@ class Command(BaseCommand):
                 )
             )
 
-        self.stdout.write(self.style.SUCCESS(f"FIN. Éxitos: {success}  Fallos: {fail}"))
+            self.stdout.write(
+                self.style.SUCCESS(f"FIN. Éxitos: {success}  Fallos: {fail}")
+            )
 
         if verbose:
             if not out_file:
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                ts = timezone.localtime().strftime("%Y%m%d_%H%M%S")
                 out_file = f"sync_result_{ts}.json"
             result = {
-                "timestamp": datetime.now().isoformat(),
+                "timestamp": timezone.localtime().isoformat(),
                 "total": total,
                 "success": success,
                 "fail": fail,

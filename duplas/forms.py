@@ -1,25 +1,27 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from duplas.models import Dupla
 
 
 class DuplaForm(forms.ModelForm):
+    _user_model = get_user_model()
     # Sobrescribimos los campos para personalizar la visualización
     tecnico = forms.ModelMultipleChoiceField(
-        queryset=None,
+        queryset=_user_model.objects.none(),
         required=True,
         widget=forms.SelectMultiple(
             attrs={
                 "class": "form-control js-tecnico",
                 "data-role": "select2",
-                "data-placeholder": "Selecciona hasta 2 técnicos",
-                "aria-label": "Selecciona hasta 2 técnicos",
+                "data-placeholder": "Selecciona técnicos",
+                "aria-label": "Selecciona técnicos",
             }
         ),
     )
 
     abogado = forms.ModelChoiceField(
-        queryset=None,
+        queryset=_user_model.objects.none(),
         required=True,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
@@ -30,17 +32,15 @@ class DuplaForm(forms.ModelForm):
         # Aplicar el label personalizado
         self.fields["tecnico"].label_from_instance = self.label_from_instance_custom
         self.fields["abogado"].label_from_instance = self.label_from_instance_custom
+        self.fields["tecnico"].help_text = (
+            "Un técnico puede integrarse en varias duplas."
+        )
 
     def filtrar_campos_tecnico_abogado(self):
         grupo_tecnico = Group.objects.filter(name="Tecnico Comedor").first()
         if grupo_tecnico:
-            usuarios_asignados = Dupla.objects.exclude(pk=self.instance.pk).values_list(
-                "tecnico", flat=True
-            )
-            usuarios_asignados = [u for u in usuarios_asignados if u is not None]
-            self.fields["tecnico"].queryset = grupo_tecnico.user_set.exclude(
-                id__in=usuarios_asignados
-            )
+            # Permitir que cualquier técnico pueda ser asignado a múltiples duplas
+            self.fields["tecnico"].queryset = grupo_tecnico.user_set.all()
         else:
             self.fields["tecnico"].queryset = self.fields["tecnico"].queryset.none()
 
@@ -71,15 +71,3 @@ class DuplaForm(forms.ModelForm):
             "abogado": "Abogado",
             "estado": "Estado",
         }
-
-    def clean_tecnico(self):
-        """Valida que se seleccionen como máximo 2 técnicos.
-
-        Select2 evita más de 2 en el UI, pero reforzamos la validación
-        del lado del servidor por seguridad y consistencia.
-        """
-        tecnicos = self.cleaned_data.get("tecnico")
-        # `tecnicos` es un QuerySet/iterable de usuarios seleccionados
-        if tecnicos is not None and len(tecnicos) > 2:
-            raise forms.ValidationError("Selecciona como máximo 2 técnicos.")
-        return tecnicos

@@ -85,7 +85,12 @@
         <!-- Formulario Creación de Ciudadano -->
         {% if request.GET.query and no_resultados %}
             <div class="alert alert-info mb-3">
-                <i class="bi bi-exclamation-triangle-fill fs-4"></i> No se encontraron coincidencias.
+                <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+                {% if renaper_precarga %}
+                    No se encontraron coincidencias en el sistema. Se precargaron datos desde RENAPER; confirme para crear y agregar a la nómina.
+                {% else %}
+                    No se encontraron coincidencias.
+                {% endif %}
             </div>
             <div class="card mb-3">
                 <div class="card-header font-weight-bold">Crear Nuevo Ciudadano</div>
@@ -95,6 +100,7 @@
                     {% endif %}
                     <form method="post">
                         {% csrf_token %}
+                        {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
                         {{ form_ciudadano|crispy }}
                         <div class="mt-4 alert alert-light">
                             <h5 class="mb-3">

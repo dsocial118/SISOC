@@ -1,4 +1,4 @@
-from datetime import datetime
+import logging
 
 from django.conf import settings
 from django.contrib import messages
@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Sum
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import (
     CreateView,
@@ -18,6 +19,10 @@ from django.views.generic import (
 
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
 from ciudadanos.models import Ciudadano, GrupoFamiliar
+from comedores.services.comedor_service import ComedorService
+from core.models import Localidad, Municipio
+
+logger = logging.getLogger("django")
 
 
 class CiudadanosListView(LoginRequiredMixin, ListView):
@@ -118,7 +123,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
 
     def get_historial_context(self, ciudadano):
         historial = ciudadano.historial_transferencias.filter(
-            anio__gte=datetime.now().year - 1
+            anio__gte=timezone.now().year - 1
         ).order_by("anio", "mes")
 
         return {
@@ -136,14 +141,20 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
     def get_celiaquia_context(self, ciudadano):
         try:
             from celiaquia.models import ExpedienteCiudadano
-        except Exception:
+        except ImportError:
             return {"expedientes_celiaquia": []}
 
-        expedientes = (
-            ExpedienteCiudadano.objects.filter(ciudadano=ciudadano)
-            .select_related("expediente", "estado")
-            .order_by("-creado_en")
-        )
+        try:
+            expedientes = (
+                ExpedienteCiudadano.objects.filter(ciudadano=ciudadano)
+                .select_related("expediente", "estado")
+                .order_by("-creado_en")
+            )
+        except Exception:
+            logger.exception(
+                "Error cargando expedientes celiaquia para ciudadano %s", ciudadano.pk
+            )
+            return {"expedientes_celiaquia": []}
         contexto = {"expedientes_celiaquia": expedientes}
         expediente_actual = expedientes.first()
         if expediente_actual:
@@ -153,20 +164,28 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
     def get_cdf_context(self, ciudadano):
         try:
             from centrodefamilia.models import ParticipanteActividad
-        except Exception:
+        except ImportError:
             return {"participaciones_cdf": [], "costo_total_cdf": 0}
 
-        participaciones = (
-            ParticipanteActividad.objects.filter(ciudadano=ciudadano)
-            .select_related("actividad_centro__centro", "actividad_centro__actividad")
-            .order_by("-fecha_registro")
-        )
-        costo_total_cdf = (
-            ParticipanteActividad.objects.filter(
-                ciudadano=ciudadano, estado="inscrito"
-            ).aggregate(total=Sum("actividad_centro__precio"))["total"]
-            or 0
-        )
+        try:
+            participaciones = (
+                ParticipanteActividad.objects.filter(ciudadano=ciudadano)
+                .select_related(
+                    "actividad_centro__centro", "actividad_centro__actividad"
+                )
+                .order_by("-fecha_registro")
+            )
+            costo_total_cdf = (
+                ParticipanteActividad.objects.filter(
+                    ciudadano=ciudadano, estado="inscrito"
+                ).aggregate(total=Sum("actividad_centro__precio"))["total"]
+                or 0
+            )
+        except Exception:
+            logger.exception(
+                "Error cargando participaciones CDF para ciudadano %s", ciudadano.pk
+            )
+            return {"participaciones_cdf": [], "costo_total_cdf": 0}
         return {
             "participaciones_cdf": participaciones,
             "costo_total_cdf": costo_total_cdf,
@@ -175,16 +194,22 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
     def get_comedor_context(self, ciudadano):
         try:
             from comedores.models import Nomina
-        except Exception:
+        except ImportError:
             return {"nominas_comedor": []}
 
-        nominas = (
-            Nomina.objects.filter(ciudadano=ciudadano)
-            .select_related(
-                "comedor__provincia", "comedor__municipio", "comedor__tipocomedor"
+        try:
+            nominas = (
+                Nomina.objects.filter(ciudadano=ciudadano)
+                .select_related(
+                    "comedor__provincia", "comedor__municipio", "comedor__tipocomedor"
+                )
+                .order_by("-fecha")
             )
-            .order_by("-fecha")
-        )
+        except Exception:
+            logger.exception(
+                "Error cargando nominas de comedor para ciudadano %s", ciudadano.pk
+            )
+            return {"nominas_comedor": []}
         contexto = {"nominas_comedor": nominas}
         nomina_actual = nominas.first()
         if nomina_actual:
@@ -196,6 +221,132 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
     model = Ciudadano
     form_class = CiudadanoForm
     template_name = "ciudadanos/ciudadano_form.html"
+    SEXO_BUSQUEDA_CHOICES = (
+        ("M", "Masculino"),
+        ("F", "Femenino"),
+        ("X", "X"),
+        ("D", "Desconocido"),
+    )
+
+    def get(self, request, *args, **kwargs):
+        dni = (request.GET.get("dni") or "").strip()
+        if dni:
+            return self._handle_ciudadano_busqueda(request, dni, *args, **kwargs)
+        return super().get(request, *args, **kwargs)
+
+    def _handle_ciudadano_busqueda(self, request, dni, *args, **kwargs):
+        dni_clean = str(dni or "").strip()
+        if not dni_clean.isdigit() or len(dni_clean) < 7:
+            messages.warning(request, "Ingrese un DNI numérico válido para buscar.")
+            return super().get(request, *args, **kwargs)
+
+        ciudadano = Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_clean)
+        ).first()
+        if ciudadano:
+            messages.info(request, "El ciudadano ya existe. Puede editar su legajo.")
+            return redirect("ciudadanos_editar", pk=ciudadano.pk)
+
+        sexo = (request.GET.get("sexo") or "M").upper()
+        if sexo not in {"M", "F", "X"}:
+            sexo = None
+
+        resultado = ComedorService.obtener_datos_ciudadano_desde_renaper(
+            dni_clean, sexo=sexo
+        )
+        if not resultado.get("success"):
+            messages.warning(
+                request,
+                resultado.get("message", "No se encontraron datos en RENAPER."),
+            )
+            return super().get(request, *args, **kwargs)
+
+        prefill = dict(resultado.get("data") or {})
+        fecha_nacimiento = prefill.get("fecha_nacimiento")
+        if hasattr(fecha_nacimiento, "isoformat"):
+            prefill["fecha_nacimiento"] = fecha_nacimiento.isoformat()
+        request.session["ciudadano_prefill"] = prefill
+        request.session.modified = True
+
+        messages.success(
+            request,
+            "Datos cargados desde RENAPER. Complete el formulario del ciudadano.",
+        )
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        sexo_selected = (self.request.GET.get("sexo") or "M").upper()
+        allowed_sexo = {choice[0] for choice in self.SEXO_BUSQUEDA_CHOICES}
+        if sexo_selected not in allowed_sexo:
+            sexo_selected = "M"
+        ctx["sexo_busqueda_choices"] = self.SEXO_BUSQUEDA_CHOICES
+        ctx["sexo_busqueda"] = sexo_selected
+        return ctx
+
+    def get_initial(self):
+        initial = super().get_initial()
+        prefill = self.request.session.pop("ciudadano_prefill", None)
+        if prefill:
+            initial.update(prefill)
+            self._prefill_ciudadano = prefill
+        return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        prefill = getattr(self, "_prefill_ciudadano", None)
+        if prefill:
+            provincia_id = self._safe_int(prefill.get("provincia"))
+            municipio_id = self._safe_int(prefill.get("municipio"))
+            localidad_id = self._safe_int(prefill.get("localidad"))
+
+            if localidad_id:
+                localidad_obj = (
+                    Localidad.objects.select_related("municipio__provincia")
+                    .filter(pk=localidad_id)
+                    .first()
+                )
+                if localidad_obj:
+                    municipio_id = municipio_id or localidad_obj.municipio_id
+                    if localidad_obj.municipio and not provincia_id:
+                        provincia_id = localidad_obj.municipio.provincia_id
+
+            if municipio_id and not provincia_id:
+                municipio_obj = (
+                    Municipio.objects.select_related("provincia")
+                    .filter(pk=municipio_id)
+                    .first()
+                )
+                if municipio_obj and not provincia_id:
+                    provincia_id = municipio_obj.provincia_id
+
+            if provincia_id:
+                form.fields["provincia"].initial = provincia_id
+                form.fields["municipio"].queryset = Municipio.objects.filter(
+                    provincia_id=provincia_id
+                ).order_by("nombre")
+            elif municipio_id:
+                form.fields["municipio"].queryset = Municipio.objects.filter(
+                    pk=municipio_id
+                )
+
+            if municipio_id:
+                form.fields["municipio"].initial = municipio_id
+                form.fields["localidad"].queryset = Localidad.objects.filter(
+                    municipio_id=municipio_id
+                ).order_by("nombre")
+
+            if localidad_id:
+                form.fields["localidad"].initial = localidad_id
+
+        return form
+
+    @staticmethod
+    def _safe_int(value):
+        try:
+            return int(value) if value not in (None, "") else None
+        except (TypeError, ValueError):
+            return None
 
     def form_valid(self, form):
         ciudadano = form.save(commit=False)
