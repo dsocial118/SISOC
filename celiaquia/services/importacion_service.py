@@ -372,7 +372,6 @@ class ImportacionService:
             "altura",
             "telefono",
             "telefono_alternativo",
-            "codigo_postal",
             "documento_responsable",
             "telefono_responsable",
             "contacto_responsable",
@@ -775,9 +774,7 @@ class ImportacionService:
 
                 # Determinar rol del beneficiario
                 if es_mismo_documento:
-                    rol_beneficiario = (
-                        ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
-                    )
+                    rol_beneficiario = ExpedienteCiudadano.ROLE_RESPONSABLE
                 else:
                     rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
 
@@ -1001,36 +998,32 @@ class ImportacionService:
                     try:
                         from ciudadanos.models import GrupoFamiliar
 
-                        relaciones_crear = []
+                        relaciones_creadas = 0
                         for rel in relaciones_familiares:
                             try:
-                                relaciones_crear.append(
-                                    GrupoFamiliar(
-                                        ciudadano_1_id=rel["responsable_id"],
-                                        ciudadano_2_id=rel["hijo_id"],
-                                        vinculo=GrupoFamiliar.RELACION_PADRE,
-                                        estado_relacion=GrupoFamiliar.ESTADO_BUENO,
-                                        conviven=True,
-                                        cuidador_principal=True,
-                                    )
+                                _, created = GrupoFamiliar.objects.get_or_create(
+                                    ciudadano_1_id=rel["responsable_id"],
+                                    ciudadano_2_id=rel["hijo_id"],
+                                    defaults={
+                                        "vinculo": GrupoFamiliar.RELACION_PADRE,
+                                        "estado_relacion": GrupoFamiliar.ESTADO_BUENO,
+                                        "conviven": True,
+                                        "cuidador_principal": True,
+                                    }
                                 )
+                                if created:
+                                    relaciones_creadas += 1
                             except Exception as e:
                                 logger.error(
-                                    "Error preparando relacion familiar fila %s: %s",
+                                    "Error creando relacion familiar fila %s: %s",
                                     rel["fila"],
                                     e,
                                 )
 
-                        if relaciones_crear:
-                            GrupoFamiliar.objects.bulk_create(
-                                relaciones_crear,
-                                batch_size=batch_size,
-                                ignore_conflicts=True,  # Evitar errores por duplicados
-                            )
-                            logger.info(
-                                "Creadas %s relaciones familiares",
-                                len(relaciones_crear),
-                            )
+                        logger.info(
+                            "Creadas %s relaciones familiares",
+                            relaciones_creadas,
+                        )
                     except Exception as e:
                         logger.error("Error creando relaciones familiares: %s", e)
                         warnings.append(
@@ -1078,11 +1071,74 @@ class ImportacionService:
                 )
                 logger.info("Guardados %s registros erróneos", len(registros_erroneos))
 
+        # Post-procesamiento: Detectar y crear relaciones familiares cruzadas
+        relaciones_cruzadas_creadas = 0
+        try:
+            from ciudadanos.models import GrupoFamiliar
+            
+            # Obtener todos los legajos del expediente
+            legajos_expediente = ExpedienteCiudadano.objects.filter(
+                expediente=expediente
+            ).select_related('ciudadano')
+            
+            # Agrupar por ciudadano
+            ciudadanos_roles = {}
+            for legajo in legajos_expediente:
+                cid = legajo.ciudadano_id
+                if cid not in ciudadanos_roles:
+                    ciudadanos_roles[cid] = []
+                ciudadanos_roles[cid].append(legajo.rol)
+            
+            # Buscar relaciones responsable-beneficiario que no estén vinculadas
+            responsables = legajos_expediente.filter(
+                rol=ExpedienteCiudadano.ROLE_RESPONSABLE
+            ).values_list('ciudadano_id', flat=True)
+            
+            beneficiarios = legajos_expediente.filter(
+                rol=ExpedienteCiudadano.ROLE_BENEFICIARIO
+            ).values_list('ciudadano_id', flat=True)
+            
+            # Detectar ciudadanos que son ambos responsable y beneficiario
+            ambos_roles = set(responsables) & set(beneficiarios)
+            
+            for ciudadano_id in ambos_roles:
+                # Obtener los legajos de este ciudadano
+                legajo_responsable = legajos_expediente.filter(
+                    ciudadano_id=ciudadano_id,
+                    rol=ExpedienteCiudadano.ROLE_RESPONSABLE
+                ).first()
+                
+                legajo_beneficiario = legajos_expediente.filter(
+                    ciudadano_id=ciudadano_id,
+                    rol=ExpedienteCiudadano.ROLE_BENEFICIARIO
+                ).first()
+                
+                if legajo_responsable and legajo_beneficiario:
+                    # Actualizar el rol del beneficiario a "Beneficiario y Responsable"
+                    legajo_beneficiario.rol = ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                    legajo_beneficiario.save(update_fields=['rol'])
+                    
+                    # Eliminar el legajo duplicado del responsable
+                    legajo_responsable.delete()
+                    relaciones_cruzadas_creadas += 1
+                    logger.info(
+                        "Consolidado ciudadano %s: rol actualizado a BENEFICIARIO_Y_RESPONSABLE",
+                        ciudadano_id
+                    )
+        except Exception as e:
+            logger.error("Error en post-procesamiento de relaciones cruzadas: %s", e)
+            warnings.append({
+                "fila": "general",
+                "campo": "relaciones_cruzadas",
+                "detalle": f"Error procesando relaciones cruzadas: {str(e)}",
+            })
+
         logger.info(
-            "Import completo: %s válidos, %s errores, %s excluidos.",
+            "Import completo: %s válidos, %s errores, %s excluidos, %s relaciones cruzadas.",
             validos,
             errores,
             len(excluidos),
+            relaciones_cruzadas_creadas,
         )
 
         return {
@@ -1093,4 +1149,5 @@ class ImportacionService:
             "excluidos": excluidos,
             "warnings": warnings,
             "relaciones_familiares_creadas": len(relaciones_familiares),
+            "relaciones_cruzadas_consolidadas": relaciones_cruzadas_creadas,
         }
