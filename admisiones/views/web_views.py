@@ -30,6 +30,7 @@ from admisiones.services.legales_filter_config import (
 )
 from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from django.views.generic.edit import FormMixin
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -260,6 +261,7 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
                 "filters_mode": True,
                 "filters_config": get_tecnicos_filters_ui_config(),
                 "filters_action": reverse("admisiones_tecnicos_listar"),
+                "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.ADMISIONES_TECNICOS,
                 "titulo_busqueda": "Admisiones - Equipos técnicos",
                 "table_headers": [
                     {"title": "ID Comedor"},
@@ -571,7 +573,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         if "forzar_cierre" in request.POST:
-            # Check permissions
+            # Verificar permisos
             if not (
                 request.user.is_superuser
                 or request.user.groups.filter(
@@ -893,6 +895,7 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
                 "filters_mode": True,
                 "filters_config": get_legales_filters_ui_config(),
                 "filters_action": reverse("admisiones_legales_listar"),
+                "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.ADMISIONES_LEGALES,
                 "titulo_busqueda": "Expedientes - Legales",
                 "table_headers": [
                     {"title": "ID Comedor"},
