@@ -33,6 +33,7 @@ from centrodefamilia.services.centro_filter_config import (
 )
 from centrodefamilia.forms import CentroForm
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
 
 
 BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -78,13 +79,14 @@ class CentroListView(LoginRequiredMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Search bar config
+        # Configuracion de la barra de busqueda
         ctx.update(
             {
                 "filters_mode": True,
                 "filters_js": "custom/js/advanced_filters.js",
                 "filters_action": reverse("centro_list"),
                 "filters_config": get_centro_filters_ui_config(),
+                "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.CDF_CENTROS,
                 "add_url": reverse("centro_create"),
             }
         )
@@ -290,7 +292,8 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-        if not (centro.referente_id == user.id or user.is_superuser):
+        es_cdf_sse = user.groups.filter(name="CDF SSE").exists()
+        if not (centro.referente_id == user.id or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -310,7 +313,8 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-        if not (centro.referente_id == user.id or user.is_superuser):
+        es_cdf_sse = user.groups.filter(name="CDF SSE").exists()
+        if not (centro.referente_id == user.id or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 

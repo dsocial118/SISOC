@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeRealTimeValidation();
     initializeProgressTracking();
     moveTooltipsToLabels();
+    initializeSelect2AutoFocus();
 });
 
 /**
@@ -654,6 +655,107 @@ function moveTooltipsToLabels() {
             }
         }
     });
+}
+
+// ============================================
+// AUTO FOCUS EN SELECT2 SEARCH
+// ============================================
+
+/**
+ * Inicializa el auto-focus en el campo de búsqueda de Select2
+ * Cuando se abre un select2, automáticamente enfoca el input de búsqueda
+ */
+function initializeSelect2AutoFocus() {
+    $(document).ready(function() {
+        // MÉTODO 1: Listener global para capturar todos los eventos select2:open
+        $(document).on('select2:open', function() {
+            // Agregar clase al body para prevenir overflow horizontal
+            document.body.classList.add('select2-container--open');
+
+            // También aplicar al html para doble seguridad
+            document.documentElement.style.overflowX = 'hidden';
+            document.body.style.overflowX = 'hidden';
+
+            // Prevenir overflow en app-content
+            const appContent = document.querySelector('.app-content');
+            if (appContent) {
+                appContent.style.overflow = 'visible';
+            }
+
+            // Ejecutar el enfoque de manera inmediata y con retry
+            focusSelect2SearchField();
+        });
+
+        // Listener para cuando se cierra el Select2
+        $(document).on('select2:close', function() {
+            // Remover clase del body
+            document.body.classList.remove('select2-container--open');
+
+            // Restaurar overflow
+            document.documentElement.style.overflowX = '';
+            document.body.style.overflowX = '';
+
+            // Restaurar overflow en app-content
+            const appContent = document.querySelector('.app-content');
+            if (appContent) {
+                appContent.style.overflow = '';
+            }
+        });
+
+        // MÉTODO 2: Observer para detectar nuevos dropdowns de Select2 en el DOM
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    // Si se agrega un dropdown de select2, enfocar su campo de búsqueda
+                    if (node.nodeType === 1 && node.classList && node.classList.contains('select2-container--open')) {
+                        focusSelect2SearchField();
+                    }
+                    // También verificar si es el dropdown que se abre
+                    if (node.nodeType === 1 && node.classList && node.classList.contains('select2-dropdown')) {
+                        focusSelect2SearchField();
+                    }
+                });
+            });
+        });
+
+        // Observar cambios en el body
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+}
+
+/**
+ * Función auxiliar para enfocar el campo de búsqueda de Select2 activo
+ */
+function focusSelect2SearchField() {
+    // Ejecutar inmediatamente
+    attemptFocus();
+
+    // Y también con un pequeño delay como backup
+    setTimeout(attemptFocus, 10);
+    setTimeout(attemptFocus, 50);
+}
+
+/**
+ * Intenta enfocar el campo de búsqueda visible
+ */
+function attemptFocus() {
+    // Buscar TODOS los campos de búsqueda
+    const searchFields = document.querySelectorAll('.select2-search__field');
+
+    // Encontrar el que está visible
+    for (let field of searchFields) {
+        const isVisible = field.offsetParent !== null &&
+                         window.getComputedStyle(field).display !== 'none' &&
+                         window.getComputedStyle(field).visibility !== 'hidden';
+
+        if (isVisible) {
+            field.focus();
+            return; // Salir después de enfocar el primero visible
+        }
+    }
 }
 
 // ============================================

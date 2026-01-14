@@ -49,6 +49,37 @@
                class="btn btn-outline-secondary">Cancelar</a>
         </div>
     </div>
+    {% if not object %}
+        <div class="card mb-3">
+            <div class="card-header font-weight-bold">Buscar Ciudadano</div>
+            <div class="card-body">
+                <form method="get" class="form-inline">
+                    <div class="form-group mr-2">
+                        <label for="busqueda-dni" class="sr-only">DNI</label>
+                        <input type="text"
+                               class="form-control"
+                               name="dni"
+                               id="busqueda-dni"
+                               placeholder="Ingrese DNI (7-8 digitos)"
+                               value="{{ request.GET.dni }}" />
+                    </div>
+                    <div class="form-group mr-2">
+                        <label for="busqueda-sexo" class="sr-only">Sexo</label>
+                        <select name="sexo" id="busqueda-sexo" class="form-control">
+                            {% for value,label in sexo_busqueda_choices %}
+                                <option value="{{ value }}"
+                                        {% if sexo_busqueda == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary mt-3" type="submit">Buscar</button>
+                </form>
+                <small class="form-text text-muted mt-2">
+                    Si existe, se abrira el legajo para edicion. Si no existe, se precargara el formulario con datos de RENAPER.
+                </small>
+            </div>
+        </div>
+    {% endif %}
 
     <div class="row comedor-form">
         <div class="col-12">
@@ -769,27 +800,56 @@
 
                 const requiredFields = Array.from(
                     sectionBody.querySelectorAll("input[required], select[required], textarea[required]")
-                );
-                let state = "complete";
+                ).filter(field => field.type !== "hidden");
+
+                const allFields = Array.from(
+                    sectionBody.querySelectorAll("input, select, textarea")
+                ).filter(field => field.type !== "hidden");
+
+                let state = "empty";
+                let isComplete = false;
 
                 if (requiredFields.length === 0) {
-                    state = "complete";
+                    // Sección opcional: solo se marca como completa si tiene al menos un campo lleno
+                    // Excluir checkboxes con valor por defecto que no han sido modificados por el usuario
+                    const hasAnyFieldFilled = allFields.some(field => {
+                        // Para checkboxes, solo contar si NO es el valor por defecto inicial
+                        if (field.type === "checkbox") {
+                            // Si el campo tiene el atributo data-user-modified, significa que el usuario lo cambió
+                            return field.hasAttribute('data-user-modified');
+                        }
+                        return fieldFilled(field);
+                    });
+
+                    if (hasAnyFieldFilled) {
+                        state = "complete";
+                        isComplete = true;
+                    } else {
+                        state = "empty";
+                        isComplete = false;
+                    }
                 } else {
+                    // Sección con campos obligatorios
                     const filled = requiredFields.filter(fieldFilled).length;
                     if (filled === 0) {
                         state = "empty";
+                        isComplete = false;
                     } else if (filled < requiredFields.length) {
                         state = "incomplete";
+                        isComplete = false;
                     } else {
                         state = "complete";
+                        isComplete = true;
                     }
                 }
 
                 if (statusBadge) {
                     statusBadge.classList.remove("complete", "incomplete", "empty");
                     statusBadge.classList.add(state);
-                    if (state === "complete" && requiredFields.length === 0) {
-                        statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Opcional';
+                    if (requiredFields.length === 0 && state === "complete") {
+                        statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Completo (Opcional)';
+                    } else if (requiredFields.length === 0 && state === "empty") {
+                        statusBadge.innerHTML = '<i class="fas fa-circle"></i> Opcional';
                     } else if (state === "complete") {
                         statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Completo';
                     } else if (state === "incomplete") {
@@ -799,7 +859,7 @@
                     }
                 }
 
-                return state === "complete";
+                return isComplete;
             }
 
             function updateProgress() {
@@ -824,8 +884,16 @@
                 if (!sectionBody) return;
                 const fields = sectionBody.querySelectorAll("input, select, textarea");
                 fields.forEach((field) => {
-                    field.addEventListener("input", updateProgress);
-                    field.addEventListener("change", updateProgress);
+                    // Marcar checkboxes cuando el usuario interactúa con ellos
+                    if (field.type === "checkbox") {
+                        field.addEventListener("change", function() {
+                            this.setAttribute('data-user-modified', 'true');
+                            updateProgress();
+                        });
+                    } else {
+                        field.addEventListener("input", updateProgress);
+                        field.addEventListener("change", updateProgress);
+                    }
                 });
             });
 

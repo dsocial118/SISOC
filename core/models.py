@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.urls import reverse
 
@@ -142,3 +143,29 @@ class Sexo(models.Model):
     class Meta:
         verbose_name = "Sexo"
         verbose_name_plural = "Sexos"
+
+
+class FiltroFavorito(models.Model):
+    """Filtro avanzado guardado por usuario y seccion."""
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="filtros_favoritos",
+    )
+    seccion = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=120)
+    filtros = models.JSONField(default=dict)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["fecha_creacion"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["usuario", "seccion", "nombre"],
+                name="unico_filtro_favorito_usuario_seccion_nombre",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.usuario_id} - {self.seccion} - {self.nombre}"

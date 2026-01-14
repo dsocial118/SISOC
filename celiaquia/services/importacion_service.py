@@ -94,15 +94,6 @@ class ImportacionService:
             "codigo_postal",
             "telefono",
             "email",
-            "APELLIDO_RESPONSABLE",
-            "NOMBRE_REPSONSABLE",
-            "Cuit_Responsable",
-            "FECHA_DE_NACIMIENTO_RESPONSABLE",
-            "SEXO",
-            "DOMICILIO_RESPONSABLE",
-            "LOCALIDAD_RESPONSABLE",
-            "CELULAR_RESPONSABLE",
-            "CORREO_RESPONSABLE",
         ]
         df = pd.DataFrame(columns=columnas)
         output = BytesIO()
@@ -332,8 +323,8 @@ class ImportacionService:
             logger.warning("No se pudo obtener provincia del usuario: %s", e)
 
         if not provincia_usuario_id:
-            raise ValidationError(
-                "El usuario debe tener una provincia configurada para importar legajos"
+            logger.warning(
+                "Usuario sin provincia configurada; se importara sin filtro provincial."
             )
 
         validos = errores = 0
@@ -422,9 +413,10 @@ class ImportacionService:
 
         # Cargar todos los datos de una vez
         if municipio_ids:
-            for m in Municipio.objects.filter(
-                pk__in=municipio_ids, provincia_id=provincia_usuario_id
-            ):
+            municipios_qs = Municipio.objects.filter(pk__in=municipio_ids)
+            if provincia_usuario_id:
+                municipios_qs = municipios_qs.filter(provincia_id=provincia_usuario_id)
+            for m in municipios_qs:
                 municipios_cache[m.pk] = m.pk
 
         if localidad_ids:
@@ -540,23 +532,15 @@ class ImportacionService:
                     payload.get("documento", "")
                 )
 
-                # Asignar provincia del usuario
-                payload["provincia"] = provincia_usuario_id
+                # Asignar provincia del usuario si existe
+                if provincia_usuario_id:
+                    payload["provincia"] = provincia_usuario_id
 
                 required = [
                     "apellido",
                     "nombre",
                     "documento",
                     "fecha_nacimiento",
-                    "sexo",
-                    "nacionalidad",
-                    "municipio",
-                    "localidad",
-                    "calle",
-                    "altura",
-                    "codigo_postal",
-                    "telefono",
-                    "email",
                 ]
                 for req in required:
                     if not payload.get(req):

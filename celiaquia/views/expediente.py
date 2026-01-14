@@ -1,8 +1,6 @@
 import json
 import logging
 import traceback
-import io
-
 
 from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
@@ -13,7 +11,6 @@ from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
     HttpResponseNotAllowed,
-    FileResponse,
 )
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_protect
@@ -914,7 +911,12 @@ class ExpedienteNominaSintysExportView(View):
         expediente = get_object_or_404(Expediente, pk=pk)
         content = CruceService.generar_nomina_sintys_excel(expediente)
         filename = f"nomina_sintys_{expediente.pk}.xlsx"
-        return FileResponse(io.BytesIO(content), as_attachment=True, filename=filename)
+        response = HttpResponse(
+            content,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 class SubirCruceExcelView(View):

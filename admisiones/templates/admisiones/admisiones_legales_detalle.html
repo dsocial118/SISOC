@@ -3,6 +3,7 @@
 {% load crispy_forms_tags %}
 {% load static custom_filters %}
 {% load admisiones_tags %}
+{% load estado_filters %}
 ;
 {% block title %}Expediente: {{ admision.num_expediente }}{% endblock %}
 ;
@@ -130,8 +131,12 @@
                         {% else %}
                             <li class="nav-item">
                                 <div class="comment-text">
-                                    Informe SGA:
-                                    {% if admision.informe_sga %}
+                                    Disposición:
+                                    {% if admision.numero_disposicion %}
+                                        <a href="{{ admision.archivo_disposicion.url }}" target="_blank">
+                                            <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
+                                        </a>
+                                        <span class="fw-bold">{{ admision.numero_disposicion }}</span>
                                         <i class="bi bi-check-circle-fill text-success"></i>
                                     {% else %}
                                         <i class="bi bi-x-circle-fill text-danger"></i>
@@ -146,20 +151,6 @@
                                             <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
                                         </a>
                                         <span class="fw-bold">{{ admision.numero_convenio }}</span>
-                                        <i class="bi bi-check-circle-fill text-success"></i>
-                                    {% else %}
-                                        <i class="bi bi-x-circle-fill text-danger"></i>
-                                    {% endif %}
-                                </div>
-                            </li>
-                            <li class="nav-item">
-                                <div class="comment-text">
-                                    Disposición:
-                                    {% if admision.numero_disposicion %}
-                                        <a href="{{ admision.archivo_disposicion.url }}" target="_blank">
-                                            <i class="bi bi-file-earmark-check text-info h5 mx-2 text-bold"></i>
-                                        </a>
-                                        <span class="fw-bold">{{ admision.numero_disposicion }}</span>
                                         <i class="bi bi-check-circle-fill text-success"></i>
                                     {% else %}
                                         <i class="bi bi-x-circle-fill text-danger"></i>
@@ -353,37 +344,11 @@
         <div class="col-12 mt-3">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title fw-bold fs-3">Historial de movimientos</h2>
+                    <h2 class="card-title fw-bold fs-3">Historial de estados</h2>
                 </div>
                 <div class="card-body p-0">
-                    {% include 'components/data_table.html' with headers=historial_headers items=historial_cambios custom_cells=True show_actions=False empty_message='No hay movimientos registrados' include_pagination=True page_obj=historial_page_obj is_paginated=historial_is_paginated page_param=historial_page_param %}
+                    {% include 'components/data_table.html' with headers=historial_estados_headers items=historial_estados_cambios custom_cells=True show_actions=False empty_message='No hay cambios de estado registrados' include_pagination=True page_obj=historial_estados_page_obj is_paginated=historial_estados_is_paginated page_param=historial_estados_page_param %}
                 </div>
-            </div>
-        </div>
-    </div>
-    <!-- Modal para modificar Informe SGA -->
-    <div class="modal fade"
-         id="modalInformeSGA"
-         tabindex="-1"
-         aria-labelledby="modalInformeSGALabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <form id="informeSGAForm" method="POST" action="">
-                    {% csrf_token %}
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalInformeSGALabel">Informe SGA</h5>
-                        <button type="button"
-                                class="btn-close"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">¿Desea modificar el estado del Informe SGA?</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" name="BtnInformeSGA" class="btn btn-primary">Confirmar</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

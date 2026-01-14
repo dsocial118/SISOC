@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect, JsonResponse
 from django.template.loader import render_to_string
@@ -44,6 +44,7 @@ class OrganizacionListView(LoginRequiredMixin, ListView):
                     | Q(email__icontains=query)
                 )
                 .select_related("tipo_entidad", "subtipo_entidad")
+                .annotate(comedores_count=Count("comedor"))
                 .only(
                     "id",
                     "nombre",
@@ -58,6 +59,7 @@ class OrganizacionListView(LoginRequiredMixin, ListView):
             # Para la vista inicial sin búsqueda, usar paginación eficiente
             queryset = (
                 Organizacion.objects.select_related("tipo_entidad", "subtipo_entidad")
+                .annotate(comedores_count=Count("comedor"))
                 .only(
                     "id",
                     "nombre",
@@ -430,6 +432,14 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context["firmantes"] = self.object.firmantes.select_related("rol")
         context["avales_data"] = self.object.avales.all()
+
+        # Obtener comedores asociados a la organización
+        comedores = self.object.comedor_set.select_related(
+            "tipocomedor", "provincia", "municipio", "localidad", "referente"
+        ).all()
+        context["comedores"] = comedores
+        context["comedores_count"] = comedores.count()
+
         context["table_headers"] = [
             {"title": "Nombre"},
             {"title": "Rol"},
@@ -491,14 +501,12 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
             {"url_name": "aval_editar", "label": "Editar", "type": "primary"},
             {"url_name": "aval_eliminar", "label": "Eliminar", "type": "danger"},
         ]
-        try:
-            if self.object.tipo_entidad.nombre == "Asociación de hecho":
-                context["avales"] = True
-            else:
-                context["avales"] = False
-        except Exception:
-            context["tipo_entidad"] = None
-            context["avales"] = False
+        tipo_entidad = getattr(self.object, "tipo_entidad", None)
+        context["tipo_entidad"] = tipo_entidad
+        context["avales"] = bool(
+            tipo_entidad
+            and getattr(tipo_entidad, "nombre", "") == "Asociación de hecho"
+        )
 
         return context
 
@@ -557,6 +565,7 @@ def organizaciones_ajax(request):
                 | Q(email__icontains=busqueda)
             )
             .select_related("tipo_entidad", "subtipo_entidad")
+            .annotate(comedores_count=Count("comedor"))
             .only(
                 "id",
                 "nombre",
@@ -570,6 +579,7 @@ def organizaciones_ajax(request):
     else:
         organizaciones = (
             organizaciones.select_related("tipo_entidad", "subtipo_entidad")
+            .annotate(comedores_count=Count("comedor"))
             .only(
                 "id",
                 "nombre",
