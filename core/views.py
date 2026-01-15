@@ -5,7 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db import IntegrityError
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods
 
 from core.models import (
@@ -164,6 +165,7 @@ def _filtros_favoritos_post(request):
     return JsonResponse(response_data, status=status_code)
 
 
+@ensure_csrf_cookie
 @login_required
 @require_http_methods(["GET", "POST"])
 def filtros_favoritos(request):
@@ -178,7 +180,12 @@ def filtros_favoritos(request):
 @require_http_methods(["GET", "DELETE"])
 def detalle_filtro_favorito(request, pk):
     """Devuelve o elimina un filtro favorito."""
-    favorito = get_object_or_404(FiltroFavorito, pk=pk, usuario=request.user)
+    favorito = FiltroFavorito.objects.filter(pk=pk, usuario=request.user).first()
+    if favorito is None:
+        return JsonResponse(
+            {"error": "Filtro favorito no encontrado."},
+            status=404,
+        )
 
     if request.method == "DELETE":
         seccion = favorito.seccion
