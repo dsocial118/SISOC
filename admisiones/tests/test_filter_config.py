@@ -10,6 +10,20 @@ from admisiones.services.legales_filter_config import (
 )
 
 
+# Common required fields for both configurations
+REQUIRED_FILTER_FIELDS = [
+    "comedor_nombre",
+    "comedor_id",
+    "tipo_admision",
+    "organizacion",
+    "num_expediente",
+    "provincia",
+    "equipo_tecnico",
+    "estado",
+    "fecha_modificado",
+]
+
+
 class TestAdmisionesFilterConfig:
     """Test filter configuration for admisiones tecnicos."""
 
@@ -25,19 +39,7 @@ class TestAdmisionesFilterConfig:
         """Verify all required fields are present in the filter config."""
         field_names = [field["name"] for field in ADMISIONES_FILTER_FIELDS]
         
-        required_fields = [
-            "comedor_nombre",
-            "comedor_id",
-            "tipo_admision",
-            "organizacion",
-            "num_expediente",
-            "provincia",
-            "equipo_tecnico",
-            "estado",
-            "fecha_modificado",
-        ]
-        
-        for required_field in required_fields:
+        for required_field in REQUIRED_FILTER_FIELDS:
             assert required_field in field_names, f"Field {required_field} not found"
 
     def test_filters_ui_config_structure(self):
@@ -68,19 +70,7 @@ class TestLegalesFilterConfig:
         """Verify all required fields are present in the filter config."""
         field_names = [field["name"] for field in LEGALES_FILTER_FIELDS]
         
-        required_fields = [
-            "comedor_nombre",
-            "comedor_id",
-            "tipo_admision",
-            "organizacion",
-            "num_expediente",
-            "provincia",
-            "equipo_tecnico",
-            "estado",
-            "fecha_modificado",
-        ]
-        
-        for required_field in required_fields:
+        for required_field in REQUIRED_FILTER_FIELDS:
             assert required_field in field_names, f"Field {required_field} not found"
 
     def test_filters_ui_config_structure(self):
