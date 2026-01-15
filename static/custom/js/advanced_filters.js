@@ -192,9 +192,11 @@
         }
     }
 
+    let headerRowAdded = false;
+
     function addHeaderRow() {
         // Check if header already exists
-        if (rowsContainer.querySelector('.filters-header-row')) {
+        if (headerRowAdded) {
             return;
         }
 
@@ -222,6 +224,7 @@
         headerRow.appendChild(headerEmpty);
         
         rowsContainer.prepend(headerRow);
+        headerRowAdded = true;
     }
 
     function addRow(prefill) {
