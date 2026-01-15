@@ -4,7 +4,6 @@
 
 /* Header del Comedor */
 .nomina-header-card {
-    background: linear-gradient(135deg, #394d66 0%, #2c3e50 100%);
     border-radius: 15px;
     padding: 30px;
     margin-bottom: 30px;
@@ -70,6 +69,7 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     color: #ffffff;
+    overflow: hidden;
 }
 
 .nomina-stat-card:hover {
@@ -122,17 +122,27 @@
 
 /* Sección Nómina */
 .nomina-section {
-    background: linear-gradient(135deg, #394d66 0%, #2c3e50 100%);
     border-radius: 15px;
     padding: 30px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    position: relative;
 }
 
 .nomina-section-title {
     font-size: 1.8rem;
     font-weight: 700;
     color: #ffffff;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
+}
+
+.nomina-section-title:after {
+    height: 2px;
+    background-color: white;
+    content:"";
+    position: absolute;
+    top: 5rem;
+    left: 0px;
+    right: 0px;
 }
 
 /* Barra de búsqueda y acciones */
@@ -442,4 +452,64 @@
         text-align: center;
         margin-bottom: 10px;
     }
+}
+
+
+.sisoclabel {
+    margin: -4em 0 -4em -1em;
+    padding: 4em 0.5em 4em 1em;
+    min-width: 131px;
+    text-align: center;
+}
+
+.bg-yellow {
+    background-color: #D3A141;
+}
+
+.bg-blue {
+    background-color: #5C86AD;
+}
+
+.bg-lightyellow {
+    background-color: #E7BA61;
+}
+
+.bg-lightblue {
+    background-color: #75AADB;
+}
+
+.bg-pink {
+    background-color: #D17C94;
+}
+
+.bg-lightpink {
+    background-color: #F48EAB;
+}
+
+.bg-green {
+    background-color: #54A970;
+}
+
+.bg-lightgreen {
+    background-color: #4FBB73;
+}
+
+.bg-red {
+    background-color: #CB4542;
+}
+
+.bg-lightred {
+    background-color: #CB4542;
+}
+
+.bg-base-blue {
+    background-color: #3E5A7E !important;
+}
+
+.bg-base-darkblue {
+    background-color: #232D4F !important;
+}
+
+.app-content-header, .app-content {
+    background-color: #3E5A7E !important;
 }
