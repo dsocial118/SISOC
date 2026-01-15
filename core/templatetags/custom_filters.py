@@ -1,5 +1,7 @@
 from django import template
 from datetime import date
+from django.templatetags.static import static
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -83,3 +85,17 @@ def es_menor_18(fecha_nacimiento):
 
     edad_actual = edad(fecha_nacimiento)
     return edad_actual is not None and edad_actual < 18
+
+@register.filter
+def boolean_icon(value):
+    if value in [True, 1, "1", "true", "True", "SI", "Sí", "si"]:
+        return mark_safe(
+            f'<img src="{static("custom/img/check_ok.svg")}" alt="Sí" width="20">'
+        )
+
+    if value in [False, 0, "0", "false", "False", "NO", "No", "no"]:
+        return mark_safe(
+            f'<img src="{static("custom/img/check.svg")}" alt="No" width="20">'
+        )
+
+    return "-"
