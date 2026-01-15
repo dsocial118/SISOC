@@ -52,6 +52,63 @@
                class="btn btn-danger">Eliminar</a>
         </div>
     </div>
+
+    <!-- Header Comedor - Figma Design -->
+    <div class="comedor-header-card mb-5">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="comedor-header-title">
+                    {{ relevamiento.comedor.nombre }}
+                    <span class="comedor-header-divider">|</span>
+                </h1>
+            </div>
+            <!-- TODO: preguntar de donde se obtienen estos datos -->
+            <div class="col-md-4">
+                <div class="comedor-header-dates">
+                    <p class="comedor-date-item">
+                        <span class="comedor-date-label">Inicio de Ejecución</span>
+                        <span class="comedor-date-value">19/06/2025</span>
+                    </p>
+                    <p class="comedor-date-item">
+                        <span class="comedor-date-label">Final de Ejecución</span>
+                        <span class="comedor-date-value">19/12/2025</span>
+                    </p>
+                    <p class="comedor-date-item">
+                        <span class="comedor-date-label">Plazo de Ejecución</span>
+                        <span class="comedor-date-value">6 meses</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /Header Comedor -->
+
+    <!-- Timeline Steps - Figma Design -->
+    <div class="comedor-steps-timeline mt-5 mb-5">
+        <div class="timeline-step-card finalizado">
+            <div class="timeline-step-number">1</div>
+            <div class="timeline-step-info">
+                <p class="timeline-step-date">05/06/25</p>
+                <p class="timeline-step-status finalizado">Finalizado</p>
+            </div>
+        </div>
+        <div class="timeline-step-card active">
+            <div class="timeline-step-number">2</div>
+            <div class="timeline-step-info">
+                <p class="timeline-step-date">05/09/25</p>
+                <p class="timeline-step-status finalizado">Finalizado</p>
+            </div>
+        </div>
+        <div class="timeline-step-card pendiente">
+            <div class="timeline-step-number">3</div>
+            <div class="timeline-step-info">
+                <p class="timeline-step-date">00/00/00</p>
+                <p class="timeline-step-status pendiente">Pendiente</p>
+            </div>
+        </div>
+    </div>
+    <!-- /Timeline Steps -->
+
     <div class="row relevamiento-container">
         <div class="col-3">
             <div class="card">
