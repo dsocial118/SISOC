@@ -40,7 +40,7 @@
     </div>
 
     <!-- Header del Comedor -->
-    <div class="nomina-header-card">
+    <div class="nomina-header-card bg-base-darkblue">
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1 class="nomina-header-title">
@@ -69,40 +69,40 @@
 
     <!-- Tarjetas de Estadísticas -->
     <div class="nomina-stats-row">
-        <div class="nomina-stat-card asistentes">
-            <i class="fas fa-users nomina-stat-icon"></i>
+        <div class="nomina-stat-card asistentes bg-yellow">
+            <i class="fas fa-users nomina-stat-icon sisoclabel bg-lightyellow"></i>
             <div class="nomina-stat-content">
                 <p class="nomina-stat-number">{{ cantidad_nomina }}</p>
                 <p class="nomina-stat-label">Asistentes</p>
             </div>
         </div>
 
-        <div class="nomina-stat-card hombres">
-            <i class="fas fa-male nomina-stat-icon"></i>
+        <div class="nomina-stat-card hombres bg-blue">
+            <i class="fas fa-male nomina-stat-icon sisoclabel bg-lightblue"></i>
             <div class="nomina-stat-content">
                 <p class="nomina-stat-number">{{ nominaM }}</p>
                 <p class="nomina-stat-label">Hombres</p>
             </div>
         </div>
 
-        <div class="nomina-stat-card mujeres">
-            <i class="fas fa-female nomina-stat-icon"></i>
+        <div class="nomina-stat-card mujeres bg-pink">
+            <i class="fas fa-female nomina-stat-icon sisoclabel bg-lightpink"></i>
             <div class="nomina-stat-content">
                 <p class="nomina-stat-number">{{ nominaF }}</p>
                 <p class="nomina-stat-label">Mujeres</p>
             </div>
         </div>
 
-        <div class="nomina-stat-card menores">
-            <i class="fas fa-child nomina-stat-icon"></i>
+        <div class="nomina-stat-card menores bg-green">
+            <i class="fas fa-child nomina-stat-icon sisoclabel bg-lightgreen"></i>
             <div class="nomina-stat-content">
                 <p class="nomina-stat-number">{{ menores|default:0 }}</p>
                 <p class="nomina-stat-label">Menores de edad</p>
             </div>
         </div>
 
-        <div class="nomina-stat-card espera">
-            <i class="fas fa-list-ul nomina-stat-icon"></i>
+        <div class="nomina-stat-card espera bg-red">
+            <i class="fas fa-list-ul nomina-stat-icon sisoclabel bg-lightred"></i>
             <div class="nomina-stat-content">
                 <p class="nomina-stat-number">{{ espera }}</p>
                 <p class="nomina-stat-label">Lista de espera</p>
@@ -111,7 +111,7 @@
     </div>
 
     <!-- Sección Nómina -->
-    <div class="nomina-section">
+    <div class="nomina-section bg-base-darkblue">
         <h2 class="nomina-section-title">Nómina</h2>
 
         <!-- Barra de búsqueda y acciones -->
