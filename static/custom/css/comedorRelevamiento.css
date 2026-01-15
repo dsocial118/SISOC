@@ -4,6 +4,24 @@
     margin-bottom:1rem;
 }
 
+.app-content-header, .app-content {
+    background-color: #3e5a7e !important;
+}
+
+.btn-outline-secondary.btn-back {
+    border-radius: 32px;
+    padding: 0.125em 2em;
+    border: 1px solid white;
+    background-color: var(--bs-body-bg);
+    color: #DDD;
+    transition: 0.3s all ease;
+}
+
+.btn-outline-secondary.btn-back:hover {
+    background-color: #DDD;
+    color: var(--bs-body-bg);
+}
+
 /* Custom para comedores_detail */
 
 .card-informacion .nav-item
