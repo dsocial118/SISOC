@@ -11,6 +11,24 @@
   width: 100%;
 }
 
+/* Header row for filters */
+#filters-rows .filters-header-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: .5rem;
+  margin-bottom: .75rem;
+  padding-bottom: .5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+#filters-rows .filter-header {
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Botones principales de filtros (Agregar y Favoritos) */
 #add-filter,
 #favorite-filters-open {
