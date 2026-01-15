@@ -221,7 +221,7 @@
         headerRow.appendChild(headerValue);
         headerRow.appendChild(headerEmpty);
         
-        rowsContainer.appendChild(headerRow);
+        rowsContainer.prepend(headerRow);
     }
 
     function addRow(prefill) {
