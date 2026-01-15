@@ -4,6 +4,8 @@
 {% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
+<div class="mb-4"><a href="{% url 'comedor_detalle' relevamiento.comedor.id %}" class="btn btn-outline-secondary btn-back mr-1">Volver</a></div>
+
     {{ relevamiento.comedor.nombre }}
     <span class="ml-2 h5">| Relevamiento</span>
     <span class="ml-2 h5">| {{ relevamiento.fecha_visita | default_if_none:"Sin información" }} |</span>
@@ -14,6 +16,7 @@
 {% endblock %}
 ;
 {% block breadcrumb %}
+
     <ol class="breadcrumb float-sm-right">
         <div class="breadcrumb-item">
             <a href="{% url 'comedores' %}">Comedores</a>
@@ -32,8 +35,7 @@
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
-            <a href="{% url 'comedor_detalle' relevamiento.comedor.id %}"
-               class="btn btn-secondary mr-1">Volver</a>
+            
         </div>
         <div class="col-auto">
             <!-- <a href="{% url 'relevamiento_editar' relevamiento.comedor.id relevamiento.id %}" class="btn btn-primary mr-1">Editar</a> -->
