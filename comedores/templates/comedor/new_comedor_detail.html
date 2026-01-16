@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static image_tags %}
+{% load static image_tags custom_filters %}
 ;
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
@@ -76,13 +76,14 @@
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-12 col-lg-5">
-                        {% if comedor.latitud and comedor.longitud %}
+                        {% google_maps_query comedor.latitud comedor.longitud as maps_query %}
+                        {% if maps_query %}
                             <div class="w-100" style="aspect-ratio: 16/9;">
                                 <iframe width="100%"
                                         height="365px"
                                         frameborder="0"
                                         style="border:0"
-                                        src="https://maps.google.com/maps?q={{ comedor.latitud }},{{ comedor.longitud }}&output=embed"
+                                        src="https://maps.google.com/maps?q={{ maps_query }}&output=embed"
                                         allowfullscreen>
                                 </iframe>
                             </div>
