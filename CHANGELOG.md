@@ -1,6 +1,22 @@
 # CHANGELOG
 Todas las versiones desplegadas deberan estar aca con su descripcion de cambios. Ordenar de mas a menos reciente,
 
+## Tag: `rc-2026.01.16` - Despliegue: 2026.01.X
+### Added
+- Filtros avanzados favoritos por sección (comedores, admisiones, CDF, duplas, usuarios) con UI de guardado y aplicación.
+- Módulo de importación de expedientes de pago con carga, tracking de errores/exitos, delimitador configurable y pantallas dedicadas.
+- Endpoints API de Provincias/Municipios/Localidades para Centro de Familia y búsquedas geográficas.
+- Tableros administrables desde base (modelo `Tablero`, fixtures y vista dinámica por slug).
+
+### Changed
+- Filtros avanzados reordenados con headers por fila y estilos actualizados en la barra de búsqueda.
+- Comedores: detalle y nómina renovados (incluye rango etario) y búsqueda en mapa por geolocalización.
+- Admisiones/Legales: validaciones de carga, deduplicación en listados, historial de estados y ajustes de estado legal.
+- UI renovada en organizaciones, intervenciones y ciudadanos (Historia Social Digital).
+
+### Fixed
+- Correcciones de geolocalización en mapas, overflow de select2 y fecha de validación al actualizar comedores.
+
 ## Despliegue: 2026.01.02
 ### Added
 - Filtros avanzados combinables para los listados de Admisiones (equipos técnicos y Legales), con configuración de campos/opciones desde backend y UI reutilizable en las tablas.
