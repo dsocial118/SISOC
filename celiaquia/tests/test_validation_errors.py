@@ -19,6 +19,7 @@ class DummyUser:
     """Simple user stub for request objects."""
 
     is_staff = True
+    is_authenticated = True
     username = "tester"
 
 
@@ -28,6 +29,7 @@ factory = RequestFactory()
 def test_confirm_envio_validation_error_returns_generic_message():
     request = factory.post("/expediente/1/confirm/")
     request.user = DummyUser()
+    request._dont_enforce_csrf_checks = True
 
     dummy_exp = type("Exp", (), {"pk": 1, "usuario_provincia": object()})()
 
@@ -58,6 +60,7 @@ def test_confirm_envio_validation_error_returns_generic_message():
 def test_configurar_cupo_validation_error_returns_generic_message():
     request = factory.post("/cupo/1/", {"accion": "config", "total_asignado": "1"})
     request.user = DummyUser()
+    request._dont_enforce_csrf_checks = True
 
     with (
         patch("celiaquia.views.cupo.get_object_or_404", return_value=object()),
@@ -78,6 +81,7 @@ def test_configurar_cupo_validation_error_returns_generic_message():
 def test_cupo_baja_legajo_validation_error_returns_generic_message():
     request = factory.post("/cupo/baja/", {"motivo": "x"})
     request.user = DummyUser()
+    request._dont_enforce_csrf_checks = True
 
     with patch(
         "celiaquia.views.cupo._BaseAccionLegajo._get_legajo_validado",
@@ -95,6 +99,7 @@ def test_cupo_baja_legajo_validation_error_returns_generic_message():
 def test_cupo_suspender_legajo_validation_error_returns_generic_message():
     request = factory.post("/cupo/suspender/", {"motivo": "x"})
     request.user = DummyUser()
+    request._dont_enforce_csrf_checks = True
 
     with patch(
         "celiaquia.views.cupo._BaseAccionLegajo._get_legajo_validado",

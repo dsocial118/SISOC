@@ -11,6 +11,59 @@
   width: 100%;
 }
 
+/* Header row for filters */
+#filters-rows .filters-header-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: .5rem;
+  margin-bottom: .75rem;
+}
+
+#filters-rows .filter-header {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Botones principales de filtros (Agregar y Favoritos) */
+#add-filter,
+#favorite-filters-open {
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+#add-filter {
+  background: #10b981;
+  color: #ffffff;
+  border: 2px solid #10b981;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+#add-filter:hover {
+  background: #059669;
+  border-color: #047857;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+}
+
+#favorite-filters-open {
+  background: #e7ba61;
+  color: #ffffff;
+  border: 2px solid #e7ba61;
+  box-shadow: 0 2px 4px rgba(231, 186, 97, 0.2);
+}
+
+#favorite-filters-open:hover {
+  background: #d9a24f;
+  border-color: #d9a24f;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(231, 186, 97, 0.3);
+}
+
 /* Botones en la barra de acciones con igual ancho */
 .search-actions .btn.btn-lg {
   min-width: 150px;

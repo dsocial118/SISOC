@@ -35,7 +35,10 @@ class ExpedientePago(models.Model):
         verbose_name="Observaciones", blank=True, null=True
     )
     comedor = models.ForeignKey(
-        Comedor, on_delete=models.SET_NULL, related_name="expedientes_pagos", null=True
+        Comedor,
+        on_delete=models.SET_NULL,
+        related_name="expedientes_pagos",
+        null=True,
     )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de creación"

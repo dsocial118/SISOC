@@ -1,3 +1,5 @@
+import unicodedata
+
 from django import forms
 
 from admisiones.models.admisiones import (
@@ -43,6 +45,25 @@ def _if_relevamiento_a_pac(fields, admision):
             field.initial = numero_gde
 
     return fields
+
+
+def _permite_no_corresponde_fecha_vencimiento(admision):
+    if not admision:
+        return False
+
+    tipo_convenio = getattr(admision, "tipo_convenio", None)
+    nombre_convenio = getattr(tipo_convenio, "nombre", "") or ""
+    nombre_convenio = unicodedata.normalize("NFKD", nombre_convenio)
+    nombre_convenio = "".join(
+        char for char in nombre_convenio if not unicodedata.combining(char)
+    )
+    nombre_convenio = nombre_convenio.strip().lower()
+    tipo_admision = (getattr(admision, "tipo", "") or "").strip().lower()
+
+    if tipo_admision not in {"incorporacion", "renovacion"}:
+        return False
+
+    return nombre_convenio == "personeria juridica eclesiastica"
 
 
 class MontoDecimalField(forms.DecimalField):
@@ -105,7 +126,13 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     "type": "date",
                     "class": "form-control",
                 },
-            )
+            ),
+            "no_corresponde_fecha_vencimiento": forms.CheckboxInput(
+                attrs={
+                    "class": "form-check-input",
+                    "id": "no_corresponde_fecha_vencimiento",
+                }
+            ),
         }
         field_classes = {f"monto_{i}": MontoDecimalField for i in range(1, 7)}
 
@@ -113,9 +140,16 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         admision = kwargs.pop("admision", None)
         self.require_full = kwargs.pop("require_full", False)
         super().__init__(*args, **kwargs)
+        self.permite_no_corresponde_fecha_vencimiento = (
+            _permite_no_corresponde_fecha_vencimiento(admision)
+        )
 
         if "fecha_vencimiento_mandatos" in self.fields:
             self.fields["fecha_vencimiento_mandatos"].input_formats = ["%Y-%m-%d"]
+        if "no_corresponde_fecha_vencimiento" in self.fields:
+            self.fields["no_corresponde_fecha_vencimiento"].required = False
+        if "validacion_registro_nacional" in self.fields:
+            self.fields["validacion_registro_nacional"].required = False
 
         # Hacer campos obligatorios solo si require_full es True,
         # dejando opcionales las resoluciones y montos (salvo renovaciones).
@@ -125,6 +159,13 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
 
         for name, field in self.fields.items():
             if name in campos_pago_opcionales:
+                field.required = False
+            elif name == "no_corresponde_fecha_vencimiento":
+                field.required = False
+            elif (
+                name == "fecha_vencimiento_mandatos"
+                and self.permite_no_corresponde_fecha_vencimiento
+            ):
                 field.required = False
             else:
                 field.required = self.require_full
@@ -218,10 +259,29 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 self.fields["provincia_organizacion"].initial = organizacion.provincia
                 self.fields["partido_organizacion"].initial = organizacion.partido
 
-                if not self.instance.fecha_vencimiento_mandatos:
+                if (
+                    not self.instance.fecha_vencimiento_mandatos
+                    and not self.instance.no_corresponde_fecha_vencimiento
+                ):
                     self.fields["fecha_vencimiento_mandatos"].initial = (
                         organizacion.fecha_vencimiento
                     )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
+
+        if no_corresponde and not self.permite_no_corresponde_fecha_vencimiento:
+            self.add_error(
+                "no_corresponde_fecha_vencimiento",
+                "No corresponde para este tipo de convenio.",
+            )
+            return cleaned_data
+
+        if no_corresponde:
+            cleaned_data["fecha_vencimiento_mandatos"] = None
+
+        return cleaned_data
 
 
 class InformeTecnicoBaseForm(forms.ModelForm):
@@ -247,6 +307,12 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     "class": "form-control",
                 },
             ),
+            "no_corresponde_fecha_vencimiento": forms.CheckboxInput(
+                attrs={
+                    "class": "form-check-input",
+                    "id": "no_corresponde_fecha_vencimiento",
+                }
+            ),
         }
         field_classes = {f"monto_{i}": MontoDecimalField for i in range(1, 7)}
 
@@ -254,9 +320,16 @@ class InformeTecnicoBaseForm(forms.ModelForm):
         admision = kwargs.pop("admision", None)
         self.require_full = kwargs.pop("require_full", False)
         super().__init__(*args, **kwargs)
+        self.permite_no_corresponde_fecha_vencimiento = (
+            _permite_no_corresponde_fecha_vencimiento(admision)
+        )
 
         if "fecha_vencimiento_mandatos" in self.fields:
             self.fields["fecha_vencimiento_mandatos"].input_formats = ["%Y-%m-%d"]
+        if "no_corresponde_fecha_vencimiento" in self.fields:
+            self.fields["no_corresponde_fecha_vencimiento"].required = False
+        if "validacion_registro_nacional" in self.fields:
+            self.fields["validacion_registro_nacional"].required = False
 
         # Hacer campos obligatorios solo si require_full es True,
         # dejando opcionales las resoluciones y montos (salvo renovaciones).
@@ -266,6 +339,13 @@ class InformeTecnicoBaseForm(forms.ModelForm):
 
         for name, field in self.fields.items():
             if name in campos_pago_opcionales:
+                field.required = False
+            elif name == "no_corresponde_fecha_vencimiento":
+                field.required = False
+            elif (
+                name == "fecha_vencimiento_mandatos"
+                and self.permite_no_corresponde_fecha_vencimiento
+            ):
                 field.required = False
             else:
                 field.required = self.require_full
@@ -355,10 +435,29 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 self.fields["provincia_organizacion"].initial = organizacion.provincia
                 self.fields["partido_organizacion"].initial = organizacion.partido
 
-                if not self.instance.fecha_vencimiento_mandatos:
+                if (
+                    not self.instance.fecha_vencimiento_mandatos
+                    and not self.instance.no_corresponde_fecha_vencimiento
+                ):
                     self.fields["fecha_vencimiento_mandatos"].initial = (
                         organizacion.fecha_vencimiento
                     )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
+
+        if no_corresponde and not self.permite_no_corresponde_fecha_vencimiento:
+            self.add_error(
+                "no_corresponde_fecha_vencimiento",
+                "No corresponde para este tipo de convenio.",
+            )
+            return cleaned_data
+
+        if no_corresponde:
+            cleaned_data["fecha_vencimiento_mandatos"] = None
+
+        return cleaned_data
 
 
 class InformeTecnicoEstadoForm(forms.Form):

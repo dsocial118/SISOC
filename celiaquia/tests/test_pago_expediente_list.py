@@ -11,7 +11,10 @@ from celiaquia.models import PagoExpediente, PagoEstado
 def test_pago_expediente_list_shows_pagos(client):
     provincia = Provincia.objects.create(nombre="Test")
     user = User.objects.create_user(username="user", password="pass")
-    Profile.objects.create(user=user, es_usuario_provincial=True, provincia=provincia)
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.es_usuario_provincial = True
+    profile.provincia = provincia
+    profile.save()
     PagoExpediente.objects.create(
         provincia=provincia,
         periodo="2024-01",
