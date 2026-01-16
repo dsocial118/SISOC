@@ -25,6 +25,7 @@ from centrodefamilia.services.beneficiarios_filter_config import (
 from centrodefamilia.services.responsables_filter_config import (
     get_filters_ui_config as get_responsables_filters_ui_config,
 )
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
 
 
 class BuscarCUILView(LoginRequiredMixin, View):
@@ -64,6 +65,7 @@ class BeneficiariosListView(LoginRequiredMixin, ListView):
                 "filters_js": "custom/js/advanced_filters.js",
                 "filters_action": reverse("beneficiarios_list"),
                 "filters_config": get_beneficiarios_filters_ui_config(),
+                "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.CDF_BENEFICIARIOS,
                 "add_text": "Crear un nuevo Preinscripto",
             }
         )
@@ -94,6 +96,7 @@ class ResponsableListView(LoginRequiredMixin, ListView):
                 "filters_js": "custom/js/advanced_filters.js",
                 "filters_action": reverse("responsables_list"),
                 "filters_config": get_responsables_filters_ui_config(),
+                "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.CDF_RESPONSABLES,
                 "show_add_button": False,
             }
         )

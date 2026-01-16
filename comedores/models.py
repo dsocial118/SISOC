@@ -245,7 +245,7 @@ class Comedor(models.Model):
     comienzo = models.IntegerField(
         validators=[
             MinValueValidator(1900),
-            MaxValueValidator(timezone.now().year),
+            MaxValueValidator(2026),
         ],
         verbose_name="Año en el que comenzó a funcionar",
         blank=True,

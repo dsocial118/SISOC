@@ -1,306 +1,30 @@
-import logging
 import os
 from typing import Any
 
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.conf import settings
 from django.db import transaction
-from django.db.models.base import Model
-from django.forms import BaseModelForm, ValidationError
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.http import require_POST
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html
-from django.shortcuts import get_object_or_404, render
 from django.views.generic import (
     CreateView,
     DeleteView,
     DetailView,
     ListView,
     UpdateView,
-    TemplateView,
 )
 
 from admisiones.models.admisiones import Admision, EstadoAdmision
-from comedores.models import HistorialValidacion
-from comedores.forms.comedor_form import (
-    ComedorForm,
-    ReferenteForm,
-    NominaForm,
-    CiudadanoFormParaNomina,
-    NominaExtraForm,
-)
-from comedores.forms.observacion_form import ObservacionForm
-from comedores.models import (
-    Comedor,
-    ImagenComedor,
-    Observacion,
-    Nomina,
-)
+from comedores.forms.comedor_form import ComedorForm, ReferenteForm
+from comedores.models import Comedor, HistorialValidacion, ImagenComedor
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
-from comedores.services.validacion_service import ValidacionService
-from duplas.dupla_service import DuplaService
-from relevamientos.service import RelevamientoService
-
-logger = logging.getLogger("django")
-
-
-@login_required
-@require_POST
-def relevamiento_crear_editar_ajax(request, pk):
-    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
-    response = None
-    try:
-        if "territorial" in request.POST:
-            relevamiento = RelevamientoService.create_pendiente(request, pk)
-            if is_ajax:
-                url = reverse(
-                    "relevamiento_detalle",
-                    kwargs={
-                        "pk": relevamiento.pk,
-                        "comedor_pk": relevamiento.comedor.pk,
-                    },
-                )
-                response = JsonResponse({"url": url}, status=200)
-            else:
-                messages.success(
-                    request, "Relevamiento territorial creado correctamente."
-                )
-                response = redirect(
-                    "relevamiento_detalle",
-                    pk=relevamiento.pk,
-                    comedor_pk=relevamiento.comedor.pk,
-                )
-        elif "territorial_editar" in request.POST:
-            relevamiento = RelevamientoService.update_territorial(request)
-            if is_ajax:
-                response = JsonResponse(
-                    {
-                        "url": f"/comedores/{relevamiento.comedor.pk}/relevamiento/{relevamiento.pk}"
-                    },
-                    status=200,
-                )
-            else:
-                messages.success(
-                    request, "Relevamiento territorial actualizado correctamente."
-                )
-                response = redirect(
-                    "relevamiento_detalle",
-                    pk=relevamiento.pk,
-                    comedor_pk=relevamiento.comedor.pk,
-                )
-        else:
-            if is_ajax:
-                response = JsonResponse({"error": "Acción no reconocida"}, status=400)
-            else:
-                messages.error(request, "Acción no reconocida.")
-                response = redirect("comedor_detalle", pk=pk)
-    except ValidationError as e:
-        return JsonResponse({"error": e.message}, status=400)
-    except Exception:
-        logger.exception(
-            f"Error procesando relevamiento {pk}",
-            extra={
-                "body": dict(request.POST),
-            },
-        )
-        return JsonResponse({"error": "Error interno"}, status=500)
-    return response
-
-
-@login_required
-def nomina_editar_ajax(request, pk):
-    nomina = get_object_or_404(Nomina, pk=pk)
-    if request.method == "POST":
-        form = NominaForm(request.POST, instance=nomina)
-        if form.is_valid():
-            form.save()
-            return JsonResponse(
-                {"success": True, "message": "Datos modificados con éxito."}
-            )
-        else:
-
-            return JsonResponse({"success": False, "errors": form.errors})
-    else:  # GET
-        form = NominaForm(instance=nomina)
-        return render(request, "comedor/nomina_editar_ajax.html", {"form": form})
-
-
-class NominaDetailView(LoginRequiredMixin, TemplateView):
-    template_name = "comedor/nomina_detail.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        comedor_pk = self.kwargs["pk"]
-        page = self.request.GET.get("page", 1)
-
-        page_obj, nomina_m, nomina_f, espera, total = ComedorService.get_nomina_detail(
-            comedor_pk, page
-        )
-
-        comedor = ComedorService.get_comedor(comedor_pk)
-
-        context.update(
-            {
-                "nomina": page_obj,
-                "nominaM": nomina_m,
-                "nominaF": nomina_f,
-                "espera": espera,
-                "cantidad_nomina": total,
-                "object": comedor,
-            }
-        )
-        return context
-
-
-class NominaCreateView(LoginRequiredMixin, CreateView):
-    model = Nomina
-    form_class = NominaForm
-    template_name = "comedor/nomina_form.html"
-
-    def get_success_url(self):
-        return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["object"] = ComedorService.get_comedor(self.kwargs["pk"])
-
-        query = self.request.GET.get("query", "")
-        query_clean = query.strip()
-        form_ciudadano = kwargs.get("form_ciudadano")
-        ciudadanos = []
-        renaper_data = None
-        if query:
-            ciudadanos = ComedorService.buscar_ciudadanos_por_documento(query)
-            if (
-                not ciudadanos
-                and query_clean.isdigit()
-                and len(query_clean) >= 7
-                and not form_ciudadano
-            ):
-                renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(
-                    query_clean
-                )
-                if renaper_result.get("success"):
-                    renaper_data = renaper_result.get("data") or {}
-                    mensaje = renaper_result.get("message")
-                    if mensaje:
-                        messages.info(self.request, mensaje)
-                elif renaper_result.get("message"):
-                    messages.warning(self.request, renaper_result["message"])
-
-        if not form_ciudadano:
-            if renaper_data:
-                form_ciudadano = CiudadanoFormParaNomina(initial=renaper_data)
-            else:
-                form_ciudadano = CiudadanoFormParaNomina()
-
-        renaper_precarga = bool(renaper_data) or (
-            self.request.POST.get("origen_dato") == "renaper"
-        )
-
-        context.update(
-            {
-                "ciudadanos": ciudadanos,
-                "no_resultados": bool(query) and not ciudadanos,
-                "form_ciudadano": form_ciudadano,
-                "form_nomina_extra": kwargs.get("form_nomina_extra")
-                or NominaExtraForm(),
-                "estados": Nomina.ESTADO_CHOICES,
-                "renaper_precarga": renaper_precarga,
-            }
-        )
-        return context
-
-    def post(self, request, *args, **kwargs):
-        # Ensure self.object exists for CreateView context handling
-        self.object = None
-        ciudadano_id = request.POST.get("ciudadano_id")
-
-        if ciudadano_id:
-            # Agregar ciudadano existente
-            form_nomina_extra = NominaExtraForm(request.POST)
-
-            if not form_nomina_extra.is_valid():
-                messages.error(
-                    request,
-                    "Datos inválidos para agregar ciudadano a la nómina.",
-                )
-                context = self.get_context_data(
-                    form_nomina_extra=form_nomina_extra,
-                )
-                return self.render_to_response(context)
-
-            estado = form_nomina_extra.cleaned_data.get("estado")
-            observaciones = form_nomina_extra.cleaned_data.get("observaciones", "")
-
-            ok, msg = ComedorService.agregar_ciudadano_a_nomina(
-                comedor_id=self.kwargs["pk"],
-                ciudadano_id=ciudadano_id,
-                user=request.user,
-                estado=estado,
-                observaciones=observaciones,
-            )
-
-            if ok:
-                messages.success(request, msg)
-            else:
-                messages.warning(request, msg)
-
-            return redirect(self.get_success_url())
-        else:
-            # Crear ciudadano nuevo
-            form_ciudadano = CiudadanoFormParaNomina(request.POST)
-            form_nomina_extra = NominaExtraForm(request.POST)
-
-            if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
-                estado = form_nomina_extra.cleaned_data.get("estado")
-                observaciones = form_nomina_extra.cleaned_data.get("observaciones")
-                ciudadano_data = dict(form_ciudadano.cleaned_data)
-                if request.POST.get("origen_dato") == "renaper":
-                    ciudadano_data["origen_dato"] = "renaper"
-
-                ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
-                    ciudadano_data=ciudadano_data,
-                    comedor_id=self.kwargs["pk"],
-                    user=request.user,
-                    estado=estado,
-                    observaciones=observaciones,
-                )
-
-                if ok:
-                    messages.success(request, msg)
-                    return redirect(self.get_success_url())
-                else:
-                    messages.warning(request, msg)
-            else:
-                messages.warning(request, "Errores en el formulario de ciudadano.")
-
-            context = self.get_context_data(
-                form_ciudadano=form_ciudadano,
-                form_nomina_extra=form_nomina_extra,
-            )
-            return self.render_to_response(context)
-
-
-class NominaDeleteView(LoginRequiredMixin, DeleteView):
-    model = Nomina
-    template_name = "comedor/nomina_confirm_delete.html"
-    pk_url_kwarg = "pk2"
-
-    def get_success_url(self):
-        return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
-
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, "Registro de nómina eliminado correctamente.")
-        return super().delete(request, *args, **kwargs)
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
 
 
 class ComedorListView(LoginRequiredMixin, ListView):
@@ -325,13 +49,14 @@ class ComedorListView(LoginRequiredMixin, ListView):
                     {"text": "Comedores", "url": reverse("comedores")},
                     {"text": "Listar", "active": True},
                 ],
-                # Search bar
+                # Barra de busqueda
                 "reset_url": reverse("comedores"),
                 "add_url": reverse("comedor_crear"),
                 "filters_mode": True,
                 "filters_js": "custom/js/advanced_filters.js",
                 "filters_action": reverse("comedores"),
                 "filters_config": get_filters_ui_config(),
+                "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.COMEDORES,
             }
         )
 
@@ -643,18 +368,18 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         page_obj = paginator.get_page(page_number)
         historial_validaciones = list(page_obj)
 
-        # Preparar datos para data_table component
+        # Preparar datos para el componente data_table
         validaciones_headers = [
             {"title": "Fecha"},
             {"title": "Usuario"},
-            {"title": "Estado"},
+            {"title": "¿Fue Validado?"},
             {"title": "Opciones"},
             {"title": "Comentario"},
         ]
 
         validaciones_items = []
         for validacion in historial_validaciones:
-            # Badge para estado
+            # Etiqueta para estado
             if validacion.estado_validacion == "Validado":
                 estado_badge = format_html(
                     '<span class="badge bg-success">{}</span>', "Validado"
@@ -743,34 +468,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
 
 # TODO: Sacar de la vista de comedores
-class AsignarDuplaListView(LoginRequiredMixin, ListView):
-    model = Comedor
-    template_name = "comedor/asignar_dupla_form.html"
-
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        duplas = DuplaService.get_duplas_by_estado_activo()
-        data["comedor"] = comedor
-        data["duplas"] = duplas
-        return data
-
-    def post(self, request, *args, **kwargs):
-        dupla_id = request.POST.get("dupla_id")
-        comedor_id = self.kwargs["pk"]
-
-        if dupla_id:
-            try:
-                ComedorService.asignar_dupla_a_comedor(dupla_id, comedor_id)
-                messages.success(request, "Dupla asignada correctamente.")
-            except Exception as e:
-                messages.error(request, f"Error al asignar la dupla: {e}")
-        else:
-            messages.error(request, "No se seleccionó ninguna dupla.")
-
-        return redirect("comedor_detalle", pk=comedor_id)
-
-
 class ComedorUpdateView(LoginRequiredMixin, UpdateView):
     model = Comedor
     form_class = ComedorForm
@@ -833,119 +530,3 @@ class ComedorDeleteView(LoginRequiredMixin, DeleteView):
     template_name = "comedor/comedor_confirm_delete.html"
     context_object_name = "comedor"
     success_url = reverse_lazy("comedores")
-
-
-class ObservacionCreateView(LoginRequiredMixin, CreateView):
-    model = Observacion
-    form_class = ObservacionForm
-    template_name = "observacion/observacion_form.html"
-    context_object_name = "observacion"
-
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-
-        context.update(
-            {
-                "comedor": Comedor.objects.values("id", "nombre").get(
-                    pk=self.kwargs["comedor_pk"]
-                )
-            }
-        )
-
-        return context
-
-    def form_valid(self, form: BaseModelForm) -> HttpResponse:
-        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = self.request.user
-        form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
-        form.instance.fecha_visita = timezone.now()
-        self.object = form.save()
-        return redirect(
-            "observacion_detalle",
-            comedor_pk=int(self.kwargs["comedor_pk"]),
-            pk=int(self.object.id),
-        )
-
-
-class ObservacionDetailView(LoginRequiredMixin, DetailView):
-    model = Observacion
-    template_name = "observacion/observacion_detail.html"
-    context_object_name = "observacion"
-
-    def get_object(self, queryset=None) -> Model:
-        return (
-            Observacion.objects.prefetch_related("comedor")
-            .values(
-                "id",
-                "fecha_visita",
-                "observacion",
-                "comedor__id",
-                "comedor__nombre",
-                "observador",
-            )
-            .get(pk=self.kwargs["pk"])
-        )
-
-
-class ObservacionUpdateView(LoginRequiredMixin, UpdateView):
-    model = Observacion
-    form_class = ObservacionForm
-    template_name = "observacion/observacion_form.html"
-    context_object_name = "observacion"
-
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
-        context = super().get_context_data(**kwargs)
-        comedor = Comedor.objects.values("id", "nombre").get(
-            pk=self.kwargs["comedor_pk"]
-        )
-
-        context.update({"comedor": comedor})
-
-        return context
-
-    def form_valid(self, form: BaseModelForm) -> HttpResponse:
-        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
-        usuario = self.request.user
-        form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
-        form.instance.fecha_visita = timezone.now()
-        self.object = form.save()
-
-        return redirect(
-            "observacion_detalle",
-            comedor_pk=int(self.kwargs["comedor_pk"]),
-            pk=int(self.object.id),
-        )
-
-
-class ObservacionDeleteView(LoginRequiredMixin, DeleteView):
-    model = Observacion
-    template_name = "observacion/observacion_confirm_delete.html"
-    context_object_name = "observacion"
-
-    def get_success_url(self):
-        comedor = self.object.comedor
-
-        return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
-
-
-@login_required
-@require_POST
-def validar_comedor(request, pk):
-    accion = request.POST.get("accion")
-    comentario = request.POST.get("comentario", "")
-    opciones = request.POST.getlist("opciones") if accion == "no_validar" else None
-
-    success, mensaje = ValidacionService.validar_comedor(
-        comedor_id=pk,
-        user=request.user,
-        accion=accion,
-        opciones=opciones,
-        comentario=comentario,
-    )
-
-    if success:
-        messages.success(request, mensaje)
-    else:
-        messages.error(request, mensaje)
-
-    return redirect("comedor_detalle", pk=pk)

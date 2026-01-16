@@ -5,7 +5,7 @@ astroid==3.2.4
 autopep8==2.3.1
 black==24.8.0
 botocore==1.35.29
-Brotli==1.1.0
+Brotli==1.2.0
 certifi==2024.7.4
 cffi==1.17.0
 chardet==5.2.0
@@ -21,7 +21,7 @@ debugpy==1.8.5
 defusedxml==0.7.1
 diff-match-patch==20230430
 dill==0.3.8
-Django==4.2.20
+Django==4.2.27
 django-appconf==1.1.0
 django-cors-headers==4.5.0
 django-crispy-forms==2.0
@@ -30,7 +30,7 @@ django-extensions==3.2.3
 django-auditlog==3.0.0
 django-import-export==3.2.0
 django-multiselectfield==0.1.13
-django-select2==8.2.3
+django-select2==8.4.1
 django-silk==5.1.0
 djangorestframework==3.15.2
 djangorestframework-api-key==3.0.0
@@ -42,7 +42,7 @@ exceptiongroup==1.2.2
 execnet==2.1.1
 factory_boy==3.3.3
 Faker==37.4.0
-fonttools==4.58.4
+fonttools==4.60.2
 gprof2dot==2024.6.6
 gunicorn==23.0.0
 h11==0.16.0
@@ -79,7 +79,7 @@ pylint==3.2.6
 pylint-django==2.5.5
 pylint-plugin-utils==0.8.2
 PyMySQL==1.1.1
-pypdf==5.6.0
+pypdf==6.6.0
 pyphen==0.17.2
 pytest==8.3.5
 pytest-cov==6.1.1
@@ -108,7 +108,7 @@ typing_extensions==4.12.2
 tzdata==2024.1
 tzlocal==5.3.1
 uritools==5.0.0
-urllib3==1.26.19
+urllib3==2.6.3
 uvicorn==0.34.0
 weasyprint==65.1
 webencodings==0.5.1
