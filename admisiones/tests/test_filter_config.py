@@ -1,4 +1,5 @@
 """Tests for filter configuration order and structure."""
+
 import pytest
 from admisiones.services.admisiones_filter_config import (
     FILTER_FIELDS as ADMISIONES_FILTER_FIELDS,
@@ -38,19 +39,19 @@ class TestAdmisionesFilterConfig:
     def test_all_required_fields_present(self):
         """Verify all required fields are present in the filter config."""
         field_names = [field["name"] for field in ADMISIONES_FILTER_FIELDS]
-        
+
         for required_field in REQUIRED_FILTER_FIELDS:
             assert required_field in field_names, f"Field {required_field} not found"
 
     def test_filters_ui_config_structure(self):
         """Verify the UI config returns proper structure."""
         config = get_admisiones_filters_ui_config()
-        
+
         assert "fields" in config
         assert "operators" in config
         assert isinstance(config["fields"], list)
         assert len(config["fields"]) > 0
-        
+
         # First field should be comedor_nombre
         assert config["fields"][0]["name"] == "comedor_nombre"
 
@@ -69,18 +70,18 @@ class TestLegalesFilterConfig:
     def test_all_required_fields_present(self):
         """Verify all required fields are present in the filter config."""
         field_names = [field["name"] for field in LEGALES_FILTER_FIELDS]
-        
+
         for required_field in REQUIRED_FILTER_FIELDS:
             assert required_field in field_names, f"Field {required_field} not found"
 
     def test_filters_ui_config_structure(self):
         """Verify the UI config returns proper structure."""
         config = get_legales_filters_ui_config()
-        
+
         assert "fields" in config
         assert "operators" in config
         assert isinstance(config["fields"], list)
         assert len(config["fields"]) > 0
-        
+
         # First field should be comedor_nombre
         assert config["fields"][0]["name"] == "comedor_nombre"
