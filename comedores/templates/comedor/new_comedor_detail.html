@@ -76,7 +76,17 @@
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-12 col-lg-5">
-                        {% if comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
+                        {% if comedor.latitud and comedor.longitud %}
+                            <div class="w-100" style="aspect-ratio: 16/9;">
+                                <iframe width="100%"
+                                        height="365px"
+                                        frameborder="0"
+                                        style="border:0"
+                                        src="https://maps.google.com/maps?q={{ comedor.latitud }},{{ comedor.longitud }}&output=embed"
+                                        allowfullscreen>
+                                </iframe>
+                            </div>
+                        {% elif comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
                             <div class="w-100" style="aspect-ratio: 16/9;">
                                 <iframe width="100%"
                                         height="365px"
@@ -94,7 +104,7 @@
                                     <i class="bi bi-geo fs-1"></i>
                                 </div>
                                 <div>
-                                    <p class="mb-0 text-white fw-bold">No hay datos suficientes para cargar el mapa.</p>
+                                    <p class="mb-0 text-white fw-bold">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
                                 </div>
                             </div>
                         {% endif %}

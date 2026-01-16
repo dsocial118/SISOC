@@ -393,7 +393,15 @@
                     </div>
                 </div>
                 <div class="card-body p-0" style="height: 400px;">
-                    {% if comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
+                    {% if comedor.latitud and comedor.longitud %}
+                        <iframe width="100%"
+                                height="100%"
+                                frameborder="0"
+                                style="border:0"
+                                src="https://maps.google.com/maps?q={{ comedor.latitud }},{{ comedor.longitud }}&output=embed"
+                                allowfullscreen>
+                        </iframe>
+                    {% elif comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
                         <iframe width="100%"
                                 height="100%"
                                 frameborder="0"
@@ -402,7 +410,9 @@
                                 allowfullscreen>
                         </iframe>
                     {% else %}
-                        <div class="p-4 text-center text-muted">No hay datos de dirección suficientes para mostrar el mapa.</div>
+                        <div class="p-4 text-center text-muted">
+                            No hay coordenadas ni datos de dirección suficientes para mostrar el mapa.
+                        </div>
                     {% endif %}
                 </div>
             </div>

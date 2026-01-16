@@ -464,6 +464,9 @@ class InformeTecnico(models.Model):
     fecha_vencimiento_mandatos = models.DateField(
         "Fecha de vencimiento de mandatos", null=True, blank=True
     )
+    no_corresponde_fecha_vencimiento = models.BooleanField(
+        "No corresponde fecha de vencimiento", default=False
+    )
 
     # Exclusivos de organizacion de Base
     declaracion_jurada_recepcion_subsidios = models.CharField(

@@ -12,7 +12,7 @@ from django.shortcuts import redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseNotAllowed
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -29,6 +29,35 @@ from importarexpediente.models import (
 
 
 DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
+MAX_ERROR_MESSAGES = 20
+
+
+def _resolve_comedor_cached(raw, cache_by_id, cache_by_name):
+    if not raw:
+        return None
+    r = str(raw).strip()
+    if not r:
+        return None
+    if r.isdigit():
+        pk = int(r)
+        if pk in cache_by_id:
+            return cache_by_id[pk]
+        try:
+            obj = Comedor.objects.filter(pk=pk).first()
+        except Exception:
+            obj = None
+        cache_by_id[pk] = obj
+        return obj
+    key = r.lower()
+    if key in cache_by_name:
+        return cache_by_name[key]
+    try:
+        obj = Comedor.objects.filter(nombre__iexact=r).first()
+    except Exception:
+        obj = None
+    cache_by_name[key] = obj
+    return obj
+
 
 # mapeo de cabeceras posibles -> campo de modelo
 HEADER_MAP = {
@@ -94,7 +123,7 @@ def _friendly_error_message(exc: Exception) -> str:
     )
 
 
-class ImportExpedientesView(FormView):
+class ImportExpedientesView(LoginRequiredMixin, FormView):
     template_name = "upload.html"
     form_class = CSVUploadForm
     success_url = reverse_lazy("importarexpedientes_list")
@@ -129,20 +158,12 @@ class ImportExpedientesView(FormView):
             return None
 
     def resolve_comedor(self, raw):
-        if not raw:
-            return None
-        r = str(raw).strip()
-        # si es pk
-        if r.isdigit():
-            try:
-                return Comedor.objects.get(pk=int(r))
-            except Comedor.DoesNotExist:
-                return None
-        # buscar por nombre
-        try:
-            return Comedor.objects.filter(nombre__iexact=r).first()
-        except Exception:
-            return None
+        if not hasattr(self, "_comedor_cache_by_id"):
+            self._comedor_cache_by_id = {}
+            self._comedor_cache_by_name = {}
+        return _resolve_comedor_cached(
+            raw, self._comedor_cache_by_id, self._comedor_cache_by_name
+        )
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def form_valid(self, form):
@@ -155,7 +176,10 @@ class ImportExpedientesView(FormView):
                 f.seek(0)
             except Exception:
                 pass
-            base_upload = ArchivosImportados(usuario=self.request.user)
+            base_upload = ArchivosImportados(
+                usuario=self.request.user,
+                delimiter=delim,
+            )
             base_upload.archivo.save(f.name, f, save=True)
             # Identificador único del lote = PK del maestro (si el modelo tiene el campo id_archivo, lo seteamos)
             batch_id = base_upload.pk
@@ -174,11 +198,22 @@ class ImportExpedientesView(FormView):
             f.seek(0)
             decoded = f.read().decode("latin-1")
 
+        first_line = decoded.splitlines()[0] if decoded else ""
+        detected_delim = ";" if ";" in first_line else ","
+        if first_line and detected_delim != delim:
+            messages.warning(
+                self.request,
+                (
+                    f"El delimitador seleccionado fue '{delim}', pero el archivo "
+                    f"parece usar '{detected_delim}'. Se usara '{delim}'."
+                ),
+            )
+
         stream = io.StringIO(decoded)
         reader = csv.reader(stream, delimiter=delim)
-        rows = list(reader)
-
-        if not rows:
+        try:
+            first_row = next(reader)
+        except StopIteration:
             # Registrar error por archivo vacío (no se guardan datos en ExpedientePago)
             err_msg = "CSV vacío."
             ErroresImportacion.objects.create(
@@ -198,8 +233,8 @@ class ImportExpedientesView(FormView):
 
         # determinar cabeceras
         if has_header:
-            headers = [h.strip().lower() for h in rows[0]]
-            data_rows = rows[1:]
+            headers = [h.strip().lower() for h in first_row]
+            data_rows = reader
         else:
             err_msg = "CSV sin cabecera no soportado por defecto."
             ErroresImportacion.objects.create(
@@ -275,7 +310,8 @@ class ImportExpedientesView(FormView):
                     # Registrar un error por cada fila inválida
                     friendly = _friendly_error_message(e)
                     msg = f"Fila {i} (Excel): {friendly}"
-                    messages.error(self.request, msg)
+                    if error_count < MAX_ERROR_MESSAGES:
+                        messages.error(self.request, msg)
                     ErroresImportacion.objects.create(
                         archivo_importado=base_upload,
                         fila=i,
@@ -319,6 +355,7 @@ class ImportarExpedienteListView(LoginRequiredMixin, ListView):
         qs = ArchivosImportados.objects.select_related("usuario").order_by(
             "-fecha_subida"
         )
+        qs = qs.filter(usuario=self.request.user)
         query = self.request.GET.get("busqueda", "").strip()
         if query:
             qs = qs.filter(
@@ -340,8 +377,10 @@ def importarexpedientes_ajax(request):
     query = request.GET.get("busqueda", "").strip()
     page = request.GET.get("page", 1)
 
-    queryset = ArchivosImportados.objects.select_related("usuario").order_by(
-        "-fecha_subida"
+    queryset = (
+        ArchivosImportados.objects.select_related("usuario")
+        .filter(usuario=request.user)
+        .order_by("-fecha_subida")
     )
     if query:
         queryset = queryset.filter(
@@ -397,13 +436,16 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         self.batch_id = int(self.kwargs.get("id_archivo"))
+        self.batch = get_object_or_404(
+            ArchivosImportados, pk=self.batch_id, usuario=request.user
+        )
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         # Mostrar solo el archivo maestro correspondiente al id recibido en la URL
         query = self.request.GET.get("busqueda", "").strip()
         queryset = ErroresImportacion.objects.filter(
-            archivo_importado_id=self.batch_id
+            archivo_importado=self.batch
         ).order_by("fila")
         if query:
             if query.isdigit():
@@ -415,11 +457,11 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         errores = ErroresImportacion.objects.filter(
-            archivo_importado_id=self.batch_id
+            archivo_importado=self.batch
         ).order_by("fila")
-        exitos = ExitoImportacion.objects.filter(
-            archivo_importado_id=self.batch_id
-        ).order_by("fila")
+        exitos = ExitoImportacion.objects.filter(archivo_importado=self.batch).order_by(
+            "fila"
+        )
         context["query"] = self.request.GET.get("busqueda", "")
         context["batch_id"] = self.batch_id
         context["error_count"] = errores.count()
@@ -436,7 +478,10 @@ def importarexpediente_detail_ajax(request, id_archivo):
     page = request.GET.get("page", 1)
 
     queryset = (
-        ErroresImportacion.objects.filter(archivo_importado_id=id_archivo)
+        ErroresImportacion.objects.filter(
+            archivo_importado_id=id_archivo,
+            archivo_importado__usuario=request.user,
+        )
         .select_related("archivo_importado")
         .order_by("fila")
     )
@@ -499,15 +544,9 @@ class ImportDatosView(LoginRequiredMixin, FormView):
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements,too-many-nested-blocks
     def post(self, request, *args, **kwargs):
         # Usar el id de la URL
-        batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
-
-        # Importar solo si el lote NO está marcado como completado
-        if getattr(batch, "importacion_completada", False):
-            messages.warning(
-                request,
-                "Este archivo ya fue importado. Primero borre los datos importados para reintentar.",
-            )
-            return redirect(self.success_url)
+        batch = get_object_or_404(
+            ArchivosImportados, pk=self.batch_id, usuario=request.user
+        )
 
         # Abrir y decodificar el archivo CSV almacenado
         try:
@@ -521,20 +560,31 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         except Exception:
             decoded = data.decode("latin-1")
 
-        # Intento simple de detección de delimitador (default ';', fallback ',')
+        # Detectar delimitador para alertar si difiere del elegido
         first_line = decoded.splitlines()[0] if decoded else ""
-        delim = ";" if ";" in first_line else ","
+        detected_delim = ";" if ";" in first_line else ","
+        chosen_delim = getattr(batch, "delimiter", ",") or ","
+        if first_line and detected_delim != chosen_delim:
+            messages.warning(
+                request,
+                (
+                    f"El delimitador seleccionado fue '{chosen_delim}', pero el archivo "
+                    f"parece usar '{detected_delim}'. Se usara '{chosen_delim}'."
+                ),
+            )
+        delim = chosen_delim
 
         stream = io.StringIO(decoded)
         reader = csv.reader(stream, delimiter=delim)
-        rows = list(reader)
-        if not rows:
+        try:
+            headers = next(reader)
+        except StopIteration:
             messages.error(request, "El archivo CSV está vacío.")
             return redirect(self.success_url)
 
         # Cabeceras y mapeo
-        headers = [h.strip().lower() for h in rows[0]]
-        data_rows = rows[1:]
+        headers = [h.strip().lower() for h in headers]
+        data_rows = reader
         mapped = []
         for h in headers:
             key = h.replace('"', "").replace("'", "").strip().lower()
@@ -544,7 +594,20 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         imported_count = 0
         error_count = 0
 
+        comedor_cache_by_id = {}
+        comedor_cache_by_name = {}
+
         with transaction.atomic():
+            batch = ArchivosImportados.objects.select_for_update().get(
+                pk=self.batch_id, usuario=request.user
+            )
+            # Importar solo si el lote NO está marcado como completado
+            if getattr(batch, "importacion_completada", False):
+                messages.warning(
+                    request,
+                    "Este archivo ya fue importado. Primero borre los datos importados para reintentar.",
+                )
+                return redirect(self.success_url)
             for i, row in enumerate(data_rows, start=2):
                 if len(row) < expected_cols:
                     row = row + [""] * (expected_cols - len(row))
@@ -584,19 +647,9 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                                     parsed = None
                             kwargs[field] = parsed
                         elif field == "comedor":
-                            # Resolver FK por id o nombre
-                            r = val.strip()
-                            resolved = None
-                            if r:
-                                if r.isdigit():
-                                    try:
-                                        resolved = Comedor.objects.get(pk=int(r))
-                                    except Comedor.DoesNotExist:
-                                        resolved = None
-                                if resolved is None:
-                                    resolved = Comedor.objects.filter(
-                                        nombre__iexact=r
-                                    ).first()
+                            resolved = _resolve_comedor_cached(
+                                val, comedor_cache_by_id, comedor_cache_by_name
+                            )
                             if resolved is not None:
                                 comedor_obj = resolved
                         else:
@@ -628,17 +681,20 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                     imported_count += 1
 
                 except Exception as e:
-                    error_count += 1
                     friendly = _friendly_error_message(e)
-                    messages.error(request, f"Fila {i} (Excel): {friendly}")
+                    if error_count < MAX_ERROR_MESSAGES:
+                        messages.error(request, f"Fila {i} (Excel): {friendly}")
+                    error_count += 1
 
-        # Marcar el lote como importado si se creó al menos un registro
-        try:
-            if imported_count > 0:
-                batch.importacion_completada = True
-                batch.save(update_fields=["importacion_completada"])
-        except Exception as e:
-            messages.error(request, f"No se pudo marcar el lote como completado: {e}")
+            # Marcar el lote como importado si se creó al menos un registro
+            try:
+                if imported_count > 0:
+                    batch.importacion_completada = True
+                    batch.save(update_fields=["importacion_completada"])
+            except Exception as e:
+                messages.error(
+                    request, f"No se pudo marcar el lote como completado: {e}"
+                )
 
         if error_count:
             messages.warning(
@@ -652,9 +708,8 @@ class ImportDatosView(LoginRequiredMixin, FormView):
             )
         return redirect(self.success_url)
 
-    # Permitir importación vía GET (desde el botón en el detalle)
     def get(self, request, *args, **kwargs):
-        return self.post(request, *args, **kwargs)
+        return HttpResponseNotAllowed(["POST"])
 
 
 class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
@@ -672,7 +727,9 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
 
     def post(self, request, *args, **kwargs):
         # Usar el id de la URL
-        batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
+        batch = get_object_or_404(
+            ArchivosImportados, pk=self.batch_id, usuario=request.user
+        )
 
         registros_qs = RegistroImportado.objects.filter(
             exito_importacion__archivo_importado=batch
@@ -701,6 +758,5 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
         )
         return redirect(self.success_url)
 
-    # Permitir borrado vía GET (desde el botón en el detalle)
     def get(self, request, *args, **kwargs):
-        return self.post(request, *args, **kwargs)
+        return HttpResponseNotAllowed(["POST"])

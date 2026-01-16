@@ -2,7 +2,7 @@
 {% for expediente in importarexpedientes %}
     <tr>
         <td data-nombre="{{ organizacion.nombre }}">
-            <a href="{% url 'importarexpediente_detail' expediente.id %}"
+            <a href="{% url 'importarexpediente_detail' expediente.archivo_importado_id %}"
                class="font-weight-bold link-handler"
                title="Ver detalles">{{ expediente.archivo_importado }}</a>
         </td>

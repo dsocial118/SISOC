@@ -20,4 +20,4 @@ def test_borrar_foto_legajo_elimina_archivo_y_nullea_campo(settings, tmp_path):
 
     assert not default_storage.exists(file_name)
     comedor.refresh_from_db()
-    assert comedor.foto_legajo is None
+    assert not comedor.foto_legajo
