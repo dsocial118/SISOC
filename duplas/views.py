@@ -14,6 +14,7 @@ from django.views.generic import (
 
 from comedores.services.comedor_service import ComedorService
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
 
 from duplas.dupla_filter_config import (
     FIELD_MAP as DUPLA_FILTER_MAP,
@@ -55,7 +56,7 @@ class DuplaListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Data table config
+        # Configuracion de la tabla
         context["table_headers"] = [
             {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
             {
@@ -95,6 +96,7 @@ class DuplaListView(LoginRequiredMixin, ListView):
         context["filters_mode"] = True
         context["filters_config"] = get_filters_ui_config()
         context["filters_action"] = reverse("dupla_list")
+        context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.DUPLAS
         context["show_add_button"] = True
         context["breadcrumb_items"] = [
             {"text": "Equipos técnicos", "url": reverse("dupla_list")},
