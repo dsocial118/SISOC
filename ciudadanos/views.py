@@ -19,6 +19,7 @@ from django.views.generic import (
 
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
 from ciudadanos.models import Ciudadano, GrupoFamiliar
+from ciudadanos.services.pas_service import PasService
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio
 
@@ -88,6 +89,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         ctx.update(self.get_celiaquia_context(ciudadano))
         ctx.update(self.get_cdf_context(ciudadano))
         ctx.update(self.get_comedor_context(ciudadano))
+        ctx.update(self.get_pas_context(ciudadano))
         return ctx
 
     def build_familia(self, ciudadano):
@@ -215,6 +217,61 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         if nomina_actual:
             contexto["nomina_actual"] = nomina_actual
         return contexto
+
+    def get_pas_context(self, ciudadano):
+        """Fetch PAS (Prestacion Alimentaria) data from DW."""
+        try:
+            pas_data = PasService.obtener_datos_pas(ciudadano.id)
+            if pas_data.get("error"):
+                logger.warning(
+                    "Error fetching PAS data for ciudadano %s: %s",
+                    ciudadano.pk,
+                    pas_data.get("error"),
+                )
+                return {"pas_resumen": None, "pas_programas": []}
+
+            resumen = pas_data.get("resumen")
+            programas = pas_data.get("programas", [])
+
+            contexto = {
+                "pas_resumen": None,
+                "pas_programas": [],
+            }
+
+            if resumen and len(resumen) >= 7:
+                contexto["pas_resumen"] = {
+                    "ciudadano_id": resumen[0],
+                    "estado": resumen[1],
+                    "fecha_inicio": resumen[2],
+                    "fecha_baja": resumen[3],
+                    "fecha_ultima_liquidacion": resumen[4],
+                    "monto": resumen[5],
+                    "aviso_liquidacion": resumen[6],
+                }
+
+            if programas:
+                contexto["pas_programas"] = [
+                    {
+                        "ciudadano_id": p[0] if len(p) > 0 else None,
+                        "rol_desc": p[1] if len(p) > 1 else None,
+                        "monto": p[2] if len(p) > 2 else None,
+                        "periodo_mes": p[3] if len(p) > 3 else None,
+                        "titular_key": p[4] if len(p) > 4 else None,
+                    }
+                    for p in programas
+                ]
+
+            return contexto
+        except (ConnectionError, ValueError) as e:
+            logger.error(
+                "Error loading PAS context for ciudadano %s: %s", ciudadano.pk, e
+            )
+            return {"pas_resumen": None, "pas_programas": []}
+        except Exception:
+            logger.exception(
+                "Error loading PAS context for ciudadano %s", ciudadano.pk
+            )
+            return {"pas_resumen": None, "pas_programas": []}
 
 
 class CiudadanosCreateView(LoginRequiredMixin, CreateView):

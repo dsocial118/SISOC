@@ -1,0 +1,101 @@
+            <div class="tab-pane fade" id="pas">
+                <div class="row">
+                    <div class="col-12">
+                        {% if pas_resumen %}
+                            <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                                <h5 class="mb-3">Resumen PAS</h5>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Estado</small>
+                                        <div style="font-size: 0.95rem; color: rgba(255,255,255,0.95); margin-top: 0.25rem;">
+                                            {{ pas_resumen.estado|default:'-' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Monto</small>
+                                        <div style="font-size: 0.95rem; color: rgba(255,255,255,0.95); margin-top: 0.25rem;">
+                                            {% if pas_resumen.monto %}
+                                                ${{ pas_resumen.monto|floatformat:2 }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Fecha Inicio</small>
+                                        <div style="font-size: 0.95rem; color: rgba(255,255,255,0.95); margin-top: 0.25rem;">
+                                            {{ pas_resumen.fecha_inicio|default:'-' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Fecha Baja</small>
+                                        <div style="font-size: 0.95rem; color: rgba(255,255,255,0.95); margin-top: 0.25rem;">
+                                            {{ pas_resumen.fecha_baja|default:'-' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Última Liquidación</small>
+                                        <div style="font-size: 0.95rem; color: rgba(255,255,255,0.95); margin-top: 0.25rem;">
+                                            {{ pas_resumen.fecha_ultima_liquidacion|default:'-' }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small style="color: rgba(255,255,255,0.7);">Aviso Liquidación</small>
+                                        <div style="font-size: 0.95rem; color: rgba(255,255,255,0.95); margin-top: 0.25rem;">
+                                            {{ pas_resumen.aviso_liquidacion|default:'-' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="tabla-legajo">
+                                <h5 class="mb-3">Resumen PAS</h5>
+                                <p style="color: rgba(255,255,255,0.5);">No hay datos de PAS disponibles para este ciudadano.</p>
+                            </div>
+                        {% endif %}
+
+                        {% if pas_programas %}
+                            <div class="tabla-legajo">
+                                <h5 class="mb-3">Programas PA</h5>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Rol</th>
+                                            <th>Monto</th>
+                                            <th>Período</th>
+                                            <th>Titular</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for programa in pas_programas %}
+                                            <tr>
+                                                <td>{{ programa.rol_desc }}</td>
+                                                <td>
+                                                    {% if programa.monto %}
+                                                        ${{ programa.monto|floatformat:2 }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ programa.periodo_mes }}</td>
+                                                <td>
+                                                    {% if programa.titular_key %}
+                                                        <span class="badge" style="background: var(--green);">Sí</span>
+                                                    {% else %}
+                                                        <span class="badge" style="background: rgba(255,255,255,0.2);">No</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="tabla-legajo">
+                                <h5 class="mb-3">Programas PA</h5>
+                                <p style="color: rgba(255,255,255,0.5);">No hay programas PA registrados.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
