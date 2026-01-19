@@ -165,7 +165,20 @@ DATABASES = {
             "charset": "utf8mb4",
         },
         "CONN_MAX_AGE": 0,
-    }
+    },
+    "dw_sisoc": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.environ.get("DW_DATABASE_NAME", "DW_sisoc"),
+        "USER": os.environ.get("DW_DATABASE_USER"),
+        "PASSWORD": os.environ.get("DW_DATABASE_PASSWORD"),
+        "HOST": os.environ.get("DW_DATABASE_HOST"),
+        "PORT": os.environ.get("DW_DATABASE_PORT", "3306"),
+        "OPTIONS": {
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            "charset": "utf8mb4",
+        },
+        "CONN_MAX_AGE": 0,
+    },
 }
 
 # DB para testing
