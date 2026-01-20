@@ -5,20 +5,18 @@ logger = logging.getLogger("django")
 
 
 class PasService:
-    """Service to fetch PAS (Prestación Alimentaria) data from DW views."""
+    """Service to fetch PA (Prestación Alimentaria) data from DW views."""
 
     @staticmethod
     def obtener_datos_pas(ciudadano_id):
         """
-        Fetch PAS data for a citizen from DW views.
+        Fetch PA data for a citizen from DW_sisoc.vw_pas_ciudadanos_resumen.
         
         Returns dict with:
-        - resumen: data from vw_pas_ciudadanos_resumen
-        - programas: data from vw_PA_ciudadanos_resumen
+        - resumen: dict with PA summary data
         """
         try:
             with connections["dw_sisoc"].cursor() as cursor:
-                # Get PAS summary data
                 cursor.execute(
                     """
                     SELECT 
@@ -29,59 +27,26 @@ class PasService:
                         FechaUltimaLiquidacion,
                         monto,
                         AvisoLiquidacion
-                    FROM DW_sisoc.vw_pas_ciudadanos_resumen
+                    FROM vw_pas_ciudadanos_resumen
                     WHERE ciudadano_id_sisoc = %s
                     """,
-                    [ciudadano_id],
+                    [int(ciudadano_id)],
                 )
-                resumen = cursor.fetchone()
-
-                # Get PA programs data
-                cursor.execute(
-                    """
-                    SELECT 
-                        ciudadano_id_sisoc,
-                        ciudadano_programa_rol_desc,
-                        monto,
-                        periodo_mes,
-                        idSisocRelacionTitular
-                    FROM DW_sisoc.vw_PA_ciudadanos_resumen
-                    WHERE ciudadano_id_sisoc = %s
-                    ORDER BY periodo_mes DESC
-                    """,
-                    [ciudadano_id],
-                )
-                programas = cursor.fetchall()
-
-                return {
-                    "resumen": resumen,
-                    "programas": programas,
-                }
+                row = cursor.fetchone()
+                logger.info(f"PA data for {ciudadano_id}: {row}")
+                if row:
+                    return {
+                        "resumen": {
+                            "ciudadano_id": row[0],
+                            "estado": row[1],
+                            "fecha_inicio": row[2],
+                            "fecha_baja": row[3],
+                            "fecha_ultima_liquidacion": row[4],
+                            "monto": row[5],
+                            "aviso_liquidacion": row[6],
+                        }
+                    }
+                return {"resumen": None}
         except Exception as e:
-            logger.exception("Error fetching PAS data for ciudadano %s: %s", ciudadano_id, e)
-            return {"error": str(e), "resumen": None, "programas": []}
-
-    @staticmethod
-    def obtener_historial_pas(ciudadano_id, meses=12):
-        """Fetch historical PAS data for the last N months."""
-        try:
-            with connections["dw_sisoc"].cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT 
-                        ciudadano_id_sisoc,
-                        ciudadano_programa_rol_desc,
-                        monto,
-                        periodo_mes,
-                        idSisocRelacionTitular
-                    FROM DW_sisoc.vw_PA_ciudadanos_resumen
-                    WHERE ciudadano_id_sisoc = %s
-                    ORDER BY periodo_mes DESC
-                    LIMIT %s
-                    """,
-                    [ciudadano_id, meses],
-                )
-                return cursor.fetchall()
-        except Exception as e:
-            logger.exception("Error fetching PAS history for ciudadano %s: %s", ciudadano_id, e)
-            return []
+            logger.exception("Error fetching PA data for ciudadano %s: %s", ciudadano_id, e)
+            return {"resumen": None}
