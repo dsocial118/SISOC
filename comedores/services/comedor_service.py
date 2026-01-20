@@ -312,7 +312,7 @@ class ComedorService:
                 "admision_set",
                 queryset=Admision.objects.select_related(
                     "tipo_convenio", "estado"
-                ).order_by("-id")[:5],
+                ).order_by("-id"),
                 to_attr="admisiones_optimized",
             ),
             Prefetch(

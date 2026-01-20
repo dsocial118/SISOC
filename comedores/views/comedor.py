@@ -10,7 +10,7 @@ from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.utils.html import escape, format_html
+from django.utils.html import escape, format_html, format_html_join
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -259,89 +259,119 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             {"title": "Tipo"},
             {"title": "Estado Actual"},
             {"title": "Fecha Estado"},
+            {"title": "N° Convenio"},
             {"title": "Activa"},
+            {"title": "Acciones"},
         ]
 
+        admisiones_list = list(admision) if admision else []
+        admisiones_paginator = Paginator(admisiones_list, 5)
+        admisiones_page_number = self.request.GET.get("admisiones_page", 1)
+        admisiones_page_obj = admisiones_paginator.get_page(admisiones_page_number)
+        admisiones_page_range = admisiones_paginator.get_elided_page_range(
+            number=admisiones_page_obj.number
+        )
+
         admisiones_items = []
-        if admision:
-            for a in admision:
-                admisiones_items.append(
-                    {
-                        "cells": [
-                            {
-                                "content": (
-                                    a.creado.strftime("%d/%m/%Y")
-                                    if hasattr(a, "creado") and a.creado
-                                    else "-"
-                                )
-                            },
-                            {
-                                "content": (
-                                    a.num_expediente
-                                    if hasattr(a, "num_expediente") and a.num_expediente
-                                    else "-"
-                                )
-                            },
-                            {
-                                "content": (
-                                    a.numero_convenio
-                                    if hasattr(a, "numero_convenio")
-                                    and a.numero_convenio
-                                    else "-"
-                                )
-                            },
-                            {
-                                "content": (
-                                    a.get_tipo_display()
-                                    if hasattr(a, "tipo") and a.tipo
-                                    else "-"
-                                )
-                            },
-                            {
-                                "content": (
-                                    a.estado_mostrar
-                                    if hasattr(a, "estado_mostrar") and a.estado_mostrar
-                                    else "-"
-                                )
-                            },
-                            {
-                                "content": (
-                                    a.fecha_estado_mostrar.strftime("%d/%m/%Y")
-                                    if hasattr(a, "fecha_estado_mostrar")
-                                    and a.fecha_estado_mostrar
-                                    else "-"
-                                )
-                            },
-                            {
-                                "content": (
-                                    format_html(
-                                        '<i class="bi bi-check-circle-fill text-success"></i>'
-                                    )
-                                    if getattr(a, "activa", True)
-                                    else format_html(
-                                        '<i class="bi bi-x-circle-fill text-danger"></i>'
-                                    )
-                                )
-                            },
-                        ],
-                        "actions": [
-                            {
-                                "url": reverse(
-                                    "admision_detalle",
-                                    args=[self.object.id, a.id],
-                                ),
-                                "label": "Ver",
-                                "type": "primary",
-                            }
-                        ],
-                        "admision_id": a.id,
-                        "activa": getattr(a, "activa", True),
-                        "enviada_a_archivo": getattr(a, "enviada_a_archivo", False),
-                        "enviado_acompaniamiento": getattr(
-                            a, "enviado_acompaniamiento", False
-                        ),
-                    }
+        for a in admisiones_page_obj:
+            actions = [
+                format_html(
+                    '<a href="{}" class="btn btn-primary btn-sm">Ver</a>',
+                    reverse("admision_detalle", args=[self.object.id, a.id]),
                 )
+            ]
+            if (
+                self.request.user.is_superuser
+                and getattr(a, "activa", True)
+                and not getattr(a, "enviada_a_archivo", False)
+                and not getattr(a, "enviado_acompaniamiento", False)
+            ):
+                actions.append(
+                    format_html(
+                        '<button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#descartarModal" data-admision-id="{}">Descartar Expediente</button>',
+                        a.id,
+                    )
+                )
+            actions_html = format_html_join(" ", "{}", ((action,) for action in actions))
+
+            admisiones_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": (
+                                a.creado.strftime("%d/%m/%Y")
+                                if hasattr(a, "creado") and a.creado
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                a.num_expediente
+                                if hasattr(a, "num_expediente") and a.num_expediente
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                a.numero_convenio
+                                if hasattr(a, "numero_convenio")
+                                and a.numero_convenio
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                a.get_tipo_display()
+                                if hasattr(a, "tipo") and a.tipo
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                a.estado_mostrar
+                                if hasattr(a, "estado_mostrar") and a.estado_mostrar
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                a.fecha_estado_mostrar.strftime("%d/%m/%Y")
+                                if hasattr(a, "fecha_estado_mostrar")
+                                and a.fecha_estado_mostrar
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                a.convenio_numero
+                                if hasattr(a, "convenio_numero")
+                                and a.convenio_numero is not None
+                                else "-"
+                            )
+                        },
+                        {
+                            "content": (
+                                format_html(
+                                    '<i class="bi bi-check-circle-fill text-success"></i>'
+                                )
+                                if getattr(a, "activa", True)
+                                else format_html(
+                                    '<i class="bi bi-x-circle-fill text-danger"></i>'
+                                )
+                            )
+                        },
+                        {
+                            "content": actions_html,
+                        },
+                    ],
+                    "admision_id": a.id,
+                    "activa": getattr(a, "activa", True),
+                    "enviada_a_archivo": getattr(a, "enviada_a_archivo", False),
+                    "enviado_acompaniamiento": getattr(
+                        a, "enviado_acompaniamiento", False
+                    ),
+                }
+            )
 
         # Optimización: Usar imágenes prefetched en lugar de .values()
         imagenes = (
@@ -438,6 +468,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "admision": admision,
             "admisiones_headers": admisiones_headers,
             "admisiones_items": admisiones_items,
+            "admisiones_page_obj": admisiones_page_obj,
+            "admisiones_is_paginated": admisiones_page_obj.has_other_pages(),
+            "admisiones_page_range": admisiones_page_range,
             "programa_history": programa_history,
             "historial_validaciones": historial_validaciones,
             "validaciones_headers": validaciones_headers,
