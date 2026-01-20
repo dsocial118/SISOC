@@ -1445,7 +1445,7 @@ class AdmisionService:
         ):
             botones.append("if_informe_tecnico")
 
-        # Botón para mandar a legales cuando el IF está cargado (solo técnicos)
+        # Botón para derivar a legales cuando el IF está cargado (solo técnicos)
         if (
             es_tecnico
             and admision.estado_admision == "if_informe_tecnico_cargado"
