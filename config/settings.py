@@ -394,6 +394,7 @@ if ENVIRONMENT == "prd":
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = "DENY"
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+    ENABLE_CSP = True
 else:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     SECURE_HSTS_SECONDS = 0
@@ -410,6 +411,7 @@ else:
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = "SAMEORIGIN"
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+    ENABLE_CSP = True
 
 # Config propia (constantes)
 PROG_MILD = 24
