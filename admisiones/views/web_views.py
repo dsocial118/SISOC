@@ -408,8 +408,11 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             AdmisionService.get_admision_update_context(admision, self.request.user)
             or {}
         )
-        puede_editar_convenio_numero = self.request.user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
-            self.request.user, comedor
+        puede_editar_convenio_numero = (
+            self.request.user.is_superuser
+            or AdmisionService._verificar_permiso_tecnico_dupla(
+                self.request.user, comedor
+            )
         )
 
         informes_complementarios_queryset = (

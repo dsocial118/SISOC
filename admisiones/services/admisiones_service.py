@@ -490,8 +490,9 @@ class AdmisionService:
 
             puede_editar_convenio_numero = False
             if user:
-                puede_editar_convenio_numero = user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
-                    user, comedor
+                puede_editar_convenio_numero = (
+                    user.is_superuser
+                    or AdmisionService._verificar_permiso_tecnico_dupla(user, comedor)
                 )
 
             return {
@@ -740,8 +741,12 @@ class AdmisionService:
                     nombre_personalizado=nombre,
                     archivo=archivo,
                     estado="Documento adjunto",
-                    creado_por=usuario if usuario and usuario.is_authenticated else None,
-                    modificado_por=usuario if usuario and usuario.is_authenticated else None,
+                    creado_por=(
+                        usuario if usuario and usuario.is_authenticated else None
+                    ),
+                    modificado_por=(
+                        usuario if usuario and usuario.is_authenticated else None
+                    ),
                 )
 
             return archivo_admision, None
