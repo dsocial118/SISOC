@@ -1,4 +1,5 @@
-# Generated manually
+# Makes validacion_registro_nacional field optional for InformeTecnico model
+# This field is not always required during admission process
 
 from django.db import migrations, models
 
