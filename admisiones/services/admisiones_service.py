@@ -38,7 +38,6 @@ from admisiones.services.admisiones_filter_config import (
 from django.db.models import Q
 import logging
 
-
 logger = logging.getLogger("django")
 
 ADMISION_ADVANCED_FILTER = AdvancedFilterEngine(
