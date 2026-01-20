@@ -96,6 +96,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.admindocs.middleware.XViewMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
+    "config.middlewares.csp.ContentSecurityPolicyMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
 ]
 
