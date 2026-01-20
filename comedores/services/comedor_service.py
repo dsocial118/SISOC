@@ -309,13 +309,6 @@ class ComedorService:
                 to_attr="clasificaciones_optimized",
             ),
             Prefetch(
-                "admision_set",
-                queryset=Admision.objects.select_related(
-                    "tipo_convenio", "estado"
-                ).order_by("-id"),
-                to_attr="admisiones_optimized",
-            ),
-            Prefetch(
                 "rendiciones_cuentas_mensuales",
                 queryset=RendicionCuentaMensual.objects.only("id"),
                 to_attr="rendiciones_optimized",

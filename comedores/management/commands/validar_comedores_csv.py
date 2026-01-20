@@ -1,4 +1,5 @@
 import csv
+from decimal import Decimal, InvalidOperation
 import unicodedata
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -232,14 +233,18 @@ class Command(BaseCommand):
 
         text = str(raw_value).strip()
         try:
-            if "." in text:
-                return int(float(text))
-            return int(text)
-        except (TypeError, ValueError):
+            number = Decimal(text)
+        except (TypeError, InvalidOperation):
             raise ValueError(
                 f"Línea {line_number}: no se pudo convertir '{raw_value}' a entero "
                 f"para el campo '{field_name}'."
             )
+        if not number.is_finite() or number != number.to_integral_value():
+            raise ValueError(
+                f"Línea {line_number}: '{raw_value}' no es un entero válido "
+                f"para el campo '{field_name}'."
+            )
+        return int(number)
 
     def _resolve_estado_actividad(
         self, label: str, create_missing: bool
