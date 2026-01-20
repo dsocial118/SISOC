@@ -52,15 +52,15 @@
                 <div class="nomina-header-dates">
                     <p class="nomina-date-item">
                         <span class="nomina-date-label">Inicio de Ejecución</span>
-                        <span class="nomina-date-value">19/06/2025</span>
+                        <span class="nomina-date-value">{{ ejecucion_inicio|date:"d/m/Y"|default:"-" }}</span>
                     </p>
                     <p class="nomina-date-item">
                         <span class="nomina-date-label">Final de Ejecución</span>
-                        <span class="nomina-date-value">19/12/2025</span>
+                        <span class="nomina-date-value">{{ ejecucion_fin|date:"d/m/Y"|default:"-" }}</span>
                     </p>
                     <p class="nomina-date-item">
                         <span class="nomina-date-label">Plazo de Ejecución</span>
-                        <span class="nomina-date-value">6 meses</span>
+                        <span class="nomina-date-value">{{ plazo_ejecucion|default:"-" }}</span>
                     </p>
                 </div>
             </div>
@@ -327,7 +327,7 @@
         {% if nomina.has_other_pages %}
             <div class="nomina-pagination">
                 <span class="nomina-pagination-info">
-                    Mostrando 1-6 de {{ nomina.paginator.count }}
+                    Mostrando {{ nomina.start_index }}-{{ nomina.end_index }} de {{ nomina.paginator.count }}
                 </span>
                 <div class="nomina-pagination-buttons">
                     {% if nomina.has_previous %}

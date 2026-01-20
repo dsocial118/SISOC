@@ -2,9 +2,8 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 
 from django import template
-from datetime import date
 from django.templatetags.static import static
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 
 register = template.Library()
 
@@ -131,13 +130,15 @@ def google_maps_query(latitud, longitud):
 @register.filter
 def boolean_icon(value):
     if value in [True, 1, "1", "true", "True", "SI", "Sí", "si"]:
-        return mark_safe(
-            f'<img src="{static("custom/img/check_ok.svg")}" alt="Sí" width="20">'
+        return format_html(
+            '<img src="{}" alt="Sí" width="20">',
+            static("custom/img/check_ok.svg"),
         )
 
     if value in [False, 0, "0", "false", "False", "NO", "No", "no"]:
-        return mark_safe(
-            f'<img src="{static("custom/img/check.svg")}" alt="No" width="20">'
+        return format_html(
+            '<img src="{}" alt="No" width="20">',
+            static("custom/img/check.svg"),
         )
 
     return "-"
