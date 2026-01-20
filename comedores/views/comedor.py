@@ -292,7 +292,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                         a.id,
                     )
                 )
-            actions_html = format_html_join(" ", "{}", ((action,) for action in actions))
+            actions_html = format_html_join(
+                " ", "{}", ((action,) for action in actions)
+            )
 
             admisiones_items.append(
                 {
@@ -314,8 +316,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                         {
                             "content": (
                                 a.numero_convenio
-                                if hasattr(a, "numero_convenio")
-                                and a.numero_convenio
+                                if hasattr(a, "numero_convenio") and a.numero_convenio
                                 else "-"
                             )
                         },

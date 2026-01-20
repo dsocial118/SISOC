@@ -128,7 +128,9 @@ class Command(BaseCommand):
                 comedor, actividad, proceso
             )
 
-            description = f"Línea {line_number}: comedor {comedor.id} ({comedor.nombre})"
+            description = (
+                f"Línea {line_number}: comedor {comedor.id} ({comedor.nombre})"
+            )
 
             if dry_run:
                 cambios = []
@@ -174,9 +176,7 @@ class Command(BaseCommand):
             if applied:
                 self.stdout.write(self.style.SUCCESS(description))
             else:
-                self.stdout.write(
-                    self.style.WARNING(f"{description} (sin cambios)")
-                )
+                self.stdout.write(self.style.WARNING(f"{description} (sin cambios)"))
 
             self._update_stats(
                 stats, validacion_needs_update, estado_changed, applied=applied
@@ -249,9 +249,7 @@ class Command(BaseCommand):
         if count == 1:
             return queryset.first()
         if count > 1:
-            raise CommandError(
-                f"Hay {count} EstadoActividad con el nombre '{label}'."
-            )
+            raise CommandError(f"Hay {count} EstadoActividad con el nombre '{label}'.")
         if not create_missing:
             raise CommandError(
                 f"No existe EstadoActividad '{label}'. Ejecutá sin --dry-run para crearlo."
@@ -295,9 +293,7 @@ class Command(BaseCommand):
 
     def _normalize_text(self, value: str) -> str:
         normalized = unicodedata.normalize("NFKD", value)
-        normalized = "".join(
-            ch for ch in normalized if not unicodedata.combining(ch)
-        )
+        normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
         return normalized.casefold()
 
     def _matches_estado_actual(
