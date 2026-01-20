@@ -36,13 +36,13 @@ CHOICE_OPS = ["eq", "ne"]
 # --- Frontend --------------------------------------------------------------
 
 FILTER_FIELDS = [
+    {"name": "comedor_nombre", "label": "Nombre del comedor", "type": "text"},
     {"name": "comedor_id", "label": "ID de comedor", "type": "number"},
     {
         "name": "tipo_admision",
         "label": "Tipo de admisi\u00f3n",
         "type": "choice",
     },
-    {"name": "comedor_nombre", "label": "Nombre del comedor", "type": "text"},
     {
         "name": "organizacion",
         "label": "Organizaci\u00f3n del comedor",
