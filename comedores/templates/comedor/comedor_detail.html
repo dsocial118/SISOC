@@ -605,43 +605,7 @@
                             font-size: 0.8rem;
                         }
                         </style>
-                        {% if admisiones_items %}
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-striped table-sm table-compact">
-                                    <thead>
-                                        <tr>
-                                            {% for header in admisiones_headers %}<th>{{ header.title }}</th>{% endfor %}
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for item in admisiones_items %}
-                                            <tr>
-                                                {% for cell in item.cells %}<td>{{ cell.content }}</td>{% endfor %}
-                                                <td>
-                                                    {% for action in item.actions %}
-                                                        <a href="{{ action.url }}" class="btn btn-{{ action.type }} btn-sm">{{ action.label }}</a>
-                                                    {% endfor %}
-                                                    {% if user.is_superuser and item.activa and not item.enviada_a_archivo and not item.enviado_acompaniamiento %}
-                                                        <button class="btn btn-danger btn-sm"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#descartarModal"
-                                                                data-admision-id="{{ item.admision_id }}">
-                                                            Descartar Expediente
-                                                        </button>
-                                                    {% endif %}
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="p-3 text-center text-muted">
-                                <i class="fas fa-inbox fa-2x mb-2"></i>
-                                <p>No hay admisiones registradas</p>
-                            </div>
-                        {% endif %}
+                        {% include 'components/data_table.html' with headers=admisiones_headers items=admisiones_items custom_cells=True empty_message='No hay admisiones registradas.' include_pagination=True is_paginated=admisiones_is_paginated page_obj=admisiones_page_obj page_range=admisiones_page_range page_param='admisiones_page' table_class='table-sm table-compact' %}
                     </div>
                 </div>
             </div>
