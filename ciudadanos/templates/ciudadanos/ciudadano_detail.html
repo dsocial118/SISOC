@@ -906,46 +906,44 @@
                     <div class="col-12">
                         {% if pas_resumen %}
                             <div class="tabla-legajo" style="border: 2px solid var(--gold);">
-                                <h5 class="mb-3">Resumen PAS</h5>
-                                <div style="display: grid;
-                                            grid-template-columns: 1fr 1fr;
-                                            gap: 1rem;
-                                            margin-bottom: 1.5rem">
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h5 class="mb-0" style="display: flex; align-items: center; gap: 0.75rem;">
+                                        Programa de Acompañamiento Social
+                                        <span class="badge" style="background: {% if pas_resumen.estado == 'BAJA' %}var(--red){% else %}var(--green){% endif %}; padding: 0.35rem 0.75rem; font-size: 0.75rem; margin: 0;">{{ pas_resumen.estado }}</span>
+                                    </h5>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                                     <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Estado</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ pas_resumen.estado|default:"-" }}</div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Período Liquidación:</small>
+                                            <span style="color: white;">{{ pas_resumen.fecha_ultima_liquidacion }}</span>
+                                        </div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Monto Liquidación:</small>
+                                            <span style="color: white;">{{ pas_resumen.monto|default:"-" }}</span>
+                                        </div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Aviso Liquidación:</small>
+                                            <span style="color: white;">{{ pas_resumen.aviso_liquidacion|default:"-" }}</span>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Estado del Programa:</small>
+                                            <span style="color: white;">{{ pas_resumen.estado }}</span>
+                                        </div>
                                     </div>
                                     <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Monto</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ pas_resumen.monto|default:"-" }}</div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Fecha Inicio</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ pas_resumen.fecha_inicio|default:"-" }}</div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Fecha Baja</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ pas_resumen.fecha_baja|default:"-" }}</div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Última Liquidación</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ pas_resumen.fecha_ultima_liquidacion|default:"-" }}</div>
-                                    </div>
-                                    <div>
-                                        <small style="color: rgba(255,255,255,0.7);">Aviso Liquidación</small>
-                                        <div style="font-size: 0.95rem;
-                                                    color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ pas_resumen.aviso_liquidacion|default:"-" }}</div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Fecha Inicio Programa:</small>
+                                            <span style="color: white;">{{ pas_resumen.fecha_inicio }}</span>
+                                        </div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Fecha Fin Programa:</small>
+                                            <span style="color: white;">{{ pas_resumen.fecha_baja }}</span>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem; font-weight: 600;">Fecha de actualización:</small>
+                                            <span style="color: white; font-weight: 600;">{{ pas_resumen.fecha_ultima_liquidacion }}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1062,7 +1060,7 @@
                                             <th>Rol</th>
                                             <th>Monto</th>
                                             <th>Período</th>
-                                            <th>Titular</th>
+                                            <th>ID Relación Titular</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1070,8 +1068,8 @@
                                             <tr>
                                                 <td>{{ programa.rol_desc|default:"-" }}</td>
                                                 <td>{{ programa.monto|default:"-" }}</td>
-                                                <td>{{ programa.periodo_mes|default:"-" }}</td>
-                                                <td>{{ programa.titular_key|default:"-" }}</td>
+                                                <td>{{ programa.periodo_mes }}</td>
+                                                <td>{{ programa.id_relacion_titular|default:"-" }}</td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
