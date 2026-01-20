@@ -373,7 +373,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             {"title": "Fecha"},
             {"title": "Usuario"},
             {"title": "¿Fue Validado?"},
-            {"title": "Opciones"},
+            {"title": "Detalle Validación"},
             {"title": "Comentario"},
         ]
 
