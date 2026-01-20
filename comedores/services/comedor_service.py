@@ -4,7 +4,16 @@ from datetime import date, datetime
 from typing import Any
 import unicodedata
 
-from django.db.models import Q, Count, Prefetch, QuerySet, Value
+from django.db.models import (
+    Q,
+    Count,
+    Prefetch,
+    QuerySet,
+    Value,
+    IntegerField,
+    F,
+    Func,
+)
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.core.files.storage import default_storage
@@ -12,7 +21,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, Now
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
@@ -66,6 +75,12 @@ COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
         "longitud": float,
     },
 )
+
+
+class TimestampDiffYears(Func):
+    function = "TIMESTAMPDIFF"
+    template = "%(function)s(YEAR, %(expressions)s)"
+    output_field = IntegerField()
 
 
 class ComedorService:
@@ -420,12 +435,45 @@ class ComedorService:
         qs_nomina = Nomina.objects.filter(comedor_id=comedor_pk).select_related(
             "ciudadano__sexo"
         )
-        resumen = qs_nomina.aggregate(
+        age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
+        qs_nomina_age = qs_nomina.annotate(edad=age_expr)
+        qs_nomina_activos = qs_nomina_age.filter(estado=Nomina.ESTADO_ACTIVO)
+        resumen = qs_nomina_age.aggregate(
             cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
             cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
+            cantidad_nomina_x=Count("id", filter=Q(ciudadano__sexo__sexo="X")),
             espera=Count("id", filter=Q(estado=Nomina.ESTADO_PENDIENTE)),
             cantidad_total=Count("id"),
+            rango_ninos=Count(
+                "id", filter=Q(edad__lte=13, estado=Nomina.ESTADO_ACTIVO)
+            ),
+            rango_adolescentes=Count(
+                "id", filter=Q(edad__gte=14, edad__lte=17, estado=Nomina.ESTADO_ACTIVO)
+            ),
+            rango_adultos=Count(
+                "id", filter=Q(edad__gte=18, edad__lte=49, estado=Nomina.ESTADO_ACTIVO)
+            ),
+            rango_adultos_mayores=Count(
+                "id", filter=Q(edad__gte=50, edad__lte=65, estado=Nomina.ESTADO_ACTIVO)
+            ),
+            rango_adulto_mayor_avanzado=Count(
+                "id", filter=Q(edad__gte=66, estado=Nomina.ESTADO_ACTIVO)
+            ),
+            rango_total_activos=Count(
+                "id",
+                filter=Q(
+                    estado=Nomina.ESTADO_ACTIVO,
+                    ciudadano__fecha_nacimiento__isnull=False,
+                ),
+            ),
         )
+        total_activos = resumen["rango_total_activos"] or 0
+
+        def _pct(value):
+            if not total_activos:
+                return 0
+            return int(round((value or 0) * 100 / total_activos))
+
         paginator = Paginator(
             qs_nomina.only(
                 "fecha",
@@ -442,8 +490,24 @@ class ComedorService:
             page_obj,
             resumen["cantidad_nomina_m"],
             resumen["cantidad_nomina_f"],
+            resumen["cantidad_nomina_x"],
             resumen["espera"],
             resumen["cantidad_total"],
+            {
+                "ninos": resumen["rango_ninos"],
+                "adolescentes": resumen["rango_adolescentes"],
+                "adultos": resumen["rango_adultos"],
+                "adultos_mayores": resumen["rango_adultos_mayores"],
+                "adulto_mayor_avanzado": resumen["rango_adulto_mayor_avanzado"],
+                "total_activos": total_activos,
+                "pct_ninos": _pct(resumen["rango_ninos"]),
+                "pct_adolescentes": _pct(resumen["rango_adolescentes"]),
+                "pct_adultos": _pct(resumen["rango_adultos"]),
+                "pct_adultos_mayores": _pct(resumen["rango_adultos_mayores"]),
+                "pct_adulto_mayor_avanzado": _pct(
+                    resumen["rango_adulto_mayor_avanzado"]
+                ),
+            },
         )
 
     @staticmethod

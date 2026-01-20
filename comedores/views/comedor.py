@@ -11,7 +11,13 @@ from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
 from admisiones.models.admisiones import Admision, EstadoAdmision
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
@@ -366,7 +372,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         validaciones_headers = [
             {"title": "Fecha"},
             {"title": "Usuario"},
-            {"title": "¿Fue validado?"},
+            {"title": "¿Fue Validado?"},
             {"title": "Opciones"},
             {"title": "Comentario"},
         ]
@@ -524,4 +530,3 @@ class ComedorDeleteView(LoginRequiredMixin, DeleteView):
     template_name = "comedor/comedor_confirm_delete.html"
     context_object_name = "comedor"
     success_url = reverse_lazy("comedores")
-

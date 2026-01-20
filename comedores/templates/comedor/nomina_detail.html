@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static l10n %}
 {% block title %}Nómina – {{ object.nombre }}{% endblock %}
 {% block titulo-pagina %}
     Nómina de {{ object.nombre }}
@@ -67,7 +67,7 @@
         </div>
     </div>
 
-    <!-- Tarjetas de Estadísticas -->
+    <!-- Tarjetas de Estadísticas Principales -->
     <div class="nomina-stats-row">
         <div class="nomina-stat-card asistentes bg-yellow">
             <i class="fas fa-users nomina-stat-icon sisoclabel bg-lightyellow"></i>
@@ -106,6 +106,119 @@
             <div class="nomina-stat-content">
                 <p class="nomina-stat-number">{{ espera }}</p>
                 <p class="nomina-stat-label">Lista de espera</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Estadísticas Detalladas Colapsable -->
+    <div class="nomina-detailed-stats-wrapper">
+        <button class="nomina-toggle-details" onclick="toggleDetailedStats()">
+            <span>Ver estadísticas detalladas</span>
+            <i class="fas fa-chevron-down nomina-toggle-icon"></i>
+        </button>
+
+        <div id="detailedStatsContent" class="nomina-detailed-content" style="display: none;">
+
+            <!-- Sección: Distribución por Género -->
+            <h3 class="nomina-subsection-title">
+                <i class="fas fa-venus-mars me-2"></i>Distribución por Género
+            </h3>
+            <div class="nomina-stats-row">
+                <div class="nomina-stat-card genero-x bg-purple">
+                    <i class="fas fa-transgender nomina-stat-icon sisoclabel bg-lightpurple"></i>
+                    <div class="nomina-stat-content">
+                        <p class="nomina-stat-number">{{ nominaX|default:0 }}</p>
+                        <p class="nomina-stat-label">Género X / No binario</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Distribución por Edad -->
+            <h3 class="nomina-subsection-title">
+                <i class="fas fa-chart-bar me-2"></i>Distribución por Edad
+            </h3>
+
+            <!-- Menores de edad -->
+            <h4 class="nomina-subgroup-title">Menores de edad (0-17 años)</h4>
+            <div class="nomina-stats-row">
+                <!-- Niños 0-13 -->
+                <div class="nomina-stat-card-detailed bg-cyan">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-child"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.ninos|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Niños (0-13 años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_ninos|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_ninos|default:0 }}%</p>
+                </div>
+
+                <!-- Adolescentes 14-17 -->
+                <div class="nomina-stat-card-detailed bg-orange">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-user-graduate"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.adolescentes|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Adolescentes (14-17 años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_adolescentes|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adolescentes|default:0 }}%</p>
+                </div>
+            </div>
+
+            <!-- Adultos -->
+            <h4 class="nomina-subgroup-title">Adultos (18+ años)</h4>
+            <div class="nomina-stats-row">
+                <!-- Adultos 18-49 -->
+                <div class="nomina-stat-card-detailed bg-teal">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-user-tie"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.adultos|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Adultos (18-49 años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_adultos|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adultos|default:0 }}%</p>
+                </div>
+
+                <!-- Adultos Mayores 50-65 -->
+                <div class="nomina-stat-card-detailed bg-gray">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-user"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.adultos_mayores|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Adultos Mayores (50-65 años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_adultos_mayores|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adultos_mayores|default:0 }}%</p>
+                </div>
+
+                <!-- Adulto Mayor Avanzado 66+ -->
+                <div class="nomina-stat-card-detailed bg-brown">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-user-clock"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.adulto_mayor_avanzado|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Adulto Mayor Avanzado (66+ años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%</p>
+                </div>
             </div>
         </div>
     </div>
