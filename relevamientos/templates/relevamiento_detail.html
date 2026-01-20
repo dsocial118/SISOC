@@ -62,20 +62,19 @@
                     <span class="comedor-header-divider">|</span>
                 </h1>
             </div>
-            <!-- TODO: preguntar de donde se obtienen estos datos -->
             <div class="col-md-4">
                 <div class="comedor-header-dates">
                     <p class="comedor-date-item">
                         <span class="comedor-date-label">Inicio de Ejecución</span>
-                        <span class="comedor-date-value">19/06/2025</span>
+                        <span class="comedor-date-value">{{ ejecucion_inicio|date:"d/m/Y"|default:"-" }}</span>
                     </p>
                     <p class="comedor-date-item">
                         <span class="comedor-date-label">Final de Ejecución</span>
-                        <span class="comedor-date-value">19/12/2025</span>
+                        <span class="comedor-date-value">{{ ejecucion_fin|date:"d/m/Y"|default:"-" }}</span>
                     </p>
                     <p class="comedor-date-item">
                         <span class="comedor-date-label">Plazo de Ejecución</span>
-                        <span class="comedor-date-value">6 meses</span>
+                        <span class="comedor-date-value">{{ plazo_ejecucion|default:"-" }}</span>
                     </p>
                 </div>
             </div>
@@ -84,29 +83,19 @@
     <!-- /Header Comedor -->
 
     <!-- Timeline Steps - Figma Design -->
-    <div class="comedor-steps-timeline mt-5 mb-5">
-        <div class="timeline-step-card finalizado">
-            <div class="timeline-step-number">1</div>
-            <div class="timeline-step-info">
-                <p class="timeline-step-date">05/06/25</p>
-                <p class="timeline-step-status finalizado">Finalizado</p>
-            </div>
+    {% if relevamientos_timeline %}
+        <div class="comedor-steps-timeline mt-5 mb-5">
+            {% for item in relevamientos_timeline %}
+                <div class="timeline-step-card {{ item.card_class }}">
+                    <div class="timeline-step-number">{{ item.step }}</div>
+                    <div class="timeline-step-info">
+                        <p class="timeline-step-date">{{ item.fecha|date:"d/m/y"|default:"-" }}</p>
+                        <p class="timeline-step-status {{ item.status_class }}">{{ item.estado|default:"-" }}</p>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
-        <div class="timeline-step-card active">
-            <div class="timeline-step-number">2</div>
-            <div class="timeline-step-info">
-                <p class="timeline-step-date">05/09/25</p>
-                <p class="timeline-step-status finalizado">Finalizado</p>
-            </div>
-        </div>
-        <div class="timeline-step-card pendiente">
-            <div class="timeline-step-number">3</div>
-            <div class="timeline-step-info">
-                <p class="timeline-step-date">00/00/00</p>
-                <p class="timeline-step-status pendiente">Pendiente</p>
-            </div>
-        </div>
-    </div>
+    {% endif %}
     <!-- /Timeline Steps -->
 
     <div class="row relevamiento-container">
