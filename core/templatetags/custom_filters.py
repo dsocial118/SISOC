@@ -2,6 +2,8 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 
 from django import template
+from django.templatetags.static import static
+from django.utils.html import format_html
 
 register = template.Library()
 
@@ -124,3 +126,19 @@ def google_maps_query(latitud, longitud):
     if lat_value is None or lng_value is None:
         return ""
     return f"{lat_value},{lng_value}"
+
+@register.filter
+def boolean_icon(value):
+    if value in [True, 1, "1", "true", "True", "SI", "Sí", "si"]:
+        return format_html(
+            '<img src="{}" alt="Sí" width="20">',
+            static("custom/img/check_ok.svg"),
+        )
+
+    if value in [False, 0, "0", "false", "False", "NO", "No", "no"]:
+        return format_html(
+            '<img src="{}" alt="No" width="20">',
+            static("custom/img/check.svg"),
+        )
+
+    return "-"
