@@ -513,3 +513,183 @@
 .app-content-header, .app-content {
     background-color: #3E5A7E !important;
 }
+
+/* ========================================
+   Sección de Estadísticas Detalladas Colapsable
+   ======================================== */
+.nomina-detailed-stats-wrapper {
+    margin-bottom: 30px;
+}
+
+.nomina-toggle-details {
+    width: 100%;
+    padding: 20px 30px;
+    background: #232D4F;
+    color: #ffffff;
+    border: none;
+    border-radius: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.nomina-toggle-details:hover {
+    background: #2a3659;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.nomina-toggle-icon {
+    transition: transform 0.3s ease;
+    font-size: 1.2rem;
+}
+
+.nomina-toggle-icon.rotated {
+    transform: rotate(180deg);
+}
+
+.nomina-detailed-content {
+    margin-top: 20px;
+    padding: 30px;
+    background: rgba(44, 62, 80, 0.3);
+    border-radius: 15px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Títulos de subsecciones */
+.nomina-subsection-title {
+    color: #ffffff;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 30px 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.nomina-subsection-title:first-child {
+    margin-top: 0;
+}
+
+.nomina-subgroup-title {
+    color: #bdc3c7;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 20px 0 15px 0;
+}
+
+/* Tarjetas detalladas con barras de progreso */
+.nomina-stat-card-detailed {
+    flex: 1;
+    min-width: 250px;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s ease;
+    color: #ffffff;
+}
+
+.nomina-stat-card-detailed:hover {
+    transform: translateY(-3px);
+}
+
+.nomina-stat-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    color: #ffffff;
+}
+
+.nomina-stat-header i {
+    font-size: 2rem;
+    opacity: 0.9;
+}
+
+.nomina-stat-info {
+    flex: 1;
+}
+
+.nomina-stat-number-small {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+    color: #ffffff;
+}
+
+.nomina-stat-label-small {
+    font-size: 0.85rem;
+    margin: 5px 0 0 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+/* Barra de progreso */
+.nomina-progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.nomina-progress-fill {
+    height: 100%;
+    background: #ffffff;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.nomina-progress-label {
+    text-align: right;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+}
+
+/* Colores adicionales para nuevas tarjetas */
+.bg-purple {
+    background-color: #9b59b6;
+}
+
+.bg-lightpurple {
+    background-color: #b388cc;
+}
+
+.bg-cyan {
+    background-color: #16a085;
+}
+
+.bg-orange {
+    background-color: #e67e22;
+}
+
+.bg-teal {
+    background-color: #1abc9c;
+}
+
+.bg-gray {
+    background-color: #7f8c8d;
+}
+
+.bg-brown {
+    background-color: #a0826d;
+}
