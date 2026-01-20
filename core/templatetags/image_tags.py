@@ -1,8 +1,8 @@
-﻿"""Template tags para imágenes optimizadas con WebP."""
+"""Template tags para imágenes optimizadas con WebP."""
 
 from django import template
 from django.utils.safestring import mark_safe
-from django.utils.html import format_html
+from django.utils.html import format_html, escape
 import logging
 
 from core.services.image_service import get_or_create_webp
@@ -42,20 +42,26 @@ def optimized_image(
         img_attrs = []
 
         if css_class:
-            from django.utils.html import escape
             img_attrs.append(f'class="{escape(css_class)}"')
 
         if loading in ("lazy", "eager"):
             img_attrs.append(f'loading="{loading}"')
 
         if width:
-            img_attrs.append(f'width="{int(width)}"')
+            try:
+                width_int = int(width)
+                img_attrs.append(f'width="{width_int}"')
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid width value: {width}")
 
         if height:
-            img_attrs.append(f'height="{int(height)}"')
+            try:
+                height_int = int(height)
+                img_attrs.append(f'height="{height_int}"')
+            except (ValueError, TypeError):
+                logger.warning(f"Invalid height value: {height}")
 
         if extra_attrs:
-            from django.utils.html import escape
             img_attrs.append(escape(extra_attrs))
 
         attrs_string = mark_safe(" " + " ".join(img_attrs)) if img_attrs else ""
