@@ -512,3 +512,148 @@ function actualizarNumeroGDELegacy(documentoId, numeroGDE) {
     actualizarNumeroGDE(documentoId, numeroGDE);
 }
 
+function activarEdicionConvenioNumero() {
+    const displayDiv = document.getElementById("convenio-numero-display");
+    const editDiv = document.getElementById("convenio-numero-edit");
+    const input = document.getElementById("convenio-numero-input");
+
+    if (displayDiv && editDiv && input) {
+        displayDiv.classList.add("d-none");
+        editDiv.classList.remove("d-none");
+        input.focus();
+        input.select();
+    }
+}
+
+function cancelarEdicionConvenioNumero() {
+    const displayDiv = document.getElementById("convenio-numero-display");
+    const editDiv = document.getElementById("convenio-numero-edit");
+    const input = document.getElementById("convenio-numero-input");
+
+    if (displayDiv && editDiv && input) {
+        const valorActual = displayDiv.querySelector("span")?.textContent || "";
+        input.value = valorActual === "Sin numero de convenio" ? "" : valorActual;
+        editDiv.classList.add("d-none");
+        displayDiv.classList.remove("d-none");
+    }
+}
+
+function guardarConvenioNumero() {
+    const input = document.getElementById("convenio-numero-input");
+    const numero = input ? input.value.trim() : "";
+    actualizarConvenioNumero(numero);
+}
+
+function actualizarConvenioNumero(numero) {
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfInput) {
+        alert("No se encontro el token CSRF.");
+        return;
+    }
+
+    if (!window.URL_ACTUALIZAR_CONVENIO_NUMERO || !window.ADMISION_ID) {
+        alert("No se pudo actualizar el numero de convenio.");
+        return;
+    }
+
+    fetch(window.URL_ACTUALIZAR_CONVENIO_NUMERO, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfInput.value,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            admision_id: window.ADMISION_ID,
+            convenio_numero: numero,
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success) {
+                const toastEl = document.getElementById("toastConvenioNumeroError");
+                const msgEl = document.getElementById("toastConvenioNumeroErrorMsg");
+                if (msgEl) {
+                    msgEl.textContent = data.error || "No se pudo actualizar el numero de convenio.";
+                }
+                if (toastEl) {
+                    new bootstrap.Toast(toastEl).show();
+                } else {
+                    alert("Error: " + (data.error || "No se pudo actualizar el numero de convenio."));
+                }
+                return;
+            }
+            const toastEl = document.getElementById("toastConvenioNumeroExito");
+            if (toastEl) {
+                new bootstrap.Toast(toastEl).show();
+            }
+            actualizarVistaConvenioNumero(data.convenio_numero);
+            volverAModoVistaConvenioNumero();
+        })
+        .catch((error) => {
+            console.error("Error al actualizar numero de convenio:", error);
+            const toastEl = document.getElementById("toastConvenioNumeroError");
+            const msgEl = document.getElementById("toastConvenioNumeroErrorMsg");
+            if (msgEl) {
+                msgEl.textContent = "Ocurrio un error al actualizar el numero de convenio.";
+            }
+            if (toastEl) {
+                new bootstrap.Toast(toastEl).show();
+            } else {
+                alert("Ocurrio un error al actualizar el numero de convenio.");
+            }
+        });
+}
+
+function actualizarVistaConvenioNumero(numero) {
+    const displayDiv = document.getElementById("convenio-numero-display");
+    const input = document.getElementById("convenio-numero-input");
+
+    if (input) {
+        input.value = numero === null || numero === undefined ? "" : numero;
+    }
+
+    if (!displayDiv) {
+        return;
+    }
+
+    const hasValue = numero !== null && numero !== undefined && numero !== "";
+    displayDiv.innerHTML = "";
+    if (hasValue) {
+        const span = document.createElement("span");
+        span.className = "text-success fw-bold";
+        span.textContent = String(numero);
+        displayDiv.appendChild(span);
+
+        const icon = document.createElement("i");
+        icon.className = "bi bi-pencil-square ms-2 text-muted";
+        icon.style.cursor = "pointer";
+        icon.title = "Editar numero de convenio";
+        displayDiv.appendChild(icon);
+    } else {
+        const span = document.createElement("span");
+        span.className = "text-muted";
+        span.textContent = "Sin numero de convenio";
+        displayDiv.appendChild(span);
+
+        const icon = document.createElement("i");
+        icon.className = "bi bi-plus-circle ms-2 text-primary";
+        icon.style.cursor = "pointer";
+        icon.title = "Agregar numero de convenio";
+        displayDiv.appendChild(icon);
+    }
+}
+
+function volverAModoVistaConvenioNumero() {
+    const displayDiv = document.getElementById("convenio-numero-display");
+    const editDiv = document.getElementById("convenio-numero-edit");
+
+    if (displayDiv && editDiv) {
+        editDiv.classList.add("d-none");
+        displayDiv.classList.remove("d-none");
+    }
+}
+
+window.activarEdicionConvenioNumero = activarEdicionConvenioNumero;
+window.cancelarEdicionConvenioNumero = cancelarEdicionConvenioNumero;
+window.guardarConvenioNumero = guardarConvenioNumero;
+

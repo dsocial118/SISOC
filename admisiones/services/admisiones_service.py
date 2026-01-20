@@ -38,7 +38,6 @@ from admisiones.services.admisiones_filter_config import (
 from django.db.models import Q
 import logging
 
-
 logger = logging.getLogger("django")
 
 ADMISION_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -368,6 +367,14 @@ class AdmisionService:
                                 else "-"
                             )
                         },
+                        # N? Convenio
+                        {
+                            "content": (
+                                admision.convenio_numero
+                                if admision and admision.convenio_numero is not None
+                                else "-"
+                            )
+                        },
                         # Provincia
                         {"content": provincia_display},
                         # Equipo tecnico
@@ -480,6 +487,13 @@ class AdmisionService:
                 admision, informe_tecnico, mostrar_informe_complementario, user
             )
 
+            puede_editar_convenio_numero = False
+            if user:
+                puede_editar_convenio_numero = (
+                    user.is_superuser
+                    or AdmisionService._verificar_permiso_tecnico_dupla(user, comedor)
+                )
+
             return {
                 "documentos": documentos_info,
                 "documentos_personalizados": documentos_personalizados_info,
@@ -498,6 +512,7 @@ class AdmisionService:
                 "observaciones_complementario": observaciones_complementario,
                 "observaciones_informe_tecnico_complementario": admision.observaciones_informe_tecnico_complementario,
                 "botones_disponibles": botones_disponibles,
+                "puede_editar_convenio_numero": puede_editar_convenio_numero,
             }
 
         except Exception:
@@ -643,7 +658,7 @@ class AdmisionService:
             return False
 
     @staticmethod
-    def handle_file_upload(admision_id, documentacion_id, archivo):
+    def handle_file_upload(admision_id, documentacion_id, archivo, usuario=None):
 
         try:
 
@@ -651,15 +666,22 @@ class AdmisionService:
 
             documentacion = get_object_or_404(Documentacion, pk=documentacion_id)
 
+            defaults = {
+                "archivo": archivo,
+                "estado": "Documento adjunto",
+                "nombre_personalizado": None,
+            }
+            if usuario and usuario.is_authenticated:
+                defaults["modificado_por"] = usuario
+
             archivo_admision, created = ArchivoAdmision.objects.update_or_create(
                 admision=admision,
                 documentacion=documentacion,
-                defaults={
-                    "archivo": archivo,
-                    "estado": "Documento adjunto",
-                    "nombre_personalizado": None,
-                },
+                defaults=defaults,
             )
+            if created and usuario and usuario.is_authenticated:
+                archivo_admision.creado_por = usuario
+                archivo_admision.save(update_fields=["creado_por"])
 
             # Actualizar estado de admisión si es la primera vez que se carga un documento
             if created and admision.estado_admision == "convenio_seleccionado":
@@ -718,6 +740,12 @@ class AdmisionService:
                     nombre_personalizado=nombre,
                     archivo=archivo,
                     estado="Documento adjunto",
+                    creado_por=(
+                        usuario if usuario and usuario.is_authenticated else None
+                    ),
+                    modificado_por=(
+                        usuario if usuario and usuario.is_authenticated else None
+                    ),
                 )
 
             return archivo_admision, None
@@ -1336,6 +1364,71 @@ class AdmisionService:
             return {"success": False, "error": str(e)}
 
     @staticmethod
+    def actualizar_convenio_numero_ajax(request):
+        """
+        Actualiza el numero de convenio de una admision via AJAX.
+        """
+        try:
+            admision_id = request.POST.get("admision_id")
+            convenio_numero_raw = request.POST.get("convenio_numero", "").strip()
+
+            if not admision_id:
+                return {"success": False, "error": "ID de admision requerido."}
+
+            admision = get_object_or_404(Admision, id=admision_id)
+
+            if not (
+                request.user.is_superuser
+                or AdmisionService._verificar_permiso_tecnico_dupla(
+                    request.user, admision.comedor
+                )
+            ):
+                return {
+                    "success": False,
+                    "error": "No tiene permisos para editar esta admision.",
+                }
+
+            if convenio_numero_raw == "":
+                nuevo_valor = None
+            else:
+                try:
+                    nuevo_valor = int(convenio_numero_raw)
+                except ValueError:
+                    return {
+                        "success": False,
+                        "error": "Debe ingresar un numero valido.",
+                    }
+                if nuevo_valor < 0:
+                    return {
+                        "success": False,
+                        "error": "El numero de convenio no puede ser negativo.",
+                    }
+
+            valor_anterior = admision.convenio_numero
+            admision.convenio_numero = nuevo_valor
+            admision.save(update_fields=["convenio_numero"])
+
+            logger.info(
+                "Numero de convenio actualizado: admision_id=%s, valor_anterior=%s, valor_nuevo=%s",
+                admision_id,
+                valor_anterior,
+                nuevo_valor,
+            )
+
+            return {
+                "success": True,
+                "convenio_numero": admision.convenio_numero,
+                "valor_anterior": valor_anterior,
+            }
+
+        except Exception as exc:
+            logger.exception(
+                "Error en actualizar_convenio_numero_ajax",
+                extra={"admision_id": admision_id},
+            )
+            return {"success": False, "error": str(exc)}
+
+    @staticmethod
     def _verificar_permiso_tecnico_dupla(user, comedor):
         """Verifica que el usuario sea técnico de la dupla asignada al comedor"""
 
@@ -1445,7 +1538,7 @@ class AdmisionService:
         ):
             botones.append("if_informe_tecnico")
 
-        # Botón para mandar a legales cuando el IF está cargado (solo técnicos)
+        # Botón para derivar a legales cuando el IF está cargado (solo técnicos)
         if (
             es_tecnico
             and admision.estado_admision == "if_informe_tecnico_cargado"

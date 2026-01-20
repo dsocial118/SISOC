@@ -180,7 +180,11 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     self.fields[f"monto_{i}"].required = True
 
         for name, field in self.fields.items():
-            if name.startswith("solicitudes_") or name.startswith("aprobadas_"):
+            if (
+                name.startswith("solicitudes_")
+                or name.startswith("aprobadas_")
+                or name.startswith("aprobadas_ultimo_convenio_")
+            ):
                 field.label = False
                 field.widget.attrs["aria-label"] = ""
                 field.widget.attrs["placeholder"] = ""
@@ -188,6 +192,14 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     field.widget.attrs.get("class", "")
                     + " form-control form-control-sm text-center"
                 ).strip()
+        if not admision or admision.tipo != "renovacion":
+            for name in list(self.fields):
+                if name.startswith("aprobadas_ultimo_convenio_"):
+                    self.fields.pop(name)
+        elif self.require_full:
+            for name, field in self.fields.items():
+                if name.startswith("aprobadas_ultimo_convenio_"):
+                    field.required = True
 
         if admision:
             comedor = admision.comedor
@@ -360,10 +372,22 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     self.fields[f"monto_{i}"].required = True
 
         for name, field in self.fields.items():
-            if name.startswith("solicitudes_") or name.startswith("aprobadas_"):
+            if (
+                name.startswith("solicitudes_")
+                or name.startswith("aprobadas_")
+                or name.startswith("aprobadas_ultimo_convenio_")
+            ):
                 field.label = False
                 field.widget.attrs["aria-label"] = ""
                 field.widget.attrs["placeholder"] = ""
+        if not admision or admision.tipo != "renovacion":
+            for name in list(self.fields):
+                if name.startswith("aprobadas_ultimo_convenio_"):
+                    self.fields.pop(name)
+        elif self.require_full:
+            for name, field in self.fields.items():
+                if name.startswith("aprobadas_ultimo_convenio_"):
+                    field.required = True
 
         if admision:
             comedor = admision.comedor
