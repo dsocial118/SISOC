@@ -244,12 +244,12 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             else None
         )
 
-        admision = (
-            self.object.admisiones_optimized
-            if hasattr(self.object, "admisiones_optimized")
-            and self.object.admisiones_optimized
-            else None
+        admisiones_qs = (
+            Admision.objects.filter(comedor=self.object)
+            .select_related("tipo_convenio", "estado")
+            .order_by("-id")
         )
+        admision = admisiones_qs
 
         # Preparar datos para la tabla de admisiones
         admisiones_headers = [
@@ -264,13 +264,17 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             {"title": "Acciones"},
         ]
 
-        admisiones_list = list(admision) if admision else []
-        admisiones_paginator = Paginator(admisiones_list, 5)
+        admisiones_paginator = Paginator(admisiones_qs, 5)
         admisiones_page_number = self.request.GET.get("admisiones_page", 1)
         admisiones_page_obj = admisiones_paginator.get_page(admisiones_page_number)
         admisiones_page_range = admisiones_paginator.get_elided_page_range(
             number=admisiones_page_obj.number
         )
+
+        def _safe_cell(value):
+            if value is None or value == "":
+                return "-"
+            return escape(value)
 
         admisiones_items = []
         for a in admisiones_page_obj:
@@ -300,54 +304,54 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 {
                     "cells": [
                         {
-                            "content": (
+                            "content": _safe_cell(
                                 a.creado.strftime("%d/%m/%Y")
                                 if hasattr(a, "creado") and a.creado
-                                else "-"
+                                else None
                             )
                         },
                         {
-                            "content": (
+                            "content": _safe_cell(
                                 a.num_expediente
-                                if hasattr(a, "num_expediente") and a.num_expediente
-                                else "-"
+                                if hasattr(a, "num_expediente")
+                                else None
                             )
                         },
                         {
-                            "content": (
+                            "content": _safe_cell(
                                 a.numero_convenio
-                                if hasattr(a, "numero_convenio") and a.numero_convenio
-                                else "-"
+                                if hasattr(a, "numero_convenio")
+                                else None
                             )
                         },
                         {
-                            "content": (
+                            "content": _safe_cell(
                                 a.get_tipo_display()
                                 if hasattr(a, "tipo") and a.tipo
-                                else "-"
+                                else None
                             )
                         },
                         {
-                            "content": (
+                            "content": _safe_cell(
                                 a.estado_mostrar
-                                if hasattr(a, "estado_mostrar") and a.estado_mostrar
-                                else "-"
+                                if hasattr(a, "estado_mostrar")
+                                else None
                             )
                         },
                         {
-                            "content": (
+                            "content": _safe_cell(
                                 a.fecha_estado_mostrar.strftime("%d/%m/%Y")
                                 if hasattr(a, "fecha_estado_mostrar")
                                 and a.fecha_estado_mostrar
-                                else "-"
+                                else None
                             )
                         },
                         {
-                            "content": (
+                            "content": _safe_cell(
                                 a.convenio_numero
                                 if hasattr(a, "convenio_numero")
                                 and a.convenio_numero is not None
-                                else "-"
+                                else None
                             )
                         },
                         {

@@ -83,7 +83,7 @@
                                     <div id="convenio-numero-display"
                                          class="convenio-numero-display"
                                          onclick="activarEdicionConvenioNumero()">
-                                        {% if admision.convenio_numero %}
+                                        {% if admision.convenio_numero is not None %}
                                             <span class="text-success fw-bold">{{ admision.convenio_numero }}</span>
                                             <i class="bi bi-pencil-square ms-2 text-muted"
                                                title="Editar numero de convenio"></i>
@@ -115,7 +115,7 @@
                                     </div>
                                 </div>
                             {% else %}
-                                <span class="fw-bold">{{ admision.convenio_numero|default:"-" }}</span>
+                                <span class="fw-bold">{{ admision.convenio_numero|default_if_none:"-" }}</span>
                             {% endif %}
                         </dd>
                         <dt class="col-sm-5">Estado Actual</dt>
