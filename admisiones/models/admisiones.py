@@ -488,7 +488,10 @@ class InformeTecnico(models.Model):
 
     # Exclusivos de organizacion juridica
     validacion_registro_nacional = models.CharField(
-        "Validación Registro Nacional Comedores/Merenderos", max_length=255
+        "Validación Registro Nacional Comedores/Merenderos",
+        max_length=255,
+        blank=True,
+        null=True,
     )
     IF_relevamiento_territorial = models.CharField(
         "IF de relevamiento territorial", max_length=255
