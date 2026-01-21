@@ -67,10 +67,9 @@ class _DocxSafeProxy:
     def __getattr__(self, name):
         value = getattr(self._obj, name, None)
         if callable(value):
+
             def _wrapped(*args, **kwargs):
-                return _wrap_value_for_docx(
-                    value(*args, **kwargs), self._placeholder
-                )
+                return _wrap_value_for_docx(value(*args, **kwargs), self._placeholder)
 
             return _wrapped
         return _wrap_value_for_docx(value, self._placeholder)
@@ -86,9 +85,7 @@ class _DocxSafeProxy:
             iterator = iter(self._obj)
         except TypeError:
             return iter(())
-        return (
-            _wrap_value_for_docx(item, self._placeholder) for item in iterator
-        )
+        return (_wrap_value_for_docx(item, self._placeholder) for item in iterator)
 
     def __len__(self):
         try:
@@ -100,8 +97,10 @@ class _DocxSafeProxy:
         return bool(self._obj)
 
     def __str__(self):
-        return str(self._obj) if self._obj is not None else str(
-            _DocxPlaceholder(self._placeholder)
+        return (
+            str(self._obj)
+            if self._obj is not None
+            else str(_DocxPlaceholder(self._placeholder))
         )
 
 

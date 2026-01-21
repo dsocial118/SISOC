@@ -135,11 +135,11 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
             card_class = (
                 "active"
                 if item.id == relevamiento.id
-                else "finalizado"
-                if is_finalizado
-                else "pendiente"
-                if is_pendiente
-                else ""
+                else (
+                    "finalizado"
+                    if is_finalizado
+                    else "pendiente" if is_pendiente else ""
+                )
             )
             status_class = (
                 "finalizado" if is_finalizado else "pendiente" if is_pendiente else ""

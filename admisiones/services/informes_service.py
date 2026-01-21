@@ -164,7 +164,10 @@ class InformeService:
             campos_excluidos = campos_excluidos_comunes + campos_excluidos_especificos
 
             return [
-                (field.verbose_name, InformeService._formatear_valor_campo(informe, field))
+                (
+                    field.verbose_name,
+                    InformeService._formatear_valor_campo(informe, field),
+                )
                 for field in informe._meta.fields
                 if field.name not in campos_excluidos
             ]
