@@ -1,0 +1,37 @@
+            <div class="tab-pane fade" id="prestacion-alimentar">
+                <div class="row">
+                    <div class="col-12">
+                        {% if pas_programas %}
+                            <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h5 class="mb-0">Programas de Prestación Alimentar</h5>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                                    {% for programa in pas_programas %}
+                                        <div>
+                                            <div style="margin-bottom: 1rem;">
+                                                <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Rol:</small>
+                                                <span style="color: white;">{{ programa.rol_desc|default:"-" }}</span>
+                                            </div>
+                                            <div style="margin-bottom: 1rem;">
+                                                <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Monto:</small>
+                                                <span style="color: white;">{{ programa.monto|default:"-" }}</span>
+                                            </div>
+                                            <div style="margin-bottom: 1rem;">
+                                                <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Período:</small>
+                                                <span style="color: white;">{{ programa.periodo_mes }}</span>
+                                            </div>
+                                            <div>
+                                                <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">ID Relación Titular:</small>
+                                                <span style="color: white;">{{ programa.id_relacion_titular|default:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="tabla-legajo">
+                                <h5 class="mb-3">Prestación Alimentar</h5>
+                                <p style="color: rgba(255,255,255,0.5);">No hay datos de Prestación Alimentar disponibles.</p>
+                            </div>
+                        {% endif %}

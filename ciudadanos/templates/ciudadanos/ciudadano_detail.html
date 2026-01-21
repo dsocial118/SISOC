@@ -1052,29 +1052,34 @@
                 <div class="row">
                     <div class="col-12">
                         {% if pas_programas %}
-                            <div class="tabla-legajo" style="border: 2px solid var(--gold);">
-                                <h5 class="mb-3">Programas de Prestación Alimentar</h5>
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Rol</th>
-                                            <th>Monto</th>
-                                            <th>Período</th>
-                                            <th>ID Relación Titular</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for programa in pas_programas %}
-                                            <tr>
-                                                <td>{{ programa.rol_desc|default:"-" }}</td>
-                                                <td>{{ programa.monto|default:"-" }}</td>
-                                                <td>{{ programa.periodo_mes }}</td>
-                                                <td>{{ programa.id_relacion_titular|default:"-" }}</td>
-                                            </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
+                            {% for programa in pas_programas %}
+                                <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                                    <div style="margin-bottom: 1.5rem;">
+                                        <h5 class="mb-0" style="display: flex; align-items: center; gap: 0.75rem;">
+                                            Prestación Alimentar
+                                            <span class="badge" style="background: var(--green); padding: 0.35rem 0.75rem; font-size: 0.75rem; margin: 0;">{{ programa.rol_desc|default:"-" }}</span>
+                                        </h5>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                                        <div>
+                                            <div style="margin-bottom: 1rem;">
+                                                <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Monto:</small>
+                                                <span style="color: white;">{{ programa.monto|default:"-" }}</span>
+                                            </div>
+                                            <div style="margin-bottom: 1rem;">
+                                                <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">Período:</small>
+                                                <span style="color: white;">{{ programa.periodo_mes }}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="margin-bottom: 1rem;">
+                                                <small style="color: rgba(255,255,255,0.7); display: block; margin-bottom: 0.25rem;">ID Relación Titular:</small>
+                                                <span style="color: white;">{{ programa.id_relacion_titular|default:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         {% else %}
                             <div class="tabla-legajo">
                                 <h5 class="mb-3">Prestación Alimentar</h5>
