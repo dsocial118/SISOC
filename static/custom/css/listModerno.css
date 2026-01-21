@@ -673,6 +673,30 @@
 }
 
 @media (max-width: 991.98px) {
+  .card:has(.table),
+  .card:has(.projects),
+  .card:has(.table-comedor-moderno) {
+    overflow: hidden;
+  }
+
+  .table-comedor-moderno,
+  .projects,
+  .table {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .table-comedor-moderno th,
+  .table-comedor-moderno td,
+  .projects th,
+  .projects td,
+  .table th,
+  .table td {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
   .projects td.project-actions,
   .table td.project-actions {
     white-space: normal;
@@ -690,6 +714,28 @@
     width: 100%;
     justify-content: center;
   }
+
+  .projects .action-buttons,
+  .table .action-buttons,
+  .projects .comedor-actions,
+  .table .comedor-actions {
+    min-width: 0;
+  }
+
+  .comedor-table-card .table-responsive-lg {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-comedor-moderno {
+    table-layout: auto;
+    min-width: 900px;
+  }
+
+  .table-comedor-moderno th,
+  .table-comedor-moderno td {
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 768px) {
@@ -706,14 +752,9 @@
     margin: 4px 0 !important;
   }
 
-  /* Hacer tabla scrolleable en móvil */
-  .comedor-table-card .card-body {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
+  /* Ajuste para evitar desborde horizontal en móvil */
   .table-comedor-moderno {
-    min-width: 800px;
+    width: auto;
   }
 
   .pagination {
