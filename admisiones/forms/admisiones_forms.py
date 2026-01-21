@@ -66,6 +66,17 @@ def _permite_no_corresponde_fecha_vencimiento(admision):
     return nombre_convenio == "personeria juridica eclesiastica"
 
 
+def _armar_domicilio(calle, numero, default="Sin definir"):
+    partes = []
+    for valor in (calle, numero):
+        if valor is None:
+            continue
+        texto = str(valor).strip()
+        if texto:
+            partes.append(texto)
+    return " ".join(partes) if partes else default
+
+
 class MontoDecimalField(forms.DecimalField):
     widget = forms.TextInput
 
@@ -208,12 +219,12 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             organizacion = comedor.organizacion if comedor else None
 
             self.fields["expediente_nro"].initial = admision.num_expediente
-            calle = getattr(comedor, "calle", "")
-            numero = getattr(comedor, "numero", "")
+            calle = getattr(comedor, "calle", None)
+            numero = getattr(comedor, "numero", None)
             referente = getattr(comedor, "referente", None)
 
             self.fields["nombre_espacio"].initial = comedor.nombre
-            self.fields["domicilio_espacio"].initial = f"{calle} {numero}".strip()
+            self.fields["domicilio_espacio"].initial = _armar_domicilio(calle, numero)
             self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
             self.fields["localidad_espacio"].initial = getattr(comedor, "localidad", "")
             self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
@@ -408,12 +419,12 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             organizacion = comedor.organizacion if comedor else None
 
             self.fields["expediente_nro"].initial = admision.num_expediente
-            calle = getattr(comedor, "calle", "")
-            numero = getattr(comedor, "numero", "")
+            calle = getattr(comedor, "calle", None)
+            numero = getattr(comedor, "numero", None)
             referente = getattr(comedor, "referente", None)
 
             self.fields["nombre_espacio"].initial = comedor.nombre
-            self.fields["domicilio_espacio"].initial = f"{calle} {numero}".strip()
+            self.fields["domicilio_espacio"].initial = _armar_domicilio(calle, numero)
             self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
             self.fields["localidad_espacio"].initial = getattr(comedor, "localidad", "")
             self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
