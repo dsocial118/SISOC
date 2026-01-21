@@ -34,7 +34,8 @@
 
     <!-- Botón Volver -->
     <div class="mb-4 d-print-none">
-        <a href="{% url 'comedor_detalle' object.id %}" class="btn btn-outline-secondary btn-back">
+        <a href="{% url 'comedor_detalle' object.id %}"
+           class="btn btn-outline-secondary btn-back">
             <i class="fas fa-arrow-left"></i> Volver
         </a>
     </div>
@@ -117,7 +118,9 @@
             <i class="fas fa-chevron-down nomina-toggle-icon"></i>
         </button>
 
-        <div id="detailedStatsContent" class="nomina-detailed-content" style="display: none;">
+        <div id="detailedStatsContent"
+             class="nomina-detailed-content"
+             style="display: none">
 
             <!-- Sección: Distribución por Género -->
             <h3 class="nomina-subsection-title">
@@ -151,7 +154,8 @@
                         </div>
                     </div>
                     <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_ninos|default:0 }}%"></div>
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_ninos|default:0 }}%"></div>
                     </div>
                     <p class="nomina-progress-label">{{ nomina_rangos.pct_ninos|default:0 }}%</p>
                 </div>
@@ -166,7 +170,8 @@
                         </div>
                     </div>
                     <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_adolescentes|default:0 }}%"></div>
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_adolescentes|default:0 }}%"></div>
                     </div>
                     <p class="nomina-progress-label">{{ nomina_rangos.pct_adolescentes|default:0 }}%</p>
                 </div>
@@ -185,7 +190,8 @@
                         </div>
                     </div>
                     <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_adultos|default:0 }}%"></div>
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_adultos|default:0 }}%"></div>
                     </div>
                     <p class="nomina-progress-label">{{ nomina_rangos.pct_adultos|default:0 }}%</p>
                 </div>
@@ -200,7 +206,8 @@
                         </div>
                     </div>
                     <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_adultos_mayores|default:0 }}%"></div>
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_adultos_mayores|default:0 }}%"></div>
                     </div>
                     <p class="nomina-progress-label">{{ nomina_rangos.pct_adultos_mayores|default:0 }}%</p>
                 </div>
@@ -215,7 +222,8 @@
                         </div>
                     </div>
                     <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill" style="width: {{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%"></div>
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%"></div>
                     </div>
                     <p class="nomina-progress-label">{{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%</p>
                 </div>
@@ -234,7 +242,7 @@
                 <input type="text"
                        class="nomina-search-input"
                        id="nominaSearch"
-                       placeholder="Buscar observación">
+                       placeholder="Buscar observación" />
             </div>
             <a href="{% url 'nomina_crear' object.id %}" class="nomina-add-btn">
                 <i class="fas fa-plus"></i>
@@ -260,15 +268,16 @@
                     {% for e in nomina %}
                         <tr class="nomina-table-row">
                             <td>
-                                <i class="far fa-calendar-alt" style="margin-right: 5px; color: #7f8c8d;"></i>
+                                <i class="far fa-calendar-alt"
+                                   style="margin-right: 5px;
+                                          color: #7f8c8d"></i>
                                 {{ e.fecha|date:"d/m/Y" }}
                             </td>
                             <td>{{ e.ciudadano.nombre }}</td>
                             <td>
                                 <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
-                                   style="color: #3498db; text-decoration: none;">
-                                    {{ e.ciudadano.apellido }}
-                                </a>
+                                   style="color: #3498db;
+                                          text-decoration: none">{{ e.ciudadano.apellido }}</a>
                             </td>
                             <td>{{ e.ciudadano.documento|default:"-" }}</td>
                             <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
@@ -286,14 +295,10 @@
                                     <button class="nomina-btn nomina-btn-actions dropdown-toggle"
                                             type="button"
                                             data-bs-toggle="dropdown"
-                                            aria-expanded="false">
-                                        Acciones
-                                    </button>
+                                            aria-expanded="false">Acciones</button>
                                     <ul class="dropdown-menu dropdown-menu-dark">
                                         <li>
-                                            <a class="dropdown-item editar-nomina"
-                                               href="#"
-                                               data-id="{{ e.id }}">
+                                            <a class="dropdown-item editar-nomina" href="#" data-id="{{ e.id }}">
                                                 <i class="fas fa-edit"></i> Editar
                                             </a>
                                         </li>
@@ -314,9 +319,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="7" class="nomina-empty-message">
-                                No hay registros en la nómina.
-                            </td>
+                            <td colspan="7" class="nomina-empty-message">No hay registros en la nómina.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -331,7 +334,8 @@
                 </span>
                 <div class="nomina-pagination-buttons">
                     {% if nomina.has_previous %}
-                        <a href="?page={{ nomina.previous_page_number }}" class="nomina-page-btn">
+                        <a href="?page={{ nomina.previous_page_number }}"
+                           class="nomina-page-btn">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     {% else %}
@@ -340,9 +344,7 @@
                         </button>
                     {% endif %}
 
-                    <span class="nomina-page-number">
-                        {{ nomina.number }} de {{ nomina.paginator.num_pages }}
-                    </span>
+                    <span class="nomina-page-number">{{ nomina.number }} de {{ nomina.paginator.num_pages }}</span>
 
                     {% if nomina.has_next %}
                         <a href="?page={{ nomina.next_page_number }}" class="nomina-page-btn">
