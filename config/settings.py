@@ -382,7 +382,6 @@ if ENVIRONMENT == "prd":
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
-    SESSION_COOKIE_SAMESITE = "None"  # Permitir cookies en contexto cross-site para APIs externas
     CSRF_COOKIE_SECURE = True
     USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -397,7 +396,6 @@ else:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
-    SESSION_COOKIE_SAMESITE = "None"  # Permitir cookies en contexto cross-site para APIs externas
     CSRF_COOKIE_SECURE = False
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
