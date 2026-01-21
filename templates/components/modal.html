@@ -26,13 +26,13 @@
                 </div>
             {% endif %}
             <div class="modal-body {% if body_class %}{{ body_class }}{% endif %}">
-                {% if content %}{{ content|safe }}{% endif %}
+                {% if content %}{{ content }}{% endif %}
                 {% if form %}
                     <form action="{{ form_action|default:'' }}"
                           {% if form_method %}method="{{ form_method }}"{% else %}method="POST"{% endif %}
                           {% if form_id %}id="{{ form_id }}"{% endif %}>
                         {% csrf_token %}
-                        {{ form|safe }}
+                        {{ form }}
                     </form>
                 {% endif %}
             </div>
