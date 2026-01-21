@@ -929,6 +929,7 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
                     {"title": "Nombre"},
                     {"title": "Organización"},
                     {"title": "N° Expediente"},
+                    {"title": "N° Convenio"},
                     {"title": "Provincia"},
                     {"title": "Equipo técnico"},
                     {"title": "Estado"},
