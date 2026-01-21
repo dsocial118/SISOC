@@ -157,6 +157,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         campos_pago_opcionales.update({f"monto_{i}" for i in range(1, 7)})
         campos_pago_opcionales.add("if_relevamiento")
         campos_pago_opcionales.add("validacion_registro_nacional")
+        campos_pago_opcionales.add("validacion_registro_nacional")
 
         for name, field in self.fields.items():
             if name in campos_pago_opcionales:
