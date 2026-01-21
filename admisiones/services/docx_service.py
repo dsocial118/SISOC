@@ -1,3 +1,6 @@
+from datetime import date, datetime
+from decimal import Decimal
+
 from docxtpl import DocxTemplate
 from django.conf import settings
 from django.template.loader import get_template
@@ -17,6 +20,91 @@ from ..models.admisiones import (
 )
 
 
+# Placeholder that renders as "-" but remains falsey for template conditionals.
+class _DocxPlaceholder(str):
+    def __new__(cls, value="-"):
+        return super().__new__(cls, value)
+
+    def __bool__(self):
+        return False
+
+    def __getattr__(self, _name):
+        return self
+
+    def __call__(self, *args, **kwargs):
+        return self
+
+    def __len__(self):
+        return 0
+
+
+def _wrap_value_for_docx(value, placeholder="-"):
+    if isinstance(value, (_DocxPlaceholder, _DocxSafeProxy)):
+        return value
+    if value is None:
+        return _DocxPlaceholder(placeholder)
+    if isinstance(value, (str, int, float, bool, datetime, date, Decimal)):
+        return value
+    if isinstance(value, dict):
+        return {k: _wrap_value_for_docx(v, placeholder) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        wrapped = [_wrap_value_for_docx(v, placeholder) for v in value]
+        if isinstance(value, tuple):
+            return tuple(wrapped)
+        if isinstance(value, set):
+            return set(wrapped)
+        return wrapped
+    return _DocxSafeProxy(value, placeholder)
+
+
+class _DocxSafeProxy:
+    __slots__ = ("_obj", "_placeholder")
+
+    def __init__(self, obj, placeholder):
+        self._obj = obj
+        self._placeholder = placeholder
+
+    def __getattr__(self, name):
+        value = getattr(self._obj, name, None)
+        if callable(value):
+            def _wrapped(*args, **kwargs):
+                return _wrap_value_for_docx(
+                    value(*args, **kwargs), self._placeholder
+                )
+
+            return _wrapped
+        return _wrap_value_for_docx(value, self._placeholder)
+
+    def __getitem__(self, key):
+        try:
+            return _wrap_value_for_docx(self._obj[key], self._placeholder)
+        except Exception:
+            return _DocxPlaceholder(self._placeholder)
+
+    def __iter__(self):
+        try:
+            iterator = iter(self._obj)
+        except TypeError:
+            return iter(())
+        return (
+            _wrap_value_for_docx(item, self._placeholder) for item in iterator
+        )
+
+    def __len__(self):
+        try:
+            return len(self._obj)
+        except TypeError:
+            return 0
+
+    def __bool__(self):
+        return bool(self._obj)
+
+    def __str__(self):
+        return str(self._obj) if self._obj is not None else str(
+            _DocxPlaceholder(self._placeholder)
+        )
+
+
 class DocumentTemplateService:
 
     @staticmethod
@@ -29,8 +117,11 @@ class DocumentTemplateService:
             raise FileNotFoundError(f"Template no encontrado: {template_path}")
 
         doc = DocxTemplate(template_path)
-        clean_context = DocumentTemplateService._sanear_contexto(context)
-        doc.render(clean_context)
+        clean_context = DocumentTemplateService._sanear_contexto(
+            context, reemplazar_none=False
+        )
+        safe_context = _wrap_value_for_docx(clean_context)
+        doc.render(safe_context)
 
         buffer = io.BytesIO()
         doc.save(buffer)
@@ -55,7 +146,7 @@ class DocumentTemplateService:
         return pdf_buffer
 
     @staticmethod
-    def _sanear_contexto(context, campos_sin_escape=None):
+    def _sanear_contexto(context, campos_sin_escape=None, reemplazar_none=True):
         if campos_sin_escape is None:
             campos_sin_escape = ["informe", "texto_comidas"]
 
@@ -64,7 +155,7 @@ class DocumentTemplateService:
             if k in campos_sin_escape or isinstance(v, (list, dict)):
                 clean_context[k] = v
             elif v is None:
-                clean_context[k] = ""
+                clean_context[k] = "" if reemplazar_none else None
             elif isinstance(v, str):
                 clean_context[k] = escape(v)
             else:
