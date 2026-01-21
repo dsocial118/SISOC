@@ -148,6 +148,7 @@ class InformeService:
                     "organizacion_avalista_1",
                     "organizacion_avalista_2",
                     "material_difusion_vinculado",
+                    "if_relevamiento",
                 ]
             elif informe.tipo == "base":
                 campos_excluidos_especificos = [
