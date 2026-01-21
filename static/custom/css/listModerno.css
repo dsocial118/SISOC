@@ -145,7 +145,15 @@
 
 /* Fix para tablas con table-bordered y table-striped que cortan el box-shadow */
 .table-responsive {
-  overflow: visible !important;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 992px) {
+  .table-responsive {
+    overflow: visible !important;
+  }
 }
 
 .card-body.table-responsive,
@@ -661,6 +669,26 @@
 
   .comedor-actions .btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .projects td.project-actions,
+  .table td.project-actions {
+    white-space: normal;
+    min-width: 0;
+  }
+
+  .projects td.project-actions .action-buttons,
+  .table td.project-actions .action-buttons {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .projects td.project-actions .btn,
+  .table td.project-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 

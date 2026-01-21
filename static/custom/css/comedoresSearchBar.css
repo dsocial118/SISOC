@@ -137,3 +137,17 @@ label:has(.field-tooltip) {
   align-items: center;
   gap: 4px;
 }
+
+@media (max-width: 991.98px) {
+  #filters-rows .filters-row,
+  #filters-rows .filters-header-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  #filters-rows .filters-row,
+  #filters-rows .filters-header-row {
+    grid-template-columns: 1fr;
+  }
+}

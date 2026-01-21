@@ -313,6 +313,11 @@ class AdmisionService:
                 if comedor and getattr(comedor, "provincia", None)
                 else "-"
             )
+            convenio_display = (
+                f"{admision.convenio_numero}°"
+                if admision and admision.convenio_numero is not None
+                else "-"
+            )
 
             from django.utils.safestring import mark_safe
 
@@ -368,13 +373,7 @@ class AdmisionService:
                             )
                         },
                         # N? Convenio
-                        {
-                            "content": (
-                                admision.convenio_numero
-                                if admision and admision.convenio_numero is not None
-                                else "-"
-                            )
-                        },
+                        {"content": convenio_display},
                         # Provincia
                         {"content": provincia_display},
                         # Equipo tecnico
