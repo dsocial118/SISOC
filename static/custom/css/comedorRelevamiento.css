@@ -4,6 +4,210 @@
     margin-bottom:1rem;
 }
 
+.app-content-header, .app-content {
+    background-color: #3e5a7e !important;
+}
+
+/* ========================================
+   HEADER COMEDOR DETAIL - FIGMA DESIGN
+======================================== */
+.comedor-header-card {
+    background: #232d4f !important;
+    border-radius: 12px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.comedor-header-title {
+    font-family: Georgia, serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.comedor-header-divider {
+    color: rgba(255,255,255,0.4);
+    font-weight: 300;
+    margin-left: 0.5rem;
+}
+
+.comedor-header-dates {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    justify-content: center;
+}
+
+.comedor-date-item {
+    color: rgba(255,255,255,0.9);
+    font-size: 0.9rem;
+    margin: 0;
+    text-align: right;
+    line-height: 1.4;
+}
+
+.comedor-date-label {
+    color: rgba(255,255,255,0.75);
+    font-weight: 400;
+}
+
+.comedor-date-value {
+    color: white;
+    font-weight: 700;
+}
+
+/* ========================================
+   TIMELINE STEPS HORIZONTAL - FIGMA DESIGN
+======================================== */
+.comedor-steps-timeline {
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0;
+}
+
+.timeline-step-card {
+    display: flex;
+    align-items: center;
+    background: #232d4f;
+    border: 3px solid transparent;
+    border-radius: 12px;
+    padding: 1rem 2rem 1rem 1.5rem;
+    min-width: 240px;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.timeline-step-card.finalizado {
+    border-color: transparent;
+    background-color: #2a3a5c;
+}
+
+.timeline-step-card.active {
+    border-color: #f39c12;
+    background-color: var(--bs-body-bg);
+    box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.3);
+}
+
+.timeline-step-card.pendiente {
+    background: #2a3a5c;
+    opacity: 0.7;
+}
+
+.timeline-step-number {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--bs-body-bg);
+    background-color: white;
+    margin: -1.5rem 1.25rem -1.5rem -1.5rem;
+    line-height: 1;
+    min-width: 50px;
+    min-height: 70px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px 0px 0px 12px;
+    padding: 1.125rem;
+}
+
+.timeline-step-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.timeline-step-date {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.9);
+    font-weight: 600;
+    margin: 0;
+}
+
+.timeline-step-status {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.timeline-step-status.finalizado {
+    color: #4ade80;
+}
+
+.timeline-step-status.pendiente {
+    color: #f87171;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .comedor-header-title {
+        font-size: 2rem;
+    }
+
+    .comedor-steps-timeline {
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+
+    .comedor-header-card {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .comedor-header-title {
+        font-size: 1.5rem;
+    }
+
+    .comedor-date-item {
+        font-size: 0.8rem;
+        text-align: left;
+    }
+
+    .timeline-step-card {
+        min-width: 180px;
+        padding: 1rem 1.25rem;
+        gap: 1rem;
+    }
+
+    .timeline-step-number {
+        font-size: 3rem;
+        margin-right: 0;
+        min-width: 60px;
+        width: 60px;
+        height: 60px;
+    }
+
+    .timeline-step-date {
+        font-size: 0.9rem;
+    }
+
+    .timeline-step-status {
+        font-size: 0.8rem;
+    }
+}
+
+.btn-outline-secondary.btn-back {
+    border-radius: 32px;
+    padding: 0.125em 2em;
+    border: 1px solid white;
+    background-color: var(--bs-body-bg);
+    color: #DDD;
+    transition: 0.3s all ease;
+}
+
+.btn-outline-secondary.btn-back:hover {
+    background-color: #DDD;
+    color: var(--bs-body-bg);
+}
+
 /* Custom para comedores_detail */
 
 .card-informacion .nav-item
@@ -156,10 +360,46 @@
 .relevamiento-container .card-header h3 {
     color: inherit !important;
     margin-bottom: 0;
+    font-family: 'Montserrat', sans-serif;
 }
 
-[data-bs-theme="dark"] .relevamiento-container .card-header {
-    background-color: #3a4148 !important;
+.relevamiento-container .card-header {
+    background-color: #232d4f !important;
     color: #ffffff !important;
-    border-bottom-color: #0d6efd;
+    border-bottom: 2px solid #ffffff;
 }
+
+.relevamiento-container .card, .relevamiento-container .card-body {
+    background-color: #232d4f !important;
+}
+
+.table.table-striped {
+    max-width: 98%;
+    border: none;
+}
+
+.table.table-striped * {
+    background-color: #232d4f !important;
+}
+
+.table.table-striped thead tr:nth-child(1) th,
+.table.table-striped thead tr:nth-child(2) th {
+    border: 1px solid white;
+}
+
+.table.table-striped tbody tr th:not(:first-child), .table.table-striped tbody tr td:not(:first-child) {
+    border: 1px solid white;
+}
+
+
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-color-type: var(--bs-table-striped-color);
+    --bs-table-bg-type: none;
+}
+
+.table.table-striped thead tr th:first-child, .table.table-striped  tbody  tr  td:first-child {
+    border: none !important;
+}
+
+

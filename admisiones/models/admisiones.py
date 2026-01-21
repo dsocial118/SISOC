@@ -201,6 +201,7 @@ class Admision(models.Model):
     )
     estado_mostrar = models.CharField(max_length=255, blank=True, null=True)
     fecha_estado_mostrar = models.DateField(null=True, blank=True)
+    convenio_numero = models.IntegerField(null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -488,7 +489,10 @@ class InformeTecnico(models.Model):
 
     # Exclusivos de organizacion juridica
     validacion_registro_nacional = models.CharField(
-        "Validación Registro Nacional Comedores/Merenderos", max_length=255
+        "Validación Registro Nacional Comedores/Merenderos",
+        max_length=255,
+        blank=True,
+        null=True,
     )
     IF_relevamiento_territorial = models.CharField(
         "IF de relevamiento territorial", max_length=255
@@ -600,6 +604,95 @@ class InformeTecnico(models.Model):
         default=0, validators=[MinValueValidator(0)]
     )
     solicitudes_cena_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    # Prestaciones aprobadas en el ultimo convenio (renovacion)
+    aprobadas_ultimo_convenio_desayuno_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_desayuno_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_desayuno_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_desayuno_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_desayuno_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_desayuno_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_desayuno_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    aprobadas_ultimo_convenio_almuerzo_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_almuerzo_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_almuerzo_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_almuerzo_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_almuerzo_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_almuerzo_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_almuerzo_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    aprobadas_ultimo_convenio_merienda_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_merienda_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_merienda_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_merienda_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_merienda_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_merienda_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_merienda_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+
+    aprobadas_ultimo_convenio_cena_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_cena_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_cena_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_cena_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_cena_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_cena_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_ultimo_convenio_cena_domingo = models.IntegerField(
         default=0, validators=[MinValueValidator(0)]
     )
 
