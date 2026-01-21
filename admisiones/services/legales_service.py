@@ -1050,6 +1050,11 @@ class LegalesService:
                 if comedor and getattr(comedor, "provincia", None)
                 else "-"
             )
+            convenio_display = (
+                f"{admision.convenio_numero}°"
+                if admision and admision.convenio_numero is not None
+                else "-"
+            )
 
             actions = [
                 {
@@ -1095,6 +1100,8 @@ class LegalesService:
                                 else "-"
                             )
                         },
+                        # N Convenio
+                        {"content": convenio_display},
                         # Provincia
                         {"content": provincia_display},
                         # Equipo tecnico

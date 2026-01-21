@@ -197,6 +197,7 @@
         try {
             const url = `${urlListado}?seccion=${encodeURIComponent(seccion)}${forzar ? '&refrescar=1' : ''}`;
             const respuesta = await fetch(url, {
+                cache: 'no-store',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
@@ -320,7 +321,7 @@
             if (activo && String(activo.id) === String(id)) {
                 limpiarFavoritoActivo();
             }
-            await cargarFavoritos();
+            await cargarFavoritos({ forzar: true });
         } catch (error) {
             mostrarError(error.message || 'No se pudo eliminar el favorito.');
         }
@@ -367,7 +368,7 @@
     }
 
     if (botonAbrir) {
-        botonAbrir.addEventListener('click', () => cargarFavoritos());
+        botonAbrir.addEventListener('click', () => cargarFavoritos({ forzar: true }));
     }
     if (botonGuardar) {
         botonGuardar.addEventListener('click', () => guardarFavorito());
