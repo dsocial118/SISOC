@@ -127,6 +127,7 @@ def google_maps_query(latitud, longitud):
         return ""
     return f"{lat_value},{lng_value}"
 
+
 @register.filter
 def boolean_icon(value):
     if value in [True, 1, "1", "true", "True", "SI", "Sí", "si"]:

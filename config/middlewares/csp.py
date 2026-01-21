@@ -2,13 +2,14 @@
 Middleware para Content Security Policy (CSP).
 Ayuda a prevenir XSS y otros ataques de inyección de código.
 """
+
 from django.conf import settings
 
 
 class ContentSecurityPolicyMiddleware:
     """
     Middleware que agrega el header Content-Security-Policy para mitigar XSS.
-    
+
     Nota sobre 'unsafe-inline' y 'unsafe-eval':
     - Se incluyen temporalmente para mantener compatibilidad con el código existente
     - En el futuro, se debería migrar a usar nonces o hashes para los scripts inline
@@ -20,7 +21,7 @@ class ContentSecurityPolicyMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
-        
+
         # CSP policy que permite recursos del mismo origen, Google Maps API, y Bootstrap CDN
         # TODO: Reemplazar 'unsafe-inline' y 'unsafe-eval' con nonces/hashes una vez que
         # el código se actualice para soportarlo
@@ -38,9 +39,9 @@ class ContentSecurityPolicyMiddleware:
             "base-uri 'self'; "
             "form-action 'self';"
         )
-        
+
         # Solo aplicar CSP en producción si está configurado
         if getattr(settings, "ENABLE_CSP", True):
             response["Content-Security-Policy"] = csp_policy
-        
+
         return response
