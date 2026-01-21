@@ -5,7 +5,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <div class="table-responsive">
+                <div class="table-responsive-lg">
                     <table class="table table-bordered table-striped projects {{ table_class|default:'' }}">
                         {% if headers %}
                             <thead>
@@ -62,7 +62,7 @@
                                             {% if custom_actions %}
                                                 <!-- Acciones personalizadas para cada item -->
                                                 {% if item.actions %}
-                                                    <div class="action-buttons" role="group">
+                                                    <div class="action-buttons flex-wrap flex-lg-nowrap" role="group">
                                                         {% for action in item.actions %}
                                                             <a href="{{ action.url }}"
                                                                class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
@@ -84,7 +84,7 @@
                                             {% else %}
                                                 <!-- Acciones estándar -->
                                                 {% if actions %}
-                                                    <div class="action-buttons" role="group">
+                                                    <div class="action-buttons flex-wrap flex-lg-nowrap" role="group">
                                                         {% for action in actions %}
                                                             <a href="{% url action.url_name item.pk %}"
                                                                class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
