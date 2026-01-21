@@ -26,7 +26,7 @@ footer.app-footer {
 .app-main {
     margin-top: 96px;
     min-height: calc(100vh - 182px); 
-    margin-left: 300px;
+    margin-left: 0;
 }
 
 .main-header {
@@ -39,6 +39,9 @@ footer.app-footer {
     gap: 8px;
     list-style: none;
     margin: 0;
+    padding-left: 0;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 .main-header .brand-image {
@@ -86,6 +89,14 @@ header.main-header {
     .nav-item {
         overflow-x: hidden !important;
     }
+
+    .app-main {
+        margin-left: 300px;
+    }
+}
+
+body.sidebar-collapse .app-main {
+    margin-left: 0;
 }
 
 .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
