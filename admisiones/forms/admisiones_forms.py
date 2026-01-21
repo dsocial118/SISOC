@@ -282,6 +282,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
+        fecha_vencimiento = cleaned_data.get("fecha_vencimiento_mandatos")
 
         if no_corresponde and not self.permite_no_corresponde_fecha_vencimiento:
             self.add_error(
@@ -289,6 +290,17 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 "No corresponde para este tipo de convenio.",
             )
             return cleaned_data
+
+        if (
+            self.require_full
+            and self.permite_no_corresponde_fecha_vencimiento
+            and not fecha_vencimiento
+            and not no_corresponde
+        ):
+            self.add_error(
+                "fecha_vencimiento_mandatos",
+                'Debe informar una fecha o marcar "No corresponde".',
+            )
 
         if no_corresponde:
             cleaned_data["fecha_vencimiento_mandatos"] = None
@@ -470,6 +482,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
+        fecha_vencimiento = cleaned_data.get("fecha_vencimiento_mandatos")
 
         if no_corresponde and not self.permite_no_corresponde_fecha_vencimiento:
             self.add_error(
@@ -477,6 +490,17 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 "No corresponde para este tipo de convenio.",
             )
             return cleaned_data
+
+        if (
+            self.require_full
+            and self.permite_no_corresponde_fecha_vencimiento
+            and not fecha_vencimiento
+            and not no_corresponde
+        ):
+            self.add_error(
+                "fecha_vencimiento_mandatos",
+                'Debe informar una fecha o marcar "No corresponde".',
+            )
 
         if no_corresponde:
             cleaned_data["fecha_vencimiento_mandatos"] = None
