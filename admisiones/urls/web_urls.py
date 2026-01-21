@@ -5,6 +5,7 @@ from admisiones.views.web_views import (
     eliminar_archivo_admision,
     actualizar_estado_archivo,
     actualizar_numero_gde_archivo,
+    actualizar_convenio_numero,
     crear_documento_personalizado,
     AdmisionesTecnicosListView,
     AdmisionesTecnicosUpdateView,
@@ -108,6 +109,11 @@ urlpatterns = [
         "ajax/actualizar-numero-gde/",
         actualizar_numero_gde_archivo,
         name="actualizar_numero_gde_archivo",
+    ),
+    path(
+        "ajax/actualizar-convenio-numero/",
+        actualizar_convenio_numero,
+        name="actualizar_convenio_numero",
     ),
     # Legales
     path(
