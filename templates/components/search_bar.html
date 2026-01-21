@@ -51,7 +51,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
             <div class="row">
                 <div class="col-12 col-lg-10 offset-lg-1">
                     <div class="form-group">
-                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                        <div class="filters-toolbar d-flex flex-wrap align-items-center gap-2 mb-2">
                             <label class="mb-0">
                                 Combinar filtros con
                                 <span class="field-tooltip tooltip-in-label">
@@ -63,16 +63,16 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                                 </span>
                             </label>
                             <select id="filters-logic"
-                                    class="form-select form-select-sm w-100 w-sm-auto">
+                                    class="form-select form-select-sm filters-logic-select">
                                 <option value="AND" selected>AND</option>
                                 <option value="OR">OR</option>
                             </select>
                             <button type="button"
                                     id="add-filter"
-                                    class="btn btn-sm btn-outline-success w-100 w-sm-auto">Agregar filtro</button>
+                                    class="btn btn-sm btn-outline-success">Agregar filtro</button>
                             <button type="button"
                                     id="abrir-filtros-favoritos"
-                                    class="btn btn-sm btn-warning w-100 w-sm-auto"
+                                    class="btn btn-sm btn-warning"
                                     data-bs-toggle="modal"
                                     data-bs-target="#modal-filtros-favoritos">
                                 <i class="bi bi-star-fill me-1"></i>Favoritos
@@ -121,38 +121,38 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
         <div class="col-12 d-flex flex-wrap justify-content-center gap-2 search-actions">
             {% if reset_url_full %}
             <a href="{{ reset_url_full }}"
-               class="btn btn-secondary btn-lg w-100 w-sm-auto"
+               class="btn btn-secondary btn-lg"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% elif reset_url|is_url %}
             <a href="{{ reset_url }}"
-               class="btn btn-secondary btn-lg w-100 w-sm-auto"
+               class="btn btn-secondary btn-lg"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% else %}
             <a href="{% url reset_url %}"
-               class="btn btn-secondary btn-lg w-100 w-sm-auto"
+               class="btn btn-secondary btn-lg"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% endif %}
             {% if add_url and show_add_button|default:True %}
                 {% if add_url_full %}
-                <a href="{{ add_url_full }}" class="btn btn-primary btn-lg w-100 w-sm-auto">{{ add_text|default:"Agregar" }}</a>
+                <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% elif add_url|is_url %}
-                <a href="{{ add_url }}" class="btn btn-primary btn-lg w-100 w-sm-auto">{{ add_text|default:"Agregar" }}</a>
+                <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% else %}
-                <a href="{% url add_url %}" class="btn btn-primary btn-lg w-100 w-sm-auto">{{ add_text|default:"Agregar" }}</a>
+                <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% endif %}
             {% endif %}
             <!-- Botones adicionales personalizados -->
             {% if additional_buttons %}
                 {% for button in additional_buttons %}
                     <a href="{{ button.url }}"
-                       class="{{ button.class|default:'btn btn-primary btn-lg' }} w-100 w-sm-auto"
+                       class="{{ button.class|default:'btn btn-primary btn-lg' }}"
                        {% if button.id %}id="{{ button.id }}"{% endif %}
                        {% if button.title %}title="{{ button.title }}"{% endif %}>{{ button.label }}</a>
                 {% endfor %}
             {% endif %}
             {% if not ajax_search_mode %}
                 {% with form_id=filters_mode|yesno:"filters-form,simple-search-form" %}
-                <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg w-100 w-sm-auto">Filtrar</button>
+                <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
                 {% endwith %}
             {% endif %}
         </div>

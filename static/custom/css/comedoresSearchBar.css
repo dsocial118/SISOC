@@ -70,6 +70,10 @@
   white-space: nowrap;
 }
 
+.filters-logic-select {
+  width: auto;
+}
+
 /* Tooltips como en formulario de comedores */
 .field-tooltip {
   position: relative;
@@ -149,5 +153,15 @@ label:has(.field-tooltip) {
   #filters-rows .filters-row,
   #filters-rows .filters-header-row {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .filters-toolbar > * {
+    width: 100%;
+  }
+
+  .search-actions .btn {
+    width: 100%;
   }
 }
