@@ -4,7 +4,10 @@
 {% block title %}Relevamiento - Comedor: {{ comedor.nombre }}{% endblock %}
 ;
 {% block titulo-pagina %}
-<div class="mb-4"><a href="{% url 'comedor_detalle' relevamiento.comedor.id %}" class="btn btn-outline-secondary btn-back mr-1">Volver</a></div>
+    <div class="mb-4">
+        <a href="{% url 'comedor_detalle' relevamiento.comedor.id %}"
+           class="btn btn-outline-secondary btn-back mr-1">Volver</a>
+    </div>
 
     {{ relevamiento.comedor.nombre }}
     <span class="ml-2 h5">| Relevamiento</span>
@@ -34,9 +37,7 @@
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorRelevamiento.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
-        <div class="col-auto">
-            
-        </div>
+        <div class="col-auto"></div>
         <div class="col-auto">
             <!-- <a href="{% url 'relevamiento_editar' relevamiento.comedor.id relevamiento.id %}" class="btn btn-primary mr-1">Editar</a> -->
             {% if relevamiento.estado == "Finalizado" or relevamiento.estado == "Finalizado/Excepciones" %}
