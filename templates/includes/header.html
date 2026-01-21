@@ -1,22 +1,24 @@
 {% load static %}
 {% with pagina_actual=request.resolver_match.route %}
     <header class="main-header">
-        <nav class="navbar"
-             style="display: flex;
-                    align-items: center;
-                    justify-content: space-between">
-            <a href="{% url 'inicio' %}"
-               class="brand-link"
-               style="display: flex;
-                      align-items: center">
-                <span class="brand-text fw-light">
-                    <img src="{% static 'custom/img/logoBlanco.png' %}"
-                         alt="SISOC"
-                         class="brand-image"
-                         style="height: 32px" />
-                </span>
-            </a>
-            <ul class="nav-links">
+        <nav class="navbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-link d-inline-flex d-lg-none p-0 text-white"
+                        type="button"
+                        data-lte-toggle="sidebar"
+                        aria-label="Abrir menu">
+                    <i class="bi bi-list fs-2"></i>
+                </button>
+                <a href="{% url 'inicio' %}" class="brand-link d-flex align-items-center">
+                    <span class="brand-text fw-light">
+                        <img src="{% static 'custom/img/logoBlanco.png' %}"
+                             alt="SISOC"
+                             class="brand-image"
+                             style="height: 32px" />
+                    </span>
+                </a>
+            </div>
+            <ul class="nav-links mb-0 d-flex align-items-center flex-wrap">
                 <!--li class="nav-item">
                     <span class="nav-link nav-link-rounded">
                         <img src="{% static 'custom/img/iconos_navbar/user.svg' %}" alt="Usuario" /> <!--strong>{{ user.username }}</strong -->
@@ -49,11 +51,11 @@
                 <img src="{% static 'custom/img/iconos_navbar/chat.svg' %}" alt="Chat" />
             </a>
         </li -->
-<li class="nav-item circle-btn">
-<a class="nav-link nav-link-rounded" href="{% url 'logout' %}">
-<img src="{% static 'custom/img/iconos_navbar/exit.svg' %}" alt="Chat" />
-</a>
-</li>
+                <li class="nav-item circle-btn">
+                    <a class="nav-link nav-link-rounded" href="{% url 'logout' %}">
+                        <img src="{% static 'custom/img/iconos_navbar/exit.svg' %}" alt="Chat" />
+                    </a>
+                </li>
 </ul>
 </nav>
 </header>

@@ -9,10 +9,11 @@
                     </a>
                 </li>
             </ul>
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto align-items-center flex-wrap gap-1 gap-md-2">
                 <li class="nav-item">
-                    <span class="nav-link">
-                        <i class="bi bi-person-fill"></i> <strong>{{ user.username }}</strong>
+                    <span class="nav-link d-flex align-items-center">
+                        <i class="bi bi-person-fill me-2"></i>
+                        <strong class="d-none d-md-inline">{{ user.username }}</strong>
                     </span>
                 </li>
                 <li class="nav-item circle-btn dropdown">
