@@ -25,6 +25,17 @@ services:
       dockerfile: ./docker/django/Dockerfile
     environment:
       TZ: America/Argentina/Buenos_Aires
+      DATABASE_HOST: ${DATABASE_HOST:-mysql}
+      DATABASE_PORT: ${DATABASE_PORT:-3306}
+      DATABASE_USER: ${DATABASE_USER:-root}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-root1-password2}
+      DATABASE_NAME: ${DATABASE_NAME:-sisoc-local}
+      DW_DATABASE_HOST: ${DW_DATABASE_HOST:-mysql}
+      DW_DATABASE_PORT: ${DW_DATABASE_PORT:-3306}
+      DW_DATABASE_USER: ${DW_DATABASE_USER:-}
+      DW_DATABASE_PASSWORD: ${DW_DATABASE_PASSWORD:-}
+      DW_DATABASE_NAME: ${DW_DATABASE_NAME:-DW_sisoc}
+      WAIT_FOR_DB: ${WAIT_FOR_DB:-true}
     env_file:
       - .env
     ports:
