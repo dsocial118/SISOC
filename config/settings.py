@@ -153,6 +153,10 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # DB
+RUNNING_TESTS = (
+    any("pytest" in arg for arg in sys.argv) or os.environ.get("PYTEST_RUNNING") == "1"
+)
+USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
 DATABASE_HOST = os.environ.get("DATABASE_HOST")
 DW_DATABASE_HOST = os.environ.get("DW_DATABASE_HOST")
 
@@ -170,7 +174,10 @@ DATABASES = {
         },
         "CONN_MAX_AGE": 0,
     },
-    "dw_sisoc": {
+}
+
+if not RUNNING_TESTS and DW_DATABASE_HOST:
+    DATABASES["dw_sisoc"] = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": os.environ.get("DW_DATABASE_NAME", "DW_sisoc"),
         "USER": os.environ.get("DW_DATABASE_USER"),
@@ -182,14 +189,8 @@ DATABASES = {
             "charset": "utf8mb4",
         },
         "CONN_MAX_AGE": 0,
-    },
-}
+    }
 
-# DB para testing
-RUNNING_TESTS = (
-    any("pytest" in arg for arg in sys.argv) or os.environ.get("PYTEST_RUNNING") == "1"
-)
-USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
 if RUNNING_TESTS and (USE_SQLITE_FOR_TESTS or not DATABASE_HOST):
     DATABASES = {
         "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
