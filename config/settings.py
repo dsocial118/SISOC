@@ -7,12 +7,12 @@ from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env", override=True)
 
 # Entorno
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")  # dev|qa|prd
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Secret Key
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
