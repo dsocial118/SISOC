@@ -181,7 +181,7 @@ def render_boton_tecnicos(boton, admision=None, informe_tecnico=None):
             "clase": "btn-primary",
         },
         "mandar_a_legales": {
-            "texto": "Mandar a legales",
+            "texto": "Derivar a legales",
             "modal": "#confirmarLegalesModal",
             "clase": "btn-primary",
         },

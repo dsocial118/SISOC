@@ -22,6 +22,13 @@
     height: 4rem !important;
 }
 
+@media (max-width: 991.98px) {
+    .app-header {
+        height: auto !important;
+        min-height: 4rem;
+    }
+}
+
 .sidebar-brand {
     font-size: 1.7rem;
 }
@@ -40,6 +47,12 @@
     align-items: center;
     justify-content: center;
     margin-left: 5px !important;
+}
+
+@media (max-width: 575.98px) {
+    .navbar-nav .circle-btn {
+        margin-left: 0 !important;
+    }
 }
 
 /* Sidebar */

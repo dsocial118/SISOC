@@ -121,6 +121,50 @@
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
+                                Número de convenio:
+                                {% if puede_editar_convenio_numero %}
+                                    <div class="d-inline-flex align-items-center gap-2">
+                                        <div id="convenio-numero-display"
+                                             class="convenio-numero-display"
+                                             onclick="activarEdicionConvenioNumero()">
+                                            {% if admision.convenio_numero is not None %}
+                                                <span class="text-success fw-bold">{{ admision.convenio_numero }}</span>
+                                                <i class="bi bi-pencil-square ms-2 text-muted"
+                                                   title="Editar numero de convenio"></i>
+                                            {% else %}
+                                                <span class="text-muted">Sin numero de convenio</span>
+                                                <i class="bi bi-plus-circle ms-2 text-primary"
+                                                   title="Agregar numero de convenio"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div id="convenio-numero-edit" class="convenio-numero-edit d-none">
+                                            <input type="number"
+                                                   id="convenio-numero-input"
+                                                   class="form-control form-control-sm"
+                                                   value="{{ admision.convenio_numero|default_if_none:'' }}"
+                                                   min="0"
+                                                   step="1" />
+                                            <button type="button"
+                                                    class="btn btn-success btn-sm convenio-numero-btn"
+                                                    onclick="guardarConvenioNumero()"
+                                                    title="Guardar">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="btn btn-danger btn-sm convenio-numero-btn"
+                                                    onclick="cancelarEdicionConvenioNumero()"
+                                                    title="Cancelar">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="fw-bold">{{ admision.convenio_numero|default_if_none:"-" }}</span>
+                                {% endif %}
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <div class="comment-text">
                                 Tipo:
                                 <span class="fw-bold">{{ admision.get_tipo_display| default_if_none:"Sin información" }}</span>
                             </div>
@@ -478,7 +522,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Modal para confirmar mandar a legales -->
+                    <!-- Modal para confirmar derivar a legales -->
                     <div class="modal fade"
                          id="confirmarLegalesModal"
                          tabindex="-1"
@@ -487,13 +531,13 @@
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="confirmarLegalesModalLabel">Confirmar mandar a Legales</h5>
+                                    <h5 class="modal-title" id="confirmarLegalesModalLabel">Confirmar derivar a Legales</h5>
                                     <button type="button"
                                             class="btn-close"
                                             data-bs-dismiss="modal"
                                             aria-label="Close"></button>
                                 </div>
-                                <div class="modal-body mb-2">¿Estás seguro que queres mandar a Legales?</div>
+                                <div class="modal-body mb-2">¿Estás seguro que queres derivar a Legales?</div>
                                 <div class="modal-footer">
                                     <form id="mandarLegalesForm" method="POST" action="">
                                         {% csrf_token %}
@@ -633,6 +677,21 @@
                                         aria-label="Cerrar"></button>
                             </div>
                         </div>
+                        <div id="toastConvenioNumeroExito"
+                             class="toast align-items-center text-bg-success border-0"
+                             role="alert"
+                             aria-live="assertive"
+                             aria-atomic="true">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    <h6>Numero de convenio actualizado con exito.</h6>
+                                </div>
+                                <button type="button"
+                                        class="btn-close btn-close-white me-2 m-auto"
+                                        data-bs-dismiss="toast"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                        </div>
                     </div>
                     <!-- MODAL CARATULACION -->
                     <div class="modal fade"
@@ -698,6 +757,7 @@
                     <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
                     <script>window.URL_ACTUALIZAR_ESTADO = "{% url 'actualizar_estado_archivo' %}";</script>
                     <script>window.URL_ACTUALIZAR_NUMERO_GDE = "{% url 'actualizar_numero_gde_archivo' %}";</script>
+                    <script>window.URL_ACTUALIZAR_CONVENIO_NUMERO = "{% url 'actualizar_convenio_numero' %}";</script>
                     <script>window.ADMISION_ID = {{ admision.id }};</script>
                     <script>window.URL_CREAR_DOCUMENTO_PERSONALIZADO = "{% url 'documento_personalizado_crear' admision.id %}";</script>
                     <!-- Estilos para la UI de número GDE -->
@@ -721,6 +781,36 @@
                                         display: flex;
                                         align-items: center;
                                         justify-content: center;
+                                    }
+                                    .convenio-numero-display {
+                                        cursor: pointer;
+                                        padding: 4px 8px;
+                                        border-radius: 4px;
+                                        transition: background-color 0.2s;
+                                    }
+                                    .convenio-numero-display:hover {
+                                        background-color: #f8f9fa;
+                                    }
+                                    .convenio-numero-edit {
+                                        display: inline-flex;
+                                        align-items: center;
+                                        gap: 6px;
+                                        min-width: 220px;
+                                    }
+                                    .convenio-numero-edit .btn {
+                                        width: 32px;
+                                        height: 32px;
+                                        padding: 0;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                    }
+                                    .convenio-numero-btn {
+                                        width: 28px;
+                                        height: 28px;
+                                    }
+                                    #convenio-numero-input {
+                                        max-width: 140px;
                                     }
                     </style>
                 {% endblock %}

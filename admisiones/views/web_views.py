@@ -54,7 +54,7 @@ def subir_archivo_admision(request, admision_id, documentacion_id):
         )
 
     archivo_admision, created = AdmisionService.handle_file_upload(
-        admision_id, documentacion_id, archivo
+        admision_id, documentacion_id, archivo, request.user
     )
     if not archivo_admision:
         return JsonResponse(
@@ -206,6 +206,24 @@ def actualizar_numero_gde_archivo(request):
 
 @login_required
 @require_POST
+def actualizar_convenio_numero(request):
+    resultado = AdmisionService.actualizar_convenio_numero_ajax(request)
+
+    response_data = {
+        "success": resultado.get("success"),
+        "convenio_numero": resultado.get("convenio_numero"),
+        "valor_anterior": resultado.get("valor_anterior"),
+    }
+
+    if not resultado.get("success"):
+        response_data["error"] = resultado.get("error", "Error desconocido")
+        return JsonResponse(response_data, status=400)
+
+    return JsonResponse(response_data)
+
+
+@login_required
+@require_POST
 def crear_documento_personalizado(request, admision_id):
     archivo = request.FILES.get("archivo")
     nombre = request.POST.get("nombre", "")
@@ -269,6 +287,7 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
                     {"title": "Nombre"},
                     {"title": "Organización"},
                     {"title": "N° Expediente"},
+                    {"title": "N° Convenio"},
                     {"title": "Provincia"},
                     {"title": "Equipo técnico"},
                     {"title": "Estado"},
@@ -388,6 +407,12 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         admision_context = (
             AdmisionService.get_admision_update_context(admision, self.request.user)
             or {}
+        )
+        puede_editar_convenio_numero = (
+            self.request.user.is_superuser
+            or AdmisionService._verificar_permiso_tecnico_dupla(
+                self.request.user, comedor
+            )
         )
 
         informes_complementarios_queryset = (
@@ -541,6 +566,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 "informe_tecnico": admision_context.get("informe_tecnico"),
                 "informe_tecnico_pdf": admision_context.get("pdf"),
                 "informes_complementarios": informes_complementarios,
+                "puede_editar_convenio_numero": puede_editar_convenio_numero,
                 "acompanamiento_info": acompanamiento_data.get("info_relevante"),
                 "acompanamiento_numero_if": acompanamiento_data.get("numero_if"),
                 "acompanamiento_numero_disposicion": acompanamiento_data.get(
@@ -903,6 +929,7 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
                     {"title": "Nombre"},
                     {"title": "Organización"},
                     {"title": "N° Expediente"},
+                    {"title": "N° Convenio"},
                     {"title": "Provincia"},
                     {"title": "Equipo técnico"},
                     {"title": "Estado"},

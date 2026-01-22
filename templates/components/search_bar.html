@@ -13,7 +13,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
     {% if ajax_search_mode %}
         <!-- Modo búsqueda AJAX dinámica -->
         <div class="row">
-            <div class="col-md-10 offset-md-1">
+            <div class="col-12 col-lg-10 offset-lg-1">
                 <div class="form-group">
                     <div class="input-group input-group-lg">
                         <input type="search"
@@ -43,16 +43,16 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
         <form method="GET"
               action="{{ filters_action|default:'' }}"
               id="filters-form"
-              class="ms-5"
+              class="ms-0 ms-lg-5"
               {% if filters_config %}data-config-id="filters-config-json"{% endif %}
               data-seccion-filtros-favoritos="{{ seccion_filtros_favoritos|default:'' }}"
               data-url-filtros-favoritos="{% url 'filtros_favoritos' %}"
               data-plantilla-url-filtro-favorito="{% url 'detalle_filtro_favorito' pk=0 %}">
             <div class="row">
-                <div class="col-md-10 offset-md-1">
+                <div class="col-12 col-lg-10 offset-lg-1">
                     <div class="form-group">
-                        <div class="d-flex align-items-center mb-2">
-                            <label class="me-2 mb-0">
+                        <div class="filters-toolbar d-flex flex-wrap align-items-center gap-2 mb-2">
+                            <label class="mb-0">
                                 Combinar filtros con
                                 <span class="field-tooltip tooltip-in-label">
                                     <i class="fas fa-info-circle"></i>
@@ -63,17 +63,16 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                                 </span>
                             </label>
                             <select id="filters-logic"
-                                    class="form-select form-select-sm"
-                                    style="width: auto">
+                                    class="form-select form-select-sm filters-logic-select">
                                 <option value="AND" selected>AND</option>
                                 <option value="OR">OR</option>
                             </select>
                             <button type="button"
                                     id="add-filter"
-                                    class="btn btn-sm btn-outline-success ms-2">Agregar filtro</button>
+                                    class="btn btn-sm btn-outline-success">Agregar filtro</button>
                             <button type="button"
                                     id="abrir-filtros-favoritos"
-                                    class="btn btn-sm btn-warning ms-2"
+                                    class="btn btn-sm btn-warning"
                                     data-bs-toggle="modal"
                                     data-bs-target="#modal-filtros-favoritos">
                                 <i class="bi bi-star-fill me-1"></i>Favoritos
@@ -90,7 +89,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
               action="{{ search_action|default:'' }}"
               id="simple-search-form">
             <div class="row">
-                <div class="col-md-10 offset-md-1">
+                <div class="col-12 col-lg-10 offset-lg-1">
                     <div class="form-group">
                         <div class="input-group input-group-lg">
                             <input type="search"
@@ -121,25 +120,25 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
     <div class="row mt-3">
         <div class="col-12 d-flex flex-wrap justify-content-center gap-2 search-actions">
             {% if reset_url_full %}
-                <a href="{{ reset_url_full }}"
-                   class="btn btn-secondary btn-lg"
+            <a href="{{ reset_url_full }}"
+               class="btn btn-secondary btn-lg"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% elif reset_url|is_url %}
-                <a href="{{ reset_url }}"
-                   class="btn btn-secondary btn-lg"
+            <a href="{{ reset_url }}"
+               class="btn btn-secondary btn-lg"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% else %}
-                <a href="{% url reset_url %}"
-                   class="btn btn-secondary btn-lg"
+            <a href="{% url reset_url %}"
+               class="btn btn-secondary btn-lg"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% endif %}
             {% if add_url and show_add_button|default:True %}
                 {% if add_url_full %}
-                    <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
+                <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% elif add_url|is_url %}
-                    <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
+                <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% else %}
-                    <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
+                <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% endif %}
             {% endif %}
             <!-- Botones adicionales personalizados -->
@@ -153,7 +152,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
             {% endif %}
             {% if not ajax_search_mode %}
                 {% with form_id=filters_mode|yesno:"filters-form,simple-search-form" %}
-                    <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
+                <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
                 {% endwith %}
             {% endif %}
         </div>
