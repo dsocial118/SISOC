@@ -28,14 +28,20 @@ class PrestacionAlimentarService:
                 rows = cursor.fetchall()
                 programas = []
                 for row in rows:
-                    programas.append({
-                        "rol_desc": row[1],
-                        "monto": row[2],
-                        "periodo_mes": row[3],
-                        "id_relacion_titular": row[4],
-                        "titular_key": row[4],
-                    })
+                    programas.append(
+                        {
+                            "rol_desc": row[1],
+                            "monto": row[2],
+                            "periodo_mes": row[3],
+                            "id_relacion_titular": row[4],
+                            "titular_key": row[4],
+                        }
+                    )
                 return {"programas": programas}
         except Exception as e:
-            logger.exception("Error fetching Prestación Alimentar for ciudadano %s: %s", ciudadano_id, e)
+            logger.exception(
+                "Error fetching Prestación Alimentar for ciudadano %s: %s",
+                ciudadano_id,
+                e,
+            )
             return {"programas": []}
