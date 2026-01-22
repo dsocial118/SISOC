@@ -162,8 +162,8 @@ DATABASES = {
         "NAME": os.environ.get("DATABASE_NAME"),
         "USER": os.environ.get("DATABASE_USER"),
         "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
-        "HOST": DATABASE_HOST or "",
-        "PORT": os.environ.get("DATABASE_PORT"),
+        "HOST": DATABASE_HOST or "mysql",
+        "PORT": os.environ.get("DATABASE_PORT", "3306"),
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             "charset": "utf8mb4",
@@ -175,7 +175,7 @@ DATABASES = {
         "NAME": os.environ.get("DW_DATABASE_NAME", "DW_sisoc"),
         "USER": os.environ.get("DW_DATABASE_USER"),
         "PASSWORD": os.environ.get("DW_DATABASE_PASSWORD"),
-        "HOST": DW_DATABASE_HOST or "",
+        "HOST": DW_DATABASE_HOST or "mysql",
         "PORT": os.environ.get("DW_DATABASE_PORT", "3306"),
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
