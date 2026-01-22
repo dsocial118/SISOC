@@ -96,6 +96,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.admindocs.middleware.XViewMiddleware",
     "config.middlewares.xss_protection.XSSProtectionMiddleware",
+    "config.middlewares.csp.ContentSecurityPolicyMiddleware",
     "config.middlewares.threadlocals.ThreadLocalMiddleware",
 ]
 
@@ -390,13 +391,18 @@ if ENVIRONMENT == "prd":
     STATICFILES_STORAGE = (
         "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
     )
-    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_SECONDS = 1800  # 30 minutos
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = "DENY"
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+    ENABLE_CSP = True
 else:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     SECURE_HSTS_SECONDS = 0
@@ -404,6 +410,11 @@ else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = "SAMEORIGIN"
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+    ENABLE_CSP = True
 
 # Config propia (constantes)
 PROG_MILD = 24

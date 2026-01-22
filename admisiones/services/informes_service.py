@@ -1,5 +1,8 @@
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string, get_template
+from datetime import date, datetime
+
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.html import strip_tags
 from django.conf import settings
@@ -148,6 +151,7 @@ class InformeService:
                     "organizacion_avalista_1",
                     "organizacion_avalista_2",
                     "material_difusion_vinculado",
+                    "if_relevamiento",
                 ]
             elif informe.tipo == "base":
                 campos_excluidos_especificos = [
@@ -160,7 +164,10 @@ class InformeService:
             campos_excluidos = campos_excluidos_comunes + campos_excluidos_especificos
 
             return [
-                (field.verbose_name, getattr(informe, field.name))
+                (
+                    field.verbose_name,
+                    InformeService._formatear_valor_campo(informe, field),
+                )
                 for field in informe._meta.fields
                 if field.name not in campos_excluidos
             ]
@@ -170,6 +177,31 @@ class InformeService:
                 extra={"informe_pk": getattr(informe, "pk", None)},
             )
             return []
+
+    @staticmethod
+    def _formatear_valor_campo(informe, field):
+        value = getattr(informe, field.name)
+
+        if field.choices:
+            display_value = getattr(informe, f"get_{field.name}_display", None)
+            if display_value:
+                try:
+                    return display_value()
+                except Exception:
+                    pass
+
+        if isinstance(value, bool):
+            return "Sí" if value else "No"
+
+        if isinstance(value, datetime):
+            if timezone.is_aware(value):
+                value = timezone.localtime(value)
+            return value.strftime("%d/%m/%Y %H:%M")
+
+        if isinstance(value, date):
+            return value.strftime("%d/%m/%Y")
+
+        return value
 
     @staticmethod
     def preparar_informe_para_creacion(instance, admision_id, action=None):

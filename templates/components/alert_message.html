@@ -6,8 +6,8 @@
          {% if id %}id="{{ id }}"{% endif %}>
         {% if icon %}<i class="{{ icon }} me-2"></i>{% endif %}
         {% if title %}<h5 class="alert-heading">{{ title }}</h5>{% endif %}
-        {{ message|safe }}
-        {% if extra_content %}{{ extra_content|safe }}{% endif %}
+        {{ message }}
+        {% if extra_content %}{{ extra_content }}{% endif %}
         {% if dismissible %}
             <button type="button"
                     class="btn-close"
