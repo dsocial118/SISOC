@@ -1,5 +1,9 @@
-from django import template
 from datetime import date
+from decimal import Decimal, InvalidOperation
+
+from django import template
+from django.templatetags.static import static
+from django.utils.html import format_html
 
 register = template.Library()
 
@@ -83,3 +87,59 @@ def es_menor_18(fecha_nacimiento):
 
     edad_actual = edad(fecha_nacimiento)
     return edad_actual is not None and edad_actual < 18
+
+
+def _normalize_coordinate(value, min_value, max_value):
+    if value is None:
+        return None
+
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        text = text.replace(",", ".")
+        if text.count(".") > 1:
+            return None
+    else:
+        text = value
+
+    try:
+        decimal_value = Decimal(str(text))
+    except (InvalidOperation, ValueError):
+        return None
+
+    if decimal_value.is_nan() or decimal_value.is_infinite():
+        return None
+
+    min_decimal = Decimal(str(min_value))
+    max_decimal = Decimal(str(max_value))
+    if decimal_value < min_decimal or decimal_value > max_decimal:
+        return None
+
+    return format(decimal_value, "f")
+
+
+@register.simple_tag
+def google_maps_query(latitud, longitud):
+    lat_value = _normalize_coordinate(latitud, -90, 90)
+    lng_value = _normalize_coordinate(longitud, -180, 180)
+    if lat_value is None or lng_value is None:
+        return ""
+    return f"{lat_value},{lng_value}"
+
+
+@register.filter
+def boolean_icon(value):
+    if value in [True, 1, "1", "true", "True", "SI", "Sí", "si"]:
+        return format_html(
+            '<img src="{}" alt="Sí" width="20">',
+            static("custom/img/check_ok.svg"),
+        )
+
+    if value in [False, 0, "0", "false", "False", "NO", "No", "no"]:
+        return format_html(
+            '<img src="{}" alt="No" width="20">',
+            static("custom/img/check.svg"),
+        )
+
+    return "-"

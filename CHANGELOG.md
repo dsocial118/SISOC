@@ -1,6 +1,32 @@
 # CHANGELOG
 Todas las versiones desplegadas deberan estar aca con su descripcion de cambios. Ordenar de mas a menos reciente,
 
+## Despliegue: 2026.01.23
+### Added
+- Nueva utilidad `validar_comedores_csv` en `comedores.management.commands` para validar/activar lotes de comedores vía CSV, con validación de entradas, dry-run y registro histórico de cambios.
+- Middleware de Content Security Policy con cobertura de scripts, estilos y orígenes externos clave (Maps, DataTables, Power BI) y flag `ENABLE_CSP` para activar el control por entorno.
+
+### Changed
+- Fortalecimiento de seguridad en `config/settings.py`: HSTS de 30 minutos sin preload, cookies `HttpOnly`/`SameSite=None` para compatibilidad cross-site y cabeceras anti-sniffing/XSS, manteniendo `ENABLE_CSP`.
+- Vistas y servicios de Admisiones/Legales ahora incluyen la columna `N° Convenio` (formato ordinal) y la validación nacional se trata como campo opcional en `InformeTecnicoJuridicoForm`.
+- Plantillas PDF/Word de informes técnicos jurídicos refinan la redacción de la organización solicitante, eliminando la repetición del subtipo de entidad.
+
+## Despliegue: 2026.01.21
+### Added
+- Filtros avanzados favoritos por sección (comedores, admisiones, CDF, duplas, usuarios) con UI de guardado y aplicación.
+- Módulo de importación de expedientes de pago con carga, tracking de errores/exitos, delimitador configurable y pantallas dedicadas.
+- Endpoints API de Provincias/Municipios/Localidades para Centro de Familia y búsquedas geográficas.
+- Tableros administrables desde base (modelo `Tablero`, fixtures y vista dinámica por slug).
+
+### Changed
+- Filtros avanzados reordenados con headers por fila y estilos actualizados en la barra de búsqueda.
+- Comedores: detalle y nómina renovados (incluye rango etario) y búsqueda en mapa por geolocalización.
+- Admisiones/Legales: validaciones de carga, deduplicación en listados, historial de estados y ajustes de estado legal.
+- UI renovada en organizaciones, intervenciones y ciudadanos (Historia Social Digital).
+
+### Fixed
+- Correcciones de geolocalización en mapas, overflow de select2 y fecha de validación al actualizar comedores.
+
 ## Despliegue: 2026.01.02
 ### Added
 - Filtros avanzados combinables para los listados de Admisiones (equipos técnicos y Legales), con configuración de campos/opciones desde backend y UI reutilizable en las tablas.

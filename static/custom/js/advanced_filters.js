@@ -192,7 +192,42 @@
         }
     }
 
+    function addHeaderRow() {
+        // Check if header already exists
+        if (rowsContainer.querySelector('.filters-header-row')) {
+            return;
+        }
+
+        const headerRow = document.createElement('div');
+        headerRow.className = 'filters-header-row';
+        
+        const headerField = document.createElement('div');
+        headerField.className = 'filter-header';
+        headerField.textContent = 'Buscar por';
+        
+        const headerOp = document.createElement('div');
+        headerOp.className = 'filter-header';
+        headerOp.textContent = 'Tipo de coincidencia';
+        
+        const headerValue = document.createElement('div');
+        headerValue.className = 'filter-header';
+        headerValue.textContent = 'Ingresar valor';
+        
+        const headerEmpty = document.createElement('div');
+        headerEmpty.className = 'filter-header';
+        
+        headerRow.appendChild(headerField);
+        headerRow.appendChild(headerOp);
+        headerRow.appendChild(headerValue);
+        headerRow.appendChild(headerEmpty);
+        
+        rowsContainer.prepend(headerRow);
+    }
+
     function addRow(prefill) {
+        // Add header row if it doesn't exist
+        addHeaderRow();
+
         const row = document.createElement('div');
         row.className = 'filters-row';
 

@@ -122,6 +122,55 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
         # Optimización: Usar self.object en lugar de nueva query
         relevamiento = self.object
 
+        timeline_qs = (
+            Relevamiento.objects.filter(comedor=relevamiento.comedor)
+            .only("id", "fecha_visita", "estado")
+            .order_by("fecha_visita", "id")
+        )
+        timeline_items = []
+        for idx, item in enumerate(timeline_qs):
+            estado = item.estado or ""
+            is_finalizado = estado in {"Finalizado", "Finalizado/Excepciones"}
+            is_pendiente = estado in {"Pendiente", "Visita pendiente"}
+            card_class = (
+                "active"
+                if item.id == relevamiento.id
+                else (
+                    "finalizado"
+                    if is_finalizado
+                    else "pendiente" if is_pendiente else ""
+                )
+            )
+            status_class = (
+                "finalizado" if is_finalizado else "pendiente" if is_pendiente else ""
+            )
+            timeline_items.append(
+                {
+                    "id": item.id,
+                    "step": idx + 1,
+                    "fecha": item.fecha_visita,
+                    "estado": item.estado or "Sin información",
+                    "card_class": card_class,
+                    "status_class": status_class,
+                }
+            )
+
+        if len(timeline_items) > 3:
+            current_index = next(
+                (
+                    index
+                    for index, item in enumerate(timeline_items)
+                    if item["id"] == relevamiento.id
+                ),
+                len(timeline_items) - 1,
+            )
+            start = max(current_index - 1, 0)
+            end = start + 3
+            if end > len(timeline_items):
+                end = len(timeline_items)
+                start = max(end - 3, 0)
+            timeline_items = timeline_items[start:end]
+
         # Crear un diccionario para los datos adicionales del relevamiento
         relevamiento_data = {}
         relevamiento_data["gas"] = (
@@ -186,6 +235,7 @@ class RelevamientoDetailView(LoginRequiredMixin, DetailView):
 
         # Agregar los datos adicionales al contexto
         context["relevamiento_data"] = relevamiento_data
+        context["relevamientos_timeline"] = timeline_items
 
         return context
 
