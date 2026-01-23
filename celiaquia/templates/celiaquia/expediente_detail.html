@@ -26,6 +26,8 @@
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
                         <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
                            class="btn btn-outline-success btn-sm me-2">Descargar nómina Sintys</a>
+                        <a href="{% url 'expediente_padron_final_export' expediente.pk %}"
+                           class="btn btn-outline-primary btn-sm me-2">Descargar padrón final</a>
                         <button type="button"
                                 class="btn btn-outline-info btn-sm me-2"
                                 data-bs-toggle="modal"
