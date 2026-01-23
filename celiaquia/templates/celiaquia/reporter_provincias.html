@@ -1,571 +1,243 @@
-{% extends "includes/base.html" %}
+{% extends "includes/main.html" %}
 {% load static %}
 
 {% block title %}Reporter de Provincias - Celiaquia{% endblock %}
 
-{% block extra_css %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'reporter_provincias' %}">Reporter</a>
+        </li>
+        <li class="breadcrumb-item active">Provincias</li>
+    </ol>
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'custom/css/reporter_provincias.css' %}">
 <link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css" rel="stylesheet">
-<style>
-    .reporter-container {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem 0;
-        margin-bottom: 2rem;
-        color: white;
-    }
-    
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    
-    .stat-card {
-        background: white;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border-left: 4px solid #667eea;
-    }
-    
-    .stat-card.success {
-        border-left-color: #10b981;
-    }
-    
-    .stat-card.warning {
-        border-left-color: #f59e0b;
-    }
-    
-    .stat-card.danger {
-        border-left-color: #ef4444;
-    }
-    
-    .stat-card.info {
-        border-left-color: #3b82f6;
-    }
-    
-    .stat-number {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #667eea;
-        margin: 0.5rem 0;
-    }
-    
-    .stat-card.success .stat-number {
-        color: #10b981;
-    }
-    
-    .stat-card.warning .stat-number {
-        color: #f59e0b;
-    }
-    
-    .stat-card.danger .stat-number {
-        color: #ef4444;
-    }
-    
-    .stat-card.info .stat-number {
-        color: #3b82f6;
-    }
-    
-    .stat-label {
-        font-size: 0.875rem;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .stat-percentage {
-        font-size: 0.875rem;
-        color: #9ca3af;
-        margin-top: 0.5rem;
-    }
-    
-    .charts-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-    
-    .chart-container {
-        background: white;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .chart-title {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 1rem;
-        border-bottom: 2px solid #e5e7eb;
-        padding-bottom: 0.5rem;
-    }
-    
-    .filter-section {
-        background: white;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .filter-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-    
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .filter-group label {
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 0.5rem;
-        font-size: 0.875rem;
-    }
-    
-    .filter-group input,
-    .filter-group select {
-        padding: 0.75rem;
-        border: 1px solid #d1d5db;
-        border-radius: 4px;
-        font-size: 0.875rem;
-    }
-    
-    .filter-group input:focus,
-    .filter-group select:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    
-    .btn-filter {
-        background: #667eea;
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-        align-self: flex-end;
-        transition: background 0.3s;
-    }
-    
-    .btn-filter:hover {
-        background: #5568d3;
-    }
-    
-    .btn-reset {
-        background: #e5e7eb;
-        color: #374151;
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-        align-self: flex-end;
-        transition: background 0.3s;
-    }
-    
-    .btn-reset:hover {
-        background: #d1d5db;
-    }
-    
-    .table-container {
-        background: white;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        overflow-x: auto;
-    }
-    
-    .table-title {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 1rem;
-    }
-    
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    
-    thead {
-        background: #f3f4f6;
-        border-bottom: 2px solid #e5e7eb;
-    }
-    
-    th {
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: #374151;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    td {
-        padding: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-        font-size: 0.875rem;
-    }
-    
-    tbody tr:hover {
-        background: #f9fafb;
-    }
-    
-    .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-    
-    .badge-success {
-        background: #d1fae5;
-        color: #065f46;
-    }
-    
-    .badge-warning {
-        background: #fef3c7;
-        color: #92400e;
-    }
-    
-    .badge-danger {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-    
-    .badge-info {
-        background: #dbeafe;
-        color: #0c2d6b;
-    }
-    
-    .badge-secondary {
-        background: #e5e7eb;
-        color: #374151;
-    }
-    
-    .instancia-section {
-        background: white;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    
-    .instancia-title {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 1rem;
-        border-bottom: 2px solid #e5e7eb;
-        padding-bottom: 0.5rem;
-    }
-    
-    .instancia-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 1rem;
-    }
-    
-    .instancia-item {
-        background: #f9fafb;
-        padding: 1rem;
-        border-radius: 6px;
-        border-left: 3px solid #667eea;
-        text-align: center;
-    }
-    
-    .instancia-item.success {
-        border-left-color: #10b981;
-    }
-    
-    .instancia-item.warning {
-        border-left-color: #f59e0b;
-    }
-    
-    .instancia-item.danger {
-        border-left-color: #ef4444;
-    }
-    
-    .instancia-count {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #667eea;
-        margin: 0.5rem 0;
-    }
-    
-    .instancia-item.success .instancia-count {
-        color: #10b981;
-    }
-    
-    .instancia-item.warning .instancia-count {
-        color: #f59e0b;
-    }
-    
-    .instancia-item.danger .instancia-count {
-        color: #ef4444;
-    }
-    
-    .instancia-label {
-        font-size: 0.75rem;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .header-title {
-        color: white;
-        margin-bottom: 1rem;
-    }
-    
-    .header-subtitle {
-        color: rgba(255,255,255,0.9);
-        font-size: 0.95rem;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
-<div class="reporter-container">
-    <div class="container">
-        <h1 class="header-title">📊 Reporter de Provincias</h1>
-        <p class="header-subtitle">Análisis gráfico de casos, instancias y estados de validación</p>
+<h2 class="h3 mb-4">📊 Reporter de Provincias</h2>
+
+<!-- Filtros -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="provincia">Provincia</label>
+                <select name="provincia" id="provincia">
+                    <option value="">Todas las provincias</option>
+                    {% for provincia in provincias %}
+                        <option value="{{ provincia.id }}" {% if provincia.id|stringformat:"s" == provincia_seleccionada %}selected{% endif %}>
+                            {{ provincia.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="fecha_desde">Desde</label>
+                <input type="date" name="fecha_desde" id="fecha_desde" value="{{ fecha_desde }}">
+            </div>
+            
+            <div class="filter-group">
+                <label for="fecha_hasta">Hasta</label>
+                <input type="date" name="fecha_hasta" id="fecha_hasta" value="{{ fecha_hasta }}">
+            </div>
+            
+            <div class="filter-group">
+                <label for="estado">Estado</label>
+                <select name="estado" id="estado">
+                    <option value="">Todos los estados</option>
+                    <option value="PENDIENTE" {% if estado_filtro == "PENDIENTE" %}selected{% endif %}>Pendiente</option>
+                    <option value="APROBADO" {% if estado_filtro == "APROBADO" %}selected{% endif %}>Aprobado</option>
+                    <option value="RECHAZADO" {% if estado_filtro == "RECHAZADO" %}selected{% endif %}>Rechazado</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="filter-row">
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; grid-column: 1 / -1;">
+                <button type="submit" class="btn-filter">🔍 Filtrar</button>
+                <a href="{% url 'reporter_provincias' %}" class="btn-reset">↻ Limpiar</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Estadísticas Generales -->
+<div class="stats-grid">
+    <div class="stat-card info">
+        <div class="stat-label">Total de Casos</div>
+        <div class="stat-number">{{ total_casos }}</div>
+        <div class="stat-percentage">Registros procesados</div>
+    </div>
+    
+    <div class="stat-card success">
+        <div class="stat-label">Documentos Completos</div>
+        <div class="stat-number">{{ casos_documentos_ok }}</div>
+        <div class="stat-percentage" data-total="{{ total_casos }}" data-value="{{ casos_documentos_ok }}"></div>
+    </div>
+    
+    <div class="stat-card warning">
+        <div class="stat-label">Documentos Incompletos</div>
+        <div class="stat-number">{{ casos_documentos_incompletos }}</div>
+        <div class="stat-percentage" data-total="{{ total_casos }}" data-value="{{ casos_documentos_incompletos }}"></div>
+    </div>
+    
+    <div class="stat-card info">
+        <div class="stat-label">Con Comentarios</div>
+        <div class="stat-number">{{ casos_con_comentarios }}</div>
+        <div class="stat-percentage">Casos con observaciones</div>
     </div>
 </div>
 
-<div class="container">
-    <!-- Filtros -->
-    <div class="filter-section">
-        <form method="get" class="filter-form">
-            <div class="filter-row">
-                <div class="filter-group">
-                    <label for="provincia">Provincia</label>
-                    <select name="provincia" id="provincia">
-                        <option value="">Todas las provincias</option>
-                        {% for provincia in provincias %}
-                            <option value="{{ provincia.id }}" {% if provincia.id|stringformat:"s" == provincia_seleccionada %}selected{% endif %}>
-                                {{ provincia.nombre }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="fecha_desde">Desde</label>
-                    <input type="date" name="fecha_desde" id="fecha_desde" value="{{ fecha_desde }}">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="fecha_hasta">Hasta</label>
-                    <input type="date" name="fecha_hasta" id="fecha_hasta" value="{{ fecha_hasta }}">
-                </div>
-                
-                <div class="filter-group">
-                    <label for="estado">Estado</label>
-                    <select name="estado" id="estado">
-                        <option value="">Todos los estados</option>
-                        <option value="PENDIENTE" {% if estado_filtro == "PENDIENTE" %}selected{% endif %}>Pendiente</option>
-                        <option value="APROBADO" {% if estado_filtro == "APROBADO" %}selected{% endif %}>Aprobado</option>
-                        <option value="RECHAZADO" {% if estado_filtro == "RECHAZADO" %}selected{% endif %}>Rechazado</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="filter-row">
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; grid-column: 1 / -1;">
-                    <button type="submit" class="btn-filter">🔍 Filtrar</button>
-                    <a href="{% url 'reporter_provincias' %}" class="btn-reset">↻ Limpiar</a>
-                </div>
-            </div>
-        </form>
+<!-- Instancias de Validación -->
+<div class="instancia-section">
+    <div class="instancia-title">🔍 Validación Técnica</div>
+    <div class="instancia-grid">
+        <div class="instancia-item">
+            <div class="instancia-label">Pendiente</div>
+            <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.pendiente }}</div>
+        </div>
+        <div class="instancia-item success">
+            <div class="instancia-label">Aprobado</div>
+            <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.aprobado }}</div>
+        </div>
+        <div class="instancia-item danger">
+            <div class="instancia-label">Rechazado</div>
+            <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.rechazado }}</div>
+        </div>
+        <div class="instancia-item warning">
+            <div class="instancia-label">Subsanar</div>
+            <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.subsanar }}</div>
+        </div>
+        <div class="instancia-item success">
+            <div class="instancia-label">Subsanado</div>
+            <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.subsanado }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="instancia-section">
+    <div class="instancia-title">🔗 Cruce SINTYS</div>
+    <div class="instancia-grid">
+        <div class="instancia-item">
+            <div class="instancia-label">Sin Cruce</div>
+            <div class="instancia-count">{{ casos_por_instancia.sintys.sin_cruce }}</div>
+        </div>
+        <div class="instancia-item success">
+            <div class="instancia-label">Match</div>
+            <div class="instancia-count">{{ casos_por_instancia.sintys.match }}</div>
+        </div>
+        <div class="instancia-item danger">
+            <div class="instancia-label">No Match</div>
+            <div class="instancia-count">{{ casos_por_instancia.sintys.no_match }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="instancia-section">
+    <div class="instancia-title">💰 Estado de Cupo</div>
+    <div class="instancia-grid">
+        <div class="instancia-item">
+            <div class="instancia-label">No Evaluado</div>
+            <div class="instancia-count">{{ casos_por_instancia.cupo.no_eval }}</div>
+        </div>
+        <div class="instancia-item success">
+            <div class="instancia-label">Dentro de Cupo</div>
+            <div class="instancia-count">{{ casos_por_instancia.cupo.dentro }}</div>
+        </div>
+        <div class="instancia-item danger">
+            <div class="instancia-label">Fuera de Cupo</div>
+            <div class="instancia-count">{{ casos_por_instancia.cupo.fuera }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="charts-grid">
+    <div class="chart-container">
+        <div class="chart-title">📈 Validación Técnica</div>
+        <canvas id="chartValidacion"></canvas>
     </div>
     
-    <!-- Estadísticas Generales -->
-    <div class="stats-grid">
-        <div class="stat-card info">
-            <div class="stat-label">Total de Casos</div>
-            <div class="stat-number">{{ total_casos }}</div>
-            <div class="stat-percentage">Registros procesados</div>
-        </div>
-        
-        <div class="stat-card success">
-            <div class="stat-label">Documentos Completos</div>
-            <div class="stat-number">{{ casos_documentos_ok }}</div>
-            <div class="stat-percentage" data-total="{{ total_casos }}" data-value="{{ casos_documentos_ok }}"></div>
-        </div>
-        
-        <div class="stat-card warning">
-            <div class="stat-label">Documentos Incompletos</div>
-            <div class="stat-number">{{ casos_documentos_incompletos }}</div>
-            <div class="stat-percentage" data-total="{{ total_casos }}" data-value="{{ casos_documentos_incompletos }}"></div>
-        </div>
-        
-        <div class="stat-card info">
-            <div class="stat-label">Con Comentarios</div>
-            <div class="stat-number">{{ casos_con_comentarios }}</div>
-            <div class="stat-percentage">Casos con observaciones</div>
-        </div>
+    <div class="chart-container">
+        <div class="chart-title">🔗 Resultados SINTYS</div>
+        <canvas id="chartSintys"></canvas>
     </div>
     
-    <!-- Instancias de Validación -->
-    <div class="instancia-section">
-        <div class="instancia-title">🔍 Validación Técnica</div>
-        <div class="instancia-grid">
-            <div class="instancia-item">
-                <div class="instancia-label">Pendiente</div>
-                <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.pendiente }}</div>
-            </div>
-            <div class="instancia-item success">
-                <div class="instancia-label">Aprobado</div>
-                <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.aprobado }}</div>
-            </div>
-            <div class="instancia-item danger">
-                <div class="instancia-label">Rechazado</div>
-                <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.rechazado }}</div>
-            </div>
-            <div class="instancia-item warning">
-                <div class="instancia-label">Subsanar</div>
-                <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.subsanar }}</div>
-            </div>
-            <div class="instancia-item success">
-                <div class="instancia-label">Subsanado</div>
-                <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.subsanado }}</div>
-            </div>
-        </div>
+    <div class="chart-container">
+        <div class="chart-title">💰 Estado de Cupo</div>
+        <canvas id="chartCupo"></canvas>
     </div>
     
-    <div class="instancia-section">
-        <div class="instancia-title">🔗 Cruce SINTYS</div>
-        <div class="instancia-grid">
-            <div class="instancia-item">
-                <div class="instancia-label">Sin Cruce</div>
-                <div class="instancia-count">{{ casos_por_instancia.sintys.sin_cruce }}</div>
-            </div>
-            <div class="instancia-item success">
-                <div class="instancia-label">Match</div>
-                <div class="instancia-count">{{ casos_por_instancia.sintys.match }}</div>
-            </div>
-            <div class="instancia-item danger">
-                <div class="instancia-label">No Match</div>
-                <div class="instancia-count">{{ casos_por_instancia.sintys.no_match }}</div>
-            </div>
-        </div>
+    <div class="chart-container">
+        <div class="chart-title">📍 Casos por Provincia</div>
+        <canvas id="chartProvincias"></canvas>
     </div>
-    
-    <div class="instancia-section">
-        <div class="instancia-title">💰 Estado de Cupo</div>
-        <div class="instancia-grid">
-            <div class="instancia-item">
-                <div class="instancia-label">No Evaluado</div>
-                <div class="instancia-count">{{ casos_por_instancia.cupo.no_eval }}</div>
-            </div>
-            <div class="instancia-item success">
-                <div class="instancia-label">Dentro de Cupo</div>
-                <div class="instancia-count">{{ casos_por_instancia.cupo.dentro }}</div>
-            </div>
-            <div class="instancia-item danger">
-                <div class="instancia-label">Fuera de Cupo</div>
-                <div class="instancia-count">{{ casos_por_instancia.cupo.fuera }}</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Gráficos -->
-    <div class="charts-grid">
-        <div class="chart-container">
-            <div class="chart-title">📈 Validación Técnica</div>
-            <canvas id="chartValidacion"></canvas>
-        </div>
-        
-        <div class="chart-container">
-            <div class="chart-title">🔗 Resultados SINTYS</div>
-            <canvas id="chartSintys"></canvas>
-        </div>
-        
-        <div class="chart-container">
-            <div class="chart-title">💰 Estado de Cupo</div>
-            <canvas id="chartCupo"></canvas>
-        </div>
-        
-        <div class="chart-container">
-            <div class="chart-title">📍 Casos por Provincia</div>
-            <canvas id="chartProvincias"></canvas>
-        </div>
-    </div>
-    
-    <!-- Tabla de Detalle -->
-    <div class="table-container">
-        <div class="table-title">📋 Últimos Casos Procesados</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Documento</th>
-                    <th>Nombre</th>
-                    <th>Provincia</th>
-                    <th>Validación Técnica</th>
-                    <th>SINTYS</th>
-                    <th>Cupo</th>
-                    <th>Documentos</th>
-                    <th>Fecha</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for caso in ultimos_casos %}
-                <tr>
-                    <td>{{ caso.ciudadano.documento }}</td>
-                    <td>{{ caso.ciudadano.nombre }} {{ caso.ciudadano.apellido }}</td>
-                    <td>{{ caso.expediente.provincia.nombre }}</td>
-                    <td>
-                        <span class="badge {% if caso.revision_tecnico == 'APROBADO' %}badge-success{% elif caso.revision_tecnico == 'RECHAZADO' %}badge-danger{% elif caso.revision_tecnico == 'SUBSANAR' %}badge-warning{% else %}badge-secondary{% endif %}">
-                            {{ caso.get_revision_tecnico_display }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge {% if caso.resultado_sintys == 'MATCH' %}badge-success{% elif caso.resultado_sintys == 'NO_MATCH' %}badge-danger{% else %}badge-secondary{% endif %}">
-                            {{ caso.get_resultado_sintys_display }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge {% if caso.estado_cupo == 'DENTRO' %}badge-success{% elif caso.estado_cupo == 'FUERA' %}badge-danger{% else %}badge-secondary{% endif %}">
-                            {{ caso.get_estado_cupo_display }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if caso.archivos_ok %}
-                            <span class="badge badge-success">✓ Completo</span>
-                        {% else %}
-                            <span class="badge badge-warning">⚠ Incompleto</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ caso.creado_en|date:"d/m/Y H:i" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="8" style="text-align: center; color: #9ca3af;">No hay casos para mostrar</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+</div>
+
+<!-- Tabla de Detalle -->
+<div class="table-container">
+    <div class="table-title">📋 Últimos Casos Procesados</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Documento</th>
+                <th>Nombre</th>
+                <th>Provincia</th>
+                <th>Validación Técnica</th>
+                <th>SINTYS</th>
+                <th>Cupo</th>
+                <th>Documentos</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for caso in ultimos_casos %}
+            <tr>
+                <td>{{ caso.ciudadano.documento }}</td>
+                <td>{{ caso.ciudadano.nombre }} {{ caso.ciudadano.apellido }}</td>
+                <td>{{ caso.expediente.provincia.nombre }}</td>
+                <td>
+                    <span class="badge {% if caso.revision_tecnico == 'APROBADO' %}badge-success{% elif caso.revision_tecnico == 'RECHAZADO' %}badge-danger{% elif caso.revision_tecnico == 'SUBSANAR' %}badge-warning{% else %}badge-secondary{% endif %}">
+                        {{ caso.get_revision_tecnico_display }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge {% if caso.resultado_sintys == 'MATCH' %}badge-success{% elif caso.resultado_sintys == 'NO_MATCH' %}badge-danger{% else %}badge-secondary{% endif %}">
+                        {{ caso.get_resultado_sintys_display }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge {% if caso.estado_cupo == 'DENTRO' %}badge-success{% elif caso.estado_cupo == 'FUERA' %}badge-danger{% else %}badge-secondary{% endif %}">
+                        {{ caso.get_estado_cupo_display }}
+                    </span>
+                </td>
+                <td>
+                    {% if caso.archivos_ok %}
+                        <span class="badge badge-success">✓ Completo</span>
+                    {% else %}
+                        <span class="badge badge-warning">⚠ Incompleto</span>
+                    {% endif %}
+                </td>
+                <td>{{ caso.creado_en|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center; color: #9ca3af;">No hay casos para mostrar</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block customJS %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
 <script>
-    // Calcular porcentajes
     document.querySelectorAll('.stat-percentage[data-total]').forEach(el => {
         const total = parseInt(el.dataset.total);
         const value = parseInt(el.dataset.value);
@@ -573,7 +245,6 @@
         el.textContent = percentage + '%';
     });
     
-    // Colores consistentes
     const colors = {
         primary: '#667eea',
         success: '#10b981',
@@ -583,7 +254,6 @@
         secondary: '#6b7280'
     };
     
-    // Gráfico Validación Técnica
     const ctxValidacion = document.getElementById('chartValidacion').getContext('2d');
     new Chart(ctxValidacion, {
         type: 'doughnut',
@@ -623,7 +293,6 @@
         }
     });
     
-    // Gráfico SINTYS
     const ctxSintys = document.getElementById('chartSintys').getContext('2d');
     new Chart(ctxSintys, {
         type: 'bar',
@@ -654,7 +323,6 @@
         }
     });
     
-    // Gráfico Cupo
     const ctxCupo = document.getElementById('chartCupo').getContext('2d');
     new Chart(ctxCupo, {
         type: 'pie',
@@ -686,7 +354,6 @@
         }
     });
     
-    // Gráfico Provincias
     const ctxProvincias = document.getElementById('chartProvincias').getContext('2d');
     const provinciasData = {{ expedientes_por_provincia|safe }} || [];
     const provinciasLabels = provinciasData.length > 0 ? provinciasData.map(p => p.usuario_provincia__profile__provincia__nombre) : [];

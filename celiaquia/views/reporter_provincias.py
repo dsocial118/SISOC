@@ -7,10 +7,7 @@ from datetime import timedelta
 from core.models import Provincia
 from celiaquia.models import (
     ExpedienteCiudadano, 
-    Expediente, 
-    RevisionTecnico,
-    ResultadoSintys,
-    EstadoCupo
+    Expediente
 )
 
 
@@ -69,21 +66,21 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         # Casos por instancia
         casos_por_instancia = {
             'validacion_tecnica': {
-                'pendiente': queryset.filter(revision_tecnico=RevisionTecnico.PENDIENTE).count(),
-                'aprobado': queryset.filter(revision_tecnico=RevisionTecnico.APROBADO).count(),
-                'rechazado': queryset.filter(revision_tecnico=RevisionTecnico.RECHAZADO).count(),
-                'subsanar': queryset.filter(revision_tecnico=RevisionTecnico.SUBSANAR).count(),
-                'subsanado': queryset.filter(revision_tecnico=RevisionTecnico.SUBSANADO).count(),
+                'pendiente': queryset.filter(revision_tecnico='PENDIENTE').count(),
+                'aprobado': queryset.filter(revision_tecnico='APROBADO').count(),
+                'rechazado': queryset.filter(revision_tecnico='RECHAZADO').count(),
+                'subsanar': queryset.filter(revision_tecnico='SUBSANAR').count(),
+                'subsanado': queryset.filter(revision_tecnico='SUBSANADO').count(),
             },
             'sintys': {
-                'sin_cruce': queryset.filter(resultado_sintys=ResultadoSintys.SIN_CRUCE).count(),
-                'match': queryset.filter(resultado_sintys=ResultadoSintys.MATCH).count(),
-                'no_match': queryset.filter(resultado_sintys=ResultadoSintys.NO_MATCH).count(),
+                'sin_cruce': queryset.filter(resultado_sintys='SIN_CRUCE').count(),
+                'match': queryset.filter(resultado_sintys='MATCH').count(),
+                'no_match': queryset.filter(resultado_sintys='NO_MATCH').count(),
             },
             'cupo': {
-                'no_eval': queryset.filter(estado_cupo=EstadoCupo.NO_EVAL).count(),
-                'dentro': queryset.filter(estado_cupo=EstadoCupo.DENTRO).count(),
-                'fuera': queryset.filter(estado_cupo=EstadoCupo.FUERA).count(),
+                'no_eval': queryset.filter(estado_cupo='NO_EVAL').count(),
+                'dentro': queryset.filter(estado_cupo='DENTRO').count(),
+                'fuera': queryset.filter(estado_cupo='FUERA').count(),
             }
         }
         
