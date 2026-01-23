@@ -34,6 +34,7 @@ class PrestacionAlimentarService:
                             "monto": row[2],
                             "periodo_mes": row[3],
                             "id_relacion_titular": row[4],
+                            "titular_key": row[4],
                         }
                     )
                 return {"programas": programas}
