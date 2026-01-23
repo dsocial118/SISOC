@@ -45,6 +45,8 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
             ComedorService.get_nomina_detail(comedor_pk, page)
         )
 
+        menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
+
         comedor = ComedorService.get_comedor(comedor_pk)
 
         context.update(
@@ -55,6 +57,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "nominaX": nomina_x,
                 "espera": espera,
                 "cantidad_nomina": total,
+                "menores": menores,
                 "nomina_rangos": rangos,
                 "object": comedor,
             }

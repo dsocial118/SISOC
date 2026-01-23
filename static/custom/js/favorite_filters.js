@@ -124,6 +124,18 @@
         return { logic: logica, items: elementos };
     }
 
+    async function leerRespuestaJson(respuesta) {
+        const texto = await respuesta.text();
+        if (!texto) {
+            return null;
+        }
+        try {
+            return JSON.parse(texto);
+        } catch (error) {
+            return null;
+        }
+    }
+
     function renderizarFavoritos(favoritos) {
         if (!listaNodo || !vacioNodo) {
             return;
@@ -185,13 +197,17 @@
         try {
             const url = `${urlListado}?seccion=${encodeURIComponent(seccion)}${forzar ? '&refrescar=1' : ''}`;
             const respuesta = await fetch(url, {
+                cache: 'no-store',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
             });
-            const data = await respuesta.json();
+            const data = await leerRespuestaJson(respuesta);
             if (!respuesta.ok) {
-                throw new Error(data.error || 'No se pudo cargar los favoritos.');
+                throw new Error((data && data.error) || 'No se pudo cargar los favoritos.');
+            }
+            if (!data) {
+                throw new Error('Respuesta invalida del servidor.');
             }
             const favoritos = Array.isArray(data.favoritos) ? data.favoritos : [];
             renderizarFavoritos(favoritos);
@@ -232,9 +248,12 @@
                     filtros: carga,
                 }),
             });
-            const data = await respuesta.json();
+            const data = await leerRespuestaJson(respuesta);
             if (!respuesta.ok) {
-                throw new Error(data.error || 'No se pudo guardar el favorito.');
+                throw new Error((data && data.error) || 'No se pudo guardar el favorito.');
+            }
+            if (!data) {
+                throw new Error('Respuesta invalida del servidor.');
             }
             inputNombre.value = '';
             await cargarFavoritos({ forzar: true });
@@ -254,9 +273,12 @@
                     'X-Requested-With': 'XMLHttpRequest',
                 },
             });
-            const data = await respuesta.json();
+            const data = await leerRespuestaJson(respuesta);
             if (!respuesta.ok) {
-                throw new Error(data.error || 'No se pudo aplicar el favorito.');
+                throw new Error((data && data.error) || 'No se pudo aplicar el favorito.');
+            }
+            if (!data) {
+                throw new Error('Respuesta invalida del servidor.');
             }
 
             guardarFavoritoActivo({ id: data.id, nombre: data.nombre });
@@ -276,7 +298,7 @@
 
     async function eliminarFavorito(id) {
         limpiarError();
-        if (!window.confirm('Eliminar favorito de manera permanente?')) {
+        if (!window.confirm('¿Eliminar filtro permanentemente?')) {
             return;
         }
 
@@ -288,15 +310,18 @@
                     'X-Requested-With': 'XMLHttpRequest',
                 },
             });
-            const data = await respuesta.json();
+            const data = await leerRespuestaJson(respuesta);
             if (!respuesta.ok) {
-                throw new Error(data.error || 'No se pudo eliminar el favorito.');
+                throw new Error((data && data.error) || 'No se pudo eliminar el favorito.');
+            }
+            if (!data) {
+                throw new Error('Respuesta invalida del servidor.');
             }
             const activo = leerFavoritoActivo();
             if (activo && String(activo.id) === String(id)) {
                 limpiarFavoritoActivo();
             }
-            await cargarFavoritos();
+            await cargarFavoritos({ forzar: true });
         } catch (error) {
             mostrarError(error.message || 'No se pudo eliminar el favorito.');
         }
@@ -343,7 +368,7 @@
     }
 
     if (botonAbrir) {
-        botonAbrir.addEventListener('click', () => cargarFavoritos());
+        botonAbrir.addEventListener('click', () => cargarFavoritos({ forzar: true }));
     }
     if (botonGuardar) {
         botonGuardar.addEventListener('click', () => guardarFavorito());

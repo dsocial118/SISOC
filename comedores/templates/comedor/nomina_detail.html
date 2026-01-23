@@ -30,254 +30,334 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/nominaDetail.css' %}" />
 
     <!-- Botón Volver -->
-    <div class="row justify-content-between d-print-none mx-1 mb-3">
-        <div class="col-auto">
-            <a href="{% url 'comedor_detalle' object.id %}"
-               class="btn btn-secondary mr-1">Volver</a>
+    <div class="mb-4 d-print-none">
+        <a href="{% url 'comedor_detalle' object.id %}"
+           class="btn btn-outline-secondary btn-back">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <!-- Header del Comedor -->
+    <div class="nomina-header-card bg-base-darkblue">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="nomina-header-title">
+                    {{ object.nombre }}
+                    <span class="nomina-header-divider">|</span>
+                </h1>
+            </div>
+            <div class="col-md-4">
+                <div class="nomina-header-dates">
+                    <p class="nomina-date-item">
+                        <span class="nomina-date-label">Inicio de Ejecución</span>
+                        <span class="nomina-date-value">{{ ejecucion_inicio|date:"d/m/Y"|default:"-" }}</span>
+                    </p>
+                    <p class="nomina-date-item">
+                        <span class="nomina-date-label">Final de Ejecución</span>
+                        <span class="nomina-date-value">{{ ejecucion_fin|date:"d/m/Y"|default:"-" }}</span>
+                    </p>
+                    <p class="nomina-date-item">
+                        <span class="nomina-date-label">Plazo de Ejecución</span>
+                        <span class="nomina-date-value">{{ plazo_ejecucion|default:"-" }}</span>
+                    </p>
+                </div>
+            </div>
         </div>
-        <div class="col-auto">
-            <a href="{% url 'nomina_crear' object.id %}"
-               class="btn btn-primary mr-1">
-                <i class="fa fa-plus"></i> Agregar a Nómina
+    </div>
+
+    <!-- Tarjetas de Estadísticas Principales -->
+    <div class="nomina-stats-row">
+        <div class="nomina-stat-card asistentes bg-yellow">
+            <i class="fas fa-users nomina-stat-icon sisoclabel bg-lightyellow"></i>
+            <div class="nomina-stat-content">
+                <p class="nomina-stat-number">{{ cantidad_nomina }}</p>
+                <p class="nomina-stat-label">Asistentes</p>
+            </div>
+        </div>
+
+        <div class="nomina-stat-card hombres bg-blue">
+            <i class="fas fa-male nomina-stat-icon sisoclabel bg-lightblue"></i>
+            <div class="nomina-stat-content">
+                <p class="nomina-stat-number">{{ nominaM }}</p>
+                <p class="nomina-stat-label">Hombres</p>
+            </div>
+        </div>
+
+        <div class="nomina-stat-card mujeres bg-pink">
+            <i class="fas fa-female nomina-stat-icon sisoclabel bg-lightpink"></i>
+            <div class="nomina-stat-content">
+                <p class="nomina-stat-number">{{ nominaF }}</p>
+                <p class="nomina-stat-label">Mujeres</p>
+            </div>
+        </div>
+
+        <div class="nomina-stat-card menores bg-green">
+            <i class="fas fa-child nomina-stat-icon sisoclabel bg-lightgreen"></i>
+            <div class="nomina-stat-content">
+                <p class="nomina-stat-number">{{ menores|default:0 }}</p>
+                <p class="nomina-stat-label">Menores de edad</p>
+            </div>
+        </div>
+
+        <div class="nomina-stat-card espera bg-red">
+            <i class="fas fa-list-ul nomina-stat-icon sisoclabel bg-lightred"></i>
+            <div class="nomina-stat-content">
+                <p class="nomina-stat-number">{{ espera }}</p>
+                <p class="nomina-stat-label">Lista de espera</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Estadísticas Detalladas Colapsable -->
+    <div class="nomina-detailed-stats-wrapper">
+        <button class="nomina-toggle-details" type="button">
+            <span>Ver estadísticas detalladas</span>
+            <i class="fas fa-chevron-down nomina-toggle-icon"></i>
+        </button>
+
+        <div id="detailedStatsContent"
+             class="nomina-detailed-content"
+             style="display: none">
+
+            <!-- Sección: Distribución por Género -->
+            <h3 class="nomina-subsection-title">
+                <i class="fas fa-venus-mars me-2"></i>Distribución por Género
+            </h3>
+            <div class="nomina-stats-row">
+                <div class="nomina-stat-card genero-x bg-purple">
+                    <i class="fas fa-transgender nomina-stat-icon sisoclabel bg-lightpurple"></i>
+                    <div class="nomina-stat-content">
+                        <p class="nomina-stat-number">{{ nominaX|default:0 }}</p>
+                        <p class="nomina-stat-label">Género X / No binario</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Distribución por Edad -->
+            <h3 class="nomina-subsection-title">
+                <i class="fas fa-chart-bar me-2"></i>Distribución por Edad
+            </h3>
+
+            <!-- Menores de edad -->
+            <h4 class="nomina-subgroup-title">Menores de edad (0-17 años)</h4>
+            <div class="nomina-stats-row">
+                <!-- Niños 0-13 -->
+                <div class="nomina-stat-card-detailed bg-cyan">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-child"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.ninos|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Niños (0-13 años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_ninos|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_ninos|default:0 }}%</p>
+                </div>
+
+                <!-- Adolescentes 14-17 -->
+                <div class="nomina-stat-card-detailed bg-orange">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-user-graduate"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.adolescentes|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Adolescentes (14-17 años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_adolescentes|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adolescentes|default:0 }}%</p>
+                </div>
+            </div>
+
+            <!-- Adultos -->
+            <h4 class="nomina-subgroup-title">Adultos (18+ años)</h4>
+            <div class="nomina-stats-row">
+                <!-- Adultos 18-49 -->
+                <div class="nomina-stat-card-detailed bg-teal">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-user-tie"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.adultos|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Adultos (18-49 años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_adultos|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adultos|default:0 }}%</p>
+                </div>
+
+                <!-- Adultos Mayores 50-65 -->
+                <div class="nomina-stat-card-detailed bg-gray">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-user"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.adultos_mayores|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Adultos Mayores (50-65 años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_adultos_mayores|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adultos_mayores|default:0 }}%</p>
+                </div>
+
+                <!-- Adulto Mayor Avanzado 66+ -->
+                <div class="nomina-stat-card-detailed bg-brown">
+                    <div class="nomina-stat-header">
+                        <i class="fas fa-user-clock"></i>
+                        <div class="nomina-stat-info">
+                            <p class="nomina-stat-number-small">{{ nomina_rangos.adulto_mayor_avanzado|default:0 }}</p>
+                            <p class="nomina-stat-label-small">Adulto Mayor Avanzado (66+ años)</p>
+                        </div>
+                    </div>
+                    <div class="nomina-progress-bar">
+                        <div class="nomina-progress-fill"
+                             style="width: {{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%"></div>
+                    </div>
+                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección Nómina -->
+    <div class="nomina-section bg-base-darkblue">
+        <h2 class="nomina-section-title">Nómina</h2>
+
+        <!-- Barra de búsqueda y acciones -->
+        <div class="nomina-actions-bar">
+            <div class="nomina-search-box">
+                <i class="fas fa-search nomina-search-icon"></i>
+                <input type="text"
+                       class="nomina-search-input"
+                       id="nominaSearch"
+                       placeholder="Buscar observación" />
+            </div>
+            <a href="{% url 'nomina_crear' object.id %}" class="nomina-add-btn">
+                <i class="fas fa-plus"></i>
+                <span>Agregar persona</span>
             </a>
         </div>
-    </div>
 
-    <!-- Contadores de Nómina -->
-    <div class="row text-center mb-3">
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
-            <div class="info-card h-100 d-flex flex-column"
-                 style="background-color: #3498db;
-                        color: #ffffff;
-                        border-radius: 10px;
-                        padding: 15px;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)">
-                <div class="row">
-                    <div class="col-3">
-                        <i class="fa fa-users fa-2x"></i>
-                    </div>
-                    <div class="col-9 text-start">
-                        <p>
-                            <i class="fa fa-users me-1"></i>Activos: {{ cantidad_nomina }}
-                        </p>
-                        <p>
-                            <i class="fa fa-clock me-1"></i>En espera: {{ espera }}
-                        </p>
-                    </div>
-                </div>
-                <div class="row info-card-label mt-auto"
-                     style="margin: 0 -15px -15px;
-                            background-color: #2980b9;
-                            border-radius: 0 0 10px 10px">
-                    <h5 class="mt-2">Total en Nómina</h5>
-                </div>
-            </div>
+        <!-- Tabla -->
+        <div class="nomina-table-container">
+            <table class="nomina-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>CUIT</th>
+                        <th>Género</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in nomina %}
+                        <tr class="nomina-table-row">
+                            <td>
+                                <i class="far fa-calendar-alt"
+                                   style="margin-right: 5px;
+                                          color: #7f8c8d"></i>
+                                {{ e.fecha|date:"d/m/Y" }}
+                            </td>
+                            <td>{{ e.ciudadano.nombre }}</td>
+                            <td>
+                                <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
+                                   style="color: #3498db;
+                                          text-decoration: none">{{ e.ciudadano.apellido }}</a>
+                            </td>
+                            <td>{{ e.ciudadano.documento|default:"-" }}</td>
+                            <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
+                            <td>
+                                {% if e.estado == "A" %}
+                                    <span class="nomina-badge activo">Activo</span>
+                                {% elif e.estado == "E" %}
+                                    <span class="nomina-badge espera">Espera</span>
+                                {% else %}
+                                    <span class="nomina-badge inactivo">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="nomina-action-buttons">
+                                    <button class="nomina-btn nomina-btn-actions dropdown-toggle"
+                                            type="button"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false">Acciones</button>
+                                    <ul class="dropdown-menu dropdown-menu-dark">
+                                        <li>
+                                            <a class="dropdown-item editar-nomina" href="#" data-id="{{ e.id }}">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item"
+                                               href="{% url 'ciudadanos_ver' e.ciudadano.id %}">
+                                                <i class="fas fa-eye"></i> Ver detalles
+                                            </a>
+                                        </li>
+                                    </ul>
+                                    <a href="{% url 'nomina_borrar' object.id e.id %}"
+                                       class="nomina-btn nomina-btn-delete"
+                                       onclick="return confirm('¿Está seguro de eliminar este registro?');">
+                                        <i class="fas fa-trash-alt"></i> Borrar
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="nomina-empty-message">No hay registros en la nómina.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
-            <div class="info-card h-100 d-flex flex-column"
-                 style="background-color: #9b59b6;
-                        color: #ffffff;
-                        border-radius: 10px;
-                        padding: 15px;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)">
-                <div class="row">
-                    <div class="col-3">
-                        <i class="fa fa-venus-mars fa-2x"></i>
-                    </div>
-                    <div class="col-9 text-start">
-                        <p>
-                            <i class="fa fa-male me-1"></i>Masculino: {{ nominaM }}
-                        </p>
-                        <p>
-                            <i class="fa fa-female me-1"></i>Femenino: {{ nominaF }}
-                        </p>
-                        <p>
-                            <i class="fa fa-user me-1"></i>X: {{ nominaX }}
-                        </p>
-                    </div>
-                </div>
-                <div class="row info-card-label mt-auto"
-                     style="margin: 0 -15px -15px;
-                            background-color: #8e44ad;
-                            border-radius: 0 0 10px 10px">
-                    <h5 class="mt-2">Sexo</h5>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
-            <div class="info-card h-100 d-flex flex-column"
-                 style="background-color: #2c3e50;
-                        color: #ffffff;
-                        border-radius: 10px;
-                        padding: 15px;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)">
-                <div class="row">
-                    <div class="col-3">
-                        <i class="fa fa-chart-bar fa-2x"></i>
-                    </div>
-                    <div class="col-9 text-start">
-                        <div class="small d-flex justify-content-between">
-                            <span>Niños (0-13)</span>
-                            <span>{{ nomina_rangos.ninos }} ({{ nomina_rangos.pct_ninos }}%)</span>
-                        </div>
-                        <div class="mb-2"
-                             style="height: 6px;
-                                    background-color: rgba(255, 255, 255, 0.15);
-                                    border-radius: 4px;
-                                    overflow: hidden">
-                            <div style="height: 100%;
-                                        width: {{ nomina_rangos.pct_ninos }}% !important;
-                                        background-color: #00bcd4"></div>
-                        </div>
-                        <div class="small d-flex justify-content-between">
-                            <span>Adolescentes (14-17)</span>
-                            <span>{{ nomina_rangos.adolescentes }} ({{ nomina_rangos.pct_adolescentes }}%)</span>
-                        </div>
-                        <div style="height: 6px;
-                                    background-color: rgba(255, 255, 255, 0.15);
-                                    border-radius: 4px;
-                                    overflow: hidden">
-                            <div style="height: 100%;
-                                        width: {{ nomina_rangos.pct_adolescentes }}% !important;
-                                        background-color: #00bcd4"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row info-card-label mt-auto"
-                     style="margin: 0 -15px -15px;
-                            background-color: #1f2d3a;
-                            border-radius: 0 0 10px 10px">
-                    <h5 class="mt-2">Rango etareo 0-17</h5>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 pt-3">
-            <div class="info-card h-100 d-flex flex-column"
-                 style="background-color: #2c3e50;
-                        color: #ffffff;
-                        border-radius: 10px;
-                        padding: 15px;
-                        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)">
-                <div class="row">
-                    <div class="col-3">
-                        <i class="fa fa-chart-bar fa-2x"></i>
-                    </div>
-                    <div class="col-9 text-start">
-                        <div class="small d-flex justify-content-between">
-                            <span>Adultos (18-49)</span>
-                            <span>{{ nomina_rangos.adultos }} ({{ nomina_rangos.pct_adultos }}%)</span>
-                        </div>
-                        <div class="mb-2"
-                             style="height: 6px;
-                                    background-color: rgba(255, 255, 255, 0.15);
-                                    border-radius: 4px;
-                                    overflow: hidden">
-                            <div style="height: 100%;
-                                        width: {{ nomina_rangos.pct_adultos }}% !important;
-                                        background-color: #00bcd4"></div>
-                        </div>
-                        <div class="small d-flex justify-content-between">
-                            <span>Adultos mayores (50-65)</span>
-                            <span>{{ nomina_rangos.adultos_mayores }} ({{ nomina_rangos.pct_adultos_mayores }}%)</span>
-                        </div>
-                        <div class="mb-2"
-                             style="height: 6px;
-                                    background-color: rgba(255, 255, 255, 0.15);
-                                    border-radius: 4px;
-                                    overflow: hidden">
-                            <div style="height: 100%;
-                                        width: {{ nomina_rangos.pct_adultos_mayores }}% !important;
-                                        background-color: #00bcd4"></div>
-                        </div>
-                        <div class="small d-flex justify-content-between">
-                            <span>Adulto mayor avanzado (66+)</span>
-                            <span>{{ nomina_rangos.adulto_mayor_avanzado }} ({{ nomina_rangos.pct_adulto_mayor_avanzado }}%)</span>
-                        </div>
-                        <div style="height: 6px;
-                                    background-color: rgba(255, 255, 255, 0.15);
-                                    border-radius: 4px;
-                                    overflow: hidden">
-                            <div style="height: 100%;
-                                        width: {{ nomina_rangos.pct_adulto_mayor_avanzado }}% !important;
-                                        background-color: #00bcd4"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row info-card-label mt-auto"
-                     style="margin: 0 -15px -15px;
-                            background-color: #1f2d3a;
-                            border-radius: 0 0 10px 10px">
-                    <h5 class="mt-2">Rango etareo +18</h5>
-                </div>
-            </div>
-        </div>
-    </div>
 
-
-    <!-- Tabla de Nómina -->
-    <div class="row relevamiento-container">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title font-weight-bold mr-3 pt-1">Historial de Nómina</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
+        <!-- Paginación -->
+        {% if nomina.has_other_pages %}
+            <div class="nomina-pagination">
+                <span class="nomina-pagination-info">
+                    Mostrando {{ nomina.start_index }}-{{ nomina.end_index }} de {{ nomina.paginator.count }}
+                </span>
+                <div class="nomina-pagination-buttons">
+                    {% if nomina.has_previous %}
+                        <a href="?page={{ nomina.previous_page_number }}"
+                           class="nomina-page-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    {% else %}
+                        <button class="nomina-page-btn" disabled>
+                            <i class="fas fa-chevron-left"></i>
                         </button>
-                    </div>
+                    {% endif %}
+
+                    <span class="nomina-page-number">{{ nomina.number }} de {{ nomina.paginator.num_pages }}</span>
+
+                    {% if nomina.has_next %}
+                        <a href="?page={{ nomina.next_page_number }}" class="nomina-page-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    {% else %}
+                        <button class="nomina-page-btn" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    {% endif %}
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-bordered table-hover table-sm m-0">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Apellido</th>
-                                    <th>Nombre</th>
-                                    <th>Sexo</th>
-                                    <th>DNI</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for e in nomina %}
-                                    <tr>
-                                        <td>{{ e.fecha|date:"d/m/Y" }}</td>
-                                        <td>
-                                            <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}">{{ e.ciudadano.apellido }}</a>
-                                        </td>
-                                        <td>{{ e.ciudadano.nombre }}</td>
-                                        <td>{{ e.ciudadano.sexo.sexo }}</td>
-                                        <td>{{ e.ciudadano.documento }}</td>
-                                        <td>{{ e.get_estado_display }}</td>
-                                        <td>
-                                            <a href="#"
-                                               class="btn btn-sm btn-primary editar-nomina"
-                                               data-id="{{ e.id }}">Editar</a>
-                                            <a href="{% url 'nomina_borrar' object.id e.id %}"
-                                               class="btn btn-sm btn-danger ml-1">Eliminar</a>
-                                        </td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="7" class="text-center py-4">No hay registros en la nómina.</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                {% if nomina.has_other_pages %}
-                    <div class="card-footer">
-                        {% include 'components/pagination.html' with is_paginated=nomina.has_other_pages page_obj=nomina prev_text='‹' next_text='›' center=True %}
-                    </div>
-                {% endif %}
             </div>
-        </div>
+        {% endif %}
     </div>
     <!-- Modal Editar -->
     <div class="modal fade"

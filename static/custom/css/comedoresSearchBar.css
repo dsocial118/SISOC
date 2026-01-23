@@ -11,6 +11,19 @@
   width: 100%;
 }
 
+/* Header row for filters */
+#filters-rows .filters-header-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: .5rem;
+  margin-bottom: .75rem;
+}
+
+#filters-rows .filter-header {
+  font-weight: 600;
+  font-size: 14px;
+}
+
 /* Botones principales de filtros (Agregar y Favoritos) */
 #add-filter,
 #favorite-filters-open {
@@ -55,6 +68,10 @@
 .search-actions .btn.btn-lg {
   min-width: 150px;
   white-space: nowrap;
+}
+
+.filters-logic-select {
+  width: auto;
 }
 
 /* Tooltips como en formulario de comedores */
@@ -123,4 +140,28 @@ label:has(.field-tooltip) {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+@media (max-width: 991.98px) {
+  #filters-rows .filters-row,
+  #filters-rows .filters-header-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 575.98px) {
+  #filters-rows .filters-row,
+  #filters-rows .filters-header-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .filters-toolbar > * {
+    width: 100%;
+  }
+
+  .search-actions .btn {
+    width: 100%;
+  }
 }

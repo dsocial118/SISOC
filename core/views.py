@@ -5,7 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db import IntegrityError
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods
 
 from core.models import (
@@ -164,6 +165,7 @@ def _filtros_favoritos_post(request):
     return JsonResponse(response_data, status=status_code)
 
 
+@ensure_csrf_cookie
 @login_required
 @require_http_methods(["GET", "POST"])
 def filtros_favoritos(request):
@@ -178,43 +180,49 @@ def filtros_favoritos(request):
 @require_http_methods(["GET", "DELETE"])
 def detalle_filtro_favorito(request, pk):
     """Devuelve o elimina un filtro favorito."""
-    favorito = get_object_or_404(FiltroFavorito, pk=pk, usuario=request.user)
+    favorito = FiltroFavorito.objects.filter(pk=pk, usuario=request.user).first()
+    response_data = None
+    status_code = 200
 
-    if request.method == "DELETE":
+    if favorito is None:
+        response_data = {"error": "Filtro favorito no encontrado."}
+        status_code = 404
+    elif request.method == "DELETE":
         seccion = favorito.seccion
         favorito.delete()
         cache.delete(clave_cache_filtros_favoritos(request.user.id, seccion))
-        return JsonResponse({"exito": True})
+        response_data = {"exito": True}
+    else:
+        seccion = str(request.GET.get("seccion") or favorito.seccion).strip()
+        if seccion != favorito.seccion:
+            response_data = {"error": "Seccion invalida."}
+            status_code = 400
+        else:
+            configuracion = obtener_configuracion_seccion(seccion)
+            if configuracion is None:
+                response_data = {"error": "Seccion invalida."}
+                status_code = 400
+            else:
+                carga = normalizar_carga(favorito.filtros)
+                if carga is None:
+                    response_data = {"error": "Filtros invalidos."}
+                    status_code = 400
+                else:
+                    items_obsoletos = obtener_items_obsoletos(carga, configuracion)
+                    if items_obsoletos:
+                        response_data = {
+                            "error": "El filtro contiene parametros obsoletos.",
+                            "items_obsoletos": items_obsoletos,
+                        }
+                        status_code = 409
+                    else:
+                        response_data = {
+                            "id": favorito.id,
+                            "nombre": favorito.nombre,
+                            "filtros": carga,
+                        }
 
-    seccion = str(request.GET.get("seccion") or favorito.seccion).strip()
-    if seccion != favorito.seccion:
-        return JsonResponse({"error": "Seccion invalida."}, status=400)
-
-    configuracion = obtener_configuracion_seccion(favorito.seccion)
-    if configuracion is None:
-        return JsonResponse({"error": "Seccion invalida."}, status=400)
-
-    carga = normalizar_carga(favorito.filtros)
-    if carga is None:
-        return JsonResponse({"error": "Filtros invalidos."}, status=400)
-
-    items_obsoletos = obtener_items_obsoletos(carga, configuracion)
-    if items_obsoletos:
-        return JsonResponse(
-            {
-                "error": "El filtro contiene parametros obsoletos.",
-                "items_obsoletos": items_obsoletos,
-            },
-            status=409,
-        )
-
-    return JsonResponse(
-        {
-            "id": favorito.id,
-            "nombre": favorito.nombre,
-            "filtros": carga,
-        }
-    )
+    return JsonResponse(response_data, status=status_code)
 
 
 @login_required

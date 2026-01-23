@@ -66,6 +66,17 @@ def _permite_no_corresponde_fecha_vencimiento(admision):
     return nombre_convenio == "personeria juridica eclesiastica"
 
 
+def _armar_domicilio(calle, numero, default="Sin definir"):
+    partes = []
+    for valor in (calle, numero):
+        if valor is None:
+            continue
+        texto = str(valor).strip()
+        if texto:
+            partes.append(texto)
+    return " ".join(partes) if partes else default
+
+
 class MontoDecimalField(forms.DecimalField):
     widget = forms.TextInput
 
@@ -156,6 +167,8 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
         campos_pago_opcionales = {f"resolucion_de_pago_{i}" for i in range(1, 7)}
         campos_pago_opcionales.update({f"monto_{i}" for i in range(1, 7)})
         campos_pago_opcionales.add("if_relevamiento")
+        campos_pago_opcionales.add("validacion_registro_nacional")
+        campos_pago_opcionales.add("validacion_registro_nacional")
 
         for name, field in self.fields.items():
             if name in campos_pago_opcionales:
@@ -180,7 +193,11 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     self.fields[f"monto_{i}"].required = True
 
         for name, field in self.fields.items():
-            if name.startswith("solicitudes_") or name.startswith("aprobadas_"):
+            if (
+                name.startswith("solicitudes_")
+                or name.startswith("aprobadas_")
+                or name.startswith("aprobadas_ultimo_convenio_")
+            ):
                 field.label = False
                 field.widget.attrs["aria-label"] = ""
                 field.widget.attrs["placeholder"] = ""
@@ -188,18 +205,26 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                     field.widget.attrs.get("class", "")
                     + " form-control form-control-sm text-center"
                 ).strip()
+        if not admision or admision.tipo != "renovacion":
+            for name in list(self.fields):
+                if name.startswith("aprobadas_ultimo_convenio_"):
+                    self.fields.pop(name)
+        elif self.require_full:
+            for name, field in self.fields.items():
+                if name.startswith("aprobadas_ultimo_convenio_"):
+                    field.required = True
 
         if admision:
             comedor = admision.comedor
             organizacion = comedor.organizacion if comedor else None
 
             self.fields["expediente_nro"].initial = admision.num_expediente
-            calle = getattr(comedor, "calle", "")
-            numero = getattr(comedor, "numero", "")
+            calle = getattr(comedor, "calle", None)
+            numero = getattr(comedor, "numero", None)
             referente = getattr(comedor, "referente", None)
 
             self.fields["nombre_espacio"].initial = comedor.nombre
-            self.fields["domicilio_espacio"].initial = f"{calle} {numero}".strip()
+            self.fields["domicilio_espacio"].initial = _armar_domicilio(calle, numero)
             self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
             self.fields["localidad_espacio"].initial = getattr(comedor, "localidad", "")
             self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
@@ -270,6 +295,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
+        fecha_vencimiento = cleaned_data.get("fecha_vencimiento_mandatos")
 
         if no_corresponde and not self.permite_no_corresponde_fecha_vencimiento:
             self.add_error(
@@ -277,6 +303,17 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                 "No corresponde para este tipo de convenio.",
             )
             return cleaned_data
+
+        if (
+            self.require_full
+            and self.permite_no_corresponde_fecha_vencimiento
+            and not fecha_vencimiento
+            and not no_corresponde
+        ):
+            self.add_error(
+                "fecha_vencimiento_mandatos",
+                'Debe informar una fecha o marcar "No corresponde".',
+            )
 
         if no_corresponde:
             cleaned_data["fecha_vencimiento_mandatos"] = None
@@ -360,22 +397,34 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                     self.fields[f"monto_{i}"].required = True
 
         for name, field in self.fields.items():
-            if name.startswith("solicitudes_") or name.startswith("aprobadas_"):
+            if (
+                name.startswith("solicitudes_")
+                or name.startswith("aprobadas_")
+                or name.startswith("aprobadas_ultimo_convenio_")
+            ):
                 field.label = False
                 field.widget.attrs["aria-label"] = ""
                 field.widget.attrs["placeholder"] = ""
+        if not admision or admision.tipo != "renovacion":
+            for name in list(self.fields):
+                if name.startswith("aprobadas_ultimo_convenio_"):
+                    self.fields.pop(name)
+        elif self.require_full:
+            for name, field in self.fields.items():
+                if name.startswith("aprobadas_ultimo_convenio_"):
+                    field.required = True
 
         if admision:
             comedor = admision.comedor
             organizacion = comedor.organizacion if comedor else None
 
             self.fields["expediente_nro"].initial = admision.num_expediente
-            calle = getattr(comedor, "calle", "")
-            numero = getattr(comedor, "numero", "")
+            calle = getattr(comedor, "calle", None)
+            numero = getattr(comedor, "numero", None)
             referente = getattr(comedor, "referente", None)
 
             self.fields["nombre_espacio"].initial = comedor.nombre
-            self.fields["domicilio_espacio"].initial = f"{calle} {numero}".strip()
+            self.fields["domicilio_espacio"].initial = _armar_domicilio(calle, numero)
             self.fields["barrio_espacio"].initial = getattr(comedor, "barrio", "")
             self.fields["localidad_espacio"].initial = getattr(comedor, "localidad", "")
             self.fields["partido_espacio"].initial = getattr(comedor, "partido", "")
@@ -446,6 +495,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
+        fecha_vencimiento = cleaned_data.get("fecha_vencimiento_mandatos")
 
         if no_corresponde and not self.permite_no_corresponde_fecha_vencimiento:
             self.add_error(
@@ -453,6 +503,17 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                 "No corresponde para este tipo de convenio.",
             )
             return cleaned_data
+
+        if (
+            self.require_full
+            and self.permite_no_corresponde_fecha_vencimiento
+            and not fecha_vencimiento
+            and not no_corresponde
+        ):
+            self.add_error(
+                "fecha_vencimiento_mandatos",
+                'Debe informar una fecha o marcar "No corresponde".',
+            )
 
         if no_corresponde:
             cleaned_data["fecha_vencimiento_mandatos"] = None
