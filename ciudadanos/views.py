@@ -227,9 +227,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             resumen = pas_data.get("resumen")
             return {"pas_resumen": resumen}
         except Exception:
-            logger.exception(
-                "Error loading PA context for ciudadano %s", ciudadano.pk
-            )
+            logger.exception("Error loading PA context for ciudadano %s", ciudadano.pk)
             return {"pas_resumen": None}
 
     def get_prestacion_alimentar_context(self, ciudadano):
@@ -239,7 +237,8 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
             return {"pas_programas": data.get("programas", [])}
         except Exception:
             logger.exception(
-                "Error loading Prestación Alimentar context for ciudadano %s", ciudadano.pk
+                "Error loading Prestación Alimentar context for ciudadano %s",
+                ciudadano.pk,
             )
             return {"pas_programas": []}
 

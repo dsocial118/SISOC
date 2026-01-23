@@ -11,7 +11,7 @@ class PasService:
     def obtener_datos_pas(ciudadano_id):
         """
         Fetch PA data for a citizen from DW_sisoc.vw_pas_ciudadanos_resumen.
-        
+
         Returns dict with:
         - resumen: dict with PA summary data
         """
@@ -48,5 +48,7 @@ class PasService:
                     }
                 return {"resumen": None}
         except Exception as e:
-            logger.exception("Error fetching PA data for ciudadano %s: %s", ciudadano_id, e)
+            logger.exception(
+                "Error fetching PA data for ciudadano %s: %s", ciudadano_id, e
+            )
             return {"resumen": None}
