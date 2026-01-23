@@ -142,7 +142,7 @@
         {% endif %}
     {% endwith %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual %}menu-open{% endif %}">
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
             <p>
@@ -354,7 +354,7 @@
                 </li>
             {% endif %}
             <!-- CELIAQUÍA -->
-            {% if request.user|has_group:"TecnicoCeliaquia" or request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"ProvinciaCeliaquia" %}
+            {% if request.user|has_group:"TecnicoCeliaquia" or request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"ProvinciaCeliaquia" or request.user.is_superuser %}
                 <li class="nav-item">
                     <a href="#" class="nav-link nav-dot ms-2">
                         <p>
@@ -374,6 +374,14 @@
                                 <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
                                     <i class="nav-icon fas fa-chart-bar"></i>
                                     <p>Dashboard Cupos</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
+                            <li class="nav-item">
+                                <a href="{% url 'reporter_provincias' %}" class="nav-link ms-2">
+                                    <i class="nav-icon fas fa-chart-pie"></i>
+                                    <p>Reporte</p>
                                 </a>
                             </li>
                         {% endif %}
