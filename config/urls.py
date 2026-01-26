@@ -32,7 +32,13 @@ urlpatterns = [
     path("", include("rendicioncuentasfinal.urls")),
     path("", include("relevamientos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
-    path("reporter-provincias/", group_required(["CoordinadorCeliaquia", "TecnicoCeliaquia"])(ReporterProvinciasView.as_view()), name="reporter_provincias"),
+    path(
+        "reporter-provincias/",
+        group_required(["CoordinadorCeliaquia", "TecnicoCeliaquia"])(
+            ReporterProvinciasView.as_view()
+        ),
+        name="reporter_provincias",
+    ),
     path("celiaquia/", include("celiaquia.urls")),
     # API URLs
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),

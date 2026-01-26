@@ -1,12 +1,14 @@
-"""
-Tests para validaciones de edad en celiaquía.
+"""Tests para validaciones de edad en celiaquía.
 Verifica que se bloqueen:
 1. Responsables menores de 18 años
 2. Beneficiarios menores sin responsable
 """
+
+from datetime import date
+
 import pytest
-from datetime import date, timedelta
 from django.core.exceptions import ValidationError
+
 from celiaquia.services.validacion_edad_service import ValidacionEdadService
 
 
@@ -44,10 +46,10 @@ class TestValidacionEdadService:
         """Responsable menor de 18 años es bloqueado."""
         hoy = date.today()
         hace_15_anos = hoy.replace(year=hoy.year - 15)
-        
+
         with pytest.raises(ValidationError) as exc_info:
             ValidacionEdadService.validar_responsable_mayor_edad(hace_15_anos)
-        
+
         assert "El responsable no puede ser menor de 18 años" in str(exc_info.value)
 
     def test_validar_responsable_exactamente_18_ok(self):
@@ -76,12 +78,12 @@ class TestValidacionEdadService:
         """Beneficiario menor sin responsable es bloqueado."""
         hoy = date.today()
         hace_10_anos = hoy.replace(year=hoy.year - 10)
-        
+
         with pytest.raises(ValidationError) as exc_info:
             ValidacionEdadService.validar_beneficiario_menor_con_responsable(
                 hace_10_anos, tiene_responsable=False
             )
-        
+
         assert "El beneficiario menor de 18 años debe tener un responsable" in str(
             exc_info.value
         )
@@ -117,7 +119,7 @@ class TestValidacionEdadService:
         hoy = date.today()
         responsable_fecha = hoy.replace(year=hoy.year - 40)
         beneficiario_fecha = hoy.replace(year=hoy.year - 10)
-        
+
         result = ValidacionEdadService.validar_relacion_responsable_beneficiario(
             responsable_fecha, beneficiario_fecha
         )
@@ -128,19 +130,19 @@ class TestValidacionEdadService:
         hoy = date.today()
         responsable_fecha = hoy.replace(year=hoy.year - 10)
         beneficiario_fecha = hoy.replace(year=hoy.year - 20)
-        
+
         with pytest.raises(ValidationError) as exc_info:
             ValidacionEdadService.validar_relacion_responsable_beneficiario(
                 responsable_fecha, beneficiario_fecha
             )
-        
+
         assert "no puede ser más joven" in str(exc_info.value)
 
     def test_validar_relacion_misma_edad_ok(self):
         """Responsable y beneficiario con la misma edad es válido."""
         hoy = date.today()
         fecha = hoy.replace(year=hoy.year - 20)
-        
+
         result = ValidacionEdadService.validar_relacion_responsable_beneficiario(
             fecha, fecha
         )
@@ -150,12 +152,12 @@ class TestValidacionEdadService:
         """Si faltan fechas, no se valida."""
         hoy = date.today()
         fecha = hoy.replace(year=hoy.year - 20)
-        
+
         result = ValidacionEdadService.validar_relacion_responsable_beneficiario(
             None, fecha
         )
         assert result is True
-        
+
         result = ValidacionEdadService.validar_relacion_responsable_beneficiario(
             fecha, None
         )

@@ -143,6 +143,7 @@ class EditarLegajoView(View):
                 if not fecha_str:
                     raise ValidationError("Fecha de nacimiento es obligatoria.")
                 from datetime import datetime
+
                 try:
                     ciudadano.fecha_nacimiento = datetime.strptime(
                         fecha_str, "%Y-%m-%d"
@@ -201,6 +202,7 @@ class EditarLegajoView(View):
                 if not municipio_id or not localidad_id:
                     raise ValidationError("Municipio y Localidad son obligatorios.")
                 from core.models import Municipio, Localidad
+
                 try:
                     ciudadano.municipio = Municipio.objects.get(pk=municipio_id)
                     ciudadano.localidad = Localidad.objects.get(pk=localidad_id)

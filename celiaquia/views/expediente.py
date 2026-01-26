@@ -489,7 +489,10 @@ class ExpedienteDetailView(DetailView):
             )
             hijos_list = []
             # Buscar hijos si es responsable O si el rol es beneficiario_y_responsable
-            if legajo.es_responsable or legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE:
+            if (
+                legajo.es_responsable
+                or legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            ):
                 hijos_list = FamiliaService.obtener_hijos_a_cargo(
                     legajo.ciudadano.id, expediente
                 )
@@ -511,7 +514,10 @@ class ExpedienteDetailView(DetailView):
                 )
             )
 
-            if legajo.es_responsable or legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE:
+            if (
+                legajo.es_responsable
+                or legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            ):
                 legajo.hijos_a_cargo = hijos_list
                 legajo.responsable_id = None
                 responsables_legajos.append(legajo)
@@ -1256,16 +1262,39 @@ class ReprocesarRegistrosErroneosView(View):
         for registro in registros:
             try:
                 datos = registro.datos_raw.copy()
-                campos_obligatorios = ['apellido', 'nombre', 'documento', 'fecha_nacimiento', 'sexo', 'nacionalidad', 'telefono', 'email', 'calle', 'altura', 'municipio', 'localidad']
+                campos_obligatorios = [
+                    "apellido",
+                    "nombre",
+                    "documento",
+                    "fecha_nacimiento",
+                    "sexo",
+                    "nacionalidad",
+                    "telefono",
+                    "email",
+                    "calle",
+                    "altura",
+                    "municipio",
+                    "localidad",
+                ]
                 campos_faltantes = [c for c in campos_obligatorios if not datos.get(c)]
                 if campos_faltantes:
-                    raise ValidationError(f"Faltan campos obligatorios: {', '.join(campos_faltantes)}")
-                telefono = str(datos.get('telefono', '')).strip()
+                    raise ValidationError(
+                        f"Faltan campos obligatorios: {', '.join(campos_faltantes)}"
+                    )
+                telefono = str(datos.get("telefono", "")).strip()
                 if len(telefono) < 8:
                     raise ValidationError("Telefono debe tener al menos 8 digitos")
-                tiene_responsable = any([datos.get('apellido_responsable'), datos.get('nombre_responsable'), datos.get('documento_responsable')])
-                if tiene_responsable and not datos.get('email_responsable'):
-                    raise ValidationError("Email del responsable es obligatorio si hay datos de responsable")
+                tiene_responsable = any(
+                    [
+                        datos.get("apellido_responsable"),
+                        datos.get("nombre_responsable"),
+                        datos.get("documento_responsable"),
+                    ]
+                )
+                if tiene_responsable and not datos.get("email_responsable"):
+                    raise ValidationError(
+                        "Email del responsable es obligatorio si hay datos de responsable"
+                    )
                 # Agregar provincia del usuario
                 datos["provincia"] = provincia_id
 
@@ -1449,7 +1478,9 @@ class ReprocesarRegistrosErroneosView(View):
                     registro.procesado = True
                     registro.procesado_en = timezone.now()
                     registro.mensaje_error = ""
-                    registro.save(update_fields=["procesado", "procesado_en", "mensaje_error"])
+                    registro.save(
+                        update_fields=["procesado", "procesado_en", "mensaje_error"]
+                    )
                 else:
                     errores += 1
                     errores_detalle.append(
@@ -1503,11 +1534,11 @@ class ReprocesarRegistrosErroneosView(View):
                             "estado_relacion": GrupoFamiliar.ESTADO_BUENO,
                             "conviven": True,
                             "cuidador_principal": True,
-                        }
+                        },
                     )
                     if created:
                         relaciones_creadas += 1
-                
+
                 logger.info(
                     "Creadas %s relaciones familiares al reprocesar",
                     relaciones_creadas,
