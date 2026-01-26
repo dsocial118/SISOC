@@ -84,9 +84,12 @@ class HistorialComentariosAdmin(admin.ModelAdmin):
     list_filter = ("tipo_comentario", "fecha_creacion", "usuario")
     search_fields = ("legajo__ciudadano__documento", "comentario")
     readonly_fields = ("fecha_creacion",)
-    
+
     def comentario_truncado(self, obj):
-        return obj.comentario[:50] + "..." if len(obj.comentario) > 50 else obj.comentario
+        return (
+            obj.comentario[:50] + "..." if len(obj.comentario) > 50 else obj.comentario
+        )
+
     comentario_truncado.short_description = "Comentario"
 
 

@@ -278,14 +278,13 @@ class ExpedienteCiudadano(models.Model):
     def _recompute_archivos_ok(self):
         """Calcula archivos_ok basado en documentos requeridos."""
         # Usar nuevo sistema si está disponible
-        if hasattr(self, 'documentos'):
+        if hasattr(self, "documentos"):
             try:
                 tipos_requeridos = TipoDocumento.objects.filter(
                     requerido=True, activo=True
                 ).count()
                 documentos_cargados = self.documentos.filter(
-                    tipo_documento__requerido=True,
-                    tipo_documento__activo=True
+                    tipo_documento__requerido=True, tipo_documento__activo=True
                 ).count()
                 self.archivos_ok = documentos_cargados >= tipos_requeridos
             except:
@@ -312,67 +311,65 @@ class ExpedienteCiudadano(models.Model):
         if not self.archivo3:
             faltan.append("archivo3")
         return faltan
-    
-    def agregar_comentario(self, tipo_comentario, comentario, usuario=None, archivo_adjunto=None):
+
+    def agregar_comentario(
+        self, tipo_comentario, comentario, usuario=None, archivo_adjunto=None
+    ):
         """Helper para agregar comentarios al historial."""
         from .services.comentarios_service import ComentariosService
+
         return ComentariosService.agregar_comentario(
             legajo=self,
             tipo_comentario=tipo_comentario,
             comentario=comentario,
             usuario=usuario,
-            archivo_adjunto=archivo_adjunto
+            archivo_adjunto=archivo_adjunto,
         )
-    
+
     @property
     def ultimo_comentario(self):
         """Obtiene el último comentario del legajo."""
         return self.historial_comentarios.first()
-    
+
     @property
     def comentarios_subsanacion(self):
         """Obtiene comentarios de subsanación."""
         return self.historial_comentarios.filter(
-            tipo_comentario__in=['SUBSANACION_MOTIVO', 'SUBSANACION_RESPUESTA']
+            tipo_comentario__in=["SUBSANACION_MOTIVO", "SUBSANACION_RESPUESTA"]
         )
-    
+
     def tiene_documento(self, tipo_documento_nombre):
         """Verifica si tiene un documento específico."""
         return self.documentos.filter(
             tipo_documento__nombre=tipo_documento_nombre
         ).exists()
-    
+
     def obtener_documento(self, tipo_documento_nombre):
         """Obtiene un documento específico."""
         try:
-            return self.documentos.get(
-                tipo_documento__nombre=tipo_documento_nombre
-            )
+            return self.documentos.get(tipo_documento__nombre=tipo_documento_nombre)
         except DocumentoLegajo.DoesNotExist:
             return None
-    
+
     @property
     def documentos_completos(self):
         """Verifica si tiene todos los documentos requeridos."""
         from .models import TipoDocumento
+
         tipos_requeridos = TipoDocumento.objects.filter(
             requerido=True, activo=True
         ).count()
         documentos_cargados = self.documentos.filter(
-            tipo_documento__requerido=True,
-            tipo_documento__activo=True
+            tipo_documento__requerido=True, tipo_documento__activo=True
         ).count()
         return tipos_requeridos == documentos_cargados
-    
+
     def documentos_faltantes(self):
         """Lista los tipos de documentos faltantes."""
         from .models import TipoDocumento
-        tipos_requeridos = TipoDocumento.objects.filter(
-            requerido=True, activo=True
-        )
-        tipos_cargados = self.documentos.values_list(
-            'tipo_documento_id', flat=True
-        )
+
+        tipos_requeridos = TipoDocumento.objects.filter(requerido=True, activo=True)
+        tipos_cargados = self.documentos.values_list("tipo_documento_id", flat=True)
         return tipos_requeridos.exclude(id__in=tipos_cargados)
 
 
@@ -384,7 +381,9 @@ class AsignacionTecnico(models.Model):
         User, on_delete=models.PROTECT, related_name="expedientes_asignados"
     )
     fecha_asignacion = models.DateTimeField(auto_now_add=True)
-    activa = models.BooleanField(default=True, help_text="Indica si la asignación está activa")
+    activa = models.BooleanField(
+        default=True, help_text="Indica si la asignación está activa"
+    )
 
     class Meta:
         verbose_name = "Asignación de Técnico"
@@ -392,7 +391,9 @@ class AsignacionTecnico(models.Model):
         unique_together = ("expediente", "tecnico")
         indexes = [
             models.Index(fields=["tecnico", "activa"], name="asig_tecnico_activa_idx"),
-            models.Index(fields=["expediente", "activa"], name="asig_expediente_activa_idx"),
+            models.Index(
+                fields=["expediente", "activa"], name="asig_expediente_activa_idx"
+            ),
         ]
 
     def __str__(self):
@@ -840,34 +841,30 @@ class RegistroErroneoReprocesado(models.Model):
 
 class TipoDocumento(models.Model):
     """Tipos de documentos requeridos para los legajos."""
-    
+
     nombre = models.CharField(max_length=100, unique=True)
     descripcion = models.TextField(blank=True)
     requerido = models.BooleanField(default=True)
     orden = models.PositiveIntegerField(default=0, help_text="Orden de presentación")
     activo = models.BooleanField(default=True)
-    
+
     class Meta:
         verbose_name = "Tipo de Documento"
         verbose_name_plural = "Tipos de Documento"
-        ordering = ['orden', 'nombre']
-    
+        ordering = ["orden", "nombre"]
+
     def __str__(self):
         return self.nombre
 
 
 class DocumentoLegajo(models.Model):
     """Documentos específicos asociados a un legajo."""
-    
+
     legajo = models.ForeignKey(
-        ExpedienteCiudadano,
-        on_delete=models.CASCADE,
-        related_name="documentos"
+        ExpedienteCiudadano, on_delete=models.CASCADE, related_name="documentos"
     )
     tipo_documento = models.ForeignKey(
-        TipoDocumento,
-        on_delete=models.PROTECT,
-        related_name="documentos_legajo"
+        TipoDocumento, on_delete=models.PROTECT, related_name="documentos_legajo"
     )
     archivo = models.FileField(upload_to="legajos/documentos/")
     fecha_carga = models.DateTimeField(auto_now_add=True)
@@ -876,27 +873,27 @@ class DocumentoLegajo(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="documentos_cargados"
+        related_name="documentos_cargados",
     )
     observaciones = models.TextField(blank=True)
-    
+
     class Meta:
         verbose_name = "Documento de Legajo"
         verbose_name_plural = "Documentos de Legajo"
-        unique_together = ('legajo', 'tipo_documento')
-        ordering = ['-fecha_carga']
+        unique_together = ("legajo", "tipo_documento")
+        ordering = ["-fecha_carga"]
         indexes = [
-            models.Index(fields=['legajo', 'tipo_documento']),
-            models.Index(fields=['fecha_carga']),
+            models.Index(fields=["legajo", "tipo_documento"]),
+            models.Index(fields=["fecha_carga"]),
         ]
-    
+
     def __str__(self):
         return f"{self.legajo} - {self.tipo_documento.nombre}"
 
 
 class HistorialComentarios(models.Model):
     """Historial completo de comentarios y subsanaciones por legajo."""
-    
+
     TIPO_VALIDACION_TECNICA = "VALIDACION_TECNICA"
     TIPO_SUBSANACION_MOTIVO = "SUBSANACION_MOTIVO"
     TIPO_SUBSANACION_RESPUESTA = "SUBSANACION_RESPUESTA"
@@ -904,7 +901,7 @@ class HistorialComentarios(models.Model):
     TIPO_OBSERVACION_GENERAL = "OBSERVACION_GENERAL"
     TIPO_CRUCE_SINTYS = "CRUCE_SINTYS"
     TIPO_PAGO_OBSERVACION = "PAGO_OBSERVACION"
-    
+
     TIPO_COMENTARIO_CHOICES = [
         (TIPO_VALIDACION_TECNICA, "Validación Técnica"),
         (TIPO_SUBSANACION_MOTIVO, "Motivo de Subsanación"),
@@ -914,40 +911,34 @@ class HistorialComentarios(models.Model):
         (TIPO_CRUCE_SINTYS, "Cruce SINTYS"),
         (TIPO_PAGO_OBSERVACION, "Observación de Pago"),
     ]
-    
+
     legajo = models.ForeignKey(
-        ExpedienteCiudadano, 
-        on_delete=models.CASCADE, 
-        related_name="historial_comentarios"
+        ExpedienteCiudadano,
+        on_delete=models.CASCADE,
+        related_name="historial_comentarios",
     )
     tipo_comentario = models.CharField(
-        max_length=30, 
-        choices=TIPO_COMENTARIO_CHOICES,
-        db_index=True
+        max_length=30, choices=TIPO_COMENTARIO_CHOICES, db_index=True
     )
     comentario = models.TextField()
     usuario = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        related_name="comentarios_realizados"
+        related_name="comentarios_realizados",
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    
+
     # Campos opcionales para contexto
-    archivo_adjunto = models.FileField(
-        upload_to="comentarios/", 
-        null=True, 
-        blank=True
-    )
+    archivo_adjunto = models.FileField(upload_to="comentarios/", null=True, blank=True)
     estado_relacionado = models.CharField(
-        max_length=50, 
-        null=True, 
+        max_length=50,
+        null=True,
         blank=True,
-        help_text="Estado del legajo al momento del comentario"
+        help_text="Estado del legajo al momento del comentario",
     )
-    
+
     class Meta:
         verbose_name = "Historial de Comentarios"
         verbose_name_plural = "Historial de Comentarios"
@@ -957,6 +948,6 @@ class HistorialComentarios(models.Model):
             models.Index(fields=["tipo_comentario", "-fecha_creacion"]),
             models.Index(fields=["usuario", "-fecha_creacion"]),
         ]
-    
+
     def __str__(self):
         return f"{self.legajo} - {self.get_tipo_comentario_display()} ({self.fecha_creacion:%Y-%m-%d %H:%M})"

@@ -49,7 +49,6 @@ from celiaquia.views.cupo import (
     CupoReactivarLegajoView,
     CupoSuspenderLegajoView,
 )
-from celiaquia.views.reporter_provincias import ReporterProvinciasView
 from celiaquia.views.padron_final_export import ExpedientePadronFinalExportView
 
 urlpatterns = [

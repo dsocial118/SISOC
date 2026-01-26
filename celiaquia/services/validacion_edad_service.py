@@ -4,6 +4,7 @@ Implementa los requerimientos:
 - Responsable menor de 18 años: BLOQUEO
 - Beneficiario menor sin responsable: BLOQUEO
 """
+
 from datetime import date
 from django.core.exceptions import ValidationError
 import logging
@@ -31,13 +32,13 @@ class ValidacionEdadService:
     def validar_responsable_mayor_edad(fecha_nacimiento_responsable):
         """
         Requerimiento 1: Responsable menor de 18 años (BLOQUEO)
-        
+
         Si una persona tiene el rol de Responsable y su edad es menor a 18 años,
         se rechaza la fila y se marca como error.
-        
+
         Args:
             fecha_nacimiento_responsable: fecha de nacimiento del responsable
-            
+
         Raises:
             ValidationError: si el responsable es menor de 18 años
         """
@@ -45,15 +46,15 @@ class ValidacionEdadService:
             return True
 
         edad = ValidacionEdadService.calcular_edad(fecha_nacimiento_responsable)
-        
+
         if edad is None:
             return True
-        
+
         if edad < 18:
             raise ValidationError(
                 f"El responsable no puede ser menor de 18 años (edad: {edad})"
             )
-        
+
         return True
 
     @staticmethod
@@ -62,14 +63,14 @@ class ValidacionEdadService:
     ):
         """
         Requerimiento 2: Beneficiario menor sin responsable (BLOQUEO)
-        
+
         Si el beneficiario es menor de 18 años, debe existir un responsable asociado.
         Si no hay responsable, se rechaza la fila.
-        
+
         Args:
             fecha_nacimiento_beneficiario: fecha de nacimiento del beneficiario
             tiene_responsable: bool indicando si hay responsable asociado
-            
+
         Raises:
             ValidationError: si el beneficiario es menor y no tiene responsable
         """
@@ -77,15 +78,15 @@ class ValidacionEdadService:
             return True
 
         edad = ValidacionEdadService.calcular_edad(fecha_nacimiento_beneficiario)
-        
+
         if edad is None:
             return True
-        
+
         if edad < 18 and not tiene_responsable:
             raise ValidationError(
                 "El beneficiario menor de 18 años debe tener un responsable"
             )
-        
+
         return True
 
     @staticmethod
@@ -94,11 +95,11 @@ class ValidacionEdadService:
     ):
         """
         Validación adicional: responsable no puede ser más joven que beneficiario.
-        
+
         Args:
             fecha_nacimiento_responsable: fecha de nacimiento del responsable
             fecha_nacimiento_beneficiario: fecha de nacimiento del beneficiario
-            
+
         Raises:
             ValidationError: si el responsable es más joven que el beneficiario
         """
