@@ -64,9 +64,10 @@ HEADER_MAP = {
     # Expedientes
     "expediente": "expediente_pago",
     "expediente de pago": "expediente_pago",
-    "expediente del convenio": "resolucion_pago",
-    "resolucion": "resolucion_pago",
-    "resolución de pago": "resolucion_pago",
+    # El modelo ahora usa 'expediente_convenio' en lugar de 'resolucion_pago'
+    "expediente del convenio": "expediente_convenio",
+    "resolucion": "expediente_convenio",
+    "resolución de pago": "expediente_convenio",
     # Comedor identificación (por nombre o por id)
     "comedor": "anexo",
     "id": "comedor",
@@ -85,12 +86,23 @@ HEADER_MAP = {
     "observaciones": "observaciones",
     "if cantidad de prestaciones": "if_cantidad_de_prestaciones",
     "if pagado": "if_pagado",
+    # Prestaciones mensuales
+    "prestaciones mensuales desayuno": "prestaciones_mensuales_desayuno",
+    "prestaciones mensuales almuerzo": "prestaciones_mensuales_almuerzo",
+    "prestaciones mensuales merienda": "prestaciones_mensuales_merienda",
+    "prestaciones mensuales cena": "prestaciones_mensuales_cena",
+    # Montos mensuales
+    "monto mensual desayuno": "monto_mensual_desayuno",
+    "monto mensual almuerzo": "monto_mensual_almuerzo",
+    "monto mensual merienda": "monto_mensual_merienda",
+    "monto mensual cena": "monto_mensual_cena",
 }
 
 # Etiquetas amigables para usuarios no técnicos
 FIELD_LABELS = {
     "expediente_pago": "Expediente de pago",
-    "resolucion_pago": "Resolución de pago",
+    # El modelo cambió: usar 'Expediente del convenio'
+    "expediente_convenio": "Expediente del convenio",
     "comedor": "Comedor",
     "anexo": "Comedor (anexo)",
     "monto": "Monto",
@@ -100,6 +112,15 @@ FIELD_LABELS = {
     "observaciones": "Observaciones",
     "if_cantidad_de_prestaciones": "IF cantidad de prestaciones",
     "if_pagado": "IF pagado",
+    # Nuevos campos mensuales
+    "prestaciones_mensuales_desayuno": "Prestaciones mensuales desayuno",
+    "prestaciones_mensuales_almuerzo": "Prestaciones mensuales almuerzo",
+    "prestaciones_mensuales_merienda": "Prestaciones mensuales merienda",
+    "prestaciones_mensuales_cena": "Prestaciones mensuales cena",
+    "monto_mensual_desayuno": "Monto mensual desayuno",
+    "monto_mensual_almuerzo": "Monto mensual almuerzo",
+    "monto_mensual_merienda": "Monto mensual merienda",
+    "monto_mensual_cena": "Monto mensual cena",
 }
 
 
@@ -281,6 +302,9 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                         if field == "monto":
                             parsed = self.parse_decimal(val)
                             kwargs[field] = parsed
+                        elif field.startswith("monto_mensual_"):
+                            parsed = self.parse_decimal(val)
+                            kwargs[field] = parsed
                         elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
                             parsed = self.parse_date(val)
                             kwargs[field] = parsed
@@ -288,6 +312,12 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                             resolved_comedor = self.resolve_comedor(val)
                             if resolved_comedor is not None:
                                 comedor_obj = resolved_comedor
+                        elif field.startswith("prestaciones_mensuales_"):
+                            s = val.replace(".", "").replace(" ", "")
+                            try:
+                                kwargs[field] = int(s) if s != "" else None
+                            except Exception:
+                                kwargs[field] = None
                         else:
                             kwargs[field] = val or None
 
@@ -631,6 +661,15 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                                 kwargs[field] = Decimal(s)
                             except Exception:
                                 kwargs[field] = None
+                        elif field.startswith("monto_mensual_"):
+                            # Parseo de moneda para montos mensuales
+                            s = val.replace("$", "").replace(" ", "")
+                            s = s.replace(".", "")
+                            s = s.replace(",", ".")
+                            try:
+                                kwargs[field] = Decimal(s)
+                            except Exception:
+                                kwargs[field] = None
                         elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
                             # Parseo de fechas (formatos comunes)
                             parsed = None
@@ -652,6 +691,12 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                             )
                             if resolved is not None:
                                 comedor_obj = resolved
+                        elif field.startswith("prestaciones_mensuales_"):
+                            s = val.replace(".", "").replace(" ", "")
+                            try:
+                                kwargs[field] = int(s) if s != "" else None
+                            except Exception:
+                                kwargs[field] = None
                         else:
                             kwargs[field] = val or None
 
