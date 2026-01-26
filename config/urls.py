@@ -8,6 +8,8 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
+from celiaquia.views.reporter_provincias import ReporterProvinciasView
+from core.decorators import group_required
 
 urlpatterns = [
     path("admin/doc/", include("django.contrib.admindocs.urls")),
@@ -30,7 +32,14 @@ urlpatterns = [
     path("", include("rendicioncuentasfinal.urls")),
     path("", include("relevamientos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
-    path("", include("celiaquia.urls")),
+    path(
+        "reporter-provincias/",
+        group_required(["CoordinadorCeliaquia", "TecnicoCeliaquia"])(
+            ReporterProvinciasView.as_view()
+        ),
+        name="reporter_provincias",
+    ),
+    path("celiaquia/", include("celiaquia.urls")),
     # API URLs
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     # Swagger/OpenAPI
