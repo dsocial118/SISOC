@@ -36,7 +36,7 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
         # Configuración para el componente data_table
         context["table_headers"] = [
             {"title": "Número de Expediente"},
-            {"title": "Resolución de Pago"},
+            {"title": "Expediente del Convenio"},
             {"title": "Monto"},
             {"title": "Anexo"},
             {"title": "Número de Orden de Pago"},
@@ -44,11 +44,19 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
             {"title": "Fecha de acreditación"},
             {"title": "Observaciones"},
             {"title": "Fecha de creación"},
+            {"title": "Prestaciones mensuales desayuno"},
+            {"title": "Prestaciones mensuales almuerzo"},
+            {"title": "Prestaciones mensuales merienda"},
+            {"title": "Prestaciones mensuales cena"},
+            {"title": "Monto mensual desayuno"},
+            {"title": "Monto mensual almuerzo"},
+            {"title": "Monto mensual merienda"},
+            {"title": "Monto mensual cena"},
         ]
 
         context["table_fields"] = [
             {"name": "expediente_pago"},
-            {"name": "resolucion_pago"},
+            {"name": "expediente_convenio"},
             {"name": "monto"},
             {"name": "anexo"},
             {"name": "numero_orden_pago"},
@@ -56,6 +64,14 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
             {"name": "fecha_acreditacion"},
             {"name": "observaciones"},
             {"name": "fecha_creacion"},
+            {"name": "prestaciones_mensuales_desayuno"},
+            {"name": "prestaciones_mensuales_almuerzo"},
+            {"name": "prestaciones_mensuales_merienda"},
+            {"name": "prestaciones_mensuales_cena"},
+            {"name": "monto_mensual_desayuno"},
+            {"name": "monto_mensual_almuerzo"},
+            {"name": "monto_mensual_merienda"},
+            {"name": "monto_mensual_cena"},
         ]
 
         context["table_actions"] = [

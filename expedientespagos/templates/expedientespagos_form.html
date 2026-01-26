@@ -28,7 +28,7 @@
                 {% if es_area_legales %}
                     <div class="col-md-6">
                         <div class="form-group">{{ form.expediente_pago|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.resolucion_pago|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.expediente_convenio|as_crispy_field }}</div>
                         <div class="form-group">{{ form.anexo|as_crispy_field }}</div>
                         <div class="form-group">{{ form.if_cantidad_de_prestaciones|as_crispy_field }}</div>
                         <div class="form-group">{{ form.if_pagado|as_crispy_field }}</div>
@@ -39,7 +39,7 @@
                     <div class="col-md-6">
                         <div class="form-group" style="display: none;">
                             {{ form.expediente_pago|as_crispy_field }}
-                            {{ form.resolucion_pago|as_crispy_field }}
+                            {{ form.expediente_convenio|as_crispy_field }}
                             {{ form.anexo|as_crispy_field }}
                             {{ form.if_cantidad_de_prestaciones|as_crispy_field }}
                             {{ form.if_pagado|as_crispy_field }}
@@ -49,6 +49,15 @@
                         <div class="form-group">{{ form.fecha_pago_al_banco|as_crispy_field }}</div>
                         <div class="form-group">{{ form.fecha_acreditacion|as_crispy_field }}</div>
                         <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
+                        <hr/>
+                        <div class="form-group">{{ form.prestaciones_mensuales_desayuno|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.prestaciones_mensuales_almuerzo|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.prestaciones_mensuales_merienda|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.prestaciones_mensuales_cena|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.monto_mensual_desayuno|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.monto_mensual_almuerzo|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.monto_mensual_merienda|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.monto_mensual_cena|as_crispy_field }}</div>
                     </div>
                 {% endif %}
             </div>
