@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    changelog_view,
     detalle_filtro_favorito,
     filtros_favoritos,
     inicio_view,
@@ -11,6 +12,7 @@ from .views import (
 
 urlpatterns = [
     path("inicio/", inicio_view, name="inicio"),
+    path("novedades/", changelog_view, name="changelog"),
     path(
         "ajax/load-municipios/",
         load_municipios,
