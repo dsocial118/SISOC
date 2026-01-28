@@ -245,7 +245,7 @@ def get_current_version():
     Retorna la primera versión encontrada (la más reciente).
     """
     changelog_path = Path(settings.BASE_DIR) / "CHANGELOG.md"
-    
+
     try:
         with open(changelog_path, "r", encoding="utf-8") as file:
             content = file.read()
@@ -255,7 +255,7 @@ def get_current_version():
                 return match.group(1)
     except (FileNotFoundError, IOError) as e:
         logger.error(f"Error al leer CHANGELOG.md: {e}")
-    
+
     return "Desconocida"
 
 
@@ -266,16 +266,16 @@ def fetch_changelog_content():
     """
     # Intentar leer el archivo local primero
     changelog_path = Path(settings.BASE_DIR) / "CHANGELOG.md"
-    
+
     try:
         with open(changelog_path, "r", encoding="utf-8") as file:
             return file.read()
     except (FileNotFoundError, IOError) as e:
         logger.warning(f"No se pudo leer CHANGELOG.md local: {e}")
-    
+
     # Si falla, intentar obtener desde GitHub
     github_url = "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/development/CHANGELOG.md"
-    
+
     try:
         response = requests.get(github_url, timeout=10)
         response.raise_for_status()
@@ -293,39 +293,39 @@ def changelog_view(request):
     """
     cache_key = "changelog_content"
     cache_timeout = 86400  # 24 horas
-    
+
     # Intentar obtener desde cache
     cached_data = cache.get(cache_key)
-    
+
     if cached_data:
         changelog_html = cached_data["html"]
         current_version = cached_data["version"]
     else:
         # Obtener contenido del changelog
         changelog_content = fetch_changelog_content()
-        
+
         if changelog_content:
             # Convertir markdown a HTML
-            md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
+            md = markdown.Markdown(extensions=["extra", "nl2br", "sane_lists"])
             changelog_html = md.convert(changelog_content)
             current_version = get_current_version()
-            
+
             # Guardar en cache
             cache.set(
                 cache_key,
                 {"html": changelog_html, "version": current_version},
-                cache_timeout
+                cache_timeout,
             )
         else:
             changelog_html = None
             current_version = "Desconocida"
-    
+
     context = {
         "changelog_html": changelog_html,
         "current_version": current_version,
         "error": changelog_html is None,
     }
-    
+
     return render(request, "changelog.html", context)
 
 
