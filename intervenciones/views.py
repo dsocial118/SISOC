@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import CreateView, UpdateView, DeleteView, TemplateView
 
@@ -131,6 +132,11 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
                     setattr(form.instance, field, value)
 
         form.instance.save()
+        next_url = self.request.POST.get("next") or self.request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(
+            next_url, allowed_hosts={self.request.get_host()}
+        ):
+            return redirect(next_url)
         return redirect(
             reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]})
         )

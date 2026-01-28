@@ -237,7 +237,7 @@ class AcompanamientoService:
             raise
 
     @staticmethod
-    def obtener_datos_admision(comedor):
+    def obtener_datos_admision(comedor, admision_id=None):
         """Obtener todos los datos relacionados con la admisión de un comedor.
 
         Args:
@@ -247,13 +247,14 @@ class AcompanamientoService:
             dict: Diccionario con datos de admisión, info relevante, anexo, etc.
         """
         try:
-            admision = (
-                Admision.objects.filter(comedor=comedor)
-                .exclude(legales_num_if__isnull=True)
-                .exclude(legales_num_if="")
-                .order_by("-id")
-                .first()
-            )
+            admision_qs = Admision.objects.filter(
+                comedor=comedor,
+                enviado_acompaniamiento=True,
+                activa=True,
+            ).order_by("-id")
+            if admision_id:
+                admision_qs = admision_qs.filter(id=admision_id)
+            admision = admision_qs.first()
 
             info_relevante = None
 
@@ -366,6 +367,7 @@ class AcompanamientoService:
                 queryset=Admision.objects.filter(
                     enviado_acompaniamiento=True, activa=True
                 )
+                .order_by("-id")
                 .select_related(
                     "comedor",
                     "comedor__provincia",
@@ -489,7 +491,7 @@ class AcompanamientoService:
                         ],
                         "actions": [
                             {
-                                "url": f"/acompanamientos/acompanamiento/{comedor.id}/detalle/",
+                                "url": f"/acompanamientos/acompanamiento/{comedor.id}/detalle/?admision_id={admision.id if admision else ''}",
                                 "label": "Ver Acompañamiento",
                                 "type": "primary",
                             }
