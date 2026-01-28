@@ -1,7 +1,14 @@
 from django.views.generic import View
 from django.contrib.auth.models import Group
 from core.mixins import CSVExportMixin
+from core.services.column_preferences import (
+    build_export_columns,
+    build_export_sort_map,
+    resolve_column_state,
+)
+from users.grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from users.services import UsuariosService
+from users.usuarios_column_config import USUARIOS_COLUMNS, USUARIOS_LIST_KEY
 from users.views import AdminRequiredMixin
 
 
@@ -9,16 +16,12 @@ class UserExportView(AdminRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_usuarios.csv"
 
     def get_export_columns(self):
-        return [
-            ("Nombre", "first_name"),
-            ("Apellido", "last_name"),
-            ("Username", "username"),
-            ("Email", "email"),
-            (
-                "Rol",
-                "rol",
-            ),  # Assuming 'rol' is available on the queryset objects/annotations
-        ]
+        column_state = resolve_column_state(
+            self.request,
+            USUARIOS_LIST_KEY,
+            USUARIOS_COLUMNS,
+        )
+        return build_export_columns(USUARIOS_COLUMNS, column_state.active_keys)
 
     def get_queryset(self):
         # Sorting handled by service? Or manually? Service applies standard order.
@@ -31,13 +34,7 @@ class UserExportView(AdminRequiredMixin, CSVExportMixin, View):
 
         if sort_col:
             prefix = "-" if direction == "desc" else ""
-            map_sort = {
-                "first_name": "first_name",
-                "last_name": "last_name",
-                "username": "username",
-                "email": "email",
-                "rol": "rol",  # If annotated
-            }
+            map_sort = build_export_sort_map(USUARIOS_COLUMNS)
             if sort_col in map_sort:
                 queryset = queryset.order_by(f"{prefix}{map_sort[sort_col]}")
 
@@ -52,18 +49,23 @@ class GroupExportView(AdminRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_grupos.csv"
 
     def get_export_columns(self):
-        return [
-            ("Nombre", "name"),
-        ]
+        column_state = resolve_column_state(
+            self.request,
+            GRUPOS_LIST_KEY,
+            GRUPOS_COLUMNS,
+        )
+        return build_export_columns(GRUPOS_COLUMNS, column_state.active_keys)
 
     def get_queryset(self):
         queryset = Group.objects.all()
 
         sort_col = self.request.GET.get("sort")
         direction = self.request.GET.get("direction", "asc")
-        if sort_col == "name":
+        if sort_col:
             prefix = "-" if direction == "desc" else ""
-            queryset = queryset.order_by(f"{prefix}name")
+            map_sort = build_export_sort_map(GRUPOS_COLUMNS)
+            if sort_col in map_sort:
+                queryset = queryset.order_by(f"{prefix}{map_sort[sort_col]}")
 
         return queryset
 
