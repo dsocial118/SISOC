@@ -13,7 +13,7 @@
                href="{% url 'usuario_crear' %}">Agregar</a>
         </div>
     </div>
-    {% include 'components/data_table.html' with headers=table_headers items=users show_actions=True actions=table_actions empty_message='No hay usuarios disponibles.' fields=table_fields %}
+    {% include 'components/data_table.html' with headers=table_headers items=users show_actions=True actions=table_actions empty_message='No hay usuarios disponibles.' fields=table_fields centered_layout=True %}
 {% endblock content %}
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
