@@ -70,6 +70,13 @@
   white-space: nowrap;
 }
 
+.search-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 .filters-logic-select {
   width: auto;
 }
