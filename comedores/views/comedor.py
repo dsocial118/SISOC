@@ -105,6 +105,14 @@ class ComedorListView(LoginRequiredMixin, ListView):
             "comedores_list",
             headers,
             fields,
+            default_keys=[
+                "nombre",
+                "tipo",
+                "ubicacion",
+                "direccion",
+                "referente",
+                "validacion",
+            ],
             required_keys=["nombre"],
         )
         active_columns = columns_context.get("column_active_keys") or [

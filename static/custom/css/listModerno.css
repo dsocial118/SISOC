@@ -165,6 +165,17 @@
   }
 }
 
+.comedor-table-card .card-body {
+  overflow-x: auto;
+}
+
+.comedor-table-card .table-responsive-lg {
+  overflow-x: auto !important;
+  overflow-y: visible;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
 .card-body.table-responsive,
 .card-body > .table-responsive {
   overflow-x: auto;
