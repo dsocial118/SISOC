@@ -7,6 +7,8 @@ from duplas.views import (
     DuplaListView,
     DuplaUpdateView,
 )
+from duplas.views_export import DuplaExportView
+
 
 urlpatterns = [
     path(
@@ -14,6 +16,12 @@ urlpatterns = [
         group_required(["Admin"])(DuplaListView.as_view()),
         name="dupla_list",
     ),
+    path(
+        "equipo-tecnico/exportar/",
+        group_required(["Admin", "Exportar a csv"])(DuplaExportView.as_view()),
+        name="dupla_exportar",
+    ),
+
     path(
         "equipo-tecnico/crear/",
         group_required(["Admin"])(DuplaCreateView.as_view()),

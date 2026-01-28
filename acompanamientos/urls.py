@@ -1,5 +1,7 @@
 from django.urls import path
 from acompanamientos import views
+from acompanamientos.views_export import AcompanamientoExportView
+
 from core.decorators import group_required
 
 urlpatterns = [
@@ -27,6 +29,12 @@ urlpatterns = [
         )(views.ComedoresAcompanamientoListView.as_view()),
         name="lista_comedores_acompanamiento",
     ),
+    path(
+        "acompanamiento/exportar/",
+        group_required(["Exportar a csv"])(AcompanamientoExportView.as_view()),
+        name="lista_comedores_acompanamiento_exportar",
+    ),
+
     path(
         "comedor/<int:comedor_id>/restaurar-hito/",
         group_required(["Tecnico Comedor", "Coordinador Equipo Tecnico"])(

@@ -5,7 +5,8 @@
 {% block content %}
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
-    {% include 'components/search_bar.html' with titulo="Buscar Usuario" reset_url=reset_url filters_mode=filters_mode filters_js=filters_js filters_action=filters_action show_add_button=show_add_button %}
+    {% url 'usuarios_exportar' as export_url %}
+    {% include 'components/search_bar.html' with titulo="Buscar Usuario" reset_url=reset_url filters_mode=filters_mode filters_js=filters_js filters_action=filters_action show_add_button=show_add_button export_url=export_url %}
 
     <div class="row d-flex justify-content-between my-3 mx-sm-2">
         <div class="col-12 col-sm-3">
@@ -18,4 +19,5 @@
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/export_helper.js' %}"></script>
 {% endblock %}

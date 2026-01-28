@@ -14,9 +14,13 @@
 {% block content %}
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    {% url 'grupos_exportar' as export_url %}
+    {% include 'components/search_bar.html' with titulo="Grupos de usuarios" hide_search=True show_add_button=False export_url=export_url %}
     {% include 'components/data_table.html' with headers=table_headers items=groups show_actions=False empty_message='No hay grupos disponibles.' fields=table_fields %}
 {% endblock content %}
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/export_helper.js' %}"></script>
 {% endblock %}
