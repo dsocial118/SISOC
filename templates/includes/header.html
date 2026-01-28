@@ -9,7 +9,8 @@
                         aria-label="Abrir menu">
                     <i class="bi bi-list fs-2"></i>
                 </button>
-                <a href="{% url 'inicio' %}" class="brand-link d-flex align-items-center">
+                <a href="{% url 'inicio' %}"
+                   class="brand-link d-flex align-items-center">
                     <span class="brand-text fw-light">
                         <img src="{% static 'custom/img/logoBlanco.png' %}"
                              alt="SISOC"
@@ -51,11 +52,11 @@
                 <img src="{% static 'custom/img/iconos_navbar/chat.svg' %}" alt="Chat" />
             </a>
         </li -->
-                <li class="nav-item circle-btn">
-                    <a class="nav-link nav-link-rounded" href="{% url 'logout' %}">
-                        <img src="{% static 'custom/img/iconos_navbar/exit.svg' %}" alt="Chat" />
-                    </a>
-                </li>
+<li class="nav-item circle-btn">
+<a class="nav-link nav-link-rounded" href="{% url 'logout' %}">
+<img src="{% static 'custom/img/iconos_navbar/exit.svg' %}" alt="Chat" />
+</a>
+</li>
 </ul>
 </nav>
 </header>

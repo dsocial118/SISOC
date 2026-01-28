@@ -1,0 +1,40 @@
+                # Crear relaciones familiares
+                if relaciones_familiares:
+                    try:
+                        from ciudadanos.models import GrupoFamiliar
+
+                        relaciones_creadas = 0
+                        for rel in relaciones_familiares:
+                            try:
+                                _, created = GrupoFamiliar.objects.get_or_create(
+                                    ciudadano_1_id=rel["responsable_id"],
+                                    ciudadano_2_id=rel["hijo_id"],
+                                    defaults={
+                                        "vinculo": GrupoFamiliar.RELACION_PADRE,
+                                        "estado_relacion": GrupoFamiliar.ESTADO_BUENO,
+                                        "conviven": True,
+                                        "cuidador_principal": True,
+                                    }
+                                )
+                                if created:
+                                    relaciones_creadas += 1
+                            except Exception as e:
+                                logger.error(
+                                    "Error creando relacion familiar fila %s: %s",
+                                    rel["fila"],
+                                    e,
+                                )
+
+                        logger.info(
+                            "Creadas %s relaciones familiares",
+                            relaciones_creadas,
+                        )
+                    except Exception as e:
+                        logger.error("Error creando relaciones familiares: %s", e)
+                        warnings.append(
+                            {
+                                "fila": "general",
+                                "campo": "relaciones_familiares",
+                                "detalle": f"Error creando relaciones: {str(e)}",
+                            }
+                        )
