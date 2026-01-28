@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     changelog_view,
+    columnas_preferencias,
     detalle_filtro_favorito,
     filtros_favoritos,
     inicio_view,
@@ -37,5 +38,10 @@ urlpatterns = [
         "ajax/filtros-favoritos/<int:pk>/",
         detalle_filtro_favorito,
         name="detalle_filtro_favorito",
+    ),
+    path(
+        "ajax/columnas-preferencias/",
+        columnas_preferencias,
+        name="column_preferences",
     ),
 ]

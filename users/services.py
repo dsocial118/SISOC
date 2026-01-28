@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.column_preferences import build_columns_context
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from users.users_filter_config import (
     FIELD_MAP as BENEFICIARIO_FILTER_MAP,
@@ -15,6 +16,7 @@ from users.users_filter_config import (
     NUM_OPS as BENEFICIARIO_NUM_OPS,
     get_filters_ui_config,
 )
+from users.usuarios_column_config import USUARIOS_COLUMNS, USUARIOS_LIST_KEY
 
 logger = logging.getLogger("django")
 
@@ -46,43 +48,15 @@ class UsuariosService:
         )
 
     @staticmethod
-    def get_usuarios_list_context():
-        """Configuración para la lista de usuarios"""
+    def get_usuarios_list_context(request):
+        """Configuración para la lista de usuarios."""
+        columns_context = build_columns_context(
+            request,
+            USUARIOS_LIST_KEY,
+            USUARIOS_COLUMNS,
+        )
         return {
-            "table_headers": [
-                {
-                    "title": "Nombre",
-                    "width": "12%",
-                    "sortable": True,
-                    "sort_key": "first_name",
-                },
-                {
-                    "title": "Apellido",
-                    "width": "20%",
-                    "sortable": True,
-                    "sort_key": "last_name",
-                },
-                {
-                    "title": "Username",
-                    "width": "10%",
-                    "sortable": True,
-                    "sort_key": "username",
-                },
-                {
-                    "title": "Email",
-                    "width": "8%",
-                    "sortable": True,
-                    "sort_key": "email",
-                },
-                {"title": "Rol", "width": "20%", "sortable": True, "sort_key": "rol"},
-            ],
-            "table_fields": [
-                {"name": "first_name"},
-                {"name": "last_name"},
-                {"name": "username"},
-                {"name": "email"},
-                {"name": "rol"},
-            ],
+            **columns_context,
             "table_actions": [
                 {
                     "label": "Editar",

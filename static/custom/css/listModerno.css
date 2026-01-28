@@ -130,8 +130,9 @@
 
 .card .card-body {
   background: #2c3e50;
-  padding: 28px;
+  padding: 0.5rem;
   overflow: visible;
+  border-radius: 8px;
 }
 
 /* TABLA MODERNA - Aplicable a cualquier tabla con .table o .projects */
@@ -147,6 +148,14 @@
 .table-responsive {
   overflow-x: auto;
   overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Asegurar scroll horizontal dentro de tablas grandes en listados */
+.table-responsive-lg {
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: 100%;
   -webkit-overflow-scrolling: touch;
 }
 

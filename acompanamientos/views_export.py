@@ -1,6 +1,7 @@
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from core.mixins import CSVExportMixin
+from core.services.column_preferences import build_columns_context_for_custom_cells
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
 
@@ -8,16 +9,36 @@ class AcompanamientoExportView(LoginRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_acompanamientos.csv"
 
     def get_export_columns(self):
-        return [
-            ("ID", "id"),
-            ("Nombre", "nombre"),
-            ("Organización", "organizacion__nombre"),
-            ("N° Expediente", "custom_num_expediente"),
-            ("Provincia", "provincia__nombre"),
-            ("Dupla", "dupla__nombre"),
-            ("Estado", "custom_estado"),
-            ("Última Modificación", "custom_modificado"),
+        headers = [
+            {"key": "id", "title": "ID"},
+            {"key": "nombre", "title": "Nombre"},
+            {"key": "organizacion", "title": "Organización"},
+            {"key": "expediente", "title": "N° Expediente"},
+            {"key": "provincia", "title": "Provincia"},
+            {"key": "dupla", "title": "Dupla"},
+            {"key": "estado", "title": "Estado"},
+            {"key": "modificado", "title": "Última Modificación"},
         ]
+        columns_map = {
+            "id": ("ID", "id"),
+            "nombre": ("Nombre", "nombre"),
+            "organizacion": ("Organización", "organizacion__nombre"),
+            "expediente": ("N° Expediente", "custom_num_expediente"),
+            "provincia": ("Provincia", "provincia__nombre"),
+            "dupla": ("Dupla", "dupla__nombre"),
+            "estado": ("Estado", "custom_estado"),
+            "modificado": ("Última Modificación", "custom_modificado"),
+        }
+        columns_context = build_columns_context_for_custom_cells(
+            self.request,
+            "acompanamientos_comedores_list",
+            headers,
+            [],
+        )
+        active_keys = columns_context.get("column_active_keys", [])
+        if not active_keys:
+            return list(columns_map.values())
+        return [columns_map[key] for key in active_keys if key in columns_map]
 
     def get_queryset(self):
         user = self.request.user
