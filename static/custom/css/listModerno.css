@@ -150,6 +150,14 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* Asegurar scroll horizontal dentro de tablas grandes en listados */
+.table-responsive-lg {
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
 @media (min-width: 992px) {
   .table-responsive {
     overflow: visible !important;
