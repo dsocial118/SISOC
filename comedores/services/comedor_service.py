@@ -110,9 +110,7 @@ class ComedorService:
 
     @staticmethod
     def get_admision_timeline_context(admisiones_qs):
-        admision_activa = (
-            admisiones_qs.filter(activa=True).order_by("-id").first()
-        )
+        admision_activa = admisiones_qs.filter(activa=True).order_by("-id").first()
         admision_enviada = bool(
             admision_activa
             and getattr(admision_activa, "enviado_acompaniamiento", False)
