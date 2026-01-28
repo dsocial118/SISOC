@@ -255,9 +255,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             .order_by("-id")
         )
         admision = admisiones_qs
-        timeline_context = ComedorService.get_admision_timeline_context(
-            admisiones_qs
-        )
+        timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
         (
             _nomina_page_obj,
             nomina_m,
@@ -290,16 +288,12 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             .order_by("-fecha")
         )
         intervenciones_paginator = Paginator(intervenciones_qs, 10)
-        intervenciones_page_number = self.request.GET.get(
-            "intervenciones_page", 1
-        )
+        intervenciones_page_number = self.request.GET.get("intervenciones_page", 1)
         intervenciones_page_obj = intervenciones_paginator.get_page(
             intervenciones_page_number
         )
-        intervenciones_page_range = (
-            intervenciones_paginator.get_elided_page_range(
-                number=intervenciones_page_obj.number
-            )
+        intervenciones_page_range = intervenciones_paginator.get_elided_page_range(
+            number=intervenciones_page_obj.number
         )
         intervenciones_headers = [
             {"title": "Intervención"},
@@ -313,22 +307,16 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         intervenciones_items = []
         for intervencion in intervenciones_page_obj:
             estado_badge = (
-                format_html(
-                    '<span class="badge bg-success">Completa</span>'
-                )
+                format_html('<span class="badge bg-success">Completa</span>')
                 if getattr(intervencion, "tiene_documentacion", False)
                 else format_html(
                     '<span class="badge bg-warning text-dark">Pendiente</span>'
                 )
             )
             doc_badge = (
-                format_html(
-                    '<span class="badge bg-success">Sí</span>'
-                )
+                format_html('<span class="badge bg-success">Sí</span>')
                 if getattr(intervencion, "tiene_documentacion", False)
-                else format_html(
-                    '<span class="badge bg-secondary">No</span>'
-                )
+                else format_html('<span class="badge bg-secondary">No</span>')
             )
 
             actions = [
@@ -653,9 +641,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "intervenciones_headers": intervenciones_headers,
             "intervenciones_items": intervenciones_items,
             "intervenciones_page_obj": intervenciones_page_obj,
-            "intervenciones_is_paginated": (
-                intervenciones_page_obj.has_other_pages()
-            ),
+            "intervenciones_is_paginated": (intervenciones_page_obj.has_other_pages()),
             "intervenciones_page_range": intervenciones_page_range,
             "interacciones_labels": json.dumps(interacciones_labels),
             "interacciones_values": json.dumps(interacciones_values),
@@ -685,11 +671,22 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         relaciones_data = self.get_relaciones_optimizadas()
         env_config = self._get_environment_config()
         intervencion_form = IntervencionForm()
-        timeline_context = ComedorService.get_admision_timeline_context(
-            Admision.objects.filter(comedor=self.object)
-            .select_related("tipo_convenio", "estado")
-            .order_by("-id")
-        )
+
+        selected_admision_pk = None
+        selected_param = self.request.GET.get("admision_id")
+        if selected_param:
+            try:
+                selected_admision_pk = int(selected_param)
+            except (TypeError, ValueError):
+                selected_admision_pk = None
+
+        admisiones_qs = presupuestos_data.get("admision")
+        selected_admision = None
+        if admisiones_qs and selected_admision_pk:
+            selected_admision = admisiones_qs.filter(id=selected_admision_pk).first()
+
+        if not selected_admision:
+            selected_admision = presupuestos_data.get("admision_activa")
 
         # Agregar opciones de validación
 
@@ -700,8 +697,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 **presupuestos_data,
                 **relaciones_data,
                 **env_config,
-                **timeline_context,
                 "intervencion_form": intervencion_form,
+                "selected_admision": selected_admision,
+                "selected_admision_id": getattr(selected_admision, "id", None),
             }
         )
         return context

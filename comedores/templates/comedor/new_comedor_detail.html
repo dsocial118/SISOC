@@ -64,8 +64,12 @@
             <button class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</button>
         </div>
         <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2">
-            <a href="#" class="btn btn-md " data-bs-toggle="modal" data-bs-target="#modalValidacion"><i class="bi bi-check2-circle me-1"></i>Validar</a>
-            <a href="{% url 'comedor_intervencion_ver' comedor.id %}" class="btn btn-md"><i class="bi bi-tools me-1"></i>Intervenciones</a>
+            <a href="#"
+               class="btn btn-md "
+               data-bs-toggle="modal"
+               data-bs-target="#modalValidacion"><i class="bi bi-check2-circle me-1"></i>Validar</a>
+            <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
+               class="btn btn-md"><i class="bi bi-tools me-1"></i>Intervenciones</a>
             <a href="{% url 'relevamientos' comedor.id %}" class="btn btn-md"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
             <div class="dropdown">
                 <button class="btn btn-md dropdown-toggle"
@@ -76,11 +80,22 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     {% for admision_item in admision %}
-                        <li>
-                            <span class="dropdown-item-text">
-                                {{ admision_item.get_tipo_display }} - {{ admision_item.creado|date:"d/m/Y" }} - {{ admision_item.estado_mostrar|default_if_none:"-" }}
-                            </span>
-                        </li>
+                        {% with admision_item.id == selected_admision_id as is_selected %}
+                            <li>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center {% if is_selected %}active{% endif %}"
+                                   href="{{ request.path }}?admision_id={{ admision_item.id }}">
+                                    <div>
+                                        <strong class="d-block">{{ admision_item.get_tipo_display }}</strong>
+                                        <small class="text-muted">
+                                            {{ admision_item.creado|date:"d/m/Y" }} · {{ admision_item.estado_mostrar|default_if_none:"-" }}
+                                        </small>
+                                    </div>
+                                    {% if is_selected %}
+                                        <i class="bi bi-check2-circle text-primary"></i>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        {% endwith %}
                     {% empty %}
                         <li>
                             <span class="dropdown-item-text text-muted">Sin Convenios</span>
@@ -107,11 +122,17 @@
                         </li>
                         <li class="list-inline-item">
                             {% if comedor.estado_validacion == "Validado" %}
-                                <button class="btn btn-sm btn-success mb-2"><i class="bi bi-check2-circle me-1"></i>Validado</button>
+                                <button class="btn btn-sm btn-success mb-2">
+                                    <i class="bi bi-check2-circle me-1"></i>Validado
+                                </button>
                             {% elif comedor.estado_validacion == "No Validado" %}
-                                <button class="btn btn-sm btn-danger mb-2"><i class="bi bi-x-circle me-1"></i>No Validado</button>
+                                <button class="btn btn-sm btn-danger mb-2">
+                                    <i class="bi bi-x-circle me-1"></i>No Validado
+                                </button>
                             {% else %}
-                                <button class="btn btn-sm btn-warning mb-2"><i class="bi bi-exclamation-triangle me-1"></i>Validación Pendiente</button>
+                                <button class="btn btn-sm btn-warning mb-2">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Validación Pendiente
+                                </button>
                             {% endif %}
                         </li>
                         <li class="list-inline-item">
@@ -197,7 +218,8 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0" style="max-height: 370px;">
+                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0"
+                         style="max-height: 370px">
                         <h2 class="border-bottom border-3 mb-4 fw-bold">Ubicación</h2>
                         <p class="mb-2">
                             <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
@@ -255,7 +277,8 @@
                                         max-height: 370px" />
                         {% endif %}
                     </div>
-                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0" style="max-height: 370px;">
+                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0"
+                         style="max-height: 370px">
                         <h2 class="border-bottom border-3 mb-4 fw-bold">Responsables</h2>
                         <p class="mb-2">
                             <i class="bi bi-building me-2"></i><strong>Organización base:</strong> {{ comedor.organizacion.nombre | default_if_none:"-" }}
@@ -845,24 +868,30 @@
                 <div class="{{ timeline_admision_step_class|default:'step active' }}">
                     <div class="circle mx-2">{{ timeline_admision_circle_html|default:'1'|safe }}</div>
                     <p class="mt-2 mb-0 text-center">Admisión</p>
-                    <p class="mb-0 text-center"><small>{{ timeline_admision_date|date:"d/m/Y"|default:"-" }}</small></p>
+                    <p class="mb-0 text-center">
+                        <small>{{ timeline_admision_date|date:"d/m/Y"|default:"-" }}</small>
+                    </p>
                 </div>
                 <div class="{{ timeline_connector_class|default:'connector' }} mb-3"></div>
                 <div class="{{ timeline_ejecucion_step_class|default:'step' }}">
                     <div class="circle mx-2">{{ timeline_ejecucion_circle|default:'2' }}</div>
                     <p class="mt-2 mb-0 text-center">Ejecución</p>
-                    <p class="mb-0 text-center"><small>-</small></p>
+                    <p class="mb-0 text-center">
+                        <small>-</small>
+                    </p>
                 </div>
                 <div class="connector mb-3"></div>
                 <div class="step">
                     <div class="circle mx-2">{{ timeline_rendicion_circle|default:'3' }}</div>
                     <p class="mt-2 mb-0 text-center">Rendición</p>
-                    <p class="mb-0 text-center"><small>-</small></p>
+                    <p class="mb-0 text-center">
+                        <small>-</small>
+                    </p>
                 </div>
             </div>
         </div>
     </div>
-<!-- /Linea de tiempo -->
+    <!-- /Linea de tiempo -->
     <!-- Bloque central-->
     <div class="row mb-3">
         <!-- Cuadros con datos, Avisos y Detalles Admision-->
@@ -938,21 +967,54 @@
                             <h6 class="fw-bold my-1 text-center">Detalles de Admisión</h6>
                         </div>
                         <div class="card-body">
-                            <p class="mb-0 fs-7">
-                                Fecha: <strong>{{ admision_activa.creado |date:'d/m/Y' |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Número de expediente: <strong class="text-uppercase">{{ admision_activa.num_expediente |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Estado: <strong class="text-uppercase">{{ admision_activa.estado.nombre |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Dupla: <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"Sin información" }}, USUARIO 1, USUARIO 2</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Tipo de convenio: <strong class="text-uppercase">{{ admision_activa.tipo_convenio.nombre |default_if_none:"Sin información" }}</strong>
-                            </p>
+                            {% with selected_admision|default:admision_activa as display_admision %}
+                                <p class="mb-0 fs-7">
+                                    Fecha:
+                                    <strong>
+                                        {% if display_admision and display_admision.creado %}
+                                            {{ display_admision.creado|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Número de expediente:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.num_expediente %}
+                                            {{ display_admision.num_expediente }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado %}
+                                            {{ display_admision.estado.nombre|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Dupla:
+                                    <strong class="text-uppercase">
+                                        {{ comedor.dupla.nombre |default_if_none:"Sin información" }}, USUARIO 1, USUARIO 2
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Tipo de convenio:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.tipo_convenio %}
+                                            {{ display_admision.tipo_convenio.nombre|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                            {% endwith %}
                             <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
                                 <a href="{% url 'dupla_asignar' pk=comedor.id %}"
                                    class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
@@ -1057,37 +1119,54 @@
     <!-- Intervenciones y Observaciones -->
     <div class="row mb-3">
         <div class="col-12 tabs-comedor-wrap">
-                <ul class="nav nav-tabs tabs-comedor ms-2 mb-0" id="intervencionesObservacionesTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active fs-6" id="intervenciones-tab" data-bs-toggle="tab" data-bs-target="#intervenciones-pane" type="button" role="tab" aria-controls="intervenciones-pane" aria-selected="true">
-                            Intervenciones
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link fs-6" id="observaciones-tab" data-bs-toggle="tab" data-bs-target="#observaciones-pane" type="button" role="tab" aria-controls="observaciones-pane" aria-selected="false">
-                            Observaciones
-                        </button>
-                    </li>
-                </ul>
+            <ul class="nav nav-tabs tabs-comedor ms-2 mb-0"
+                id="intervencionesObservacionesTabs"
+                role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fs-6"
+                            id="intervenciones-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#intervenciones-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="intervenciones-pane"
+                            aria-selected="true">Intervenciones</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fs-6"
+                            id="observaciones-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#observaciones-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="observaciones-pane"
+                            aria-selected="false">Observaciones</button>
+                </li>
+            </ul>
             <div class="card bg-card">
                 <div class="card-body pt-0">
                     <div class="tab-content" id="intervencionesObservacionesContent">
-                        <div class="tab-pane fade show active" id="intervenciones-pane" role="tabpanel" aria-labelledby="intervenciones-tab">
+                        <div class="tab-pane fade show active"
+                             id="intervenciones-pane"
+                             role="tabpanel"
+                             aria-labelledby="intervenciones-tab">
                             <div class="d-flex justify-content-end mb-2">
                                 <button type="button"
                                         class="btn btn-sm btn-primary"
                                         data-bs-toggle="modal"
-                                        data-bs-target="#modalIntervencion">
-                                    Agregar intervención
-                                </button>
+                                        data-bs-target="#modalIntervencion">Agregar intervención</button>
                             </div>
                             {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
                         </div>
-                        <div class="tab-pane fade" id="observaciones-pane" role="tabpanel" aria-labelledby="observaciones-tab">
+                        <div class="tab-pane fade"
+                             id="observaciones-pane"
+                             role="tabpanel"
+                             aria-labelledby="observaciones-tab">
                             {% for observacion in observaciones|slice:":3" %}
                                 <div class="row border-bottom mb-1">
                                     <p class="m-1">
-                                        <a href="{% url 'observacion_detalle' comedor.id observacion.id %}" class="btn btn-sm btn-primary">{{ observacion.fecha_visita }}</a>
+                                        <a href="{% url 'observacion_detalle' comedor.id observacion.id %}"
+                                           class="btn btn-sm btn-primary">{{ observacion.fecha_visita }}</a>
                                     </p>
                                     <p class="text-muted m-1">{{ observacion.observacion|truncatechars:80 }}</p>
                                 </div>
@@ -1130,7 +1209,9 @@
                       enctype="multipart/form-data"
                       id="intervencionModalForm">
                     {% csrf_token %}
-                    <input type="hidden" name="next" value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalIntervencionLabel">Nueva intervención</h5>
                         <button type="button"
@@ -1141,54 +1222,49 @@
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}" class="form-label">
-                                    {{ intervencion_form.tipo_intervencion.label }}
-                                </label>
+                                <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.tipo_intervencion.label }}</label>
                                 {{ intervencion_form.tipo_intervencion }}
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ intervencion_form.subintervencion.id_for_label }}" class="form-label">
-                                    {{ intervencion_form.subintervencion.label }}
-                                </label>
+                                <label for="{{ intervencion_form.subintervencion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.subintervencion.label }}</label>
                                 {{ intervencion_form.subintervencion }}
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ intervencion_form.destinatario.id_for_label }}" class="form-label">
-                                    {{ intervencion_form.destinatario.label }}
-                                </label>
+                                <label for="{{ intervencion_form.destinatario.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.destinatario.label }}</label>
                                 {{ intervencion_form.destinatario }}
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">
-                                    {{ intervencion_form.fecha.label }}
-                                </label>
+                                <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
                                 {{ intervencion_form.fecha }}
-                                <div id="fecha-error-intervencion" class="invalid-feedback" style="display: none;"></div>
+                                <div id="fecha-error-intervencion"
+                                     class="invalid-feedback"
+                                     style="display: none"></div>
                             </div>
                             <div class="col-md-6">
-                                <label for="{{ intervencion_form.forma_contacto.id_for_label }}" class="form-label">
-                                    {{ intervencion_form.forma_contacto.label }}
-                                </label>
+                                <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.forma_contacto.label }}</label>
                                 {{ intervencion_form.forma_contacto }}
                             </div>
                             <div class="col-12">
-                                <label for="{{ intervencion_form.observaciones.id_for_label }}" class="form-label">
-                                    {{ intervencion_form.observaciones.label }}
-                                </label>
+                                <label for="{{ intervencion_form.observaciones.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.observaciones.label }}</label>
                                 {{ intervencion_form.observaciones }}
                             </div>
                             <div class="col-12">
                                 <div class="form-check">
                                     {{ intervencion_form.tiene_documentacion }}
-                                    <label class="form-check-label" for="{{ intervencion_form.tiene_documentacion.id_for_label }}">
+                                    <label class="form-check-label"
+                                           for="{{ intervencion_form.tiene_documentacion.id_for_label }}">
                                         {{ intervencion_form.tiene_documentacion.label }}
                                     </label>
                                 </div>
                             </div>
                             <div class="col-12 d-none" id="documentacion-field-modal">
-                                <label for="{{ intervencion_form.documentacion.id_for_label }}" class="form-label">
-                                    {{ intervencion_form.documentacion.label }}
-                                </label>
+                                <label for="{{ intervencion_form.documentacion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.documentacion.label }}</label>
                                 {{ intervencion_form.documentacion }}
                             </div>
                         </div>
@@ -1201,7 +1277,7 @@
             </div>
         </div>
     </div>
-    
+ 
 
     <!-- Modal Validaci&oacute;n -->
     <div class="modal fade"
@@ -1248,7 +1324,9 @@
                       id="formNoValidar">
                     {% csrf_token %}
                     <input type="hidden" name="accion" value="no_validar" />
-                    <input type="hidden" name="next" value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
                     <div class="modal-header">
                         <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validaci&oacute;n</h5>
                         <button type="button"
