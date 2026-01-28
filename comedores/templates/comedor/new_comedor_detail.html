@@ -9,6 +9,51 @@
   content: none !important;
   display: none !important;
 }
+    .tabs-comedor-wrap {
+        position: relative;
+    }
+    .tabs-comedor {
+        padding-left: 1.5rem;
+        margin: 0;
+        position: absolute;
+        top: -30px;
+        left: 0;
+        z-index: 2;
+        border-bottom: 0;
+    }
+    .tabs-comedor-wrap .card {
+        margin-top: 0;
+        padding-top: 0.75rem;
+    }
+    .tabs-comedor .nav-link {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-bottom: 0;
+        border-radius: 0.7rem 0.7rem 0 0;
+        padding: 1rem 0.8rem;
+        font-size: 0.98rem;
+        line-height: 1.2;
+        color: #e6eefb;
+        background-color: rgba(255, 255, 255, 0.08);
+        font-weight: 700;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .tabs-comedor .nav-link.active {
+        color: #fff;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
+    }
+    :root[data-bs-theme="dark"] .tabs-comedor .nav-link.active {
+        background-color: #232d4f;
+    }
+    :root[data-bs-theme="light"] .tabs-comedor .nav-link.active {
+        background-color: #f4f6f9;
+        color: #212529;
+    }
+    .tabs-comedor .nav-link:hover {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.16);
+    }
     </style>
 {% endblock %}
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
@@ -19,10 +64,45 @@
             <button class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</button>
         </div>
         <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2">
-            <a href="{% url 'comedores' %}" class="btn btn-md w-100 w-sm-auto"><i class="bi bi-people-fill me-1"></i>Nomina</a>
-            <a href="{% url 'comedores' %}" class="btn btn-md w-100 w-sm-auto"><i class="bi bi-geo-fill me-1"></i>Relevamientos</a>
-            <a href="{% url 'comedores' %}" class="btn btn-md w-100 w-sm-auto"><i class="bi bi-check-square-fill me-1"></i>Convenios</a>
-            <a href="{% url 'comedores' %}" class="btn btn-md w-100 w-sm-auto"><i class="bi bi-printer-fill me-1"></i>Imprimir</a>
+            <a href="#"
+               class="btn btn-md "
+               data-bs-toggle="modal"
+               data-bs-target="#modalValidacion"><i class="bi bi-check2-circle me-1"></i>Validar</a>
+            <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
+               class="btn btn-md"><i class="bi bi-tools me-1"></i>Intervenciones</a>
+            <a href="{% url 'relevamientos' comedor.id %}" class="btn btn-md"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
+            <div class="dropdown">
+                <button class="btn btn-md dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <i class="bi bi-folder2-open me-1"></i>Seleccionar Convenio
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    {% for admision_item in admision %}
+                        {% with selected_admision_id|default:0 as safe_selected_id %}
+                            <li>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center {% if admision_item.id == safe_selected_id %}active{% endif %}"
+                                   href="{{ request.path }}?admision_id={{ admision_item.id }}">
+                                    <div>
+                                        <strong class="d-block">{{ admision_item.get_tipo_display }}</strong>
+                                        <small class="text-muted">
+                                            {{ admision_item.creado|date:"d/m/Y" }} · {{ admision_item.estado_mostrar|default_if_none:"-" }}
+                                        </small>
+                                    </div>
+                                    {% if admision_item.id == safe_selected_id %}
+                                        <i class="bi bi-check2-circle text-primary"></i>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        {% endwith %}
+                    {% empty %}
+                        <li>
+                            <span class="dropdown-item-text text-muted">Sin Convenios</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -41,13 +121,41 @@
                             </h2>
                         </li>
                         <li class="list-inline-item">
-                            <button class="btn btn-sm btn-outline-primary mb-2">PNUD Seco</button>
+                            {% if comedor.estado_validacion == "Validado" %}
+                                <button class="btn btn-sm btn-success mb-2">
+                                    <i class="bi bi-check2-circle me-1"></i>Validado
+                                </button>
+                            {% elif comedor.estado_validacion == "No Validado" %}
+                                <button class="btn btn-sm btn-danger mb-2">
+                                    <i class="bi bi-x-circle me-1"></i>No Validado
+                                </button>
+                            {% else %}
+                                <button class="btn btn-sm btn-warning mb-2">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Validación Pendiente
+                                </button>
+                            {% endif %}
                         </li>
                         <li class="list-inline-item">
-                            <button class="btn btn-sm btn-outline-primary mb-2">Punto de entrega</button>
+                            <button class="btn btn-sm btn-primary mb-2">
+                                {% if comedor.programa_id == 2 %}
+                                    PAC
+                                {% elif comedor.programa_id == 3 %}
+                                    PNUD - SECOS
+                                {% elif comedor.programa_id == 4 %}
+                                    PNUD - TRADICIONAL
+                                {% else %}
+                                    Sin programa
+                                {% endif %}
+                            </button>
                         </li>
                         <li class="list-inline-item">
-                            <button class="btn btn-sm btn-success mb-2">En Ejecución</button>
+                            <button class="btn btn-sm btn-success mb-2">
+                                {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_proceso %}
+                                    {{ comedor.ultimo_estado.estado_general.estado_proceso.estado }}
+                                {% else %}
+                                    Sin proceso
+                                {% endif %}
+                            </button>
                         </li>
                     </ul>
                 </div>
@@ -110,7 +218,8 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0" style="max-height: 370px;">
+                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0"
+                         style="max-height: 370px">
                         <h2 class="border-bottom border-3 mb-4 fw-bold">Ubicación</h2>
                         <p class="mb-2">
                             <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
@@ -168,7 +277,8 @@
                                         max-height: 370px" />
                         {% endif %}
                     </div>
-                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0" style="max-height: 370px;">
+                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0"
+                         style="max-height: 370px">
                         <h2 class="border-bottom border-3 mb-4 fw-bold">Responsables</h2>
                         <p class="mb-2">
                             <i class="bi bi-building me-2"></i><strong>Organización base:</strong> {{ comedor.organizacion.nombre | default_if_none:"-" }}
@@ -753,37 +863,30 @@
     <!-- Linea de tiempo -->
     <div class="card mb-3 bg-card">
         <div class="card-body">
+            <!-- Timeline -->
             <div class="timeline-comedor d-flex align-items-center overflow-auto pb-2">
-                <div class="step completed">
-                    <div class="circle mx-2">
-                        <i class="bi bi-check-lg"></i>
-                    </div>
-                    <p class="mt-2 mb-0 text-center">Visita</p>
-                    <p class="mb-0 text-center fs-7">03/06/2025</p>
-                </div>
-                <div class="connector completed"></div>
-                <div class="step completed">
-                    <div class="circle mx-2">
-                        <i class="bi bi-check-lg"></i>
-                    </div>
+                <div class="{{ timeline_admision_step_class|default:'step active' }}">
+                    <div class="circle mx-2">{{ timeline_admision_circle_html|default:'1'|safe }}</div>
                     <p class="mt-2 mb-0 text-center">Admisión</p>
-                    <p class="mb-0 text-center fs-7">05/07/2025</p>
+                    <p class="mb-0 text-center">
+                        <small>{{ timeline_admision_date|date:"d/m/Y"|default:"-" }}</small>
+                    </p>
                 </div>
-                <div class="connector completed"></div>
-                <div class="step active">
-                    <div class="circle mx-2">3</div>
+                <div class="{{ timeline_connector_class|default:'connector' }} mb-3"></div>
+                <div class="{{ timeline_ejecucion_step_class|default:'step' }}">
+                    <div class="circle mx-2">{{ timeline_ejecucion_circle|default:'2' }}</div>
                     <p class="mt-2 mb-0 text-center">Ejecución</p>
-                    <p class="mb-0 text-center fs-7">05/10/2025</p>
+                    <p class="mb-0 text-center">
+                        <small>-</small>
+                    </p>
                 </div>
-                <div class="connector"></div>
+                <div class="connector mb-3"></div>
                 <div class="step">
-                    <div class="circle mx-2">4</div>
+                    <div class="circle mx-2">{{ timeline_rendicion_circle|default:'3' }}</div>
                     <p class="mt-2 mb-0 text-center">Rendición</p>
-                </div>
-                <div class="connector"></div>
-                <div class="step">
-                    <div class="circle mx-2">5</div>
-                    <p class="mt-2 mb-0 text-center">Renovación</p>
+                    <p class="mb-0 text-center">
+                        <small>-</small>
+                    </p>
                 </div>
             </div>
         </div>
@@ -849,23 +952,11 @@
                 <div class="col-12 col-lg-6 mb-3 mb-lg-0">
                     <div class="card bg-card h-100">
                         <div class="card-header py-1">
-                            <h6 class="fw-bold my-1 text-center">Avisos</h6>
+                            <h6 class="fw-bold my-1 text-center">Asistencia por rango etareo</h6>
                         </div>
                         <div class="card-body">
-                            <div class="col-12">
-                                <div class="d-flex align-items-center p-3">
-                                    <div class="me-3 text-warning fs-1">
-                                        <i class="bi bi-lightbulb-fill"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold fs-7">Este comedor no cargó rendición en 2 meses.</div>
-                                        <p class="mt-1 text-muted fs-7">¿Quieres enviar un recordatorio?</p>
-                                        <div class="mt-1 d-flex flex-column flex-sm-row justify-content-center gap-2">
-                                            <button class="btn btn-secondary p1 fs-7 w-100 w-sm-auto">Omitir</button>
-                                            <button class="btn btn-primary p1 fs-7 w-100 w-sm-auto">Enviar</button>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="w-100" style="height: 240px;">
+                                <canvas id="nominaEdadChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -876,21 +967,54 @@
                             <h6 class="fw-bold my-1 text-center">Detalles de Admisión</h6>
                         </div>
                         <div class="card-body">
-                            <p class="mb-0 fs-7">
-                                Fecha: <strong>{{ admision.creado |date:'d/m/Y' |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Número de expediente: <strong class="text-uppercase">{{ admision.num_expediente |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Estado: <strong class="text-uppercase">{{ admision.estado.nombre |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Dupla: <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"Sin información" }}, USUARIO 1, USUARIO 2</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Tipo de convenio: <strong class="text-uppercase">{{ admision.tipo_convenio.nombre |default_if_none:"Sin información" }}</strong>
-                            </p>
+                            {% with selected_admision|default:admision_activa as display_admision %}
+                                <p class="mb-0 fs-7">
+                                    Fecha:
+                                    <strong>
+                                        {% if display_admision and display_admision.creado %}
+                                            {{ display_admision.creado|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Número de expediente:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.num_expediente %}
+                                            {{ display_admision.num_expediente }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado %}
+                                            {{ display_admision.estado.nombre|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Dupla:
+                                    <strong class="text-uppercase">
+                                        {{ comedor.dupla.nombre |default_if_none:"Sin información" }}, USUARIO 1, USUARIO 2
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Tipo de convenio:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.tipo_convenio %}
+                                            {{ display_admision.tipo_convenio.nombre|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                            {% endwith %}
                             <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
                                 <a href="{% url 'dupla_asignar' pk=comedor.id %}"
                                    class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
@@ -911,8 +1035,14 @@
         <!-- Nomina-->
         <div class="col-12 col-lg-3">
             <div class="card bg-card">
-                <div class="card-header py-1">
-                    <h4 class="fw-bold my-1">Nomina</h4>
+                <div class="card-header py-1 d-flex align-items-center justify-content-between">
+                    <h4 class="fw-bold my-1">Nómina</h4>
+                    <a href="{% url 'nomina_ver' pk=comedor.id %}"
+                       class="text-white fs-5 ms-auto"
+                       title="Ver nómina"
+                       aria-label="Ver nómina">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
                 </div>
                 <div class="card-body">
                     <div class="col-12">
@@ -923,7 +1053,7 @@
                                 <i class="bi bi-people-fill fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">380</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_total|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Asistentes</p>
                             </div>
                         </div>
@@ -936,7 +1066,7 @@
                                 <i class="bi bi-person-standing fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">100</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_hombres|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Hombres</p>
                             </div>
                         </div>
@@ -949,8 +1079,21 @@
                                 <i class="bi bi-person-standing-dress fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">280</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_mujeres|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Mujeres</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center bg-verde px-3 py-2 rounded-3 mb-2">
+                            <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3"
+                                 style="width: 60px;
+                                        height: 60px">
+                                <i class="bi bi-person-arms-up fs-1"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_menores|default:0 }}</div>
+                                <p class="mb-0 text-white fw-bold">Menores de edad</p>
                             </div>
                         </div>
                     </div>
@@ -962,7 +1105,7 @@
                                 <i class="bi bi-list-check fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">500</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_espera|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Lista de espera</p>
                             </div>
                         </div>
@@ -973,305 +1116,489 @@
         <!-- /Nomina-->
     </div>
     <!-- /Bloque central-->
-    <!-- Expediente y Observaciones-->
+    <!-- Intervenciones y Observaciones -->
     <div class="row mb-3">
-        <!-- Expediente -->
-        <div class="col-12 col-lg-8 mb-3 mb-lg-0">
+        <div class="col-12 tabs-comedor-wrap">
+            <ul class="nav nav-tabs tabs-comedor ms-2 mb-0"
+                id="intervencionesObservacionesTabs"
+                role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fs-6"
+                            id="intervenciones-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#intervenciones-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="intervenciones-pane"
+                            aria-selected="true">Intervenciones</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fs-6"
+                            id="observaciones-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#observaciones-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="observaciones-pane"
+                            aria-selected="false">Observaciones</button>
+                </li>
+            </ul>
             <div class="card bg-card">
-                <div class="card-header py-1">
-                    <h4 class="fw-bold my-1">Expediente</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-4">
-                            <div class="card border-0 shadow-none bg-transparent text-center">
-                                <div class="position-relative d-inline-block"
-                                     style="width: 180px;
-                                            height: 180px">
-                                    <canvas id="donutChart" width="180" height="180"></canvas>
-                                    <div class="position-absolute top-50 start-50 translate-middle text-center">
-                                        <div class="fw-bold text-warning" style="font-size: 1.2rem;">65%</div>
-                                        <div class="fw-bold" style="font-size: 0.9rem;">RENDICIÓN</div>
-                                    </div>
-                                </div>
+                <div class="card-body pt-0">
+                    <div class="tab-content" id="intervencionesObservacionesContent">
+                        <div class="tab-pane fade show active"
+                             id="intervenciones-pane"
+                             role="tabpanel"
+                             aria-labelledby="intervenciones-tab">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalIntervencion">Agregar intervención</button>
                             </div>
+                            {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
                         </div>
-                        <div class="col-md-8">
-                            <div class="row align-items-center justify-content-between mb-2">
-                                <div class="col-auto">
-                                    <h2 class="mb-0">Documentación</h2>
+                        <div class="tab-pane fade"
+                             id="observaciones-pane"
+                             role="tabpanel"
+                             aria-labelledby="observaciones-tab">
+                            {% for observacion in observaciones|slice:":3" %}
+                                <div class="row border-bottom mb-1">
+                                    <p class="m-1">
+                                        <a href="{% url 'observacion_detalle' comedor.id observacion.id %}"
+                                           class="btn btn-sm btn-primary">{{ observacion.fecha_visita }}</a>
+                                    </p>
+                                    <p class="text-muted m-1">{{ observacion.observacion|truncatechars:80 }}</p>
                                 </div>
-                                <div class="col-auto text-end">
-                                    <h2 class="mb-0">128</h2>
-                                </div>
-                            </div>
-                            <div class="progress mb-4">
-                                <div class="progress-bar bg-amarillo"
-                                     role="progressbar"
-                                     style="width: 60%"
-                                     aria-valuenow="60"
-                                     aria-valuemin="0"
-                                     aria-valuemax="100"></div>
-                            </div>
-                            <!-- Timeline -->
-                            <div class="timeline-comedor d-flex align-items-center overflow-auto pb-2">
-                                <div class="step completed">
-                                    <div class="circle mx-2">
-                                        <i class="bi bi-check-lg"></i>
-                                    </div>
-                                    <p class="mt-2 mb-0 text-center">Admisión</p>
-                                </div>
-                                <div class="connector completed"></div>
-                                <div class="step completed">
-                                    <div class="circle mx-2">
-                                        <i class="bi bi-check-lg"></i>
-                                    </div>
-                                    <p class="mt-2 mb-0 text-center">Expediente</p>
-                                </div>
-                                <div class="connector completed"></div>
-                                <div class="step active">
-                                    <div class="circle mx-2">3</div>
-                                    <p class="mt-2 mb-0 text-center">Ejecución</p>
-                                </div>
-                                <div class="connector"></div>
-                                <div class="step">
-                                    <div class="circle mx-2">4</div>
-                                    <p class="mt-2 mb-0 text-center">Rendición</p>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
-                                    <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Agregar documentación Expediente</button>
-                                    <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Últimos Movimientos</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- /Expediente -->
-        <!-- Observaciones -->
-        <div class="col-12 col-lg-4">
-            <div class="card bg-card">
-                <div class="card-header py-1">
-                    <h4 class="fw-bold my-1">Observaciones</h4>
-                </div>
-                <div class="card-body">
-                    {% for observacion in observaciones|slice:":3" %}
-                        <div class="row border-bottom mb-1">
-                            <p class="m-1">
-                                <a href="{% url 'observacion_detalle' comedor.id observacion.id %}"
-                                   class="btn btn-sm btn-primary">{{ observacion.fecha_visita }}</a>
-                            </p>
-                            <p class="text-muted m-1">{{ observacion.observacion|truncatechars:80 }}</p>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        <!-- /Observaciones -->
-    </div>
-    <!-- /Expediente y Observaciones-->
-    <!-- Acompañamiento -->
-    <div class="row mb-3">
-        <div class="card bg-card">
-            <div class="card-header py-1">
-                <h4 class="fw-bold my-1">Acompañamiento</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mx-auto px-3 mb-3 mb-md-0">
-                        <h5>Prestaciones Mensuales</h5>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Desayunos</span>
-                            <span class="fw-bold">5</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 10px;">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 8%"
-                                 aria-valuenow="8"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Almuerzos</span>
-                            <span class="fw-bold">400</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 10px;">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 40%"
-                                 aria-valuenow="40"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Meriendas</span>
-                            <span class="fw-bold">100</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 10px;">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 12%"
-                                 aria-valuenow="12"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Cenas</span>
-                            <span class="fw-bold">400</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 10px;">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 40%"
-                                 aria-valuenow="40"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1 mt-3">
-                            <span class="fs-5">Total Prestaciones</span>
-                            <span class="fw-bold fs-5">905</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 100%"
-                                 aria-valuenow="100"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mx-auto px-3">
-                        <h5>Últimos hitos</h5>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Tarea</th>
-                                        <th scope="col">Estado</th>
-                                        <th scope="col"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Rendición de cuentas</td>
-                                        <td>Aprobado</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Rendición de cuentas</td>
-                                        <td>Aprobado</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Intervenciones</td>
-                                        <td>Revisión</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Relevamientos</td>
-                                        <td>Agenda</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Relevamientos</td>
-                                        <td>Agenda</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Rendición de cuentas</td>
-                                        <td>Aprobado</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="mt-0 d-flex justify-content-center">
-                                <button class="mt-2 me-2 btn btn-primary px-2 py-1 fs-7">Agregar expediente de pago</button>
-                            </div>
+                            {% empty %}
+                                <p class="text-muted text-center my-3">Sin observaciones registradas.</p>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- /Acompañamiento -->
+    <!-- /Intervenciones y Observaciones -->
+    <!-- Historial de interacciones -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card bg-card">
+                <div class="card-header py-1">
+                    <h4 class="fw-bold my-1">Historial de interacciones</h4>
+                </div>
+                <div class="card-body">
+                    <div class="w-100" style="height: 220px;">
+                        <canvas id="interaccionesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /Historial de interacciones -->
+    <!-- Modal Intervención -->
+    <div class="modal fade"
+         id="modalIntervencion"
+         tabindex="-1"
+         aria-labelledby="modalIntervencionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'comedor_intervencion_crear' comedor.id %}"
+                      enctype="multipart/form-data"
+                      id="intervencionModalForm">
+                    {% csrf_token %}
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalIntervencionLabel">Nueva intervención</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.tipo_intervencion.label }}</label>
+                                {{ intervencion_form.tipo_intervencion }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.subintervencion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.subintervencion.label }}</label>
+                                {{ intervencion_form.subintervencion }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.destinatario.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.destinatario.label }}</label>
+                                {{ intervencion_form.destinatario }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
+                                {{ intervencion_form.fecha }}
+                                <div id="fecha-error-intervencion"
+                                     class="invalid-feedback"
+                                     style="display: none"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.forma_contacto.label }}</label>
+                                {{ intervencion_form.forma_contacto }}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ intervencion_form.observaciones.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.observaciones.label }}</label>
+                                {{ intervencion_form.observaciones }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ intervencion_form.tiene_documentacion }}
+                                    <label class="form-check-label"
+                                           for="{{ intervencion_form.tiene_documentacion.id_for_label }}">
+                                        {{ intervencion_form.tiene_documentacion.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12 d-none" id="documentacion-field-modal">
+                                <label for="{{ intervencion_form.documentacion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.documentacion.label }}</label>
+                                {{ intervencion_form.documentacion }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar intervención</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+ 
+
+    <!-- Modal Validaci&oacute;n -->
+    <div class="modal fade"
+         id="modalValidacion"
+         tabindex="-1"
+         aria-labelledby="modalValidacionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalValidacionLabel">Validaci&oacute;n del Comedor</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="mb-4">Seleccione una opci&oacute;n para validar el comedor:</p>
+                    <div class="d-grid gap-2">
+                        <button type="button"
+                                class="btn btn-success btn-lg"
+                                onclick="validarComedor()">Validar</button>
+                        <button type="button"
+                                class="btn btn-danger btn-lg"
+                                onclick="mostrarOpcionesNoValidar()">No Validar</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal No Validar -->
+    <div class="modal fade"
+         id="modalNoValidar"
+         tabindex="-1"
+         aria-labelledby="modalNoValidarLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'validar_comedor' comedor.pk %}"
+                      id="formNoValidar">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="no_validar" />
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validaci&oacute;n</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="opcionesSelect" class="form-label">Seleccione uno o m&aacute;s motivos: *</label>
+                            <select class="form-control" id="opcionesSelect" name="opciones" multiple>
+                                {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3" id="comentarioDiv" style="display: none;">
+                            <label for="comentario" class="form-label">Comentario: *</label>
+                            <textarea class="form-control"
+                                      id="comentario"
+                                      name="comentario"
+                                      rows="3"
+                                      placeholder="Especifique el motivo..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-danger"
+                                onclick="return validarFormNoValidar()">No Validar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 {% block customJS %}
+
+    <style>
+    .select2-container .select2-selection--multiple {
+        background-color: #495057 !important;
+        border: 1px solid #6c757d !important;
+        border-radius: 0.375rem !important;
+        color: #fff !important;
+        min-height: 38px !important;
+        padding: 0.375rem 0.75rem !important;
+    }
+
+    .select2-container .select2-selection--multiple .select2-selection__choice {
+        background-color: #0d6efd !important;
+        border: 1px solid #0d6efd !important;
+        border-radius: 0.25rem !important;
+        color: #fff !important;
+        font-size: 0.875rem !important;
+        margin: 0.125rem 0.25rem 0.125rem 0 !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+
+    .select2-container .select2-selection--multiple .select2-selection__choice__remove {
+        color: #fff !important;
+        margin-right: 0.25rem !important;
+    }
+
+    .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #f8f9fa !important;
+    }
+
+    .select2-dropdown {
+        background-color: #343a40 !important;
+        border: 1px solid #6c757d !important;
+        border-radius: 0.375rem !important;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .select2-results__option {
+        background-color: #343a40 !important;
+        color: #fff !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    .select2-results__option--highlighted {
+        background-color: #0d6efd !important;
+        color: #fff !important;
+    }
+
+    .select2-search__field {
+        background-color: #495057 !important;
+        border: 1px solid #6c757d !important;
+        border-radius: 0.25rem !important;
+        color: #fff !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+
+    .select2-container .select2-selection--multiple .select2-selection__placeholder {
+        color: #adb5bd !important;
+        margin-top: 0.25rem !important;
+    }
+
+    .select2-container--focus .select2-selection--multiple {
+        border-color: #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+    </style>
+    <script>
+    function validarComedor() {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '{% url "validar_comedor" comedor.pk %}';
+
+      const csrf = document.createElement('input');
+      csrf.type = 'hidden';
+      csrf.name = 'csrfmiddlewaretoken';
+      csrf.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+      const accion = document.createElement('input');
+      accion.type = 'hidden';
+      accion.name = 'accion';
+      accion.value = 'validar';
+
+      const nextInput = document.createElement('input');
+      nextInput.type = 'hidden';
+      nextInput.name = 'next';
+      nextInput.value = '{% url "nuevo_comedor_detalle" pk=comedor.id %}';
+
+      form.appendChild(csrf);
+      form.appendChild(accion);
+      form.appendChild(nextInput);
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    function mostrarOpcionesNoValidar() {
+      const modalValidacion = bootstrap.Modal.getInstance(document.getElementById('modalValidacion'));
+      modalValidacion.hide();
+
+      const modalNoValidar = new bootstrap.Modal(document.getElementById('modalNoValidar'));
+      modalNoValidar.show();
+    }
+
+    document.getElementById('modalNoValidar').addEventListener('shown.bs.modal', function() {
+      if (typeof $ !== 'undefined' && $.fn.select2) {
+        $('#opcionesSelect').select2({
+          placeholder: 'Seleccione una o m\u00e1s opciones...',
+          allowClear: true,
+          width: '100%',
+          dropdownParent: $('#modalNoValidar')
+        });
+
+        $('#opcionesSelect').on('change', function() {
+          toggleComentario();
+        });
+      }
+    });
+
+    function toggleComentario() {
+      const selectedValues = $('#opcionesSelect').val() || [];
+      const comentarioDiv = document.getElementById('comentarioDiv');
+      const comentarioTextarea = document.getElementById('comentario');
+
+      if (selectedValues.includes('otro')) {
+        comentarioDiv.style.display = 'block';
+        comentarioTextarea.required = true;
+      } else {
+        comentarioDiv.style.display = 'none';
+        comentarioTextarea.required = false;
+        comentarioTextarea.value = '';
+      }
+    }
+
+    function validarFormNoValidar() {
+      const selectedValues = $('#opcionesSelect').val() || [];
+      const comentario = document.getElementById('comentario').value.trim();
+
+      if (selectedValues.length === 0) {
+        alert('Debe seleccionar al menos una opci\u00f3n.');
+        return false;
+      }
+
+      if (selectedValues.includes('otro') && !comentario) {
+        alert('El comentario es obligatorio cuando selecciona "Otro".');
+        return false;
+      }
+
+      return true;
+    }
+    </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const tieneDocumentacion = document.getElementById("id_tiene_documentacion");
+      const documentacionField = document.getElementById("documentacion-field-modal");
+      const tipoIntervencionSelect = document.getElementById("id_tipo_intervencion");
+      const subIntervencionSelect = document.getElementById("id_subintervencion");
+      const fechaInput = document.getElementById("id_fecha");
+      const fechaError = document.getElementById("fecha-error-intervencion");
+
+      if (tieneDocumentacion) {
+        tieneDocumentacion.addEventListener("change", function () {
+          if (tieneDocumentacion.checked) {
+            documentacionField.classList.remove("d-none");
+          } else {
+            documentacionField.classList.add("d-none");
+          }
+        });
+      }
+
+      function cargarSubintervenciones(tipoIntervencionId) {
+        if (!subIntervencionSelect) {
+          return;
+        }
+        subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
+
+        if (tipoIntervencionId) {
+          fetch(`/comedores/ajax/load-subestadosintervenciones/?id=${tipoIntervencionId}`)
+            .then(response => response.json())
+            .then(data => {
+              data.forEach(subIntervencion => {
+                const option = document.createElement("option");
+                option.value = subIntervencion.id;
+                option.textContent = subIntervencion.text;
+                subIntervencionSelect.appendChild(option);
+              });
+            })
+            .catch(() => {});
+        }
+      }
+
+      if (tipoIntervencionSelect) {
+        tipoIntervencionSelect.addEventListener("change", function () {
+          cargarSubintervenciones(this.value);
+        });
+      }
+
+      function validarFecha() {
+        if (!fechaInput) {
+          return true;
+        }
+        if (!fechaInput.value) {
+          return true;
+        }
+        const fechaSeleccionada = new Date(fechaInput.value);
+        const anio = fechaSeleccionada.getFullYear();
+
+        if (anio < 2000 || anio > 2100) {
+          fechaInput.classList.add("is-invalid");
+          if (fechaError) {
+            fechaError.textContent = "El año de la fecha debe estar entre 2000 y 2100.";
+            fechaError.style.display = "block";
+          }
+          return false;
+        }
+        fechaInput.classList.remove("is-invalid");
+        if (fechaError) {
+          fechaError.style.display = "none";
+        }
+        return true;
+      }
+
+      if (fechaInput) {
+        fechaInput.addEventListener("change", validarFecha);
+        fechaInput.addEventListener("blur", validarFecha);
+      }
+
+      const form = document.getElementById("intervencionModalForm");
+      if (form) {
+        form.addEventListener("submit", function (event) {
+          if (!validarFecha()) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        });
+      }
+    });
+    </script>
+
     <script>
     const comedorId = "{{ comedor.id }}"
     const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
@@ -1281,27 +1608,142 @@
     <script src="{% static 'custom/js/newcomedor.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-const ctx = document.getElementById('donutChart').getContext('2d');
-
-new Chart(ctx, {
-  type: 'doughnut',
-  data: {
-    labels: ['Cargado', 'Pendiente'],
-    datasets: [{
-      data: [65, 35],
-      backgroundColor: ['#fcbf49', '#e0e0e0'],
-      borderWidth: 0,
-      cutout: '70%'  // ancho dona
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { enabled: false }
+const donutCanvas = document.getElementById('donutChart');
+if (donutCanvas) {
+  const ctx = donutCanvas.getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Cargado', 'Pendiente'],
+      datasets: [{
+        data: [65, 35],
+        backgroundColor: ['#fcbf49', '#e0e0e0'],
+        borderWidth: 0,
+        cutout: '70%'  // ancho dona
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      }
     }
-  }
-});
+  });
+}
+    </script>
+    <script>
+    const nominaEdadCtx = document.getElementById('nominaEdadChart');
+    if (nominaEdadCtx) {
+      new Chart(nominaEdadCtx, {
+        type: 'bar',
+        data: {
+          labels: [
+            'Sin dato',
+            '0-13 años',
+            '14-17 años',
+            '18-49 años',
+            '50-65 años',
+            '+66 años'
+          ],
+          datasets: [{
+            data: [
+              {{ nomina_pct_sin_dato|default:0 }},
+              {{ nomina_pct_ninos|default:0 }},
+              {{ nomina_pct_adolescentes|default:0 }},
+              {{ nomina_pct_adultos|default:0 }},
+              {{ nomina_pct_adultos_mayores|default:0 }},
+              {{ nomina_pct_adulto_mayor_avanzado|default:0 }}
+            ],
+            backgroundColor: [
+              '#F05A4F',
+              '#8B7AD8',
+              '#56C271',
+              '#F3C05B',
+              '#56C1B9',
+              '#F2A000'
+            ],
+            borderWidth: 0,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.parsed.y || 0}%`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#ffffff', maxRotation: 45, minRotation: 45 }
+            },
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                color: '#ffffff',
+                callback: (value) => `${value}%`
+              },
+              grid: { color: 'rgba(255,255,255,0.08)' }
+            }
+          }
+        }
+      });
+    }
+    </script>
+    <script>
+    const interaccionesCtx = document.getElementById('interaccionesChart');
+    if (interaccionesCtx) {
+      const labels = {{ interacciones_labels|default:"[]"|safe }};
+      const values = {{ interacciones_values|default:"[]"|safe }};
+
+      new Chart(interaccionesCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            borderColor: '#f2a000',
+            backgroundColor: 'rgba(84, 164, 180, 0.35)',
+            pointBackgroundColor: '#f2a000',
+            pointBorderColor: '#f2a000',
+            pointRadius: 4,
+            pointHoverRadius: 5,
+            tension: 0.35,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => ` ${context.parsed.y || 0}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#ffffff' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#ffffff', precision: 0 },
+              grid: { color: 'rgba(255,255,255,0.08)' }
+            }
+          }
+        }
+      });
+    }
     </script>
 {% endblock %}

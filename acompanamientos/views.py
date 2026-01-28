@@ -42,6 +42,7 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = self.object
+        admision_id = self.request.GET.get("admision_id")
 
         user_groups = list(self.request.user.groups.values_list("name", flat=True))
         context["es_tecnico_comedor"] = (
@@ -122,7 +123,9 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
             },
         ]
 
-        datos_admision = AcompanamientoService.obtener_datos_admision(comedor)
+        datos_admision = AcompanamientoService.obtener_datos_admision(
+            comedor, admision_id=admision_id
+        )
 
         admision = datos_admision.get("admision")
         info_relevante = datos_admision.get("info_relevante")
