@@ -80,9 +80,9 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     {% for admision_item in admision %}
-                        {% with admision_item.id == selected_admision_id as is_selected %}
+                        {% with selected_admision_id|default:0 as safe_selected_id %}
                             <li>
-                                <a class="dropdown-item d-flex justify-content-between align-items-center {% if is_selected %}active{% endif %}"
+                                <a class="dropdown-item d-flex justify-content-between align-items-center {% if admision_item.id == safe_selected_id %}active{% endif %}"
                                    href="{{ request.path }}?admision_id={{ admision_item.id }}">
                                     <div>
                                         <strong class="d-block">{{ admision_item.get_tipo_display }}</strong>
@@ -90,7 +90,7 @@
                                             {{ admision_item.creado|date:"d/m/Y" }} · {{ admision_item.estado_mostrar|default_if_none:"-" }}
                                         </small>
                                     </div>
-                                    {% if is_selected %}
+                                    {% if admision_item.id == safe_selected_id %}
                                         <i class="bi bi-check2-circle text-primary"></i>
                                     {% endif %}
                                 </a>
