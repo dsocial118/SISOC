@@ -130,8 +130,9 @@
 
 .card .card-body {
   background: #2c3e50;
-  padding: 28px;
+  padding: 0.5rem;
   overflow: visible;
+  border-radius: 8px;
 }
 
 /* TABLA MODERNA - Aplicable a cualquier tabla con .table o .projects */
