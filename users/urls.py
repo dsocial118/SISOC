@@ -25,7 +25,6 @@ urlpatterns = [
         group_required(["Usuario Ver", "Exportar a csv"])(UserExportView.as_view()),
         name="usuarios_exportar",
     ),
-
     path(
         "usuarios/crear/",
         group_required(["Usuario Crear"])(UserCreateView.as_view()),
@@ -46,10 +45,9 @@ urlpatterns = [
         group_required(["Grupos Ver"])(GroupListView.as_view()),
         name="grupos",
     ),
-     path(
+    path(
         "grupos/exportar/",
         group_required(["Grupos Ver", "Exportar a csv"])(GroupExportView.as_view()),
         name="grupos_exportar",
     ),
-
 ]

@@ -25,7 +25,6 @@ urlpatterns = [
         login_required(CiudadanosExportView.as_view()),
         name="ciudadanos_exportar",
     ),
-
     path(
         "ciudadanos/crear/",
         login_required(CiudadanosCreateView.as_view()),

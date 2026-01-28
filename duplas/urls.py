@@ -21,7 +21,6 @@ urlpatterns = [
         group_required(["Admin", "Exportar a csv"])(DuplaExportView.as_view()),
         name="dupla_exportar",
     ),
-
     path(
         "equipo-tecnico/crear/",
         group_required(["Admin"])(DuplaCreateView.as_view()),

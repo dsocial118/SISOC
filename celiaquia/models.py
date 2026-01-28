@@ -329,7 +329,7 @@ class ExpedienteCiudadano(models.Model):
     @property
     def ultimo_comentario(self):
         """Obtiene el último comentario del legajo."""
-        return self.historial_comentarios.first()
+        return self.historial_comentarios.first()  # pylint: disable=no-member
 
     @property
     def comentarios_subsanacion(self):
@@ -354,8 +354,6 @@ class ExpedienteCiudadano(models.Model):
     @property
     def documentos_completos(self):
         """Verifica si tiene todos los documentos requeridos."""
-        from .models import TipoDocumento
-
         tipos_requeridos = TipoDocumento.objects.filter(
             requerido=True, activo=True
         ).count()
@@ -366,8 +364,6 @@ class ExpedienteCiudadano(models.Model):
 
     def documentos_faltantes(self):
         """Lista los tipos de documentos faltantes."""
-        from .models import TipoDocumento
-
         tipos_requeridos = TipoDocumento.objects.filter(requerido=True, activo=True)
         tipos_cargados = self.documentos.values_list("tipo_documento_id", flat=True)
         return tipos_requeridos.exclude(id__in=tipos_cargados)

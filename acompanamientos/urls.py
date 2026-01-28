@@ -34,7 +34,6 @@ urlpatterns = [
         group_required(["Exportar a csv"])(AcompanamientoExportView.as_view()),
         name="lista_comedores_acompanamiento_exportar",
     ),
-
     path(
         "comedor/<int:comedor_id>/restaurar-hito/",
         group_required(["Tecnico Comedor", "Coordinador Equipo Tecnico"])(

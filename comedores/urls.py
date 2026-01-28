@@ -61,11 +61,10 @@ urlpatterns = [
             [
                 "Exportar a csv",
                 "Administrador",
-             ]
+            ]
         )(ComedorExportView.as_view()),
         name="comedor_export",
     ),
-
     path(
         "comedores/crear",
         group_required(["Comedores Crear"])(ComedorCreateView.as_view()),

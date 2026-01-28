@@ -4,9 +4,10 @@ from django.db.models import Case, When, Value, IntegerField
 from core.mixins import CSVExportMixin
 from comedores.services.comedor_service import ComedorService
 
+
 class ComedorExportView(LoginRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_comedores.csv"
-    
+
     def get_export_columns(self):
         # Tuplas (Encabezado CSV, Key en el diccionario/objeto)
         return [
@@ -26,28 +27,30 @@ class ComedorExportView(LoginRequiredMixin, CSVExportMixin, View):
 
     def get_queryset(self):
         # 1. Obtener queryset filtrado (reutilizando lógica del listado)
-        queryset = ComedorService.get_filtered_comedores(self.request, user=self.request.user)
-        
+        queryset = ComedorService.get_filtered_comedores(
+            self.request, user=self.request.user
+        )
+
         # 2. Aplicar ordenamiento desde parámetros GET
-        sort_col = self.request.GET.get('sort')
-        direction = self.request.GET.get('direction', 'asc')
-        
+        sort_col = self.request.GET.get("sort")
+        direction = self.request.GET.get("direction", "asc")
+
         if sort_col:
-            order_prefix = '-' if direction == 'desc' else ''
-            
-            if sort_col == 'nombre':
-                queryset = queryset.order_by(f'{order_prefix}nombre')
-                
-            elif sort_col == 'validacion':
+            order_prefix = "-" if direction == "desc" else ""
+
+            if sort_col == "nombre":
+                queryset = queryset.order_by(f"{order_prefix}nombre")
+
+            elif sort_col == "validacion":
                 # Replicar logica de peso visual: Validado(3) > Pendiente(2) > No Validado(1) > Otro(0)
                 # Nota: En JS, ASC es 0->3.
-                
+
                 # Definir pesos
                 w_validado = 3
                 w_pendiente = 2
                 w_novalidado = 1
                 w_default = 0
-                
+
                 queryset = queryset.annotate(
                     val_weight=Case(
                         When(estado_validacion="Validado", then=Value(w_validado)),
@@ -56,7 +59,7 @@ class ComedorExportView(LoginRequiredMixin, CSVExportMixin, View):
                         default=Value(w_default),
                         output_field=IntegerField(),
                     )
-                ).order_by(f'{order_prefix}val_weight')
+                ).order_by(f"{order_prefix}val_weight")
 
         return queryset
 

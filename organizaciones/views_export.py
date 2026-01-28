@@ -4,9 +4,10 @@ from django.db.models import Q, Count
 from core.mixins import CSVExportMixin
 from organizaciones.models import Organizacion
 
+
 class OrganizacionExportView(LoginRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_organizaciones.csv"
-    
+
     def get_export_columns(self):
         return [
             ("CUIT", "cuit"),
@@ -20,9 +21,10 @@ class OrganizacionExportView(LoginRequiredMixin, CSVExportMixin, View):
 
     def get_queryset(self):
         busqueda = self.request.GET.get("busqueda", "").strip()
-        
-        organizaciones = Organizacion.objects.select_related("tipo_entidad", "subtipo_entidad") \
-                                             .annotate(comedores_count=Count("comedor"))
+
+        organizaciones = Organizacion.objects.select_related(
+            "tipo_entidad", "subtipo_entidad"
+        ).annotate(comedores_count=Count("comedor"))
 
         if busqueda:
             organizaciones = organizaciones.filter(
@@ -33,24 +35,26 @@ class OrganizacionExportView(LoginRequiredMixin, CSVExportMixin, View):
             )
 
         # Sorting from request
-        sort_col = self.request.GET.get('sort')
-        direction = self.request.GET.get('direction', 'asc')
-        
+        sort_col = self.request.GET.get("sort")
+        direction = self.request.GET.get("direction", "asc")
+
         if sort_col:
-            prefix = '-' if direction == 'desc' else ''
+            prefix = "-" if direction == "desc" else ""
             map_sort = {
-                'cuit': 'cuit',
-                'nombre': 'nombre',
-                'comedores': 'comedores_count', # Annotated field, works in order_by
-                'tipo_entidad': 'tipo_entidad__nombre',
-                'subtipo_entidad': 'subtipo_entidad__nombre',
-                'telefono': 'telefono',
-                'email': 'email',
+                "cuit": "cuit",
+                "nombre": "nombre",
+                "comedores": "comedores_count",  # Annotated field, works in order_by
+                "tipo_entidad": "tipo_entidad__nombre",
+                "subtipo_entidad": "subtipo_entidad__nombre",
+                "telefono": "telefono",
+                "email": "email",
             }
             if sort_col in map_sort:
-                organizaciones = organizaciones.order_by(f'{prefix}{map_sort[sort_col]}')
+                organizaciones = organizaciones.order_by(
+                    f"{prefix}{map_sort[sort_col]}"
+                )
         else:
-            organizaciones = organizaciones.order_by("-id") # matches default view
+            organizaciones = organizaciones.order_by("-id")  # matches default view
 
         return organizaciones
 
