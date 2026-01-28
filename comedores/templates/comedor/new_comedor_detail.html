@@ -90,9 +90,7 @@
                                             {{ admision_item.creado|date:"d/m/Y" }} · {{ admision_item.estado_mostrar|default_if_none:"-" }}
                                         </small>
                                     </div>
-                                    {% if admision_item.id == safe_selected_id %}
-                                        <i class="bi bi-check2-circle text-primary"></i>
-                                    {% endif %}
+                                    {% if admision_item.id == safe_selected_id %}<i class="bi bi-check2-circle text-primary"></i>{% endif %}
                                 </a>
                             </li>
                         {% endwith %}

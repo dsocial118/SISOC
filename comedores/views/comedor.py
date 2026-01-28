@@ -382,15 +382,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             .values_list("fecha", flat=True)
             .order_by("fecha")
         )
-        
+
         mes_counter = defaultdict(int)
         for fecha in intervenciones_list:
             if fecha:
                 mes_key = (fecha.year, fecha.month)
                 mes_counter[mes_key] += 1
-        
+
         meses_ordenados = sorted(mes_counter.keys())
-        
+
         meses_es = [
             "Ene",
             "Feb",
