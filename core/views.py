@@ -1,6 +1,12 @@
 # Crea tus vistas aqui.
 import json
+import re
+import logging
+from pathlib import Path
 
+import markdown
+import requests
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.db import IntegrityError
@@ -8,6 +14,8 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods
+
+logger = logging.getLogger(__name__)
 
 from core.models import (
     FiltroFavorito,
@@ -229,6 +237,96 @@ def detalle_filtro_favorito(request, pk):
 def inicio_view(request):
     """Vista para la página de inicio del sistema"""
     return render(request, "inicio.html")
+
+
+def get_current_version():
+    """
+    Extrae la versión actual del sistema desde CHANGELOG.md.
+    Retorna la primera versión encontrada (la más reciente).
+    """
+    changelog_path = Path(settings.BASE_DIR) / "CHANGELOG.md"
+    
+    try:
+        with open(changelog_path, "r", encoding="utf-8") as file:
+            content = file.read()
+            # Buscar el primer "Despliegue: YYYY.MM.DD"
+            match = re.search(r"##\s*Despliegue:\s*(\d{4}\.\d{2}\.\d{2})", content)
+            if match:
+                return match.group(1)
+    except (FileNotFoundError, IOError) as e:
+        logger.error(f"Error al leer CHANGELOG.md: {e}")
+    
+    return "Desconocida"
+
+
+def fetch_changelog_content():
+    """
+    Obtiene el contenido del CHANGELOG.md.
+    Primero intenta leer el archivo local, si falla intenta obtenerlo desde GitHub.
+    """
+    # Intentar leer el archivo local primero
+    changelog_path = Path(settings.BASE_DIR) / "CHANGELOG.md"
+    
+    try:
+        with open(changelog_path, "r", encoding="utf-8") as file:
+            return file.read()
+    except (FileNotFoundError, IOError) as e:
+        logger.warning(f"No se pudo leer CHANGELOG.md local: {e}")
+    
+    # Si falla, intentar obtener desde GitHub
+    github_url = "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/development/CHANGELOG.md"
+    
+    try:
+        response = requests.get(github_url, timeout=10)
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException as e:
+        logger.error(f"Error al obtener CHANGELOG.md desde GitHub: {e}")
+        return None
+
+
+@login_required
+def changelog_view(request):
+    """
+    Vista para mostrar las novedades del sistema desde CHANGELOG.md.
+    El contenido se cachea por 24 horas para evitar lecturas constantes.
+    """
+    cache_key = "changelog_content"
+    cache_timeout = 86400  # 24 horas
+    
+    # Intentar obtener desde cache
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        changelog_html = cached_data["html"]
+        current_version = cached_data["version"]
+    else:
+        # Obtener contenido del changelog
+        changelog_content = fetch_changelog_content()
+        
+        if changelog_content:
+            # Convertir markdown a HTML
+            md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
+            changelog_html = md.convert(changelog_content)
+            current_version = get_current_version()
+            
+            # Guardar en cache
+            cache.set(
+                cache_key,
+                {"html": changelog_html, "version": current_version},
+                cache_timeout
+            )
+        else:
+            changelog_html = None
+            current_version = "Desconocida"
+    
+    context = {
+        "changelog_html": changelog_html,
+        "current_version": current_version,
+        "error": changelog_html is None,
+    }
+    
+    return render(request, "changelog.html", context)
 
 
 def error_500_view(request):
