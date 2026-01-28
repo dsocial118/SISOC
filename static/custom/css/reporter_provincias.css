@@ -1,0 +1,93 @@
+/* Estadísticas - Cards */
+.stat-card-info,
+.stat-card-success,
+.stat-card-warning {
+    border-left: 4px solid;
+}
+
+.stat-card-info {
+    border-left-color: #3b82f6;
+}
+
+.stat-card-success {
+    border-left-color: #10b981;
+}
+
+.stat-card-warning {
+    border-left-color: #f59e0b;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #e7ba61;
+    margin: 0.5rem 0;
+}
+
+.stat-card-success .stat-number {
+    color: #10b981;
+}
+
+.stat-card-warning .stat-number {
+    color: #f59e0b;
+}
+
+.stat-card-info .stat-number {
+    color: #3b82f6;
+}
+
+/* Instancias */
+.instancia-item {
+    background: #1e2a3a;
+    padding: 1rem;
+    border-radius: 6px;
+    border-left: 3px solid #e7ba61;
+    text-align: center;
+}
+
+.instancia-item.instancia-success {
+    border-left-color: #10b981;
+}
+
+.instancia-item.instancia-warning {
+    border-left-color: #f59e0b;
+}
+
+.instancia-item.instancia-danger {
+    border-left-color: #ef4444;
+}
+
+.instancia-count {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #e7ba61;
+    margin: 0.5rem 0;
+}
+
+.instancia-item.instancia-success .instancia-count {
+    color: #10b981;
+}
+
+.instancia-item.instancia-warning .instancia-count {
+    color: #f59e0b;
+}
+
+.instancia-item.instancia-danger .instancia-count {
+    color: #ef4444;
+}
+
+.instancia-label {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
