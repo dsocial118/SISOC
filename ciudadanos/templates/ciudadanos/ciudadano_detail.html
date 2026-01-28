@@ -904,10 +904,77 @@
             <div class="tab-pane fade" id="pas">
                 <div class="row">
                     <div class="col-12">
-                        <div class="tabla-legajo">
-                            <h5 class="mb-3">PAS</h5>
-                            <p style="color: rgba(255,255,255,0.5);">Contenido en desarrollo...</p>
-                        </div>
+                        {% if pas_resumen %}
+                            <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                                <div style="margin-bottom: 1.5rem;">
+                                    <h5 class="mb-0"
+                                        style="display: flex;
+                                               align-items: center;
+                                               gap: 0.75rem">
+                                        Programa de Acompañamiento Social
+                                        <span class="badge"
+                                              style="background: {% if pas_resumen.estado == 'BAJA' %}var(--red){% else %}var(--green){% endif %};
+                                                     padding: 0.35rem 0.75rem;
+                                                     font-size: 0.75rem;
+                                                     margin: 0">{{ pas_resumen.estado }}</span>
+                                    </h5>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                                    <div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7);
+                                                          display: block;
+                                                          margin-bottom: 0.25rem">Período Liquidación:</small>
+                                            <span style="color: white;">{{ pas_resumen.fecha_ultima_liquidacion }}</span>
+                                        </div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7);
+                                                          display: block;
+                                                          margin-bottom: 0.25rem">Monto Liquidación:</small>
+                                            <span style="color: white;">{{ pas_resumen.monto|default:"-" }}</span>
+                                        </div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7);
+                                                          display: block;
+                                                          margin-bottom: 0.25rem">Aviso Liquidación:</small>
+                                            <span style="color: white;">{{ pas_resumen.aviso_liquidacion|default:"-" }}</span>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);
+                                                          display: block;
+                                                          margin-bottom: 0.25rem">Estado del Programa:</small>
+                                            <span style="color: white;">{{ pas_resumen.estado }}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7);
+                                                          display: block;
+                                                          margin-bottom: 0.25rem">Fecha Inicio Programa:</small>
+                                            <span style="color: white;">{{ pas_resumen.fecha_inicio }}</span>
+                                        </div>
+                                        <div style="margin-bottom: 1rem;">
+                                            <small style="color: rgba(255,255,255,0.7);
+                                                          display: block;
+                                                          margin-bottom: 0.25rem">Fecha Fin Programa:</small>
+                                            <span style="color: white;">{{ pas_resumen.fecha_baja }}</span>
+                                        </div>
+                                        <div>
+                                            <small style="color: rgba(255,255,255,0.7);
+                                                          display: block;
+                                                          margin-bottom: 0.25rem;
+                                                          font-weight: 600">Fecha de actualización:</small>
+                                            <span style="color: white; font-weight: 600;">{{ pas_resumen.fecha_ultima_liquidacion }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="tabla-legajo">
+                                <h5 class="mb-3">PAS</h5>
+                                <p style="color: rgba(255,255,255,0.5);">No hay datos de PAS disponibles.</p>
+                            </div>
+                        {% endif %}
                         <div class="tabla-legajo">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="mb-0">Interacciones</h5>
@@ -1006,10 +1073,54 @@
             <div class="tab-pane fade" id="prestacion-alimentar">
                 <div class="row">
                     <div class="col-12">
-                        <div class="tabla-legajo">
-                            <h5 class="mb-3">Prestación Alimentar</h5>
-                            <p style="color: rgba(255,255,255,0.5);">Contenido en desarrollo...</p>
-                        </div>
+                        {% if pas_programas %}
+                            {% for programa in pas_programas %}
+                                <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                                    <div style="margin-bottom: 1.5rem;">
+                                        <h5 class="mb-0"
+                                            style="display: flex;
+                                                   align-items: center;
+                                                   gap: 0.75rem">
+                                            Prestación Alimentar
+                                            <span class="badge"
+                                                  style="background: var(--green);
+                                                         padding: 0.35rem 0.75rem;
+                                                         font-size: 0.75rem;
+                                                         margin: 0">{{ programa.rol_desc|default:"-" }}</span>
+                                        </h5>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                                        <div>
+                                            <div style="margin-bottom: 1rem;">
+                                                <small style="color: rgba(255,255,255,0.7);
+                                                              display: block;
+                                                              margin-bottom: 0.25rem">Monto:</small>
+                                                <span style="color: white;">{{ programa.monto|default:"-" }}</span>
+                                            </div>
+                                            <div style="margin-bottom: 1rem;">
+                                                <small style="color: rgba(255,255,255,0.7);
+                                                              display: block;
+                                                              margin-bottom: 0.25rem">Período:</small>
+                                                <span style="color: white;">{{ programa.periodo_mes }}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="margin-bottom: 1rem;">
+                                                <small style="color: rgba(255,255,255,0.7);
+                                                              display: block;
+                                                              margin-bottom: 0.25rem">ID Relación Titular:</small>
+                                                <span style="color: white;">{{ programa.id_relacion_titular|default:"-" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="tabla-legajo">
+                                <h5 class="mb-3">Prestación Alimentar</h5>
+                                <p style="color: rgba(255,255,255,0.5);">No hay datos de Prestación Alimentar disponibles.</p>
+                            </div>
+                        {% endif %}
                         <div class="tabla-legajo">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="mb-0">Interacciones</h5>

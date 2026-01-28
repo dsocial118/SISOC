@@ -7,12 +7,12 @@ from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env", override=True)
 
 # Entorno
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")  # dev|qa|prd
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Secret Key
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
@@ -153,28 +153,45 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # DB
+RUNNING_TESTS = (
+    any("pytest" in arg for arg in sys.argv) or os.environ.get("PYTEST_RUNNING") == "1"
+)
+USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
+DATABASE_HOST = os.environ.get("DATABASE_HOST")
+DW_DATABASE_HOST = os.environ.get("DW_DATABASE_HOST")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": os.environ.get("DATABASE_NAME"),
         "USER": os.environ.get("DATABASE_USER"),
         "PASSWORD": os.environ.get("DATABASE_PASSWORD"),
-        "HOST": os.environ.get("DATABASE_HOST"),
-        "PORT": os.environ.get("DATABASE_PORT"),
+        "HOST": DATABASE_HOST or "mysql",
+        "PORT": os.environ.get("DATABASE_PORT", "3306"),
+        "OPTIONS": {
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            "charset": "utf8mb4",
+        },
+        "CONN_MAX_AGE": 0,
+    },
+}
+
+if not RUNNING_TESTS and DW_DATABASE_HOST:
+    DATABASES["dw_sisoc"] = {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.environ.get("DW_DATABASE_NAME", "DW_sisoc"),
+        "USER": os.environ.get("DW_DATABASE_USER"),
+        "PASSWORD": os.environ.get("DW_DATABASE_PASSWORD"),
+        "HOST": DW_DATABASE_HOST or "mysql",
+        "PORT": os.environ.get("DW_DATABASE_PORT", "3306"),
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             "charset": "utf8mb4",
         },
         "CONN_MAX_AGE": 0,
     }
-}
 
-# DB para testing
-RUNNING_TESTS = (
-    any("pytest" in arg for arg in sys.argv) or os.environ.get("PYTEST_RUNNING") == "1"
-)
-USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
-if RUNNING_TESTS and (USE_SQLITE_FOR_TESTS or not os.environ.get("DATABASE_HOST")):
+if RUNNING_TESTS and (USE_SQLITE_FOR_TESTS or not DATABASE_HOST):
     DATABASES = {
         "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
     }

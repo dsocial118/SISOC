@@ -19,6 +19,8 @@ from django.views.generic import (
 
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
 from ciudadanos.models import Ciudadano, GrupoFamiliar
+from ciudadanos.services.pas_service import PasService
+from ciudadanos.services.prestacion_alimentar_service import PrestacionAlimentarService
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio
 
@@ -88,6 +90,8 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         ctx.update(self.get_celiaquia_context(ciudadano))
         ctx.update(self.get_cdf_context(ciudadano))
         ctx.update(self.get_comedor_context(ciudadano))
+        ctx.update(self.get_pas_context(ciudadano))
+        ctx.update(self.get_prestacion_alimentar_context(ciudadano))
         return ctx
 
     def build_familia(self, ciudadano):
@@ -215,6 +219,28 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         if nomina_actual:
             contexto["nomina_actual"] = nomina_actual
         return contexto
+
+    def get_pas_context(self, ciudadano):
+        """Fetch PA (Prestacion Alimentaria) data from DW."""
+        try:
+            pas_data = PasService.obtener_datos_pas(ciudadano.pk)
+            resumen = pas_data.get("resumen")
+            return {"pas_resumen": resumen}
+        except Exception:
+            logger.exception("Error loading PA context for ciudadano %s", ciudadano.pk)
+            return {"pas_resumen": None}
+
+    def get_prestacion_alimentar_context(self, ciudadano):
+        """Fetch Prestación Alimentar data from DW."""
+        try:
+            data = PrestacionAlimentarService.obtener_prestacion_alimentar(ciudadano.pk)
+            return {"pas_programas": data.get("programas", [])}
+        except Exception:
+            logger.exception(
+                "Error loading Prestación Alimentar context for ciudadano %s",
+                ciudadano.pk,
+            )
+            return {"pas_programas": []}
 
 
 class CiudadanosCreateView(LoginRequiredMixin, CreateView):
