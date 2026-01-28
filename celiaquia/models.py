@@ -329,13 +329,18 @@ class ExpedienteCiudadano(models.Model):
     @property
     def ultimo_comentario(self):
         """Obtiene el último comentario del legajo."""
-        return self.historial_comentarios.first()
+        # Evitar error de análisis estático (pylint no-member) usando consulta directa
+        return HistorialComentarios.objects.filter(legajo=self).first()
 
     @property
     def comentarios_subsanacion(self):
         """Obtiene comentarios de subsanación."""
-        return self.historial_comentarios.filter(
-            tipo_comentario__in=["SUBSANACION_MOTIVO", "SUBSANACION_RESPUESTA"]
+        return HistorialComentarios.objects.filter(
+            legajo=self,
+            tipo_comentario__in=[
+                HistorialComentarios.TIPO_SUBSANACION_MOTIVO,
+                HistorialComentarios.TIPO_SUBSANACION_RESPUESTA,
+            ],
         )
 
     def tiene_documento(self, tipo_documento_nombre):
@@ -354,8 +359,6 @@ class ExpedienteCiudadano(models.Model):
     @property
     def documentos_completos(self):
         """Verifica si tiene todos los documentos requeridos."""
-        from .models import TipoDocumento
-
         tipos_requeridos = TipoDocumento.objects.filter(
             requerido=True, activo=True
         ).count()
@@ -366,8 +369,6 @@ class ExpedienteCiudadano(models.Model):
 
     def documentos_faltantes(self):
         """Lista los tipos de documentos faltantes."""
-        from .models import TipoDocumento
-
         tipos_requeridos = TipoDocumento.objects.filter(requerido=True, activo=True)
         tipos_cargados = self.documentos.values_list("tipo_documento_id", flat=True)
         return tipos_requeridos.exclude(id__in=tipos_cargados)
