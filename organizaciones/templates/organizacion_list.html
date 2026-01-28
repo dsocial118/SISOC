@@ -13,7 +13,8 @@
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'organizaciones_ajax' as ajax_url %}
-    {% include 'components/search_bar.html' with titulo='Buscar Organizacion' placeholder='Buscar por nombre, CUIT, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='organizaciones' add_url='organizacion_crear' add_text='Agregar' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='organizaciones-tbody' query=query %}
+    {% url 'organizacion_exportar' as export_url %}
+    {% include 'components/search_bar.html' with titulo='Buscar Organizacion' placeholder='Buscar por nombre, CUIT, telefono o email' help_text='Ingresar nombre, CUIT, telefono o email.' reset_url='organizaciones' add_url='organizacion_crear' add_text='Agregar' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='organizaciones-tbody' query=query export_url=export_url %}
     <div class="row mt-5 max-width-100">
         <div class="col-12">
             <div class="card">
@@ -67,4 +68,5 @@
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/export_helper.js' %}"></script>
 {% endblock %}

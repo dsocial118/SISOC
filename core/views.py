@@ -15,8 +15,6 @@ from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods
 
-logger = logging.getLogger(__name__)
-
 from core.models import (
     FiltroFavorito,
     Localidad,
@@ -30,6 +28,8 @@ from core.services.favorite_filters import (
     obtener_items_obsoletos,
 )
 from organizaciones.models import Organizacion
+
+logger = logging.getLogger(__name__)
 
 
 @login_required

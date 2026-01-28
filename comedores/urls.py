@@ -18,6 +18,8 @@ from comedores.views import (
     nomina_editar_ajax,
     validar_comedor,
 )
+from comedores.views.export import ComedorExportView
+
 
 from comedores.views_territorial import (
     obtener_territoriales_api,
@@ -52,6 +54,16 @@ urlpatterns = [
             ]
         )(ComedorListView.as_view()),
         name="comedores",
+    ),
+    path(
+        "comedores/exportar",
+        group_required(
+            [
+                "Exportar a csv",
+                "Administrador",
+            ]
+        )(ComedorExportView.as_view()),
+        name="comedor_export",
     ),
     path(
         "comedores/crear",
