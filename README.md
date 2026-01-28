@@ -181,6 +181,8 @@ curl -X GET http://localhost:8000/api/comedores/      -H "Authorization: Bearer 
 
 [CHANGELOG.md](https://github.com/dsocial118/BACKOFFICE/blob/development/CHANGELOG.md)
 
+Los usuarios del sistema pueden consultar las novedades desde la opción **"Novedades del sistema"** en el menú lateral del backoffice.
+
 ---
 
 ## Contribución
