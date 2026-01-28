@@ -32,8 +32,6 @@ from organizaciones.models import Organizacion
 logger = logging.getLogger(__name__)
 
 
-
-
 @login_required
 @require_GET
 def load_municipios(request):
