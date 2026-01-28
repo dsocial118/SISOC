@@ -41,15 +41,7 @@
             <p>Inicio</p>
         </a>
     </li>
-    <!-- NOVEDADES DEL SISTEMA -->
-    <li class="nav-item nav-main-item">
-        <a href="{% url 'changelog' %}"
-           class="nav-link {% if 'novedades' in pagina_actual %}active{% endif %}">
-            <i class="bi bi-megaphone-fill nav-icon" style="font-size: 1.2rem;"></i>
-            <p>Novedades del sistema</p>
-        </a>
-    </li>
-    <!-- ADMINISTRACIÓN -->
+
     {% if request.user|has_group:"Administrador" %}
         <li class="nav-item nav-main-item">
             <a href="#" class="nav-link">

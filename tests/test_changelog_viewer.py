@@ -1,5 +1,5 @@
-import pytest
 from unittest.mock import patch
+import pytest
 from django.urls import reverse
 from django.core.cache import cache
 from core.views import get_current_version, fetch_changelog_content
