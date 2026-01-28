@@ -19,6 +19,7 @@ from core.models import (
     FiltroFavorito,
     Localidad,
     Municipio,
+    PreferenciaColumnas,
 )
 from core.services.favorite_filters import (
     TTL_CACHE_FILTROS_FAVORITOS,
@@ -86,6 +87,63 @@ def _parsear_datos_request(request):
         except (json.JSONDecodeError, UnicodeDecodeError):
             pass
     return request.POST
+
+
+def _normalizar_columnas(carga):
+    if carga is None:
+        return None
+    if isinstance(carga, str):
+        try:
+            carga = json.loads(carga)
+        except json.JSONDecodeError:
+            return None
+    if not isinstance(carga, (list, tuple)):
+        return None
+    columnas = []
+    vistos = set()
+    for item in carga:
+        valor = str(item).strip()
+        if not valor or valor in vistos:
+            continue
+        vistos.add(valor)
+        columnas.append(valor)
+    return columnas
+
+
+def _columnas_preferencias_get(request):
+    listado = str(request.GET.get("list_key") or "").strip()
+    if not listado:
+        return JsonResponse({"error": "Listado invalido."}, status=400)
+
+    preferencia = PreferenciaColumnas.objects.filter(
+        usuario=request.user, listado=listado
+    ).only("columnas").first()
+
+    columnas = preferencia.columnas if preferencia else []
+    return JsonResponse({"list_key": listado, "columns": columnas}, status=200)
+
+
+def _columnas_preferencias_post(request):
+    datos = _parsear_datos_request(request)
+    listado = str(datos.get("list_key") or "").strip()
+    if not listado:
+        return JsonResponse({"error": "Listado invalido."}, status=400)
+
+    reset = str(datos.get("reset") or "").lower() in ("1", "true", "yes")
+    if reset:
+        PreferenciaColumnas.objects.filter(usuario=request.user, listado=listado).delete()
+        return JsonResponse({"list_key": listado, "columns": []}, status=200)
+
+    columnas = _normalizar_columnas(datos.get("columns"))
+    if columnas is None:
+        return JsonResponse({"error": "Columnas invalidas."}, status=400)
+
+    PreferenciaColumnas.objects.update_or_create(
+        usuario=request.user,
+        listado=listado,
+        defaults={"columnas": columnas},
+    )
+    return JsonResponse({"list_key": listado, "columns": columnas}, status=200)
 
 
 def _filtros_favoritos_get(request):
@@ -182,6 +240,17 @@ def filtros_favoritos(request):
         return _filtros_favoritos_get(request)
 
     return _filtros_favoritos_post(request)
+
+
+@ensure_csrf_cookie
+@login_required
+@require_http_methods(["GET", "POST"])
+def columnas_preferencias(request):
+    """Guarda o devuelve preferencias de columnas para el usuario actual."""
+    if request.method == "GET":
+        return _columnas_preferencias_get(request)
+
+    return _columnas_preferencias_post(request)
 
 
 @login_required
