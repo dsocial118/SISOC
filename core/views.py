@@ -243,9 +243,11 @@ def get_current_version():
     """
     Extrae la versión actual del sistema desde CHANGELOG.md.
     Retorna la primera versión encontrada (la más reciente).
+    Intenta primero del archivo local, luego desde GitHub.
     """
     changelog_path = Path(settings.BASE_DIR) / "CHANGELOG.md"
 
+    # Intentar leer del archivo local
     try:
         with open(changelog_path, "r", encoding="utf-8") as file:
             content = file.read()
@@ -254,7 +256,18 @@ def get_current_version():
             if match:
                 return match.group(1)
     except (FileNotFoundError, IOError) as e:
-        logger.error(f"Error al leer CHANGELOG.md: {e}")
+        logger.warning(f"No se pudo leer CHANGELOG.md local para versión: {e}")
+
+    # Si falla, intentar obtener desde GitHub
+    try:
+        response = requests.get(settings.CHANGELOG_GITHUB_URL, timeout=10)
+        response.raise_for_status()
+        content = response.text
+        match = re.search(r"##\s*Despliegue:\s*(\d{4}\.\d{2}\.\d{2})", content)
+        if match:
+            return match.group(1)
+    except requests.RequestException as e:
+        logger.error(f"Error al obtener versión desde GitHub: {e}")
 
     return "Desconocida"
 
@@ -274,10 +287,8 @@ def fetch_changelog_content():
         logger.warning(f"No se pudo leer CHANGELOG.md local: {e}")
 
     # Si falla, intentar obtener desde GitHub
-    github_url = "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/development/CHANGELOG.md"
-
     try:
-        response = requests.get(github_url, timeout=10)
+        response = requests.get(settings.CHANGELOG_GITHUB_URL, timeout=10)
         response.raise_for_status()
         return response.text
     except requests.RequestException as e:
@@ -306,7 +317,7 @@ def changelog_view(request):
 
         if changelog_content:
             # Convertir markdown a HTML
-            md = markdown.Markdown(extensions=["extra", "nl2br", "sane_lists"])
+            md = markdown.Markdown(extensions=["extra", "sane_lists"])
             changelog_html = md.convert(changelog_content)
             current_version = get_current_version()
 
@@ -318,7 +329,7 @@ def changelog_view(request):
             )
         else:
             changelog_html = None
-            current_version = "Desconocida"
+            current_version = get_current_version()
 
     context = {
         "changelog_html": changelog_html,
