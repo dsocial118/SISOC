@@ -1,5 +1,6 @@
 import json
 import os
+from collections import defaultdict
 from typing import Any
 
 from django.conf import settings
@@ -9,7 +10,6 @@ from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count
-from django.db.models.functions import TruncMonth
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -377,13 +377,20 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 }
             )
 
-        interacciones_qs = (
-            Intervencion.objects.filter(comedor=self.object)
-            .annotate(mes=TruncMonth("fecha"))
-            .values("mes")
-            .annotate(cantidad=Count("id"))
-            .order_by("mes")
+        intervenciones_list = (
+            Intervencion.objects.filter(comedor=self.object, fecha__isnull=False)
+            .values_list("fecha", flat=True)
+            .order_by("fecha")
         )
+        
+        mes_counter = defaultdict(int)
+        for fecha in intervenciones_list:
+            if fecha:
+                mes_key = (fecha.year, fecha.month)
+                mes_counter[mes_key] += 1
+        
+        meses_ordenados = sorted(mes_counter.keys())
+        
         meses_es = [
             "Ene",
             "Feb",
@@ -400,14 +407,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         ]
         interacciones_labels = []
         interacciones_values = []
-        for item in interacciones_qs:
-            mes = item["mes"]
-            if mes:
-                label = f"{meses_es[mes.month - 1]} {mes.year}"
-            else:
-                label = "-"
+        for year, month in meses_ordenados:
+            label = f"{meses_es[month - 1]} {year}"
             interacciones_labels.append(label)
-            interacciones_values.append(item["cantidad"] or 0)
+            interacciones_values.append(mes_counter[(year, month)])
 
         # Preparar datos para la tabla de admisiones
         admisiones_headers = [
