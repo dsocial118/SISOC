@@ -27,10 +27,11 @@ urlpatterns = [
     ),
     path(
         "organizaciones/exportar",
-        group_required(["Organizaciones", "Exportar a csv"])(OrganizacionExportView.as_view()),
+        group_required(["Organizaciones", "Exportar a csv"])(
+            OrganizacionExportView.as_view()
+        ),
         name="organizacion_exportar",
     ),
-
     path(
         "organizaciones/crear",
         group_required(["Organizaciones"])(OrganizacionCreateView.as_view()),

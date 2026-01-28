@@ -4,9 +4,10 @@ from django.db.models import Q
 from core.mixins import CSVExportMixin
 from cdi.models import CentroDesarrolloInfantil
 
+
 class CDIExportView(LoginRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_cdi.csv"
-    
+
     def get_export_columns(self):
         return [
             ("Nombre", "nombre"),
@@ -34,21 +35,21 @@ class CDIExportView(LoginRequiredMixin, CSVExportMixin, View):
             )
 
         # Sorting from request
-        sort_col = self.request.GET.get('sort')
-        direction = self.request.GET.get('direction', 'asc')
-        
+        sort_col = self.request.GET.get("sort")
+        direction = self.request.GET.get("direction", "asc")
+
         if sort_col:
-            prefix = '-' if direction == 'desc' else ''
+            prefix = "-" if direction == "desc" else ""
             # map headers to fields
             map_sort = {
-                'nombre': 'nombre',
-                'numexpe': 'numexpe',
-                'numrepo': 'numrepo',
-                'organizacion': 'organizacion__nombre',
-                'provincia': 'provincia__nombre',
+                "nombre": "nombre",
+                "numexpe": "numexpe",
+                "numrepo": "numrepo",
+                "organizacion": "organizacion__nombre",
+                "provincia": "provincia__nombre",
             }
             if sort_col in map_sort:
-                queryset = queryset.order_by(f'{prefix}{map_sort[sort_col]}')
+                queryset = queryset.order_by(f"{prefix}{map_sort[sort_col]}")
         else:
             queryset = queryset.order_by("nombre")
 

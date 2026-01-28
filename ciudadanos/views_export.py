@@ -5,9 +5,10 @@ from core.mixins import CSVExportMixin
 from ciudadanos.models import Ciudadano
 from ciudadanos.forms import CiudadanoFiltroForm
 
+
 class CiudadanosExportView(LoginRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_ciudadanos.csv"
-    
+
     def get_export_columns(self):
         return [
             ("Apellido", "apellido"),
@@ -35,25 +36,25 @@ class CiudadanosExportView(LoginRequiredMixin, CSVExportMixin, View):
                 )
             if data.get("provincia"):
                 queryset = queryset.filter(provincia=data["provincia"])
-        
+
         # Sorting
-        sort_col = self.request.GET.get('sort')
-        direction = self.request.GET.get('direction', 'asc')
+        sort_col = self.request.GET.get("sort")
+        direction = self.request.GET.get("direction", "asc")
         if sort_col:
-            prefix = '-' if direction == 'desc' else ''
+            prefix = "-" if direction == "desc" else ""
             # Map frontend columns to backend fields
             map_sort = {
-                'apellido': 'apellido',
-                'nombre': 'nombre',
-                'documento': 'documento',
-                'sexo': 'sexo',
-                'provincia': 'provincia__nombre',
+                "apellido": "apellido",
+                "nombre": "nombre",
+                "documento": "documento",
+                "sexo": "sexo",
+                "provincia": "provincia__nombre",
             }
             if sort_col in map_sort:
-                queryset = queryset.order_by(f'{prefix}{map_sort[sort_col]}')
+                queryset = queryset.order_by(f"{prefix}{map_sort[sort_col]}")
         else:
-             queryset = queryset.order_by("apellido", "nombre")
-             
+            queryset = queryset.order_by("apellido", "nombre")
+
         return queryset
 
     def get(self, request, *args, **kwargs):

@@ -23,7 +23,6 @@ urlpatterns = [
         group_required(["CDI", "Exportar a csv"])(CDIExportView.as_view()),
         name="cdi_exportar",
     ),
-
     path(
         "cdi/crear",
         group_required(["CDI"])(CDICreateView.as_view()),
