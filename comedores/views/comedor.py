@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any
 
@@ -7,6 +8,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -25,6 +28,8 @@ from comedores.models import Comedor, HistorialValidacion, ImagenComedor
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from intervenciones.models.intervenciones import Intervencion
+from intervenciones.forms import IntervencionForm
 
 
 class ComedorListView(LoginRequiredMixin, ListView):
@@ -250,6 +255,159 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             .order_by("-id")
         )
         admision = admisiones_qs
+        timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
+        (
+            _nomina_page_obj,
+            nomina_m,
+            nomina_f,
+            _nomina_x,
+            nomina_espera,
+            nomina_total,
+            nomina_rangos,
+        ) = ComedorService.get_nomina_detail(self.object.pk, page=1, per_page=1)
+        nomina_menores = (nomina_rangos.get("ninos") or 0) + (
+            nomina_rangos.get("adolescentes") or 0
+        )
+        nomina_total_safe = nomina_total or 0
+        nomina_activos = nomina_rangos.get("total_activos") or 0
+        nomina_sin_dato = max(nomina_total_safe - nomina_activos, 0)
+
+        def _pct(value):
+            if not nomina_total_safe:
+                return 0
+            return int(round((value or 0) * 100 / nomina_total_safe))
+
+        def _safe_cell(value):
+            if value is None or value == "":
+                return "-"
+            return escape(value)
+
+        intervenciones_qs = (
+            Intervencion.objects.filter(comedor=self.object)
+            .select_related("tipo_intervencion", "subintervencion", "destinatario")
+            .order_by("-fecha")
+        )
+        intervenciones_paginator = Paginator(intervenciones_qs, 10)
+        intervenciones_page_number = self.request.GET.get("intervenciones_page", 1)
+        intervenciones_page_obj = intervenciones_paginator.get_page(
+            intervenciones_page_number
+        )
+        intervenciones_page_range = intervenciones_paginator.get_elided_page_range(
+            number=intervenciones_page_obj.number
+        )
+        intervenciones_headers = [
+            {"title": "Intervención"},
+            {"title": "Sub intervención"},
+            {"title": "Fecha"},
+            {"title": "Doc. adjunta"},
+            {"title": "Destinatario"},
+            {"title": "Estado"},
+            {"title": "Acciones"},
+        ]
+        intervenciones_items = []
+        for intervencion in intervenciones_page_obj:
+            estado_badge = (
+                format_html('<span class="badge bg-success">Completa</span>')
+                if getattr(intervencion, "tiene_documentacion", False)
+                else format_html(
+                    '<span class="badge bg-warning text-dark">Pendiente</span>'
+                )
+            )
+            doc_badge = (
+                format_html('<span class="badge bg-success">Sí</span>')
+                if getattr(intervencion, "tiene_documentacion", False)
+                else format_html('<span class="badge bg-secondary">No</span>')
+            )
+
+            actions = [
+                format_html(
+                    '<a href="{}" class="btn btn-sm btn-primary">Ver</a>',
+                    reverse("intervencion_detalle", args=[intervencion.id]),
+                )
+            ]
+            if self.request.user.is_superuser:
+                actions.append(
+                    format_html(
+                        '<a href="{}" class="btn btn-sm btn-danger">Eliminar</a>',
+                        reverse(
+                            "comedor_intervencion_borrar",
+                            args=[self.object.id, intervencion.id],
+                        ),
+                    )
+                )
+            actions_html = format_html_join(
+                " ", "{}", ((action,) for action in actions)
+            )
+
+            intervenciones_items.append(
+                {
+                    "cells": [
+                        {
+                            "content": _safe_cell(
+                                str(intervencion.tipo_intervencion)
+                                if intervencion.tipo_intervencion
+                                else None
+                            )
+                        },
+                        {
+                            "content": _safe_cell(
+                                str(intervencion.subintervencion)
+                                if intervencion.subintervencion
+                                else None
+                            )
+                        },
+                        {
+                            "content": _safe_cell(
+                                intervencion.fecha.strftime("%d/%m/%Y")
+                                if intervencion.fecha
+                                else None
+                            )
+                        },
+                        {"content": doc_badge},
+                        {
+                            "content": _safe_cell(
+                                str(intervencion.destinatario)
+                                if intervencion.destinatario
+                                else None
+                            )
+                        },
+                        {"content": estado_badge},
+                        {"content": actions_html},
+                    ]
+                }
+            )
+
+        interacciones_qs = (
+            Intervencion.objects.filter(comedor=self.object)
+            .annotate(mes=TruncMonth("fecha"))
+            .values("mes")
+            .annotate(cantidad=Count("id"))
+            .order_by("mes")
+        )
+        meses_es = [
+            "Ene",
+            "Feb",
+            "Mar",
+            "Abr",
+            "May",
+            "Jun",
+            "Jul",
+            "Ago",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dic",
+        ]
+        interacciones_labels = []
+        interacciones_values = []
+        for item in interacciones_qs:
+            mes = item["mes"]
+            if mes:
+                label = f"{meses_es[mes.month - 1]} {mes.year}"
+            else:
+                label = "-"
+            interacciones_labels.append(label)
+            interacciones_values.append(item["cantidad"] or 0)
 
         # Preparar datos para la tabla de admisiones
         admisiones_headers = [
@@ -270,11 +428,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         admisiones_page_range = admisiones_paginator.get_elided_page_range(
             number=admisiones_page_obj.number
         )
-
-        def _safe_cell(value):
-            if value is None or value == "":
-                return "-"
-            return escape(value)
 
         admisiones_items = []
         for a in admisiones_page_obj:
@@ -471,6 +624,27 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "comedor_categoria": comedor_categoria,
             "rendicion_cuentas_final_activo": True,  # rendiciones_mensuales >= 5, (esta validación se saca temporalmente)
             "admision": admision,
+            **timeline_context,
+            "nomina_total": nomina_total,
+            "nomina_hombres": nomina_m,
+            "nomina_mujeres": nomina_f,
+            "nomina_menores": nomina_menores,
+            "nomina_espera": nomina_espera,
+            "nomina_pct_sin_dato": _pct(nomina_sin_dato),
+            "nomina_pct_ninos": _pct(nomina_rangos.get("ninos")),
+            "nomina_pct_adolescentes": _pct(nomina_rangos.get("adolescentes")),
+            "nomina_pct_adultos": _pct(nomina_rangos.get("adultos")),
+            "nomina_pct_adultos_mayores": _pct(nomina_rangos.get("adultos_mayores")),
+            "nomina_pct_adulto_mayor_avanzado": _pct(
+                nomina_rangos.get("adulto_mayor_avanzado")
+            ),
+            "intervenciones_headers": intervenciones_headers,
+            "intervenciones_items": intervenciones_items,
+            "intervenciones_page_obj": intervenciones_page_obj,
+            "intervenciones_is_paginated": (intervenciones_page_obj.has_other_pages()),
+            "intervenciones_page_range": intervenciones_page_range,
+            "interacciones_labels": json.dumps(interacciones_labels),
+            "interacciones_values": json.dumps(interacciones_values),
             "admisiones_headers": admisiones_headers,
             "admisiones_items": admisiones_items,
             "admisiones_page_obj": admisiones_page_obj,
@@ -496,12 +670,38 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         presupuestos_data = self.get_presupuestos_data()
         relaciones_data = self.get_relaciones_optimizadas()
         env_config = self._get_environment_config()
+        intervencion_form = IntervencionForm()
+
+        selected_admision_pk = None
+        selected_param = self.request.GET.get("admision_id")
+        if selected_param:
+            try:
+                selected_admision_pk = int(selected_param)
+            except (TypeError, ValueError):
+                selected_admision_pk = None
+
+        admisiones_qs = presupuestos_data.get("admision")
+        selected_admision = None
+        if admisiones_qs and selected_admision_pk:
+            selected_admision = admisiones_qs.filter(id=selected_admision_pk).first()
+
+        if not selected_admision:
+            selected_admision = presupuestos_data.get("admision_activa")
 
         # Agregar opciones de validación
 
         context["opciones_no_validar"] = HistorialValidacion.get_opciones_no_validar()
 
-        context.update({**presupuestos_data, **relaciones_data, **env_config})
+        context.update(
+            {
+                **presupuestos_data,
+                **relaciones_data,
+                **env_config,
+                "intervencion_form": intervencion_form,
+                "selected_admision": selected_admision,
+                "selected_admision_id": getattr(selected_admision, "id", None),
+            }
+        )
         return context
 
 
