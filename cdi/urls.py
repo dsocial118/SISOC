@@ -8,6 +8,8 @@ from cdi.views import (
     CDIDeleteView,
     cdi_ajax,
 )
+from cdi.views_export import CDIExportView
+
 from core.decorators import group_required
 
 urlpatterns = [
@@ -16,6 +18,12 @@ urlpatterns = [
         group_required(["CDI"])(CDIListView.as_view()),
         name="cdi",
     ),
+    path(
+        "cdi/exportar",
+        group_required(["CDI", "Exportar a csv"])(CDIExportView.as_view()),
+        name="cdi_exportar",
+    ),
+
     path(
         "cdi/crear",
         group_required(["CDI"])(CDICreateView.as_view()),

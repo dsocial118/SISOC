@@ -9,6 +9,8 @@ from users.views import (
     UserDeleteView,
     GroupListView,
 )
+from users.views_export import UserExportView, GroupExportView
+
 
 urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),
@@ -18,6 +20,12 @@ urlpatterns = [
         group_required(["Usuario Ver"])(UserListView.as_view()),
         name="usuarios",
     ),
+    path(
+        "usuarios/exportar/",
+        group_required(["Usuario Ver", "Exportar a csv"])(UserExportView.as_view()),
+        name="usuarios_exportar",
+    ),
+
     path(
         "usuarios/crear/",
         group_required(["Usuario Crear"])(UserCreateView.as_view()),
@@ -38,4 +46,10 @@ urlpatterns = [
         group_required(["Grupos Ver"])(GroupListView.as_view()),
         name="grupos",
     ),
+     path(
+        "grupos/exportar/",
+        group_required(["Grupos Ver", "Exportar a csv"])(GroupExportView.as_view()),
+        name="grupos_exportar",
+    ),
+
 ]

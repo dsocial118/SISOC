@@ -165,3 +165,17 @@ label:has(.field-tooltip) {
     width: 100%;
   }
 }
+
+/* Export Button - Matches .btn-editar color */
+.search-actions .btn-export-csv {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.search-actions .btn-export-csv:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
