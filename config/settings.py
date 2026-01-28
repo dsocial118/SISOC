@@ -247,6 +247,12 @@ RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = os.getenv("RENAPER_API_URL")
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
+# Changelog
+CHANGELOG_GITHUB_URL = os.getenv(
+    "CHANGELOG_GITHUB_URL",
+    "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/development/CHANGELOG.md",
+)
+
 # IPs internas
 INTERNAL_IPS = ["127.0.0.1", "::1"]
 
