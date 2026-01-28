@@ -80,7 +80,7 @@ class ExpedientePago(models.Model):
         max_digits=10,
         decimal_places=2,
         verbose_name="Monto mensual cena",
-        blank=True, 
+        blank=True,
         null=True,
     )
 

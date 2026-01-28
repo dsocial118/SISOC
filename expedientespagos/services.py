@@ -19,9 +19,15 @@ class ExpedientesPagosService:
                 fecha_pago_al_banco=data.get("fecha_pago_al_banco"),
                 fecha_acreditacion=data.get("fecha_acreditacion"),
                 observaciones=data.get("observaciones"),
-                prestaciones_mensuales_desayuno=data.get("prestaciones_mensuales_desayuno"),
-                prestaciones_mensuales_almuerzo=data.get("prestaciones_mensuales_almuerzo"),
-                prestaciones_mensuales_merienda=data.get("prestaciones_mensuales_merienda"),
+                prestaciones_mensuales_desayuno=data.get(
+                    "prestaciones_mensuales_desayuno"
+                ),
+                prestaciones_mensuales_almuerzo=data.get(
+                    "prestaciones_mensuales_almuerzo"
+                ),
+                prestaciones_mensuales_merienda=data.get(
+                    "prestaciones_mensuales_merienda"
+                ),
                 prestaciones_mensuales_cena=data.get("prestaciones_mensuales_cena"),
                 monto_mensual_desayuno=data.get("monto_mensual_desayuno"),
                 monto_mensual_almuerzo=data.get("monto_mensual_almuerzo"),
@@ -52,10 +58,18 @@ class ExpedientesPagosService:
             expediente_pago.fecha_pago_al_banco = data.get("fecha_pago_al_banco")
             expediente_pago.fecha_acreditacion = data.get("fecha_acreditacion")
             expediente_pago.observaciones = data.get("observaciones")
-            expediente_pago.prestaciones_mensuales_desayuno = data.get("prestaciones_mensuales_desayuno")
-            expediente_pago.prestaciones_mensuales_almuerzo = data.get("prestaciones_mensuales_almuerzo")
-            expediente_pago.prestaciones_mensuales_merienda = data.get("prestaciones_mensuales_merienda")
-            expediente_pago.prestaciones_mensuales_cena = data.get("prestaciones_mensuales_cena")
+            expediente_pago.prestaciones_mensuales_desayuno = data.get(
+                "prestaciones_mensuales_desayuno"
+            )
+            expediente_pago.prestaciones_mensuales_almuerzo = data.get(
+                "prestaciones_mensuales_almuerzo"
+            )
+            expediente_pago.prestaciones_mensuales_merienda = data.get(
+                "prestaciones_mensuales_merienda"
+            )
+            expediente_pago.prestaciones_mensuales_cena = data.get(
+                "prestaciones_mensuales_cena"
+            )
             expediente_pago.monto_mensual_desayuno = data.get("monto_mensual_desayuno")
             expediente_pago.monto_mensual_almuerzo = data.get("monto_mensual_almuerzo")
             expediente_pago.monto_mensual_merienda = data.get("monto_mensual_merienda")
