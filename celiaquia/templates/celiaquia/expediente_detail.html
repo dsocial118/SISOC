@@ -1000,28 +1000,32 @@
                                                     <input type="text"
                                                            class="form-control"
                                                            name="telefono"
-                                                           value="{{ registro.datos_raw.telefono|default:'' }}" required />
+                                                           value="{{ registro.datos_raw.telefono|default:'' }}"
+                                                           required />
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label class="form-label">Email *</label>
                                                     <input type="email"
                                                            class="form-control"
                                                            name="email"
-                                                           value="{{ registro.datos_raw.email|default:'' }}" required />
+                                                           value="{{ registro.datos_raw.email|default:'' }}"
+                                                           required />
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label">Calle *</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="calle"
-                                                           value="{{ registro.datos_raw.calle|default:'' }}" required />
+                                                           value="{{ registro.datos_raw.calle|default:'' }}"
+                                                           required />
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label">Altura *</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="altura"
-                                                           value="{{ registro.datos_raw.altura|default:'' }}" required />
+                                                           value="{{ registro.datos_raw.altura|default:'' }}"
+                                                           required />
                                                 </div>
                                             </div>
 
@@ -1085,7 +1089,8 @@
                                                         <input type="email"
                                                                class="form-control"
                                                                name="email_responsable"
-                                                               value="{{ registro.datos_raw.email_responsable|default:'' }}" required />
+                                                               value="{{ registro.datos_raw.email_responsable|default:'' }}"
+                                                               required />
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label">Domicilio Responsable</label>
@@ -1617,33 +1622,53 @@
                         </div>
                         <div class="col-md-6">
                             <label for="editar-nacionalidad" class="form-label">Nacionalidad *</label>
-                            <select class="form-select" id="editar-nacionalidad" name="nacionalidad" required>
+                            <select class="form-select"
+                                    id="editar-nacionalidad"
+                                    name="nacionalidad"
+                                    required>
                                 <option value="">Seleccionar...</option>
                                 {% for nac in nacionalidades %}<option value="{{ nac.id }}">{{ nac.nacionalidad }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label for="editar-telefono" class="form-label">Teléfono *</label>
-                            <input type="text" class="form-control" id="editar-telefono" name="telefono" required />
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-telefono"
+                                   name="telefono"
+                                   required />
                         </div>
                         <div class="col-md-6">
                             <label for="editar-email" class="form-label">Email *</label>
-                            <input type="email" class="form-control" id="editar-email" name="email" required />
+                            <input type="email"
+                                   class="form-control"
+                                   id="editar-email"
+                                   name="email"
+                                   required />
                         </div>
                         <div class="col-md-4">
                             <label for="editar-calle" class="form-label">Calle *</label>
-                            <input type="text" class="form-control" id="editar-calle" name="calle" required />
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-calle"
+                                   name="calle"
+                                   required />
                         </div>
                         <div class="col-md-4">
                             <label for="editar-altura" class="form-label">Altura *</label>
-                            <input type="text" class="form-control" id="editar-altura" name="altura" required />
+                            <input type="text"
+                                   class="form-control"
+                                   id="editar-altura"
+                                   name="altura"
+                                   required />
                         </div>
                         <div class="col-md-4">
                             <label for="editar-codigo-postal" class="form-label">Código Postal *</label>
                             <input type="text"
                                    class="form-control"
                                    id="editar-codigo-postal"
-                                   name="codigo_postal" required />
+                                   name="codigo_postal"
+                                   required />
                         </div>
                         <div class="col-md-4">
                             <label for="editar-municipio" class="form-label">Municipio *</label>
@@ -1656,7 +1681,11 @@
                             <label for="editar-localidad" class="form-label">Localidad *</label>
                             <select class="form-select" id="editar-localidad" name="localidad" required>
                                 <option value="">Seleccionar...</option>
-                                {% for loc in localidades %}<option value="{{ loc.id }}" data-municipio="{{ loc.municipio_id }}">{{ loc.nombre }} ({{ loc.municipio.nombre }})</option>{% endfor %}
+                                {% for loc in localidades %}
+                                    <option value="{{ loc.id }}" data-municipio="{{ loc.municipio_id }}">
+                                        {{ loc.nombre }} ({{ loc.municipio.nombre }})
+                                    </option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>
