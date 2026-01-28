@@ -30,10 +30,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // 3. Construir URL final
-            // Asegurarse de no duplicar ? si ya existe en baseUrl (raro en Django urls pero posible)
-            const separator = baseUrl.includes('?') ? '&' : '?';
-            const finalUrl = `${baseUrl}${separator}${currentParams.toString()}`;
+            // 3. Construir URL final de forma segura a partir de baseUrl
+            let exportUrl;
+            try {
+                // Permite rutas relativas y absolutas, siempre respecto al origen actual
+                exportUrl = new URL(baseUrl, window.location.href);
+            } catch (err) {
+                // Si baseUrl no es una URL válida, abortar
+                return;
+            }
+
+            // Restringir esquema y origen para evitar redirecciones inseguras
+            if ((exportUrl.protocol !== 'http:' && exportUrl.protocol !== 'https:') ||
+                exportUrl.origin !== window.location.origin) {
+                return;
+            }
+
+            // Añadir/mezclar parámetros actuales a la URL de exportación
+            currentParams.forEach((value, key) => {
+                exportUrl.searchParams.set(key, value);
+            });
+
+            const finalUrl = exportUrl.toString();
 
             // 4. Trigger descarga
             window.location.href = finalUrl;
