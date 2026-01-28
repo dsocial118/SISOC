@@ -106,9 +106,7 @@
                         </h4>
                         <div class="version-badge">{{ current_version }}</div>
                     </div>
-                    {# The safe filter is used here because the HTML is generated server-side from markdown.
-                       The markdown library by default escapes any HTML in the source, providing XSS protection.
-                       The source is trusted (local CHANGELOG.md or GitHub repository). #}
+
                     <div class="changelog-content">{{ changelog_html|safe }}</div>
                 {% else %}
                     <div class="error-message">
