@@ -58,11 +58,46 @@
         width: 100%;
         max-height: 370px;
         aspect-ratio: 4 / 3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
     }
     .comedor-photo {
         width: 100%;
         height: 100%;
         object-fit: contain;
+        object-position: center;
+    }
+    .header-actions .btn {
+        border: none !important;
+        box-shadow: none !important;
+        transition: none !important;
+        background: transparent !important;
+        background-clip: border-box;
+        color: #d7dde9;
+        display: inline-flex;
+        align-items: center;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        margin-right: 0.25rem;
+        gap: 0;
+    }
+    .header-actions .btn:last-child {
+        margin-right: 0;
+    }
+    .header-actions .btn:hover,
+    .header-actions .btn:focus,
+    .header-actions .btn:active {
+        border: none !important;
+        box-shadow: none !important;
+        background-color: transparent !important;
+        color: #ffffff !important;
+    }
+    .header-actions .btn i,
+    .header-actions .btn svg {
+        color: inherit !important;
+        margin-right: 0;
     }
     </style>
 {% endblock %}
@@ -73,14 +108,57 @@
         <div class="col-12 col-lg-auto d-flex justify-content-start">
             <button class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</button>
         </div>
-        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2">
+        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
             <a href="#"
-               class="btn btn-md "
+               class="btn btn-md btn-warning"
                data-bs-toggle="modal"
-               data-bs-target="#modalValidacion"><i class="bi bi-check2-circle me-1"></i>Validar</a>
-            <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
-               class="btn btn-md"><i class="bi bi-tools me-1"></i>Intervenciones</a>
-            <a href="{% url 'relevamientos' comedor.id %}" class="btn btn-md"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
+               data-bs-target="#modalValidacion"><i class="bi bi-clipboard-check me-1"></i>Validar</a>
+            <a href="{% url 'relevamientos' comedor.id %}"
+               class="btn btn-md btn-outline-light"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
+            {% if perms.auditlog.view_logentry %}
+                <a href="{% url 'audittrail:log_instance' 'comedores' 'comedor' comedor.pk %}"
+                   class="btn btn-md btn-outline-light"><i class="bi bi-journal-text me-1"></i>Historial</a>
+            {% endif %}
+            <div class="btn-group">
+                <button class="btn btn-md dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <i class="bi bi-list"></i>Acciones
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item print" href="#">
+                            <i class="bi bi-printer me-1"></i>Imprimir
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'comedor_editar' comedor.id %}">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{% url 'comedor_eliminar' comedor.id %}">
+                            <i class="bi bi-trash me-1"></i>Eliminar
+                        </a>
+                    </li>
+                    {% if comedor.estado != "Sin Ingreso" %}
+                        <li>
+                            <button class="dropdown-item text-start"
+                                    type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalAdmision">
+                                <i class="bi bi-box-arrow-in-up-right"></i>Comenzar Admisión
+                            </button>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'dupla_asignar' pk=comedor.id %}">
+                                <i class="bi bi-person-workspace"></i>Modificar Equipo Técnico
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
             <div class="dropdown">
                 <button class="btn btn-md dropdown-toggle"
                         type="button"
@@ -1226,6 +1304,13 @@
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-md-6">
+                                <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
+                                {{ intervencion_form.fecha }}
+                                <div id="fecha-error-intervencion"
+                                     class="invalid-feedback"
+                                     style="display: none"></div>
+                            </div>
+                            <div class="col-md-6">
                                 <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
                                        class="form-label">{{ intervencion_form.tipo_intervencion.label }}</label>
                                 {{ intervencion_form.tipo_intervencion }}
@@ -1239,13 +1324,6 @@
                                 <label for="{{ intervencion_form.destinatario.id_for_label }}"
                                        class="form-label">{{ intervencion_form.destinatario.label }}</label>
                                 {{ intervencion_form.destinatario }}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
-                                {{ intervencion_form.fecha }}
-                                <div id="fecha-error-intervencion"
-                                     class="invalid-feedback"
-                                     style="display: none"></div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
@@ -1314,6 +1392,42 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Guardar observación</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Selección Admisión -->
+    <div class="modal fade"
+         id="modalAdmision"
+         tabindex="-1"
+         aria-labelledby="modalAdmisionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Seleccione el tipo de Admisión</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <select name="admision"
+                                id="admisionID"
+                                class="form-control form-select"
+                                required>
+                            <option value="" disabled selected>-- Seleccione --</option>
+                            <option value="incorporacion">Incorporación</option>
+                            <option value="renovacion">Renovación</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="seleccionAdmision">Seleccionar</button>
                     </div>
                 </form>
             </div>
