@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% include 'components/search_bar.html' with titulo=titulo_busqueda reset_url=reset_url filters_mode=filters_mode filters_config=filters_config filters_action=filters_action show_add_button=False %}
 
-    {% include 'components/data_table.html' with headers=table_headers items=table_items show_actions=True custom_cells=True custom_actions=True empty_message='No hay admisiones registradas.' include_pagination=True %}
+    {% include 'components/data_table.html' with headers=table_headers items=table_items show_actions=True custom_cells=True custom_actions=True empty_message='No hay admisiones registradas.' include_pagination=True full_width=True %}
 {% endblock %}
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
