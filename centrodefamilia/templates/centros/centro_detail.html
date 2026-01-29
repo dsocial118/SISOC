@@ -443,7 +443,7 @@
                                 {% for act in actividades_curso_paginadas %}
                                     <tr>
                                         <td>
-                                            <a href="{% url 'actividadcentro_detail' centro_id=centro.id pk=act.id %}"
+                                            <a href="{% url 'actividadcentro_detail' pk=act.id %}"
                                                class="text-info text-decoration-none">{{ act.actividad.nombre }}</a>
                                         </td>
                                         <td>{{ act.actividad.categoria.nombre }}</td>

@@ -54,6 +54,16 @@
         color: #fff;
         background-color: rgba(255, 255, 255, 0.16);
     }
+    .comedor-photo-wrapper {
+        width: 100%;
+        max-height: 370px;
+        aspect-ratio: 4 / 3;
+    }
+    .comedor-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
     </style>
 {% endblock %}
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
@@ -264,16 +274,16 @@
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-12 col-lg-6">
-                        {% if comedor.foto_legajo %}
-                            {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid rounded" extra_attrs='style="max-width: 100%; height: auto; max-height: 370px"' %}
-                        {% else %}
-                            <img src="{% static 'custom/img/default.png' %}"
-                                 alt="Imagen del comedor"
-                                 class="img-fluid rounded"
-                                 style="max-width: 100%;
-                                        height: auto;
-                                        max-height: 370px" />
-                        {% endif %}
+                        <div class="comedor-photo-wrapper">
+                            {% if comedor.foto_legajo %}
+                                {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid rounded comedor-photo" extra_attrs='loading="lazy"' %}
+                            {% else %}
+                                <img src="{% static 'custom/img/default.png' %}"
+                                     alt="Imagen del comedor"
+                                     class="img-fluid rounded comedor-photo"
+                                     loading="lazy" />
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0"
                          style="max-height: 370px">
@@ -1161,20 +1171,12 @@
                              role="tabpanel"
                              aria-labelledby="observaciones-tab">
                             <div class="d-flex justify-content-end mb-2">
-                                <a href="{% url 'observacion_crear' comedor.id %}"
-                                   class="btn btn-sm btn-primary">Agregar observación</a>
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalObservacion">Agregar observación</button>
                             </div>
-                            {% for observacion in observaciones|slice:":3" %}
-                                <div class="row border-bottom mb-1">
-                                    <p class="m-1">
-                                        <a href="{% url 'observacion_detalle' comedor.id observacion.id %}"
-                                           class="btn btn-sm btn-primary">{{ observacion.fecha_visita }}</a>
-                                    </p>
-                                    <p class="text-muted m-1">{{ observacion.observacion|truncatechars:80 }}</p>
-                                </div>
-                            {% empty %}
-                                <p class="text-muted text-center my-3">Sin observaciones registradas.</p>
-                            {% endfor %}
+                            {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
                         </div>
                     </div>
                 </div>
@@ -1280,6 +1282,43 @@
         </div>
     </div>
 
+    <!-- Modal Observación -->
+    <div class="modal fade"
+         id="modalObservacion"
+         tabindex="-1"
+         aria-labelledby="modalObservacionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'observacion_crear' comedor.id %}"
+                      id="observacionModalForm">
+                    {% csrf_token %}
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalObservacionLabel">Nueva observación</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="{{ observacion_form.observacion.id_for_label }}"
+                                   class="form-label">{{ observacion_form.observacion.label }}</label>
+                            {{ observacion_form.observacion }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar observación</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Validaci&oacute;n -->
     <div class="modal fade"

@@ -676,7 +676,7 @@
                         <div class="nav nav-pills row col-10 my-3">
                             {% for observacion in observaciones %}
                                 <div class="col-2 d-flex">
-                                    <a href="{% url 'observacion_detalle' comedor.id observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
+                                    <a href="{% url 'observacion_detalle' observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
                                 </div>
                             {% endfor %}
                         </div>
