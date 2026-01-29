@@ -12,7 +12,7 @@
             <a href="{% url 'comedor_detalle' observacion.comedor.id %}">{{ observacion.comedor.nombre }}</a>
         </div>
         <div class="breadcrumb-item active">
-            <a href="{% url 'observacion_detalle' observacion.comedor.id observacion.id %}">Observacion - {{ observacion.id }}</a>
+            <a href="{% url 'observacion_detalle' observacion.id %}">Observacion - {{ observacion.id }}</a>
         </div>
         <div class="breadcrumb-item">Eliminar</div>
     </ol>
@@ -25,13 +25,13 @@
                 <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
             </h3>
             <p>
-                ¿Estás seguro que deseas eliminar de manera permanente el observacion: <span class="font-weight-bold"><a href="{% url 'observacion_detalle' observacion.comedor.id observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a></span>?
+                ¿Estás seguro que deseas eliminar de manera permanente el observacion: <span class="font-weight-bold"><a href="{% url 'observacion_detalle' observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a></span>?
             </p>
             <div class="text-left">
                 <form method="post">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                    <a href="{% url 'observacion_detalle' observacion.comedor.id observacion.id %}"
+                    <a href="{% url 'observacion_detalle' observacion.id %}"
                        class="btn btn-secondary btn-sm">Cancelar</a>
                 </form>
             </div>

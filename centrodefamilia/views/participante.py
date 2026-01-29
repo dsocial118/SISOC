@@ -39,7 +39,6 @@ class ParticipanteActividadCreateView(LoginRequiredMixin, CreateView):
         return reverse_lazy(
             "actividadcentro_detail",
             kwargs={
-                "centro_id": self.kwargs.get("centro_id"),
                 "pk": self.kwargs.get("actividad_id"),
             },
         )
@@ -132,10 +131,7 @@ class ParticipanteActividadDeleteView(LoginRequiredMixin, View):
         return redirect(
             reverse_lazy(
                 "actividadcentro_detail",
-                kwargs={
-                    "centro_id": kwargs["centro_id"],
-                    "pk": kwargs["actividad_id"],
-                },
+                kwargs={"pk": kwargs["actividad_id"]},
             )
         )
 
@@ -170,7 +166,7 @@ class ParticipanteActividadPromoverView(LoginRequiredMixin, View):
         actividad_id = kwargs.get("actividad_id")
         detail_url = reverse_lazy(
             "actividadcentro_detail",
-            kwargs={"centro_id": centro_id, "pk": actividad_id},
+            kwargs={"pk": actividad_id},
         )
         return redirect(f"{detail_url}?promo_error=1")
 
@@ -181,7 +177,7 @@ class ParticipanteActividadPromoverView(LoginRequiredMixin, View):
         actividad_id = kwargs["actividad_id"]
         detail_url = reverse_lazy(
             "actividadcentro_detail",
-            kwargs={"centro_id": centro_id, "pk": actividad_id},
+            kwargs={"pk": actividad_id},
         )
 
         # Verifico cupo antes de promover

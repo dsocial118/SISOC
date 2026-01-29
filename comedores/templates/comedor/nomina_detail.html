@@ -280,12 +280,12 @@
                             <td>{{ e.ciudadano.documento|default:"-" }}</td>
                             <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
                             <td>
-                                {% if e.estado == "A" %}
+                                {% if e.estado == "activo" %}
                                     <span class="nomina-badge activo">Activo</span>
-                                {% elif e.estado == "E" %}
-                                    <span class="nomina-badge espera">Espera</span>
+                                {% elif e.estado == "pendiente" %}
+                                    <span class="nomina-badge espera">Pendiente</span>
                                 {% else %}
-                                    <span class="nomina-badge inactivo">Inactivo</span>
+                                    <span class="nomina-badge inactivo">Baja</span>
                                 {% endif %}
                             </td>
                             <td>

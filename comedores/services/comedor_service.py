@@ -475,7 +475,6 @@ class ComedorService:
         )
         age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
         qs_nomina_age = qs_nomina.annotate(edad=age_expr)
-        qs_nomina_activos = qs_nomina_age.filter(estado=Nomina.ESTADO_ACTIVO)
         resumen = qs_nomina_age.aggregate(
             cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
             cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),

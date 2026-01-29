@@ -13,7 +13,7 @@
         </li>
         {% if request.resolver_match.url_name == "observacion_editar" %}
             <li class="breadcrumb-item">
-                <a href="{% url 'observacion_detalle' observacion.comedor.id observacion.id %}">{{ observacion.id }}</a>
+                <a href="{% url 'observacion_detalle' observacion.id %}">{{ observacion.id }}</a>
             </li>
             <li class="breadcrumb-item active">Editar</li>
         {% else %}
