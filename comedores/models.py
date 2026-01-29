@@ -454,8 +454,8 @@ class Nomina(models.Model):
     ESTADO_BAJA = "baja"
 
     ESTADO_CHOICES = [
-        (ESTADO_PENDIENTE, "Pendiente"),
         (ESTADO_ACTIVO, "Activo"),
+        (ESTADO_PENDIENTE, "Pendiente"),
         (ESTADO_BAJA, "Baja"),
     ]
 

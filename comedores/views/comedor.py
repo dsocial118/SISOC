@@ -3,9 +3,11 @@ import os
 from collections import defaultdict
 from typing import Any
 
+from auditlog.models import LogEntry
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -14,6 +16,7 @@ from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.text import Truncator
 from django.utils.decorators import method_decorator
 from django.views.generic import (
     CreateView,
@@ -26,7 +29,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from admisiones.models.admisiones import Admision, EstadoAdmision
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
-from comedores.models import Comedor, HistorialValidacion, ImagenComedor
+from comedores.forms.observacion_form import ObservacionForm
+from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
 from core.services.column_preferences import build_columns_context_from_fields
@@ -371,29 +375,54 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         intervenciones_page_range = intervenciones_paginator.get_elided_page_range(
             number=intervenciones_page_obj.number
         )
+        intervencion_ids = [
+            intervencion.pk for intervencion in intervenciones_page_obj if intervencion.pk
+        ]
+        creator_map: dict[int, Any] = {}
+        if intervencion_ids:
+            content_type = ContentType.objects.get_for_model(Intervencion)
+            logs_qs = (
+                LogEntry.objects.filter(
+                    content_type=content_type,
+                    object_pk__in=[str(pk) for pk in intervencion_ids],
+                    action=LogEntry.Action.CREATE,
+                )
+                .select_related("actor")
+                .order_by("timestamp")
+            )
+            for log in logs_qs:
+                try:
+                    object_pk = int(log.object_pk)
+                except (TypeError, ValueError):
+                    continue
+                creator_map.setdefault(object_pk, log.actor)
+
         intervenciones_headers = [
+            {"title": "Fecha"},
             {"title": "Intervención"},
             {"title": "Sub intervención"},
-            {"title": "Fecha"},
             {"title": "Doc. adjunta"},
             {"title": "Destinatario"},
-            {"title": "Estado"},
+            {"title": "Usuario creador"},
             {"title": "Acciones"},
         ]
         intervenciones_items = []
         for intervencion in intervenciones_page_obj:
-            estado_badge = (
-                format_html('<span class="badge bg-success">Completa</span>')
-                if getattr(intervencion, "tiene_documentacion", False)
-                else format_html(
-                    '<span class="badge bg-warning text-dark">Pendiente</span>'
-                )
-            )
             doc_badge = (
                 format_html('<span class="badge bg-success">Sí</span>')
                 if getattr(intervencion, "tiene_documentacion", False)
                 else format_html('<span class="badge bg-secondary">No</span>')
             )
+            fecha_display = (
+                intervencion.fecha.strftime("%d/%m/%Y")
+                if intervencion.fecha
+                else None
+            )
+            actor = creator_map.get(intervencion.pk)
+            usuario_creador = "-"
+            if actor:
+                full_name = actor.get_full_name()
+                usuario_creador = full_name or getattr(actor, "username", None) or "-"
 
             actions = [
                 format_html(
@@ -418,6 +447,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             intervenciones_items.append(
                 {
                     "cells": [
+                        {"content": _safe_cell(fecha_display)},
                         {
                             "content": _safe_cell(
                                 str(intervencion.tipo_intervencion)
@@ -432,13 +462,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                                 else None
                             )
                         },
-                        {
-                            "content": _safe_cell(
-                                intervencion.fecha.strftime("%d/%m/%Y")
-                                if intervencion.fecha
-                                else None
-                            )
-                        },
                         {"content": doc_badge},
                         {
                             "content": _safe_cell(
@@ -447,8 +470,57 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                                 else None
                             )
                         },
-                        {"content": estado_badge},
+                        {"content": _safe_cell(usuario_creador)},
                         {"content": actions_html},
+                    ]
+                }
+            )
+
+        observaciones_qs = (
+            Observacion.objects.filter(comedor=self.object)
+            .order_by("-fecha_visita")
+            .select_related("comedor")
+        )
+        observaciones_paginator = Paginator(observaciones_qs, 5)
+        observaciones_page_number = self.request.GET.get("observaciones_page", 1)
+        observaciones_page_obj = observaciones_paginator.get_page(
+            observaciones_page_number
+        )
+        observaciones_page_range = observaciones_paginator.get_elided_page_range(
+            number=observaciones_page_obj.number
+        )
+        observaciones_headers = [
+            {"title": "Fecha"},
+            {"title": "Observador"},
+            {"title": "Observación"},
+            {"title": "Acciones"},
+        ]
+        observaciones_items = []
+        for obs in observaciones_page_obj:
+            fecha_obs = "-"
+            if obs.fecha_visita:
+                fecha_visita = obs.fecha_visita
+                if timezone.is_naive(fecha_visita):
+                    fecha_visita = timezone.make_aware(fecha_visita)
+                fecha_visita = timezone.localtime(fecha_visita)
+                fecha_obs = fecha_visita.strftime("%d/%m/%Y %H:%M")
+
+            observaciones_items.append(
+                {
+                    "cells": [
+                        {"content": fecha_obs},
+                        {"content": _safe_cell(obs.observador or "Sin observador")},
+                        {
+                            "content": _safe_cell(
+                                Truncator(obs.observacion or "").chars(80)
+                            )
+                        },
+                        {
+                            "content": format_html(
+                                '<a href="{}" class="btn btn-sm btn-primary">Ver</a>',
+                                reverse("observacion_detalle", kwargs={"pk": obs.id}),
+                            )
+                        },
                     ]
                 }
             )
@@ -722,6 +794,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "intervenciones_page_obj": intervenciones_page_obj,
             "intervenciones_is_paginated": (intervenciones_page_obj.has_other_pages()),
             "intervenciones_page_range": intervenciones_page_range,
+            "observaciones_headers": observaciones_headers,
+            "observaciones_items": observaciones_items,
+            "observaciones_page_obj": observaciones_page_obj,
+            "observaciones_is_paginated": observaciones_page_obj.has_other_pages(),
+            "observaciones_page_range": observaciones_page_range,
             "interacciones_labels": json.dumps(interacciones_labels),
             "interacciones_values": json.dumps(interacciones_values),
             "admisiones_headers": admisiones_headers,
@@ -777,6 +854,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 **relaciones_data,
                 **env_config,
                 "intervencion_form": intervencion_form,
+                "observacion_form": ObservacionForm(),
                 "selected_admision": selected_admision,
                 "selected_admision_id": getattr(selected_admision, "id", None),
             }
