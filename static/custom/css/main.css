@@ -197,4 +197,9 @@ aside .nav-link p {
     border-color: #e7ba61;
 }
 
+.btn-outline-warning:hover {
+    background-color: #e7ba61;
+    border-color: #e7ba61;
+}
+
 /* 
