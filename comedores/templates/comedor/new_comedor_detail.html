@@ -1160,6 +1160,10 @@
                              id="observaciones-pane"
                              role="tabpanel"
                              aria-labelledby="observaciones-tab">
+                            <div class="d-flex justify-content-end mb-2">
+                                <a href="{% url 'observacion_crear' comedor.id %}"
+                                   class="btn btn-sm btn-primary">Agregar observación</a>
+                            </div>
                             {% for observacion in observaciones|slice:":3" %}
                                 <div class="row border-bottom mb-1">
                                     <p class="m-1">
@@ -1275,7 +1279,7 @@
             </div>
         </div>
     </div>
- 
+
 
     <!-- Modal Validaci&oacute;n -->
     <div class="modal fade"
