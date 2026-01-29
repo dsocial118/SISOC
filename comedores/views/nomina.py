@@ -39,7 +39,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_pk = self.kwargs["pk"]
-        page = self.request.GET.get("page", 1)
+        page = int(self.request.GET.get("page", 1))
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, total, rangos = (
             ComedorService.get_nomina_detail(comedor_pk, page)
