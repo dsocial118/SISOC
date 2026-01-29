@@ -1,0 +1,175 @@
+{
+  "info": {
+    "_postman_id": "fda41daf-470e-4768-a73e-c62bd1523af8",
+    "name": "SISOC APIs",
+    "description": "Collection of internal APIs exposed by the BACKOFFICE application.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "14921866",
+    "_collection_link": "https://go.postman.co/collection/14921866-fda41daf-470e-4768-a73e-c62bd1523af8?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Centro de Familia",
+      "item": [
+        {
+          "name": "List Centros",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/centrodefamilia/centros/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "centrodefamilia",
+                "centros",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Centro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Centro Ejemplo\",\n    \"direccion\": \"Calle Falsa 123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/centrodefamilia/centros/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "centrodefamilia",
+                "centros",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Actividades",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/centrodefamilia/actividades/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "centrodefamilia",
+                "actividades",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Relevamientos",
+      "item": [
+        {
+          "name": "Update Relevamiento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"sisoc_id\": \"1\",\n    \"gestionar_uid\": \"1\",\n    \"relevador\": \"e7819a22\",\n    \"estado\": \"Finalizado\",\n    \"fecha_visita\": \"6/8/2025 00:00\",\n    \"comedor\": {\n        \"id\": \"1\",\n        \"comienzo\": \"1/1/2020\",\n        \"numero\": \"108\",\n        \"calle\": \"Bosques\",\n        \"entre_calle_1\": \"Bolivar\",\n        \"entre_calle_2\": \"La Rioja\",\n        \"barrio\": \"Los Olmos\",\n        \"codigo_postal\": \"1108\",\n        \"municipio\": \"Berisso\",\n        \"localidad\": \"Villa Nueva\",\n        \"provincia\": \"Buenos Aires\",\n        \"partido\": \"Marcos Paz\",\n        \"manzana\": \"0108\",\n        \"lote\": \"0108\"\n    },\n    \"responsable_es_referente\": \"Y\",\n    \"referente_comedor\": {\n        \"nombre\": \"Juana\",\n        \"apellido\": \"Martínez\",\n        \"mail\": \"test@test.com\",\n        \"celular\": \"101010101\",\n        \"documento\": \"10101010101\",\n        \"funcion\": \"Referente\"\n    },\n    \"responsable_relevamiento\": {\n        \"nombre\": \"Juana\",\n        \"apellido\": \"Martínez\",\n        \"documento\": \"10101010101\",\n        \"mail\": \"test@test.com\",\n        \"celular\": \"101010101\",\n        \"funcion\": \"Referente\"\n    },\n    \"territorial\": {\n        \"gestionar_uid\": \"e7819a22\",\n        \"nombre\": \"Andres Garcia (BS AS)\"\n    },\n    \"funcionamiento\": {\n        \"modalidad_prestacion\": \"\",\n        \"servicio_por_turnos\": \"\",\n        \"cantidad_turnos\": \"\"\n    },\n    \"espacio\": {\n        \"tipo_espacio_fisico\": \"Espacio alquilado\",\n        \"espacio_fisico_otro\": \"\",\n        \"cocina\": {\n            \"espacio_elaboracion_alimentos\": \"\",\n            \"almacenamiento_alimentos_secos\": \"Y\",\n            \"heladera\": \"Y\",\n            \"freezer\": \"Y\",\n            \"recipiente_residuos_organicos\": \"N\",\n            \"recipiente_residuos_reciclables\": \"\",\n            \"otros_residuos\": \"\",\n            \"recipiente_otros_residuos\": \"\",\n            \"abastecimiento_combustible\": \"\",\n            \"abastecimiento_agua\": \"Pozo\",\n            \"abastecimiento_agua_otro\": \"\",\n            \"instalacion_electrica\": \"Y\"\n        },\n        \"prestacion\": {\n            \"espacio_equipado\": \"\",\n            \"tiene_ventilacion\": \"\",\n            \"tiene_salida_emergencia\": \"\",\n            \"salida_emergencia_senializada\": \"\",\n            \"tiene_equipacion_incendio\": \"Y\",\n            \"tiene_botiquin\": \"Y\",\n            \"tiene_buena_iluminacion\": \"\",\n            \"tiene_sanitarios\": \"N\",\n            \"desague_hinodoro\": \"\",\n            \"gestion_quejas\": \"\",\n            \"gestion_quejas_otro\": \"\",\n            \"informacion_quejas\": \"\",\n            \"frecuencia_limpieza\": \"\"\n        }\n    },\n    \"colaboradores\": {\n        \"cantidad_colaboradores\": \"\",\n        \"colaboradores_capacitados_alimentos\": \"\",\n        \"colaboradores_recibieron_capacitacion_alimentos\": \"\",\n        \"colaboradores_capacitados_salud_seguridad\": \"\",\n        \"colaboradores_recibieron_capacitacion_emergencias\": \"\",\n        \"colaboradores_recibieron_capacitacion_violencia\": \"\"\n    },\n    \"recursos\": {\n        \"recibe_donaciones_particulares\": \"Y\",\n        \"frecuencia_donaciones_particulares\": \"1 vez por semana\",\n        \"recursos_donaciones_particulares\": \"Transferencia monetaria\",\n        \"recibe_estado_nacional\": \"N\",\n        \"frecuencia_estado_nacional\": \"\",\n        \"recursos_estado_nacional\": \"\",\n        \"recibe_estado_provincial\": \"N\",\n        \"frecuencia_estado_provincial\": \"\",\n        \"recursos_estado_provincial\": \"\",\n        \"recibe_estado_municipal\": \"N\",\n        \"frecuencia_estado_municipal\": \"\",\n        \"recursos_estado_municipal\": \"\",\n        \"recibe_otros\": \"N\",\n        \"frecuencia_otros\": \"\",\n        \"recursos_otros\": \"\"\n    },\n    \"compras\": {\n        \"almacen_cercano\": \"N\",\n        \"verduleria\": \"N\",\n        \"granja\": \"N\",\n        \"carniceria\": \"N\",\n        \"pescaderia\": \"N\",\n        \"supermercado\": \"N\",\n        \"mercado_central\": \"N\",\n        \"ferias_comunales\": \"N\",\n        \"mayoristas\": \"N\",\n        \"otro\": \"N\"\n    },\n    \"prestacion\": {\n        \"lunes_desayuno_actual\": \"0\",\n        \"lunes_desayuno_espera\": \"0\",\n        \"lunes_almuerzo_actual\": \"0\",\n        \"lunes_almuerzo_espera\": \"0\",\n        \"lunes_merienda_actual\": \"0\",\n        \"lunes_merienda_espera\": \"0\",\n        \"lunes_cena_actual\": \"0\",\n        \"lunes_cena_espera\": \"0\",\n        \"martes_desayuno_actual\": \"0\",\n        \"martes_desayuno_espera\": \"0\",\n        \"martes_almuerzo_actual\": \"0\",\n        \"martes_almuerzo_espera\": \"0\",\n        \"martes_merienda_actual\": \"0\",\n        \"martes_merienda_espera\": \"0\",\n        \"martes_cena_actual\": \"0\",\n        \"martes_cena_espera\": \"0\",\n        \"miercoles_desayuno_actual\": \"0\",\n        \"miercoles_desayuno_espera\": \"0\",\n        \"miercoles_almuerzo_actual\": \"0\",\n        \"miercoles_almuerzo_espera\": \"0\",\n        \"miercoles_merienda_actual\": \"0\",\n        \"miercoles_merienda_espera\": \"0\",\n        \"miercoles_cena_actual\": \"0\",\n        \"miercoles_cena_espera\": \"0\",\n        \"jueves_desayuno_actual\": \"0\",\n        \"jueves_desayuno_espera\": \"0\",\n        \"jueves_almuerzo_actual\": \"0\",\n        \"jueves_almuerzo_espera\": \"0\",\n        \"jueves_merienda_actual\": \"0\",\n        \"jueves_merienda_espera\": \"0\",\n        \"jueves_cena_actual\": \"0\",\n        \"jueves_cena_espera\": \"0\",\n        \"viernes_desayuno_actual\": \"0\",\n        \"viernes_desayuno_espera\": \"0\",\n        \"viernes_almuerzo_actual\": \"0\",\n        \"viernes_almuerzo_espera\": \"0\",\n        \"viernes_merienda_actual\": \"0\",\n        \"viernes_merienda_espera\": \"0\",\n        \"viernes_cena_actual\": \"0\",\n        \"viernes_cena_espera\": \"0\",\n        \"sabado_desayuno_actual\": \"0\",\n        \"sabado_desayuno_espera\": \"0\",\n        \"sabado_almuerzo_actual\": \"0\",\n        \"sabado_almuerzo_espera\": \"0\",\n        \"sabado_merienda_actual\": \"0\",\n        \"sabado_merienda_espera\": \"0\",\n        \"sabado_cena_actual\": \"0\",\n        \"sabado_cena_espera\": \"0\",\n        \"domingo_desayuno_actual\": \"0\",\n        \"domingo_desayuno_espera\": \"0\",\n        \"domingo_almuerzo_actual\": \"0\",\n        \"domingo_almuerzo_espera\": \"0\",\n        \"domingo_merienda_actual\": \"0\",\n        \"domingo_merienda_espera\": \"0\",\n        \"domingo_cena_actual\": \"0\",\n        \"domingo_cena_espera\": \"0\",\n        \"lunes_merienda_reforzada_actual\": \"\",\n        \"lunes_merienda_reforzada_espera\": \"\",\n        \"martes_merienda_reforzada_actual\": \"\",\n        \"martes_merienda_reforzada_espera\": \"\",\n        \"miercoles_merienda_reforzada_actual\": \"\",\n        \"miercoles_merienda_reforzada_espera\": \"\",\n        \"jueves_merienda_reforzada_actual\": \"\",\n        \"jueves_merienda_reforzada_espera\": \"\",\n        \"viernes_merienda_reforzada_actual\": \"\",\n        \"viernes_merienda_reforzada_espera\": \"\",\n        \"sabado_merienda_reforzada_actual\": \"\",\n        \"sabado_merienda_reforzada_espera\": \"\",\n        \"domingo_merienda_reforzada_actual\": \"\",\n        \"domingo_merienda_reforzada_espera\": \"\"\n    },\n    \"observacion\": \"Obs\",\n    \"docPDF\": \"https://www.appsheet.com/template/gettablefileurl?appName=GesCom-2448428&tableName=RelevamientoComedores&fileName=Relevamientos%20PDF%2F2643.pdf&at=08%2F06%2F2025%2022%3A53%3A08\",\n    \"anexo\": {\n        \"tipo_insumo\": \"Mercadería\",\n        \"frecuencia_insumo\": \"1 vez cada 15 días\",\n        \"tecnologia\": \"Ambos\",\n        \"acceso_comedor\": \"Calle asfaltada\",\n        \"distancia_transporte\": \"Entre 6 y 10 cuadras\",\n        \"comedor_merendero\": \"Y\",\n        \"insumos_organizacion\": \"N\",\n        \"servicio_internet\": \"N\",\n        \"zona_inundable\": \"N\",\n        \"actividades_jardin_maternal\": \"N\",\n        \"actividades_jardin_infantes\": \"N\",\n        \"apoyo_escolar\": \"N\",\n        \"alfabetizacion_terminalidad\": \"N\",\n        \"capacitaciones_talleres\": \"N\",\n        \"promocion_salud\": \"N\",\n        \"actividades_discapacidad\": \"N\",\n        \"necesidades_alimentarias\": \"N\",\n        \"actividades_recreativas\": \"N\",\n        \"actividades_culturales\": \"N\",\n        \"emprendimientos_productivos\": \"N\",\n        \"actividades_religiosas\": \"N\",\n        \"actividades_huerta\": \"N\",\n        \"espacio_huerta\": \"N\",\n        \"otras_actividades\": \"N\",\n        \"cuales_otras_actividades\": \"\",\n        \"veces_recibio_insumos_2024\": \"2\"\n    },\n    \"excepcion\": {\n        \"motivo\": \"Punto de entrega\",\n        \"descripcion\": \"\",\n        \"longitud\": \"-58.423496\",\n        \"latitud\": \"-34.733203\",\n        \"firma\": \"https://www.appsheet.com/image/getimageurl?appName=GesCom-2448428&tableName=RelevamientoComedores&fileName=RelevamientoComedores_Images%2F2643.Firma%20Relevador.015206.png&appVersion=2.000951&signature=5f59cd4dc169b3a7446a25b4c5830dcf36cf39fa349ebe611144483b5967c42a&width=200\",\n        \"adjuntos\": \"https://www.appsheet.com/template/gettablefileurl?appName=GesCom-2448428&tableName=RelevamientoComedores&fileName=AdjuntosRelevaminto_Images/4fafe5a2.documento.015216.jpg\"\n    },\n    \"punto_entregas\": {\n        \"tipo_comedor\": \"Punto de Entrega\",\n        \"existe_punto_entregas\": \"Y\",\n        \"funciona_punto_entregas\": \"N\",\n        \"observa_entregas\": \"Y\",\n        \"retiran_mercaderias_distribucion\": \"Y\",\n        \"retiran_mercaderias_comercio\": \"Y\",\n        \"reciben_dinero\": \"Y\",\n        \"reciben_otros_recepcion\": \"\",\n        \"frecuencia_recepcion_mercaderias\": \"Quincenal\",\n        \"frecuencia_entrega_bolsones\": \"Mensual\",\n        \"tipo_modulo_bolsones\": \"Alimentos frescos\",\n        \"registran_entrega_bolsones\": \"N\",\n        \"otros_punto_entregas\": \"Otrow\"\n    },\n    \"imagenes\": \"https://www.appsheet.com/template/gettablefileurl?appName=GesCom-2448428&tableName=RelevamientoComedores&fileName=AdjuntosRelevaminto_Images/4fafe5a2.documento.015216.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/relevamiento",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "relevamiento"
+              ]
+            },
+            "description": "Updates a specific Relevamiento. Uses Custom Header or Token auth."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Docs",
+      "item": [
+        {
+          "name": "OpenAPI Schema",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/schema/",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "schema",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Status code is 200\", function () {",
+          "    pm.response.to.have.status(200);",
+          "});"
+        ]
+      }
+    }
+  ]
+}

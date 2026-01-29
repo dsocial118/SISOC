@@ -15,7 +15,8 @@
                 {% with reset_url_name='cdi' %}
                     {% with add_url_name='cdi_crear' %}
                         {% with tbody_id='cdi-table-body' %}
-                            {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name add_url=add_url_name query=query add_text='Agregar' ajax_search_mode=True ajax_url=ajax_url target_tbody_id=tbody_id %}
+                            {% url 'cdi_exportar' as export_url %}
+                            {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name add_url=add_url_name query=query add_text='Agregar' ajax_search_mode=True ajax_url=ajax_url target_tbody_id=tbody_id export_url=export_url %}
                         {% endwith %}
                     {% endwith %}
                 {% endwith %}
@@ -107,4 +108,5 @@
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/export_helper.js' %}"></script>
 {% endblock %}

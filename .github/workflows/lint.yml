@@ -24,7 +24,7 @@ jobs:
             - name: Install dependencies
               run: |
                   python -m pip install --upgrade pip
-                  pip install black djlint pylint
+                  pip install black==24.8.0 djlint pylint
               id: install-dependencies
 
     black:
@@ -42,7 +42,7 @@ jobs:
             - name: Install dependencies
               run: |
                   python -m pip install --upgrade pip
-                  pip install black
+                  pip install black==24.8.0
 
             - name: Run Black
               run: black --check . --config pyproject.toml

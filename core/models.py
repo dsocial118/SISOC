@@ -169,3 +169,29 @@ class FiltroFavorito(models.Model):
 
     def __str__(self):
         return f"{self.usuario_id} - {self.seccion} - {self.nombre}"
+
+
+class PreferenciaColumnas(models.Model):
+    """Preferencias de columnas por listado y usuario."""
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="preferencias_columnas",
+    )
+    listado = models.CharField(max_length=150)
+    columnas = models.JSONField(default=list)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-fecha_actualizacion"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["usuario", "listado"],
+                name="unica_preferencia_columnas_usuario_listado",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.usuario_id} - {self.listado}"

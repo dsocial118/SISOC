@@ -329,8 +329,7 @@ class ExpedienteCiudadano(models.Model):
     @property
     def ultimo_comentario(self):
         """Obtiene el último comentario del legajo."""
-        # Evitar error de análisis estático (pylint no-member) usando consulta directa
-        return HistorialComentarios.objects.filter(legajo=self).first()
+        return self.historial_comentarios.first()  # pylint: disable=no-member
 
     @property
     def comentarios_subsanacion(self):

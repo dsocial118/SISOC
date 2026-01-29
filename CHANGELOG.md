@@ -46,7 +46,7 @@ Todas las versiones desplegadas deberan estar aca con su descripcion de cambios.
     (centraliza la información y agiliza la gestión de casos)
 - Integración RENAPER desde comedores para crear ciudadanos automáticamente normalizando dirección y nacionalidad (fixtures de nacionalidades incluidas)
     (reduce carga manual y mejora la calidad de datos)
-- Documentación reorganizada con índice en `docs/index.md` y nuevas guías de arquitectura/operaciones/flows
+- Documentación reorganizada con índice en `docs/indice.md` y nuevas guías de arquitectura/operaciones/flows
     (mejora la referencia técnica y operativa)
 ### Changed
 - Tabla y estilos de comedores modernizados con badges, sorting y acciones claras; nuevos CSS/JS de listas

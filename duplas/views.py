@@ -3,6 +3,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms import ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from django.views.generic import (
     CreateView,
@@ -14,8 +16,14 @@ from django.views.generic import (
 
 from comedores.services.comedor_service import ComedorService
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.column_preferences import (
+    apply_queryset_column_hints,
+    build_columns_context,
+    resolve_column_state,
+)
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 
+from duplas.dupla_column_config import DUPLA_COLUMNS, DUPLA_LIST_KEY
 from duplas.dupla_filter_config import (
     FIELD_MAP as DUPLA_FILTER_MAP,
     FIELD_TYPES as DUPLA_FIELD_TYPES,
@@ -36,6 +44,7 @@ DUPLA_ADVANCED_FILTER = AdvancedFilterEngine(
 )
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class DuplaListView(LoginRequiredMixin, ListView):
     model = Dupla
     template_name = "dupla_list.html"
@@ -44,37 +53,32 @@ class DuplaListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         """Retorna las duplas ordenadas y filtradas con filtros avanzados"""
-        base_qs = (
-            Dupla.objects.select_related("abogado", "coordinador")
-            .prefetch_related("tecnico")
-            .order_by("-fecha", "nombre")
-        )
+        base_qs = Dupla.objects.order_by("-fecha", "nombre")
 
         # Aplicar filtros avanzados combinables asegurando resultados únicos para M2M
         filtered_qs = DUPLA_ADVANCED_FILTER.filter_queryset(base_qs, self.request)
-        return filtered_qs.distinct()
+        column_state = resolve_column_state(
+            self.request,
+            DUPLA_LIST_KEY,
+            DUPLA_COLUMNS,
+        )
+        optimized_qs = apply_queryset_column_hints(
+            filtered_qs,
+            DUPLA_COLUMNS,
+            column_state.active_keys,
+        )
+        return optimized_qs.distinct()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Configuracion de la tabla
-        context["table_headers"] = [
-            {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
-            {
-                "title": "Coordinador",
-                "sortable": True,
-                "sort_key": "coordinador_nombre",
-            },
-            {"title": "Técnico/s", "sortable": True, "sort_key": "tecnicos_nombres"},
-            {"title": "Abogado", "sortable": True, "sort_key": "abogado_nombre"},
-            {"title": "Estado", "sortable": True, "sort_key": "estado"},
-        ]
-        context["table_fields"] = [
-            {"name": "nombre", "link_field": True, "link_url": "dupla_detalle"},
-            {"name": "coordinador_nombre"},
-            {"name": "tecnicos_nombres"},
-            {"name": "abogado_nombre"},
-            {"name": "estado"},
-        ]
+        context.update(
+            build_columns_context(
+                self.request,
+                DUPLA_LIST_KEY,
+                DUPLA_COLUMNS,
+            )
+        )
         context["table_actions"] = [
             {
                 "label": "Editar",

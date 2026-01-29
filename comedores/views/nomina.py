@@ -94,7 +94,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                     query_clean
                 )
                 if renaper_result.get("success"):
-                    renaper_data = renaper_result.get("data") or {}
+                    renaper_data = self._prepare_renaper_initial_data(renaper_result)
                     mensaje = renaper_result.get("message")
                     if mensaje:
                         messages.info(self.request, mensaje)
@@ -123,6 +123,24 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             }
         )
         return context
+
+    @staticmethod
+    def _prepare_renaper_initial_data(renaper_result):
+        renaper_data = dict(renaper_result.get("data") or {})
+        if not renaper_data:
+            return renaper_data
+
+        fecha_raw = renaper_data.get("fecha_nacimiento")
+        if not fecha_raw:
+            datos_api = renaper_result.get("datos_api") or {}
+            fecha_raw = datos_api.get("fechaNacimiento")
+
+        if fecha_raw:
+            parsed_fecha = ComedorService._parse_fecha_renaper(fecha_raw)
+            if parsed_fecha:
+                renaper_data["fecha_nacimiento"] = parsed_fecha.isoformat()
+
+        return renaper_data
 
     def post(self, request, *args, **kwargs):
         # Asegura que self.object exista para el contexto de CreateView
