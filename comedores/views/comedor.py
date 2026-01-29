@@ -14,6 +14,7 @@ from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.decorators import method_decorator
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -21,17 +22,20 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from admisiones.models.admisiones import Admision, EstadoAdmision
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
 from comedores.models import Comedor, HistorialValidacion, ImagenComedor
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
+from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class ComedorListView(LoginRequiredMixin, ListView):
     model = Comedor
     template_name = "comedor/comedor_list.html"
@@ -45,6 +49,75 @@ class ComedorListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        headers = [
+            {"title": "ID"},
+            {"title": "Nombre"},
+            {"title": "Tipo"},
+            {"title": "Organización"},
+            {"title": "Programa"},
+            {"title": "Dupla"},
+            {"title": "Estado general"},
+            {"title": "Estado actividad"},
+            {"title": "Estado proceso"},
+            {"title": "Estado detalle"},
+            {"title": "Provincia"},
+            {"title": "Municipio"},
+            {"title": "Localidad"},
+            {"title": "Barrio"},
+            {"title": "Partido"},
+            {"title": "Calle"},
+            {"title": "Número"},
+            {"title": "Ubicación"},
+            {"title": "Dirección"},
+            {"title": "Referente"},
+            {"title": "Referente celular"},
+            {"title": "Validación"},
+            {"title": "Fecha validación"},
+        ]
+        fields = [
+            {"name": "id"},
+            {"name": "nombre"},
+            {"name": "tipo"},
+            {"name": "organizacion"},
+            {"name": "programa"},
+            {"name": "dupla"},
+            {"name": "estado_general"},
+            {"name": "estado_actividad"},
+            {"name": "estado_proceso"},
+            {"name": "estado_detalle"},
+            {"name": "provincia"},
+            {"name": "municipio"},
+            {"name": "localidad"},
+            {"name": "barrio"},
+            {"name": "partido"},
+            {"name": "calle"},
+            {"name": "numero"},
+            {"name": "ubicacion"},
+            {"name": "direccion"},
+            {"name": "referente"},
+            {"name": "referente_celular"},
+            {"name": "validacion"},
+            {"name": "fecha_validado"},
+        ]
+        columns_context = build_columns_context_from_fields(
+            self.request,
+            "comedores_list",
+            headers,
+            fields,
+            default_keys=[
+                "nombre",
+                "tipo",
+                "ubicacion",
+                "direccion",
+                "referente",
+                "validacion",
+            ],
+            required_keys=["nombre"],
+        )
+        active_columns = columns_context.get("column_active_keys") or [
+            field["name"] for field in fields
+        ]
 
         # Datos para componentes reutilizables
         context.update(
@@ -62,8 +135,11 @@ class ComedorListView(LoginRequiredMixin, ListView):
                 "filters_action": reverse("comedores"),
                 "filters_config": get_filters_ui_config(),
                 "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.COMEDORES,
+                "column_keys_all": [field["name"] for field in fields],
+                "active_columns": active_columns,
             }
         )
+        context.update(columns_context)
 
         return context
 

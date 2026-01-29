@@ -16,12 +16,21 @@ from organizaciones.views import (
     sub_tipo_entidad_ajax,
     organizaciones_ajax,
 )
+from organizaciones.views_export import OrganizacionExportView
+
 
 urlpatterns = [
     path(
         "organizaciones/listar",
         group_required(["Organizaciones"])(OrganizacionListView.as_view()),
         name="organizaciones",
+    ),
+    path(
+        "organizaciones/exportar",
+        group_required(["Organizaciones", "Exportar a csv"])(
+            OrganizacionExportView.as_view()
+        ),
+        name="organizacion_exportar",
     ),
     path(
         "organizaciones/crear",

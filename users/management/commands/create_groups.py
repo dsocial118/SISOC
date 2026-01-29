@@ -9,6 +9,7 @@ class Command(BaseCommand):
         groups = [
             "Admin",
             "Comedores",
+            "Exportar a csv",
             "Organizaciones",
             "CDI",
             "Ciudadanos",

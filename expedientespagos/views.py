@@ -9,12 +9,16 @@ from django.views.generic import (
     DeleteView,
 )
 from django.urls import reverse_lazy, reverse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
+from core.services.column_preferences import build_columns_context_from_fields
 from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
 from expedientespagos.services import ExpedientesPagosService
 from comedores.models import Comedor
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class ExpedientesPagosListView(LoginRequiredMixin, ListView):
     model = ExpedientePago
     template_name = "expedientespagos_list.html"
@@ -33,8 +37,7 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
         )
         context["comedorid"] = comedor_id
 
-        # Configuración para el componente data_table
-        context["table_headers"] = [
+        headers = [
             {"title": "Número de Expediente"},
             {"title": "Expediente del Convenio"},
             {"title": "Monto"},
@@ -54,7 +57,7 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
             {"title": "Monto mensual cena"},
         ]
 
-        context["table_fields"] = [
+        fields = [
             {"name": "expediente_pago"},
             {"name": "expediente_convenio"},
             {"name": "monto"},
@@ -73,6 +76,15 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
             {"name": "monto_mensual_merienda"},
             {"name": "monto_mensual_cena"},
         ]
+
+        context.update(
+            build_columns_context_from_fields(
+                self.request,
+                "expedientes_pagos_list",
+                headers,
+                fields,
+            )
+        )
 
         context["table_actions"] = [
             {"label": "Ver", "url_name": "expedientespagos_detail", "type": "info"}

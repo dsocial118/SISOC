@@ -7,6 +7,13 @@
             <p>Dashboard</p>
         </a>
     </li>
+    <li class="nav-item">
+        <a href="{% url 'changelog' %}"
+           class="nav-link {% if 'novedades' in pagina_actual %}active{% endif %}">
+            <i class="nav-icon bi bi-megaphone-fill"></i>
+            <p>Novedades del sistema</p>
+        </a>
+    </li>
     {% if request.user|has_group:"Administrador" %}
         <li class="nav-item">
             <a href="#" class="nav-link">
