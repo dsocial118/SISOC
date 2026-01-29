@@ -129,6 +129,14 @@ def google_maps_query(latitud, longitud):
 
 
 @register.filter
+def default_full_width(value):
+    """Garantiza que la tabla sea full width salvo que se especifique lo contrario."""
+    if value is None or (isinstance(value, str) and value == ""):
+        return True
+    return value
+
+
+@register.filter
 def boolean_icon(value):
     if value in [True, 1, "1", "true", "True", "SI", "Sí", "si"]:
         return format_html(
