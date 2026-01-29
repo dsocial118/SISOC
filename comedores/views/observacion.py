@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from comedores.forms.observacion_form import ObservacionForm
@@ -38,9 +39,14 @@ class ObservacionCreateView(LoginRequiredMixin, CreateView):
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
         self.object = form.save()
+        next_url = self.request.POST.get("next") or self.request.GET.get("next")
+        if next_url and url_has_allowed_host_and_scheme(
+            next_url, allowed_hosts={self.request.get_host()}
+        ):
+            return redirect(next_url)
+
         return redirect(
             "observacion_detalle",
-            comedor_pk=int(self.kwargs["comedor_pk"]),
             pk=int(self.object.id),
         )
 
@@ -73,16 +79,15 @@ class ObservacionUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        comedor = Comedor.objects.values("id", "nombre").get(
-            pk=self.kwargs["comedor_pk"]
-        )
-
-        context.update({"comedor": comedor})
+        comedor = getattr(self.object, "comedor", None)
+        if comedor:
+            context.update({"comedor": {"id": comedor.id, "nombre": comedor.nombre}})
 
         return context
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
-        form.instance.comedor_id = Comedor.objects.get(pk=self.kwargs["comedor_pk"]).id
+        # Mantener el mismo comedor asociado sin depender de la URL
+        form.instance.comedor = self.object.comedor
         usuario = self.request.user
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}"
         form.instance.fecha_visita = timezone.now()
@@ -90,7 +95,6 @@ class ObservacionUpdateView(LoginRequiredMixin, UpdateView):
 
         return redirect(
             "observacion_detalle",
-            comedor_pk=int(self.kwargs["comedor_pk"]),
             pk=int(self.object.id),
         )
 
