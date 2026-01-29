@@ -1,0 +1,15 @@
+- No inventes APIs, modelos, endpoints, settings ni dependencias. Si falta info, preguntá o dejá TODO explícito.
+- Preservá comportamiento por defecto: si cambiás lógica/contratos, listá breaking changes y actualizá callers.
+- Cambios mínimos primero: preferí patches incrementales; refactors grandes primero proponlos, hazlos sin preguntar solo si son imprescindibles.
+- Compila/pasa tests: el output debe quedar en estado “verde” (lint + typecheck + tests) o explicar exactamente qué falta.
+- Seguridad por defecto: validación de inputs, authz/authn, no exponer datos sensibles, evitar inyección (SQL/OS/HTML).
+- Performance consciente: evitar N+1, evitar loops con I/O, paginar listados, no cargar datasets completos “porque sí”.
+- Observabilidad: logs útiles (sin PII), manejo de errores consistente, mensajes accionables, métricas si aplica.
+- Comentarios utiles, no redundantes. Crea la documentacion o añade docstrings siempre que consideres util segun complejidad.
+- Consistencia del repo: seguir convenciones existentes (naming, estructura, estilo). No introducir nuevos patrones sin motivo.
+- Código legible > clever: explícito, nombres claros, funciones chicas, comentarios solo donde agregan valor.
+- Edge cases: contemplar null/None, vacíos, permisos, concurrencia, timezones, locales, y compatibilidad hacia atrás.
+- Tests cuando cambia lógica o queries: mínimo 1 test por caso crítico; si es refactor puro, asegurar paridad.
+- Respuesta operativa: entregar plan + diff mental: “qué toqué”, “por qué”, “riesgos”, “cómo validar” (comandos).
+- Si la complejidad de la solicitud lo amerita, primero identifica el objetivo, las constraints y propone las posibles soluciones (ordenadas por eficiencia).
+- Si la solicitud es simple, resuelve.
