@@ -3,7 +3,6 @@ from decimal import Decimal, InvalidOperation
 
 from django import template
 from django.templatetags.static import static
-from django.template.base import Undefined
 from django.utils.html import format_html
 
 register = template.Library()
@@ -132,7 +131,7 @@ def google_maps_query(latitud, longitud):
 @register.filter
 def default_full_width(value):
     """Garantiza que la tabla sea full width salvo que se especifique lo contrario."""
-    if value is None or isinstance(value, Undefined):
+    if value is None or (isinstance(value, str) and value == ""):
         return True
     return value
 
