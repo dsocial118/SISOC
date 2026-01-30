@@ -991,10 +991,20 @@
                                     </strong>
                                 </p>
                                 <p class="mb-0 fs-7">
-                                    Estado:
+                                    Estado - técnicos:
                                     <strong class="text-uppercase">
-                                        {% if display_admision and display_admision.estado %}
-                                            {{ display_admision.estado.nombre|default_if_none:"Sin información" }}
+                                        {% if display_admision and display_admision.estado_admision %}
+                                            {{ display_admision.get_estado_admision_display|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado - legales:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_legales %}
+                                            {{ display_admision.get_estado_legales_display|default_if_none:"Sin información" }}
                                         {% else %}
                                             Sin información
                                         {% endif %}
@@ -1014,18 +1024,27 @@
                                         {% endif %}
                                     </strong>
                                 </p>
-                            {% endwith %}
-                            <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
-                                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-                                   class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
-                                    {% if comedor.estado == "Sin Ingreso" %}
-                                        Asignar Equipo Técnico
+                                <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
+                                    <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                                       class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
+                                        {% if comedor.estado == "Sin Ingreso" %}
+                                            Asignar Equipo Técnico
+                                        {% else %}
+                                            Modificar Equipo Técnico
+                                        {% endif %}
+                                    </a>
+                                    {% if display_admision %}
+                                        <a href="{% url 'admision_detalle' comedor.id display_admision.id %}"
+                                           class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
+                                            Ver detalles
+                                        </a>
                                     {% else %}
-                                        Modificar Equipo Técnico
+                                        <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto" disabled>
+                                            Ver detalles
+                                        </button>
                                     {% endif %}
-                                </a>
-                                <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver detalles</button>
-                            </div>
+                                </div>
+                            {% endwith %}
                         </div>
                     </div>
                 </div>
