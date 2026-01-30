@@ -869,6 +869,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "total_admisiones": total_admisiones,
             }
         )
+        timeline_selected = ComedorService.get_admision_timeline_context_from_admision(
+            selected_admision
+        )
+        context.update(timeline_selected)
         return context
 
 

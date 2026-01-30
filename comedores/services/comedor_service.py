@@ -139,6 +139,33 @@ class ComedorService:
         }
 
     @staticmethod
+    def get_admision_timeline_context_from_admision(admision):
+        admision_enviada = bool(
+            admision and getattr(admision, "enviado_acompaniamiento", False)
+        )
+
+        if admision_enviada:
+            admision_step_class = "step completed"
+            admision_circle_html = format_html('<i class="bi bi-check-lg"></i>')
+            connector_class = "connector completed"
+            ejecucion_step_class = "step active"
+        else:
+            admision_step_class = "step active"
+            admision_circle_html = "1"
+            connector_class = "connector"
+            ejecucion_step_class = "step"
+
+        return {
+            "timeline_admision_step_class": admision_step_class,
+            "timeline_admision_circle_html": admision_circle_html,
+            "timeline_admision_date": getattr(admision, "creado", None),
+            "timeline_connector_class": connector_class,
+            "timeline_ejecucion_step_class": ejecucion_step_class,
+            "timeline_ejecucion_circle": "2",
+            "timeline_rendicion_circle": "3",
+        }
+
+    @staticmethod
     def asignar_dupla_a_comedor(dupla_id, comedor_id):
         comedor = Comedor.objects.get(id=comedor_id)
         comedor.dupla_id = dupla_id
