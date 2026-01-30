@@ -144,17 +144,27 @@
                         </li>
                     </ul>
                 </div>
-                <div class="col-12 col-lg-3 d-flex flex-column justify-content-end">
-                    <p class="mb-0 fs-7">
-                        <small>Inicio de Ejecución: <strong>16/09/2025</strong></small>
-                    </p>
-                    <p class="mb-0 fs-7">
-                        <small>Final de Ejecución: <strong>16/09/2026</strong></small>
-                    </p>
-                    <p class="mb-0 fs-7">
-                        <small>Plazo de Ejecución: <strong>3 meses</strong></small>
-                    </p>
-                </div>
+                    {% with selected_admision|default:admision_activa as display_admision %}
+                        <div class="col-12 col-lg-3 d-flex flex-column justify-content-end">
+                            <p class="mb-0 fs-7">
+                                <small>Inicio de Ejecución:
+                                    <strong>
+                                        {% if display_admision and display_admision.creado %}
+                                            {{ display_admision.creado|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </small>
+                            </p>
+                            <p class="mb-0 fs-7">
+                                <small>Final de Ejecución: <strong>--/--/--</strong></small>
+                            </p>
+                            <p class="mb-0 fs-7">
+                                <small>Plazo de Ejecución: <strong>6 meses</strong></small>
+                            </p>
+                        </div>
+                    {% endwith %}
             </div>
         </div>
     </div>
@@ -189,12 +199,12 @@
                                 </iframe>
                             </div>
                         {% else %}
-                            <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
-                                <div class="d-flex align-items-center justify-content-center text-white rounded-circle mx-2 me-3 comedor-icon-60">
-                                    <i class="bi bi-geo fs-1"></i>
-                                </div>
-                                <div>
-                                    <p class="mb-0 text-white fw-bold">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
+                            <div class="w-100 comedor-map-wrapper comedor-map-placeholder d-flex align-items-center justify-content-center">
+                                <div class="d-flex align-items-center px-3 py-2">
+                                    <div class="d-flex align-items-center justify-content-center text-secondary rounded-circle mx-2 me-3 comedor-icon-60">
+                                        <i class="bi bi-geo fs-1"></i>
+                                    </div>
+                                    <p class="mb-0 fw-bold text-body">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
                                 </div>
                             </div>
                         {% endif %}
@@ -214,7 +224,12 @@
                             <i class="bi bi-grid me-2"></i><strong>Manzana:</strong> {{ comedor.manzana | default_if_none:"-" }}
                         </p>
                         <p class="mb-2">
-                            <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong> {{ comedor.piso_departamento | default_if_none:"-" }}
+                            <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong>
+                            {% if comedor.piso or comedor.departamento %}
+                                {{ comedor.piso }}{% if comedor.piso and comedor.departamento %} - {% endif %}{{ comedor.departamento }}
+                            {% else %}
+                                -
+                            {% endif %}
                         </p>
                         <p class="mb-2">
                             <i class="bi bi-signpost me-2"></i><strong>Entre calle 1:</strong> {{ comedor.entre_calle_1 | default_if_none:"-" }}
@@ -327,7 +342,13 @@
                                     <div class="fs-2 mb-1">
                                         <i class="bi bi-calendar-week"></i>
                                     </div>
-                                    <div class="fw-bold fs-3 mb-0">7</div>
+                                    <div class="fw-bold fs-3 mb-0">
+                                        {% if prestacion %}
+                                            {{ prestacion|dias_prestacion_semana }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
                                     <div class="fw-bold fs-6">Dias a la semana</div>
                                 </div>
                             </div>
@@ -905,21 +926,29 @@
                 </div>
                 <div class="col-md-3 mx-auto">
                     <div class="small-box bg-card text-center">
-                        <div class="inner">
-                            <h3 class="mb-1 mt-2">
-                                <i class="bi bi-graph-up-arrow"></i>
-                            </h3>
-                            <h4 class="fw-bold my-1">
-                                {% if admision %}
-                                    {{ admision|length }}
-                                {% else %}
-                                    0
-                                {% endif %}
-                            </h4>
-                            <p class="fw-bold fs-7">Numero de Convenio</p>
-                        </div>
-                    </div>
-                </div>
+	                            <div class="inner">
+		                            <h3 class="mb-1 mt-2">
+		                                <i class="bi bi-graph-up-arrow"></i>
+		                            </h3>
+		                            {% with selected_convenio_numero|default_if_none:"" as convenio_numero %}
+		                                {% with total_admisiones|default_if_none:0 as total_convenios %}
+		                                    <h4 class="fw-bold my-1">
+		                                        {% if total_convenios %}
+		                                            {% if convenio_numero != "" %}
+		                                                {{ convenio_numero }}&deg;/{{ total_convenios }}
+		                                            {% else %}
+		                                                -/{{ total_convenios }}
+		                                            {% endif %}
+		                                        {% else %}
+		                                            0
+		                                        {% endif %}
+		                                    </h4>
+		                                {% endwith %}
+		                            {% endwith %}
+		                            <p class="fw-bold fs-7">Numero de Convenio</p>
+		                        </div>
+		                    </div>
+		                </div>
             </div>
             <div class="row">
                 <div class="col-12 col-lg-6 mb-3 mb-lg-0">
@@ -995,7 +1024,7 @@
                                         Modificar Equipo Técnico
                                     {% endif %}
                                 </a>
-                                <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Cargar documentos</button>
+                                <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver detalles</button>
                             </div>
                         </div>
                     </div>
