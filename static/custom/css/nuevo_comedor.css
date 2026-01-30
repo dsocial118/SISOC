@@ -517,6 +517,11 @@ body.sidebar-collapse .sidebar-user-name {
   aspect-ratio: 16 / 9;
 }
 
+.comedor-map-placeholder {
+  height: 365px;
+  aspect-ratio: auto;
+}
+
 .comedor-map-iframe {
   border: 0;
 }

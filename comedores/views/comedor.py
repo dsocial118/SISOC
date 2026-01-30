@@ -836,13 +836,21 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             except (TypeError, ValueError):
                 selected_admision_pk = None
 
-        admisiones_qs = presupuestos_data.get("admision")
+        admisiones_qs = relaciones_data.get("admision")
         selected_admision = None
         if admisiones_qs and selected_admision_pk:
             selected_admision = admisiones_qs.filter(id=selected_admision_pk).first()
 
         if not selected_admision:
-            selected_admision = presupuestos_data.get("admision_activa")
+            selected_admision = relaciones_data.get("admision_activa")
+
+        selected_convenio_numero = None
+        if selected_admision:
+            selected_convenio_numero = getattr(selected_admision, "convenio_numero", None)
+            if selected_convenio_numero in ("", None):
+                selected_convenio_numero = getattr(selected_admision, "numero_convenio", None)
+
+        total_admisiones = admisiones_qs.count() if admisiones_qs is not None else 0
 
         # Agregar opciones de validación
 
@@ -857,6 +865,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "observacion_form": ObservacionForm(),
                 "selected_admision": selected_admision,
                 "selected_admision_id": getattr(selected_admision, "id", None),
+                "selected_convenio_numero": selected_convenio_numero,
+                "total_admisiones": total_admisiones,
             }
         )
         return context
