@@ -1,10 +1,78 @@
-{% load custom_filters %}
+{% load custom_filters static %}
 <!-- Componente Data Table -->
 <!-- Uso: include 'components/data_table.html' with headers=table_headers items=object_list show_actions=True actions_width='15%' empty_message='No hay datos' -->
-<div class="row mt-3 max-width-100">
-    <div class="col-12">
+{% with full_width|default_full_width as effective_full_width %}
+<div class="row {% if effective_full_width %}mt-5{% else %}mt-3{% endif %} max-width-100">
+    <div class="{% if effective_full_width %}col-12{% else %}col-12 col-lg-10 offset-lg-1{% endif %}">
         <div class="card">
             <div class="card-body">
+                {% if column_config %}
+                    {{ column_config|json_script:column_config.script_id }}
+                    <div class="d-flex justify-content-start mb-2">
+                        <button type="button"
+                                class="btn btn-outline-warning btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#{{ column_config.modal_id }}">
+                            Configurar columnas
+                        </button>
+                    </div>
+                    <div class="modal fade"
+                         id="{{ column_config.modal_id }}"
+                         tabindex="-1"
+                         aria-hidden="true"
+                         data-column-config="true"
+                         data-config-id="{{ column_config.script_id }}">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Columnas visibles</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-muted mb-3">
+                                        Seleccioná qué columnas mostrar y ordenalas con las flechas.
+                                    </p>
+                                    <div class="list-group column-config-list">
+                                        {% for col in column_config.available %}
+                                            <div class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2"
+                                                 data-column-key="{{ col.key }}">
+                                                <div class="form-check">
+                                                    <input class="form-check-input column-config-checkbox"
+                                                           type="checkbox"
+                                                           id="{{ column_config.modal_id }}-{{ col.key }}"
+                                                           {% if col.active %}checked{% endif %}
+                                                           {% if col.required %}disabled{% endif %}>
+                                                    <label class="form-check-label" for="{{ column_config.modal_id }}-{{ col.key }}">
+                                                        {{ col.title }}
+                                                    </label>
+                                                    {% if col.required %}
+                                                        <span class="badge bg-secondary ms-2">Obligatoria</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button" class="btn btn-light column-move-up" title="Mover arriba">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-light column-move-down" title="Mover abajo">
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="alert alert-danger d-none mt-3 column-config-error"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary column-config-reset">Restablecer</button>
+                                    <button type="button" class="btn btn-primary column-config-save">Guardar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="table-responsive-lg">
                     <table class="table table-bordered table-striped projects {{ table_class|default:'' }}">
                         {% if headers %}
@@ -126,3 +194,7 @@
         </div>
     </div>
 </div>
+{% if column_config %}
+    <script src="{% static 'custom/js/column_config.js' %}"></script>
+{% endif %}
+{% endwith %}

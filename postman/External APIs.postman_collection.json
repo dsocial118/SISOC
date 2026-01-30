@@ -1,0 +1,337 @@
+{
+  "info": {
+    "_postman_id": "666c63ed-56f3-4661-a879-4634601709b7",
+    "name": "External APIs",
+    "description": "Collection of external API integrations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "14921866",
+    "_collection_link": "https://go.postman.co/collection/14921866-666c63ed-56f3-4661-a879-4634601709b7?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Gestionar",
+      "item": [
+        {
+          "name": "Sync/Find Comedor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "applicationAccessKey",
+                "value": "{{gestionarApiKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"Action\": \"Find\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"ComedorID\": 123\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{gestionarComedorAction}}",
+              "host": [
+                "{{gestionarComedorAction}}"
+              ]
+            },
+            "description": "Used in sync_comedores_gestionar.py"
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Comedor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "applicationAccessKey",
+                "value": "V2-V8hgQ-FKzfL-qfSlP-MHIFc-LTr0r-bqi7Y-xjKzq-0W39D",
+                "type": "text",
+                "id": 0
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"Action\": \"Add\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"ComedorID\": 10,\n            \"ID_Sisoc\": 10,\n            \"nombre\": \"1AndresComedor\",\n            \"comienzo\": \"01/01/1900\",\n            \"TipoComedor\": \"Comedor\",\n            \"calle\": \"\",\n            \"numero\": \"\",\n            \"entre_calle_1\": \"\",\n            \"entre_calle_2\": \"\",\n            \"provincia\": \"Buenos Aires\",\n            \"municipio\": \"\",\n            \"localidad\": \"\",\n            \"partido\": \"\",\n            \"barrio\": \"\",\n            \"codigo_postal\": \"\",\n            \"Referente\": \"\",\n            \"Imagen\": \"https://xbn31kcj-8001.brs.devtunnels.ms/media/\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.appsheet.com/api/v2/apps/7ca73a85-597d-4fd3-bd43-da6a6b0dfed4/tables/Comedores/Action",
+              "protocol": "https",
+              "host": [
+                "api",
+                "appsheet",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "apps",
+                "7ca73a85-597d-4fd3-bd43-da6a6b0dfed4",
+                "tables",
+                "Comedores",
+                "Action"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener territoriales",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "applicationAccessKey",
+                "value": "V2-V8hgQ-FKzfL-qfSlP-MHIFc-LTr0r-bqi7Y-xjKzq-0W39D",
+                "type": "text",
+                "id": 0
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"Action\": \"Find\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"ComedorID\": 1\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.appsheet.com/api/v2/apps/7ca73a85-597d-4fd3-bd43-da6a6b0dfed4/tables/Comedores/Action",
+              "protocol": "https",
+              "host": [
+                "api",
+                "appsheet",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "apps",
+                "7ca73a85-597d-4fd3-bd43-da6a6b0dfed4",
+                "tables",
+                "Comedores",
+                "Action"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear relevamiento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "applicationAccessKey",
+                "value": "V2-V8hgQ-FKzfL-qfSlP-MHIFc-LTr0r-bqi7Y-xjKzq-0W39D",
+                "type": "text",
+                "id": 0
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"Action\": \"Add\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"Relevamiento id\": \"25\",\n            \"Id_SISOC\": \"25\",\n            \"ESTADO\": \"Visita pendiente\",\n            \"Fecha de visita\": \"\",\n            \"Id_Comedor\": \"3\",\n            \"Modalidad Prestacion Servicio\": \"\",\n            \"Servicio Organizado por turnos\": \"N\",\n            \"Cantidad Turnos\": \"\",\n            \"Espacio donde funciona\": \"\",\n            \"Otro espacio\": \"\",\n            \"Espacio elavoracion alimentos\": \"N\",\n            \"Lugar almacenamiento alimentos\": \"N\",\n            \"Donde almacenan\": \"\",\n            \"Almacen Frios\": \"N\",\n            \"AlmacenFreezer\": \"N\",\n            \"Recipientes residuos organicos\": \"N\",\n            \"Recipientes residuos reciclables\": \"N\",\n            \"Generacion de residuos diferentes\": \"N\",\n            \"Espacio residuos diferentes\": \"N\",\n            \"Utiliza para cocinar\": \"\",\n            \"Abastecimiento de agua\": \"\",\n            \"Otro Abastecimiento Agua\": \"\",\n            \"Instalacion Electrica\": \"N\",\n            \"Espacio y equipamiento\": \"N\",\n            \"Sistema de ventilacion\": \"N\",\n            \"Salidas de emergencia\": \"N\",\n            \"Señalizacion de salidas\": \"N\",\n            \"Elementos Anti incendios\": \"N\",\n            \"Botiquin primeros auxilios\": \"N\",\n            \"Tiene buena iluminacion\": \"N\",\n            \"Posee baños\": \"N\",\n            \"Tipo desague inodoro\": \"\",\n            \"Buzon de quejas\": \"\",\n            \"Otros Reclamos\": \"\",\n            \"Carteleria informacion\": \"N\",\n            \"Frecuencia limpieza\": \"\",\n            \"Otra frecuencia limpieza\": \"\",\n            \"Cantidad de personas realizan tareas\": \"\",\n            \"Capacitadas manipulacion de alimentos\": \"N\",\n            \"Recibieron capacitacion\": \"N\",\n            \"Capacitacion salud y seguridad\": \"N\",\n            \"Capacitacion preparacion respuesta emergencias\": \"N\",\n            \"Capacitacion violencia de genero abuso\": \"N\",\n            \"Recibe donaciones particulares\": \"N\",\n            \"Frecuencia donaciones particular\": \"\",\n            \"Que donaciones particulares recibe\": \"\",\n            \"Donaciones de Estado Nacional\": \"N\",\n            \"Frecuencia donacion Estado\": \"\",\n            \"Que donaciones de Estado recibe\": \"\",\n            \"Donaciones Estado Provincial\": \"N\",\n            \"Frecuencia donacion EP\": \"\",\n            \"Que donaciones recibe EP\": \"\",\n            \"Donaciones Estado Municipal\": \"N\",\n            \"Frencuencia donaciones EM\": \"\",\n            \"Que donaciones recibe EM\": \"\",\n            \"Otras donaciones\": \"N\",\n            \"Frecuencia otras donaciones\": \"\",\n            \"Que recibe otras donaciones\": \"\",\n            \"Lugares compra abastecimiento\": \"-\",\n            \"EsElReferente\": \"Y\",\n            \"NombreRef\": \"\",\n            \"ApellidoRef\": \"\",\n            \"DniRef\": \"\",\n            \"TelefonoRef\": \"\",\n            \"FuncionRef\": \"\",\n            \"OBSERVACIONES\": \"\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.appsheet.com/api/v2/apps/7ca73a85-597d-4fd3-bd43-da6a6b0dfed4/tables/RelevamientoComedores/Action",
+              "protocol": "https",
+              "host": [
+                "api",
+                "appsheet",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "apps",
+                "7ca73a85-597d-4fd3-bd43-da6a6b0dfed4",
+                "tables",
+                "RelevamientoComedores",
+                "Action"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear prestaciones",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "applicationAccessKey",
+                "value": "V2-V8hgQ-FKzfL-qfSlP-MHIFc-LTr0r-bqi7Y-xjKzq-0W39D",
+                "type": "text",
+                "id": 0
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"Action\": \"Add\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"DESAYUNO\",\n            \"DiaPrestacion\": \"LUNES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"DESAYUNO\",\n            \"DiaPrestacion\": \"MARTES\",\n            \"CantidadActual\": \"4\",\n            \"CantidadEspera\": \"7\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"DESAYUNO\",\n            \"DiaPrestacion\": \"MIERCOLES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"DESAYUNO\",\n            \"DiaPrestacion\": \"JUEVES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"DESAYUNO\",\n            \"DiaPrestacion\": \"VIERNES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"ALMUERZO\",\n            \"DiaPrestacion\": \"LUNES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"ALMUERZO\",\n            \"DiaPrestacion\": \"MARTES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"ALMUERZO\",\n            \"DiaPrestacion\": \"MIERCOLES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"ALMUERZO\",\n            \"DiaPrestacion\": \"JUEVES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"ALMUERZO\",\n            \"DiaPrestacion\": \"VIERNES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"MERIENDA\",\n            \"DiaPrestacion\": \"LUNES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"MERIENDA\",\n            \"DiaPrestacion\": \"MARTES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"MERIENDA\",\n            \"DiaPrestacion\": \"MIERCOLES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"MERIENDA\",\n            \"DiaPrestacion\": \"JUEVES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"MERIENDA\",\n            \"DiaPrestacion\": \"VIERNES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"CENA\",\n            \"DiaPrestacion\": \"LUNES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"CENA\",\n            \"DiaPrestacion\": \"MARTES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"CENA\",\n            \"DiaPrestacion\": \"MIERCOLES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"CENA\",\n            \"DiaPrestacion\": \"JUEVES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        },\n        {\n            \"Relevamiento_Id\": \"5\",\n            \"TipoPrestacion\": \"CENA\",\n            \"DiaPrestacion\": \"VIERNES\",\n            \"CantidadActual\": \"\",\n            \"CantidadEspera\": \"\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.appsheet.com/api/v2/apps/7ca73a85-597d-4fd3-bd43-da6a6b0dfed4/tables/DiasPrestacion/Action",
+              "protocol": "https",
+              "host": [
+                "api",
+                "appsheet",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "apps",
+                "7ca73a85-597d-4fd3-bd43-da6a6b0dfed4",
+                "tables",
+                "DiasPrestacion",
+                "Action"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar relevamiento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "applicationAccessKey",
+                "value": "V2-V8hgQ-FKzfL-qfSlP-MHIFc-LTr0r-bqi7Y-xjKzq-0W39D",
+                "type": "text",
+                "id": 0
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"Action\": \"Delete\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"Relevamiento id\": \"41\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://api.appsheet.com/api/v2/apps/7ca73a85-597d-4fd3-bd43-da6a6b0dfed4/tables/RelevamientoComedores/Action",
+              "protocol": "https",
+              "host": [
+                "api",
+                "appsheet",
+                "com"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "apps",
+                "7ca73a85-597d-4fd3-bd43-da6a6b0dfed4",
+                "tables",
+                "RelevamientoComedores",
+                "Action"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "RENAPER",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.environment.set(\"authToken\", jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{renaperUsername}}\",\n    \"password\": \"{{renaperPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{renaperBaseUrl}}/auth/login",
+              "host": [
+                "{{renaperBaseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar Ciudadano",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{renaperBaseUrl}}/consultarenaper?dni=12345678&sexo=M",
+              "host": [
+                "{{renaperBaseUrl}}"
+              ],
+              "path": [
+                "consultarenaper"
+              ],
+              "query": [
+                {
+                  "key": "dni",
+                  "value": "12345678"
+                },
+                {
+                  "key": "sexo",
+                  "value": "M"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

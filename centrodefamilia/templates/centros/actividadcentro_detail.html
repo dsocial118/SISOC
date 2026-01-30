@@ -19,7 +19,7 @@
             <div>
                 <a href="{% url 'centro_detail' actividad.centro.id %}"
                    class="btn btn-secondary mr-2">Volver</a>
-                <a href="{% url 'actividadcentro_edit' centro_id=actividad.centro.id pk=actividad.id %}"
+                <a href="{% url 'actividadcentro_edit' pk=actividad.id %}"
                    class="btn btn-warning btn-sm">Editar</a>
                 <a href="{% url 'participanteactividad_create' centro_id=actividad.centro.id actividad_id=actividad.id %}"
                    class="btn btn-success btn-sm">Agregar Participante</a>

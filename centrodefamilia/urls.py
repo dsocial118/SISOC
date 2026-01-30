@@ -98,7 +98,7 @@ urlpatterns = [
         name="actividadcentro_create",
     ),
     path(
-        "centros/<int:centro_id>/actividades/<int:pk>/detalle/",
+        "centros/actividades/<int:pk>/detalle/",
         group_required(["ReferenteCentro", "CDF SSE"])(
             ActividadCentroDetailView.as_view()
         ),
@@ -112,7 +112,7 @@ urlpatterns = [
         name="participanteactividad_create",
     ),
     path(
-        "centros/<int:centro_id>/actividades/<int:pk>/editar/",
+        "centros/actividades/<int:pk>/editar/",
         group_required(["ReferenteCentro", "CDF SSE"])(
             ActividadCentroUpdateView.as_view()
         ),

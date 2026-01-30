@@ -22,6 +22,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from django.db.models.functions import Coalesce, Now
+from django.utils.html import format_html
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from relevamientos.service import RelevamientoService
@@ -108,6 +109,36 @@ class ComedorService:
         return intervenciones, cantidad_intervenciones
 
     @staticmethod
+    def get_admision_timeline_context(admisiones_qs):
+        admision_activa = admisiones_qs.filter(activa=True).order_by("-id").first()
+        admision_enviada = bool(
+            admision_activa
+            and getattr(admision_activa, "enviado_acompaniamiento", False)
+        )
+
+        if admision_enviada:
+            admision_step_class = "step completed"
+            admision_circle_html = format_html('<i class="bi bi-check-lg"></i>')
+            connector_class = "connector completed"
+            ejecucion_step_class = "step active"
+        else:
+            admision_step_class = "step active"
+            admision_circle_html = "1"
+            connector_class = "connector"
+            ejecucion_step_class = "step"
+
+        return {
+            "admision_activa": admision_activa,
+            "timeline_admision_step_class": admision_step_class,
+            "timeline_admision_circle_html": admision_circle_html,
+            "timeline_admision_date": getattr(admision_activa, "creado", None),
+            "timeline_connector_class": connector_class,
+            "timeline_ejecucion_step_class": ejecucion_step_class,
+            "timeline_ejecucion_circle": "2",
+            "timeline_rendicion_circle": "3",
+        }
+
+    @staticmethod
     def asignar_dupla_a_comedor(dupla_id, comedor_id):
         comedor = Comedor.objects.get(id=comedor_id)
         comedor.dupla_id = dupla_id
@@ -179,6 +210,9 @@ class ComedorService:
                 "nombre",
                 "estado_general",
                 "tipocomedor__nombre",
+                "organizacion__nombre",
+                "programa__nombre",
+                "dupla__nombre",
                 "provincia__nombre",
                 "municipio__nombre",
                 "localidad__nombre",
@@ -188,6 +222,10 @@ class ComedorService:
                 "numero",
                 "referente__nombre",
                 "referente__apellido",
+                "referente__celular",
+                "ultimo_estado__estado_general__estado_actividad__estado",
+                "ultimo_estado__estado_general__estado_proceso",
+                "ultimo_estado__estado_general__estado_detalle",
                 "estado_validacion",
                 "fecha_validado",
             )
@@ -249,6 +287,9 @@ class ComedorService:
                         "nombre",
                         "estado_general",
                         "tipocomedor__nombre",
+                        "organizacion__nombre",
+                        "programa__nombre",
+                        "dupla__nombre",
                         "provincia__nombre",
                         "municipio__nombre",
                         "localidad__nombre",
@@ -258,6 +299,10 @@ class ComedorService:
                         "numero",
                         "referente__nombre",
                         "referente__apellido",
+                        "referente__celular",
+                        "ultimo_estado__estado_general__estado_actividad__estado",
+                        "ultimo_estado__estado_general__estado_proceso",
+                        "ultimo_estado__estado_general__estado_detalle",
                         "estado_validacion",
                         "fecha_validado",
                     )
@@ -430,7 +475,6 @@ class ComedorService:
         )
         age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
         qs_nomina_age = qs_nomina.annotate(edad=age_expr)
-        qs_nomina_activos = qs_nomina_age.filter(estado=Nomina.ESTADO_ACTIVO)
         resumen = qs_nomina_age.aggregate(
             cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
             cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),

@@ -1,110 +1,267 @@
 <!-- Comedor Table Component - Modernizado -->
+{% load static %}
 <div class="row mt-5 max-width-100">
     <div class="col-12">
         <div class="card comedor-table-card">
             <div class="card-body">
+                {% if column_config %}
+                    {{ column_config|json_script:column_config.script_id }}
+                    <div class="d-flex justify-content-start mb-2">
+                        <button type="button"
+                                class="btn btn-outline-warning btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#{{ column_config.modal_id }}">
+                            Configurar columnas
+                        </button>
+                    </div>
+                    <div class="modal fade"
+                         id="{{ column_config.modal_id }}"
+                         tabindex="-1"
+                         aria-hidden="true"
+                         data-column-config="true"
+                         data-config-id="{{ column_config.script_id }}">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Columnas visibles</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-muted mb-3">
+                                        Seleccioná qué columnas mostrar y ordenalas con las flechas.
+                                    </p>
+                                    <div class="list-group column-config-list">
+                                        {% for col in column_config.available %}
+                                            <div class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2"
+                                                 data-column-key="{{ col.key }}">
+                                                <div class="form-check">
+                                                    <input class="form-check-input column-config-checkbox"
+                                                           type="checkbox"
+                                                           id="{{ column_config.modal_id }}-{{ col.key }}"
+                                                           {% if col.active %}checked{% endif %}
+                                                           {% if col.required %}disabled{% endif %}>
+                                                    <label class="form-check-label" for="{{ column_config.modal_id }}-{{ col.key }}">
+                                                        {{ col.title }}
+                                                    </label>
+                                                    {% if col.required %}
+                                                        <span class="badge bg-secondary ms-2">Obligatoria</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button" class="btn btn-light column-move-up" title="Mover arriba">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-light column-move-down" title="Mover abajo">
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="alert alert-danger d-none mt-3 column-config-error"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary column-config-reset">Restablecer</button>
+                                    <button type="button" class="btn btn-primary column-config-save">Guardar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="table-responsive-lg">
                     <table class="table table-comedor-moderno">
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-column="nombre">
-                                Nombre
-                                <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th>Tipo</th>
-                            <th>Ubicación</th>
-                            <th>Dirección</th>
-                            <th>Referente</th>
-                            <th class="sortable" data-column="validacion">
-                                Validación
-                                <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th class="notexport">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for comedor in comedores %}
+                        <thead>
                             <tr>
-                                <td data-nombre="{{ comedor.nombre }}">
-                                    <a href="{% url 'comedor_detalle' comedor.id %}"
-                                       class="link-handler"
-                                       title="Ver detalles de {{ comedor.nombre }}">{{ comedor.nombre }}</a>
-                                </td>
-                                <td>{{ comedor.tipocomedor__nombre | default_if_none:"Sin información" }}</td>
-                                <td>
-                                    <div class="ubicacion-info">
-                                        <div class="ubicacion-item">{{ comedor.provincia__nombre | default_if_none:"Sin provincia" }}</div>
-                                        <div class="ubicacion-item">
-                                            {{ comedor.municipio__nombre | default_if_none:"Sin municipio" }} / {{ comedor.localidad__nombre | default_if_none:"Sin localidad" }}
-                                        </div>
-                                        {% if comedor.barrio %}<div class="ubicacion-item">{{ comedor.barrio }}</div>{% endif %}
-                                    </div>
-                                </td>
-                                <td>{{ comedor.calle | default_if_none:"Sin calle" }} {{ comedor.numero | default_if_none:"S/N" }}</td>
-                                <td>
-                                    {{ comedor.referente__nombre | default_if_none:"Sin" }} {{ comedor.referente__apellido | default_if_none:"información" }}
-                                </td>
-                                <td data-validacion="{{ comedor.estado_validacion }}">
-                                    {% if comedor.estado_validacion == "Validado" %}
-                                        <span class="badge-validacion validado">
-                                            <i class="fas fa-check-circle"></i>
-                                            Validado
-                                        </span>
-                                        {% if comedor.fecha_validado %}
-                                            <small class="fecha-validacion">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
-                                        {% endif %}
-                                    {% elif comedor.estado_validacion == "No Validado" %}
-                                        <span class="badge-validacion no-validado">
-                                            <i class="fas fa-times-circle"></i>
-                                            No Validado
-                                        </span>
-                                        {% if comedor.fecha_validado %}
-                                            <small class="fecha-validacion">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="badge-validacion pendiente">
-                                            <i class="fas fa-clock"></i>
-                                            Pendiente
-                                        </span>
+                                {% for column_key in active_columns %}
+                                    {% if column_key == "id" %}
+                                        <th>ID</th>
+                                    {% elif column_key == "nombre" %}
+                                        <th class="sortable" data-column="nombre">
+                                            Nombre
+                                            <i class="fas fa-sort sort-icon"></i>
+                                        </th>
+                                    {% elif column_key == "tipo" %}
+                                        <th>Tipo</th>
+                                    {% elif column_key == "organizacion" %}
+                                        <th>Organización</th>
+                                    {% elif column_key == "programa" %}
+                                        <th>Programa</th>
+                                    {% elif column_key == "dupla" %}
+                                        <th>Dupla</th>
+                                    {% elif column_key == "estado_general" %}
+                                        <th>Estado general</th>
+                                    {% elif column_key == "estado_actividad" %}
+                                        <th>Estado actividad</th>
+                                    {% elif column_key == "estado_proceso" %}
+                                        <th>Estado proceso</th>
+                                    {% elif column_key == "estado_detalle" %}
+                                        <th>Estado detalle</th>
+                                    {% elif column_key == "provincia" %}
+                                        <th>Provincia</th>
+                                    {% elif column_key == "municipio" %}
+                                        <th>Municipio</th>
+                                    {% elif column_key == "localidad" %}
+                                        <th>Localidad</th>
+                                    {% elif column_key == "barrio" %}
+                                        <th>Barrio</th>
+                                    {% elif column_key == "partido" %}
+                                        <th>Partido</th>
+                                    {% elif column_key == "calle" %}
+                                        <th>Calle</th>
+                                    {% elif column_key == "numero" %}
+                                        <th>Número</th>
+                                    {% elif column_key == "ubicacion" %}
+                                        <th>Ubicación</th>
+                                    {% elif column_key == "direccion" %}
+                                        <th>Dirección</th>
+                                    {% elif column_key == "referente" %}
+                                        <th>Referente</th>
+                                    {% elif column_key == "referente_celular" %}
+                                        <th>Referente celular</th>
+                                    {% elif column_key == "validacion" %}
+                                        <th class="sortable" data-column="validacion">
+                                            Validación
+                                            <i class="fas fa-sort sort-icon"></i>
+                                        </th>
+                                    {% elif column_key == "fecha_validado" %}
+                                        <th>Fecha validación</th>
                                     {% endif %}
-                                </td>
-                                <td>
-                                    <div class="comedor-actions">
-                                        <a href="{% url 'comedor_detalle' comedor.id %}"
-                                           class="btn btn-ver link-handler"
-                                           title="Ver detalles">
-                                            <i class="fas fa-eye"></i>
-                                            Ver
-                                        </a>
-                                        <a href="{% url 'comedor_editar' comedor.id %}"
-                                           class="btn btn-editar link-handler"
-                                           title="Editar comedor">
-                                            <i class="fas fa-edit"></i>
-                                            Editar
-                                        </a>
-                                        <a href="{% url 'comedor_eliminar' comedor.id %}"
-                                           class="btn btn-eliminar link-handler"
-                                           title="Eliminar comedor">
-                                            <i class="fas fa-trash-alt"></i>
-                                            Eliminar
-                                        </a>
-                                    </div>
-                                </td>
+                                {% endfor %}
+                                <th class="notexport">Acciones</th>
                             </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="7">
-                                    <div class="no-comedores-message">
-                                        <h3>No se encontraron comedores</h3>
-                                        <p>No hay comedores que coincidan con los criterios de búsqueda.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
+                        </thead>
+                        <tbody>
+                            {% for comedor in comedores %}
+                                <tr>
+                                    {% for column_key in active_columns %}
+                                        {% if column_key == "id" %}
+                                            <td>{{ comedor.id }}</td>
+                                        {% elif column_key == "nombre" %}
+                                            <td data-nombre="{{ comedor.nombre }}">
+                                                <a href="{% url 'comedor_detalle' comedor.id %}"
+                                                   class="link-handler"
+                                                   title="Ver detalles de {{ comedor.nombre }}">{{ comedor.nombre }}</a>
+                                            </td>
+                                        {% elif column_key == "tipo" %}
+                                            <td>{{ comedor.tipocomedor__nombre | default_if_none:"Sin información" }}</td>
+                                        {% elif column_key == "organizacion" %}
+                                            <td>{{ comedor.organizacion__nombre | default_if_none:"Sin organización" }}</td>
+                                        {% elif column_key == "programa" %}
+                                            <td>{{ comedor.programa__nombre | default_if_none:"Sin programa" }}</td>
+                                        {% elif column_key == "dupla" %}
+                                            <td>{{ comedor.dupla__nombre | default_if_none:"Sin dupla" }}</td>
+                                        {% elif column_key == "estado_general" %}
+                                            <td>{{ comedor.estado_general | default_if_none:"Sin estado" }}</td>
+                                        {% elif column_key == "estado_actividad" %}
+                                            <td>{{ comedor.ultimo_estado__estado_general__estado_actividad__estado | default_if_none:"Sin estado" }}</td>
+                                        {% elif column_key == "estado_proceso" %}
+                                            <td>{{ comedor.ultimo_estado__estado_general__estado_proceso | default_if_none:"Sin estado" }}</td>
+                                        {% elif column_key == "estado_detalle" %}
+                                            <td>{{ comedor.ultimo_estado__estado_general__estado_detalle | default_if_none:"Sin estado" }}</td>
+                                        {% elif column_key == "provincia" %}
+                                            <td>{{ comedor.provincia__nombre | default_if_none:"Sin provincia" }}</td>
+                                        {% elif column_key == "municipio" %}
+                                            <td>{{ comedor.municipio__nombre | default_if_none:"Sin municipio" }}</td>
+                                        {% elif column_key == "localidad" %}
+                                            <td>{{ comedor.localidad__nombre | default_if_none:"Sin localidad" }}</td>
+                                        {% elif column_key == "barrio" %}
+                                            <td>{{ comedor.barrio | default_if_none:"Sin barrio" }}</td>
+                                        {% elif column_key == "partido" %}
+                                            <td>{{ comedor.partido | default_if_none:"Sin partido" }}</td>
+                                        {% elif column_key == "calle" %}
+                                            <td>{{ comedor.calle | default_if_none:"Sin calle" }}</td>
+                                        {% elif column_key == "numero" %}
+                                            <td>{{ comedor.numero | default_if_none:"S/N" }}</td>
+                                        {% elif column_key == "ubicacion" %}
+                                            <td>
+                                                <div class="ubicacion-info">
+                                                    <div class="ubicacion-item">{{ comedor.provincia__nombre | default_if_none:"Sin provincia" }}</div>
+                                                    <div class="ubicacion-item">
+                                                        {{ comedor.municipio__nombre | default_if_none:"Sin municipio" }} / {{ comedor.localidad__nombre | default_if_none:"Sin localidad" }}
+                                                    </div>
+                                                    {% if comedor.barrio %}<div class="ubicacion-item">{{ comedor.barrio }}</div>{% endif %}
+                                                </div>
+                                            </td>
+                                        {% elif column_key == "direccion" %}
+                                            <td>{{ comedor.calle | default_if_none:"Sin calle" }} {{ comedor.numero | default_if_none:"S/N" }}</td>
+                                        {% elif column_key == "referente" %}
+                                            <td>
+                                                {{ comedor.referente__nombre | default_if_none:"Sin" }} {{ comedor.referente__apellido | default_if_none:"información" }}
+                                            </td>
+                                        {% elif column_key == "referente_celular" %}
+                                            <td>{{ comedor.referente__celular | default_if_none:"Sin celular" }}</td>
+                                        {% elif column_key == "validacion" %}
+                                            <td data-validacion="{{ comedor.estado_validacion }}">
+                                                {% if comedor.estado_validacion == "Validado" %}
+                                                    <span class="badge-validacion validado">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        Validado
+                                                    </span>
+                                                    {% if comedor.fecha_validado %}
+                                                        <small class="fecha-validacion">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
+                                                    {% endif %}
+                                                {% elif comedor.estado_validacion == "No Validado" %}
+                                                    <span class="badge-validacion no-validado">
+                                                        <i class="fas fa-times-circle"></i>
+                                                        No Validado
+                                                    </span>
+                                                    {% if comedor.fecha_validado %}
+                                                        <small class="fecha-validacion">{{ comedor.fecha_validado|date:"d/m/Y" }}</small>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="badge-validacion pendiente">
+                                                        <i class="fas fa-clock"></i>
+                                                        Pendiente
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                        {% elif column_key == "fecha_validado" %}
+                                            <td>{{ comedor.fecha_validado | date:"d/m/Y" | default_if_none:"Sin fecha" }}</td>
+                                        {% endif %}
+                                    {% endfor %}
+                                    <td>
+                                        <div class="comedor-actions">
+                                            <a href="{% url 'comedor_detalle' comedor.id %}"
+                                               class="btn btn-ver link-handler"
+                                               title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                                Ver
+                                            </a>
+                                            <a href="{% url 'comedor_editar' comedor.id %}"
+                                               class="btn btn-editar link-handler"
+                                               title="Editar comedor">
+                                                <i class="fas fa-edit"></i>
+                                                Editar
+                                            </a>
+                                            <a href="{% url 'comedor_eliminar' comedor.id %}"
+                                               class="btn btn-eliminar link-handler"
+                                               title="Eliminar comedor">
+                                                <i class="fas fa-trash-alt"></i>
+                                                Eliminar
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="{{ active_columns|length|add:1 }}">
+                                        <div class="no-comedores-message">
+                                            <h3>No se encontraron comedores</h3>
+                                            <p>No hay comedores que coincidan con los criterios de búsqueda.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% if column_config %}
+    <script src="{% static 'custom/js/column_config.js' %}"></script>
+{% endif %}
