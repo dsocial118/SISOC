@@ -4,8 +4,10 @@ from django.http import Http404, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, get_object_or_404
+from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView, DetailView
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.paginator import Paginator
 from django.utils import timezone
 import logging
@@ -30,6 +32,7 @@ from admisiones.services.legales_filter_config import (
 )
 from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
+from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from django.views.generic.edit import FormMixin
 from django.template.loader import render_to_string
@@ -251,6 +254,7 @@ def crear_documento_personalizado(request, admision_id):
     )
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
     model = Admision
     template_name = "admisiones/admisiones_tecnicos_list.html"
@@ -269,6 +273,18 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
             context["admisiones"], self.request.user
         )
 
+        headers = [
+            {"key": "comedor_id", "title": "ID Comedor"},
+            {"key": "tipo", "title": "Tipo"},
+            {"key": "nombre", "title": "Nombre"},
+            {"key": "organizacion", "title": "Organización"},
+            {"key": "expediente", "title": "N° Expediente"},
+            {"key": "convenio", "title": "N° Convenio"},
+            {"key": "provincia", "title": "Provincia"},
+            {"key": "dupla", "title": "Equipo técnico"},
+            {"key": "estado", "title": "Estado"},
+            {"key": "modificado", "title": "Última Modificación"},
+        ]
         context.update(
             {
                 "breadcrumb_items": [
@@ -281,20 +297,15 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
                 "filters_action": reverse("admisiones_tecnicos_listar"),
                 "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.ADMISIONES_TECNICOS,
                 "titulo_busqueda": "Admisiones - Equipos técnicos",
-                "table_headers": [
-                    {"title": "ID Comedor"},
-                    {"title": "Tipo"},
-                    {"title": "Nombre"},
-                    {"title": "Organización"},
-                    {"title": "N° Expediente"},
-                    {"title": "N° Convenio"},
-                    {"title": "Provincia"},
-                    {"title": "Equipo técnico"},
-                    {"title": "Estado"},
-                    {"title": "Última Modificación"},
-                ],
-                "table_items": table_items,
             }
+        )
+        context.update(
+            build_columns_context_for_custom_cells(
+                self.request,
+                "admisiones_tecnicos_list",
+                headers,
+                table_items,
+            )
         )
         return context
 
@@ -894,6 +905,7 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
     model = Admision
     template_name = "admisiones/admisiones_legales_list.html"
@@ -911,6 +923,18 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
             context["admisiones"]
         )
 
+        headers = [
+            {"key": "comedor_id", "title": "ID Comedor"},
+            {"key": "tipo", "title": "Tipo"},
+            {"key": "nombre", "title": "Nombre"},
+            {"key": "organizacion", "title": "Organización"},
+            {"key": "expediente", "title": "N° Expediente"},
+            {"key": "convenio", "title": "N° Convenio"},
+            {"key": "provincia", "title": "Provincia"},
+            {"key": "dupla", "title": "Equipo técnico"},
+            {"key": "estado", "title": "Estado"},
+            {"key": "modificado", "title": "Última Modificación"},
+        ]
         context.update(
             {
                 "breadcrumb_items": [
@@ -923,20 +947,15 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
                 "filters_action": reverse("admisiones_legales_listar"),
                 "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.ADMISIONES_LEGALES,
                 "titulo_busqueda": "Expedientes - Legales",
-                "table_headers": [
-                    {"title": "ID Comedor"},
-                    {"title": "Tipo"},
-                    {"title": "Nombre"},
-                    {"title": "Organización"},
-                    {"title": "N° Expediente"},
-                    {"title": "N° Convenio"},
-                    {"title": "Provincia"},
-                    {"title": "Equipo técnico"},
-                    {"title": "Estado"},
-                    {"title": "Última Modificación"},
-                ],
-                "table_items": table_items,
             }
+        )
+        context.update(
+            build_columns_context_for_custom_cells(
+                self.request,
+                "admisiones_legales_list",
+                headers,
+                table_items,
+            )
         )
         return context
 

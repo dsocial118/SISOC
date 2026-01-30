@@ -130,34 +130,37 @@ body.sidebar-collapse .sidebar-user-name {
 /* Colores */
 
 .bg-amarillo {
-    background-color: #fcbf49 !important;
+    background-color: #D3A141 !important;
 }
 .bg-celeste {
-    background-color: #75aadb !important;
+    background-color: #5C86AD !important;
 }
 .bg-rosa {
-    background-color: #f48eab !important;
+    background-color: #D17C94 !important;
 }
 .bg-violeta {
     background-color: #be0aeb !important;
 }
 .bg-verde {
-    background-color: #119b33 !important;
+    background-color: #54A970 !important;
 }
 .bg-rojo {
-    background-color: #ef5350 !important;
+    background-color: #CB4542 !important;
 }
 .bg-amarillo-75 {
-    background-color: rgba(252, 191, 73, 0.75) !important;
+    background-color: #E7BA61 !important;
 }
 .bg-celeste-75 {
-    background-color: rgba(117, 170, 219, 0.75) !important;
+    background-color: #75AADB !important;
 }
 .bg-rosa-75 {
-    background-color: rgba(244, 142, 171, 0.75) !important;
+    background-color: #F48EAB !important;
+}
+.bg-verde-75 {
+    background-color: #4FBB73 !important;
 }
 .bg-rojo-75 {
-    background-color: rgba(239, 83, 80, 0.75) !important;
+    background-color: #CB4542 !important;
 }
 
 [data-bs-theme="dark"] .progress {

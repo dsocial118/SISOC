@@ -18,6 +18,8 @@ from comedores.views import (
     nomina_editar_ajax,
     validar_comedor,
 )
+from comedores.views.export import ComedorExportView
+
 
 from comedores.views_territorial import (
     obtener_territoriales_api,
@@ -52,6 +54,16 @@ urlpatterns = [
             ]
         )(ComedorListView.as_view()),
         name="comedores",
+    ),
+    path(
+        "comedores/exportar",
+        group_required(
+            [
+                "Exportar a csv",
+                "Administrador",
+            ]
+        )(ComedorExportView.as_view()),
+        name="comedor_export",
     ),
     path(
         "comedores/crear",
@@ -89,21 +101,21 @@ urlpatterns = [
         name="observacion_crear",
     ),
     path(
-        "comedores/<comedor_pk>/observacion/<int:pk>",
+        "comedores/observacion/<int:pk>",
         group_required(["Comedores Observaciones Detalle"])(
             ObservacionDetailView.as_view()
         ),
         name="observacion_detalle",
     ),
     path(
-        "comedores/<comedor_pk>/observacion/<int:pk>/editar",
+        "comedores/observacion/<int:pk>/editar",
         group_required(["Comedores Observaciones Editar"])(
             ObservacionUpdateView.as_view()
         ),
         name="observacion_editar",
     ),
     path(
-        "comedores/<comedor_pk>/observacion/<int:pk>/eliminar",
+        "comedores/observacion/<int:pk>/eliminar",
         group_required(["Comedores Observaciones Eliminar"])(
             ObservacionDeleteView.as_view()
         ),

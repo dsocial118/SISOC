@@ -8,7 +8,8 @@
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% with titulo_search='Buscar ciudadano' placeholder_text='Apellido, nombre o documento' help_text='Ingresá apellido, nombre o DNI' reset_url_name='ciudadanos' %}
-        {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name query=filter_form.q.value show_add_button=True add_url='ciudadanos_crear' add_text='Nuevo ciudadano' %}
+        {% url 'ciudadanos_exportar' as export_url %}
+        {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name query=filter_form.q.value show_add_button=True add_url='ciudadanos_crear' add_text='Nuevo ciudadano' export_url=export_url %}
     {% endwith %}
     <input type="hidden"
            name="q"
@@ -103,6 +104,7 @@
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/export_helper.js' %}"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
