@@ -139,6 +139,33 @@ class ComedorService:
         }
 
     @staticmethod
+    def get_admision_timeline_context_from_admision(admision):
+        admision_enviada = bool(
+            admision and getattr(admision, "enviado_acompaniamiento", False)
+        )
+
+        if admision_enviada:
+            admision_step_class = "step completed"
+            admision_circle_html = format_html('<i class="bi bi-check-lg"></i>')
+            connector_class = "connector completed"
+            ejecucion_step_class = "step active"
+        else:
+            admision_step_class = "step active"
+            admision_circle_html = "1"
+            connector_class = "connector"
+            ejecucion_step_class = "step"
+
+        return {
+            "timeline_admision_step_class": admision_step_class,
+            "timeline_admision_circle_html": admision_circle_html,
+            "timeline_admision_date": getattr(admision, "creado", None),
+            "timeline_connector_class": connector_class,
+            "timeline_ejecucion_step_class": ejecucion_step_class,
+            "timeline_ejecucion_circle": "2",
+            "timeline_rendicion_circle": "3",
+        }
+
+    @staticmethod
     def asignar_dupla_a_comedor(dupla_id, comedor_id):
         comedor = Comedor.objects.get(id=comedor_id)
         comedor.dupla_id = dupla_id
@@ -336,9 +363,17 @@ class ComedorService:
             ),
             Prefetch(
                 "relevamiento_set",
-                queryset=Relevamiento.objects.select_related("prestacion").order_by(
-                    "-estado", "-id"
-                ),
+                queryset=Relevamiento.objects.select_related(
+                    "prestacion",
+                    "colaboradores",
+                    "colaboradores__cantidad_colaboradores",
+                    "recursos",
+                    "funcionamiento",
+                    "funcionamiento__modalidad_prestacion",
+                    "espacio",
+                    "espacio__tipo_espacio_fisico",
+                    "anexo",
+                ).order_by("-fecha_visita", "-id"),
                 to_attr="relevamientos_optimized",
             ),
             Prefetch(
@@ -413,18 +448,42 @@ class ComedorService:
             return imagen_comedor.errors
 
     @staticmethod
+    def get_relevamiento_resumen(relevamientos):
+        """Selecciona el relevamiento preferido para mostrar en el detalle."""
+        if not relevamientos:
+            return None
+        estados_finalizados = {"Finalizado", "Finalizado/Excepciones"}
+        for relevamiento in relevamientos:
+            if getattr(relevamiento, "estado", None) in estados_finalizados:
+                return relevamiento
+        return relevamientos[0]
+
+    @staticmethod
     def get_presupuestos(comedor_id: int, relevamientos_prefetched=None):
         valor_map = preload_valores_comida_cache()
         if relevamientos_prefetched:
-            relevamiento = relevamientos_prefetched[0]
+            relevamiento = ComedorService.get_relevamiento_resumen(
+                relevamientos_prefetched
+            )
         else:
             relevamiento = (
                 Relevamiento.objects.select_related("prestacion")
-                .filter(comedor=comedor_id)
-                .order_by("-fecha_visita")
-                .only("prestacion", "fecha_visita")
+                .filter(
+                    comedor=comedor_id,
+                    estado__in=["Finalizado", "Finalizado/Excepciones"],
+                )
+                .order_by("-fecha_visita", "-id")
+                .only("prestacion", "fecha_visita", "estado")
                 .first()
             )
+            if not relevamiento:
+                relevamiento = (
+                    Relevamiento.objects.select_related("prestacion")
+                    .filter(comedor=comedor_id)
+                    .order_by("-fecha_visita", "-id")
+                    .only("prestacion", "fecha_visita")
+                    .first()
+                )
         count = {
             "desayuno": 0,
             "almuerzo": 0,
@@ -455,6 +514,13 @@ class ComedorService:
                     getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0 for dia in dias
                 )
         count_beneficiarios = sum(count.values())
+        total_almuerzo_cena = count["almuerzo"] + count["cena"]
+        total_desayuno_merienda = (
+            count["desayuno"] + count["merienda"] + count.get("merienda_reforzada", 0)
+        )
+        monto_prestacion_mensual = (
+            total_almuerzo_cena * 763 + total_desayuno_merienda * 383
+        )
         valor_cena = count["cena"] * valor_map.get("cena", 0)
         valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
         valor_almuerzo = count["almuerzo"] * valor_map.get("almuerzo", 0)
@@ -466,6 +532,7 @@ class ComedorService:
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
+            monto_prestacion_mensual,
         )
 
     @staticmethod
