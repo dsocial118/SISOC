@@ -16,7 +16,7 @@ _DAYS = (
     "sabado",
     "domingo",
 )
-_MEALS = ("desayuno", "almuerzo", "merienda", "cena")
+_MEALS = ("desayuno", "almuerzo", "merienda", "merienda_reforzada", "cena")
 
 
 @register.filter

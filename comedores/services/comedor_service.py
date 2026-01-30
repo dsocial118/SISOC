@@ -482,6 +482,13 @@ class ComedorService:
                     getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0 for dia in dias
                 )
         count_beneficiarios = sum(count.values())
+        total_almuerzo_cena = count["almuerzo"] + count["cena"]
+        total_desayuno_merienda = (
+            count["desayuno"] + count["merienda"] + count.get("merienda_reforzada", 0)
+        )
+        monto_prestacion_mensual = (
+            total_almuerzo_cena * 763 + total_desayuno_merienda * 383
+        )
         valor_cena = count["cena"] * valor_map.get("cena", 0)
         valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
         valor_almuerzo = count["almuerzo"] * valor_map.get("almuerzo", 0)
@@ -493,6 +500,7 @@ class ComedorService:
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
+            monto_prestacion_mensual,
         )
 
     @staticmethod

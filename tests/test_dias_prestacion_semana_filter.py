@@ -29,3 +29,11 @@ def test_dias_prestacion_semana_devuelve_guion_si_todos_son_cero_o_vacios():
 
     assert dias_prestacion_semana(prestacion) == "-"
 
+
+def test_dias_prestacion_semana_incluye_merienda_reforzada():
+    prestacion = SimpleNamespace(
+        lunes_merienda_reforzada_actual=3,
+        martes_merienda_reforzada_actual=0,
+    )
+
+    assert dias_prestacion_semana(prestacion) == 1
