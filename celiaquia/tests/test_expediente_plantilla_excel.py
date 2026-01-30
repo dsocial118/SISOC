@@ -41,4 +41,13 @@ def test_descargar_plantilla_excel(client):
         "codigo_postal",
         "telefono",
         "email",
+        "APELLIDO_RESPONSABLE",
+        "NOMBRE_REPSONSABLE",
+        "Cuit_Responsable",
+        "FECHA_DE_NACIMIENTO_RESPONSABLE",
+        "SEXO",
+        "DOMICILIO_RESPONSABLE",
+        "LOCALIDAD_RESPONSABLE",
+        "CELULAR_RESPONSABLE",
+        "CORREO_RESPONSABLE",
     ]
