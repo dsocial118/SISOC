@@ -287,11 +287,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
     def get_relaciones_optimizadas(self):  # pylint: disable=too-many-locals
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
-        relevamientos = (
-            self.object.relevamientos_optimized[:1]
+        relevamientos_prefetched = (
+            self.object.relevamientos_optimized
             if hasattr(self.object, "relevamientos_optimized")
-            else []
+            else None
         )
+        relevamiento_actual = ComedorService.get_relevamiento_resumen(
+            relevamientos_prefetched or []
+        )
+        relevamientos = [relevamiento_actual] if relevamiento_actual else []
         observaciones = (
             self.object.observaciones_optimized
             if hasattr(self.object, "observaciones_optimized")
@@ -299,12 +303,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         )
 
         count_relevamientos = (
-            len(self.object.relevamientos_optimized)
-            if hasattr(self.object, "relevamientos_optimized")
+            len(relevamientos_prefetched)
+            if relevamientos_prefetched is not None
             else self.object.relevamiento_set.count()
         )
 
-        relevamiento_actual = relevamientos[0] if relevamientos else None
         anexo = (
             getattr(relevamiento_actual, "anexo", None) if relevamiento_actual else None
         )

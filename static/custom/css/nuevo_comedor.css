@@ -41,7 +41,7 @@
     background-color: #eeeeee !important;
     border: 2px solid #b4b4b4 !important;
     border-radius: 50% !important;
-    width: 35px; 
+    width: 35px;
     height: 35px;
     display: flex;
     align-items: center;
@@ -259,12 +259,21 @@ body.sidebar-collapse .sidebar-user-name {
     background: var(--clr-bg-secondary);
 }
 
+.accordion-horizontal.is-measuring {
+  visibility: hidden;
+}
+
+.accordion-horizontal.is-measuring .accordion-panel,
+.accordion-horizontal.is-measuring .accordion-content {
+  transition: none !important;
+}
+
 .accordion-panel {
     position: relative;
     display: flex;
     flex-direction: row;
-    width: 60px; 
-    height: 100%;
+    width: 60px;
+    height: 120%;
     cursor: pointer;
     overflow: visible;
     transition: width 0.3s ease;
@@ -513,6 +522,59 @@ body.sidebar-collapse .sidebar-user-name {
   color: #ffffff;
 }
 
+.prestaciones-table-wrap {
+  border-radius: 0.65rem;
+  overflow: hidden;
+}
+
+.prestaciones-table {
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.prestaciones-table th,
+.prestaciones-table td {
+  padding: 0.35rem 0.45rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.prestaciones-table thead th {
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.prestaciones-subhead {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bs-secondary-color);
+}
+
+.prestaciones-row {
+  font-weight: 600;
+}
+
+:root[data-bs-theme="dark"] .prestaciones-table thead th {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+:root[data-bs-theme="light"] .prestaciones-table thead th {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+:root[data-bs-theme="dark"] .prestaciones-table,
+:root[data-bs-theme="dark"] .prestaciones-table th,
+:root[data-bs-theme="dark"] .prestaciones-table td {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:root[data-bs-theme="light"] .prestaciones-table,
+:root[data-bs-theme="light"] .prestaciones-table th,
+:root[data-bs-theme="light"] .prestaciones-table td {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
 .comedor-map-wrapper {
   aspect-ratio: 16 / 9;
 }
@@ -533,6 +595,16 @@ body.sidebar-collapse .sidebar-user-name {
 
 .comedor-scroll-370 {
   max-height: 370px;
+}
+
+@media (min-width: 769px) {
+  .accordion-horizontal .comedor-scroll-370 {
+    max-height: none;
+  }
+
+  .accordion-horizontal .overflow-auto {
+    overflow: visible !important;
+  }
 }
 
 .comedor-chart-h240 {

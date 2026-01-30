@@ -363,9 +363,17 @@ class ComedorService:
             ),
             Prefetch(
                 "relevamiento_set",
-                queryset=Relevamiento.objects.select_related("prestacion").order_by(
-                    "-estado", "-id"
-                ),
+                queryset=Relevamiento.objects.select_related(
+                    "prestacion",
+                    "colaboradores",
+                    "colaboradores__cantidad_colaboradores",
+                    "recursos",
+                    "funcionamiento",
+                    "funcionamiento__modalidad_prestacion",
+                    "espacio",
+                    "espacio__tipo_espacio_fisico",
+                    "anexo",
+                ).order_by("-fecha_visita", "-id"),
                 to_attr="relevamientos_optimized",
             ),
             Prefetch(
@@ -440,18 +448,42 @@ class ComedorService:
             return imagen_comedor.errors
 
     @staticmethod
+    def get_relevamiento_resumen(relevamientos):
+        """Selecciona el relevamiento preferido para mostrar en el detalle."""
+        if not relevamientos:
+            return None
+        estados_finalizados = {"Finalizado", "Finalizado/Excepciones"}
+        for relevamiento in relevamientos:
+            if getattr(relevamiento, "estado", None) in estados_finalizados:
+                return relevamiento
+        return relevamientos[0]
+
+    @staticmethod
     def get_presupuestos(comedor_id: int, relevamientos_prefetched=None):
         valor_map = preload_valores_comida_cache()
         if relevamientos_prefetched:
-            relevamiento = relevamientos_prefetched[0]
+            relevamiento = ComedorService.get_relevamiento_resumen(
+                relevamientos_prefetched
+            )
         else:
             relevamiento = (
                 Relevamiento.objects.select_related("prestacion")
-                .filter(comedor=comedor_id)
-                .order_by("-fecha_visita")
-                .only("prestacion", "fecha_visita")
+                .filter(
+                    comedor=comedor_id,
+                    estado__in=["Finalizado", "Finalizado/Excepciones"],
+                )
+                .order_by("-fecha_visita", "-id")
+                .only("prestacion", "fecha_visita", "estado")
                 .first()
             )
+            if not relevamiento:
+                relevamiento = (
+                    Relevamiento.objects.select_related("prestacion")
+                    .filter(comedor=comedor_id)
+                    .order_by("-fecha_visita", "-id")
+                    .only("prestacion", "fecha_visita")
+                    .first()
+                )
         count = {
             "desayuno": 0,
             "almuerzo": 0,

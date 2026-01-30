@@ -210,7 +210,6 @@
                         {% endif %}
                     </div>
                     <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
-                        <h2 class="border-bottom border-3 mb-4 fw-bold">Ubicación</h2>
                         <p class="mb-2">
                             <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
                         </p>
@@ -271,7 +270,6 @@
                         </div>
                     </div>
                     <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
-                        <h2 class="border-bottom border-3 mb-4 fw-bold">Responsables</h2>
                         <p class="mb-2">
                             <i class="bi bi-building me-2"></i><strong>Organización base:</strong> {{ comedor.organizacion.nombre | default_if_none:"-" }}
                         </p>
@@ -322,9 +320,8 @@
         <div class="accordion-panel">
             <div class="accordion-header h5 accordion-header--prestaciones">Prestaciones</div>
             <div class="accordion-content">
-                <h2 class="border-bottom border-3 mb-4 fw-bold">Prestaciones</h2>
                 {% with prestacion=relevamientos.0.prestacion %}
-                    <div class="row text-center mb-4">
+                    <div class="row text-center mb-1">
                         <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
                             <div class="small-box">
                                 <div class="inner">
@@ -388,33 +385,44 @@
                             </div>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm align-middle text-center mb-0">
+                    <div class="table-responsive prestaciones-table-wrap">
+                        <table class="table table-bordered table-sm align-middle text-center mb-0 prestaciones-table">
                             <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>Lunes</th>
-                                    <th>Martes</th>
-                                    <th>Miercoles</th>
-                                    <th>Jueves</th>
-                                    <th>Viernes</th>
-                                    <th>Sabado</th>
-                                    <th>Domingo</th>
-                                </tr>
-                                <tr class="small fw-normal">
-                                    <th></th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
+                                <tr class="prestaciones-table-head">
+                                    <th scope="col" class="text-start">Prestacion</th>
+                                    <th scope="col">
+                                        <span class="d-block">Lunes</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Martes</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Miercoles</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Jueves</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Viernes</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Sabado</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Domingo</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <th scope="row" class="text-start">Desayuno</th>
+                                    <th scope="row" class="text-start prestaciones-row">Desayuno</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_desayuno_actual|default_if_none:"-" }}
@@ -466,7 +474,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Almuerzo</th>
+                                    <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_almuerzo_actual|default_if_none:"-" }}
@@ -518,7 +526,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Merienda</th>
+                                    <th scope="row" class="text-start prestaciones-row">Merienda</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_merienda_actual|default_if_none:"-" }}
@@ -570,7 +578,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Merienda reforzada</th>
+                                    <th scope="row" class="text-start prestaciones-row">Merienda reforzada</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_merienda_reforzada_actual|default_if_none:"-" }}
@@ -622,7 +630,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Cena</th>
+                                    <th scope="row" class="text-start prestaciones-row">Cena</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_cena_actual|default_if_none:"-" }}
@@ -683,7 +691,6 @@
         <div class="accordion-panel">
             <div class="accordion-header h5 accordion-header--relevamientos">Relevamientos</div>
             <div class="accordion-content">
-                <h2 class="border-bottom border-3 mb-4 fw-bold">Relevamientos</h2>
                 {% with relevamiento=relevamientos.0 %}
                     <div class="row mb-4">
                         <div class="col-12 col-lg-4 mb-4 mb-lg-0">
@@ -941,9 +948,9 @@
 		                                    <h4 class="fw-bold my-1">
 		                                        {% if total_convenios %}
 		                                            {% if convenio_numero != "" %}
-		                                                {{ convenio_numero }}&deg;/{{ total_convenios }}
+		                                                {{ convenio_numero }}&deg; / {{ total_convenios }}
 		                                            {% else %}
-		                                                -/{{ total_convenios }}
+		                                                - / {{ total_convenios }}
 		                                            {% endif %}
 		                                        {% else %}
 		                                            0
