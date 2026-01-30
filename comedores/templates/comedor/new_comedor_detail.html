@@ -376,7 +376,13 @@
                                     <div class="fs-2 mb-1">
                                         <i class="bi bi-currency-dollar"></i>
                                     </div>
-                                    <div class="fw-bold fs-3 mb-0">0</div>
+                                    <div class="fw-bold fs-3 mb-0">
+                                        {% if prestacion %}
+                                            {{ monto_prestacion_mensual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
                                     <div class="fw-bold fs-6">Monto prestacion mensual</div>
                                 </div>
                             </div>
@@ -1005,6 +1011,66 @@
                                     <strong class="text-uppercase">
                                         {% if display_admision and display_admision.estado_legales %}
                                             {{ display_admision.get_estado_legales_display|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado actual:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_mostrar %}
+                                            {{ display_admision.estado_mostrar|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Fecha estado:
+                                    <strong>
+                                        {% if display_admision and display_admision.fecha_estado_mostrar %}
+                                            {{ display_admision.fecha_estado_mostrar|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.num_if %}
+                                            {{ display_admision.num_if }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF legales:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.legales_num_if %}
+                                            {{ display_admision.legales_num_if }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF técnico:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_if_tecnico %}
+                                            {{ display_admision.numero_if_tecnico }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° disposición:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_disposicion %}
+                                            {{ display_admision.numero_disposicion }}
                                         {% else %}
                                             Sin información
                                         {% endif %}

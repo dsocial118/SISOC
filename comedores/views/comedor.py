@@ -208,7 +208,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             hasattr(self.object, "relevamientos_optimized")
             and self.object.relevamientos_optimized
         ):
-            cache_key = f"presupuestos_comedor_{self.object.id}"
+            cache_key = f"presupuestos_comedor_{self.object.id}_v2"
             cached_presupuestos = cache.get(cache_key)
 
             if cached_presupuestos:
@@ -232,6 +232,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
+            monto_prestacion_mensual,
         ) = presupuestos_tuple
 
         return {
@@ -240,6 +241,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "presupuesto_almuerzo": valor_almuerzo,
             "presupuesto_merienda": valor_merienda,
             "presupuesto_cena": valor_cena,
+            "monto_prestacion_mensual": monto_prestacion_mensual,
         }
 
     def post(self, request, *args, **kwargs):
