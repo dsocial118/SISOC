@@ -3,103 +3,6 @@
 ;
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
-    <style>
-.timeline::before,
-.timeline::after {
-  content: none !important;
-  display: none !important;
-}
-    .tabs-comedor-wrap {
-        position: relative;
-    }
-    .tabs-comedor {
-        padding-left: 1.5rem;
-        margin: 0;
-        position: absolute;
-        top: -30px;
-        left: 0;
-        z-index: 2;
-        border-bottom: 0;
-    }
-    .tabs-comedor-wrap .card {
-        margin-top: 0;
-        padding-top: 0.75rem;
-    }
-    .tabs-comedor .nav-link {
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-bottom: 0;
-        border-radius: 0.7rem 0.7rem 0 0;
-        padding: 1rem 0.8rem;
-        font-size: 0.98rem;
-        line-height: 1.2;
-        color: #e6eefb;
-        background-color: rgba(255, 255, 255, 0.08);
-        font-weight: 700;
-        height: 28px;
-        display: inline-flex;
-        align-items: center;
-    }
-    .tabs-comedor .nav-link.active {
-        color: #fff;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
-    }
-    :root[data-bs-theme="dark"] .tabs-comedor .nav-link.active {
-        background-color: #232d4f;
-    }
-    :root[data-bs-theme="light"] .tabs-comedor .nav-link.active {
-        background-color: #f4f6f9;
-        color: #212529;
-    }
-    .tabs-comedor .nav-link:hover {
-        color: #fff;
-        background-color: rgba(255, 255, 255, 0.16);
-    }
-    .comedor-photo-wrapper {
-        width: 100%;
-        max-height: 370px;
-        aspect-ratio: 4 / 3;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-    .comedor-photo {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        object-position: center;
-    }
-    .header-actions .btn {
-        border: none !important;
-        box-shadow: none !important;
-        transition: none !important;
-        background: transparent !important;
-        background-clip: border-box;
-        color: #d7dde9;
-        display: inline-flex;
-        align-items: center;
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-        margin-right: 0.25rem;
-        gap: 0;
-    }
-    .header-actions .btn:last-child {
-        margin-right: 0;
-    }
-    .header-actions .btn:hover,
-    .header-actions .btn:focus,
-    .header-actions .btn:active {
-        border: none !important;
-        box-shadow: none !important;
-        background-color: transparent !important;
-        color: #ffffff !important;
-    }
-    .header-actions .btn i,
-    .header-actions .btn svg {
-        color: inherit !important;
-        margin-right: 0;
-    }
-    </style>
 {% endblock %}
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 ;
@@ -133,7 +36,8 @@
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item text-danger" href="{% url 'comedor_eliminar' comedor.id %}">
+                        <a class="dropdown-item text-danger"
+                           href="{% url 'comedor_eliminar' comedor.id %}">
                             <i class="bi bi-trash me-1"></i>Eliminar
                         </a>
                     </li>
@@ -143,12 +47,12 @@
                                     type="button"
                                     data-bs-toggle="modal"
                                     data-bs-target="#modalAdmision">
-                                <i class="bi bi-box-arrow-in-up-right"></i>Comenzar Admisión
+                                <i class="bi bi-box-arrow-in-up-right me-1"></i>Comenzar Admisión
                             </button>
                         </li>
                         <li>
                             <a class="dropdown-item" href="{% url 'dupla_asignar' pk=comedor.id %}">
-                                <i class="bi bi-person-workspace"></i>Modificar Equipo Técnico
+                                <i class="bi bi-person-workspace me-1"></i>Modificar Equipo Técnico
                             </a>
                         </li>
                     {% endif %}
@@ -240,17 +144,27 @@
                         </li>
                     </ul>
                 </div>
-                <div class="col-12 col-lg-3 d-flex flex-column justify-content-end">
-                    <p class="mb-0 fs-7">
-                        <small>Inicio de Ejecución: <strong>16/09/2025</strong></small>
-                    </p>
-                    <p class="mb-0 fs-7">
-                        <small>Final de Ejecución: <strong>16/09/2026</strong></small>
-                    </p>
-                    <p class="mb-0 fs-7">
-                        <small>Plazo de Ejecución: <strong>3 meses</strong></small>
-                    </p>
-                </div>
+                    {% with selected_admision|default:admision_activa as display_admision %}
+                        <div class="col-12 col-lg-3 d-flex flex-column justify-content-end">
+                            <p class="mb-0 fs-7">
+                                <small>Inicio de Ejecución:
+                                    <strong>
+                                        {% if display_admision and display_admision.creado %}
+                                            {{ display_admision.creado|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </small>
+                            </p>
+                            <p class="mb-0 fs-7">
+                                <small>Final de Ejecución: <strong>--/--/--</strong></small>
+                            </p>
+                            <p class="mb-0 fs-7">
+                                <small>Plazo de Ejecución: <strong>6 meses</strong></small>
+                            </p>
+                        </div>
+                    {% endwith %}
             </div>
         </div>
     </div>
@@ -259,49 +173,43 @@
     <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
         <!-- panel 1 -->
         <div class="accordion-panel open">
-            <div class="accordion-header h5"
-                 style="background-color: #F79D00;
-                        color: white">Ubicación</div>
+            <div class="accordion-header h5 accordion-header--ubicacion">Ubicación</div>
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-12 col-lg-5">
                         {% google_maps_query comedor.latitud comedor.longitud as maps_query %}
                         {% if maps_query %}
-                            <div class="w-100" style="aspect-ratio: 16/9;">
+                            <div class="w-100 comedor-map-wrapper">
                                 <iframe width="100%"
                                         height="365px"
                                         frameborder="0"
-                                        style="border:0"
+                                        class="comedor-map-iframe"
                                         src="https://maps.google.com/maps?q={{ maps_query }}&output=embed"
                                         allowfullscreen>
                                 </iframe>
                             </div>
                         {% elif comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
-                            <div class="w-100" style="aspect-ratio: 16/9;">
+                            <div class="w-100 comedor-map-wrapper">
                                 <iframe width="100%"
                                         height="365px"
                                         frameborder="0"
-                                        style="border:0"
+                                        class="comedor-map-iframe"
                                         src="https://maps.google.com/maps?q={{ comedor.calle|urlencode }}+{{ comedor.numero }},+{{ comedor.localidad.nombre|urlencode }},+{{ comedor.municipio.nombre|urlencode }},+{{ comedor.provincia.nombre|urlencode }}&output=embed"
                                         allowfullscreen>
                                 </iframe>
                             </div>
                         {% else %}
-                            <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
-                                <div class="d-flex align-items-center justify-content-center text-white rounded-circle mx-2 me-3"
-                                     style="width: 60px;
-                                            height: 60px">
-                                    <i class="bi bi-geo fs-1"></i>
-                                </div>
-                                <div>
-                                    <p class="mb-0 text-white fw-bold">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
+                            <div class="w-100 comedor-map-wrapper comedor-map-placeholder d-flex align-items-center justify-content-center">
+                                <div class="d-flex align-items-center px-3 py-2">
+                                    <div class="d-flex align-items-center justify-content-center text-secondary rounded-circle mx-2 me-3 comedor-icon-60">
+                                        <i class="bi bi-geo fs-1"></i>
+                                    </div>
+                                    <p class="mb-0 fw-bold text-body">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
                                 </div>
                             </div>
                         {% endif %}
                     </div>
-                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0"
-                         style="max-height: 370px">
-                        <h2 class="border-bottom border-3 mb-4 fw-bold">Ubicación</h2>
+                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
                         <p class="mb-2">
                             <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
                         </p>
@@ -315,7 +223,12 @@
                             <i class="bi bi-grid me-2"></i><strong>Manzana:</strong> {{ comedor.manzana | default_if_none:"-" }}
                         </p>
                         <p class="mb-2">
-                            <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong> {{ comedor.piso_departamento | default_if_none:"-" }}
+                            <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong>
+                            {% if comedor.piso or comedor.departamento %}
+                                {{ comedor.piso }}{% if comedor.piso and comedor.departamento %} - {% endif %}{{ comedor.departamento }}
+                            {% else %}
+                                -
+                            {% endif %}
                         </p>
                         <p class="mb-2">
                             <i class="bi bi-signpost me-2"></i><strong>Entre calle 1:</strong> {{ comedor.entre_calle_1 | default_if_none:"-" }}
@@ -341,9 +254,7 @@
         </div>
         <!-- panel 2 -->
         <div class="accordion-panel">
-            <div class="accordion-header h5"
-                 style="background-color: #6A1B99;
-                        color: white">Responsables</div>
+            <div class="accordion-header h5 accordion-header--responsables">Responsables</div>
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-12 col-lg-6">
@@ -358,9 +269,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0"
-                         style="max-height: 370px">
-                        <h2 class="border-bottom border-3 mb-4 fw-bold">Responsables</h2>
+                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
                         <p class="mb-2">
                             <i class="bi bi-building me-2"></i><strong>Organización base:</strong> {{ comedor.organizacion.nombre | default_if_none:"-" }}
                         </p>
@@ -409,13 +318,10 @@
         </div>
         <!-- panel 3 -->
         <div class="accordion-panel">
-            <div class="accordion-header h5"
-                 style="background-color: #2E7D33;
-                        color: white">Prestaciones</div>
+            <div class="accordion-header h5 accordion-header--prestaciones">Prestaciones</div>
             <div class="accordion-content">
-                <h2 class="border-bottom border-3 mb-4 fw-bold">Prestaciones</h2>
                 {% with prestacion=relevamientos.0.prestacion %}
-                    <div class="row text-center mb-4">
+                    <div class="row text-center mb-1">
                         <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
                             <div class="small-box">
                                 <div class="inner">
@@ -433,7 +339,13 @@
                                     <div class="fs-2 mb-1">
                                         <i class="bi bi-calendar-week"></i>
                                     </div>
-                                    <div class="fw-bold fs-3 mb-0">7</div>
+                                    <div class="fw-bold fs-3 mb-0">
+                                        {% if prestacion %}
+                                            {{ prestacion|dias_prestacion_semana }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
                                     <div class="fw-bold fs-6">Dias a la semana</div>
                                 </div>
                             </div>
@@ -461,39 +373,56 @@
                                     <div class="fs-2 mb-1">
                                         <i class="bi bi-currency-dollar"></i>
                                     </div>
-                                    <div class="fw-bold fs-3 mb-0">0</div>
+                                    <div class="fw-bold fs-3 mb-0">
+                                        {% if prestacion %}
+                                            {{ monto_prestacion_mensual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
                                     <div class="fw-bold fs-6">Monto prestacion mensual</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm align-middle text-center mb-0">
+                    <div class="table-responsive prestaciones-table-wrap">
+                        <table class="table table-bordered table-sm align-middle text-center mb-0 prestaciones-table">
                             <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>Lunes</th>
-                                    <th>Martes</th>
-                                    <th>Miercoles</th>
-                                    <th>Jueves</th>
-                                    <th>Viernes</th>
-                                    <th>Sabado</th>
-                                    <th>Domingo</th>
-                                </tr>
-                                <tr class="small fw-normal">
-                                    <th></th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
+                                <tr class="prestaciones-table-head">
+                                    <th scope="col" class="text-start">Prestacion</th>
+                                    <th scope="col">
+                                        <span class="d-block">Lunes</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Martes</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Miercoles</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Jueves</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Viernes</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Sabado</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Domingo</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <th scope="row" class="text-start">Desayuno</th>
+                                    <th scope="row" class="text-start prestaciones-row">Desayuno</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_desayuno_actual|default_if_none:"-" }}
@@ -545,7 +474,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Almuerzo</th>
+                                    <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_almuerzo_actual|default_if_none:"-" }}
@@ -597,7 +526,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Merienda</th>
+                                    <th scope="row" class="text-start prestaciones-row">Merienda</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_merienda_actual|default_if_none:"-" }}
@@ -649,7 +578,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Merienda reforzada</th>
+                                    <th scope="row" class="text-start prestaciones-row">Merienda reforzada</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_merienda_reforzada_actual|default_if_none:"-" }}
@@ -701,7 +630,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Cena</th>
+                                    <th scope="row" class="text-start prestaciones-row">Cena</th>
                                     <td>
                                         {% if prestacion %}
                                             {{ prestacion.lunes_cena_actual|default_if_none:"-" }}
@@ -760,11 +689,8 @@
         </div>
         <!-- panel 4 -->
         <div class="accordion-panel">
-            <div class="accordion-header h5"
-                 style="background-color: #50B7B2;
-                        color: white">Relevamientos</div>
+            <div class="accordion-header h5 accordion-header--relevamientos">Relevamientos</div>
             <div class="accordion-content">
-                <h2 class="border-bottom border-3 mb-4 fw-bold">Relevamientos</h2>
                 {% with relevamiento=relevamientos.0 %}
                     <div class="row mb-4">
                         <div class="col-12 col-lg-4 mb-4 mb-lg-0">
@@ -1013,21 +939,29 @@
                 </div>
                 <div class="col-md-3 mx-auto">
                     <div class="small-box bg-card text-center">
-                        <div class="inner">
-                            <h3 class="mb-1 mt-2">
-                                <i class="bi bi-graph-up-arrow"></i>
-                            </h3>
-                            <h4 class="fw-bold my-1">
-                                {% if admision %}
-                                    {{ admision|length }}
-                                {% else %}
-                                    0
-                                {% endif %}
-                            </h4>
-                            <p class="fw-bold fs-7">Numero de Convenio</p>
-                        </div>
-                    </div>
-                </div>
+	                            <div class="inner">
+		                            <h3 class="mb-1 mt-2">
+		                                <i class="bi bi-graph-up-arrow"></i>
+		                            </h3>
+		                            {% with selected_convenio_numero|default_if_none:"" as convenio_numero %}
+		                                {% with total_admisiones|default_if_none:0 as total_convenios %}
+		                                    <h4 class="fw-bold my-1">
+		                                        {% if total_convenios %}
+		                                            {% if convenio_numero != "" %}
+		                                                {{ convenio_numero }}&deg; / {{ total_convenios }}
+		                                            {% else %}
+		                                                - / {{ total_convenios }}
+		                                            {% endif %}
+		                                        {% else %}
+		                                            0
+		                                        {% endif %}
+		                                    </h4>
+		                                {% endwith %}
+		                            {% endwith %}
+		                            <p class="fw-bold fs-7">Numero de Convenio</p>
+		                        </div>
+		                    </div>
+		                </div>
             </div>
             <div class="row">
                 <div class="col-12 col-lg-6 mb-3 mb-lg-0">
@@ -1036,7 +970,7 @@
                             <h6 class="fw-bold my-1 text-center">Asistencia por rango etareo</h6>
                         </div>
                         <div class="card-body">
-                            <div class="w-100" style="height: 240px;">
+                            <div class="w-100 comedor-chart-h240">
                                 <canvas id="nominaEdadChart"></canvas>
                             </div>
                         </div>
@@ -1070,10 +1004,80 @@
                                     </strong>
                                 </p>
                                 <p class="mb-0 fs-7">
-                                    Estado:
+                                    Estado - técnicos:
                                     <strong class="text-uppercase">
-                                        {% if display_admision and display_admision.estado %}
-                                            {{ display_admision.estado.nombre|default_if_none:"Sin información" }}
+                                        {% if display_admision and display_admision.estado_admision %}
+                                            {{ display_admision.get_estado_admision_display|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado - legales:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_legales %}
+                                            {{ display_admision.get_estado_legales_display|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado actual:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_mostrar %}
+                                            {{ display_admision.estado_mostrar|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Fecha estado:
+                                    <strong>
+                                        {% if display_admision and display_admision.fecha_estado_mostrar %}
+                                            {{ display_admision.fecha_estado_mostrar|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.num_if %}
+                                            {{ display_admision.num_if }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF legales:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.legales_num_if %}
+                                            {{ display_admision.legales_num_if }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF técnico:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_if_tecnico %}
+                                            {{ display_admision.numero_if_tecnico }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° disposición:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_disposicion %}
+                                            {{ display_admision.numero_disposicion }}
                                         {% else %}
                                             Sin información
                                         {% endif %}
@@ -1081,9 +1085,7 @@
                                 </p>
                                 <p class="mb-0 fs-7">
                                     Dupla:
-                                    <strong class="text-uppercase">
-                                        {{ comedor.dupla.nombre |default_if_none:"Sin información" }}
-                                    </strong>
+                                    <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"Sin información" }}</strong>
                                 </p>
                                 <p class="mb-0 fs-7">
                                     Tipo de convenio:
@@ -1095,18 +1097,27 @@
                                         {% endif %}
                                     </strong>
                                 </p>
-                            {% endwith %}
-                            <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
-                                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-                                   class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
-                                    {% if comedor.estado == "Sin Ingreso" %}
-                                        Asignar Equipo Técnico
+                                <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
+                                    <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                                       class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
+                                        {% if comedor.estado == "Sin Ingreso" %}
+                                            Asignar Equipo Técnico
+                                        {% else %}
+                                            Modificar Equipo Técnico
+                                        {% endif %}
+                                    </a>
+                                    {% if display_admision %}
+                                        <a href="{% url 'admision_detalle' comedor.id display_admision.id %}"
+                                           class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
+                                            Ver detalles
+                                        </a>
                                     {% else %}
-                                        Modificar Equipo Técnico
+                                        <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto" disabled>
+                                            Ver detalles
+                                        </button>
                                     {% endif %}
-                                </a>
-                                <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Cargar documentos</button>
-                            </div>
+                                </div>
+                            {% endwith %}
                         </div>
                     </div>
                 </div>
@@ -1128,9 +1139,7 @@
                 <div class="card-body">
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-amarillo px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-amarillo-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-amarillo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-people-fill fs-1"></i>
                             </div>
                             <div>
@@ -1141,9 +1150,7 @@
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-person-standing fs-1"></i>
                             </div>
                             <div>
@@ -1154,9 +1161,7 @@
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-rosa px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-rosa-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-rosa-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-person-standing-dress fs-1"></i>
                             </div>
                             <div>
@@ -1167,9 +1172,7 @@
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-verde px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-person-arms-up fs-1"></i>
                             </div>
                             <div>
@@ -1180,9 +1183,7 @@
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-rojo px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-rojo-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-rojo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-list-check fs-1"></i>
                             </div>
                             <div>
@@ -1265,7 +1266,7 @@
                     <h4 class="fw-bold my-1">Historial de interacciones</h4>
                 </div>
                 <div class="card-body">
-                    <div class="w-100" style="height: 220px;">
+                    <div class="w-100 comedor-chart-h220">
                         <canvas id="interaccionesChart"></canvas>
                     </div>
                 </div>
@@ -1301,9 +1302,7 @@
                             <div class="col-md-6">
                                 <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
                                 {{ intervencion_form.fecha }}
-                                <div id="fecha-error-intervencion"
-                                     class="invalid-feedback"
-                                     style="display: none"></div>
+                                <div id="fecha-error-intervencion" class="invalid-feedback d-none"></div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
@@ -1491,7 +1490,7 @@
                                 {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
                             </select>
                         </div>
-                        <div class="mb-3" id="comentarioDiv" style="display: none;">
+                        <div class="mb-3 d-none" id="comentarioDiv">
                             <label for="comentario" class="form-label">Comentario: *</label>
                             <textarea class="form-control"
                                       id="comentario"
@@ -1512,72 +1511,6 @@
     </div>
 {% endblock %}
 {% block customJS %}
-
-    <style>
-    .select2-container .select2-selection--multiple {
-        background-color: #495057 !important;
-        border: 1px solid #6c757d !important;
-        border-radius: 0.375rem !important;
-        color: #fff !important;
-        min-height: 38px !important;
-        padding: 0.375rem 0.75rem !important;
-    }
-
-    .select2-container .select2-selection--multiple .select2-selection__choice {
-        background-color: #0d6efd !important;
-        border: 1px solid #0d6efd !important;
-        border-radius: 0.25rem !important;
-        color: #fff !important;
-        font-size: 0.875rem !important;
-        margin: 0.125rem 0.25rem 0.125rem 0 !important;
-        padding: 0.25rem 0.5rem !important;
-    }
-
-    .select2-container .select2-selection--multiple .select2-selection__choice__remove {
-        color: #fff !important;
-        margin-right: 0.25rem !important;
-    }
-
-    .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
-        color: #f8f9fa !important;
-    }
-
-    .select2-dropdown {
-        background-color: #343a40 !important;
-        border: 1px solid #6c757d !important;
-        border-radius: 0.375rem !important;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5) !important;
-    }
-
-    .select2-results__option {
-        background-color: #343a40 !important;
-        color: #fff !important;
-        padding: 0.5rem 0.75rem !important;
-    }
-
-    .select2-results__option--highlighted {
-        background-color: #0d6efd !important;
-        color: #fff !important;
-    }
-
-    .select2-search__field {
-        background-color: #495057 !important;
-        border: 1px solid #6c757d !important;
-        border-radius: 0.25rem !important;
-        color: #fff !important;
-        padding: 0.25rem 0.5rem !important;
-    }
-
-    .select2-container .select2-selection--multiple .select2-selection__placeholder {
-        color: #adb5bd !important;
-        margin-top: 0.25rem !important;
-    }
-
-    .select2-container--focus .select2-selection--multiple {
-        border-color: #86b7fe !important;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
-    }
-    </style>
     <script>
     function validarComedor() {
       const form = document.createElement('form');
@@ -1634,14 +1567,19 @@
       const comentarioDiv = document.getElementById('comentarioDiv');
       const comentarioTextarea = document.getElementById('comentario');
 
-      if (selectedValues.includes('otro')) {
-        comentarioDiv.style.display = 'block';
-        comentarioTextarea.required = true;
-      } else {
-        comentarioDiv.style.display = 'none';
-        comentarioTextarea.required = false;
-        comentarioTextarea.value = '';
+      if (!comentarioDiv || !comentarioTextarea) {
+        return;
       }
+
+      if (selectedValues.includes('otro')) {
+        comentarioDiv.classList.remove('d-none');
+        comentarioTextarea.required = true;
+        return;
+      }
+
+      comentarioDiv.classList.add('d-none');
+      comentarioTextarea.required = false;
+      comentarioTextarea.value = '';
     }
 
     function validarFormNoValidar() {
@@ -1721,13 +1659,13 @@
           fechaInput.classList.add("is-invalid");
           if (fechaError) {
             fechaError.textContent = "El año de la fecha debe estar entre 2000 y 2100.";
-            fechaError.style.display = "block";
+            fechaError.classList.remove("d-none");
           }
           return false;
         }
         fechaInput.classList.remove("is-invalid");
         if (fechaError) {
-          fechaError.style.display = "none";
+          fechaError.classList.add("d-none");
         }
         return true;
       }
@@ -1786,6 +1724,18 @@ if (donutCanvas) {
     <script>
     const nominaEdadCtx = document.getElementById('nominaEdadChart');
     if (nominaEdadCtx) {
+      const nominaEdadData = [
+        {{ nomina_pct_sin_dato|default:0 }},
+        {{ nomina_pct_ninos|default:0 }},
+        {{ nomina_pct_adolescentes|default:0 }},
+        {{ nomina_pct_adultos|default:0 }},
+        {{ nomina_pct_adultos_mayores|default:0 }},
+        {{ nomina_pct_adulto_mayor_avanzado|default:0 }}
+      ].map((value) => Number(value) || 0);
+
+      const nominaEdadMax = Math.max(...nominaEdadData);
+      const nominaEdadYAxisMax = Math.min(100, (nominaEdadMax || 0) + 10);
+
       new Chart(nominaEdadCtx, {
         type: 'bar',
         data: {
@@ -1798,14 +1748,7 @@ if (donutCanvas) {
             '+66 años'
           ],
           datasets: [{
-            data: [
-              {{ nomina_pct_sin_dato|default:0 }},
-              {{ nomina_pct_ninos|default:0 }},
-              {{ nomina_pct_adolescentes|default:0 }},
-              {{ nomina_pct_adultos|default:0 }},
-              {{ nomina_pct_adultos_mayores|default:0 }},
-              {{ nomina_pct_adulto_mayor_avanzado|default:0 }}
-            ],
+            data: nominaEdadData,
             backgroundColor: [
               '#F05A4F',
               '#8B7AD8',
@@ -1836,7 +1779,7 @@ if (donutCanvas) {
             },
             y: {
               beginAtZero: true,
-              max: 100,
+              max: nominaEdadYAxisMax,
               ticks: {
                 color: '#ffffff',
                 callback: (value) => `${value}%`
