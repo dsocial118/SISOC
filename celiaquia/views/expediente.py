@@ -519,8 +519,16 @@ class ExpedienteDetailView(DetailView):
                 or legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
             ):
                 legajo.hijos_a_cargo = hijos_list
-                legajo.responsable_id = None
+                # Verificar si también es hijo de alguien
+                legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
+                    legajo.ciudadano.id
+                )
                 responsables_legajos.append(legajo)
+                # Si tiene responsable, agregarlo también a hijos_por_responsable
+                if legajo.responsable_id:
+                    if legajo.responsable_id not in hijos_por_responsable:
+                        hijos_por_responsable[legajo.responsable_id] = []
+                    hijos_por_responsable[legajo.responsable_id].append(legajo)
             else:
                 legajo.hijos_a_cargo = []
                 legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
@@ -535,14 +543,35 @@ class ExpedienteDetailView(DetailView):
 
             legajos_por_ciudadano[legajo.ciudadano_id] = legajo
 
-        # Ordenar: responsables primero, luego sus hijos, luego hijos sin
-        # responsable
+        # Ordenar: construir árbol jerárquico completo
+        agregados = set()
+        
+        def agregar_con_descendientes(legajo):
+            """Agrega un legajo y todos sus descendientes recursivamente"""
+            if legajo.ciudadano_id in agregados:
+                return
+            agregados.add(legajo.ciudadano_id)
+            legajos_enriquecidos.append(legajo)
+            # Agregar hijos de este legajo
+            hijos = hijos_por_responsable.get(legajo.ciudadano_id, [])
+            for hijo in hijos:
+                agregar_con_descendientes(hijo)
+        
+        # Encontrar raíces (responsables que no son hijos de nadie)
+        raices = []
         for responsable in responsables_legajos:
-            legajos_enriquecidos.append(responsable)
-            # Agregar hijos de este responsable inmediatamente después
-            hijos = hijos_por_responsable.get(responsable.ciudadano_id, [])
-            legajos_enriquecidos.extend(hijos)
-
+            if responsable.responsable_id is None:
+                raices.append(responsable)
+        
+        # Agregar cada raíz con sus descendientes
+        for raiz in raices:
+            agregar_con_descendientes(raiz)
+        
+        # Agregar responsables que no fueron agregados (tienen responsable pero también son responsables)
+        for responsable in responsables_legajos:
+            if responsable.ciudadano_id not in agregados:
+                agregar_con_descendientes(responsable)
+        
         # Agregar hijos sin responsable al final
         legajos_enriquecidos.extend(hijos_sin_responsable)
 
