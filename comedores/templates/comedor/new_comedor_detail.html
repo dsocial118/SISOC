@@ -423,263 +423,43 @@
                             <tbody>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Desayuno</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_lunes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_martes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_miercoles" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_jueves" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_viernes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_sabado" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_domingo" }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_lunes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_martes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_miercoles" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_jueves" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_viernes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_sabado" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_domingo" }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Merienda</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="text-start prestaciones-row">Merienda reforzada</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_lunes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_martes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_miercoles" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_jueves" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_viernes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_sabado" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_domingo" }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Cena</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_cena_lunes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_cena_martes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_cena_miercoles" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_cena_jueves" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_cena_viernes" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_cena_sabado" }}</td>
+                                    <td>{{ selected_admision|getattr:"aprobadas_cena_domingo" }}</td>
                                 </tr>
                             </tbody>
                         </table>
