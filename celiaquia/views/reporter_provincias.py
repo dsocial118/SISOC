@@ -18,7 +18,11 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         provincia_id = self.request.GET.get("provincia")
         fecha_desde = self.request.GET.get("fecha_desde")
         fecha_hasta = self.request.GET.get("fecha_hasta")
-        estado_filtro = self.request.GET.get("estado")
+        expediente_numero = self.request.GET.get("expediente_numero")
+        documento_persona = self.request.GET.get("documento_persona")
+        revision_tecnico = self.request.GET.get("revision_tecnico")
+        resultado_sintys = self.request.GET.get("resultado_sintys")
+        estado_cupo = self.request.GET.get("estado_cupo")
 
         # Filtro base
         queryset = ExpedienteCiudadano.objects.select_related(
@@ -37,8 +41,22 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         if fecha_hasta:
             queryset = queryset.filter(creado_en__lte=fecha_hasta)
 
-        if estado_filtro:
-            queryset = queryset.filter(estado__nombre=estado_filtro)
+        if expediente_numero:
+            queryset = queryset.filter(
+                expediente__numero_expediente__icontains=expediente_numero
+            )
+
+        if documento_persona:
+            queryset = queryset.filter(ciudadano__documento__icontains=documento_persona)
+
+        if revision_tecnico:
+            queryset = queryset.filter(revision_tecnico=revision_tecnico)
+
+        if resultado_sintys:
+            queryset = queryset.filter(resultado_sintys=resultado_sintys)
+
+        if estado_cupo:
+            queryset = queryset.filter(estado_cupo=estado_cupo)
 
         # Estadísticas generales
         total_casos = queryset.count()
@@ -125,10 +143,14 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
                 "expedientes_por_provincia": expedientes_por_provincia,
                 "ultimos_casos": ultimos_casos,
                 "provincias": provincias,
-                "provincia_seleccionada": provincia_id,
-                "fecha_desde": fecha_desde,
-                "fecha_hasta": fecha_hasta,
-                "estado_filtro": estado_filtro,
+                "provincia_seleccionada": provincia_id or "",
+                "fecha_desde": fecha_desde or "",
+                "fecha_hasta": fecha_hasta or "",
+                "expediente_numero": expediente_numero or "",
+                "documento_persona": documento_persona or "",
+                "revision_tecnico": revision_tecnico or "",
+                "resultado_sintys": resultado_sintys or "",
+                "estado_cupo": estado_cupo or "",
             }
         )
 
