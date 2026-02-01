@@ -280,6 +280,11 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== MODAL SUBIR/EDITAR ARCHIVO DE LEGAJO (archivo1/2/3) ===== */
   const modalArchivo = document.getElementById('modalSubirArchivo');
   if (modalArchivo) {
+    // Asegurar z-index del modal
+    modalArchivo.style.zIndex = '9999';
+    const modalBackdrop = modalArchivo.querySelector('.modal-backdrop');
+    if (modalBackdrop) modalBackdrop.style.zIndex = '9998';
+    
     modalArchivo.addEventListener('show.bs.modal', function (event) {
       const button = event.relatedTarget;
       const legajoId = button.getAttribute('data-legajo-id');
@@ -289,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const archivo3Label = button?.getAttribute('data-archivo3-label') || 'Biopsia / Constancia médica';
       const uploadForm = modalArchivo.querySelector('#form-subir-archivo');
 
-      const actionUrl = `/expedientes/${expedienteId}/ciudadanos/${legajoId}/archivo/`;
+      const actionUrl = `/celiaquia/expedientes/${expedienteId}/ciudadanos/${legajoId}/archivo/`;
       uploadForm.setAttribute('action', actionUrl);
 
       const selCampo = modalArchivo.querySelector('#campo-archivo');
