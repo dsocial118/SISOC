@@ -150,10 +150,11 @@ test: add tests for new feature
 ## API Documentation
 
 - **Postman Documentation**: [API SISOC Documentation](https://documenter.getpostman.com/view/14921866/2sAXxMfDXf)
-- For questions, contact the tech lead or project owner
-- **Authentication**: API keys and authentication setup are documented in the environment variables section. See `.env.example` for required API configuration.
+- For detailed API specifications, authentication methods, and endpoint documentation, refer to the Postman collection
+- For questions or clarifications, contact the tech lead or project owner
+- **Authentication**: See `.env.example` for API configuration and authentication setup
 
-Example API request:
+Example API request (authentication method varies by endpoint - see Postman docs):
 ```bash
 curl -X GET http://localhost:8000/api/comedores/ \
   -H "Authorization: Bearer <API_KEY>"
@@ -161,7 +162,7 @@ curl -X GET http://localhost:8000/api/comedores/ \
 
 ## Important Guidelines for Code Changes
 
-1. **Never invent**: Don't create APIs, models, endpoints, settings, or dependencies without explicit requirements. If information is missing, ask or leave explicit TODOs.
+1. **Never invent**: Don't create APIs, models, endpoints, settings, or dependencies without explicit requirements. If information is missing, leave explicit TODO comments or document assumptions clearly.
 
 2. **Preserve default behavior**: If changing logic or contracts, list breaking changes and update all callers.
 
