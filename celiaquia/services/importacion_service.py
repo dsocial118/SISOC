@@ -66,8 +66,8 @@ def validar_edad_responsable(fecha_nac_responsable, fecha_nac_beneficiario):
         edad_beneficiario = (date.today() - fecha_nac_beneficiario).days // 365
 
         if edad_responsable < 18:
-            warnings_edad.append(f"Responsable menor de 18 anos ({edad_responsable})")
-        if edad_responsable < edad_beneficiario:
+            error = f"Responsable debe ser mayor de 18 anos (tiene {edad_responsable})"
+        elif edad_responsable < edad_beneficiario:
             error = "Responsable mas joven que beneficiario"
     except Exception as e:
         logger.warning("Error validando edad: %s", e)
@@ -94,6 +94,15 @@ class ImportacionService:
             "codigo_postal",
             "telefono",
             "email",
+            "APELLIDO_RESPONSABLE",
+            "NOMBRE_REPSONSABLE",
+            "Cuit_Responsable",
+            "FECHA_DE_NACIMIENTO_RESPONSABLE",
+            "SEXO",
+            "DOMICILIO_RESPONSABLE",
+            "LOCALIDAD_RESPONSABLE",
+            "CELULAR_RESPONSABLE",
+            "CORREO_RESPONSABLE",
         ]
         df = pd.DataFrame(columns=columnas)
         output = BytesIO()
@@ -453,38 +462,45 @@ class ImportacionService:
             if not doc_str or not doc_str.isdigit():
                 raise ValidationError(f"{campo_nombre} debe contener solo dígitos")
 
+            doc_len = len(doc_str)
+
             # Validar longitud según tipo
             if campo_nombre == "documento":
-                # Aceptar tanto DNI (7-8) como CUIT (11)
-                if len(doc_str) == 11:
-                    # Es CUIT, validar formato
-                    if not (
-                        doc_str.startswith("20")
-                        or doc_str.startswith("23")
-                        or doc_str.startswith("27")
-                    ):
-                        raise ValidationError(
-                            f"{campo_nombre} CUIT debe comenzar con 20, 23 o 27"
-                        )
-                elif len(doc_str) < 7 or len(doc_str) > 8:
-                    raise ValidationError(
-                        f"{campo_nombre} debe tener 7-8 dígitos (DNI) o 11 dígitos (CUIT)"
-                    )
+                # Aceptar DNI (10-11 dígitos) o CUIT (11 dígitos con prefijos 20/23/27)
+                if doc_len == 11:
+                    # Podría ser CUIT o DNI de 11 dígitos
+                    if doc_str.startswith(("20", "23", "27")):
+                        # Es CUIT válido
+                        pass
+                    else:
+                        # Es DNI de 11 dígitos
+                        pass
+                elif doc_len == 10:
+                    # DNI de 10 dígitos
+                    pass
                 else:
-                    # Es DNI, validar rango
-                    doc_int = int(doc_str)
-                    if doc_int < 1000000 or doc_int > 99999999:
-                        raise ValidationError(
-                            f"{campo_nombre} {doc_str} fuera del rango válido para DNI"
-                        )
+                    raise ValidationError(
+                        f"{campo_nombre} debe tener entre 10 y 11 dígitos"
+                    )
             elif (
                 "responsable" in campo_nombre
                 and "telefono" not in campo_nombre
                 and "contacto" not in campo_nombre
             ):
-                if len(doc_str) != 11:
+                if doc_len == 11:
+                    # Podría ser CUIT o DNI de 11 dígitos
+                    if doc_str.startswith(("20", "23", "27")):
+                        # Es CUIT válido
+                        pass
+                    else:
+                        # Es DNI de 11 dígitos
+                        pass
+                elif doc_len == 10:
+                    # DNI de 10 dígitos
+                    pass
+                else:
                     raise ValidationError(
-                        f"{campo_nombre} debe tener 11 dígitos (CUIT)"
+                        f"{campo_nombre} debe tener entre 10 y 11 dígitos"
                     )
 
             return doc_str
@@ -774,7 +790,7 @@ class ImportacionService:
 
                 # Determinar rol del beneficiario
                 if es_mismo_documento:
-                    rol_beneficiario = ExpedienteCiudadano.ROLE_RESPONSABLE
+                    rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
                 else:
                     rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
 
@@ -920,18 +936,21 @@ class ImportacionService:
                             if ciudadano_responsable and ciudadano_responsable.pk:
                                 cid_resp = ciudadano_responsable.pk
 
-                                # Validar edad
-                                valido_edad, edad_warnings, error_edad = (
-                                    validar_edad_responsable(
-                                        responsable_payload.get("fecha_nacimiento"),
-                                        payload.get("fecha_nacimiento"),
+                                # Validar edad SOLO si se creó un nuevo responsable con fecha de nacimiento
+                                if responsable_payload.get("fecha_nacimiento"):
+                                    valido_edad, edad_warnings, error_edad = (
+                                        validar_edad_responsable(
+                                            responsable_payload.get("fecha_nacimiento"),
+                                            payload.get("fecha_nacimiento"),
+                                        )
                                     )
-                                )
-                                # Agregar warnings ANTES de verificar errores
-                                for warning in edad_warnings:
-                                    add_warning(offset, "edad", warning)
-                                if error_edad:
-                                    add_error(offset, "edad_responsable", error_edad)
+                                    # Agregar warnings ANTES de verificar errores
+                                    for warning in edad_warnings:
+                                        add_warning(offset, "edad", warning)
+                                    if error_edad:
+                                        add_warning(
+                                            offset, "edad_responsable", error_edad
+                                        )
 
                                 # Crear legajo del responsable si no existe ya
                                 if cid_resp not in existentes_ids:
@@ -1125,6 +1144,33 @@ class ImportacionService:
                         "Consolidado ciudadano %s: rol actualizado a BENEFICIARIO_Y_RESPONSABLE",
                         ciudadano_id,
                     )
+
+            # CASO A: Beneficiarios sin hijos a cargo Y sin responsable → cambiar a RESPONSABLE
+            # IMPORTANTE: Recargar legajos después de consolidación
+            legajos_expediente = ExpedienteCiudadano.objects.filter(
+                expediente=expediente
+            ).select_related("ciudadano")
+
+            for legajo in legajos_expediente.filter(
+                rol=ExpedienteCiudadano.ROLE_BENEFICIARIO
+            ):
+                # Verificar si tiene hijos a cargo (es padre)
+                tiene_hijos = GrupoFamiliar.objects.filter(
+                    ciudadano_1_id=legajo.ciudadano_id
+                ).exists()
+                # Verificar si tiene responsable (es hijo)
+                tiene_responsable = GrupoFamiliar.objects.filter(
+                    ciudadano_2_id=legajo.ciudadano_id
+                ).exists()
+
+                # Solo cambiar a RESPONSABLE si NO tiene hijos NI responsable
+                if not tiene_hijos and not tiene_responsable:
+                    legajo.rol = ExpedienteCiudadano.ROLE_RESPONSABLE
+                    legajo.save(update_fields=["rol"])
+                    logger.info(
+                        "Ciudadano %s sin hijos ni responsable: rol actualizado a RESPONSABLE",
+                        legajo.ciudadano_id,
+                    )
         except Exception as e:
             logger.error("Error en post-procesamiento de relaciones cruzadas: %s", e)
             warnings.append(
@@ -1136,15 +1182,15 @@ class ImportacionService:
             )
 
         logger.info(
-            "Import completo: %s válidos, %s errores, %s excluidos, %s relaciones cruzadas.",
-            validos,
+            "Import completo: %s legajos creados, %s errores, %s excluidos, %s relaciones cruzadas.",
+            len(legajos_crear),
             errores,
             len(excluidos),
             relaciones_cruzadas_creadas,
         )
 
         return {
-            "validos": validos,
+            "validos": len(legajos_crear),
             "errores": errores,
             "detalles_errores": detalles_errores,
             "excluidos_count": len(excluidos),
