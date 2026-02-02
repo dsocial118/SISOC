@@ -85,11 +85,10 @@ class ExpedienteService:
     @staticmethod
     @transaction.atomic
     def confirmar_envio(expediente: Expediente, usuario):
-        try:
-            if expediente.estado.nombre != "EN_ESPERA":
-                raise ValidationError("El expediente no está en EN_ESPERA.")
-        except AttributeError:
-            pass
+        if expediente.estado.nombre != "EN_ESPERA":
+            raise ValidationError(
+                f"El expediente no está en estado EN_ESPERA. Estado actual: {expediente.estado.nombre}"
+            )
 
         if not LegajoService.all_legajos_loaded(expediente):
             raise ValidationError(

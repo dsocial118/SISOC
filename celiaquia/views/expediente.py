@@ -761,7 +761,6 @@ class ExpedienteConfirmView(View):
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
-        # Validar que no haya registros erróneos pendientes
         from celiaquia.models import RegistroErroneo
 
         registros_erroneos = RegistroErroneo.objects.filter(
@@ -769,16 +768,6 @@ class ExpedienteConfirmView(View):
         )
         if registros_erroneos.exists():
             msg = f"No se puede enviar: hay {registros_erroneos.count()} registros con errores pendientes de corrección."
-            if _is_ajax(request):
-                return JsonResponse({"success": False, "error": msg}, status=400)
-            messages.error(request, msg)
-            return redirect("expediente_detail", pk=pk)
-
-        faltantes_qs = expediente.expediente_ciudadanos.filter(
-            Q(archivo2__isnull=True) | Q(archivo3__isnull=True)
-        )
-        if faltantes_qs.exists():
-            msg = "No se puede enviar: hay legajos sin los 2 archivos requeridos."
             if _is_ajax(request):
                 return JsonResponse({"success": False, "error": msg}, status=400)
             messages.error(request, msg)
@@ -800,11 +789,12 @@ class ExpedienteConfirmView(View):
                 f"Expediente enviado a Subsecretaría. Legajos: {result['validos']} (sin errores).",
             )
         except ValidationError as ve:
+            error_msg = str(ve.message) if hasattr(ve, 'message') else str(ve)
             if _is_ajax(request):
                 return JsonResponse(
-                    {"success": False, "error": escape(str(ve))}, status=400
+                    {"success": False, "error": escape(error_msg)}, status=400
                 )
-            messages.error(request, f"Error al confirmar: {escape(str(ve))}")
+            messages.error(request, f"Error al confirmar: {escape(error_msg)}")
         except Exception as e:
             logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
             if _is_ajax(request):

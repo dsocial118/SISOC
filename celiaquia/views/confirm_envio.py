@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 
-from celiaquia.models import Expediente, ExpedienteCiudadano
+from celiaquia.models import Expediente, ExpedienteCiudadano, RegistroErroneo
 from celiaquia.services.expediente_service import ExpedienteService
 from celiaquia.views.expediente import _is_ajax
 
@@ -55,7 +55,34 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
             msg = "No tiene permisos para confirmar este expediente."
             return JsonResponse({"success": False, "error": msg}, status=403)
 
-        # 3) Validación de negocio: todos los legajos con los 2 archivos requeridos
+        # 3) Validación de negocio: estado correcto
+        if expediente.estado.nombre != "EN_ESPERA":
+            msg = (
+                "El expediente no está en estado EN_ESPERA. "
+                f"Estado actual: {expediente.estado.nombre}"
+            )
+            logger.info("Validación en confirmar envío falló: %s", msg)
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": msg}, status=400)
+            messages.error(request, msg)
+            return redirect("expediente_detail", pk=expediente.pk)
+
+        # 4) Validación de negocio: no hay registros erróneos pendientes
+        registros_erroneos = RegistroErroneo.objects.filter(
+            expediente=expediente, procesado=False
+        )
+        if registros_erroneos.exists():
+            msg = (
+                "No se puede confirmar el envío: hay "
+                f"{registros_erroneos.count()} registros con errores pendientes."
+            )
+            logger.info("Validación en confirmar envío falló: %s", msg)
+            if _is_ajax(request):
+                return JsonResponse({"success": False, "error": msg}, status=400)
+            messages.error(request, msg)
+            return redirect("expediente_detail", pk=expediente.pk)
+
+        # 5) Validación de negocio: todos los legajos con los 2 archivos requeridos
         faltantes_qs = (
             ExpedienteCiudadano.objects.select_related("ciudadano")
             .filter(expediente_id=expediente.pk)
@@ -96,7 +123,7 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
             messages.error(request, msg)
             return redirect("expediente_detail", pk=expediente.pk)
 
-        # 4) Transición de estado / lógica de confirmación
+        # 6) Transición de estado / lógica de confirmación
         try:
             result = ExpedienteService.confirmar_envio(expediente, request.user)
             logger.info(
@@ -113,9 +140,9 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
                 }
             )
         except ValidationError as e:
-            logger.warning("Validación en confirmar envío falló: %s", e, exc_info=True)
-            msg = "No se pudo confirmar el envío: revise los datos e intente de nuevo."
-            return JsonResponse({"success": False, "error": msg}, status=400)
+            error_msg = str(e.message) if hasattr(e, 'message') else str(e)
+            logger.warning("Validación en confirmar envío falló: %s", error_msg, exc_info=True)
+            return JsonResponse({"success": False, "error": error_msg}, status=400)
         except Exception as e:
             logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
             return JsonResponse(

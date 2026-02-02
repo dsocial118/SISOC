@@ -26,23 +26,33 @@ class DummyUser:
 factory = RequestFactory()
 
 
-def test_confirm_envio_validation_error_returns_generic_message():
+def test_confirm_envio_validation_error_returns_validation_message():
     request = factory.post("/expediente/1/confirm/")
     request.user = DummyUser()
     request._dont_enforce_csrf_checks = True
 
-    dummy_exp = type("Exp", (), {"pk": 1, "usuario_provincia": object()})()
+    dummy_estado = type("Estado", (), {"nombre": "EN_ESPERA"})()
+    dummy_exp = type(
+        "Exp",
+        (),
+        {"pk": 1, "usuario_provincia": object(), "estado": dummy_estado},
+    )()
 
     dummy_qs = MagicMock()
     dummy_qs.select_related.return_value = dummy_qs
     dummy_qs.filter.return_value = dummy_qs
     dummy_qs.exists.return_value = False
 
+    dummy_err_qs = MagicMock()
+    dummy_err_qs.filter.return_value = dummy_err_qs
+    dummy_err_qs.exists.return_value = False
+
     with (
         patch(
             "celiaquia.views.confirm_envio.get_object_or_404", return_value=dummy_exp
         ),
         patch("celiaquia.views.confirm_envio.ExpedienteCiudadano.objects", dummy_qs),
+        patch("celiaquia.views.confirm_envio.RegistroErroneo.objects", dummy_err_qs),
         patch(
             "celiaquia.views.confirm_envio.ExpedienteService.confirmar_envio",
             side_effect=ValidationError("err"),
@@ -51,10 +61,7 @@ def test_confirm_envio_validation_error_returns_generic_message():
         response = ExpedienteConfirmView.as_view()(request, pk=1)
 
     assert response.status_code == 400
-    assert json.loads(response.content) == {
-        "success": False,
-        "error": "No se pudo confirmar el envío: revise los datos e intente de nuevo.",
-    }
+    assert json.loads(response.content) == {"success": False, "error": "err"}
 
 
 def test_configurar_cupo_validation_error_returns_generic_message():
