@@ -79,7 +79,9 @@ def _normalize_keys(value: Any) -> Optional[list[str]]:
     return None
 
 
-def _get_default_keys(catalog: Iterable[ColumnDefinition], default_keys: Optional[list[str]] = None) -> list[str]:
+def _get_default_keys(
+    catalog: Iterable[ColumnDefinition], default_keys: Optional[list[str]] = None
+) -> list[str]:
     if default_keys:
         return list(default_keys)
 
@@ -218,8 +220,12 @@ def build_columns_context_from_fields(
         required_keys=required_keys,
     )
 
-    active_headers = [header_by_key[key] for key in resolution.active_keys if key in header_by_key]
-    active_fields = [field_by_key[key] for key in resolution.active_keys if key in field_by_key]
+    active_headers = [
+        header_by_key[key] for key in resolution.active_keys if key in header_by_key
+    ]
+    active_fields = [
+        field_by_key[key] for key in resolution.active_keys if key in field_by_key
+    ]
 
     for col in available:
         col_key = col["key"]
@@ -273,7 +279,9 @@ def build_columns_context_for_custom_cells(
         required_keys=required_keys,
     )
 
-    active_headers = [header_by_key[key] for key in resolution.active_keys if key in header_by_key]
+    active_headers = [
+        header_by_key[key] for key in resolution.active_keys if key in header_by_key
+    ]
     updated_items = []
     for item in list(items):
         if isinstance(item, dict) and isinstance(item.get("cells"), list):

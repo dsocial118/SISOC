@@ -27,7 +27,7 @@ from django.views.generic import (
 )
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from admisiones.models.admisiones import Admision, EstadoAdmision
+from admisiones.models.admisiones import Admision, EstadoAdmision, InformeTecnico
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
@@ -35,6 +35,7 @@ from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.utils import convert_string_to_int
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm
 
@@ -381,7 +382,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             number=intervenciones_page_obj.number
         )
         intervencion_ids = [
-            intervencion.pk for intervencion in intervenciones_page_obj if intervencion.pk
+            intervencion.pk
+            for intervencion in intervenciones_page_obj
+            if intervencion.pk
         ]
         creator_map: dict[int, Any] = {}
         if intervencion_ids:
@@ -419,9 +422,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 else format_html('<span class="badge bg-secondary">No</span>')
             )
             fecha_display = (
-                intervencion.fecha.strftime("%d/%m/%Y")
-                if intervencion.fecha
-                else None
+                intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
             )
             actor = creator_map.get(intervencion.pk)
             usuario_creador = "-"
@@ -849,11 +850,39 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         if not selected_admision:
             selected_admision = relaciones_data.get("admision_activa")
 
+        informe_tecnico = None
+        if selected_admision:
+            informe_tecnico = (
+                InformeTecnico.objects.filter(
+                    admision=selected_admision, estado_formulario="finalizado"
+                )
+                .order_by("-id")
+                .first()
+            )
+
         selected_convenio_numero = None
         if selected_admision:
-            selected_convenio_numero = getattr(selected_admision, "convenio_numero", None)
+            selected_convenio_numero = getattr(
+                selected_admision, "convenio_numero", None
+            )
             if selected_convenio_numero in ("", None):
-                selected_convenio_numero = getattr(selected_admision, "numero_convenio", None)
+                selected_convenio_numero = convert_string_to_int(
+                    getattr(selected_admision, "numero_convenio", "")
+                )
+
+        prestaciones_aprobadas_total = None
+        monto_prestacion_mensual_aprobadas = None
+        if informe_tecnico:
+            prestaciones_por_tipo = ComedorService.get_prestaciones_aprobadas_por_tipo(
+                informe_tecnico
+            )
+            if prestaciones_por_tipo is not None:
+                prestaciones_aprobadas_total = sum(prestaciones_por_tipo.values())
+                monto_prestacion_mensual_aprobadas = (
+                    ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(
+                        prestaciones_por_tipo
+                    )
+                )
 
         total_admisiones = admisiones_qs.count() if admisiones_qs is not None else 0
 
@@ -870,8 +899,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "observacion_form": ObservacionForm(),
                 "selected_admision": selected_admision,
                 "selected_admision_id": getattr(selected_admision, "id", None),
+                "admisiones_informetecnico": informe_tecnico,
                 "selected_convenio_numero": selected_convenio_numero,
                 "total_admisiones": total_admisiones,
+                "prestaciones_aprobadas_total": prestaciones_aprobadas_total,
+                "monto_prestacion_mensual": monto_prestacion_mensual_aprobadas,
             }
         )
         timeline_selected = ComedorService.get_admision_timeline_context_from_admision(

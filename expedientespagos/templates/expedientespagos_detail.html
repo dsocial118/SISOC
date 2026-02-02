@@ -25,7 +25,7 @@
                     <strong>Número de Expediente:</strong> {{ expediente.expediente_pago }}
                 </p>
                 <p>
-                    <strong>Resolución de Pago:</strong> {{ expediente.resolucion_pago }}
+                    <strong>Expediente del Convenio:</strong> {{ expediente.expediente_convenio }}
                 </p>
                 <p>
                     <strong>Monto:</strong> ${{ expediente.monto|floatformat:2 }}
@@ -44,6 +44,31 @@
                 </p>
                 <p>
                     <strong>Observaciones:</strong> {{ expediente.observaciones }}
+                </p>
+                <hr />
+                <p>
+                    <strong>Prestaciones mensuales desayuno:</strong> {{ expediente.prestaciones_mensuales_desayuno|default:"-" }}
+                </p>
+                <p>
+                    <strong>Prestaciones mensuales almuerzo:</strong> {{ expediente.prestaciones_mensuales_almuerzo|default:"-" }}
+                </p>
+                <p>
+                    <strong>Prestaciones mensuales merienda:</strong> {{ expediente.prestaciones_mensuales_merienda|default:"-" }}
+                </p>
+                <p>
+                    <strong>Prestaciones mensuales cena:</strong> {{ expediente.prestaciones_mensuales_cena|default:"-" }}
+                </p>
+                <p>
+                    <strong>Monto mensual desayuno:</strong> ${{ expediente.monto_mensual_desayuno|floatformat:2 }}
+                </p>
+                <p>
+                    <strong>Monto mensual almuerzo:</strong> ${{ expediente.monto_mensual_almuerzo|floatformat:2 }}
+                </p>
+                <p>
+                    <strong>Monto mensual merienda:</strong> ${{ expediente.monto_mensual_merienda|floatformat:2 }}
+                </p>
+                <p>
+                    <strong>Monto mensual cena:</strong> ${{ expediente.monto_mensual_cena|floatformat:2 }}
                 </p>
                 <p>
                     <strong>Fecha de Creación:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}

@@ -248,6 +248,45 @@ body.sidebar-collapse .sidebar-user-name {
 /* ==========================
    ACORDEÓN HORIZONTAL (DESKTOP)
 ========================== */
+.accordion-shell {
+  position: relative;
+}
+
+.accordion-shell.is-loading .accordion-horizontal {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.accordion-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  border-radius: 16px;
+  transition: opacity 0.2s ease;
+}
+
+.accordion-shell.is-loading .accordion-loader {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+:root[data-bs-theme="dark"] .accordion-loader {
+  background-color: rgba(24, 31, 55, 0.75);
+  color: #ffffff;
+}
+
+:root[data-bs-theme="light"] .accordion-loader {
+  background-color: rgba(244, 246, 249, 0.85);
+  color: #212529;
+}
+
 .accordion-horizontal {
     display: flex;
     height: 400px;
@@ -265,6 +304,11 @@ body.sidebar-collapse .sidebar-user-name {
 
 .accordion-horizontal.is-measuring .accordion-panel,
 .accordion-horizontal.is-measuring .accordion-content {
+  transition: none !important;
+}
+
+.accordion-horizontal.is-initializing .accordion-panel,
+.accordion-horizontal.is-initializing .accordion-content {
   transition: none !important;
 }
 
@@ -608,7 +652,8 @@ body.sidebar-collapse .sidebar-user-name {
 }
 
 .comedor-chart-h240 {
-  height: 240px;
+  height: 100%;
+  min-height: 240px;
 }
 
 .comedor-chart-h220 {

@@ -312,6 +312,8 @@ class ImportacionService:
         df = df[present].rename(columns={c: column_map[c] for c in present}).fillna("")
         # Eliminar posibles columnas duplicadas despues del renombrado
         df = df.loc[:, ~df.columns.duplicated()]
+        # Limpiar espacios en blanco de todos los valores
+        df = df.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
         if "fecha_nacimiento" in df.columns:
             df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(
                 lambda x: x.date() if hasattr(x, "date") else x
@@ -463,7 +465,7 @@ class ImportacionService:
                 raise ValidationError(f"{campo_nombre} debe contener solo dígitos")
 
             doc_len = len(doc_str)
-            
+
             # Validar longitud según tipo
             if campo_nombre == "documento":
                 # Aceptar DNI (10-11 dígitos) o CUIT (11 dígitos con prefijos 20/23/27)
@@ -653,12 +655,14 @@ class ImportacionService:
                     if nacionalidad_obj:
                         payload["nacionalidad"] = nacionalidad_obj.pk
                     else:
-                        add_warning(
-                            offset,
-                            "nacionalidad",
-                            f"'{nacionalidad_val}' no encontrada",
-                        )
-                        payload.pop("nacionalidad", None)
+                        # Si no encuentra, usar Argentina como default
+                        argentina = Nacionalidad.objects.filter(
+                            nacionalidad__iexact="Argentina"
+                        ).first()
+                        if argentina:
+                            payload["nacionalidad"] = argentina.pk
+                        else:
+                            payload.pop("nacionalidad", None)
                 else:
                     payload.pop("nacionalidad", None)
 
@@ -948,7 +952,9 @@ class ImportacionService:
                                     for warning in edad_warnings:
                                         add_warning(offset, "edad", warning)
                                     if error_edad:
-                                        add_warning(offset, "edad_responsable", error_edad)
+                                        add_warning(
+                                            offset, "edad_responsable", error_edad
+                                        )
 
                                 # Crear legajo del responsable si no existe ya
                                 if cid_resp not in existentes_ids:
@@ -1142,14 +1148,16 @@ class ImportacionService:
                         "Consolidado ciudadano %s: rol actualizado a BENEFICIARIO_Y_RESPONSABLE",
                         ciudadano_id,
                     )
-            
+
             # CASO A: Beneficiarios sin hijos a cargo Y sin responsable → cambiar a RESPONSABLE
             # IMPORTANTE: Recargar legajos después de consolidación
             legajos_expediente = ExpedienteCiudadano.objects.filter(
                 expediente=expediente
             ).select_related("ciudadano")
-            
-            for legajo in legajos_expediente.filter(rol=ExpedienteCiudadano.ROLE_BENEFICIARIO):
+
+            for legajo in legajos_expediente.filter(
+                rol=ExpedienteCiudadano.ROLE_BENEFICIARIO
+            ):
                 # Verificar si tiene hijos a cargo (es padre)
                 tiene_hijos = GrupoFamiliar.objects.filter(
                     ciudadano_1_id=legajo.ciudadano_id
@@ -1158,7 +1166,7 @@ class ImportacionService:
                 tiene_responsable = GrupoFamiliar.objects.filter(
                     ciudadano_2_id=legajo.ciudadano_id
                 ).exists()
-                
+
                 # Solo cambiar a RESPONSABLE si NO tiene hijos NI responsable
                 if not tiene_hijos and not tiene_responsable:
                     legajo.rol = ExpedienteCiudadano.ROLE_RESPONSABLE
