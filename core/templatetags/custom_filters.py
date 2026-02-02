@@ -191,7 +191,8 @@ def _is_positive_number(value):
 def dias_prestacion_semana(prestacion):
     """
     Cuenta cuántos días a la semana el comedor presta servicio, en base a los
-    campos *_<comida>_actual (p.ej. lunes_desayuno_actual). Si no hay datos,
+    campos *_<comida>_actual (p.ej. lunes_desayuno_actual) o a los campos
+    aprobadas_<comida>_<dia> (p.ej. aprobadas_desayuno_lunes). Si no hay datos,
     devuelve "-".
     """
     if prestacion is None:
@@ -202,8 +203,11 @@ def dias_prestacion_semana(prestacion):
     dias_con_servicio = 0
     for day in _DAYS:
         for meal in _MEALS:
-            value = builtins.getattr(prestacion, f"{day}_{meal}_actual", None)
-            if _is_positive_number(value):
+            values = (
+                builtins.getattr(prestacion, f"{day}_{meal}_actual", None),
+                builtins.getattr(prestacion, f"aprobadas_{meal}_{day}", None),
+            )
+            if any(_is_positive_number(value) for value in values):
                 dias_con_servicio += 1
                 break
 

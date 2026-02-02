@@ -37,3 +37,16 @@ def test_dias_prestacion_semana_incluye_merienda_reforzada():
     )
 
     assert dias_prestacion_semana(prestacion) == 1
+
+
+def test_dias_prestacion_semana_usa_aprobadas_informe_tecnico():
+    informe = SimpleNamespace(
+        aprobadas_desayuno_lunes=0,
+        aprobadas_almuerzo_lunes=None,
+        aprobadas_merienda_lunes="0",
+        aprobadas_cena_lunes="-",
+        aprobadas_desayuno_martes=5,
+        aprobadas_almuerzo_miercoles="2",
+    )
+
+    assert dias_prestacion_semana(informe) == 2
