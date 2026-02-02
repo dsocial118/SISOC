@@ -67,11 +67,16 @@
                         <label for="revision_tecnico" class="form-label">Validación Técnica</label>
                         <select name="revision_tecnico" id="revision_tecnico" class="form-select">
                             <option value="">Todas</option>
-                            <option value="PENDIENTE" {% if revision_tecnico == "PENDIENTE" %}selected{% endif %}>Pendiente</option>
-                            <option value="APROBADO" {% if revision_tecnico == "APROBADO" %}selected{% endif %}>Aprobado</option>
-                            <option value="RECHAZADO" {% if revision_tecnico == "RECHAZADO" %}selected{% endif %}>Rechazado</option>
-                            <option value="SUBSANAR" {% if revision_tecnico == "SUBSANAR" %}selected{% endif %}>Subsanar</option>
-                            <option value="SUBSANADO" {% if revision_tecnico == "SUBSANADO" %}selected{% endif %}>Subsanado</option>
+                            <option value="PENDIENTE"
+                                    {% if revision_tecnico == "PENDIENTE" %}selected{% endif %}>Pendiente</option>
+                            <option value="APROBADO"
+                                    {% if revision_tecnico == "APROBADO" %}selected{% endif %}>Aprobado</option>
+                            <option value="RECHAZADO"
+                                    {% if revision_tecnico == "RECHAZADO" %}selected{% endif %}>Rechazado</option>
+                            <option value="SUBSANAR"
+                                    {% if revision_tecnico == "SUBSANAR" %}selected{% endif %}>Subsanar</option>
+                            <option value="SUBSANADO"
+                                    {% if revision_tecnico == "SUBSANADO" %}selected{% endif %}>Subsanado</option>
                         </select>
                     </div>
 
@@ -79,9 +84,11 @@
                         <label for="resultado_sintys" class="form-label">SINTYS</label>
                         <select name="resultado_sintys" id="resultado_sintys" class="form-select">
                             <option value="">Todas</option>
-                            <option value="SIN_CRUCE" {% if resultado_sintys == "SIN_CRUCE" %}selected{% endif %}>Sin Cruce</option>
+                            <option value="SIN_CRUCE"
+                                    {% if resultado_sintys == "SIN_CRUCE" %}selected{% endif %}>Sin Cruce</option>
                             <option value="MATCH" {% if resultado_sintys == "MATCH" %}selected{% endif %}>Match</option>
-                            <option value="NO_MATCH" {% if resultado_sintys == "NO_MATCH" %}selected{% endif %}>No Match</option>
+                            <option value="NO_MATCH"
+                                    {% if resultado_sintys == "NO_MATCH" %}selected{% endif %}>No Match</option>
                         </select>
                     </div>
 
@@ -299,7 +306,9 @@
                     <tbody>
                         {% for caso in ultimos_casos %}
                             <tr>
-                                <td><a href="{% url 'expediente_detail' caso.expediente.id %}">{{ caso.ciudadano.documento }}</a></td>
+                                <td>
+                                    <a href="{% url 'expediente_detail' caso.expediente.id %}">{{ caso.ciudadano.documento }}</a>
+                                </td>
                                 <td>{{ caso.ciudadano.nombre }} {{ caso.ciudadano.apellido }}</td>
                                 <td>{{ caso.expediente.numero }}</td>
                                 <td>{{ caso.expediente.provincia.nombre }}</td>
@@ -339,5 +348,4 @@
     </div>
 {% endblock %}
 
-{% block customJS %}
-{% endblock %}
+{% block customJS %}{% endblock %}
