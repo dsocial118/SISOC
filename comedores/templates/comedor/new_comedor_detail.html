@@ -161,7 +161,7 @@
                                 <small>Final de Ejecución: <strong>--/--/--</strong></small>
                             </p>
                             <p class="mb-0 fs-7">
-                                <small>Plazo de Ejecución: <strong>6 meses</strong></small>
+                                <small>Plazo de Ejecución: <strong>{{ admisiones_informetecnico|getattr:"plazo_ejecucion" }}</strong></small>
                             </p>
                         </div>
                     {% endwith %}
@@ -320,7 +320,7 @@
         <div class="accordion-panel">
             <div class="accordion-header h5 accordion-header--prestaciones">Prestaciones</div>
             <div class="accordion-content">
-                {% with prestacion=relevamientos.0.prestacion %}
+                {% with prestacion=relevamientos.0.prestacion informe_tecnico=admisiones_informetecnico %}
                     <div class="row text-center mb-1">
                         <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
                             <div class="small-box">
@@ -340,7 +340,7 @@
                                         <i class="bi bi-calendar-week"></i>
                                     </div>
                                     <div class="fw-bold fs-3 mb-0">
-                                        {% if prestacion %}
+                                        {% if prestacion and informe_tecnico %}
                                             {{ prestacion|dias_prestacion_semana }}
                                         {% else %}
                                             -
@@ -357,8 +357,8 @@
                                         <i class="bi bi-cup-hot"></i>
                                     </div>
                                     <div class="fw-bold fs-3 mb-0">
-                                        {% if prestacion %}
-                                            {{ count_beneficiarios|default_if_none:"-" }}
+                                        {% if informe_tecnico %}
+                                            {{ prestaciones_aprobadas_total|default_if_none:"-" }}
                                         {% else %}
                                             -
                                         {% endif %}
@@ -374,7 +374,7 @@
                                         <i class="bi bi-currency-dollar"></i>
                                     </div>
                                     <div class="fw-bold fs-3 mb-0">
-                                        {% if prestacion %}
+                                        {% if prestacion and informe_tecnico %}
                                             {{ monto_prestacion_mensual|default_if_none:"-" }}
                                         {% else %}
                                             -
@@ -423,43 +423,43 @@
                             <tbody>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Desayuno</th>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_lunes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_martes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_miercoles" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_jueves" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_viernes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_sabado" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_domingo" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_domingo" }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_lunes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_martes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_miercoles" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_jueves" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_viernes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_sabado" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_domingo" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_domingo" }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Merienda</th>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_lunes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_martes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_miercoles" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_jueves" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_viernes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_sabado" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_domingo" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_domingo" }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Cena</th>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_lunes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_martes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_miercoles" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_jueves" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_viernes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_sabado" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_domingo" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_domingo" }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -698,7 +698,7 @@
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-cup-hot mb-1"></i>
                             </h3>
-                            <h4 class="fw-bold my-1">{{ count_beneficiarios|default_if_none:"0" }}</h4>
+                            <h4 class="fw-bold my-1">{{ prestaciones_aprobadas_total|default_if_none:"0" }}</h4>
                             <p class="fw-bold fs-7">Prestaciones mensuales</p>
                         </div>
                     </div>
