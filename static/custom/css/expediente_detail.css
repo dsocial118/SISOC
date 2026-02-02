@@ -58,3 +58,30 @@
 .btn-toolbar.flex-wrap > .btn-group { 
     margin-bottom:.4rem; 
 }
+
+
+/* Modal z-index fix para asegurar que esté por encima del sidebar */
+#modalSubirArchivo {
+    z-index: 9999 !important;
+}
+
+#modalSubirArchivo .modal-backdrop {
+    z-index: 9998 !important;
+}
+
+#modalSubirArchivo .modal-dialog {
+    z-index: 9999 !important;
+}
+
+#modalSubirArchivo .modal-content {
+    z-index: 9999 !important;
+}
+
+/* Asegurar que otros modales también estén por encima */
+.modal {
+    z-index: 9999 !important;
+}
+
+.modal-backdrop {
+    z-index: 9998 !important;
+}
