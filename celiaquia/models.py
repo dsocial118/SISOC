@@ -334,8 +334,12 @@ class ExpedienteCiudadano(models.Model):
     @property
     def comentarios_subsanacion(self):
         """Obtiene comentarios de subsanación."""
-        return self.historial_comentarios.filter(
-            tipo_comentario__in=["SUBSANACION_MOTIVO", "SUBSANACION_RESPUESTA"]
+        return HistorialComentarios.objects.filter(
+            legajo=self,
+            tipo_comentario__in=[
+                HistorialComentarios.TIPO_SUBSANACION_MOTIVO,
+                HistorialComentarios.TIPO_SUBSANACION_RESPUESTA,
+            ],
         )
 
     def tiene_documento(self, tipo_documento_nombre):

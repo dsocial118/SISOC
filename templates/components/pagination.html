@@ -67,13 +67,9 @@
             </ul>
         {% endif %}
         {% if page_obj %}
-            <p class="text-center text-muted mb-0 mt-1">
-                Se encontraron {{ page_obj.paginator.count }} resultados
-            </p>
+            <p class="text-center text-muted mb-0 mt-1">Se encontraron {{ page_obj.paginator.count }} resultados</p>
         {% elif results_count %}
-            <p class="text-center text-muted mb-0 mt-1">
-                Se encontraron {{ results_count }} resultados
-            </p>
+            <p class="text-center text-muted mb-0 mt-1">Se encontraron {{ results_count }} resultados</p>
         {% endif %}
     </div>
 {% endwith %}

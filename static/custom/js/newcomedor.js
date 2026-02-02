@@ -3,6 +3,18 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ==========================================================
      1) FUNCIONES DE ACORDEÓN RESPONSIVE
   ========================================================== */
+  const accordion = document.querySelector('.accordion-horizontal');
+  const accordionShell = document.querySelector('.accordion-shell');
+  if (accordion) {
+    accordion.classList.add('is-initializing');
+  }
+
+  function terminarCarga() {
+    if (accordionShell) {
+      accordionShell.classList.remove('is-loading');
+    }
+  }
+
   function isMobile() {
     return window.innerWidth <= 768;
   }
@@ -129,7 +141,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Inicializar acordeón al cargar
   ajustarAnchos();
-  requestAnimationFrame(ajustarAltura);
+  requestAnimationFrame(() => {
+    ajustarAltura();
+    if (accordion) {
+      accordion.classList.remove('is-initializing');
+    }
+  });
 
   // Evento para hacer clic solo en headers
   document.querySelectorAll('.accordion-panel .accordion-header').forEach(header => {
@@ -145,6 +162,9 @@ document.addEventListener("DOMContentLoaded", function () {
     ajustarAltura();
   });
 
-  window.addEventListener('load', ajustarAltura);
+  window.addEventListener('load', () => {
+    ajustarAltura();
+    terminarCarga();
+  });
 
 });
