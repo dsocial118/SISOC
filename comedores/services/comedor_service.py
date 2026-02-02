@@ -536,6 +536,48 @@ class ComedorService:
         )
 
     @staticmethod
+    def get_prestaciones_aprobadas_por_tipo(informe_tecnico):
+        """Suma las prestaciones aprobadas por tipo en el informe tecnico."""
+        if not informe_tecnico:
+            return None
+        dias = (
+            "lunes",
+            "martes",
+            "miercoles",
+            "jueves",
+            "viernes",
+            "sabado",
+            "domingo",
+        )
+        tipos = ("desayuno", "almuerzo", "merienda", "cena")
+        count = {tipo: 0 for tipo in tipos}
+        for tipo in tipos:
+            total = 0
+            for dia in dias:
+                value = getattr(informe_tecnico, f"aprobadas_{tipo}_{dia}", 0)
+                if value is None:
+                    continue
+                try:
+                    total += int(value)
+                except (TypeError, ValueError):
+                    continue
+            count[tipo] = total
+        return count
+
+    @staticmethod
+    def calcular_monto_prestacion_mensual_por_aprobadas(prestaciones_por_tipo):
+        """Calcula el monto mensual usando prestaciones aprobadas."""
+        if not prestaciones_por_tipo:
+            return None
+        total_almuerzo_cena = prestaciones_por_tipo.get(
+            "almuerzo", 0
+        ) + prestaciones_por_tipo.get("cena", 0)
+        total_desayuno_merienda = prestaciones_por_tipo.get(
+            "desayuno", 0
+        ) + prestaciones_por_tipo.get("merienda", 0)
+        return total_almuerzo_cena * 763 + total_desayuno_merienda * 383
+
+    @staticmethod
     def get_nomina_detail(comedor_pk, page=1, per_page=100):
         qs_nomina = Nomina.objects.filter(comedor_id=comedor_pk).select_related(
             "ciudadano__sexo"
