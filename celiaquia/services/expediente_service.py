@@ -90,6 +90,11 @@ class ExpedienteService:
                 f"El expediente no está en estado EN_ESPERA. Estado actual: {expediente.estado.nombre}"
             )
 
+        for leg in expediente.expediente_ciudadanos.all():
+            if hasattr(leg, 'archivos_ok'):
+                leg.archivos_ok = bool(leg.archivo2 and leg.archivo3)
+                leg.save(update_fields=['archivos_ok'])
+
         if not LegajoService.all_legajos_loaded(expediente):
             raise ValidationError(
                 "Debes subir un archivo para cada legajo antes de confirmar."
