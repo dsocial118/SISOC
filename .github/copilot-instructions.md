@@ -151,6 +151,7 @@ test: add tests for new feature
 
 - **Postman Documentation**: [API SISOC Documentation](https://documenter.getpostman.com/view/14921866/2sAXxMfDXf)
 - For questions, contact the tech lead or project owner
+- **Authentication**: API keys and authentication setup are documented in the environment variables section. See `.env.example` for required API configuration.
 
 Example API request:
 ```bash
