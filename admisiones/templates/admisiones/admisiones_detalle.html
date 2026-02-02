@@ -573,7 +573,7 @@
                         <thead>
                             <tr>
                                 <th>Expediente</th>
-                                <th>Resolucion</th>
+                                <th>Expediente del convenio</th>
                                 <th>IF prestaciones</th>
                                 <th>Monto</th>
                                 <th>Orden de pago</th>
@@ -586,7 +586,7 @@
                             {% for expediente in expedientes_pagos %}
                                 <tr>
                                     <td>{{ expediente.expediente_pago|default:"-" }}</td>
-                                    <td>{{ expediente.resolucion_pago|default:"-" }}</td>
+                                    <td>{{ expediente.expediente_convenio|default:"-" }}</td>
                                     <td>{{ expediente.if_cantidad_de_prestaciones|default:"-" }}</td>
                                     <td>{{ expediente.monto|default:"-" }}</td>
                                     <td>{{ expediente.numero_orden_pago|default:"-" }}</td>
