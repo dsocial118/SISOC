@@ -4,12 +4,12 @@ from comedores.models import Comedor
 
 class ExpedientePago(models.Model):
     expediente_pago = models.CharField(
-        max_length=255, verbose_name="Expediente de Pago", blank=True, null=True
+        max_length=255, verbose_name="Expediente de Pago",
     )
     resolucion_pago = models.CharField(
         max_length=255, verbose_name="Resolución de Pago", blank=True, null=True
     )
-    anexo = models.CharField(max_length=255, verbose_name="Anexo")
+    anexo = models.CharField(max_length=255, verbose_name="Anexo",blank=True, null=True)
     if_cantidad_de_prestaciones = models.CharField(
         max_length=255,
         verbose_name="IF Cantidad de Prestaciones",
@@ -43,7 +43,60 @@ class ExpedientePago(models.Model):
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de creación"
     )
-
+    organizacion_creacion = models.CharField(
+        max_length=255, verbose_name="Organización de creación", blank=True, null=True
+    )
+    expediente_convenio = models.CharField(
+        max_length=255,
+        verbose_name="Expediente Convenio",
+    )
+    prestacioin_mensual_desayuno = models.CharField(
+        max_length=255,
+        verbose_name="Prestaciones Mensuales Desayuno",
+    )
+    prestacion_mensual_almuerzo = models.CharField(
+        max_length=255,
+        verbose_name="Prestaciones Mensuales Almuerzo",
+    )
+    prestacion_mensual_merienda = models.CharField(
+        max_length=255,
+        verbose_name="Prestaciones Mensuales Merienda",
+    )
+    prestacion_mensual_cena = models.CharField(
+        max_length=255,
+        verbose_name="Prestaciones Mensuales Cena",
+        blank=True,
+        null=True,
+    )
+    monto_mensual_desayuno = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto Mensual Desayuno",
+    )
+    monto_mensual_almuerzo = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto Mensual Almuerzo",
+    )
+    monto_mensual_merienda = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto Mensual Merienda",
+    )
+    monto_mensual_cena = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Monto Mensual Cena",
+    )
+    total = models.DecimalField(
+        max_digits=10, decimal_places=2, verbose_name="Total", blank=True, null=True
+    )
+    mes_pago = models.CharField(
+        max_length=20, verbose_name="Mes de Pago", blank=True, null=True
+    )
+    ano = models.CharField(
+        max_length=4, verbose_name="Año", blank=True, null=True
+    )
     class Meta:
         verbose_name = "Expediente de Pago"
         verbose_name_plural = "Expedientes de Pago"
