@@ -3,58 +3,6 @@
 ;
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
-    <style>
-.timeline::before,
-.timeline::after {
-  content: none !important;
-  display: none !important;
-}
-    .tabs-comedor-wrap {
-        position: relative;
-    }
-    .tabs-comedor {
-        padding-left: 1.5rem;
-        margin: 0;
-        position: absolute;
-        top: -30px;
-        left: 0;
-        z-index: 2;
-        border-bottom: 0;
-    }
-    .tabs-comedor-wrap .card {
-        margin-top: 0;
-        padding-top: 0.75rem;
-    }
-    .tabs-comedor .nav-link {
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-bottom: 0;
-        border-radius: 0.7rem 0.7rem 0 0;
-        padding: 1rem 0.8rem;
-        font-size: 0.98rem;
-        line-height: 1.2;
-        color: #e6eefb;
-        background-color: rgba(255, 255, 255, 0.08);
-        font-weight: 700;
-        height: 28px;
-        display: inline-flex;
-        align-items: center;
-    }
-    .tabs-comedor .nav-link.active {
-        color: #fff;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
-    }
-    :root[data-bs-theme="dark"] .tabs-comedor .nav-link.active {
-        background-color: #232d4f;
-    }
-    :root[data-bs-theme="light"] .tabs-comedor .nav-link.active {
-        background-color: #f4f6f9;
-        color: #212529;
-    }
-    .tabs-comedor .nav-link:hover {
-        color: #fff;
-        background-color: rgba(255, 255, 255, 0.16);
-    }
-    </style>
 {% endblock %}
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 ;
@@ -63,14 +11,53 @@
         <div class="col-12 col-lg-auto d-flex justify-content-start">
             <button class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</button>
         </div>
-        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2">
+        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
             <a href="#"
-               class="btn btn-md "
+               class="btn btn-md btn-warning"
                data-bs-toggle="modal"
-               data-bs-target="#modalValidacion"><i class="bi bi-check2-circle me-1"></i>Validar</a>
-            <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
-               class="btn btn-md"><i class="bi bi-tools me-1"></i>Intervenciones</a>
-            <a href="{% url 'relevamientos' comedor.id %}" class="btn btn-md"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
+               data-bs-target="#modalValidacion"><i class="bi bi-clipboard-check me-1"></i>Validar</a>
+            <a href="{% url 'relevamientos' comedor.id %}"
+               class="btn btn-md btn-outline-light"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
+            {% if perms.auditlog.view_logentry %}
+                <a href="{% url 'audittrail:log_instance' 'comedores' 'comedor' comedor.pk %}"
+                   class="btn btn-md btn-outline-light"><i class="bi bi-journal-text me-1"></i>Historial</a>
+            {% endif %}
+            <div class="btn-group">
+                <button class="btn btn-md dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <i class="bi bi-list"></i>Acciones
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'comedor_editar' comedor.id %}">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-danger"
+                           href="{% url 'comedor_eliminar' comedor.id %}">
+                            <i class="bi bi-trash me-1"></i>Eliminar
+                        </a>
+                    </li>
+                    {% if comedor.estado != "Sin Ingreso" %}
+                        <li>
+                            <button class="dropdown-item text-start"
+                                    type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalAdmision">
+                                <i class="bi bi-box-arrow-in-up-right me-1"></i>Comenzar Admisión
+                            </button>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'dupla_asignar' pk=comedor.id %}">
+                                <i class="bi bi-person-workspace me-1"></i>Modificar Equipo Técnico
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
             <div class="dropdown">
                 <button class="btn btn-md dropdown-toggle"
                         type="button"
@@ -157,17 +144,27 @@
                         </li>
                     </ul>
                 </div>
-                <div class="col-12 col-lg-3 d-flex flex-column justify-content-end">
-                    <p class="mb-0 fs-7">
-                        <small>Inicio de Ejecución: <strong>16/09/2025</strong></small>
-                    </p>
-                    <p class="mb-0 fs-7">
-                        <small>Final de Ejecución: <strong>16/09/2026</strong></small>
-                    </p>
-                    <p class="mb-0 fs-7">
-                        <small>Plazo de Ejecución: <strong>3 meses</strong></small>
-                    </p>
-                </div>
+                {% with selected_admision|default:admision_activa as display_admision %}
+                    <div class="col-12 col-lg-3 d-flex flex-column justify-content-end">
+                        <p class="mb-0 fs-7">
+                            <small>Inicio de Ejecución:
+                                <strong>
+                                    {% if display_admision and display_admision.creado %}
+                                        {{ display_admision.creado|date:"d/m/Y" }}
+                                    {% else %}
+                                        Sin información
+                                    {% endif %}
+                                </strong>
+                            </small>
+                        </p>
+                        <p class="mb-0 fs-7">
+                            <small>Final de Ejecución: <strong>--/--/--</strong></small>
+                        </p>
+                        <p class="mb-0 fs-7">
+                            <small>Plazo de Ejecución: <strong>{{ admisiones_informetecnico|getattr:"plazo_ejecucion" }}</strong></small>
+                        </p>
+                    </div>
+                {% endwith %}
             </div>
         </div>
     </div>
@@ -176,49 +173,43 @@
     <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
         <!-- panel 1 -->
         <div class="accordion-panel open">
-            <div class="accordion-header h5"
-                 style="background-color: #F79D00;
-                        color: white">Ubicación</div>
+            <div class="accordion-header h5 accordion-header--ubicacion">Ubicación</div>
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-12 col-lg-5">
                         {% google_maps_query comedor.latitud comedor.longitud as maps_query %}
                         {% if maps_query %}
-                            <div class="w-100" style="aspect-ratio: 16/9;">
+                            <div class="w-100 comedor-map-wrapper">
                                 <iframe width="100%"
                                         height="365px"
                                         frameborder="0"
-                                        style="border:0"
+                                        class="comedor-map-iframe"
                                         src="https://maps.google.com/maps?q={{ maps_query }}&output=embed"
                                         allowfullscreen>
                                 </iframe>
                             </div>
                         {% elif comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
-                            <div class="w-100" style="aspect-ratio: 16/9;">
+                            <div class="w-100 comedor-map-wrapper">
                                 <iframe width="100%"
                                         height="365px"
                                         frameborder="0"
-                                        style="border:0"
+                                        class="comedor-map-iframe"
                                         src="https://maps.google.com/maps?q={{ comedor.calle|urlencode }}+{{ comedor.numero }},+{{ comedor.localidad.nombre|urlencode }},+{{ comedor.municipio.nombre|urlencode }},+{{ comedor.provincia.nombre|urlencode }}&output=embed"
                                         allowfullscreen>
                                 </iframe>
                             </div>
                         {% else %}
-                            <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
-                                <div class="d-flex align-items-center justify-content-center text-white rounded-circle mx-2 me-3"
-                                     style="width: 60px;
-                                            height: 60px">
-                                    <i class="bi bi-geo fs-1"></i>
-                                </div>
-                                <div>
-                                    <p class="mb-0 text-white fw-bold">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
+                            <div class="w-100 comedor-map-wrapper comedor-map-placeholder d-flex align-items-center justify-content-center">
+                                <div class="d-flex align-items-center px-3 py-2">
+                                    <div class="d-flex align-items-center justify-content-center text-secondary rounded-circle mx-2 me-3 comedor-icon-60">
+                                        <i class="bi bi-geo fs-1"></i>
+                                    </div>
+                                    <p class="mb-0 fw-bold text-body">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
                                 </div>
                             </div>
                         {% endif %}
                     </div>
-                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0"
-                         style="max-height: 370px">
-                        <h2 class="border-bottom border-3 mb-4 fw-bold">Ubicación</h2>
+                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
                         <p class="mb-2">
                             <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
                         </p>
@@ -232,7 +223,14 @@
                             <i class="bi bi-grid me-2"></i><strong>Manzana:</strong> {{ comedor.manzana | default_if_none:"-" }}
                         </p>
                         <p class="mb-2">
-                            <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong> {{ comedor.piso_departamento | default_if_none:"-" }}
+                            <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong>
+                            {% if comedor.piso or comedor.departamento %}
+                                {{ comedor.piso }}
+                                {% if comedor.piso and comedor.departamento %}-{% endif %}
+                                {{ comedor.departamento }}
+                            {% else %}
+                                -
+                            {% endif %}
                         </p>
                         <p class="mb-2">
                             <i class="bi bi-signpost me-2"></i><strong>Entre calle 1:</strong> {{ comedor.entre_calle_1 | default_if_none:"-" }}
@@ -258,26 +256,22 @@
         </div>
         <!-- panel 2 -->
         <div class="accordion-panel">
-            <div class="accordion-header h5"
-                 style="background-color: #6A1B99;
-                        color: white">Responsables</div>
+            <div class="accordion-header h5 accordion-header--responsables">Responsables</div>
             <div class="accordion-content">
                 <div class="row">
                     <div class="col-12 col-lg-6">
-                        {% if comedor.foto_legajo %}
-                            {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid rounded" extra_attrs='style="max-width: 100%; height: auto; max-height: 370px"' %}
-                        {% else %}
-                            <img src="{% static 'custom/img/default.png' %}"
-                                 alt="Imagen del comedor"
-                                 class="img-fluid rounded"
-                                 style="max-width: 100%;
-                                        height: auto;
-                                        max-height: 370px" />
-                        {% endif %}
+                        <div class="comedor-photo-wrapper">
+                            {% if comedor.foto_legajo %}
+                                {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid rounded comedor-photo" extra_attrs='loading="lazy"' %}
+                            {% else %}
+                                <img src="{% static 'custom/img/default.png' %}"
+                                     alt="Imagen del comedor"
+                                     class="img-fluid rounded comedor-photo"
+                                     loading="lazy" />
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0"
-                         style="max-height: 370px">
-                        <h2 class="border-bottom border-3 mb-4 fw-bold">Responsables</h2>
+                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
                         <p class="mb-2">
                             <i class="bi bi-building me-2"></i><strong>Organización base:</strong> {{ comedor.organizacion.nombre | default_if_none:"-" }}
                         </p>
@@ -326,13 +320,10 @@
         </div>
         <!-- panel 3 -->
         <div class="accordion-panel">
-            <div class="accordion-header h5"
-                 style="background-color: #2E7D33;
-                        color: white">Prestaciones</div>
+            <div class="accordion-header h5 accordion-header--prestaciones">Prestaciones</div>
             <div class="accordion-content">
-                <h2 class="border-bottom border-3 mb-4 fw-bold">Prestaciones</h2>
-                {% with prestacion=relevamientos.0.prestacion %}
-                    <div class="row text-center mb-4">
+                {% with prestacion=relevamientos.0.prestacion informe_tecnico=admisiones_informetecnico %}
+                    <div class="row text-center mb-1">
                         <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
                             <div class="small-box">
                                 <div class="inner">
@@ -350,7 +341,13 @@
                                     <div class="fs-2 mb-1">
                                         <i class="bi bi-calendar-week"></i>
                                     </div>
-                                    <div class="fw-bold fs-3 mb-0">7</div>
+                                    <div class="fw-bold fs-3 mb-0">
+                                        {% if prestacion and informe_tecnico %}
+                                            {{ prestacion|dias_prestacion_semana }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
                                     <div class="fw-bold fs-6">Dias a la semana</div>
                                 </div>
                             </div>
@@ -362,8 +359,8 @@
                                         <i class="bi bi-cup-hot"></i>
                                     </div>
                                     <div class="fw-bold fs-3 mb-0">
-                                        {% if prestacion %}
-                                            {{ count_beneficiarios|default_if_none:"-" }}
+                                        {% if informe_tecnico %}
+                                            {{ prestaciones_aprobadas_total|default_if_none:"-" }}
                                         {% else %}
                                             -
                                         {% endif %}
@@ -378,296 +375,93 @@
                                     <div class="fs-2 mb-1">
                                         <i class="bi bi-currency-dollar"></i>
                                     </div>
-                                    <div class="fw-bold fs-3 mb-0">0</div>
+                                    <div class="fw-bold fs-3 mb-0">
+                                        {% if prestacion and informe_tecnico %}
+                                            {{ monto_prestacion_mensual|default_if_none:"-" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
                                     <div class="fw-bold fs-6">Monto prestacion mensual</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm align-middle text-center mb-0">
+                    <div class="table-responsive prestaciones-table-wrap">
+                        <table class="table table-bordered table-sm align-middle text-center mb-0 prestaciones-table">
                             <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>Lunes</th>
-                                    <th>Martes</th>
-                                    <th>Miercoles</th>
-                                    <th>Jueves</th>
-                                    <th>Viernes</th>
-                                    <th>Sabado</th>
-                                    <th>Domingo</th>
-                                </tr>
-                                <tr class="small fw-normal">
-                                    <th></th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
+                                <tr class="prestaciones-table-head">
+                                    <th scope="col" class="text-start">Prestacion</th>
+                                    <th scope="col">
+                                        <span class="d-block">Lunes</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Martes</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Miercoles</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Jueves</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Viernes</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Sabado</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
+                                    <th scope="col">
+                                        <span class="d-block">Domingo</span>
+                                        <span class="d-block prestaciones-subhead">Asistentes</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <th scope="row" class="text-start">Desayuno</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
+                                    <th scope="row" class="text-start prestaciones-row">Desayuno</th>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_domingo" }}</td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Almuerzo</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
+                                    <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_domingo" }}</td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Merienda</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
+                                    <th scope="row" class="text-start prestaciones-row">Merienda</th>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_domingo" }}</td>
                                 </tr>
                                 <tr>
-                                    <th scope="row" class="text-start">Merienda reforzada</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="text-start">Cena</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
+                                    <th scope="row" class="text-start prestaciones-row">Cena</th>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_domingo" }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -677,11 +471,8 @@
         </div>
         <!-- panel 4 -->
         <div class="accordion-panel">
-            <div class="accordion-header h5"
-                 style="background-color: #50B7B2;
-                        color: white">Relevamientos</div>
+            <div class="accordion-header h5 accordion-header--relevamientos">Relevamientos</div>
             <div class="accordion-content">
-                <h2 class="border-bottom border-3 mb-4 fw-bold">Relevamientos</h2>
                 {% with relevamiento=relevamientos.0 %}
                     <div class="row mb-4">
                         <div class="col-12 col-lg-4 mb-4 mb-lg-0">
@@ -861,32 +652,40 @@
     <!-- Linea de tiempo -->
     <div class="card mb-3 bg-card">
         <div class="card-body">
-            <!-- Timeline -->
-            <div class="timeline-comedor d-flex align-items-center overflow-auto pb-2">
-                <div class="{{ timeline_admision_step_class|default:'step active' }}">
-                    <div class="circle mx-2">{{ timeline_admision_circle_html|default:'1'|safe }}</div>
-                    <p class="mt-2 mb-0 text-center">Admisión</p>
-                    <p class="mb-0 text-center">
-                        <small>{{ timeline_admision_date|date:"d/m/Y"|default:"-" }}</small>
-                    </p>
+            {% with selected_admision|default:admision_activa as timeline_admision %}
+                <!-- Timeline -->
+                <div class="timeline-comedor d-flex align-items-center overflow-auto pb-2">
+                    <div class="{{ timeline_admision_step_class|default:'step active' }}">
+                        <div class="circle mx-2">{{ timeline_admision_circle_html|default:'1'|safe }}</div>
+                        <p class="mt-2 mb-0 text-center">Admisión</p>
+                        <p class="mb-0 text-center">
+                            <small>
+                                {% if timeline_admision and timeline_admision.fecha_estado_mostrar %}
+                                    {{ timeline_admision.fecha_estado_mostrar|date:"d/m/Y" }}
+                                {% else %}
+                                    {{ timeline_admision_date|date:"d/m/Y"|default:"-" }}
+                                {% endif %}
+                            </small>
+                        </p>
+                    </div>
+                    <div class="{{ timeline_connector_class|default:'connector' }} mb-3"></div>
+                    <div class="{{ timeline_ejecucion_step_class|default:'step' }}">
+                        <div class="circle mx-2">{{ timeline_ejecucion_circle|default:'2' }}</div>
+                        <p class="mt-2 mb-0 text-center">Ejecución</p>
+                        <p class="mb-0 text-center">
+                            <small>-</small>
+                        </p>
+                    </div>
+                    <div class="connector mb-3"></div>
+                    <div class="step">
+                        <div class="circle mx-2">{{ timeline_rendicion_circle|default:'3' }}</div>
+                        <p class="mt-2 mb-0 text-center">Rendición</p>
+                        <p class="mb-0 text-center">
+                            <small>-</small>
+                        </p>
+                    </div>
                 </div>
-                <div class="{{ timeline_connector_class|default:'connector' }} mb-3"></div>
-                <div class="{{ timeline_ejecucion_step_class|default:'step' }}">
-                    <div class="circle mx-2">{{ timeline_ejecucion_circle|default:'2' }}</div>
-                    <p class="mt-2 mb-0 text-center">Ejecución</p>
-                    <p class="mb-0 text-center">
-                        <small>-</small>
-                    </p>
-                </div>
-                <div class="connector mb-3"></div>
-                <div class="step">
-                    <div class="circle mx-2">{{ timeline_rendicion_circle|default:'3' }}</div>
-                    <p class="mt-2 mb-0 text-center">Rendición</p>
-                    <p class="mb-0 text-center">
-                        <small>-</small>
-                    </p>
-                </div>
-            </div>
+            {% endwith %}
         </div>
     </div>
     <!-- /Linea de tiempo -->
@@ -901,7 +700,7 @@
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-cup-hot mb-1"></i>
                             </h3>
-                            <h4 class="fw-bold my-1">{{ count_beneficiarios|default_if_none:"0" }}</h4>
+                            <h4 class="fw-bold my-1">{{ prestaciones_aprobadas_total|default_if_none:"0" }}</h4>
                             <p class="fw-bold fs-7">Prestaciones mensuales</p>
                         </div>
                     </div>
@@ -930,20 +729,47 @@
                 </div>
                 <div class="col-md-3 mx-auto">
                     <div class="small-box bg-card text-center">
+ 
                         <div class="inner">
+ 
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-graph-up-arrow"></i>
+ 
                             </h3>
-                            <h4 class="fw-bold my-1">
-                                {% if admision %}
-                                    {{ admision|length }}
-                                {% else %}
-                                    0
-                                {% endif %}
-                            </h4>
+ 
+                            {% with selected_convenio_numero|default_if_none:"" as convenio_numero %}
+ 
+                                {% with total_admisiones|default_if_none:0 as total_convenios %}
+ 
+                                    <h4 class="fw-bold my-1">
+ 
+                                        {% if total_convenios %}
+ 
+                                            {% if convenio_numero != "" %}
+                                                {{ convenio_numero }}&deg; / {{ total_convenios }}
+ 
+                                            {% else %}
+                                                - / {{ total_convenios }}
+ 
+                                            {% endif %}
+ 
+                                        {% else %}
+                                            0
+ 
+                                        {% endif %}
+ 
+                                    </h4>
+ 
+                                {% endwith %}
+ 
+                            {% endwith %}
+ 
                             <p class="fw-bold fs-7">Numero de Convenio</p>
+ 
                         </div>
+ 
                     </div>
+ 
                 </div>
             </div>
             <div class="row">
@@ -953,7 +779,7 @@
                             <h6 class="fw-bold my-1 text-center">Asistencia por rango etareo</h6>
                         </div>
                         <div class="card-body">
-                            <div class="w-100" style="height: 240px;">
+                            <div class="w-100 comedor-chart-h240">
                                 <canvas id="nominaEdadChart"></canvas>
                             </div>
                         </div>
@@ -987,10 +813,80 @@
                                     </strong>
                                 </p>
                                 <p class="mb-0 fs-7">
-                                    Estado:
+                                    Estado - técnicos:
                                     <strong class="text-uppercase">
-                                        {% if display_admision and display_admision.estado %}
-                                            {{ display_admision.estado.nombre|default_if_none:"Sin información" }}
+                                        {% if display_admision and display_admision.estado_admision %}
+                                            {{ display_admision.get_estado_admision_display|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado - legales:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_legales %}
+                                            {{ display_admision.get_estado_legales_display|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado actual:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_mostrar %}
+                                            {{ display_admision.estado_mostrar|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Fecha estado:
+                                    <strong>
+                                        {% if display_admision and display_admision.fecha_estado_mostrar %}
+                                            {{ display_admision.fecha_estado_mostrar|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.num_if %}
+                                            {{ display_admision.num_if }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF legales:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.legales_num_if %}
+                                            {{ display_admision.legales_num_if }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF técnico:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_if_tecnico %}
+                                            {{ display_admision.numero_if_tecnico }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° disposición:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_disposicion %}
+                                            {{ display_admision.numero_disposicion }}
                                         {% else %}
                                             Sin información
                                         {% endif %}
@@ -998,9 +894,7 @@
                                 </p>
                                 <p class="mb-0 fs-7">
                                     Dupla:
-                                    <strong class="text-uppercase">
-                                        {{ comedor.dupla.nombre |default_if_none:"Sin información" }}, USUARIO 1, USUARIO 2
-                                    </strong>
+                                    <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"Sin información" }}</strong>
                                 </p>
                                 <p class="mb-0 fs-7">
                                     Tipo de convenio:
@@ -1012,18 +906,23 @@
                                         {% endif %}
                                     </strong>
                                 </p>
-                            {% endwith %}
-                            <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
-                                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-                                   class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
-                                    {% if comedor.estado == "Sin Ingreso" %}
-                                        Asignar Equipo Técnico
+                                <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
+                                    <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                                       class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
+                                        {% if comedor.estado == "Sin Ingreso" %}
+                                            Asignar Equipo Técnico
+                                        {% else %}
+                                            Modificar Equipo Técnico
+                                        {% endif %}
+                                    </a>
+                                    {% if display_admision %}
+                                        <a href="{% url 'admision_detalle' comedor.id display_admision.id %}"
+                                           class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver detalles</a>
                                     {% else %}
-                                        Modificar Equipo Técnico
+                                        <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto" disabled>Ver detalles</button>
                                     {% endif %}
-                                </a>
-                                <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Cargar documentos</button>
-                            </div>
+                                </div>
+                            {% endwith %}
                         </div>
                     </div>
                 </div>
@@ -1045,9 +944,7 @@
                 <div class="card-body">
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-amarillo px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-amarillo-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-amarillo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-people-fill fs-1"></i>
                             </div>
                             <div>
@@ -1058,9 +955,7 @@
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-person-standing fs-1"></i>
                             </div>
                             <div>
@@ -1071,9 +966,7 @@
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-rosa px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-rosa-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-rosa-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-person-standing-dress fs-1"></i>
                             </div>
                             <div>
@@ -1084,9 +977,7 @@
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-verde px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-person-arms-up fs-1"></i>
                             </div>
                             <div>
@@ -1097,9 +988,7 @@
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-rojo px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-rojo-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-rojo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-list-check fs-1"></i>
                             </div>
                             <div>
@@ -1160,17 +1049,13 @@
                              id="observaciones-pane"
                              role="tabpanel"
                              aria-labelledby="observaciones-tab">
-                            {% for observacion in observaciones|slice:":3" %}
-                                <div class="row border-bottom mb-1">
-                                    <p class="m-1">
-                                        <a href="{% url 'observacion_detalle' comedor.id observacion.id %}"
-                                           class="btn btn-sm btn-primary">{{ observacion.fecha_visita }}</a>
-                                    </p>
-                                    <p class="text-muted m-1">{{ observacion.observacion|truncatechars:80 }}</p>
-                                </div>
-                            {% empty %}
-                                <p class="text-muted text-center my-3">Sin observaciones registradas.</p>
-                            {% endfor %}
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalObservacion">Agregar observación</button>
+                            </div>
+                            {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
                         </div>
                     </div>
                 </div>
@@ -1186,7 +1071,7 @@
                     <h4 class="fw-bold my-1">Historial de interacciones</h4>
                 </div>
                 <div class="card-body">
-                    <div class="w-100" style="height: 220px;">
+                    <div class="w-100 comedor-chart-h220">
                         <canvas id="interaccionesChart"></canvas>
                     </div>
                 </div>
@@ -1220,6 +1105,11 @@
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-md-6">
+                                <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
+                                {{ intervencion_form.fecha }}
+                                <div id="fecha-error-intervencion" class="invalid-feedback d-none"></div>
+                            </div>
+                            <div class="col-md-6">
                                 <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
                                        class="form-label">{{ intervencion_form.tipo_intervencion.label }}</label>
                                 {{ intervencion_form.tipo_intervencion }}
@@ -1233,13 +1123,6 @@
                                 <label for="{{ intervencion_form.destinatario.id_for_label }}"
                                        class="form-label">{{ intervencion_form.destinatario.label }}</label>
                                 {{ intervencion_form.destinatario }}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
-                                {{ intervencion_form.fecha }}
-                                <div id="fecha-error-intervencion"
-                                     class="invalid-feedback"
-                                     style="display: none"></div>
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
@@ -1275,7 +1158,80 @@
             </div>
         </div>
     </div>
- 
+
+    <!-- Modal Observación -->
+    <div class="modal fade"
+         id="modalObservacion"
+         tabindex="-1"
+         aria-labelledby="modalObservacionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'observacion_crear' comedor.id %}"
+                      id="observacionModalForm">
+                    {% csrf_token %}
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalObservacionLabel">Nueva observación</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="{{ observacion_form.observacion.id_for_label }}"
+                                   class="form-label">{{ observacion_form.observacion.label }}</label>
+                            {{ observacion_form.observacion }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar observación</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Selección Admisión -->
+    <div class="modal fade"
+         id="modalAdmision"
+         tabindex="-1"
+         aria-labelledby="modalAdmisionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Seleccione el tipo de Admisión</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <select name="admision"
+                                id="admisionID"
+                                class="form-control form-select"
+                                required>
+                            <option value="" disabled selected>-- Seleccione --</option>
+                            <option value="incorporacion">Incorporación</option>
+                            <option value="renovacion">Renovación</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="seleccionAdmision">Seleccionar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Validaci&oacute;n -->
     <div class="modal fade"
@@ -1339,7 +1295,7 @@
                                 {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
                             </select>
                         </div>
-                        <div class="mb-3" id="comentarioDiv" style="display: none;">
+                        <div class="mb-3 d-none" id="comentarioDiv">
                             <label for="comentario" class="form-label">Comentario: *</label>
                             <textarea class="form-control"
                                       id="comentario"
@@ -1360,72 +1316,6 @@
     </div>
 {% endblock %}
 {% block customJS %}
-
-    <style>
-    .select2-container .select2-selection--multiple {
-        background-color: #495057 !important;
-        border: 1px solid #6c757d !important;
-        border-radius: 0.375rem !important;
-        color: #fff !important;
-        min-height: 38px !important;
-        padding: 0.375rem 0.75rem !important;
-    }
-
-    .select2-container .select2-selection--multiple .select2-selection__choice {
-        background-color: #0d6efd !important;
-        border: 1px solid #0d6efd !important;
-        border-radius: 0.25rem !important;
-        color: #fff !important;
-        font-size: 0.875rem !important;
-        margin: 0.125rem 0.25rem 0.125rem 0 !important;
-        padding: 0.25rem 0.5rem !important;
-    }
-
-    .select2-container .select2-selection--multiple .select2-selection__choice__remove {
-        color: #fff !important;
-        margin-right: 0.25rem !important;
-    }
-
-    .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
-        color: #f8f9fa !important;
-    }
-
-    .select2-dropdown {
-        background-color: #343a40 !important;
-        border: 1px solid #6c757d !important;
-        border-radius: 0.375rem !important;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5) !important;
-    }
-
-    .select2-results__option {
-        background-color: #343a40 !important;
-        color: #fff !important;
-        padding: 0.5rem 0.75rem !important;
-    }
-
-    .select2-results__option--highlighted {
-        background-color: #0d6efd !important;
-        color: #fff !important;
-    }
-
-    .select2-search__field {
-        background-color: #495057 !important;
-        border: 1px solid #6c757d !important;
-        border-radius: 0.25rem !important;
-        color: #fff !important;
-        padding: 0.25rem 0.5rem !important;
-    }
-
-    .select2-container .select2-selection--multiple .select2-selection__placeholder {
-        color: #adb5bd !important;
-        margin-top: 0.25rem !important;
-    }
-
-    .select2-container--focus .select2-selection--multiple {
-        border-color: #86b7fe !important;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
-    }
-    </style>
     <script>
     function validarComedor() {
       const form = document.createElement('form');
@@ -1482,14 +1372,19 @@
       const comentarioDiv = document.getElementById('comentarioDiv');
       const comentarioTextarea = document.getElementById('comentario');
 
-      if (selectedValues.includes('otro')) {
-        comentarioDiv.style.display = 'block';
-        comentarioTextarea.required = true;
-      } else {
-        comentarioDiv.style.display = 'none';
-        comentarioTextarea.required = false;
-        comentarioTextarea.value = '';
+      if (!comentarioDiv || !comentarioTextarea) {
+        return;
       }
+
+      if (selectedValues.includes('otro')) {
+        comentarioDiv.classList.remove('d-none');
+        comentarioTextarea.required = true;
+        return;
+      }
+
+      comentarioDiv.classList.add('d-none');
+      comentarioTextarea.required = false;
+      comentarioTextarea.value = '';
     }
 
     function validarFormNoValidar() {
@@ -1569,13 +1464,13 @@
           fechaInput.classList.add("is-invalid");
           if (fechaError) {
             fechaError.textContent = "El año de la fecha debe estar entre 2000 y 2100.";
-            fechaError.style.display = "block";
+            fechaError.classList.remove("d-none");
           }
           return false;
         }
         fechaInput.classList.remove("is-invalid");
         if (fechaError) {
-          fechaError.style.display = "none";
+          fechaError.classList.add("d-none");
         }
         return true;
       }
@@ -1634,6 +1529,18 @@ if (donutCanvas) {
     <script>
     const nominaEdadCtx = document.getElementById('nominaEdadChart');
     if (nominaEdadCtx) {
+      const nominaEdadData = [
+        {{ nomina_pct_sin_dato|default:0 }},
+        {{ nomina_pct_ninos|default:0 }},
+        {{ nomina_pct_adolescentes|default:0 }},
+        {{ nomina_pct_adultos|default:0 }},
+        {{ nomina_pct_adultos_mayores|default:0 }},
+        {{ nomina_pct_adulto_mayor_avanzado|default:0 }}
+      ].map((value) => Number(value) || 0);
+
+      const nominaEdadMax = Math.max(...nominaEdadData);
+      const nominaEdadYAxisMax = Math.min(100, (nominaEdadMax || 0) + 10);
+
       new Chart(nominaEdadCtx, {
         type: 'bar',
         data: {
@@ -1646,14 +1553,7 @@ if (donutCanvas) {
             '+66 años'
           ],
           datasets: [{
-            data: [
-              {{ nomina_pct_sin_dato|default:0 }},
-              {{ nomina_pct_ninos|default:0 }},
-              {{ nomina_pct_adolescentes|default:0 }},
-              {{ nomina_pct_adultos|default:0 }},
-              {{ nomina_pct_adultos_mayores|default:0 }},
-              {{ nomina_pct_adulto_mayor_avanzado|default:0 }}
-            ],
+            data: nominaEdadData,
             backgroundColor: [
               '#F05A4F',
               '#8B7AD8',
@@ -1684,7 +1584,7 @@ if (donutCanvas) {
             },
             y: {
               beginAtZero: true,
-              max: 100,
+              max: nominaEdadYAxisMax,
               ticks: {
                 color: '#ffffff',
                 callback: (value) => `${value}%`

@@ -34,7 +34,7 @@
                                         <td data-centro="{{ actividad.centro.nombre }}">{{ actividad.centro.nombre }}</td>
                                         <td data-actividad="{{ actividad.actividad.nombre }}">
                                             {% if actividad.id %}
-                                                <a href="{% url 'actividadcentro_detail' centro_id=actividad.centro.id pk=actividad.id %}"
+                                                <a href="{% url 'actividadcentro_detail' pk=actividad.id %}"
                                                    class="text-decoration-none">{{ actividad.actividad.nombre }}</a>
                                             {% else %}
                                                 {{ actividad.actividad.nombre }}
