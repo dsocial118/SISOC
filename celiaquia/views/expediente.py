@@ -789,7 +789,7 @@ class ExpedienteConfirmView(View):
                 f"Expediente enviado a Subsecretaría. Legajos: {result['validos']} (sin errores).",
             )
         except ValidationError as ve:
-            error_msg = str(ve.message) if hasattr(ve, 'message') else str(ve)
+            error_msg = str(ve.message) if hasattr(ve, "message") else str(ve)
             if _is_ajax(request):
                 return JsonResponse(
                     {"success": False, "error": escape(error_msg)}, status=400
