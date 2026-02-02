@@ -23,9 +23,7 @@
             </div>
             <div class="info flex-grow-1">
                 <p class="mb-1 text-white fw-bold">{{ request.user.get_full_name|default:request.user.username }}</p>
-                <p class="mb-0 text-white-50 small">
-                    {{ request.user.profile.rol }}
-                </p>
+                <p class="mb-0 text-white-50 small">{{ request.user.profile.rol }}</p>
             </div>
         </div>
     </li>
