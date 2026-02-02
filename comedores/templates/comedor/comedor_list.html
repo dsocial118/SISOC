@@ -11,7 +11,7 @@
     <div class="comedor-list-container">
         {% url 'comedor_export' as export_url %}
         {% include 'components/search_bar.html' with titulo="Buscar Comedor/Merendero" placeholder="Buscar por nombre, provincia, municipio, localidad, barrio o calle" help_text="Ingresar nombre, provincia, municipio, localidad, barrio o calle." reset_url=reset_url add_url=add_url button_append=True comedores_filters_mode=True export_url=export_url %}
- 
+
         {% include 'components/comedor_table.html' with comedores=comedores %}
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
     </div>
