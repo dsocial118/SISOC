@@ -35,6 +35,7 @@ from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.utils import convert_string_to_int
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm
 
@@ -865,33 +866,23 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 selected_admision, "convenio_numero", None
             )
             if selected_convenio_numero in ("", None):
-                selected_convenio_numero = getattr(
-                    selected_admision, "numero_convenio", None
+                selected_convenio_numero = convert_string_to_int(
+                    getattr(selected_admision, "numero_convenio", "")
                 )
 
         prestaciones_aprobadas_total = None
+        monto_prestacion_mensual_aprobadas = None
         if informe_tecnico:
-            aprobadas_total = 0
-            dias = (
-                "lunes",
-                "martes",
-                "miercoles",
-                "jueves",
-                "viernes",
-                "sabado",
-                "domingo",
+            prestaciones_por_tipo = ComedorService.get_prestaciones_aprobadas_por_tipo(
+                informe_tecnico
             )
-            tipos = ("desayuno", "almuerzo", "merienda", "cena")
-            for tipo in tipos:
-                for dia in dias:
-                    value = getattr(informe_tecnico, f"aprobadas_{tipo}_{dia}", 0)
-                    if value is None:
-                        continue
-                    try:
-                        aprobadas_total += int(value)
-                    except (TypeError, ValueError):
-                        continue
-            prestaciones_aprobadas_total = aprobadas_total
+            if prestaciones_por_tipo is not None:
+                prestaciones_aprobadas_total = sum(prestaciones_por_tipo.values())
+                monto_prestacion_mensual_aprobadas = (
+                    ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(
+                        prestaciones_por_tipo
+                    )
+                )
 
         total_admisiones = admisiones_qs.count() if admisiones_qs is not None else 0
 
@@ -912,6 +903,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "selected_convenio_numero": selected_convenio_numero,
                 "total_admisiones": total_admisiones,
                 "prestaciones_aprobadas_total": prestaciones_aprobadas_total,
+                "monto_prestacion_mensual": monto_prestacion_mensual_aprobadas,
             }
         )
         timeline_selected = ComedorService.get_admision_timeline_context_from_admision(
