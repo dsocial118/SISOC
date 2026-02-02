@@ -381,7 +381,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             number=intervenciones_page_obj.number
         )
         intervencion_ids = [
-            intervencion.pk for intervencion in intervenciones_page_obj if intervencion.pk
+            intervencion.pk
+            for intervencion in intervenciones_page_obj
+            if intervencion.pk
         ]
         creator_map: dict[int, Any] = {}
         if intervencion_ids:
@@ -419,9 +421,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 else format_html('<span class="badge bg-secondary">No</span>')
             )
             fecha_display = (
-                intervencion.fecha.strftime("%d/%m/%Y")
-                if intervencion.fecha
-                else None
+                intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
             )
             actor = creator_map.get(intervencion.pk)
             usuario_creador = "-"
@@ -861,9 +861,13 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
         selected_convenio_numero = None
         if selected_admision:
-            selected_convenio_numero = getattr(selected_admision, "convenio_numero", None)
+            selected_convenio_numero = getattr(
+                selected_admision, "convenio_numero", None
+            )
             if selected_convenio_numero in ("", None):
-                selected_convenio_numero = getattr(selected_admision, "numero_convenio", None)
+                selected_convenio_numero = getattr(
+                    selected_admision, "numero_convenio", None
+                )
 
         prestaciones_aprobadas_total = None
         if informe_tecnico:
@@ -880,9 +884,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             tipos = ("desayuno", "almuerzo", "merienda", "cena")
             for tipo in tipos:
                 for dia in dias:
-                    value = getattr(
-                        informe_tecnico, f"aprobadas_{tipo}_{dia}", 0
-                    )
+                    value = getattr(informe_tecnico, f"aprobadas_{tipo}_{dia}", 0)
                     if value is None:
                         continue
                     try:
