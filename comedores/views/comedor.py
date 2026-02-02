@@ -208,7 +208,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             hasattr(self.object, "relevamientos_optimized")
             and self.object.relevamientos_optimized
         ):
-            cache_key = f"presupuestos_comedor_{self.object.id}"
+            cache_key = f"presupuestos_comedor_{self.object.id}_v2"
             cached_presupuestos = cache.get(cache_key)
 
             if cached_presupuestos:
@@ -232,6 +232,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
+            monto_prestacion_mensual,
         ) = presupuestos_tuple
 
         return {
@@ -240,6 +241,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "presupuesto_almuerzo": valor_almuerzo,
             "presupuesto_merienda": valor_merienda,
             "presupuesto_cena": valor_cena,
+            "monto_prestacion_mensual": monto_prestacion_mensual,
         }
 
     def post(self, request, *args, **kwargs):
@@ -285,11 +287,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
     def get_relaciones_optimizadas(self):  # pylint: disable=too-many-locals
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
-        relevamientos = (
-            self.object.relevamientos_optimized[:1]
+        relevamientos_prefetched = (
+            self.object.relevamientos_optimized
             if hasattr(self.object, "relevamientos_optimized")
-            else []
+            else None
         )
+        relevamiento_actual = ComedorService.get_relevamiento_resumen(
+            relevamientos_prefetched or []
+        )
+        relevamientos = [relevamiento_actual] if relevamiento_actual else []
         observaciones = (
             self.object.observaciones_optimized
             if hasattr(self.object, "observaciones_optimized")
@@ -297,12 +303,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         )
 
         count_relevamientos = (
-            len(self.object.relevamientos_optimized)
-            if hasattr(self.object, "relevamientos_optimized")
+            len(relevamientos_prefetched)
+            if relevamientos_prefetched is not None
             else self.object.relevamiento_set.count()
         )
 
-        relevamiento_actual = relevamientos[0] if relevamientos else None
         anexo = (
             getattr(relevamiento_actual, "anexo", None) if relevamiento_actual else None
         )
@@ -836,13 +841,21 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             except (TypeError, ValueError):
                 selected_admision_pk = None
 
-        admisiones_qs = presupuestos_data.get("admision")
+        admisiones_qs = relaciones_data.get("admision")
         selected_admision = None
         if admisiones_qs and selected_admision_pk:
             selected_admision = admisiones_qs.filter(id=selected_admision_pk).first()
 
         if not selected_admision:
-            selected_admision = presupuestos_data.get("admision_activa")
+            selected_admision = relaciones_data.get("admision_activa")
+
+        selected_convenio_numero = None
+        if selected_admision:
+            selected_convenio_numero = getattr(selected_admision, "convenio_numero", None)
+            if selected_convenio_numero in ("", None):
+                selected_convenio_numero = getattr(selected_admision, "numero_convenio", None)
+
+        total_admisiones = admisiones_qs.count() if admisiones_qs is not None else 0
 
         # Agregar opciones de validación
 
@@ -857,8 +870,14 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "observacion_form": ObservacionForm(),
                 "selected_admision": selected_admision,
                 "selected_admision_id": getattr(selected_admision, "id", None),
+                "selected_convenio_numero": selected_convenio_numero,
+                "total_admisiones": total_admisiones,
             }
         )
+        timeline_selected = ComedorService.get_admision_timeline_context_from_admision(
+            selected_admision
+        )
+        context.update(timeline_selected)
         return context
 
 

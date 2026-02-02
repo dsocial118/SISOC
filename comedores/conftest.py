@@ -50,7 +50,7 @@ def comedor_fixture(monkeypatch, db):
     )
     monkeypatch.setattr(
         "comedores.services.comedor_service.ComedorService.get_presupuestos",
-        lambda pk: (10, 1, 2, 3, 4),
+        lambda pk: (10, 1, 2, 3, 4, 5),
     )
     monkeypatch.setattr(
         "rendicioncuentasmensual.services.RendicionCuentaMensualService.cantidad_rendiciones_cuentas_mensuales",
