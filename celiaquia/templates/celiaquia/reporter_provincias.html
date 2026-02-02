@@ -152,9 +152,7 @@
                 <div class="card-body text-center">
                     <div class="stat-label">Documentos Completos</div>
                     <div class="stat-number">{{ casos_documentos_ok }}</div>
-                    <small class="stat-percentage"
-                           data-total="{{ total_casos }}"
-                           data-value="{{ casos_documentos_ok }}"></small>
+                    <small class="text-muted">{{ porcentaje_documentos_ok }}%</small>
                 </div>
             </div>
         </div>
@@ -164,9 +162,7 @@
                 <div class="card-body text-center">
                     <div class="stat-label">Documentos Incompletos</div>
                     <div class="stat-number">{{ casos_documentos_incompletos }}</div>
-                    <small class="stat-percentage"
-                           data-total="{{ total_casos }}"
-                           data-value="{{ casos_documentos_incompletos }}"></small>
+                    <small class="text-muted">{{ porcentaje_documentos_incompletos }}%</small>
                 </div>
             </div>
         </div>
@@ -310,7 +306,7 @@
                                     <a href="{% url 'expediente_detail' caso.expediente.id %}">{{ caso.ciudadano.documento }}</a>
                                 </td>
                                 <td>{{ caso.ciudadano.nombre }} {{ caso.ciudadano.apellido }}</td>
-                                <td>{{ caso.expediente.numero }}</td>
+                                <td>{{ caso.expediente.numero_expediente|default:"-" }}</td>
                                 <td>{{ caso.expediente.provincia.nombre }}</td>
                                 <td>
                                     <span class="badge {% if caso.revision_tecnico == 'APROBADO' %}bg-success{% elif caso.revision_tecnico == 'RECHAZADO' %}bg-danger{% elif caso.revision_tecnico == 'SUBSANAR' %}bg-warning{% else %}bg-secondary{% endif %}">

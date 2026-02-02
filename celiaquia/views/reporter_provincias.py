@@ -108,6 +108,14 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         # Casos con documentos completos
         casos_documentos_ok = queryset.filter(archivos_ok=True).count()
         casos_documentos_incompletos = total_casos - casos_documentos_ok
+        porcentaje_documentos_ok = (
+            round((casos_documentos_ok / total_casos) * 100, 1) if total_casos else 0
+        )
+        porcentaje_documentos_incompletos = (
+            round((casos_documentos_incompletos / total_casos) * 100, 1)
+            if total_casos
+            else 0
+        )
 
         # Casos con comentarios
         casos_con_comentarios = (
@@ -137,6 +145,8 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
                 "total_casos": total_casos,
                 "casos_documentos_ok": casos_documentos_ok,
                 "casos_documentos_incompletos": casos_documentos_incompletos,
+                "porcentaje_documentos_ok": porcentaje_documentos_ok,
+                "porcentaje_documentos_incompletos": porcentaje_documentos_incompletos,
                 "casos_con_comentarios": casos_con_comentarios,
                 "casos_por_instancia": casos_por_instancia,
                 "stats_validacion": stats_validacion,
