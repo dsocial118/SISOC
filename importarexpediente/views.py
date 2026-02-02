@@ -59,6 +59,34 @@ def _resolve_comedor_cached(raw, cache_by_id, cache_by_name):
     return obj
 
 
+def _parse_decimal(value):
+    if value is None or value == "":
+        return None
+    s = str(value)
+    # Quitar símbolos de moneda, espacios y separadores de miles
+    s = s.replace("$", "").replace(" ", "")
+    s = s.replace(".", "")  # remover separador de miles
+    s = s.replace(",", ".")  # usar punto como separador decimal
+    s = s.strip()
+    try:
+        return Decimal(s)
+    except Exception:
+        return None
+
+
+def _parse_int(value):
+    if value is None or value == "":
+        return None
+    s = str(value).replace(".", "").replace(",", "").replace(" ", "")
+    s = s.strip()
+    if not s:
+        return None
+    try:
+        return int(s)
+    except Exception:
+        return None
+
+
 # mapeo de cabeceras posibles -> campo de modelo
 HEADER_MAP = {
     # Expedientes
@@ -165,18 +193,7 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
             return None
 
     def parse_decimal(self, value):
-        if value is None or value == "":
-            return None
-        s = str(value)
-        # Quitar símbolos de moneda, espacios y separadores de miles
-        s = s.replace("$", "").replace(" ", "")
-        s = s.replace(".", "")  # remover separador de miles
-        s = s.replace(",", ".")  # usar punto como separador decimal
-        s = s.strip()
-        try:
-            return Decimal(s)
-        except Exception:
-            return None
+        return _parse_decimal(value)
 
     def resolve_comedor(self, raw):
         if not hasattr(self, "_comedor_cache_by_id"):
@@ -283,6 +300,7 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
         success_count = 0
         error_count = 0
         expected_cols = len(headers)
+        unresolved_comedor_rows = set()
         with transaction.atomic():
             for i, row in enumerate(data_rows, start=2):
                 # normalizar cantidad de columnas
@@ -312,12 +330,10 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                             resolved_comedor = self.resolve_comedor(val)
                             if resolved_comedor is not None:
                                 comedor_obj = resolved_comedor
+                            elif val:
+                                unresolved_comedor_rows.add(i)
                         elif field.startswith("prestaciones_mensuales_"):
-                            s = val.replace(".", "").replace(" ", "")
-                            try:
-                                kwargs[field] = int(s) if s != "" else None
-                            except Exception:
-                                kwargs[field] = None
+                            kwargs[field] = _parse_int(val)
                         else:
                             kwargs[field] = val or None
 
@@ -351,6 +367,17 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
 
             # No se guarda nada en ExpedientePago por requerimiento
 
+        if unresolved_comedor_rows:
+            rows = sorted(unresolved_comedor_rows)
+            preview = ", ".join(str(r) for r in rows[:5])
+            suffix = "..." if len(rows) > 5 else ""
+            messages.warning(
+                self.request,
+                (
+                    "No se pudo resolver el comedor en "
+                    f"{len(rows)} fila(s) (Excel): {preview}{suffix}."
+                ),
+            )
         if error_count:
             # Persistir contadores finales en el maestro
             try:
@@ -623,6 +650,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         expected_cols = len(headers)
         imported_count = 0
         error_count = 0
+        unresolved_comedor_rows = set()
 
         comedor_cache_by_id = {}
         comedor_cache_by_name = {}
@@ -653,23 +681,9 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                             continue
                         val = (cell or "").strip()
                         if field == "monto":
-                            # Reutilizar parseo de moneda
-                            s = val.replace("$", "").replace(" ", "")
-                            s = s.replace(".", "")
-                            s = s.replace(",", ".")
-                            try:
-                                kwargs[field] = Decimal(s)
-                            except Exception:
-                                kwargs[field] = None
+                            kwargs[field] = _parse_decimal(val)
                         elif field.startswith("monto_mensual_"):
-                            # Parseo de moneda para montos mensuales
-                            s = val.replace("$", "").replace(" ", "")
-                            s = s.replace(".", "")
-                            s = s.replace(",", ".")
-                            try:
-                                kwargs[field] = Decimal(s)
-                            except Exception:
-                                kwargs[field] = None
+                            kwargs[field] = _parse_decimal(val)
                         elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
                             # Parseo de fechas (formatos comunes)
                             parsed = None
@@ -691,12 +705,10 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                             )
                             if resolved is not None:
                                 comedor_obj = resolved
+                            elif val:
+                                unresolved_comedor_rows.add(i)
                         elif field.startswith("prestaciones_mensuales_"):
-                            s = val.replace(".", "").replace(" ", "")
-                            try:
-                                kwargs[field] = int(s) if s != "" else None
-                            except Exception:
-                                kwargs[field] = None
+                            kwargs[field] = _parse_int(val)
                         else:
                             kwargs[field] = val or None
 
@@ -741,6 +753,17 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                     request, f"No se pudo marcar el lote como completado: {e}"
                 )
 
+        if unresolved_comedor_rows:
+            rows = sorted(unresolved_comedor_rows)
+            preview = ", ".join(str(r) for r in rows[:5])
+            suffix = "..." if len(rows) > 5 else ""
+            messages.warning(
+                request,
+                (
+                    "No se pudo resolver el comedor en "
+                    f"{len(rows)} fila(s) (Excel): {preview}{suffix}."
+                ),
+            )
         if error_count:
             messages.warning(
                 request,

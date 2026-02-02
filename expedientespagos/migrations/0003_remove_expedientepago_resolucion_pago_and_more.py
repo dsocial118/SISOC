@@ -10,11 +10,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
+        migrations.RenameField(
             model_name="expedientepago",
-            name="resolucion_pago",
+            old_name="resolucion_pago",
+            new_name="expediente_convenio",
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name="expedientepago",
             name="expediente_convenio",
             field=models.CharField(
