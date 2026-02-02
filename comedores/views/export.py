@@ -75,9 +75,18 @@ class ComedorExportView(LoginRequiredMixin, CSVExportMixin, View):
             "programa": ("Programa", "programa__nombre"),
             "dupla": ("Dupla", "dupla__nombre"),
             "estado_general": ("Estado general", "estado_general"),
-            "estado_actividad": ("Estado actividad", "ultimo_estado__estado_general__estado_actividad__estado"),
-            "estado_proceso": ("Estado proceso", "ultimo_estado__estado_general__estado_proceso"),
-            "estado_detalle": ("Estado detalle", "ultimo_estado__estado_general__estado_detalle"),
+            "estado_actividad": (
+                "Estado actividad",
+                "ultimo_estado__estado_general__estado_actividad__estado",
+            ),
+            "estado_proceso": (
+                "Estado proceso",
+                "ultimo_estado__estado_general__estado_proceso",
+            ),
+            "estado_detalle": (
+                "Estado detalle",
+                "ultimo_estado__estado_general__estado_detalle",
+            ),
             "provincia": ("Provincia", "provincia__nombre"),
             "municipio": ("Municipio", "municipio__nombre"),
             "localidad": ("Localidad", "localidad__nombre"),

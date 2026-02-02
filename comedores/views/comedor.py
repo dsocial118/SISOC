@@ -27,7 +27,7 @@ from django.views.generic import (
 )
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from admisiones.models.admisiones import Admision, EstadoAdmision
+from admisiones.models.admisiones import Admision, EstadoAdmision, InformeTecnico
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
@@ -381,7 +381,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             number=intervenciones_page_obj.number
         )
         intervencion_ids = [
-            intervencion.pk for intervencion in intervenciones_page_obj if intervencion.pk
+            intervencion.pk
+            for intervencion in intervenciones_page_obj
+            if intervencion.pk
         ]
         creator_map: dict[int, Any] = {}
         if intervencion_ids:
@@ -419,9 +421,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 else format_html('<span class="badge bg-secondary">No</span>')
             )
             fecha_display = (
-                intervencion.fecha.strftime("%d/%m/%Y")
-                if intervencion.fecha
-                else None
+                intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
             )
             actor = creator_map.get(intervencion.pk)
             usuario_creador = "-"
@@ -849,11 +849,49 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         if not selected_admision:
             selected_admision = relaciones_data.get("admision_activa")
 
+        informe_tecnico = None
+        if selected_admision:
+            informe_tecnico = (
+                InformeTecnico.objects.filter(
+                    admision=selected_admision, estado_formulario="finalizado"
+                )
+                .order_by("-id")
+                .first()
+            )
+
         selected_convenio_numero = None
         if selected_admision:
-            selected_convenio_numero = getattr(selected_admision, "convenio_numero", None)
+            selected_convenio_numero = getattr(
+                selected_admision, "convenio_numero", None
+            )
             if selected_convenio_numero in ("", None):
-                selected_convenio_numero = getattr(selected_admision, "numero_convenio", None)
+                selected_convenio_numero = getattr(
+                    selected_admision, "numero_convenio", None
+                )
+
+        prestaciones_aprobadas_total = None
+        if informe_tecnico:
+            aprobadas_total = 0
+            dias = (
+                "lunes",
+                "martes",
+                "miercoles",
+                "jueves",
+                "viernes",
+                "sabado",
+                "domingo",
+            )
+            tipos = ("desayuno", "almuerzo", "merienda", "cena")
+            for tipo in tipos:
+                for dia in dias:
+                    value = getattr(informe_tecnico, f"aprobadas_{tipo}_{dia}", 0)
+                    if value is None:
+                        continue
+                    try:
+                        aprobadas_total += int(value)
+                    except (TypeError, ValueError):
+                        continue
+            prestaciones_aprobadas_total = aprobadas_total
 
         total_admisiones = admisiones_qs.count() if admisiones_qs is not None else 0
 
@@ -870,8 +908,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "observacion_form": ObservacionForm(),
                 "selected_admision": selected_admision,
                 "selected_admision_id": getattr(selected_admision, "id", None),
+                "admisiones_informetecnico": informe_tecnico,
                 "selected_convenio_numero": selected_convenio_numero,
                 "total_admisiones": total_admisiones,
+                "prestaciones_aprobadas_total": prestaciones_aprobadas_total,
             }
         )
         timeline_selected = ComedorService.get_admision_timeline_context_from_admision(
