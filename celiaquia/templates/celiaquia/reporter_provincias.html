@@ -64,16 +64,62 @@
                     </div>
  
                     <div class="col-md-3">
-                        <label for="estado" class="form-label">Estado</label>
-                        <select name="estado" id="estado" class="form-select">
-                            <option value="">Todos los estados</option>
+                        <label for="revision_tecnico" class="form-label">Validación Técnica</label>
+                        <select name="revision_tecnico" id="revision_tecnico" class="form-select">
+                            <option value="">Todas</option>
                             <option value="PENDIENTE"
-                                    {% if estado_filtro == "PENDIENTE" %}selected{% endif %}>Pendiente</option>
+                                    {% if revision_tecnico == "PENDIENTE" %}selected{% endif %}>Pendiente</option>
                             <option value="APROBADO"
-                                    {% if estado_filtro == "APROBADO" %}selected{% endif %}>Aprobado</option>
+                                    {% if revision_tecnico == "APROBADO" %}selected{% endif %}>Aprobado</option>
                             <option value="RECHAZADO"
-                                    {% if estado_filtro == "RECHAZADO" %}selected{% endif %}>Rechazado</option>
+                                    {% if revision_tecnico == "RECHAZADO" %}selected{% endif %}>Rechazado</option>
+                            <option value="SUBSANAR"
+                                    {% if revision_tecnico == "SUBSANAR" %}selected{% endif %}>Subsanar</option>
+                            <option value="SUBSANADO"
+                                    {% if revision_tecnico == "SUBSANADO" %}selected{% endif %}>Subsanado</option>
                         </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="resultado_sintys" class="form-label">SINTYS</label>
+                        <select name="resultado_sintys" id="resultado_sintys" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="SIN_CRUCE"
+                                    {% if resultado_sintys == "SIN_CRUCE" %}selected{% endif %}>Sin Cruce</option>
+                            <option value="MATCH" {% if resultado_sintys == "MATCH" %}selected{% endif %}>Match</option>
+                            <option value="NO_MATCH"
+                                    {% if resultado_sintys == "NO_MATCH" %}selected{% endif %}>No Match</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="estado_cupo" class="form-label">Cupo</label>
+                        <select name="estado_cupo" id="estado_cupo" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="NO_EVAL" {% if estado_cupo == "NO_EVAL" %}selected{% endif %}>No Evaluado</option>
+                            <option value="DENTRO" {% if estado_cupo == "DENTRO" %}selected{% endif %}>Dentro</option>
+                            <option value="FUERA" {% if estado_cupo == "FUERA" %}selected{% endif %}>Fuera</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="expediente_numero" class="form-label">Nº Expediente</label>
+                        <input type="text"
+                               name="expediente_numero"
+                               id="expediente_numero"
+                               value="{{ expediente_numero|default:'' }}"
+                               placeholder="Buscar expediente..."
+                               class="form-control" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="documento_persona" class="form-label">Documento Persona</label>
+                        <input type="text"
+                               name="documento_persona"
+                               id="documento_persona"
+                               value="{{ documento_persona|default:'' }}"
+                               placeholder="Buscar documento..."
+                               class="form-control" />
                     </div>
                 </div>
  
@@ -106,9 +152,7 @@
                 <div class="card-body text-center">
                     <div class="stat-label">Documentos Completos</div>
                     <div class="stat-number">{{ casos_documentos_ok }}</div>
-                    <small class="stat-percentage"
-                           data-total="{{ total_casos }}"
-                           data-value="{{ casos_documentos_ok }}"></small>
+                    <small class="text-muted">{{ porcentaje_documentos_ok }}%</small>
                 </div>
             </div>
         </div>
@@ -118,9 +162,7 @@
                 <div class="card-body text-center">
                     <div class="stat-label">Documentos Incompletos</div>
                     <div class="stat-number">{{ casos_documentos_incompletos }}</div>
-                    <small class="stat-percentage"
-                           data-total="{{ total_casos }}"
-                           data-value="{{ casos_documentos_incompletos }}"></small>
+                    <small class="text-muted">{{ porcentaje_documentos_incompletos }}%</small>
                 </div>
             </div>
         </div>
@@ -234,51 +276,7 @@
     </div>
 
     <!-- Gráficos -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">📈 Validación Técnica</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="chartValidacion"></canvas>
-                </div>
-            </div>
-        </div>
- 
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">🔗 Resultados SINTYS</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="chartSintys"></canvas>
-                </div>
-            </div>
-        </div>
- 
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">💰 Estado de Cupo</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="chartCupo"></canvas>
-                </div>
-            </div>
-        </div>
- 
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">📍 Casos por Provincia</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="chartProvincias"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Gráficos removidos debido a restricciones de CSP -->
 
     <!-- Tabla de Detalle -->
     <div class="card">
@@ -292,6 +290,7 @@
                         <tr>
                             <th>Documento</th>
                             <th>Nombre</th>
+                            <th>Nº Expediente</th>
                             <th>Provincia</th>
                             <th>Validación Técnica</th>
                             <th>SINTYS</th>
@@ -303,8 +302,11 @@
                     <tbody>
                         {% for caso in ultimos_casos %}
                             <tr>
-                                <td>{{ caso.ciudadano.documento }}</td>
+                                <td>
+                                    <a href="{% url 'expediente_detail' caso.expediente.id %}">{{ caso.ciudadano.documento }}</a>
+                                </td>
                                 <td>{{ caso.ciudadano.nombre }} {{ caso.ciudadano.apellido }}</td>
+                                <td>{{ caso.expediente.numero_expediente|default:"-" }}</td>
                                 <td>{{ caso.expediente.provincia.nombre }}</td>
                                 <td>
                                     <span class="badge {% if caso.revision_tecnico == 'APROBADO' %}bg-success{% elif caso.revision_tecnico == 'RECHAZADO' %}bg-danger{% elif caso.revision_tecnico == 'SUBSANAR' %}bg-warning{% else %}bg-secondary{% endif %}">
@@ -332,7 +334,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">No hay casos para mostrar</td>
+                                <td colspan="9" class="text-center text-muted py-4">No hay casos para mostrar</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -342,173 +344,4 @@
     </div>
 {% endblock %}
 
-{% block customJS %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
-    <script>
-    document.querySelectorAll('.stat-percentage[data-total]').forEach(el => {
-        const total = parseInt(el.dataset.total);
-        const value = parseInt(el.dataset.value);
-        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-        el.textContent = percentage + '%';
-    });
-    
-    const colors = {
-        primary: '#e7ba61',
-        success: '#10b981',
-        warning: '#f59e0b',
-        danger: '#ef4444',
-        info: '#3b82f6',
-        secondary: '#6b7280'
-    };
-    
-    const ctxValidacion = document.getElementById('chartValidacion').getContext('2d');
-    new Chart(ctxValidacion, {
-        type: 'doughnut',
-        data: {
-            labels: ['Pendiente', 'Aprobado', 'Rechazado', 'Subsanar', 'Subsanado'],
-            datasets: [{
-                data: [
-                    {{ casos_por_instancia.validacion_tecnica.pendiente }},
-                    {{ casos_por_instancia.validacion_tecnica.aprobado }},
-                    {{ casos_por_instancia.validacion_tecnica.rechazado }},
-                    {{ casos_por_instancia.validacion_tecnica.subsanar }},
-                    {{ casos_por_instancia.validacion_tecnica.subsanado }}
-                ],
-                backgroundColor: [
-                    colors.secondary,
-                    colors.success,
-                    colors.danger,
-                    colors.warning,
-                    colors.info
-                ],
-                borderColor: '#2c3e50',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 15,
-                        font: { size: 12 },
-                        color: '#e5e7eb'
-                    }
-                }
-            }
-        }
-    });
-    
-    const ctxSintys = document.getElementById('chartSintys').getContext('2d');
-    new Chart(ctxSintys, {
-        type: 'bar',
-        data: {
-            labels: ['Sin Cruce', 'Match', 'No Match'],
-            datasets: [{
-                label: 'Cantidad',
-                data: [
-                    {{ casos_por_instancia.sintys.sin_cruce }},
-                    {{ casos_por_instancia.sintys.match }},
-                    {{ casos_por_instancia.sintys.no_match }}
-                ],
-                backgroundColor: [colors.secondary, colors.success, colors.danger],
-                borderRadius: 6,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            indexAxis: 'y',
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                x: { 
-                    beginAtZero: true,
-                    ticks: { color: '#e5e7eb' },
-                    grid: { color: '#374151' }
-                },
-                y: {
-                    ticks: { color: '#e5e7eb' },
-                    grid: { color: '#374151' }
-                }
-            }
-        }
-    });
-    
-    const ctxCupo = document.getElementById('chartCupo').getContext('2d');
-    new Chart(ctxCupo, {
-        type: 'pie',
-        data: {
-            labels: ['No Evaluado', 'Dentro de Cupo', 'Fuera de Cupo'],
-            datasets: [{
-                data: [
-                    {{ casos_por_instancia.cupo.no_eval }},
-                    {{ casos_por_instancia.cupo.dentro }},
-                    {{ casos_por_instancia.cupo.fuera }}
-                ],
-                backgroundColor: [colors.secondary, colors.success, colors.danger],
-                borderColor: '#2c3e50',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 15,
-                        font: { size: 12 },
-                        color: '#e5e7eb'
-                    }
-                }
-            }
-        }
-    });
-    
-    const ctxProvincias = document.getElementById('chartProvincias').getContext('2d');
-    const provinciasData = {{ expedientes_por_provincia|safe }} || [];
-    const provinciasLabels = provinciasData.length > 0 ? provinciasData.map(p => p.usuario_provincia__profile__provincia__nombre) : [];
-    const provinciasValues = provinciasData.length > 0 ? provinciasData.map(p => p.casos) : [];
-    
-    if (provinciasLabels.length > 0) {
-        new Chart(ctxProvincias, {
-            type: 'bar',
-            data: {
-                labels: provinciasLabels,
-                datasets: [{
-                    label: 'Casos',
-                    data: provinciasValues,
-                    backgroundColor: colors.primary,
-                    borderRadius: 6,
-                    borderSkipped: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                indexAxis: 'y',
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: { 
-                        beginAtZero: true,
-                        ticks: { color: '#e5e7eb' },
-                        grid: { color: '#374151' }
-                    },
-                    y: {
-                        ticks: { color: '#e5e7eb' },
-                        grid: { color: '#374151' }
-                    }
-                }
-            }
-        });
-    }
-    </script>
-{% endblock %}
+{% block customJS %}{% endblock %}

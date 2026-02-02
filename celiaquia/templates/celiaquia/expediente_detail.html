@@ -1141,52 +1141,7 @@
         </div>
     </div>
 {% endif %}
-<!-- Modal: subir/editar archivo de legajo (individual por campo) -->
-<div class="modal fade"
-     id="modalSubirArchivo"
-     tabindex="-1"
-     aria-labelledby="modalSubirArchivoLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form id="form-subir-archivo" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalSubirArchivoLabel">Subir/Editar archivo del legajo</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="modal-alertas" class="mb-2"></div>
-                    <div class="row g-2">
-                        <div class="col-12">
-                            <label class="form-label">Seleccionar archivo a actualizar</label>
-                            <select name="campo" id="campo-archivo" class="form-select" required>
-                                <option value="archivo2" id="opt-archivo2">Biopsia / Constancia médica</option>
-                                <option value="archivo3" id="opt-archivo3">Documento</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label for="id_archivo" class="form-label">PDF o imagen</label>
-                            <input type="file"
-                                   name="archivo"
-                                   id="id_archivo"
-                                   class="form-control"
-                                   required
-                                   accept=".pdf,.jpg,.jpeg,.png" />
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+
 <!-- Modal: pedir SUBSANACIÃ“N -->
 <div class="modal fade"
      id="modalSubsanar"
@@ -1701,6 +1656,56 @@
     </div>
 </div>
 {% endwith %}
+{% endblock %}
+<!-- Modales movidos fuera del contenido principal para evitar interferencia con sidebar -->
+{% block modals %}
+    <!-- Modal: subir/editar archivo de legajo (individual por campo) -->
+    <div class="modal fade"
+         id="modalSubirArchivo"
+         tabindex="-1"
+         aria-labelledby="modalSubirArchivoLabel"
+         aria-hidden="true"
+         style="z-index: 9999">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="form-subir-archivo" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalSubirArchivoLabel">Subir/Editar archivo del legajo</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="modal-alertas" class="mb-2"></div>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label">Seleccionar archivo a actualizar</label>
+                                <select name="campo" id="campo-archivo" class="form-select" required>
+                                    <option value="archivo2" id="opt-archivo2">Biopsia / Constancia médica</option>
+                                    <option value="archivo3" id="opt-archivo3">Documento</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="id_archivo" class="form-label">PDF o imagen</label>
+                                <input type="file"
+                                       name="archivo"
+                                       id="id_archivo"
+                                       class="form-control"
+                                       required
+                                       accept=".pdf,.jpg,.jpeg,.png" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 {% block customCSS %}
     <link rel="stylesheet"
