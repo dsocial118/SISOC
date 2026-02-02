@@ -144,27 +144,27 @@
                         </li>
                     </ul>
                 </div>
-                    {% with selected_admision|default:admision_activa as display_admision %}
-                        <div class="col-12 col-lg-3 d-flex flex-column justify-content-end">
-                            <p class="mb-0 fs-7">
-                                <small>Inicio de Ejecución:
-                                    <strong>
-                                        {% if display_admision and display_admision.creado %}
-                                            {{ display_admision.creado|date:"d/m/Y" }}
-                                        {% else %}
-                                            Sin información
-                                        {% endif %}
-                                    </strong>
-                                </small>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                <small>Final de Ejecución: <strong>--/--/--</strong></small>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                <small>Plazo de Ejecución: <strong>6 meses</strong></small>
-                            </p>
-                        </div>
-                    {% endwith %}
+                {% with selected_admision|default:admision_activa as display_admision %}
+                    <div class="col-12 col-lg-3 d-flex flex-column justify-content-end">
+                        <p class="mb-0 fs-7">
+                            <small>Inicio de Ejecución:
+                                <strong>
+                                    {% if display_admision and display_admision.creado %}
+                                        {{ display_admision.creado|date:"d/m/Y" }}
+                                    {% else %}
+                                        Sin información
+                                    {% endif %}
+                                </strong>
+                            </small>
+                        </p>
+                        <p class="mb-0 fs-7">
+                            <small>Final de Ejecución: <strong>--/--/--</strong></small>
+                        </p>
+                        <p class="mb-0 fs-7">
+                            <small>Plazo de Ejecución: <strong>{{ admisiones_informetecnico|getattr:"plazo_ejecucion" }}</strong></small>
+                        </p>
+                    </div>
+                {% endwith %}
             </div>
         </div>
     </div>
@@ -225,7 +225,9 @@
                         <p class="mb-2">
                             <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong>
                             {% if comedor.piso or comedor.departamento %}
-                                {{ comedor.piso }}{% if comedor.piso and comedor.departamento %} - {% endif %}{{ comedor.departamento }}
+                                {{ comedor.piso }}
+                                {% if comedor.piso and comedor.departamento %}-{% endif %}
+                                {{ comedor.departamento }}
                             {% else %}
                                 -
                             {% endif %}
@@ -320,7 +322,7 @@
         <div class="accordion-panel">
             <div class="accordion-header h5 accordion-header--prestaciones">Prestaciones</div>
             <div class="accordion-content">
-                {% with prestacion=relevamientos.0.prestacion %}
+                {% with prestacion=relevamientos.0.prestacion informe_tecnico=admisiones_informetecnico %}
                     <div class="row text-center mb-1">
                         <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
                             <div class="small-box">
@@ -340,7 +342,7 @@
                                         <i class="bi bi-calendar-week"></i>
                                     </div>
                                     <div class="fw-bold fs-3 mb-0">
-                                        {% if prestacion %}
+                                        {% if prestacion and informe_tecnico %}
                                             {{ prestacion|dias_prestacion_semana }}
                                         {% else %}
                                             -
@@ -357,8 +359,8 @@
                                         <i class="bi bi-cup-hot"></i>
                                     </div>
                                     <div class="fw-bold fs-3 mb-0">
-                                        {% if prestacion %}
-                                            {{ count_beneficiarios|default_if_none:"-" }}
+                                        {% if informe_tecnico %}
+                                            {{ prestaciones_aprobadas_total|default_if_none:"-" }}
                                         {% else %}
                                             -
                                         {% endif %}
@@ -374,7 +376,7 @@
                                         <i class="bi bi-currency-dollar"></i>
                                     </div>
                                     <div class="fw-bold fs-3 mb-0">
-                                        {% if prestacion %}
+                                        {% if prestacion and informe_tecnico %}
                                             {{ monto_prestacion_mensual|default_if_none:"-" }}
                                         {% else %}
                                             -
@@ -423,43 +425,43 @@
                             <tbody>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Desayuno</th>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_lunes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_martes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_miercoles" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_jueves" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_viernes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_sabado" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_desayuno_domingo" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_domingo" }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_lunes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_martes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_miercoles" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_jueves" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_viernes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_sabado" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_almuerzo_domingo" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_domingo" }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Merienda</th>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_lunes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_martes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_miercoles" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_jueves" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_viernes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_sabado" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_merienda_domingo" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_domingo" }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row" class="text-start prestaciones-row">Cena</th>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_lunes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_martes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_miercoles" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_jueves" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_viernes" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_sabado" }}</td>
-                                    <td>{{ selected_admision|getattr:"aprobadas_cena_domingo" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_lunes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_martes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_miercoles" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_jueves" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_viernes" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_sabado" }}</td>
+                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_domingo" }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -650,32 +652,40 @@
     <!-- Linea de tiempo -->
     <div class="card mb-3 bg-card">
         <div class="card-body">
-            <!-- Timeline -->
-            <div class="timeline-comedor d-flex align-items-center overflow-auto pb-2">
-                <div class="{{ timeline_admision_step_class|default:'step active' }}">
-                    <div class="circle mx-2">{{ timeline_admision_circle_html|default:'1'|safe }}</div>
-                    <p class="mt-2 mb-0 text-center">Admisión</p>
-                    <p class="mb-0 text-center">
-                        <small>{{ timeline_admision_date|date:"d/m/Y"|default:"-" }}</small>
-                    </p>
+            {% with selected_admision|default:admision_activa as timeline_admision %}
+                <!-- Timeline -->
+                <div class="timeline-comedor d-flex align-items-center overflow-auto pb-2">
+                    <div class="{{ timeline_admision_step_class|default:'step active' }}">
+                        <div class="circle mx-2">{{ timeline_admision_circle_html|default:'1'|safe }}</div>
+                        <p class="mt-2 mb-0 text-center">Admisión</p>
+                        <p class="mb-0 text-center">
+                            <small>
+                                {% if timeline_admision and timeline_admision.fecha_estado_mostrar %}
+                                    {{ timeline_admision.fecha_estado_mostrar|date:"d/m/Y" }}
+                                {% else %}
+                                    {{ timeline_admision_date|date:"d/m/Y"|default:"-" }}
+                                {% endif %}
+                            </small>
+                        </p>
+                    </div>
+                    <div class="{{ timeline_connector_class|default:'connector' }} mb-3"></div>
+                    <div class="{{ timeline_ejecucion_step_class|default:'step' }}">
+                        <div class="circle mx-2">{{ timeline_ejecucion_circle|default:'2' }}</div>
+                        <p class="mt-2 mb-0 text-center">Ejecución</p>
+                        <p class="mb-0 text-center">
+                            <small>-</small>
+                        </p>
+                    </div>
+                    <div class="connector mb-3"></div>
+                    <div class="step">
+                        <div class="circle mx-2">{{ timeline_rendicion_circle|default:'3' }}</div>
+                        <p class="mt-2 mb-0 text-center">Rendición</p>
+                        <p class="mb-0 text-center">
+                            <small>-</small>
+                        </p>
+                    </div>
                 </div>
-                <div class="{{ timeline_connector_class|default:'connector' }} mb-3"></div>
-                <div class="{{ timeline_ejecucion_step_class|default:'step' }}">
-                    <div class="circle mx-2">{{ timeline_ejecucion_circle|default:'2' }}</div>
-                    <p class="mt-2 mb-0 text-center">Ejecución</p>
-                    <p class="mb-0 text-center">
-                        <small>-</small>
-                    </p>
-                </div>
-                <div class="connector mb-3"></div>
-                <div class="step">
-                    <div class="circle mx-2">{{ timeline_rendicion_circle|default:'3' }}</div>
-                    <p class="mt-2 mb-0 text-center">Rendición</p>
-                    <p class="mb-0 text-center">
-                        <small>-</small>
-                    </p>
-                </div>
-            </div>
+            {% endwith %}
         </div>
     </div>
     <!-- /Linea de tiempo -->
@@ -690,7 +700,7 @@
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-cup-hot mb-1"></i>
                             </h3>
-                            <h4 class="fw-bold my-1">{{ count_beneficiarios|default_if_none:"0" }}</h4>
+                            <h4 class="fw-bold my-1">{{ prestaciones_aprobadas_total|default_if_none:"0" }}</h4>
                             <p class="fw-bold fs-7">Prestaciones mensuales</p>
                         </div>
                     </div>
@@ -719,29 +729,48 @@
                 </div>
                 <div class="col-md-3 mx-auto">
                     <div class="small-box bg-card text-center">
-	                            <div class="inner">
-		                            <h3 class="mb-1 mt-2">
-		                                <i class="bi bi-graph-up-arrow"></i>
-		                            </h3>
-		                            {% with selected_convenio_numero|default_if_none:"" as convenio_numero %}
-		                                {% with total_admisiones|default_if_none:0 as total_convenios %}
-		                                    <h4 class="fw-bold my-1">
-		                                        {% if total_convenios %}
-		                                            {% if convenio_numero != "" %}
-		                                                {{ convenio_numero }}&deg; / {{ total_convenios }}
-		                                            {% else %}
-		                                                - / {{ total_convenios }}
-		                                            {% endif %}
-		                                        {% else %}
-		                                            0
-		                                        {% endif %}
-		                                    </h4>
-		                                {% endwith %}
-		                            {% endwith %}
-		                            <p class="fw-bold fs-7">Numero de Convenio</p>
-		                        </div>
-		                    </div>
-		                </div>
+ 
+                        <div class="inner">
+ 
+                            <h3 class="mb-1 mt-2">
+                                <i class="bi bi-graph-up-arrow"></i>
+ 
+                            </h3>
+ 
+                            {% with selected_convenio_numero|default_if_none:"" as convenio_numero %}
+ 
+                                {% with total_admisiones|default_if_none:0 as total_convenios %}
+ 
+                                    <h4 class="fw-bold my-1">
+ 
+                                        {% if total_convenios %}
+ 
+                                            {% if convenio_numero != "" %}
+                                                {{ convenio_numero }}&deg; / {{ total_convenios }}
+ 
+                                            {% else %}
+                                                - / {{ total_convenios }}
+ 
+                                            {% endif %}
+ 
+                                        {% else %}
+                                            0
+ 
+                                        {% endif %}
+ 
+                                    </h4>
+ 
+                                {% endwith %}
+ 
+                            {% endwith %}
+ 
+                            <p class="fw-bold fs-7">Numero de Convenio</p>
+ 
+                        </div>
+ 
+                    </div>
+ 
+                </div>
             </div>
             <div class="row">
                 <div class="col-12 col-lg-6 mb-3 mb-lg-0">
@@ -888,13 +917,9 @@
                                     </a>
                                     {% if display_admision %}
                                         <a href="{% url 'admision_detalle' comedor.id display_admision.id %}"
-                                           class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
-                                            Ver detalles
-                                        </a>
+                                           class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver detalles</a>
                                     {% else %}
-                                        <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto" disabled>
-                                            Ver detalles
-                                        </button>
+                                        <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto" disabled>Ver detalles</button>
                                     {% endif %}
                                 </div>
                             {% endwith %}
