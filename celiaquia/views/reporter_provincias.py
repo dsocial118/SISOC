@@ -47,7 +47,9 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
             )
 
         if documento_persona:
-            queryset = queryset.filter(ciudadano__documento__icontains=documento_persona)
+            queryset = queryset.filter(
+                ciudadano__documento__icontains=documento_persona
+            )
 
         if revision_tecnico:
             queryset = queryset.filter(revision_tecnico=revision_tecnico)
