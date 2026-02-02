@@ -115,9 +115,11 @@ def _columnas_preferencias_get(request):
     if not listado:
         return JsonResponse({"error": "Listado invalido."}, status=400)
 
-    preferencia = PreferenciaColumnas.objects.filter(
-        usuario=request.user, listado=listado
-    ).only("columnas").first()
+    preferencia = (
+        PreferenciaColumnas.objects.filter(usuario=request.user, listado=listado)
+        .only("columnas")
+        .first()
+    )
 
     columnas = preferencia.columnas if preferencia else []
     return JsonResponse({"list_key": listado, "columns": columnas}, status=200)
@@ -131,7 +133,9 @@ def _columnas_preferencias_post(request):
 
     reset = str(datos.get("reset") or "").lower() in ("1", "true", "yes")
     if reset:
-        PreferenciaColumnas.objects.filter(usuario=request.user, listado=listado).delete()
+        PreferenciaColumnas.objects.filter(
+            usuario=request.user, listado=listado
+        ).delete()
         return JsonResponse({"list_key": listado, "columns": []}, status=200)
 
     columnas = _normalizar_columnas(datos.get("columns"))

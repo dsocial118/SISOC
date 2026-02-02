@@ -10,9 +10,7 @@
                         <button type="button"
                                 class="btn btn-outline-warning btn-sm"
                                 data-bs-toggle="modal"
-                                data-bs-target="#{{ column_config.modal_id }}">
-                            Configurar columnas
-                        </button>
+                                data-bs-target="#{{ column_config.modal_id }}">Configurar columnas</button>
                     </div>
                     <div class="modal fade"
                          id="{{ column_config.modal_id }}"
@@ -30,9 +28,7 @@
                                             aria-label="Cerrar"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <p class="text-muted mb-3">
-                                        Seleccioná qué columnas mostrar y ordenalas con las flechas.
-                                    </p>
+                                    <p class="text-muted mb-3">Seleccioná qué columnas mostrar y ordenalas con las flechas.</p>
                                     <div class="list-group column-config-list">
                                         {% for col in column_config.available %}
                                             <div class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2"
@@ -42,19 +38,22 @@
                                                            type="checkbox"
                                                            id="{{ column_config.modal_id }}-{{ col.key }}"
                                                            {% if col.active %}checked{% endif %}
-                                                           {% if col.required %}disabled{% endif %}>
-                                                    <label class="form-check-label" for="{{ column_config.modal_id }}-{{ col.key }}">
+                                                           {% if col.required %}disabled{% endif %} />
+                                                    <label class="form-check-label"
+                                                           for="{{ column_config.modal_id }}-{{ col.key }}">
                                                         {{ col.title }}
                                                     </label>
-                                                    {% if col.required %}
-                                                        <span class="badge bg-secondary ms-2">Obligatoria</span>
-                                                    {% endif %}
+                                                    {% if col.required %}<span class="badge bg-secondary ms-2">Obligatoria</span>{% endif %}
                                                 </div>
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button" class="btn btn-light column-move-up" title="Mover arriba">
+                                                    <button type="button"
+                                                            class="btn btn-light column-move-up"
+                                                            title="Mover arriba">
                                                         <i class="fas fa-arrow-up"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-light column-move-down" title="Mover abajo">
+                                                    <button type="button"
+                                                            class="btn btn-light column-move-down"
+                                                            title="Mover abajo">
                                                         <i class="fas fa-arrow-down"></i>
                                                     </button>
                                                 </div>
