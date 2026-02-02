@@ -91,18 +91,7 @@ class ExpedienteService:
         except AttributeError:
             pass
 
-        faltan = None
-        if hasattr(
-            expediente._meta.model._meta.apps.get_model(
-                "celiaquia", "ExpedienteCiudadano"
-            ),
-            "archivos_ok",
-        ):
-            faltan = expediente.expediente_ciudadanos.filter(archivos_ok=False).exists()
-        if faltan is None:
-            faltan = not LegajoService.all_legajos_loaded(expediente)
-
-        if faltan:
+        if not LegajoService.all_legajos_loaded(expediente):
             raise ValidationError(
                 "Debes subir un archivo para cada legajo antes de confirmar."
             )
