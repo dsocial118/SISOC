@@ -312,6 +312,8 @@ class ImportacionService:
         df = df[present].rename(columns={c: column_map[c] for c in present}).fillna("")
         # Eliminar posibles columnas duplicadas despues del renombrado
         df = df.loc[:, ~df.columns.duplicated()]
+        # Limpiar espacios en blanco de todos los valores
+        df = df.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
         if "fecha_nacimiento" in df.columns:
             df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(
                 lambda x: x.date() if hasattr(x, "date") else x
@@ -653,12 +655,14 @@ class ImportacionService:
                     if nacionalidad_obj:
                         payload["nacionalidad"] = nacionalidad_obj.pk
                     else:
-                        add_warning(
-                            offset,
-                            "nacionalidad",
-                            f"'{nacionalidad_val}' no encontrada",
-                        )
-                        payload.pop("nacionalidad", None)
+                        # Si no encuentra, usar Argentina como default
+                        argentina = Nacionalidad.objects.filter(
+                            nacionalidad__iexact="Argentina"
+                        ).first()
+                        if argentina:
+                            payload["nacionalidad"] = argentina.pk
+                        else:
+                            payload.pop("nacionalidad", None)
                 else:
                     payload.pop("nacionalidad", None)
 
