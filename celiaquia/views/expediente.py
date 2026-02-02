@@ -545,7 +545,7 @@ class ExpedienteDetailView(DetailView):
 
         # Ordenar: construir árbol jerárquico completo
         agregados = set()
-        
+
         def agregar_con_descendientes(legajo):
             """Agrega un legajo y todos sus descendientes recursivamente"""
             if legajo.ciudadano_id in agregados:
@@ -556,22 +556,22 @@ class ExpedienteDetailView(DetailView):
             hijos = hijos_por_responsable.get(legajo.ciudadano_id, [])
             for hijo in hijos:
                 agregar_con_descendientes(hijo)
-        
+
         # Encontrar raíces (responsables que no son hijos de nadie)
         raices = []
         for responsable in responsables_legajos:
             if responsable.responsable_id is None:
                 raices.append(responsable)
-        
+
         # Agregar cada raíz con sus descendientes
         for raiz in raices:
             agregar_con_descendientes(raiz)
-        
+
         # Agregar responsables que no fueron agregados (tienen responsable pero también son responsables)
         for responsable in responsables_legajos:
             if responsable.ciudadano_id not in agregados:
                 agregar_con_descendientes(responsable)
-        
+
         # Agregar hijos sin responsable al final
         legajos_enriquecidos.extend(hijos_sin_responsable)
 
