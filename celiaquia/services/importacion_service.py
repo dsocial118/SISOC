@@ -793,10 +793,7 @@ class ImportacionService:
                 )
 
                 # Determinar rol del beneficiario
-                if es_mismo_documento:
-                    rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
-                else:
-                    rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
+                rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
 
                 # OK para crear legajo del beneficiario CON ROL
                 legajos_crear.append(
