@@ -32,6 +32,7 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
         "presupuesto_almuerzo",
         "presupuesto_merienda",
         "presupuesto_cena",
+        "monto_prestacion_mensual",
         "imagenes",
         "comedor_categoria",
         "rendicion_cuentas_final_activo",

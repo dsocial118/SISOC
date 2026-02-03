@@ -3,13 +3,6 @@
 ;
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
-    <style>
-.timeline::before,
-.timeline::after {
-  content: none !important;
-  display: none !important;
-}
-    </style>
 {% endblock %}
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 ;
@@ -18,11 +11,83 @@
         <div class="col-12 col-lg-auto d-flex justify-content-start">
             <button class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</button>
         </div>
-        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2">
-            <a href="{% url 'comedores' %}" class="btn btn-md w-100 w-sm-auto"><i class="bi bi-people-fill me-1"></i>Nomina</a>
-            <a href="{% url 'comedores' %}" class="btn btn-md w-100 w-sm-auto"><i class="bi bi-geo-fill me-1"></i>Relevamientos</a>
-            <a href="{% url 'comedores' %}" class="btn btn-md w-100 w-sm-auto"><i class="bi bi-check-square-fill me-1"></i>Convenios</a>
-            <a href="{% url 'comedores' %}" class="btn btn-md w-100 w-sm-auto"><i class="bi bi-printer-fill me-1"></i>Imprimir</a>
+        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
+            <a href="#"
+               class="btn btn-md btn-warning"
+               data-bs-toggle="modal"
+               data-bs-target="#modalValidacion"><i class="bi bi-clipboard-check me-1"></i>Validar</a>
+            <a href="{% url 'relevamientos' comedor.id %}"
+               class="btn btn-md btn-outline-light"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
+            {% if perms.auditlog.view_logentry %}
+                <a href="{% url 'audittrail:log_instance' 'comedores' 'comedor' comedor.pk %}"
+                   class="btn btn-md btn-outline-light"><i class="bi bi-journal-text me-1"></i>Historial</a>
+            {% endif %}
+            <div class="btn-group">
+                <button class="btn btn-md dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <i class="bi bi-list"></i>Acciones
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'comedor_editar' comedor.id %}">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-danger"
+                           href="{% url 'comedor_eliminar' comedor.id %}">
+                            <i class="bi bi-trash me-1"></i>Eliminar
+                        </a>
+                    </li>
+                    {% if comedor.estado != "Sin Ingreso" %}
+                        <li>
+                            <button class="dropdown-item text-start"
+                                    type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalAdmision">
+                                <i class="bi bi-box-arrow-in-up-right me-1"></i>Comenzar Admisión
+                            </button>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'dupla_asignar' pk=comedor.id %}">
+                                <i class="bi bi-person-workspace me-1"></i>Modificar Equipo Técnico
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-md dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <i class="bi bi-folder2-open me-1"></i>Seleccionar Convenio
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    {% for admision_item in admision %}
+                        {% with selected_admision_id|default:0 as safe_selected_id %}
+                            <li>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center {% if admision_item.id == safe_selected_id %}active{% endif %}"
+                                   href="{{ request.path }}?admision_id={{ admision_item.id }}">
+                                    <div>
+                                        <strong class="d-block">{{ admision_item.get_tipo_display }}</strong>
+                                        <small class="text-muted">
+                                            {{ admision_item.creado|date:"d/m/Y" }} · {{ admision_item.estado_mostrar|default_if_none:"-" }}
+                                        </small>
+                                    </div>
+                                    {% if admision_item.id == safe_selected_id %}<i class="bi bi-check2-circle text-primary"></i>{% endif %}
+                                </a>
+                            </li>
+                        {% endwith %}
+                    {% empty %}
+                        <li>
+                            <span class="dropdown-item-text text-muted">Sin Convenios</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -30,7 +95,7 @@
 ;
 {% block content %}
     <!-- Titulo comedor -->
-    <div class="card mb-3 bg-card">
+    <div class="card mb-3">
         <div class="card-body">
             <div class="row gy-3 align-items-center">
                 <div class="col-12 col-lg-9 d-flex align-items-center flex-wrap">
@@ -41,751 +106,590 @@
                             </h2>
                         </li>
                         <li class="list-inline-item">
-                            <button class="btn btn-sm btn-outline-primary mb-2">PNUD Seco</button>
+                            {% if comedor.estado_validacion == "Validado" %}
+                                <button class="btn btn-sm btn-success mb-2">
+                                    <i class="bi bi-check2-circle me-1"></i>Validado
+                                </button>
+                            {% elif comedor.estado_validacion == "No Validado" %}
+                                <button class="btn btn-sm btn-danger mb-2">
+                                    <i class="bi bi-x-circle me-1"></i>No Validado
+                                </button>
+                            {% else %}
+                                <button class="btn btn-sm btn-warning mb-2">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Validación Pendiente
+                                </button>
+                            {% endif %}
                         </li>
                         <li class="list-inline-item">
-                            <button class="btn btn-sm btn-outline-primary mb-2">Punto de entrega</button>
+                            <button class="btn btn-sm btn-primary mb-2">
+                                {% if comedor.programa_id == 2 %}
+                                    PAC
+                                {% elif comedor.programa_id == 3 %}
+                                    PNUD - SECOS
+                                {% elif comedor.programa_id == 4 %}
+                                    PNUD - TRADICIONAL
+                                {% else %}
+                                    Sin programa
+                                {% endif %}
+                            </button>
                         </li>
                         <li class="list-inline-item">
-                            <button class="btn btn-sm btn-success mb-2">En Ejecución</button>
+                            <button class="btn btn-sm btn-success mb-2">
+                                {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_proceso %}
+                                    {{ comedor.ultimo_estado.estado_general.estado_proceso.estado }}
+                                {% else %}
+                                    Sin proceso
+                                {% endif %}
+                            </button>
                         </li>
                     </ul>
                 </div>
-                <div class="col-12 col-lg-3 d-flex flex-column justify-content-end">
-                    <p class="mb-0 fs-7">
-                        <small>Inicio de Ejecución: <strong>16/09/2025</strong></small>
-                    </p>
-                    <p class="mb-0 fs-7">
-                        <small>Final de Ejecución: <strong>16/09/2026</strong></small>
-                    </p>
-                    <p class="mb-0 fs-7">
-                        <small>Plazo de Ejecución: <strong>3 meses</strong></small>
-                    </p>
-                </div>
+                {% with selected_admision|default:admision_activa as display_admision %}
+                    <div class="col-12 col-lg-auto ms-lg-auto d-flex flex-column justify-content-end">
+                        <p class="mb-0 fs-7">
+                            <small>Inicio de Ejecución:
+                                <strong>
+                                    {% if display_admision and display_admision.creado %}
+                                        {{ display_admision.creado|date:"d/m/Y" }}
+                                    {% else %}
+                                        Sin información
+                                    {% endif %}
+                                </strong>
+                            </small>
+                        </p>
+                        <p class="mb-0 fs-7">
+                            <small>Final de Ejecución: <strong>--/--/--</strong></small>
+                        </p>
+                        <p class="mb-0 fs-7">
+                            <small>Plazo de Ejecución: <strong>{{ admisiones_informetecnico|getattr:"plazo_ejecucion" }}</strong></small>
+                        </p>
+                    </div>
+                {% endwith %}
             </div>
         </div>
     </div>
     <!-- /Titulo comedor -->
     <!-- Acordion -->
-    <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
-        <!-- panel 1 -->
-        <div class="accordion-panel open">
-            <div class="accordion-header h5"
-                 style="background-color: #F79D00;
-                        color: white">Ubicación</div>
-            <div class="accordion-content">
-                <div class="row">
-                    <div class="col-12 col-lg-5">
-                        {% google_maps_query comedor.latitud comedor.longitud as maps_query %}
-                        {% if maps_query %}
-                            <div class="w-100" style="aspect-ratio: 16/9;">
-                                <iframe width="100%"
-                                        height="365px"
-                                        frameborder="0"
-                                        style="border:0"
-                                        src="https://maps.google.com/maps?q={{ maps_query }}&output=embed"
-                                        allowfullscreen>
-                                </iframe>
-                            </div>
-                        {% elif comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
-                            <div class="w-100" style="aspect-ratio: 16/9;">
-                                <iframe width="100%"
-                                        height="365px"
-                                        frameborder="0"
-                                        style="border:0"
-                                        src="https://maps.google.com/maps?q={{ comedor.calle|urlencode }}+{{ comedor.numero }},+{{ comedor.localidad.nombre|urlencode }},+{{ comedor.municipio.nombre|urlencode }},+{{ comedor.provincia.nombre|urlencode }}&output=embed"
-                                        allowfullscreen>
-                                </iframe>
-                            </div>
-                        {% else %}
-                            <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
-                                <div class="d-flex align-items-center justify-content-center text-white rounded-circle mx-2 me-3"
-                                     style="width: 60px;
-                                            height: 60px">
-                                    <i class="bi bi-geo fs-1"></i>
-                                </div>
-                                <div>
-                                    <p class="mb-0 text-white fw-bold">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0" style="max-height: 370px;">
-                        <h2 class="border-bottom border-3 mb-4 fw-bold">Ubicación</h2>
-                        <p class="mb-2">
-                            <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-geo me-2"></i><strong>Calle:</strong> {{ comedor.calle | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-123 me-2"></i><strong>Numeración:</strong> {{ comedor.numero | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-grid me-2"></i><strong>Manzana:</strong> {{ comedor.manzana | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong> {{ comedor.piso_departamento | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-signpost me-2"></i><strong>Entre calle 1:</strong> {{ comedor.entre_calle_1 | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-signpost-2 me-2"></i><strong>Entre calle 2:</strong> {{ comedor.entre_calle_2 | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-mailbox me-2"></i><strong>Código Postal:</strong> {{ comedor.codigo_postal | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-geo-alt me-2"></i><strong>Localidad:</strong> {{ comedor.localidad.nombre | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-map me-2"></i><strong>Partido:</strong> {{ comedor.partido | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-geo-alt-fill me-2"></i><strong>Provincia:</strong> {{ comedor.provincia.nombre | default_if_none:"-" }}
-                        </p>
-                    </div>
+    <div class="accordion-shell is-loading">
+        <div class="accordion-loader" aria-live="polite" aria-busy="true">
+            <div class="d-flex align-items-center gap-2">
+                <div class="spinner-border text-warning" role="status">
+                    <span class="visually-hidden">Cargando...</span>
                 </div>
+                <span class="fw-semibold">Cargando información...</span>
             </div>
         </div>
-        <!-- panel 2 -->
-        <div class="accordion-panel">
-            <div class="accordion-header h5"
-                 style="background-color: #6A1B99;
-                        color: white">Responsables</div>
-            <div class="accordion-content">
-                <div class="row">
-                    <div class="col-12 col-lg-6">
-                        {% if comedor.foto_legajo %}
-                            {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid rounded" extra_attrs='style="max-width: 100%; height: auto; max-height: 370px"' %}
-                        {% else %}
-                            <img src="{% static 'custom/img/default.png' %}"
-                                 alt="Imagen del comedor"
-                                 class="img-fluid rounded"
-                                 style="max-width: 100%;
-                                        height: auto;
-                                        max-height: 370px" />
-                        {% endif %}
-                    </div>
-                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0" style="max-height: 370px;">
-                        <h2 class="border-bottom border-3 mb-4 fw-bold">Responsables</h2>
-                        <p class="mb-2">
-                            <i class="bi bi-building me-2"></i><strong>Organización base:</strong> {{ comedor.organizacion.nombre | default_if_none:"-" }}
-                        </p>
-                        <div class="row mb-2">
-                            <div class="col-12 col-md-8">
-                                <i class="bi bi-person-fill me-2"></i><strong>Responsable 1:</strong> {{ comedor.referente.nombre | default_if_none:"-" }} {{ comedor.referente.apellido | default_if_none:"" }}
-                            </div>
-                            <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
-                                <strong>Vto:</strong> {{ comedor.organizacion.fecha_vencimiento | default_if_none:"-" }}
-                            </div>
-                        </div>
-                        <p class="mb-2">
-                            <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.referente.documento | default_if_none:"-" }}
-                        </p>
-                        <div class="row mb-2">
-                            <div class="col-12 col-md-8">
-                                <i class="bi bi-person me-2"></i><strong>Responsable 2:</strong> {{ comedor.referente_2.nombre | default_if_none:"-" }} {{ comedor.referente_2.apellido | default_if_none:"" }}
-                            </div>
-                            <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
-                                <strong>Vto:</strong> {{ comedor.referente_2.fecha_vencimiento | default_if_none:"-" }}
-                            </div>
-                        </div>
-                        <p class="mb-2">
-                            <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.referente_2.documento | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-envelope me-2"></i><strong>Mail de contacto organización:</strong> {{ comedor.organizacion.email | default_if_none:"-" }}
-                        </p>
-                        <hr class="my-3" />
-                        <p class="mb-2">
-                            <i class="bi bi-credit-card me-2"></i><strong>Responsable de la tarjeta del cobro:</strong> {{ comedor.responsable_tarjeta.nombre | default_if_none:"-" }} {{ comedor.responsable_tarjeta.apellido | default_if_none:"" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.responsable_tarjeta.documento | default_if_none:"-" }}
-                        </p>
-                        <hr class="my-3" />
-                        <p class="mb-2">
-                            <i class="bi bi-shield-check me-2"></i><strong>Aval 1:</strong> {{ comedor.aval_1 | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-shield-check me-2"></i><strong>Aval 2:</strong> {{ comedor.aval_2 | default_if_none:"-" }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- panel 3 -->
-        <div class="accordion-panel">
-            <div class="accordion-header h5"
-                 style="background-color: #2E7D33;
-                        color: white">Prestaciones</div>
-            <div class="accordion-content">
-                <h2 class="border-bottom border-3 mb-4 fw-bold">Prestaciones</h2>
-                {% with prestacion=relevamientos.0.prestacion %}
-                    <div class="row text-center mb-4">
-                        <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
-                            <div class="small-box">
-                                <div class="inner">
-                                    <div class="fs-2 mb-1">
-                                        <i class="bi bi-people"></i>
-                                    </div>
-                                    <div class="fw-bold fs-3 mb-0">{{ relevamientos.0.colaboradores.cantidad_colaboradores.nombre|default:"-" }}</div>
-                                    <div class="fw-bold fs-6">Colaboradores</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
-                            <div class="small-box">
-                                <div class="inner">
-                                    <div class="fs-2 mb-1">
-                                        <i class="bi bi-calendar-week"></i>
-                                    </div>
-                                    <div class="fw-bold fs-3 mb-0">7</div>
-                                    <div class="fw-bold fs-6">Dias a la semana</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="small-box">
-                                <div class="inner">
-                                    <div class="fs-2 mb-1">
-                                        <i class="bi bi-cup-hot"></i>
-                                    </div>
-                                    <div class="fw-bold fs-3 mb-0">
-                                        {% if prestacion %}
-                                            {{ count_beneficiarios|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </div>
-                                    <div class="fw-bold fs-6">Prestaciones mensuales</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="small-box">
-                                <div class="inner">
-                                    <div class="fs-2 mb-1">
-                                        <i class="bi bi-currency-dollar"></i>
-                                    </div>
-                                    <div class="fw-bold fs-3 mb-0">0</div>
-                                    <div class="fw-bold fs-6">Monto prestacion mensual</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm align-middle text-center mb-0">
-                            <thead>
-                                <tr>
-                                    <th></th>
-                                    <th>Lunes</th>
-                                    <th>Martes</th>
-                                    <th>Miercoles</th>
-                                    <th>Jueves</th>
-                                    <th>Viernes</th>
-                                    <th>Sabado</th>
-                                    <th>Domingo</th>
-                                </tr>
-                                <tr class="small fw-normal">
-                                    <th></th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                    <th>Asistentes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <th scope="row" class="text-start">Desayuno</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_desayuno_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="text-start">Almuerzo</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_almuerzo_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="text-start">Merienda</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_merienda_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="text-start">Merienda reforzada</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_merienda_reforzada_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="text-start">Cena</th>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.lunes_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.martes_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.miercoles_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.jueves_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.viernes_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.sabado_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if prestacion %}
-                                            {{ prestacion.domingo_cena_actual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                {% endwith %}
-            </div>
-        </div>
-        <!-- panel 4 -->
-        <div class="accordion-panel">
-            <div class="accordion-header h5"
-                 style="background-color: #50B7B2;
-                        color: white">Relevamientos</div>
-            <div class="accordion-content">
-                <h2 class="border-bottom border-3 mb-4 fw-bold">Relevamientos</h2>
-                {% with relevamiento=relevamientos.0 %}
-                    <div class="row mb-4">
-                        <div class="col-12 col-lg-4 mb-4 mb-lg-0">
-                            <h4 class="mb-3 fw-bold">Donaciones</h4>
-                            <ul class="list-unstyled mb-0">
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_donaciones_particulares %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Particulares
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_nacional %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Estado nacional
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_provincial %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Estado provincial
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_municipal %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Estado municipal
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_otros %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Otros
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="col-12 col-lg-4 mb-4 mb-lg-0">
-                            <h4 class="mb-3 fw-bold">Tipo de servicio</h4>
-                            <ul class="list-unstyled mb-0">
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Servicio en el lugar" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Servicio en el lugar
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Vianda
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda y servicio" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Vianda y servicio
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="col-12 col-lg-4">
-                            <h4 class="mb-3 fw-bold">Tipo de espacio</h4>
-                            <ul class="list-unstyled mb-0">
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Propio" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Propio
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Alquilado" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Alquilado
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Prestado (uso exclusivo)" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Prestado (uso exclusivo)
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Comunitario (compartido)" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Comunitario (compartido)
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Casa de familia" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Casa de familia
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Otro" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Otro
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+        <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
+            <!-- panel 1 -->
+            <div class="accordion-panel open">
+                <div class="accordion-header h5 accordion-header--ubicacion">Ubicación</div>
+                <div class="accordion-content">
                     <div class="row">
-                        <div class="col-12 d-flex flex-wrap gap-2">
-                            {% if relevamiento and relevamiento.anexo %}
-                                {% with anexo=relevamiento.anexo %}
-                                    {% if anexo.apoyo_escolar or anexo.promocion_salud or anexo.actividades_recreativas or anexo.actividades_religiosas or anexo.actividades_jardin_maternal or anexo.alfabetizacion_terminalidad or anexo.actividades_huerta or anexo.actividades_culturales %}
-                                        {% if anexo.apoyo_escolar %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Apoyo escolar</span>
-                                        {% endif %}
-                                        {% if anexo.promocion_salud %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Promocion de la salud</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_recreativas %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Recreacion</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_recreativas %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Deportes</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_religiosas %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades religiosas</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_jardin_maternal %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Jardin Maternal</span>
-                                        {% endif %}
-                                        {% if anexo.alfabetizacion_terminalidad %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Terminalidad educativa</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_huerta %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Huerta</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_culturales %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades culturales</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-white">-</span>
-                                    {% endif %}
-                                {% endwith %}
+                        <div class="col-12 col-lg-5">
+                            {% google_maps_query comedor.latitud comedor.longitud as maps_query %}
+                            {% if maps_query %}
+                                <div class="w-100 comedor-map-wrapper">
+                                    <iframe width="100%"
+                                            height="365px"
+                                            frameborder="0"
+                                            class="comedor-map-iframe"
+                                            src="https://maps.google.com/maps?q={{ maps_query }}&output=embed"
+                                            allowfullscreen>
+                                    </iframe>
+                                </div>
+                            {% elif comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
+                                <div class="w-100 comedor-map-wrapper">
+                                    <iframe width="100%"
+                                            height="365px"
+                                            frameborder="0"
+                                            class="comedor-map-iframe"
+                                            src="https://maps.google.com/maps?q={{ comedor.calle|urlencode }}+{{ comedor.numero }},+{{ comedor.localidad.nombre|urlencode }},+{{ comedor.municipio.nombre|urlencode }},+{{ comedor.provincia.nombre|urlencode }}&output=embed"
+                                            allowfullscreen>
+                                    </iframe>
+                                </div>
                             {% else %}
-                                <span class="text-white">-</span>
+                                <div class="w-100 comedor-map-wrapper comedor-map-placeholder d-flex align-items-center justify-content-center">
+                                    <div class="d-flex align-items-center px-3 py-2">
+                                        <div class="d-flex align-items-center justify-content-center text-secondary rounded-circle mx-2 me-3 comedor-icon-60">
+                                            <i class="bi bi-geo fs-1"></i>
+                                        </div>
+                                        <p class="mb-0 fw-bold text-body">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
+                                    </div>
+                                </div>
                             {% endif %}
                         </div>
+                        <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
+                            <p class="mb-2">
+                                <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-geo me-2"></i><strong>Calle:</strong> {{ comedor.calle | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-123 me-2"></i><strong>Numeración:</strong> {{ comedor.numero | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-grid me-2"></i><strong>Manzana:</strong> {{ comedor.manzana | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong>
+                                {% if comedor.piso or comedor.departamento %}
+                                    {{ comedor.piso }}
+                                    {% if comedor.piso and comedor.departamento %}-{% endif %}
+                                    {{ comedor.departamento }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-signpost me-2"></i><strong>Entre calle 1:</strong> {{ comedor.entre_calle_1 | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-signpost-2 me-2"></i><strong>Entre calle 2:</strong> {{ comedor.entre_calle_2 | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-mailbox me-2"></i><strong>Código Postal:</strong> {{ comedor.codigo_postal | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-geo-alt me-2"></i><strong>Localidad:</strong> {{ comedor.localidad.nombre | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-map me-2"></i><strong>Partido:</strong> {{ comedor.partido | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-geo-alt-fill me-2"></i><strong>Provincia:</strong> {{ comedor.provincia.nombre | default_if_none:"-" }}
+                            </p>
+                        </div>
                     </div>
-                {% endwith %}
+                </div>
+            </div>
+            <!-- panel 2 -->
+            <div class="accordion-panel">
+                <div class="accordion-header h5 accordion-header--responsables">Responsables</div>
+                <div class="accordion-content">
+                    <div class="row">
+                        <div class="col-12 col-lg-6">
+                            <div class="comedor-photo-wrapper">
+                                {% if comedor.foto_legajo %}
+                                    {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid rounded comedor-photo" extra_attrs='loading="lazy"' %}
+                                {% else %}
+                                    <img src="{% static 'custom/img/default.png' %}"
+                                         alt="Imagen del comedor"
+                                         class="img-fluid rounded comedor-photo"
+                                         loading="lazy" />
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
+                            <p class="mb-2">
+                                <i class="bi bi-building me-2"></i><strong>Organización base:</strong> {{ comedor.organizacion.nombre | default_if_none:"-" }}
+                            </p>
+                            <div class="row mb-2">
+                                <div class="col-12 col-md-8">
+                                    <i class="bi bi-person-fill me-2"></i><strong>Responsable 1:</strong> {{ comedor.referente.nombre | default_if_none:"-" }} {{ comedor.referente.apellido | default_if_none:"" }}
+                                </div>
+                                <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
+                                    <strong>Vto:</strong> {{ comedor.organizacion.fecha_vencimiento | default_if_none:"-" }}
+                                </div>
+                            </div>
+                            <p class="mb-2">
+                                <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.referente.documento | default_if_none:"-" }}
+                            </p>
+                            <div class="row mb-2">
+                                <div class="col-12 col-md-8">
+                                    <i class="bi bi-person me-2"></i><strong>Responsable 2:</strong> {{ comedor.referente_2.nombre | default_if_none:"-" }} {{ comedor.referente_2.apellido | default_if_none:"" }}
+                                </div>
+                                <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
+                                    <strong>Vto:</strong> {{ comedor.referente_2.fecha_vencimiento | default_if_none:"-" }}
+                                </div>
+                            </div>
+                            <p class="mb-2">
+                                <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.referente_2.documento | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-envelope me-2"></i><strong>Mail de contacto organización:</strong> {{ comedor.organizacion.email | default_if_none:"-" }}
+                            </p>
+                            <hr class="my-3" />
+                            <p class="mb-2">
+                                <i class="bi bi-credit-card me-2"></i><strong>Responsable de la tarjeta del cobro:</strong> {{ comedor.responsable_tarjeta.nombre | default_if_none:"-" }} {{ comedor.responsable_tarjeta.apellido | default_if_none:"" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.responsable_tarjeta.documento | default_if_none:"-" }}
+                            </p>
+                            <hr class="my-3" />
+                            <p class="mb-2">
+                                <i class="bi bi-shield-check me-2"></i><strong>Aval 1:</strong> {{ comedor.aval_1 | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-shield-check me-2"></i><strong>Aval 2:</strong> {{ comedor.aval_2 | default_if_none:"-" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- panel 3 -->
+            <div class="accordion-panel">
+                <div class="accordion-header h5 accordion-header--prestaciones">Prestaciones</div>
+                <div class="accordion-content">
+                    {% with informe_tecnico=admisiones_informetecnico %}
+                        <div class="row text-center mb-1">
+                            <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
+                                <div class="small-box">
+                                    <div class="inner">
+                                        <div class="fs-2 mb-1">
+                                            <i class="bi bi-people"></i>
+                                        </div>
+                                        <div class="fw-bold fs-3 mb-0">{{ relevamientos.0.colaboradores.cantidad_colaboradores.nombre|default:"-" }}</div>
+                                        <div class="fw-bold fs-6">Colaboradores</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
+                                <div class="small-box">
+                                    <div class="inner">
+                                        <div class="fs-2 mb-1">
+                                            <i class="bi bi-calendar-week"></i>
+                                        </div>
+                                        <div class="fw-bold fs-3 mb-0">{{ informe_tecnico|dias_prestacion_semana }}</div>
+                                        <div class="fw-bold fs-6">Dias a la semana</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <div class="small-box">
+                                    <div class="inner">
+                                        <div class="fs-2 mb-1">
+                                            <i class="bi bi-cup-hot"></i>
+                                        </div>
+                                        <div class="fw-bold fs-3 mb-0">
+                                            {% if informe_tecnico %}
+                                                {{ prestaciones_aprobadas_total|default_if_none:"-" }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                        <div class="fw-bold fs-6">Prestaciones mensuales</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <div class="small-box">
+                                    <div class="inner">
+                                        <div class="fs-2 mb-1">
+                                            <i class="bi bi-currency-dollar"></i>
+                                        </div>
+                                        <div class="fw-bold fs-3 mb-0">
+                                            {% if informe_tecnico %}
+                                                {{ monto_prestacion_mensual|default_if_none:"-" }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                        <div class="fw-bold fs-6">Monto prestacion mensual</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive prestaciones-table-wrap">
+                            <table class="table table-bordered table-sm align-middle text-center mb-0 prestaciones-table">
+                                <thead>
+                                    <tr class="prestaciones-table-head">
+                                        <th scope="col" class="text-start">Prestacion</th>
+                                        <th scope="col">
+                                            <span class="d-block">Lunes</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Martes</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Miercoles</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Jueves</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Viernes</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Sabado</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Domingo</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" class="text-start prestaciones-row">Desayuno</th>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_lunes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_martes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_miercoles" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_jueves" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_viernes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_sabado" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_domingo" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_lunes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_martes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_miercoles" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_jueves" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_viernes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_sabado" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_domingo" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="text-start prestaciones-row">Merienda</th>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_lunes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_martes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_miercoles" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_jueves" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_viernes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_sabado" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_domingo" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="text-start prestaciones-row">Cena</th>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_lunes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_martes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_miercoles" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_jueves" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_viernes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_sabado" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_domingo" }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+            <!-- panel 4 -->
+            <div class="accordion-panel">
+                <div class="accordion-header h5 accordion-header--relevamientos">Relevamientos</div>
+                <div class="accordion-content">
+                    {% with relevamiento=relevamientos.0 %}
+                        <div class="row mb-4">
+                            <div class="col-12 col-lg-4 mb-4 mb-lg-0">
+                                <h4 class="mb-3 fw-bold">Donaciones</h4>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_donaciones_particulares %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Particulares
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_nacional %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Estado nacional
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_provincial %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Estado provincial
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_municipal %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Estado municipal
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_otros %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Otros
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-12 col-lg-4 mb-4 mb-lg-0">
+                                <h4 class="mb-3 fw-bold">Tipo de servicio</h4>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Servicio en el lugar" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Servicio en el lugar
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Vianda
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda y servicio" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Vianda y servicio
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-12 col-lg-4">
+                                <h4 class="mb-3 fw-bold">Tipo de espacio</h4>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Propio" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Propio
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Alquilado" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Alquilado
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Prestado (uso exclusivo)" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Prestado (uso exclusivo)
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Comunitario (compartido)" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Comunitario (compartido)
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Casa de familia" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Casa de familia
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Otro" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Otro
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 d-flex flex-wrap gap-2">
+                                {% if relevamiento and relevamiento.anexo %}
+                                    {% with anexo=relevamiento.anexo %}
+                                        {% if anexo.apoyo_escolar or anexo.promocion_salud or anexo.actividades_recreativas or anexo.actividades_religiosas or anexo.actividades_jardin_maternal or anexo.alfabetizacion_terminalidad or anexo.actividades_huerta or anexo.actividades_culturales %}
+                                            {% if anexo.apoyo_escolar %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Apoyo escolar</span>
+                                            {% endif %}
+                                            {% if anexo.promocion_salud %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Promocion de la salud</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_recreativas %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Recreacion</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_recreativas %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Deportes</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_religiosas %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades religiosas</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_jardin_maternal %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Jardin Maternal</span>
+                                            {% endif %}
+                                            {% if anexo.alfabetizacion_terminalidad %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Terminalidad educativa</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_huerta %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Huerta</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_culturales %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades culturales</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-white">-</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% else %}
+                                    <span class="text-white">-</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endwith %}
+                </div>
             </div>
         </div>
     </div>
     <!-- /Acordion -->
     <!-- Linea de tiempo -->
-    <div class="card mb-3 bg-card">
+    <div class="mb-3">
         <div class="card-body">
-            <div class="timeline-comedor d-flex align-items-center overflow-auto pb-2">
-                <div class="step completed">
-                    <div class="circle mx-2">
-                        <i class="bi bi-check-lg"></i>
+            {% with selected_admision|default:admision_activa as timeline_admision %}
+                <!-- Timeline -->
+                <div class="timeline-comedor d-flex align-items-center overflow-auto pb-2">
+                    <div class="{{ timeline_admision_step_class|default:'step active' }}">
+                        <div class="circle mx-2">{{ timeline_admision_circle_html|default:'1'|safe }}</div>
+                        <p class="mt-2 mb-0 text-center">Admisión</p>
+                        <p class="mb-0 text-center">
+                            <small>
+                                {% if timeline_admision and timeline_admision.fecha_estado_mostrar %}
+                                    {{ timeline_admision.fecha_estado_mostrar|date:"d/m/Y" }}
+                                {% else %}
+                                    {{ timeline_admision_date|date:"d/m/Y"|default:"-" }}
+                                {% endif %}
+                            </small>
+                        </p>
                     </div>
-                    <p class="mt-2 mb-0 text-center">Visita</p>
-                    <p class="mb-0 text-center fs-7">03/06/2025</p>
-                </div>
-                <div class="connector completed"></div>
-                <div class="step completed">
-                    <div class="circle mx-2">
-                        <i class="bi bi-check-lg"></i>
+                    <div class="{{ timeline_connector_class|default:'connector' }} mb-3"></div>
+                    <div class="{{ timeline_ejecucion_step_class|default:'step' }}">
+                        <div class="circle mx-2">{{ timeline_ejecucion_circle|default:'2' }}</div>
+                        <p class="mt-2 mb-0 text-center">Ejecución</p>
+                        <p class="mb-0 text-center">
+                            <small>-</small>
+                        </p>
                     </div>
-                    <p class="mt-2 mb-0 text-center">Admisión</p>
-                    <p class="mb-0 text-center fs-7">05/07/2025</p>
+                    <div class="connector mb-3"></div>
+                    <div class="step">
+                        <div class="circle mx-2">{{ timeline_rendicion_circle|default:'3' }}</div>
+                        <p class="mt-2 mb-0 text-center">Rendición</p>
+                        <p class="mb-0 text-center">
+                            <small>-</small>
+                        </p>
+                    </div>
                 </div>
-                <div class="connector completed"></div>
-                <div class="step active">
-                    <div class="circle mx-2">3</div>
-                    <p class="mt-2 mb-0 text-center">Ejecución</p>
-                    <p class="mb-0 text-center fs-7">05/10/2025</p>
-                </div>
-                <div class="connector"></div>
-                <div class="step">
-                    <div class="circle mx-2">4</div>
-                    <p class="mt-2 mb-0 text-center">Rendición</p>
-                </div>
-                <div class="connector"></div>
-                <div class="step">
-                    <div class="circle mx-2">5</div>
-                    <p class="mt-2 mb-0 text-center">Renovación</p>
-                </div>
-            </div>
+            {% endwith %}
         </div>
     </div>
     <!-- /Linea de tiempo -->
@@ -800,7 +704,7 @@
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-cup-hot mb-1"></i>
                             </h3>
-                            <h4 class="fw-bold my-1">{{ count_beneficiarios|default_if_none:"0" }}</h4>
+                            <h4 class="fw-bold my-1">{{ prestaciones_aprobadas_total|default_if_none:"0" }}</h4>
                             <p class="fw-bold fs-7">Prestaciones mensuales</p>
                         </div>
                     </div>
@@ -829,43 +733,58 @@
                 </div>
                 <div class="col-md-3 mx-auto">
                     <div class="small-box bg-card text-center">
+
                         <div class="inner">
+
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-graph-up-arrow"></i>
+
                             </h3>
-                            <h4 class="fw-bold my-1">
-                                {% if admision %}
-                                    {{ admision|length }}
-                                {% else %}
-                                    0
-                                {% endif %}
-                            </h4>
+
+                            {% with selected_convenio_numero|default_if_none:"" as convenio_numero %}
+
+                                {% with total_admisiones|default_if_none:0 as total_convenios %}
+
+                                    <h4 class="fw-bold my-1">
+
+                                        {% if total_convenios %}
+
+                                            {% if convenio_numero != "" %}
+                                                {{ convenio_numero }}&deg; / {{ total_convenios }}
+
+                                            {% else %}
+                                                - / {{ total_convenios }}
+
+                                            {% endif %}
+
+                                        {% else %}
+                                            0
+
+                                        {% endif %}
+
+                                    </h4>
+
+                                {% endwith %}
+
+                            {% endwith %}
+
                             <p class="fw-bold fs-7">Numero de Convenio</p>
+
                         </div>
+
                     </div>
+
                 </div>
             </div>
             <div class="row">
                 <div class="col-12 col-lg-6 mb-3 mb-lg-0">
                     <div class="card bg-card h-100">
                         <div class="card-header py-1">
-                            <h6 class="fw-bold my-1 text-center">Avisos</h6>
+                            <h6 class="fw-bold my-1 text-center">Asistencia por rango etareo</h6>
                         </div>
-                        <div class="card-body">
-                            <div class="col-12">
-                                <div class="d-flex align-items-center p-3">
-                                    <div class="me-3 text-warning fs-1">
-                                        <i class="bi bi-lightbulb-fill"></i>
-                                    </div>
-                                    <div>
-                                        <div class="fw-bold fs-7">Este comedor no cargó rendición en 2 meses.</div>
-                                        <p class="mt-1 text-muted fs-7">¿Quieres enviar un recordatorio?</p>
-                                        <div class="mt-1 d-flex flex-column flex-sm-row justify-content-center gap-2">
-                                            <button class="btn btn-secondary p1 fs-7 w-100 w-sm-auto">Omitir</button>
-                                            <button class="btn btn-primary p1 fs-7 w-100 w-sm-auto">Enviar</button>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div class="card-body d-flex align-items-center">
+                            <div class="w-100 h-100 comedor-chart-h240">
+                                <canvas id="nominaEdadChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -876,32 +795,138 @@
                             <h6 class="fw-bold my-1 text-center">Detalles de Admisión</h6>
                         </div>
                         <div class="card-body">
-                            <p class="mb-0 fs-7">
-                                Fecha: <strong>{{ admision.creado |date:'d/m/Y' |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Número de expediente: <strong class="text-uppercase">{{ admision.num_expediente |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Estado: <strong class="text-uppercase">{{ admision.estado.nombre |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Dupla: <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"Sin información" }}, USUARIO 1, USUARIO 2</strong>
-                            </p>
-                            <p class="mb-0 fs-7">
-                                Tipo de convenio: <strong class="text-uppercase">{{ admision.tipo_convenio.nombre |default_if_none:"Sin información" }}</strong>
-                            </p>
-                            <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
-                                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-                                   class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
-                                    {% if comedor.estado == "Sin Ingreso" %}
-                                        Asignar Equipo Técnico
+                            {% with selected_admision|default:admision_activa as display_admision %}
+                                <p class="mb-0 fs-7">
+                                    Fecha:
+                                    <strong>
+                                        {% if display_admision and display_admision.creado %}
+                                            {{ display_admision.creado|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Número de expediente:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.num_expediente %}
+                                            {{ display_admision.num_expediente }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado - técnicos:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_admision %}
+                                            {{ display_admision.get_estado_admision_display|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado - legales:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_legales %}
+                                            {{ display_admision.get_estado_legales_display|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Estado actual:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.estado_mostrar %}
+                                            {{ display_admision.estado_mostrar|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Fecha estado:
+                                    <strong>
+                                        {% if display_admision and display_admision.fecha_estado_mostrar %}
+                                            {{ display_admision.fecha_estado_mostrar|date:"d/m/Y" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.num_if %}
+                                            {{ display_admision.num_if }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF legales:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.legales_num_if %}
+                                            {{ display_admision.legales_num_if }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° IF técnico:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_if_tecnico %}
+                                            {{ display_admision.numero_if_tecnico }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    N° disposición:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.numero_disposicion %}
+                                            {{ display_admision.numero_disposicion }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Dupla:
+                                    <strong class="text-uppercase">{{ comedor.dupla.nombre |default_if_none:"Sin información" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Tipo de convenio:
+                                    <strong class="text-uppercase">
+                                        {% if display_admision and display_admision.tipo_convenio %}
+                                            {{ display_admision.tipo_convenio.nombre|default_if_none:"Sin información" }}
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </strong>
+                                </p>
+                                <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
+                                    <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                                       class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
+                                        {% if comedor.estado == "Sin Ingreso" %}
+                                            Asignar Equipo Técnico
+                                        {% else %}
+                                            Modificar Equipo Técnico
+                                        {% endif %}
+                                    </a>
+                                    {% if display_admision %}
+                                        <a href="{% url 'admision_detalle' comedor.id display_admision.id %}"
+                                           class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver detalles</a>
                                     {% else %}
-                                        Modificar Equipo Técnico
+                                        <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto" disabled>Ver detalles</button>
                                     {% endif %}
-                                </a>
-                                <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Cargar documentos</button>
-                            </div>
+                                </div>
+                            {% endwith %}
                         </div>
                     </div>
                 </div>
@@ -911,58 +936,67 @@
         <!-- Nomina-->
         <div class="col-12 col-lg-3">
             <div class="card bg-card">
-                <div class="card-header py-1">
-                    <h4 class="fw-bold my-1">Nomina</h4>
+                <div class="card-header py-1 d-flex align-items-center justify-content-between">
+                    <h4 class="fw-bold my-1">Nómina</h4>
+                    <a href="{% url 'nomina_ver' pk=comedor.id %}"
+                       class="text-white fs-5 ms-auto"
+                       title="Ver nómina"
+                       aria-label="Ver nómina">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
                 </div>
                 <div class="card-body">
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-amarillo px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-amarillo-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-amarillo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-people-fill fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">380</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_total|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Asistentes</p>
                             </div>
                         </div>
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-person-standing fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">100</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_hombres|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Hombres</p>
                             </div>
                         </div>
                     </div>
                     <div class="col-12">
                         <div class="d-flex align-items-center bg-rosa px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-rosa-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-rosa-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-person-standing-dress fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">280</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_mujeres|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Mujeres</p>
                             </div>
                         </div>
                     </div>
                     <div class="col-12">
+                        <div class="d-flex align-items-center bg-verde px-3 py-2 rounded-3 mb-2">
+                            <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                <i class="bi bi-person-arms-up fs-1"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_menores|default:0 }}</div>
+                                <p class="mb-0 text-white fw-bold">Menores de edad</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
                         <div class="d-flex align-items-center bg-rojo px-3 py-2 rounded-3 mb-2">
-                            <div class="d-flex align-items-center justify-content-center bg-rojo-75 text-white rounded-circle mx-2 me-3"
-                                 style="width: 60px;
-                                        height: 60px">
+                            <div class="d-flex align-items-center justify-content-center bg-rojo-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
                                 <i class="bi bi-list-check fs-1"></i>
                             </div>
                             <div>
-                                <div class="fw-bold fs-2 mb-0 py-0 text-white">500</div>
+                                <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_espera|default:0 }}</div>
                                 <p class="mb-0 text-white fw-bold">Lista de espera</p>
                             </div>
                         </div>
@@ -973,305 +1007,495 @@
         <!-- /Nomina-->
     </div>
     <!-- /Bloque central-->
-    <!-- Expediente y Observaciones-->
+    <!-- Intervenciones y Observaciones -->
     <div class="row mb-3">
-        <!-- Expediente -->
-        <div class="col-12 col-lg-8 mb-3 mb-lg-0">
+        <div class="col-12 tabs-comedor-wrap">
+            <ul class="nav nav-tabs tabs-comedor ms-2 mb-0"
+                id="intervencionesObservacionesTabs"
+                role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fs-6"
+                            id="intervenciones-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#intervenciones-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="intervenciones-pane"
+                            aria-selected="true">Intervenciones</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fs-6"
+                            id="observaciones-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#observaciones-pane"
+                            type="button"
+                            role="tab"
+                            aria-controls="observaciones-pane"
+                            aria-selected="false">Observaciones</button>
+                </li>
+            </ul>
             <div class="card bg-card">
-                <div class="card-header py-1">
-                    <h4 class="fw-bold my-1">Expediente</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-4">
-                            <div class="card border-0 shadow-none bg-transparent text-center">
-                                <div class="position-relative d-inline-block"
-                                     style="width: 180px;
-                                            height: 180px">
-                                    <canvas id="donutChart" width="180" height="180"></canvas>
-                                    <div class="position-absolute top-50 start-50 translate-middle text-center">
-                                        <div class="fw-bold text-warning" style="font-size: 1.2rem;">65%</div>
-                                        <div class="fw-bold" style="font-size: 0.9rem;">RENDICIÓN</div>
-                                    </div>
-                                </div>
+                <div class="card-body pt-0">
+                    <div class="tab-content" id="intervencionesObservacionesContent">
+                        <div class="tab-pane fade show active"
+                             id="intervenciones-pane"
+                             role="tabpanel"
+                             aria-labelledby="intervenciones-tab">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalIntervencion">Agregar intervención</button>
                             </div>
+                            {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
                         </div>
-                        <div class="col-md-8">
-                            <div class="row align-items-center justify-content-between mb-2">
-                                <div class="col-auto">
-                                    <h2 class="mb-0">Documentación</h2>
-                                </div>
-                                <div class="col-auto text-end">
-                                    <h2 class="mb-0">128</h2>
-                                </div>
+                        <div class="tab-pane fade"
+                             id="observaciones-pane"
+                             role="tabpanel"
+                             aria-labelledby="observaciones-tab">
+                            <div class="d-flex justify-content-end mb-2">
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalObservacion">Agregar observación</button>
                             </div>
-                            <div class="progress mb-4">
-                                <div class="progress-bar bg-amarillo"
-                                     role="progressbar"
-                                     style="width: 60%"
-                                     aria-valuenow="60"
-                                     aria-valuemin="0"
-                                     aria-valuemax="100"></div>
-                            </div>
-                            <!-- Timeline -->
-                            <div class="timeline-comedor d-flex align-items-center overflow-auto pb-2">
-                                <div class="step completed">
-                                    <div class="circle mx-2">
-                                        <i class="bi bi-check-lg"></i>
-                                    </div>
-                                    <p class="mt-2 mb-0 text-center">Admisión</p>
-                                </div>
-                                <div class="connector completed"></div>
-                                <div class="step completed">
-                                    <div class="circle mx-2">
-                                        <i class="bi bi-check-lg"></i>
-                                    </div>
-                                    <p class="mt-2 mb-0 text-center">Expediente</p>
-                                </div>
-                                <div class="connector completed"></div>
-                                <div class="step active">
-                                    <div class="circle mx-2">3</div>
-                                    <p class="mt-2 mb-0 text-center">Ejecución</p>
-                                </div>
-                                <div class="connector"></div>
-                                <div class="step">
-                                    <div class="circle mx-2">4</div>
-                                    <p class="mt-2 mb-0 text-center">Rendición</p>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
-                                    <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Agregar documentación Expediente</button>
-                                    <button class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Últimos Movimientos</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- /Expediente -->
-        <!-- Observaciones -->
-        <div class="col-12 col-lg-4">
-            <div class="card bg-card">
-                <div class="card-header py-1">
-                    <h4 class="fw-bold my-1">Observaciones</h4>
-                </div>
-                <div class="card-body">
-                    {% for observacion in observaciones|slice:":3" %}
-                        <div class="row border-bottom mb-1">
-                            <p class="m-1">
-                                <a href="{% url 'observacion_detalle' comedor.id observacion.id %}"
-                                   class="btn btn-sm btn-primary">{{ observacion.fecha_visita }}</a>
-                            </p>
-                            <p class="text-muted m-1">{{ observacion.observacion|truncatechars:80 }}</p>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        <!-- /Observaciones -->
-    </div>
-    <!-- /Expediente y Observaciones-->
-    <!-- Acompañamiento -->
-    <div class="row mb-3">
-        <div class="card bg-card">
-            <div class="card-header py-1">
-                <h4 class="fw-bold my-1">Acompañamiento</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mx-auto px-3 mb-3 mb-md-0">
-                        <h5>Prestaciones Mensuales</h5>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Desayunos</span>
-                            <span class="fw-bold">5</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 10px;">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 8%"
-                                 aria-valuenow="8"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Almuerzos</span>
-                            <span class="fw-bold">400</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 10px;">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 40%"
-                                 aria-valuenow="40"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Meriendas</span>
-                            <span class="fw-bold">100</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 10px;">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 12%"
-                                 aria-valuenow="12"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Cenas</span>
-                            <span class="fw-bold">400</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 10px;">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 40%"
-                                 aria-valuenow="40"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1 mt-3">
-                            <span class="fs-5">Total Prestaciones</span>
-                            <span class="fw-bold fs-5">905</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-info"
-                                 role="progressbar"
-                                 style="width: 100%"
-                                 aria-valuenow="100"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100"></div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mx-auto px-3">
-                        <h5>Últimos hitos</h5>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-striped table-hover">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Tarea</th>
-                                        <th scope="col">Estado</th>
-                                        <th scope="col"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Rendición de cuentas</td>
-                                        <td>Aprobado</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Rendición de cuentas</td>
-                                        <td>Aprobado</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Intervenciones</td>
-                                        <td>Revisión</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Relevamientos</td>
-                                        <td>Agenda</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Relevamientos</td>
-                                        <td>Agenda</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Rendición de cuentas</td>
-                                        <td>Aprobado</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Basic example">
-                                                <button type="button" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <div class="mt-0 d-flex justify-content-center">
-                                <button class="mt-2 me-2 btn btn-primary px-2 py-1 fs-7">Agregar expediente de pago</button>
-                            </div>
+                            {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- /Acompañamiento -->
+    <!-- /Intervenciones y Observaciones -->
+    <!-- Historial de interacciones -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card bg-card">
+                <div class="card-header py-1">
+                    <h4 class="fw-bold my-1">Historial de interacciones</h4>
+                </div>
+                <div class="card-body">
+                    <div class="w-100 comedor-chart-h220">
+                        <canvas id="interaccionesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /Historial de interacciones -->
+    <!-- Modal Intervención -->
+    <div class="modal fade"
+         id="modalIntervencion"
+         tabindex="-1"
+         aria-labelledby="modalIntervencionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'comedor_intervencion_crear' comedor.id %}"
+                      enctype="multipart/form-data"
+                      id="intervencionModalForm">
+                    {% csrf_token %}
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalIntervencionLabel">Nueva intervención</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
+                                {{ intervencion_form.fecha }}
+                                <div id="fecha-error-intervencion" class="invalid-feedback d-none"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.tipo_intervencion.label }}</label>
+                                {{ intervencion_form.tipo_intervencion }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.subintervencion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.subintervencion.label }}</label>
+                                {{ intervencion_form.subintervencion }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.destinatario.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.destinatario.label }}</label>
+                                {{ intervencion_form.destinatario }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.forma_contacto.label }}</label>
+                                {{ intervencion_form.forma_contacto }}
+                            </div>
+                            <div class="col-12">
+                                <label for="{{ intervencion_form.observaciones.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.observaciones.label }}</label>
+                                {{ intervencion_form.observaciones }}
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ intervencion_form.tiene_documentacion }}
+                                    <label class="form-check-label"
+                                           for="{{ intervencion_form.tiene_documentacion.id_for_label }}">
+                                        {{ intervencion_form.tiene_documentacion.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12 d-none" id="documentacion-field-modal">
+                                <label for="{{ intervencion_form.documentacion.id_for_label }}"
+                                       class="form-label">{{ intervencion_form.documentacion.label }}</label>
+                                {{ intervencion_form.documentacion }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar intervención</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Observación -->
+    <div class="modal fade"
+         id="modalObservacion"
+         tabindex="-1"
+         aria-labelledby="modalObservacionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'observacion_crear' comedor.id %}"
+                      id="observacionModalForm">
+                    {% csrf_token %}
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalObservacionLabel">Nueva observación</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="{{ observacion_form.observacion.id_for_label }}"
+                                   class="form-label">{{ observacion_form.observacion.label }}</label>
+                            {{ observacion_form.observacion }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar observación</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Selección Admisión -->
+    <div class="modal fade"
+         id="modalAdmision"
+         tabindex="-1"
+         aria-labelledby="modalAdmisionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Seleccione el tipo de Admisión</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <select name="admision"
+                                id="admisionID"
+                                class="form-control form-select"
+                                required>
+                            <option value="" disabled selected>-- Seleccione --</option>
+                            <option value="incorporacion">Incorporación</option>
+                            <option value="renovacion">Renovación</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="seleccionAdmision">Seleccionar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Validaci&oacute;n -->
+    <div class="modal fade"
+         id="modalValidacion"
+         tabindex="-1"
+         aria-labelledby="modalValidacionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalValidacionLabel">Validaci&oacute;n del Comedor</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="mb-4">Seleccione una opci&oacute;n para validar el comedor:</p>
+                    <div class="d-grid gap-2">
+                        <button type="button"
+                                class="btn btn-success btn-lg"
+                                onclick="validarComedor()">Validar</button>
+                        <button type="button"
+                                class="btn btn-danger btn-lg"
+                                onclick="mostrarOpcionesNoValidar()">No Validar</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal No Validar -->
+    <div class="modal fade"
+         id="modalNoValidar"
+         tabindex="-1"
+         aria-labelledby="modalNoValidarLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'validar_comedor' comedor.pk %}"
+                      id="formNoValidar">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="no_validar" />
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'nuevo_comedor_detalle' pk=comedor.id %}" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validaci&oacute;n</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="opcionesSelect" class="form-label">Seleccione uno o m&aacute;s motivos: *</label>
+                            <select class="form-control" id="opcionesSelect" name="opciones" multiple>
+                                {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3 d-none" id="comentarioDiv">
+                            <label for="comentario" class="form-label">Comentario: *</label>
+                            <textarea class="form-control"
+                                      id="comentario"
+                                      name="comentario"
+                                      rows="3"
+                                      placeholder="Especifique el motivo..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-danger"
+                                onclick="return validarFormNoValidar()">No Validar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 {% block customJS %}
+    <script>
+    function validarComedor() {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '{% url "validar_comedor" comedor.pk %}';
+
+      const csrf = document.createElement('input');
+      csrf.type = 'hidden';
+      csrf.name = 'csrfmiddlewaretoken';
+      csrf.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+      const accion = document.createElement('input');
+      accion.type = 'hidden';
+      accion.name = 'accion';
+      accion.value = 'validar';
+
+      const nextInput = document.createElement('input');
+      nextInput.type = 'hidden';
+      nextInput.name = 'next';
+      nextInput.value = '{% url "nuevo_comedor_detalle" pk=comedor.id %}';
+
+      form.appendChild(csrf);
+      form.appendChild(accion);
+      form.appendChild(nextInput);
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    function mostrarOpcionesNoValidar() {
+      const modalValidacion = bootstrap.Modal.getInstance(document.getElementById('modalValidacion'));
+      modalValidacion.hide();
+
+      const modalNoValidar = new bootstrap.Modal(document.getElementById('modalNoValidar'));
+      modalNoValidar.show();
+    }
+
+    document.getElementById('modalNoValidar').addEventListener('shown.bs.modal', function() {
+      if (typeof $ !== 'undefined' && $.fn.select2) {
+        $('#opcionesSelect').select2({
+          placeholder: 'Seleccione una o m\u00e1s opciones...',
+          allowClear: true,
+          width: '100%',
+          dropdownParent: $('#modalNoValidar')
+        });
+
+        $('#opcionesSelect').on('change', function() {
+          toggleComentario();
+        });
+      }
+    });
+
+    function toggleComentario() {
+      const selectedValues = $('#opcionesSelect').val() || [];
+      const comentarioDiv = document.getElementById('comentarioDiv');
+      const comentarioTextarea = document.getElementById('comentario');
+
+      if (!comentarioDiv || !comentarioTextarea) {
+        return;
+      }
+
+      if (selectedValues.includes('otro')) {
+        comentarioDiv.classList.remove('d-none');
+        comentarioTextarea.required = true;
+        return;
+      }
+
+      comentarioDiv.classList.add('d-none');
+      comentarioTextarea.required = false;
+      comentarioTextarea.value = '';
+    }
+
+    function validarFormNoValidar() {
+      const selectedValues = $('#opcionesSelect').val() || [];
+      const comentario = document.getElementById('comentario').value.trim();
+
+      if (selectedValues.length === 0) {
+        alert('Debe seleccionar al menos una opci\u00f3n.');
+        return false;
+      }
+
+      if (selectedValues.includes('otro') && !comentario) {
+        alert('El comentario es obligatorio cuando selecciona "Otro".');
+        return false;
+      }
+
+      return true;
+    }
+    </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const tieneDocumentacion = document.getElementById("id_tiene_documentacion");
+      const documentacionField = document.getElementById("documentacion-field-modal");
+      const tipoIntervencionSelect = document.getElementById("id_tipo_intervencion");
+      const subIntervencionSelect = document.getElementById("id_subintervencion");
+      const fechaInput = document.getElementById("id_fecha");
+      const fechaError = document.getElementById("fecha-error-intervencion");
+
+      if (tieneDocumentacion) {
+        tieneDocumentacion.addEventListener("change", function () {
+          if (tieneDocumentacion.checked) {
+            documentacionField.classList.remove("d-none");
+          } else {
+            documentacionField.classList.add("d-none");
+          }
+        });
+      }
+
+      function cargarSubintervenciones(tipoIntervencionId) {
+        if (!subIntervencionSelect) {
+          return;
+        }
+        subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
+
+        if (tipoIntervencionId) {
+          fetch(`/comedores/ajax/load-subestadosintervenciones/?id=${tipoIntervencionId}`)
+            .then(response => response.json())
+            .then(data => {
+              data.forEach(subIntervencion => {
+                const option = document.createElement("option");
+                option.value = subIntervencion.id;
+                option.textContent = subIntervencion.text;
+                subIntervencionSelect.appendChild(option);
+              });
+            })
+            .catch(() => {});
+        }
+      }
+
+      if (tipoIntervencionSelect) {
+        tipoIntervencionSelect.addEventListener("change", function () {
+          cargarSubintervenciones(this.value);
+        });
+      }
+
+      function validarFecha() {
+        if (!fechaInput) {
+          return true;
+        }
+        if (!fechaInput.value) {
+          return true;
+        }
+        const fechaSeleccionada = new Date(fechaInput.value);
+        const anio = fechaSeleccionada.getFullYear();
+
+        if (anio < 2000 || anio > 2100) {
+          fechaInput.classList.add("is-invalid");
+          if (fechaError) {
+            fechaError.textContent = "El año de la fecha debe estar entre 2000 y 2100.";
+            fechaError.classList.remove("d-none");
+          }
+          return false;
+        }
+        fechaInput.classList.remove("is-invalid");
+        if (fechaError) {
+          fechaError.classList.add("d-none");
+        }
+        return true;
+      }
+
+      if (fechaInput) {
+        fechaInput.addEventListener("change", validarFecha);
+        fechaInput.addEventListener("blur", validarFecha);
+      }
+
+      const form = document.getElementById("intervencionModalForm");
+      if (form) {
+        form.addEventListener("submit", function (event) {
+          if (!validarFecha()) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        });
+      }
+    });
+    </script>
+
     <script>
     const comedorId = "{{ comedor.id }}"
     const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
@@ -1281,27 +1505,150 @@
     <script src="{% static 'custom/js/newcomedor.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-const ctx = document.getElementById('donutChart').getContext('2d');
-
-new Chart(ctx, {
-  type: 'doughnut',
-  data: {
-    labels: ['Cargado', 'Pendiente'],
-    datasets: [{
-      data: [65, 35],
-      backgroundColor: ['#fcbf49', '#e0e0e0'],
-      borderWidth: 0,
-      cutout: '70%'  // ancho dona
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { enabled: false }
+const donutCanvas = document.getElementById('donutChart');
+if (donutCanvas) {
+  const ctx = donutCanvas.getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Cargado', 'Pendiente'],
+      datasets: [{
+        data: [65, 35],
+        backgroundColor: ['#fcbf49', '#e0e0e0'],
+        borderWidth: 0,
+        cutout: '70%'  // ancho dona
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      }
     }
-  }
-});
+  });
+}
+    </script>
+    <script>
+    const nominaEdadCtx = document.getElementById('nominaEdadChart');
+    if (nominaEdadCtx) {
+      const nominaEdadData = [
+        {{ nomina_pct_sin_dato|default:0 }},
+        {{ nomina_pct_ninos|default:0 }},
+        {{ nomina_pct_adolescentes|default:0 }},
+        {{ nomina_pct_adultos|default:0 }},
+        {{ nomina_pct_adultos_mayores|default:0 }},
+        {{ nomina_pct_adulto_mayor_avanzado|default:0 }}
+      ].map((value) => Number(value) || 0);
+
+      const nominaEdadMax = Math.max(...nominaEdadData);
+      const nominaEdadYAxisMax = Math.min(
+        100,
+        nominaEdadMax > 0 ? Math.ceil(nominaEdadMax / 10) * 10 : 10
+      );
+
+      new Chart(nominaEdadCtx, {
+        type: 'bar',
+        data: {
+          labels: [
+            'Sin dato',
+            '0-13 años',
+            '14-17 años',
+            '18-49 años',
+            '50-65 años',
+            '+66 años'
+          ],
+          datasets: [{
+            data: nominaEdadData,
+            backgroundColor: [
+              '#F05A4F',
+              '#8B7AD8',
+              '#56C271',
+              '#F3C05B',
+              '#56C1B9',
+              '#F2A000'
+            ],
+            borderWidth: 0,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.parsed.y || 0}%`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#ffffff', maxRotation: 45, minRotation: 45 }
+            },
+            y: {
+              beginAtZero: true,
+              max: nominaEdadYAxisMax,
+              ticks: {
+                color: '#ffffff',
+                callback: (value) => `${value}%`
+              },
+              grid: { color: 'rgba(255,255,255,0.08)' }
+            }
+          }
+        }
+      });
+    }
+    </script>
+    <script>
+    const interaccionesCtx = document.getElementById('interaccionesChart');
+    if (interaccionesCtx) {
+      const labels = {{ interacciones_labels|default:"[]"|safe }};
+      const values = {{ interacciones_values|default:"[]"|safe }};
+
+      new Chart(interaccionesCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            borderColor: '#f2a000',
+            backgroundColor: 'rgba(84, 164, 180, 0.35)',
+            pointBackgroundColor: '#f2a000',
+            pointBorderColor: '#f2a000',
+            pointRadius: 4,
+            pointHoverRadius: 5,
+            tension: 0.35,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => ` ${context.parsed.y || 0}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#ffffff' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#ffffff', precision: 0 },
+              grid: { color: 'rgba(255,255,255,0.08)' }
+            }
+          }
+        }
+      });
+    }
     </script>
 {% endblock %}

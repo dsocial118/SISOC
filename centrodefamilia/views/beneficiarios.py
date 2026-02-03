@@ -1,7 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView, View
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from centrodefamilia.forms import BeneficiarioForm, ResponsableForm
 from centrodefamilia.models import Beneficiario, Responsable
@@ -40,6 +42,7 @@ class BuscarResponsableView(LoginRequiredMixin, View):
         )
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class BeneficiariosListView(LoginRequiredMixin, ListView):
     model = Beneficiario
     template_name = "beneficiarios/beneficiarios_list.html"
@@ -51,7 +54,7 @@ class BeneficiariosListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(get_beneficiarios_list_context())
+        context.update(get_beneficiarios_list_context(self.request))
         prepare_beneficiarios_for_display(context["beneficiarios"])
         context.update(
             {
@@ -72,6 +75,7 @@ class BeneficiariosListView(LoginRequiredMixin, ListView):
         return context
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class ResponsableListView(LoginRequiredMixin, ListView):
     model = Responsable
     template_name = "beneficiarios/responsable_list.html"
@@ -83,7 +87,7 @@ class ResponsableListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(get_responsables_list_context())
+        context.update(get_responsables_list_context(self.request))
         prepare_responsables_for_display(context["responsables"])
         context.update(
             {

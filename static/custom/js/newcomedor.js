@@ -3,6 +3,18 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ==========================================================
      1) FUNCIONES DE ACORDEÓN RESPONSIVE
   ========================================================== */
+  const accordion = document.querySelector('.accordion-horizontal');
+  const accordionShell = document.querySelector('.accordion-shell');
+  if (accordion) {
+    accordion.classList.add('is-initializing');
+  }
+
+  function terminarCarga() {
+    if (accordionShell) {
+      accordionShell.classList.remove('is-loading');
+    }
+  }
+
   function isMobile() {
     return window.innerWidth <= 768;
   }
@@ -33,6 +45,68 @@ document.addEventListener("DOMContentLoaded", function () {
         p.style.width = closedWidth + 'px';
       }
     });
+  }
+
+  function ajustarAltura() {
+    const accordion = document.querySelector('.accordion-horizontal');
+    if (!accordion) {
+      return;
+    }
+
+    const panels = Array.from(accordion.querySelectorAll('.accordion-panel'));
+    if (!panels.length) {
+      return;
+    }
+
+    if (isMobile()) {
+      accordion.style.height = 'auto';
+      panels.forEach(panel => {
+        panel.style.height = 'auto';
+      });
+      return;
+    }
+
+    const totalPanels = panels.length;
+    const closedWidth = 60;
+    const openWidth = accordion.clientWidth - (totalPanels - 1) * closedWidth;
+    if (openWidth <= 0) {
+      return;
+    }
+
+    const originalOpenPanel = panels.find(panel => panel.classList.contains('open')) || panels[0];
+
+    accordion.classList.add('is-measuring');
+
+    let maxHeight = 0;
+    panels.forEach((panel, index) => {
+      panels.forEach((item, itemIndex) => {
+        item.classList.toggle('open', itemIndex === index);
+        item.style.width = itemIndex === index ? `${openWidth}px` : `${closedWidth}px`;
+      });
+
+      const content = panel.querySelector('.accordion-content');
+      if (content) {
+        const contentHeight = content.scrollHeight;
+        if (contentHeight > maxHeight) {
+          maxHeight = contentHeight;
+        }
+      }
+    });
+
+    panels.forEach(panel => {
+      panel.classList.toggle('open', panel === originalOpenPanel);
+    });
+
+    accordion.classList.remove('is-measuring');
+
+    if (maxHeight > 0) {
+      accordion.style.height = `${maxHeight}px`;
+      panels.forEach(panel => {
+        panel.style.height = `${maxHeight}px`;
+      });
+    }
+
+    ajustarAnchos();
   }
 
   function toggleAccordion(panel) {
@@ -67,6 +141,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Inicializar acordeón al cargar
   ajustarAnchos();
+  requestAnimationFrame(() => {
+    ajustarAltura();
+    if (accordion) {
+      accordion.classList.remove('is-initializing');
+    }
+  });
 
   // Evento para hacer clic solo en headers
   document.querySelectorAll('.accordion-panel .accordion-header').forEach(header => {
@@ -77,6 +157,14 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // Recalcular anchos al cambiar tamaño de ventana
-  window.addEventListener('resize', ajustarAnchos);
+  window.addEventListener('resize', () => {
+    ajustarAnchos();
+    ajustarAltura();
+  });
+
+  window.addEventListener('load', () => {
+    ajustarAltura();
+    terminarCarga();
+  });
 
 });

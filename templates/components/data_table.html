@@ -1,128 +1,199 @@
-{% load custom_filters %}
+{% load custom_filters static %}
 <!-- Componente Data Table -->
 <!-- Uso: include 'components/data_table.html' with headers=table_headers items=object_list show_actions=True actions_width='15%' empty_message='No hay datos' -->
-<div class="row mt-3 max-width-100">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive-lg">
-                    <table class="table table-bordered table-striped projects {{ table_class|default:'' }}">
-                        {% if headers %}
-                            <thead>
-                                <tr>
-                                    {% for header in headers %}
-                                        <th {% if header.width %}style="width: {{ header.width }}"{% endif %}
-                                            {% if header.sortable %}class="sortable {{ header.class|default:'' }}" data-column="{{ header.sort_key|default:header.title }}"{% elif header.class %}class="{{ header.class }}"{% endif %}>
-                                            {{ header.title|default:header }}
-                                            {% if header.sortable %}<i class="fas fa-sort sort-icon"></i>{% endif %}
-                                        </th>
-                                    {% endfor %}
-                                    {% if show_actions %}
-                                        <th style="width: {{ actions_width|default:'15%' }}" class="notexport">{{ actions_title|default:"Acciones" }}</th>
-                                    {% endif %}
-                                </tr>
-                            </thead>
-                        {% endif %}
-                        <tbody {% if tbody_id %}id="{{ tbody_id }}"{% endif %}>
-                            {% for item in items %}
-                                <tr>
-                                    {% if custom_cells %}
-                                        <!-- Modo personalizado - permite definir las celdas manualmente -->
-                                        {% for cell in item.cells %}
-                                            <td {% if cell.class %}class="{{ cell.class }}"{% endif %}{% if cell.data_attr %} data-{{ cell.data_attr }}="{{ cell.data_value|default:cell.content }}"{% endif %}>
-                                                {% if cell.link_url and not disable_links %}
-                                                    <a href="{{ cell.link_url }}"
-                                                       {% if cell.link_class %}class="{{ cell.link_class }}"{% endif %}
-                                                       {% if cell.link_title %}title="{{ cell.link_title }}"{% endif %}>
-                                                        {{ cell.content }}
-                                                    </a>
-                                                {% else %}
-                                                    {{ cell.content|safe }}
-                                                {% endif %}
-                                            </td>
+{% with full_width|default_full_width as effective_full_width %}
+    <div class="row {% if effective_full_width %}mt-5{% else %}mt-3{% endif %} max-width-100">
+        <div class="{% if effective_full_width %}col-12{% else %}col-12 col-lg-10 offset-lg-1{% endif %}">
+            <div class="card">
+                <div class="card-body">
+                    {% if column_config %}
+                        {{ column_config|json_script:column_config.script_id }}
+                        <div class="d-flex justify-content-start mb-2">
+                            <button type="button"
+                                    class="btn btn-outline-warning btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#{{ column_config.modal_id }}">Configurar columnas</button>
+                        </div>
+                        <div class="modal fade"
+                             id="{{ column_config.modal_id }}"
+                             tabindex="-1"
+                             aria-hidden="true"
+                             data-column-config="true"
+                             data-config-id="{{ column_config.script_id }}">
+                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Columnas visibles</h5>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="text-muted mb-3">Seleccioná qué columnas mostrar y ordenalas con las flechas.</p>
+                                        <div class="list-group column-config-list">
+                                            {% for col in column_config.available %}
+                                                <div class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2"
+                                                     data-column-key="{{ col.key }}">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input column-config-checkbox"
+                                                               type="checkbox"
+                                                               id="{{ column_config.modal_id }}-{{ col.key }}"
+                                                               {% if col.active %}checked{% endif %}
+                                                               {% if col.required %}disabled{% endif %} />
+                                                        <label class="form-check-label"
+                                                               for="{{ column_config.modal_id }}-{{ col.key }}">
+                                                            {{ col.title }}
+                                                        </label>
+                                                        {% if col.required %}<span class="badge bg-secondary ms-2">Obligatoria</span>{% endif %}
+                                                    </div>
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <button type="button"
+                                                                class="btn btn-light column-move-up"
+                                                                title="Mover arriba">
+                                                            <i class="fas fa-arrow-up"></i>
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn btn-light column-move-down"
+                                                                title="Mover abajo">
+                                                            <i class="fas fa-arrow-down"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="alert alert-danger d-none mt-3 column-config-error"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary column-config-reset">Restablecer</button>
+                                        <button type="button" class="btn btn-primary column-config-save">Guardar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="table-responsive-lg">
+                        <table class="table table-bordered table-striped projects {{ table_class|default:'' }}">
+                            {% if headers %}
+                                <thead>
+                                    <tr>
+                                        {% for header in headers %}
+                                            <th {% if header.width %}style="width: {{ header.width }}"{% endif %}
+                                                {% if header.sortable %}class="sortable {{ header.class|default:'' }}" data-column="{{ header.sort_key|default:header.title }}"{% elif header.class %}class="{{ header.class }}"{% endif %}>
+                                                {{ header.title|default:header }}
+                                                {% if header.sortable %}<i class="fas fa-sort sort-icon"></i>{% endif %}
+                                            </th>
                                         {% endfor %}
-                                    {% else %}
-                                        <!-- Modo automático - definir campos en la vista -->
-                                        {% for field in fields %}
-                                            <td>
-                                                {% if field.link_field and not disable_links %}
-                                                    <a href="{% url field.link_url item.pk %}"
-                                                       {% if field.link_class %}class="{{ field.link_class }}"{% endif %}
-                                                       {% if field.link_title %}title="{{ field.link_title }}"{% endif %}>
+                                        {% if show_actions %}
+                                            <th style="width: {{ actions_width|default:'15%' }}" class="notexport">{{ actions_title|default:"Acciones" }}</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                            {% endif %}
+                            <tbody {% if tbody_id %}id="{{ tbody_id }}"{% endif %}>
+                                {% for item in items %}
+                                    <tr>
+                                        {% if custom_cells %}
+                                            <!-- Modo personalizado - permite definir las celdas manualmente -->
+                                            {% for cell in item.cells %}
+                                                <td {% if cell.class %}class="{{ cell.class }}"{% endif %}{% if cell.data_attr %} data-{{ cell.data_attr }}="{{ cell.data_value|default:cell.content }}"{% endif %}>
+                                                    {% if cell.link_url and not disable_links %}
+                                                        <a href="{{ cell.link_url }}"
+                                                           {% if cell.link_class %}class="{{ cell.link_class }}"{% endif %}
+                                                           {% if cell.link_title %}title="{{ cell.link_title }}"{% endif %}>
+                                                            {{ cell.content }}
+                                                        </a>
+                                                    {% else %}
+                                                        {{ cell.content|safe }}
+                                                    {% endif %}
+                                                </td>
+                                            {% endfor %}
+                                        {% else %}
+                                            <!-- Modo automático - definir campos en la vista -->
+                                            {% for field in fields %}
+                                                <td>
+                                                    {% if field.link_field and not disable_links %}
+                                                        <a href="{% url field.link_url item.pk %}"
+                                                           {% if field.link_class %}class="{{ field.link_class }}"{% endif %}
+                                                           {% if field.link_title %}title="{{ field.link_title }}"{% endif %}>
+                                                            {{ item|getattr:field.name }}
+                                                        </a>
+                                                    {% else %}
                                                         {{ item|getattr:field.name }}
-                                                    </a>
+                                                    {% endif %}
+                                                </td>
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if show_actions %}
+                                            <td class="project-actions text-right">
+                                                {% if custom_actions %}
+                                                    <!-- Acciones personalizadas para cada item -->
+                                                    {% if item.actions %}
+                                                        <div class="action-buttons flex-wrap flex-lg-nowrap" role="group">
+                                                            {% for action in item.actions %}
+                                                                <a href="{{ action.url }}"
+                                                                   class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
+                                                                   title="{{ action.title|default:action.label }}">
+                                                                    {% if action.icon %}
+                                                                        <i class="fas fa-{{ action.icon }}"></i>
+                                                                    {% elif action.label == 'Ver' or action.label == 'Ver detalle' %}
+                                                                        <i class="fas fa-eye"></i>
+                                                                    {% elif action.label == 'Editar' %}
+                                                                        <i class="fas fa-edit"></i>
+                                                                    {% elif action.label == 'Eliminar' %}
+                                                                        <i class="fas fa-trash-alt"></i>
+                                                                    {% endif %}
+                                                                    {{ action.label }}
+                                                                </a>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
                                                 {% else %}
-                                                    {{ item|getattr:field.name }}
+                                                    <!-- Acciones estándar -->
+                                                    {% if actions %}
+                                                        <div class="action-buttons flex-wrap flex-lg-nowrap" role="group">
+                                                            {% for action in actions %}
+                                                                <a href="{% url action.url_name item.pk %}"
+                                                                   class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
+                                                                   title="{{ action.title|default:action.label }}">
+                                                                    {% if action.icon %}
+                                                                        <i class="fas fa-{{ action.icon }}"></i>
+                                                                    {% elif action.label == 'Ver' %}
+                                                                        <i class="fas fa-eye"></i>
+                                                                    {% elif action.label == 'Editar' %}
+                                                                        <i class="fas fa-edit"></i>
+                                                                    {% elif action.label == 'Eliminar' %}
+                                                                        <i class="fas fa-trash-alt"></i>
+                                                                    {% endif %}
+                                                                    {{ action.label }}
+                                                                </a>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
                                                 {% endif %}
                                             </td>
-                                        {% endfor %}
-                                    {% endif %}
-                                    {% if show_actions %}
-                                        <td class="project-actions text-right">
-                                            {% if custom_actions %}
-                                                <!-- Acciones personalizadas para cada item -->
-                                                {% if item.actions %}
-                                                    <div class="action-buttons flex-wrap flex-lg-nowrap" role="group">
-                                                        {% for action in item.actions %}
-                                                            <a href="{{ action.url }}"
-                                                               class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
-                                                               title="{{ action.title|default:action.label }}">
-                                                                {% if action.icon %}
-                                                                    <i class="fas fa-{{ action.icon }}"></i>
-                                                                {% elif action.label == 'Ver' or action.label == 'Ver detalle' %}
-                                                                    <i class="fas fa-eye"></i>
-                                                                {% elif action.label == 'Editar' %}
-                                                                    <i class="fas fa-edit"></i>
-                                                                {% elif action.label == 'Eliminar' %}
-                                                                    <i class="fas fa-trash-alt"></i>
-                                                                {% endif %}
-                                                                {{ action.label }}
-                                                            </a>
-                                                        {% endfor %}
-                                                    </div>
-                                                {% endif %}
-                                            {% else %}
-                                                <!-- Acciones estándar -->
-                                                {% if actions %}
-                                                    <div class="action-buttons flex-wrap flex-lg-nowrap" role="group">
-                                                        {% for action in actions %}
-                                                            <a href="{% url action.url_name item.pk %}"
-                                                               class="btn btn-{{ action.type|default:'primary' }} {{ action.class|default:'' }}"
-                                                               title="{{ action.title|default:action.label }}">
-                                                                {% if action.icon %}
-                                                                    <i class="fas fa-{{ action.icon }}"></i>
-                                                                {% elif action.label == 'Ver' %}
-                                                                    <i class="fas fa-eye"></i>
-                                                                {% elif action.label == 'Editar' %}
-                                                                    <i class="fas fa-edit"></i>
-                                                                {% elif action.label == 'Eliminar' %}
-                                                                    <i class="fas fa-trash-alt"></i>
-                                                                {% endif %}
-                                                                {{ action.label }}
-                                                            </a>
-                                                        {% endfor %}
-                                                    </div>
-                                                {% endif %}
-                                            {% endif %}
+                                        {% endif %}
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="{% if show_actions %}{{ headers|length|add:1 }}{% else %}{{ headers|length }}{% endif %}"
+                                            class="text-center text-muted py-4">
+                                            {{ empty_message|default:"No hay elementos para mostrar" }}
                                         </td>
-                                    {% endif %}
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="{% if show_actions %}{{ headers|length|add:1 }}{% else %}{{ headers|length }}{% endif %}"
-                                        class="text-center text-muted py-4">
-                                        {{ empty_message|default:"No hay elementos para mostrar" }}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Paginación opcional integrada -->
+                    {% if include_pagination %}
+                        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range query=query page_param=page_param %}
+                    {% endif %}
                 </div>
-                <!-- Paginación opcional integrada -->
-                {% if include_pagination %}
-                    {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range query=query page_param=page_param %}
-                {% endif %}
             </div>
         </div>
     </div>
-</div>
+    {% if column_config %}
+        <script src="{% static 'custom/js/column_config.js' %}"></script>
+    {% endif %}
+{% endwith %}

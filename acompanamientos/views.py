@@ -3,6 +3,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView, DetailView
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.http import JsonResponse
@@ -11,6 +13,7 @@ from django.template.loader import render_to_string
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
 from comedores.models import Comedor
+from core.services.column_preferences import build_columns_context_for_custom_cells
 
 
 @login_required
@@ -42,6 +45,7 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor = self.object
+        admision_id = self.request.GET.get("admision_id")
 
         user_groups = list(self.request.user.groups.values_list("name", flat=True))
         context["es_tecnico_comedor"] = (
@@ -122,7 +126,9 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
             },
         ]
 
-        datos_admision = AcompanamientoService.obtener_datos_admision(comedor)
+        datos_admision = AcompanamientoService.obtener_datos_admision(
+            comedor, admision_id=admision_id
+        )
 
         admision = datos_admision.get("admision")
         info_relevante = datos_admision.get("info_relevante")
@@ -145,6 +151,7 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
     model = Comedor
     template_name = "lista_comedores.html"
@@ -162,15 +169,15 @@ class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
         context["query"] = self.request.GET.get("busqueda", "")
 
         # Configuración para data_table
-        context["table_headers"] = [
-            {"title": "ID"},
-            {"title": "Nombre"},
-            {"title": "Organización"},
-            {"title": "N° Expediente"},
-            {"title": "Provincia"},
-            {"title": "Dupla"},
-            {"title": "Estado"},
-            {"title": "Última Modificación"},
+        headers = [
+            {"key": "id", "title": "ID"},
+            {"key": "nombre", "title": "Nombre"},
+            {"key": "organizacion", "title": "Organización"},
+            {"key": "expediente", "title": "N° Expediente"},
+            {"key": "provincia", "title": "Provincia"},
+            {"key": "dupla", "title": "Dupla"},
+            {"key": "estado", "title": "Estado"},
+            {"key": "modificado", "title": "Última Modificación"},
         ]
 
         # Usar modo personalizado para acceder a campos relacionados
@@ -180,7 +187,15 @@ class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
         comedores_con_celdas = AcompanamientoService.preparar_datos_tabla_comedores(
             context["comedores"]
         )
-        context["comedores"] = comedores_con_celdas
+        context.update(
+            build_columns_context_for_custom_cells(
+                self.request,
+                "acompanamientos_comedores_list",
+                headers,
+                comedores_con_celdas,
+                items_key="comedores",
+            )
+        )
 
         context["custom_actions"] = True
         return context

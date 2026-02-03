@@ -1,7 +1,17 @@
 # CHANGELOG
 Todas las versiones desplegadas deberan estar aca con su descripcion de cambios. Ordenar de mas a menos reciente,
 
-## Tag: `rc-2026.01.16` - Despliegue: 2026.01.X
+## Despliegue: 2026.01.23
+### Added
+- Nueva utilidad `validar_comedores_csv` en `comedores.management.commands` para validar/activar lotes de comedores vía CSV, con validación de entradas, dry-run y registro histórico de cambios.
+- Middleware de Content Security Policy con cobertura de scripts, estilos y orígenes externos clave (Maps, DataTables, Power BI) y flag `ENABLE_CSP` para activar el control por entorno.
+
+### Changed
+- Fortalecimiento de seguridad en `config/settings.py`: HSTS de 30 minutos sin preload, cookies `HttpOnly`/`SameSite=None` para compatibilidad cross-site y cabeceras anti-sniffing/XSS, manteniendo `ENABLE_CSP`.
+- Vistas y servicios de Admisiones/Legales ahora incluyen la columna `N° Convenio` (formato ordinal) y la validación nacional se trata como campo opcional en `InformeTecnicoJuridicoForm`.
+- Plantillas PDF/Word de informes técnicos jurídicos refinan la redacción de la organización solicitante, eliminando la repetición del subtipo de entidad.
+
+## Despliegue: 2026.01.21
 ### Added
 - Filtros avanzados favoritos por sección (comedores, admisiones, CDF, duplas, usuarios) con UI de guardado y aplicación.
 - Módulo de importación de expedientes de pago con carga, tracking de errores/exitos, delimitador configurable y pantallas dedicadas.
@@ -36,7 +46,7 @@ Todas las versiones desplegadas deberan estar aca con su descripcion de cambios.
     (centraliza la información y agiliza la gestión de casos)
 - Integración RENAPER desde comedores para crear ciudadanos automáticamente normalizando dirección y nacionalidad (fixtures de nacionalidades incluidas)
     (reduce carga manual y mejora la calidad de datos)
-- Documentación reorganizada con índice en `docs/index.md` y nuevas guías de arquitectura/operaciones/flows
+- Documentación reorganizada con índice en `docs/indice.md` y nuevas guías de arquitectura/operaciones/flows
     (mejora la referencia técnica y operativa)
 ### Changed
 - Tabla y estilos de comedores modernizados con badges, sorting y acciones claras; nuevos CSS/JS de listas

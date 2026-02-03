@@ -135,6 +135,7 @@ class CupoService:
         Intenta ocupar un cupo para el legajo.
         Reglas:
         - Sólo si (APROBADO + MATCH).
+        - Sólo si el rol es BENEFICIARIO o BENEFICIARIO_Y_RESPONSABLE (no responsables puros).
         - Si el ciudadano ya ocupa un cupo DENTRO en la provincia (activo o suspendido), NO se reserva otro:
           este legajo queda FUERA (lista de espera) y no cambia 'usados'.
         - Si no hay disponibles, queda FUERA (lista de espera) y no cambia 'usados'.
@@ -150,7 +151,17 @@ class CupoService:
             .get(pk=legajo.pk)
         )
 
-        # Validar que califica para cupo
+        # Validar que califica para cupo: debe ser beneficiario (no responsable puro)
+        if legajo.rol == ExpedienteCiudadano.ROLE_RESPONSABLE:
+            if legajo.estado_cupo != EstadoCupo.NO_EVAL or legajo.es_titular_activo:
+                legajo.estado_cupo = EstadoCupo.NO_EVAL
+                legajo.es_titular_activo = False
+                legajo.save(
+                    update_fields=["estado_cupo", "es_titular_activo", "modificado_en"]
+                )
+            return False
+
+        # Validar que califica para cupo: debe estar aprobado y matcheado
         if not (
             legajo.revision_tecnico == RevisionTecnico.APROBADO
             and legajo.resultado_sintys == ResultadoSintys.MATCH

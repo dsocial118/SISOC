@@ -2,8 +2,12 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.views.decorators.csrf import ensure_csrf_cookie
+from core.services.column_preferences import build_columns_context
 from .forms import CustomUserChangeForm, UserCreationForm
+from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from .services import UsuariosService
 
 
@@ -16,6 +20,7 @@ class UsuariosLoginView(LoginView):
     template_name = "user/login.html"
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class UserListView(AdminRequiredMixin, ListView):
     model = User
     template_name = "user/user_list.html"
@@ -28,7 +33,7 @@ class UserListView(AdminRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         # Configuración para el componente data_table
-        context.update(UsuariosService.get_usuarios_list_context())
+        context.update(UsuariosService.get_usuarios_list_context(self.request))
         return context
 
 
@@ -52,6 +57,7 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
     success_url = reverse_lazy("usuarios")
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class GroupListView(AdminRequiredMixin, ListView):
     model = Group
     template_name = "group/group_list.html"
@@ -61,12 +67,12 @@ class GroupListView(AdminRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
 
         # Configuración para el componente data_table
-        context["table_headers"] = [
-            {"title": "Nombre", "sortable": True, "sort_key": "name"},
-        ]
-
-        context["table_fields"] = [
-            {"name": "name"},
-        ]
+        context.update(
+            build_columns_context(
+                self.request,
+                GRUPOS_LIST_KEY,
+                GRUPOS_COLUMNS,
+            )
+        )
 
         return context

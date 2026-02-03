@@ -1,0 +1,347 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Reporter de Provincias - Celiaquia{% endblock %}
+
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'reporter_provincias' %}">Reporter</a>
+        </li>
+        <li class="breadcrumb-item active">Provincias</li>
+    </ol>
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/reporter_provincias.css' %}" />
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css"
+          rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3">📊 Reporter de Provincias</h2>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Filtros de Búsqueda</h5>
+        </div>
+        <div class="card-body">
+            <form method="get">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="provincia" class="form-label">Provincia</label>
+                        <select name="provincia" id="provincia" class="form-select">
+                            <option value="">Todas las provincias</option>
+                            {% for provincia in provincias %}
+                                <option value="{{ provincia.id }}"
+                                        {% if provincia.id|stringformat:"s" == provincia_seleccionada %}selected{% endif %}>
+                                    {{ provincia.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="fecha_desde" class="form-label">Desde</label>
+                        <input type="date"
+                               name="fecha_desde"
+                               id="fecha_desde"
+                               value="{{ fecha_desde }}"
+                               class="form-control" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="fecha_hasta" class="form-label">Hasta</label>
+                        <input type="date"
+                               name="fecha_hasta"
+                               id="fecha_hasta"
+                               value="{{ fecha_hasta }}"
+                               class="form-control" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="revision_tecnico" class="form-label">Validación Técnica</label>
+                        <select name="revision_tecnico" id="revision_tecnico" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="PENDIENTE"
+                                    {% if revision_tecnico == "PENDIENTE" %}selected{% endif %}>Pendiente</option>
+                            <option value="APROBADO"
+                                    {% if revision_tecnico == "APROBADO" %}selected{% endif %}>Aprobado</option>
+                            <option value="RECHAZADO"
+                                    {% if revision_tecnico == "RECHAZADO" %}selected{% endif %}>Rechazado</option>
+                            <option value="SUBSANAR"
+                                    {% if revision_tecnico == "SUBSANAR" %}selected{% endif %}>Subsanar</option>
+                            <option value="SUBSANADO"
+                                    {% if revision_tecnico == "SUBSANADO" %}selected{% endif %}>Subsanado</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="resultado_sintys" class="form-label">SINTYS</label>
+                        <select name="resultado_sintys" id="resultado_sintys" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="SIN_CRUCE"
+                                    {% if resultado_sintys == "SIN_CRUCE" %}selected{% endif %}>Sin Cruce</option>
+                            <option value="MATCH" {% if resultado_sintys == "MATCH" %}selected{% endif %}>Match</option>
+                            <option value="NO_MATCH"
+                                    {% if resultado_sintys == "NO_MATCH" %}selected{% endif %}>No Match</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="estado_cupo" class="form-label">Cupo</label>
+                        <select name="estado_cupo" id="estado_cupo" class="form-select">
+                            <option value="">Todas</option>
+                            <option value="NO_EVAL" {% if estado_cupo == "NO_EVAL" %}selected{% endif %}>No Evaluado</option>
+                            <option value="DENTRO" {% if estado_cupo == "DENTRO" %}selected{% endif %}>Dentro</option>
+                            <option value="FUERA" {% if estado_cupo == "FUERA" %}selected{% endif %}>Fuera</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="expediente_numero" class="form-label">Nº Expediente</label>
+                        <input type="text"
+                               name="expediente_numero"
+                               id="expediente_numero"
+                               value="{{ expediente_numero|default:'' }}"
+                               placeholder="Buscar expediente..."
+                               class="form-control" />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="documento_persona" class="form-label">Documento Persona</label>
+                        <input type="text"
+                               name="documento_persona"
+                               id="documento_persona"
+                               value="{{ documento_persona|default:'' }}"
+                               placeholder="Buscar documento..."
+                               class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fa fa-search"></i> Filtrar
+                        </button>
+                        <a href="{% url 'reporter_provincias' %}" class="btn btn-secondary"><i class="fa fa-redo"></i> Limpiar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card-info">
+                <div class="card-body text-center">
+                    <div class="stat-label">Total de Casos</div>
+                    <div class="stat-number">{{ total_casos }}</div>
+                    <small class="text-muted">Registros procesados</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card-success">
+                <div class="card-body text-center">
+                    <div class="stat-label">Documentos Completos</div>
+                    <div class="stat-number">{{ casos_documentos_ok }}</div>
+                    <small class="text-muted">{{ porcentaje_documentos_ok }}%</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card-warning">
+                <div class="card-body text-center">
+                    <div class="stat-label">Documentos Incompletos</div>
+                    <div class="stat-number">{{ casos_documentos_incompletos }}</div>
+                    <small class="text-muted">{{ porcentaje_documentos_incompletos }}%</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card-info">
+                <div class="card-body text-center">
+                    <div class="stat-label">Con Comentarios</div>
+                    <div class="stat-number">{{ casos_con_comentarios }}</div>
+                    <small class="text-muted">Casos con observaciones</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instancias de Validación -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">🔍 Validación Técnica</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col">
+                    <div class="instancia-item">
+                        <div class="instancia-label">Pendiente</div>
+                        <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.pendiente }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="instancia-item instancia-success">
+                        <div class="instancia-label">Aprobado</div>
+                        <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.aprobado }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="instancia-item instancia-danger">
+                        <div class="instancia-label">Rechazado</div>
+                        <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.rechazado }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="instancia-item instancia-warning">
+                        <div class="instancia-label">Subsanar</div>
+                        <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.subsanar }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="instancia-item instancia-success">
+                        <div class="instancia-label">Subsanado</div>
+                        <div class="instancia-count">{{ casos_por_instancia.validacion_tecnica.subsanado }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">🔗 Cruce SINTYS</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col">
+                    <div class="instancia-item">
+                        <div class="instancia-label">Sin Cruce</div>
+                        <div class="instancia-count">{{ casos_por_instancia.sintys.sin_cruce }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="instancia-item instancia-success">
+                        <div class="instancia-label">Match</div>
+                        <div class="instancia-count">{{ casos_por_instancia.sintys.match }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="instancia-item instancia-danger">
+                        <div class="instancia-label">No Match</div>
+                        <div class="instancia-count">{{ casos_por_instancia.sintys.no_match }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">💰 Estado de Cupo</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col">
+                    <div class="instancia-item">
+                        <div class="instancia-label">No Evaluado</div>
+                        <div class="instancia-count">{{ casos_por_instancia.cupo.no_eval }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="instancia-item instancia-success">
+                        <div class="instancia-label">Dentro de Cupo</div>
+                        <div class="instancia-count">{{ casos_por_instancia.cupo.dentro }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="instancia-item instancia-danger">
+                        <div class="instancia-label">Fuera de Cupo</div>
+                        <div class="instancia-count">{{ casos_por_instancia.cupo.fuera }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <!-- Gráficos removidos debido a restricciones de CSP -->
+
+    <!-- Tabla de Detalle -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">📋 Últimos Casos Procesados</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Documento</th>
+                            <th>Nombre</th>
+                            <th>Nº Expediente</th>
+                            <th>Provincia</th>
+                            <th>Validación Técnica</th>
+                            <th>SINTYS</th>
+                            <th>Cupo</th>
+                            <th>Documentos</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for caso in ultimos_casos %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'expediente_detail' caso.expediente.id %}">{{ caso.ciudadano.documento }}</a>
+                                </td>
+                                <td>{{ caso.ciudadano.nombre }} {{ caso.ciudadano.apellido }}</td>
+                                <td>{{ caso.expediente.numero_expediente|default:"-" }}</td>
+                                <td>{{ caso.expediente.provincia.nombre }}</td>
+                                <td>
+                                    <span class="badge {% if caso.revision_tecnico == 'APROBADO' %}bg-success{% elif caso.revision_tecnico == 'RECHAZADO' %}bg-danger{% elif caso.revision_tecnico == 'SUBSANAR' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ caso.get_revision_tecnico_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if caso.resultado_sintys == 'MATCH' %}bg-success{% elif caso.resultado_sintys == 'NO_MATCH' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ caso.get_resultado_sintys_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if caso.estado_cupo == 'DENTRO' %}bg-success{% elif caso.estado_cupo == 'FUERA' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ caso.get_estado_cupo_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if caso.archivos_ok %}
+                                        <span class="badge bg-success">✓ Completo</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">⚠ Incompleto</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ caso.creado_en|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">No hay casos para mostrar</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block customJS %}{% endblock %}

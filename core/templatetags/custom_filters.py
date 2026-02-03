@@ -7,6 +7,17 @@ from django.utils.html import format_html
 
 register = template.Library()
 
+_DAYS = (
+    "lunes",
+    "martes",
+    "miercoles",
+    "jueves",
+    "viernes",
+    "sabado",
+    "domingo",
+)
+_MEALS = ("desayuno", "almuerzo", "merienda", "merienda_reforzada", "cena")
+
 
 @register.filter
 def has_group(user, group_name):
@@ -129,6 +140,14 @@ def google_maps_query(latitud, longitud):
 
 
 @register.filter
+def default_full_width(value):
+    """Garantiza que la tabla sea full width salvo que se especifique lo contrario."""
+    if value is None or (isinstance(value, str) and value == ""):
+        return True
+    return value
+
+
+@register.filter
 def boolean_icon(value):
     if value in [True, 1, "1", "true", "True", "SI", "Sí", "si"]:
         return format_html(
@@ -143,3 +162,53 @@ def boolean_icon(value):
         )
 
     return "-"
+
+
+def _is_positive_number(value):
+    if value is None:
+        return False
+
+    if isinstance(value, str):
+        text = value.strip()
+        if not text or text == "-":
+            return False
+        text = text.replace(",", ".")
+    else:
+        text = value
+
+    try:
+        number = Decimal(str(text))
+    except (InvalidOperation, ValueError):
+        return False
+
+    if number.is_nan() or number.is_infinite():
+        return False
+
+    return number > 0
+
+
+@register.filter
+def dias_prestacion_semana(prestacion):
+    """
+    Cuenta cuántos días a la semana el comedor presta servicio, en base a los
+    campos *_<comida>_actual (p.ej. lunes_desayuno_actual) o a los campos
+    aprobadas_<comida>_<dia> (p.ej. aprobadas_desayuno_lunes). Si no hay datos,
+    devuelve "-".
+    """
+    if prestacion is None:
+        return "-"
+
+    import builtins
+
+    dias_con_servicio = 0
+    for day in _DAYS:
+        for meal in _MEALS:
+            values = (
+                builtins.getattr(prestacion, f"{day}_{meal}_actual", None),
+                builtins.getattr(prestacion, f"aprobadas_{meal}_{day}", None),
+            )
+            if any(_is_positive_number(value) for value in values):
+                dias_con_servicio += 1
+                break
+
+    return dias_con_servicio if dias_con_servicio > 0 else "-"

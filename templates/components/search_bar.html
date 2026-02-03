@@ -67,9 +67,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                                 <option value="AND" selected>AND</option>
                                 <option value="OR">OR</option>
                             </select>
-                            <button type="button"
-                                    id="add-filter"
-                                    class="btn btn-sm btn-outline-success">Agregar filtro</button>
+                            <button type="button" id="add-filter" class="btn btn-sm btn-outline-success">Agregar filtro</button>
                             <button type="button"
                                     id="abrir-filtros-favoritos"
                                     class="btn btn-sm btn-warning"
@@ -119,29 +117,45 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
     {% endif %}
     <div class="row mt-3">
         <div class="col-12 d-flex flex-wrap justify-content-center gap-2 search-actions">
-            {% if reset_url_full %}
-            <a href="{{ reset_url_full }}"
-               class="btn btn-secondary btn-lg"
-                   {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
-            {% elif reset_url|is_url %}
-            <a href="{{ reset_url }}"
-               class="btn btn-secondary btn-lg"
-                   {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
-            {% else %}
-            <a href="{% url reset_url %}"
-               class="btn btn-secondary btn-lg"
-                   {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
-            {% endif %}
             {% if add_url and show_add_button|default:True %}
                 {% if add_url_full %}
-                <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
+                    <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% elif add_url|is_url %}
-                <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
+                    <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% else %}
-                <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
+                    <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
                 {% endif %}
             {% endif %}
+            {% if not ajax_search_mode %}
+                {% with form_id=filters_mode|yesno:"filters-form,simple-search-form" %}
+                    <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
+                {% endwith %}
+            {% endif %}
+            {% if reset_url_full %}
+                <a href="{{ reset_url_full }}"
+                   class="btn btn-secondary btn-lg"
+                   {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
+            {% elif reset_url|is_url %}
+                <a href="{{ reset_url }}"
+                   class="btn btn-secondary btn-lg"
+                   {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
+            {% else %}
+                <a href="{% url reset_url %}"
+                   class="btn btn-secondary btn-lg"
+                   {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
+            {% endif %}
+            {% if export_url %}
+                {% with export_group=export_group|default:"Exportar a csv" %}
+                    {% if request.user|has_group:export_group or request.user.is_superuser %}
+                        <button type="button"
+                                class="btn btn-lg btn-export-csv"
+                                data-url="{{ export_url }}"
+                                title="Exportar listado actual a CSV">Exportar</button>
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
             <!-- Botones adicionales personalizados -->
+
             {% if additional_buttons %}
                 {% for button in additional_buttons %}
                     <a href="{{ button.url }}"
@@ -149,11 +163,6 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                        {% if button.id %}id="{{ button.id }}"{% endif %}
                        {% if button.title %}title="{{ button.title }}"{% endif %}>{{ button.label }}</a>
                 {% endfor %}
-            {% endif %}
-            {% if not ajax_search_mode %}
-                {% with form_id=filters_mode|yesno:"filters-form,simple-search-form" %}
-                <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
-                {% endwith %}
             {% endif %}
         </div>
     </div>

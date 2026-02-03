@@ -66,8 +66,8 @@ def validar_edad_responsable(fecha_nac_responsable, fecha_nac_beneficiario):
         edad_beneficiario = (date.today() - fecha_nac_beneficiario).days // 365
 
         if edad_responsable < 18:
-            warnings_edad.append(f"Responsable menor de 18 anos ({edad_responsable})")
-        if edad_responsable < edad_beneficiario:
+            error = f"Responsable debe ser mayor de 18 anos (tiene {edad_responsable})"
+        elif edad_responsable < edad_beneficiario:
             error = "Responsable mas joven que beneficiario"
     except Exception as e:
         logger.warning("Error validando edad: %s", e)
@@ -94,6 +94,15 @@ class ImportacionService:
             "codigo_postal",
             "telefono",
             "email",
+            "APELLIDO_RESPONSABLE",
+            "NOMBRE_REPSONSABLE",
+            "Cuit_Responsable",
+            "FECHA_DE_NACIMIENTO_RESPONSABLE",
+            "SEXO",
+            "DOMICILIO_RESPONSABLE",
+            "LOCALIDAD_RESPONSABLE",
+            "CELULAR_RESPONSABLE",
+            "CORREO_RESPONSABLE",
         ]
         df = pd.DataFrame(columns=columnas)
         output = BytesIO()
@@ -303,6 +312,8 @@ class ImportacionService:
         df = df[present].rename(columns={c: column_map[c] for c in present}).fillna("")
         # Eliminar posibles columnas duplicadas despues del renombrado
         df = df.loc[:, ~df.columns.duplicated()]
+        # Limpiar espacios en blanco de todos los valores
+        df = df.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
         if "fecha_nacimiento" in df.columns:
             df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(
                 lambda x: x.date() if hasattr(x, "date") else x
@@ -372,7 +383,6 @@ class ImportacionService:
             "altura",
             "telefono",
             "telefono_alternativo",
-            "codigo_postal",
             "documento_responsable",
             "telefono_responsable",
             "contacto_responsable",
@@ -454,38 +464,45 @@ class ImportacionService:
             if not doc_str or not doc_str.isdigit():
                 raise ValidationError(f"{campo_nombre} debe contener solo dígitos")
 
+            doc_len = len(doc_str)
+
             # Validar longitud según tipo
             if campo_nombre == "documento":
-                # Aceptar tanto DNI (7-8) como CUIT (11)
-                if len(doc_str) == 11:
-                    # Es CUIT, validar formato
-                    if not (
-                        doc_str.startswith("20")
-                        or doc_str.startswith("23")
-                        or doc_str.startswith("27")
-                    ):
-                        raise ValidationError(
-                            f"{campo_nombre} CUIT debe comenzar con 20, 23 o 27"
-                        )
-                elif len(doc_str) < 7 or len(doc_str) > 8:
-                    raise ValidationError(
-                        f"{campo_nombre} debe tener 7-8 dígitos (DNI) o 11 dígitos (CUIT)"
-                    )
+                # Aceptar DNI (10-11 dígitos) o CUIT (11 dígitos con prefijos 20/23/27)
+                if doc_len == 11:
+                    # Podría ser CUIT o DNI de 11 dígitos
+                    if doc_str.startswith(("20", "23", "27")):
+                        # Es CUIT válido
+                        pass
+                    else:
+                        # Es DNI de 11 dígitos
+                        pass
+                elif doc_len == 10:
+                    # DNI de 10 dígitos
+                    pass
                 else:
-                    # Es DNI, validar rango
-                    doc_int = int(doc_str)
-                    if doc_int < 1000000 or doc_int > 99999999:
-                        raise ValidationError(
-                            f"{campo_nombre} {doc_str} fuera del rango válido para DNI"
-                        )
+                    raise ValidationError(
+                        f"{campo_nombre} debe tener entre 10 y 11 dígitos"
+                    )
             elif (
                 "responsable" in campo_nombre
                 and "telefono" not in campo_nombre
                 and "contacto" not in campo_nombre
             ):
-                if len(doc_str) != 11:
+                if doc_len == 11:
+                    # Podría ser CUIT o DNI de 11 dígitos
+                    if doc_str.startswith(("20", "23", "27")):
+                        # Es CUIT válido
+                        pass
+                    else:
+                        # Es DNI de 11 dígitos
+                        pass
+                elif doc_len == 10:
+                    # DNI de 10 dígitos
+                    pass
+                else:
                     raise ValidationError(
-                        f"{campo_nombre} debe tener 11 dígitos (CUIT)"
+                        f"{campo_nombre} debe tener entre 10 y 11 dígitos"
                     )
 
             return doc_str
@@ -638,12 +655,14 @@ class ImportacionService:
                     if nacionalidad_obj:
                         payload["nacionalidad"] = nacionalidad_obj.pk
                     else:
-                        add_warning(
-                            offset,
-                            "nacionalidad",
-                            f"'{nacionalidad_val}' no encontrada",
-                        )
-                        payload.pop("nacionalidad", None)
+                        # Si no encuentra, usar Argentina como default
+                        argentina = Nacionalidad.objects.filter(
+                            nacionalidad__iexact="Argentina"
+                        ).first()
+                        if argentina:
+                            payload["nacionalidad"] = argentina.pk
+                        else:
+                            payload.pop("nacionalidad", None)
                 else:
                     payload.pop("nacionalidad", None)
 
@@ -775,9 +794,7 @@ class ImportacionService:
 
                 # Determinar rol del beneficiario
                 if es_mismo_documento:
-                    rol_beneficiario = (
-                        ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
-                    )
+                    rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
                 else:
                     rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
 
@@ -923,18 +940,21 @@ class ImportacionService:
                             if ciudadano_responsable and ciudadano_responsable.pk:
                                 cid_resp = ciudadano_responsable.pk
 
-                                # Validar edad
-                                valido_edad, edad_warnings, error_edad = (
-                                    validar_edad_responsable(
-                                        responsable_payload.get("fecha_nacimiento"),
-                                        payload.get("fecha_nacimiento"),
+                                # Validar edad SOLO si se creó un nuevo responsable con fecha de nacimiento
+                                if responsable_payload.get("fecha_nacimiento"):
+                                    valido_edad, edad_warnings, error_edad = (
+                                        validar_edad_responsable(
+                                            responsable_payload.get("fecha_nacimiento"),
+                                            payload.get("fecha_nacimiento"),
+                                        )
                                     )
-                                )
-                                # Agregar warnings ANTES de verificar errores
-                                for warning in edad_warnings:
-                                    add_warning(offset, "edad", warning)
-                                if error_edad:
-                                    add_error(offset, "edad_responsable", error_edad)
+                                    # Agregar warnings ANTES de verificar errores
+                                    for warning in edad_warnings:
+                                        add_warning(offset, "edad", warning)
+                                    if error_edad:
+                                        add_warning(
+                                            offset, "edad_responsable", error_edad
+                                        )
 
                                 # Crear legajo del responsable si no existe ya
                                 if cid_resp not in existentes_ids:
@@ -1001,36 +1021,32 @@ class ImportacionService:
                     try:
                         from ciudadanos.models import GrupoFamiliar
 
-                        relaciones_crear = []
+                        relaciones_creadas = 0
                         for rel in relaciones_familiares:
                             try:
-                                relaciones_crear.append(
-                                    GrupoFamiliar(
-                                        ciudadano_1_id=rel["responsable_id"],
-                                        ciudadano_2_id=rel["hijo_id"],
-                                        vinculo=GrupoFamiliar.RELACION_PADRE,
-                                        estado_relacion=GrupoFamiliar.ESTADO_BUENO,
-                                        conviven=True,
-                                        cuidador_principal=True,
-                                    )
+                                _, created = GrupoFamiliar.objects.get_or_create(
+                                    ciudadano_1_id=rel["responsable_id"],
+                                    ciudadano_2_id=rel["hijo_id"],
+                                    defaults={
+                                        "vinculo": GrupoFamiliar.RELACION_PADRE,
+                                        "estado_relacion": GrupoFamiliar.ESTADO_BUENO,
+                                        "conviven": True,
+                                        "cuidador_principal": True,
+                                    },
                                 )
+                                if created:
+                                    relaciones_creadas += 1
                             except Exception as e:
                                 logger.error(
-                                    "Error preparando relacion familiar fila %s: %s",
+                                    "Error creando relacion familiar fila %s: %s",
                                     rel["fila"],
                                     e,
                                 )
 
-                        if relaciones_crear:
-                            GrupoFamiliar.objects.bulk_create(
-                                relaciones_crear,
-                                batch_size=batch_size,
-                                ignore_conflicts=True,  # Evitar errores por duplicados
-                            )
-                            logger.info(
-                                "Creadas %s relaciones familiares",
-                                len(relaciones_crear),
-                            )
+                        logger.info(
+                            "Creadas %s relaciones familiares",
+                            relaciones_creadas,
+                        )
                     except Exception as e:
                         logger.error("Error creando relaciones familiares: %s", e)
                         warnings.append(
@@ -1078,19 +1094,112 @@ class ImportacionService:
                 )
                 logger.info("Guardados %s registros erróneos", len(registros_erroneos))
 
+        # Post-procesamiento: Detectar y crear relaciones familiares cruzadas
+        relaciones_cruzadas_creadas = 0
+        try:
+            from ciudadanos.models import GrupoFamiliar
+
+            # Obtener todos los legajos del expediente
+            legajos_expediente = ExpedienteCiudadano.objects.filter(
+                expediente=expediente
+            ).select_related("ciudadano")
+
+            # Agrupar por ciudadano
+            ciudadanos_roles = {}
+            for legajo in legajos_expediente:
+                cid = legajo.ciudadano_id
+                if cid not in ciudadanos_roles:
+                    ciudadanos_roles[cid] = []
+                ciudadanos_roles[cid].append(legajo.rol)
+
+            # Buscar relaciones responsable-beneficiario que no estén vinculadas
+            responsables = legajos_expediente.filter(
+                rol=ExpedienteCiudadano.ROLE_RESPONSABLE
+            ).values_list("ciudadano_id", flat=True)
+
+            beneficiarios = legajos_expediente.filter(
+                rol=ExpedienteCiudadano.ROLE_BENEFICIARIO
+            ).values_list("ciudadano_id", flat=True)
+
+            # Detectar ciudadanos que son ambos responsable y beneficiario
+            ambos_roles = set(responsables) & set(beneficiarios)
+
+            for ciudadano_id in ambos_roles:
+                # Obtener los legajos de este ciudadano
+                legajo_responsable = legajos_expediente.filter(
+                    ciudadano_id=ciudadano_id, rol=ExpedienteCiudadano.ROLE_RESPONSABLE
+                ).first()
+
+                legajo_beneficiario = legajos_expediente.filter(
+                    ciudadano_id=ciudadano_id, rol=ExpedienteCiudadano.ROLE_BENEFICIARIO
+                ).first()
+
+                if legajo_responsable and legajo_beneficiario:
+                    # Actualizar el rol del beneficiario a "Beneficiario y Responsable"
+                    legajo_beneficiario.rol = (
+                        ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+                    )
+                    legajo_beneficiario.save(update_fields=["rol"])
+
+                    # Eliminar el legajo duplicado del responsable
+                    legajo_responsable.delete()
+                    relaciones_cruzadas_creadas += 1
+                    logger.info(
+                        "Consolidado ciudadano %s: rol actualizado a BENEFICIARIO_Y_RESPONSABLE",
+                        ciudadano_id,
+                    )
+
+            # CASO A: Beneficiarios sin hijos a cargo Y sin responsable → cambiar a RESPONSABLE
+            # IMPORTANTE: Recargar legajos después de consolidación
+            legajos_expediente = ExpedienteCiudadano.objects.filter(
+                expediente=expediente
+            ).select_related("ciudadano")
+
+            for legajo in legajos_expediente.filter(
+                rol=ExpedienteCiudadano.ROLE_BENEFICIARIO
+            ):
+                # Verificar si tiene hijos a cargo (es padre)
+                tiene_hijos = GrupoFamiliar.objects.filter(
+                    ciudadano_1_id=legajo.ciudadano_id
+                ).exists()
+                # Verificar si tiene responsable (es hijo)
+                tiene_responsable = GrupoFamiliar.objects.filter(
+                    ciudadano_2_id=legajo.ciudadano_id
+                ).exists()
+
+                # Solo cambiar a RESPONSABLE si NO tiene hijos NI responsable
+                if not tiene_hijos and not tiene_responsable:
+                    legajo.rol = ExpedienteCiudadano.ROLE_RESPONSABLE
+                    legajo.save(update_fields=["rol"])
+                    logger.info(
+                        "Ciudadano %s sin hijos ni responsable: rol actualizado a RESPONSABLE",
+                        legajo.ciudadano_id,
+                    )
+        except Exception as e:
+            logger.error("Error en post-procesamiento de relaciones cruzadas: %s", e)
+            warnings.append(
+                {
+                    "fila": "general",
+                    "campo": "relaciones_cruzadas",
+                    "detalle": f"Error procesando relaciones cruzadas: {str(e)}",
+                }
+            )
+
         logger.info(
-            "Import completo: %s válidos, %s errores, %s excluidos.",
-            validos,
+            "Import completo: %s legajos creados, %s errores, %s excluidos, %s relaciones cruzadas.",
+            len(legajos_crear),
             errores,
             len(excluidos),
+            relaciones_cruzadas_creadas,
         )
 
         return {
-            "validos": validos,
+            "validos": len(legajos_crear),
             "errores": errores,
             "detalles_errores": detalles_errores,
             "excluidos_count": len(excluidos),
             "excluidos": excluidos,
             "warnings": warnings,
             "relaciones_familiares_creadas": len(relaciones_familiares),
+            "relaciones_cruzadas_consolidadas": relaciones_cruzadas_creadas,
         }
