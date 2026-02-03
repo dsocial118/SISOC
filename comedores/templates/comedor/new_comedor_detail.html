@@ -180,478 +180,476 @@
             </div>
         </div>
         <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
-        <!-- panel 1 -->
-        <div class="accordion-panel open">
-            <div class="accordion-header h5 accordion-header--ubicacion">Ubicación</div>
-            <div class="accordion-content">
-                <div class="row">
-                    <div class="col-12 col-lg-5">
-                        {% google_maps_query comedor.latitud comedor.longitud as maps_query %}
-                        {% if maps_query %}
-                            <div class="w-100 comedor-map-wrapper">
-                                <iframe width="100%"
-                                        height="365px"
-                                        frameborder="0"
-                                        class="comedor-map-iframe"
-                                        src="https://maps.google.com/maps?q={{ maps_query }}&output=embed"
-                                        allowfullscreen>
-                                </iframe>
-                            </div>
-                        {% elif comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
-                            <div class="w-100 comedor-map-wrapper">
-                                <iframe width="100%"
-                                        height="365px"
-                                        frameborder="0"
-                                        class="comedor-map-iframe"
-                                        src="https://maps.google.com/maps?q={{ comedor.calle|urlencode }}+{{ comedor.numero }},+{{ comedor.localidad.nombre|urlencode }},+{{ comedor.municipio.nombre|urlencode }},+{{ comedor.provincia.nombre|urlencode }}&output=embed"
-                                        allowfullscreen>
-                                </iframe>
-                            </div>
-                        {% else %}
-                            <div class="w-100 comedor-map-wrapper comedor-map-placeholder d-flex align-items-center justify-content-center">
-                                <div class="d-flex align-items-center px-3 py-2">
-                                    <div class="d-flex align-items-center justify-content-center text-secondary rounded-circle mx-2 me-3 comedor-icon-60">
-                                        <i class="bi bi-geo fs-1"></i>
-                                    </div>
-                                    <p class="mb-0 fw-bold text-body">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
-                        <p class="mb-2">
-                            <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-geo me-2"></i><strong>Calle:</strong> {{ comedor.calle | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-123 me-2"></i><strong>Numeración:</strong> {{ comedor.numero | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-grid me-2"></i><strong>Manzana:</strong> {{ comedor.manzana | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong>
-                            {% if comedor.piso or comedor.departamento %}
-                                {{ comedor.piso }}
-                                {% if comedor.piso and comedor.departamento %}-{% endif %}
-                                {{ comedor.departamento }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-signpost me-2"></i><strong>Entre calle 1:</strong> {{ comedor.entre_calle_1 | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-signpost-2 me-2"></i><strong>Entre calle 2:</strong> {{ comedor.entre_calle_2 | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-mailbox me-2"></i><strong>Código Postal:</strong> {{ comedor.codigo_postal | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-geo-alt me-2"></i><strong>Localidad:</strong> {{ comedor.localidad.nombre | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-map me-2"></i><strong>Partido:</strong> {{ comedor.partido | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-geo-alt-fill me-2"></i><strong>Provincia:</strong> {{ comedor.provincia.nombre | default_if_none:"-" }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- panel 2 -->
-        <div class="accordion-panel">
-            <div class="accordion-header h5 accordion-header--responsables">Responsables</div>
-            <div class="accordion-content">
-                <div class="row">
-                    <div class="col-12 col-lg-6">
-                        <div class="comedor-photo-wrapper">
-                            {% if comedor.foto_legajo %}
-                                {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid rounded comedor-photo" extra_attrs='loading="lazy"' %}
-                            {% else %}
-                                <img src="{% static 'custom/img/default.png' %}"
-                                     alt="Imagen del comedor"
-                                     class="img-fluid rounded comedor-photo"
-                                     loading="lazy" />
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
-                        <p class="mb-2">
-                            <i class="bi bi-building me-2"></i><strong>Organización base:</strong> {{ comedor.organizacion.nombre | default_if_none:"-" }}
-                        </p>
-                        <div class="row mb-2">
-                            <div class="col-12 col-md-8">
-                                <i class="bi bi-person-fill me-2"></i><strong>Responsable 1:</strong> {{ comedor.referente.nombre | default_if_none:"-" }} {{ comedor.referente.apellido | default_if_none:"" }}
-                            </div>
-                            <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
-                                <strong>Vto:</strong> {{ comedor.organizacion.fecha_vencimiento | default_if_none:"-" }}
-                            </div>
-                        </div>
-                        <p class="mb-2">
-                            <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.referente.documento | default_if_none:"-" }}
-                        </p>
-                        <div class="row mb-2">
-                            <div class="col-12 col-md-8">
-                                <i class="bi bi-person me-2"></i><strong>Responsable 2:</strong> {{ comedor.referente_2.nombre | default_if_none:"-" }} {{ comedor.referente_2.apellido | default_if_none:"" }}
-                            </div>
-                            <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
-                                <strong>Vto:</strong> {{ comedor.referente_2.fecha_vencimiento | default_if_none:"-" }}
-                            </div>
-                        </div>
-                        <p class="mb-2">
-                            <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.referente_2.documento | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-envelope me-2"></i><strong>Mail de contacto organización:</strong> {{ comedor.organizacion.email | default_if_none:"-" }}
-                        </p>
-                        <hr class="my-3" />
-                        <p class="mb-2">
-                            <i class="bi bi-credit-card me-2"></i><strong>Responsable de la tarjeta del cobro:</strong> {{ comedor.responsable_tarjeta.nombre | default_if_none:"-" }} {{ comedor.responsable_tarjeta.apellido | default_if_none:"" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.responsable_tarjeta.documento | default_if_none:"-" }}
-                        </p>
-                        <hr class="my-3" />
-                        <p class="mb-2">
-                            <i class="bi bi-shield-check me-2"></i><strong>Aval 1:</strong> {{ comedor.aval_1 | default_if_none:"-" }}
-                        </p>
-                        <p class="mb-2">
-                            <i class="bi bi-shield-check me-2"></i><strong>Aval 2:</strong> {{ comedor.aval_2 | default_if_none:"-" }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- panel 3 -->
-        <div class="accordion-panel">
-            <div class="accordion-header h5 accordion-header--prestaciones">Prestaciones</div>
-            <div class="accordion-content">
-                {% with informe_tecnico=admisiones_informetecnico %}
-                    <div class="row text-center mb-1">
-                        <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
-                            <div class="small-box">
-                                <div class="inner">
-                                    <div class="fs-2 mb-1">
-                                        <i class="bi bi-people"></i>
-                                    </div>
-                                    <div class="fw-bold fs-3 mb-0">{{ relevamientos.0.colaboradores.cantidad_colaboradores.nombre|default:"-" }}</div>
-                                    <div class="fw-bold fs-6">Colaboradores</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
-                            <div class="small-box">
-                                <div class="inner">
-                                    <div class="fs-2 mb-1">
-                                        <i class="bi bi-calendar-week"></i>
-                                    </div>
-                                    <div class="fw-bold fs-3 mb-0">
-                                        {{ informe_tecnico|dias_prestacion_semana }}
-                                    </div>
-                                    <div class="fw-bold fs-6">Dias a la semana</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="small-box">
-                                <div class="inner">
-                                    <div class="fs-2 mb-1">
-                                        <i class="bi bi-cup-hot"></i>
-                                    </div>
-                                    <div class="fw-bold fs-3 mb-0">
-                                        {% if informe_tecnico %}
-                                            {{ prestaciones_aprobadas_total|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </div>
-                                    <div class="fw-bold fs-6">Prestaciones mensuales</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="small-box">
-                                <div class="inner">
-                                    <div class="fs-2 mb-1">
-                                        <i class="bi bi-currency-dollar"></i>
-                                    </div>
-                                    <div class="fw-bold fs-3 mb-0">
-                                        {% if informe_tecnico %}
-                                            {{ monto_prestacion_mensual|default_if_none:"-" }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </div>
-                                    <div class="fw-bold fs-6">Monto prestacion mensual</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="table-responsive prestaciones-table-wrap">
-                        <table class="table table-bordered table-sm align-middle text-center mb-0 prestaciones-table">
-                            <thead>
-                                <tr class="prestaciones-table-head">
-                                    <th scope="col" class="text-start">Prestacion</th>
-                                    <th scope="col">
-                                        <span class="d-block">Lunes</span>
-                                        <span class="d-block prestaciones-subhead">Asistentes</span>
-                                    </th>
-                                    <th scope="col">
-                                        <span class="d-block">Martes</span>
-                                        <span class="d-block prestaciones-subhead">Asistentes</span>
-                                    </th>
-                                    <th scope="col">
-                                        <span class="d-block">Miercoles</span>
-                                        <span class="d-block prestaciones-subhead">Asistentes</span>
-                                    </th>
-                                    <th scope="col">
-                                        <span class="d-block">Jueves</span>
-                                        <span class="d-block prestaciones-subhead">Asistentes</span>
-                                    </th>
-                                    <th scope="col">
-                                        <span class="d-block">Viernes</span>
-                                        <span class="d-block prestaciones-subhead">Asistentes</span>
-                                    </th>
-                                    <th scope="col">
-                                        <span class="d-block">Sabado</span>
-                                        <span class="d-block prestaciones-subhead">Asistentes</span>
-                                    </th>
-                                    <th scope="col">
-                                        <span class="d-block">Domingo</span>
-                                        <span class="d-block prestaciones-subhead">Asistentes</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <th scope="row" class="text-start prestaciones-row">Desayuno</th>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_lunes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_martes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_miercoles" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_jueves" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_viernes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_sabado" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_domingo" }}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_lunes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_martes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_miercoles" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_jueves" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_viernes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_sabado" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_domingo" }}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="text-start prestaciones-row">Merienda</th>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_lunes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_martes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_miercoles" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_jueves" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_viernes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_sabado" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_merienda_domingo" }}</td>
-                                </tr>
-                                <tr>
-                                    <th scope="row" class="text-start prestaciones-row">Cena</th>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_lunes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_martes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_miercoles" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_jueves" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_viernes" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_sabado" }}</td>
-                                    <td>{{ informe_tecnico|getattr:"aprobadas_cena_domingo" }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                {% endwith %}
-            </div>
-        </div>
-        <!-- panel 4 -->
-        <div class="accordion-panel">
-            <div class="accordion-header h5 accordion-header--relevamientos">Relevamientos</div>
-            <div class="accordion-content">
-                {% with relevamiento=relevamientos.0 %}
-                    <div class="row mb-4">
-                        <div class="col-12 col-lg-4 mb-4 mb-lg-0">
-                            <h4 class="mb-3 fw-bold">Donaciones</h4>
-                            <ul class="list-unstyled mb-0">
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_donaciones_particulares %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Particulares
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_nacional %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Estado nacional
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_provincial %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Estado provincial
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_municipal %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Estado municipal
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_otros %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Otros
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="col-12 col-lg-4 mb-4 mb-lg-0">
-                            <h4 class="mb-3 fw-bold">Tipo de servicio</h4>
-                            <ul class="list-unstyled mb-0">
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Servicio en el lugar" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Servicio en el lugar
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Vianda
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda y servicio" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Vianda y servicio
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="col-12 col-lg-4">
-                            <h4 class="mb-3 fw-bold">Tipo de espacio</h4>
-                            <ul class="list-unstyled mb-0">
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Propio" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Propio
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Alquilado" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Alquilado
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Prestado (uso exclusivo)" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Prestado (uso exclusivo)
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Comunitario (compartido)" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Comunitario (compartido)
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Casa de familia" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Casa de familia
-                                </li>
-                                <li class="mb-1">
-                                    {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Otro" %}
-                                        <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-circle text-white me-2"></i>
-                                    {% endif %}
-                                    Otro
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+            <!-- panel 1 -->
+            <div class="accordion-panel open">
+                <div class="accordion-header h5 accordion-header--ubicacion">Ubicación</div>
+                <div class="accordion-content">
                     <div class="row">
-                        <div class="col-12 d-flex flex-wrap gap-2">
-                            {% if relevamiento and relevamiento.anexo %}
-                                {% with anexo=relevamiento.anexo %}
-                                    {% if anexo.apoyo_escolar or anexo.promocion_salud or anexo.actividades_recreativas or anexo.actividades_religiosas or anexo.actividades_jardin_maternal or anexo.alfabetizacion_terminalidad or anexo.actividades_huerta or anexo.actividades_culturales %}
-                                        {% if anexo.apoyo_escolar %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Apoyo escolar</span>
-                                        {% endif %}
-                                        {% if anexo.promocion_salud %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Promocion de la salud</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_recreativas %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Recreacion</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_recreativas %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Deportes</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_religiosas %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades religiosas</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_jardin_maternal %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Jardin Maternal</span>
-                                        {% endif %}
-                                        {% if anexo.alfabetizacion_terminalidad %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Terminalidad educativa</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_huerta %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Huerta</span>
-                                        {% endif %}
-                                        {% if anexo.actividades_culturales %}
-                                            <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades culturales</span>
-                                        {% endif %}
-                                    {% else %}
-                                        <span class="text-white">-</span>
-                                    {% endif %}
-                                {% endwith %}
+                        <div class="col-12 col-lg-5">
+                            {% google_maps_query comedor.latitud comedor.longitud as maps_query %}
+                            {% if maps_query %}
+                                <div class="w-100 comedor-map-wrapper">
+                                    <iframe width="100%"
+                                            height="365px"
+                                            frameborder="0"
+                                            class="comedor-map-iframe"
+                                            src="https://maps.google.com/maps?q={{ maps_query }}&output=embed"
+                                            allowfullscreen>
+                                    </iframe>
+                                </div>
+                            {% elif comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
+                                <div class="w-100 comedor-map-wrapper">
+                                    <iframe width="100%"
+                                            height="365px"
+                                            frameborder="0"
+                                            class="comedor-map-iframe"
+                                            src="https://maps.google.com/maps?q={{ comedor.calle|urlencode }}+{{ comedor.numero }},+{{ comedor.localidad.nombre|urlencode }},+{{ comedor.municipio.nombre|urlencode }},+{{ comedor.provincia.nombre|urlencode }}&output=embed"
+                                            allowfullscreen>
+                                    </iframe>
+                                </div>
                             {% else %}
-                                <span class="text-white">-</span>
+                                <div class="w-100 comedor-map-wrapper comedor-map-placeholder d-flex align-items-center justify-content-center">
+                                    <div class="d-flex align-items-center px-3 py-2">
+                                        <div class="d-flex align-items-center justify-content-center text-secondary rounded-circle mx-2 me-3 comedor-icon-60">
+                                            <i class="bi bi-geo fs-1"></i>
+                                        </div>
+                                        <p class="mb-0 fw-bold text-body">No hay coordenadas ni datos suficientes para cargar el mapa.</p>
+                                    </div>
+                                </div>
                             {% endif %}
                         </div>
+                        <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
+                            <p class="mb-2">
+                                <i class="bi bi-house-door-fill me-2"></i><strong>Nombre del comedor:</strong> {{ comedor.nombre | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-geo me-2"></i><strong>Calle:</strong> {{ comedor.calle | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-123 me-2"></i><strong>Numeración:</strong> {{ comedor.numero | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-grid me-2"></i><strong>Manzana:</strong> {{ comedor.manzana | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-building me-2"></i><strong>Piso y/o departamento:</strong>
+                                {% if comedor.piso or comedor.departamento %}
+                                    {{ comedor.piso }}
+                                    {% if comedor.piso and comedor.departamento %}-{% endif %}
+                                    {{ comedor.departamento }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-signpost me-2"></i><strong>Entre calle 1:</strong> {{ comedor.entre_calle_1 | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-signpost-2 me-2"></i><strong>Entre calle 2:</strong> {{ comedor.entre_calle_2 | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-mailbox me-2"></i><strong>Código Postal:</strong> {{ comedor.codigo_postal | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-geo-alt me-2"></i><strong>Localidad:</strong> {{ comedor.localidad.nombre | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-map me-2"></i><strong>Partido:</strong> {{ comedor.partido | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-geo-alt-fill me-2"></i><strong>Provincia:</strong> {{ comedor.provincia.nombre | default_if_none:"-" }}
+                            </p>
+                        </div>
                     </div>
-                {% endwith %}
+                </div>
             </div>
-        </div>
+            <!-- panel 2 -->
+            <div class="accordion-panel">
+                <div class="accordion-header h5 accordion-header--responsables">Responsables</div>
+                <div class="accordion-content">
+                    <div class="row">
+                        <div class="col-12 col-lg-6">
+                            <div class="comedor-photo-wrapper">
+                                {% if comedor.foto_legajo %}
+                                    {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid rounded comedor-photo" extra_attrs='loading="lazy"' %}
+                                {% else %}
+                                    <img src="{% static 'custom/img/default.png' %}"
+                                         alt="Imagen del comedor"
+                                         class="img-fluid rounded comedor-photo"
+                                         loading="lazy" />
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
+                            <p class="mb-2">
+                                <i class="bi bi-building me-2"></i><strong>Organización base:</strong> {{ comedor.organizacion.nombre | default_if_none:"-" }}
+                            </p>
+                            <div class="row mb-2">
+                                <div class="col-12 col-md-8">
+                                    <i class="bi bi-person-fill me-2"></i><strong>Responsable 1:</strong> {{ comedor.referente.nombre | default_if_none:"-" }} {{ comedor.referente.apellido | default_if_none:"" }}
+                                </div>
+                                <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
+                                    <strong>Vto:</strong> {{ comedor.organizacion.fecha_vencimiento | default_if_none:"-" }}
+                                </div>
+                            </div>
+                            <p class="mb-2">
+                                <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.referente.documento | default_if_none:"-" }}
+                            </p>
+                            <div class="row mb-2">
+                                <div class="col-12 col-md-8">
+                                    <i class="bi bi-person me-2"></i><strong>Responsable 2:</strong> {{ comedor.referente_2.nombre | default_if_none:"-" }} {{ comedor.referente_2.apellido | default_if_none:"" }}
+                                </div>
+                                <div class="col-12 col-md-4 text-md-end mt-2 mt-md-0">
+                                    <strong>Vto:</strong> {{ comedor.referente_2.fecha_vencimiento | default_if_none:"-" }}
+                                </div>
+                            </div>
+                            <p class="mb-2">
+                                <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.referente_2.documento | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-envelope me-2"></i><strong>Mail de contacto organización:</strong> {{ comedor.organizacion.email | default_if_none:"-" }}
+                            </p>
+                            <hr class="my-3" />
+                            <p class="mb-2">
+                                <i class="bi bi-credit-card me-2"></i><strong>Responsable de la tarjeta del cobro:</strong> {{ comedor.responsable_tarjeta.nombre | default_if_none:"-" }} {{ comedor.responsable_tarjeta.apellido | default_if_none:"" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-card-text me-2"></i><strong>DNI:</strong> {{ comedor.responsable_tarjeta.documento | default_if_none:"-" }}
+                            </p>
+                            <hr class="my-3" />
+                            <p class="mb-2">
+                                <i class="bi bi-shield-check me-2"></i><strong>Aval 1:</strong> {{ comedor.aval_1 | default_if_none:"-" }}
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-shield-check me-2"></i><strong>Aval 2:</strong> {{ comedor.aval_2 | default_if_none:"-" }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- panel 3 -->
+            <div class="accordion-panel">
+                <div class="accordion-header h5 accordion-header--prestaciones">Prestaciones</div>
+                <div class="accordion-content">
+                    {% with informe_tecnico=admisiones_informetecnico %}
+                        <div class="row text-center mb-1">
+                            <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
+                                <div class="small-box">
+                                    <div class="inner">
+                                        <div class="fs-2 mb-1">
+                                            <i class="bi bi-people"></i>
+                                        </div>
+                                        <div class="fw-bold fs-3 mb-0">{{ relevamientos.0.colaboradores.cantidad_colaboradores.nombre|default:"-" }}</div>
+                                        <div class="fw-bold fs-6">Colaboradores</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-3 mb-3 mb-lg-0">
+                                <div class="small-box">
+                                    <div class="inner">
+                                        <div class="fs-2 mb-1">
+                                            <i class="bi bi-calendar-week"></i>
+                                        </div>
+                                        <div class="fw-bold fs-3 mb-0">{{ informe_tecnico|dias_prestacion_semana }}</div>
+                                        <div class="fw-bold fs-6">Dias a la semana</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <div class="small-box">
+                                    <div class="inner">
+                                        <div class="fs-2 mb-1">
+                                            <i class="bi bi-cup-hot"></i>
+                                        </div>
+                                        <div class="fw-bold fs-3 mb-0">
+                                            {% if informe_tecnico %}
+                                                {{ prestaciones_aprobadas_total|default_if_none:"-" }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                        <div class="fw-bold fs-6">Prestaciones mensuales</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <div class="small-box">
+                                    <div class="inner">
+                                        <div class="fs-2 mb-1">
+                                            <i class="bi bi-currency-dollar"></i>
+                                        </div>
+                                        <div class="fw-bold fs-3 mb-0">
+                                            {% if informe_tecnico %}
+                                                {{ monto_prestacion_mensual|default_if_none:"-" }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                        <div class="fw-bold fs-6">Monto prestacion mensual</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive prestaciones-table-wrap">
+                            <table class="table table-bordered table-sm align-middle text-center mb-0 prestaciones-table">
+                                <thead>
+                                    <tr class="prestaciones-table-head">
+                                        <th scope="col" class="text-start">Prestacion</th>
+                                        <th scope="col">
+                                            <span class="d-block">Lunes</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Martes</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Miercoles</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Jueves</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Viernes</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Sabado</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                        <th scope="col">
+                                            <span class="d-block">Domingo</span>
+                                            <span class="d-block prestaciones-subhead">Asistentes</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" class="text-start prestaciones-row">Desayuno</th>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_lunes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_martes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_miercoles" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_jueves" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_viernes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_sabado" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_desayuno_domingo" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_lunes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_martes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_miercoles" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_jueves" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_viernes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_sabado" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_almuerzo_domingo" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="text-start prestaciones-row">Merienda</th>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_lunes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_martes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_miercoles" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_jueves" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_viernes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_sabado" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_merienda_domingo" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="text-start prestaciones-row">Cena</th>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_lunes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_martes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_miercoles" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_jueves" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_viernes" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_sabado" }}</td>
+                                        <td>{{ informe_tecnico|getattr:"aprobadas_cena_domingo" }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
+            <!-- panel 4 -->
+            <div class="accordion-panel">
+                <div class="accordion-header h5 accordion-header--relevamientos">Relevamientos</div>
+                <div class="accordion-content">
+                    {% with relevamiento=relevamientos.0 %}
+                        <div class="row mb-4">
+                            <div class="col-12 col-lg-4 mb-4 mb-lg-0">
+                                <h4 class="mb-3 fw-bold">Donaciones</h4>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_donaciones_particulares %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Particulares
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_nacional %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Estado nacional
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_provincial %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Estado provincial
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_municipal %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Estado municipal
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_otros %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Otros
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-12 col-lg-4 mb-4 mb-lg-0">
+                                <h4 class="mb-3 fw-bold">Tipo de servicio</h4>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Servicio en el lugar" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Servicio en el lugar
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Vianda
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda y servicio" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Vianda y servicio
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-12 col-lg-4">
+                                <h4 class="mb-3 fw-bold">Tipo de espacio</h4>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Propio" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Propio
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Alquilado" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Alquilado
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Prestado (uso exclusivo)" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Prestado (uso exclusivo)
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Comunitario (compartido)" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Comunitario (compartido)
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Casa de familia" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Casa de familia
+                                    </li>
+                                    <li class="mb-1">
+                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Otro" %}
+                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-white me-2"></i>
+                                        {% endif %}
+                                        Otro
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 d-flex flex-wrap gap-2">
+                                {% if relevamiento and relevamiento.anexo %}
+                                    {% with anexo=relevamiento.anexo %}
+                                        {% if anexo.apoyo_escolar or anexo.promocion_salud or anexo.actividades_recreativas or anexo.actividades_religiosas or anexo.actividades_jardin_maternal or anexo.alfabetizacion_terminalidad or anexo.actividades_huerta or anexo.actividades_culturales %}
+                                            {% if anexo.apoyo_escolar %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Apoyo escolar</span>
+                                            {% endif %}
+                                            {% if anexo.promocion_salud %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Promocion de la salud</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_recreativas %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Recreacion</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_recreativas %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Deportes</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_religiosas %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades religiosas</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_jardin_maternal %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Jardin Maternal</span>
+                                            {% endif %}
+                                            {% if anexo.alfabetizacion_terminalidad %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Terminalidad educativa</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_huerta %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Huerta</span>
+                                            {% endif %}
+                                            {% if anexo.actividades_culturales %}
+                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades culturales</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-white">-</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% else %}
+                                    <span class="text-white">-</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endwith %}
+                </div>
+            </div>
         </div>
     </div>
     <!-- /Acordion -->
