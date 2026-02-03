@@ -30,7 +30,7 @@ footer.app-footer {
 }
 
 .main-header {
-    padding: 0.5rem 1rem;
+    padding: 0rem 1rem;
     z-index: 1050; /* Mayor que Select2 dropdown para evitar superposición */
 }
 
@@ -45,7 +45,11 @@ footer.app-footer {
 }
 
 .main-header .brand-image {
-    max-height: 32px;
+    max-height: 40px;
+}
+
+.main-header .nav-links>.nav-item {
+    padding-top: 10px;
 }
 
 .main-header .nav-link.nav-link-rounded {
