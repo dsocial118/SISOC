@@ -313,7 +313,7 @@ class ImportacionService:
         # Eliminar posibles columnas duplicadas despues del renombrado
         df = df.loc[:, ~df.columns.duplicated()]
         # Limpiar espacios en blanco de todos los valores
-        df = df.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
+        df = df.map(lambda x: str(x).strip() if isinstance(x, str) else x)
         if "fecha_nacimiento" in df.columns:
             df["fecha_nacimiento"] = df["fecha_nacimiento"].apply(
                 lambda x: x.date() if hasattr(x, "date") else x
@@ -793,10 +793,7 @@ class ImportacionService:
                 )
 
                 # Determinar rol del beneficiario
-                if es_mismo_documento:
-                    rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
-                else:
-                    rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
+                rol_beneficiario = ExpedienteCiudadano.ROLE_BENEFICIARIO
 
                 # OK para crear legajo del beneficiario CON ROL
                 legajos_crear.append(
@@ -1149,32 +1146,8 @@ class ImportacionService:
                         ciudadano_id,
                     )
 
-            # CASO A: Beneficiarios sin hijos a cargo Y sin responsable → cambiar a RESPONSABLE
-            # IMPORTANTE: Recargar legajos después de consolidación
-            legajos_expediente = ExpedienteCiudadano.objects.filter(
-                expediente=expediente
-            ).select_related("ciudadano")
-
-            for legajo in legajos_expediente.filter(
-                rol=ExpedienteCiudadano.ROLE_BENEFICIARIO
-            ):
-                # Verificar si tiene hijos a cargo (es padre)
-                tiene_hijos = GrupoFamiliar.objects.filter(
-                    ciudadano_1_id=legajo.ciudadano_id
-                ).exists()
-                # Verificar si tiene responsable (es hijo)
-                tiene_responsable = GrupoFamiliar.objects.filter(
-                    ciudadano_2_id=legajo.ciudadano_id
-                ).exists()
-
-                # Solo cambiar a RESPONSABLE si NO tiene hijos NI responsable
-                if not tiene_hijos and not tiene_responsable:
-                    legajo.rol = ExpedienteCiudadano.ROLE_RESPONSABLE
-                    legajo.save(update_fields=["rol"])
-                    logger.info(
-                        "Ciudadano %s sin hijos ni responsable: rol actualizado a RESPONSABLE",
-                        legajo.ciudadano_id,
-                    )
+            # Post-procesamiento: Los beneficiarios sin relaciones familiares mantienen su rol BENEFICIARIO
+            # No se cambia automáticamente a RESPONSABLE
         except Exception as e:
             logger.error("Error en post-procesamiento de relaciones cruzadas: %s", e)
             warnings.append(
