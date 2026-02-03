@@ -141,13 +141,13 @@ class ExpedienteConfirmView(LoginRequiredMixin, View):
             )
         except ValidationError as e:
             logger.warning("Validación en confirmar envío falló: %s", e, exc_info=True)
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": "No se pudo confirmar el envío. Revisa los datos e intenta de nuevo.",
-                },
-                status=400,
-            )
+            if getattr(e, "messages", None):
+                error_msg = "; ".join(str(m) for m in e.messages if m)
+            elif getattr(e, "message", None):
+                error_msg = str(e.message)
+            else:
+                error_msg = str(e)
+            return JsonResponse({"success": False, "error": error_msg}, status=400)
         except Exception as e:
             logger.error("Error inesperado al confirmar envío: %s", e, exc_info=True)
             return JsonResponse(
