@@ -11,12 +11,19 @@ from ciudadanos.views import (
     GrupoFamiliarDeleteView,
 )
 from ciudadanos.api_views import buscar_ciudadanos
+from ciudadanos.views_export import CiudadanosExportView
+
 
 urlpatterns = [
     path(
         "ciudadanos/listar",
         login_required(CiudadanosListView.as_view()),
         name="ciudadanos",
+    ),
+    path(
+        "ciudadanos/exportar",
+        login_required(CiudadanosExportView.as_view()),
+        name="ciudadanos_exportar",
     ),
     path(
         "ciudadanos/crear/",

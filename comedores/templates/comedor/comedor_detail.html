@@ -676,7 +676,7 @@
                         <div class="nav nav-pills row col-10 my-3">
                             {% for observacion in observaciones %}
                                 <div class="col-2 d-flex">
-                                    <a href="{% url 'observacion_detalle' comedor.id observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
+                                    <a href="{% url 'observacion_detalle' observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
                                 </div>
                             {% endfor %}
                         </div>
@@ -1034,7 +1034,7 @@
             min-height: 38px !important;
             padding: 0.375rem 0.75rem !important;
         }
-        
+
         .select2-container .select2-selection--multiple .select2-selection__choice {
             background-color: #0d6efd !important;
             border: 1px solid #0d6efd !important;
@@ -1044,34 +1044,34 @@
             margin: 0.125rem 0.25rem 0.125rem 0 !important;
             padding: 0.25rem 0.5rem !important;
         }
-        
+
         .select2-container .select2-selection--multiple .select2-selection__choice__remove {
             color: #fff !important;
             margin-right: 0.25rem !important;
         }
-        
+
         .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
             color: #f8f9fa !important;
         }
-        
+
         .select2-dropdown {
             background-color: #343a40 !important;
             border: 1px solid #6c757d !important;
             border-radius: 0.375rem !important;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5) !important;
         }
-        
+
         .select2-results__option {
             background-color: #343a40 !important;
             color: #fff !important;
             padding: 0.5rem 0.75rem !important;
         }
-        
+
         .select2-results__option--highlighted {
             background-color: #0d6efd !important;
             color: #fff !important;
         }
-        
+
         .select2-search__field {
             background-color: #495057 !important;
             border: 1px solid #6c757d !important;
@@ -1079,53 +1079,53 @@
             color: #fff !important;
             padding: 0.25rem 0.5rem !important;
         }
-        
+
         .select2-container .select2-selection--multiple .select2-selection__placeholder {
             color: #adb5bd !important;
             margin-top: 0.25rem !important;
         }
-        
+
         .select2-container--focus .select2-selection--multiple {
             border-color: #86b7fe !important;
             box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
         }
         </style>
- 
+
         <script>
         const comedorId = "{{ comedor.id }}"
         const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
         const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
-        
+
         function validarComedor() {
             // Crear form para validar
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '{% url "validar_comedor" comedor.pk %}';
-            
+
             const csrf = document.createElement('input');
             csrf.type = 'hidden';
             csrf.name = 'csrfmiddlewaretoken';
             csrf.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            
+
             const accion = document.createElement('input');
             accion.type = 'hidden';
             accion.name = 'accion';
             accion.value = 'validar';
-            
+
             form.appendChild(csrf);
             form.appendChild(accion);
             document.body.appendChild(form);
             form.submit();
         }
-        
+
         function mostrarOpcionesNoValidar() {
             const modalValidacion = bootstrap.Modal.getInstance(document.getElementById('modalValidacion'));
             modalValidacion.hide();
-            
+
             const modalNoValidar = new bootstrap.Modal(document.getElementById('modalNoValidar'));
             modalNoValidar.show();
         }
-        
+
         // Inicializar Select2 cuando se abre el modal
         document.getElementById('modalNoValidar').addEventListener('shown.bs.modal', function() {
             if (typeof $ !== 'undefined' && $.fn.select2) {
@@ -1135,19 +1135,19 @@
                     width: '100%',
                     dropdownParent: $('#modalNoValidar')
                 });
-                
+
                 // Escuchar cambios para mostrar/ocultar comentario
                 $('#opcionesSelect').on('change', function() {
                     toggleComentario();
                 });
             }
         });
-        
+
         function toggleComentario() {
             const selectedValues = $('#opcionesSelect').val() || [];
             const comentarioDiv = document.getElementById('comentarioDiv');
             const comentarioTextarea = document.getElementById('comentario');
-            
+
             if (selectedValues.includes('otro')) {
                 comentarioDiv.style.display = 'block';
                 comentarioTextarea.required = true;
@@ -1157,21 +1157,21 @@
                 comentarioTextarea.value = '';
             }
         }
-        
+
         function validarFormNoValidar() {
             const selectedValues = $('#opcionesSelect').val() || [];
             const comentario = document.getElementById('comentario').value.trim();
-            
+
             if (selectedValues.length === 0) {
                 alert('Debe seleccionar al menos una opción.');
                 return false;
             }
-            
+
             if (selectedValues.includes('otro') && !comentario) {
                 alert('El comentario es obligatorio cuando selecciona "Otro".');
                 return false;
             }
-            
+
             return true;
         }
         </script>

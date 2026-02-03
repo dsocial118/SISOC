@@ -31,6 +31,7 @@ from centrodefamilia.services.responsables_filter_config import (
     TEXT_OPS as RESPONSABLE_TEXT_OPS,
 )
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.column_preferences import build_columns_context_from_fields
 
 logger = logging.getLogger("django")
 
@@ -509,52 +510,59 @@ def buscar_cuil_beneficiario(request, cuil):
         )
 
 
-def get_beneficiarios_list_context():
-    """Configuración para la lista de beneficiarios"""
+def get_beneficiarios_list_context(request=None):
+    """Configuración para la lista de beneficiarios."""
+    headers = [
+        {"title": "CUIL", "width": "12%", "sortable": True, "sort_key": "cuil"},
+        {
+            "title": "Apellido y Nombre",
+            "width": "20%",
+            "sortable": True,
+            "sort_key": "apellido_nombre",
+        },
+        {"title": "DNI", "width": "10%", "sortable": True, "sort_key": "dni"},
+        {
+            "title": "Género",
+            "width": "8%",
+            "sortable": True,
+            "sort_key": "genero_display",
+        },
+        {
+            "title": "Responsable",
+            "width": "20%",
+            "sortable": True,
+            "sort_key": "responsable_nombre",
+        },
+        {
+            "title": "Provincia",
+            "width": "15%",
+            "sortable": True,
+            "sort_key": "provincia",
+        },
+        {
+            "title": "Municipio",
+            "width": "15%",
+            "sortable": True,
+            "sort_key": "municipio",
+        },
+    ]
+    fields = [
+        {"name": "cuil"},
+        {"name": "apellido_nombre"},
+        {"name": "dni"},
+        {"name": "genero_display"},
+        {"name": "responsable_nombre"},
+        {"name": "provincia"},
+        {"name": "municipio"},
+    ]
+    columns_context = build_columns_context_from_fields(
+        request,
+        "centrodefamilia_beneficiarios_list",
+        headers,
+        fields,
+    )
     return {
-        "table_headers": [
-            {"title": "CUIL", "width": "12%", "sortable": True, "sort_key": "cuil"},
-            {
-                "title": "Apellido y Nombre",
-                "width": "20%",
-                "sortable": True,
-                "sort_key": "apellido_nombre",
-            },
-            {"title": "DNI", "width": "10%", "sortable": True, "sort_key": "dni"},
-            {
-                "title": "Género",
-                "width": "8%",
-                "sortable": True,
-                "sort_key": "genero_display",
-            },
-            {
-                "title": "Responsable",
-                "width": "20%",
-                "sortable": True,
-                "sort_key": "responsable_nombre",
-            },
-            {
-                "title": "Provincia",
-                "width": "15%",
-                "sortable": True,
-                "sort_key": "provincia",
-            },
-            {
-                "title": "Municipio",
-                "width": "15%",
-                "sortable": True,
-                "sort_key": "municipio",
-            },
-        ],
-        "table_fields": [
-            {"name": "cuil"},
-            {"name": "apellido_nombre"},
-            {"name": "dni"},
-            {"name": "genero_display"},
-            {"name": "responsable_nombre"},
-            {"name": "provincia"},
-            {"name": "municipio"},
-        ],
+        **columns_context,
         "table_actions": [
             {
                 "url_name": "beneficiarios_detail",
@@ -566,52 +574,59 @@ def get_beneficiarios_list_context():
     }
 
 
-def get_responsables_list_context():
-    """Configuración para la lista de responsables"""
+def get_responsables_list_context(request=None):
+    """Configuración para la lista de responsables."""
+    headers = [
+        {"title": "CUIL", "width": "15%", "sortable": True, "sort_key": "cuil"},
+        {
+            "title": "Apellido y Nombre",
+            "width": "25%",
+            "sortable": True,
+            "sort_key": "apellido_nombre",
+        },
+        {"title": "DNI", "width": "10%", "sortable": True, "sort_key": "dni"},
+        {
+            "title": "Género",
+            "width": "15%",
+            "sortable": True,
+            "sort_key": "genero_display",
+        },
+        {
+            "title": "Beneficiarios",
+            "width": "10%",
+            "sortable": True,
+            "sort_key": "cantidad_beneficiarios",
+        },
+        {
+            "title": "Provincia",
+            "width": "15%",
+            "sortable": True,
+            "sort_key": "provincia",
+        },
+        {
+            "title": "Municipio",
+            "width": "10%",
+            "sortable": True,
+            "sort_key": "municipio",
+        },
+    ]
+    fields = [
+        {"name": "cuil"},
+        {"name": "apellido_nombre"},
+        {"name": "dni"},
+        {"name": "genero_display"},
+        {"name": "cantidad_beneficiarios"},
+        {"name": "provincia"},
+        {"name": "municipio"},
+    ]
+    columns_context = build_columns_context_from_fields(
+        request,
+        "centrodefamilia_responsables_list",
+        headers,
+        fields,
+    )
     return {
-        "table_headers": [
-            {"title": "CUIL", "width": "15%", "sortable": True, "sort_key": "cuil"},
-            {
-                "title": "Apellido y Nombre",
-                "width": "25%",
-                "sortable": True,
-                "sort_key": "apellido_nombre",
-            },
-            {"title": "DNI", "width": "10%", "sortable": True, "sort_key": "dni"},
-            {
-                "title": "Género",
-                "width": "15%",
-                "sortable": True,
-                "sort_key": "genero_display",
-            },
-            {
-                "title": "Beneficiarios",
-                "width": "10%",
-                "sortable": True,
-                "sort_key": "cantidad_beneficiarios",
-            },
-            {
-                "title": "Provincia",
-                "width": "15%",
-                "sortable": True,
-                "sort_key": "provincia",
-            },
-            {
-                "title": "Municipio",
-                "width": "10%",
-                "sortable": True,
-                "sort_key": "municipio",
-            },
-        ],
-        "table_fields": [
-            {"name": "cuil"},
-            {"name": "apellido_nombre"},
-            {"name": "dni"},
-            {"name": "genero_display"},
-            {"name": "cantidad_beneficiarios"},
-            {"name": "provincia"},
-            {"name": "municipio"},
-        ],
+        **columns_context,
         "table_actions": [
             {
                 "url_name": "responsables_detail",

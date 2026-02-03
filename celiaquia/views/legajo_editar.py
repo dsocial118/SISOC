@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.db import transaction
 
 from celiaquia.models import Expediente, ExpedienteCiudadano
-from core.models import Sexo
+from core.models import Nacionalidad, Sexo
 
 logger = logging.getLogger("django")
 
@@ -76,12 +76,14 @@ class EditarLegajoView(View):
                     else ""
                 ),
                 "sexo": ciudadano.sexo_id if ciudadano.sexo else "",
-                "nacionalidad": ciudadano.nacionalidad or "",
+                "nacionalidad": ciudadano.nacionalidad_id or "",
                 "telefono": ciudadano.telefono or "",
                 "email": ciudadano.email or "",
                 "calle": ciudadano.calle or "",
                 "altura": ciudadano.altura or "",
                 "codigo_postal": ciudadano.codigo_postal or "",
+                "municipio": ciudadano.municipio_id if ciudadano.municipio else "",
+                "localidad": ciudadano.localidad_id if ciudadano.localidad else "",
             },
         }
 
@@ -136,40 +138,81 @@ class EditarLegajoView(View):
                         "Apellido, nombre y documento son obligatorios."
                     )
 
-                # Fecha de nacimiento
+                # Fecha de nacimiento (obligatorio)
                 fecha_str = request.POST.get("fecha_nacimiento", "").strip()
-                if fecha_str:
-                    from datetime import datetime
+                if not fecha_str:
+                    raise ValidationError("Fecha de nacimiento es obligatoria.")
+                from datetime import datetime
 
-                    try:
-                        ciudadano.fecha_nacimiento = datetime.strptime(
-                            fecha_str, "%Y-%m-%d"
-                        ).date()
-                    except ValueError:
-                        raise ValidationError("Formato de fecha inválido.")
+                try:
+                    ciudadano.fecha_nacimiento = datetime.strptime(
+                        fecha_str, "%Y-%m-%d"
+                    ).date()
+                except ValueError:
+                    raise ValidationError("Formato de fecha inválido.")
 
-                # Sexo
+                # Sexo (obligatorio)
                 sexo_id = request.POST.get("sexo", "").strip()
-                if sexo_id:
-                    try:
-                        ciudadano.sexo = Sexo.objects.get(pk=sexo_id)
-                    except Sexo.DoesNotExist:
-                        ciudadano.sexo = None
-                else:
-                    ciudadano.sexo = None
+                if not sexo_id:
+                    raise ValidationError("Sexo es obligatorio.")
+                try:
+                    ciudadano.sexo = Sexo.objects.get(pk=sexo_id)
+                except Sexo.DoesNotExist:
+                    raise ValidationError("Sexo inválido.")
 
-                # Nacionalidad (texto libre)
-                nacionalidad_txt = request.POST.get("nacionalidad", "").strip()
-                ciudadano.nacionalidad = nacionalidad_txt or ""
+                # Nacionalidad (obligatorio)
+                nacionalidad_id = request.POST.get("nacionalidad", "").strip()
+                if not nacionalidad_id:
+                    raise ValidationError("Nacionalidad es obligatoria.")
+                try:
+                    ciudadano.nacionalidad = Nacionalidad.objects.get(
+                        pk=nacionalidad_id
+                    )
+                except Nacionalidad.DoesNotExist:
+                    raise ValidationError("Nacionalidad inválida.")
 
-                # Campos opcionales
-                ciudadano.telefono = request.POST.get("telefono", "").strip() or None
-                ciudadano.email = request.POST.get("email", "").strip() or None
-                ciudadano.calle = request.POST.get("calle", "").strip() or None
-                ciudadano.altura = request.POST.get("altura", "").strip() or None
-                ciudadano.codigo_postal = (
-                    request.POST.get("codigo_postal", "").strip() or None
-                )
+                # Teléfono (obligatorio, mín 8 dígitos)
+                telefono = request.POST.get("telefono", "").strip()
+                if not telefono or len(telefono) < 8:
+                    raise ValidationError("Teléfono debe tener al menos 8 dígitos.")
+                ciudadano.telefono = telefono
+
+                # Email (obligatorio)
+                email = request.POST.get("email", "").strip()
+                if not email:
+                    raise ValidationError("Email es obligatorio.")
+                ciudadano.email = email
+
+                # Calle (obligatorio)
+                calle = request.POST.get("calle", "").strip()
+                if not calle:
+                    raise ValidationError("Calle es obligatoria.")
+                ciudadano.calle = calle
+
+                # Altura (obligatorio)
+                altura = request.POST.get("altura", "").strip()
+                if not altura:
+                    raise ValidationError("Altura es obligatoria.")
+                ciudadano.altura = altura
+
+                # Código postal (obligatorio)
+                codigo_postal = request.POST.get("codigo_postal", "").strip()
+                if not codigo_postal:
+                    raise ValidationError("Código postal es obligatorio.")
+                ciudadano.codigo_postal = codigo_postal
+
+                # Municipio y Localidad (obligatorio)
+                municipio_id = request.POST.get("municipio", "").strip()
+                localidad_id = request.POST.get("localidad", "").strip()
+                if not municipio_id or not localidad_id:
+                    raise ValidationError("Municipio y Localidad son obligatorios.")
+                from core.models import Municipio, Localidad
+
+                try:
+                    ciudadano.municipio = Municipio.objects.get(pk=municipio_id)
+                    ciudadano.localidad = Localidad.objects.get(pk=localidad_id)
+                except (Municipio.DoesNotExist, Localidad.DoesNotExist):
+                    raise ValidationError("Municipio o Localidad inválido.")
 
                 # Guardar cambios
                 ciudadano.save()

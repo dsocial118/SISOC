@@ -1,8 +1,8 @@
 <!-- Componente Pagination -->
 <!-- Uso: include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range query=query page_param='page' prev_text='Anterior' next_text='Siguiente' -->
-{% if is_paginated %}
-    {% with page_param_name=page_param|default:'page' %}
-        <div class="mt-2">
+{% with page_param_name=page_param|default:'page' %}
+    <div class="mt-2">
+        {% if is_paginated %}
             <ul class="pagination">
                 <!-- Botón Anterior -->
                 {% if page_obj.has_previous %}
@@ -65,6 +65,11 @@
                     </li>
                 {% endif %}
             </ul>
-        </div>
-    {% endwith %}
-{% endif %}
+        {% endif %}
+        {% if page_obj %}
+            <p class="text-center text-muted mb-0 mt-1">Se encontraron {{ page_obj.paginator.count }} resultados</p>
+        {% elif results_count %}
+            <p class="text-center text-muted mb-0 mt-1">Se encontraron {{ results_count }} resultados</p>
+        {% endif %}
+    </div>
+{% endwith %}

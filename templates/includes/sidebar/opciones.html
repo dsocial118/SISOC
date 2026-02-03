@@ -23,13 +23,7 @@
             </div>
             <div class="info flex-grow-1">
                 <p class="mb-1 text-white fw-bold">{{ request.user.get_full_name|default:request.user.username }}</p>
-                <p class="mb-0 text-white-50 small">
-                    {% if request.user.groups.all %}
-                        {{ request.user.groups.first.name }}
-                    {% else %}
-                        Sin grupo
-                    {% endif %}
-                </p>
+                <p class="mb-0 text-white-50 small">{{ request.user.profile.rol }}</p>
             </div>
         </div>
     </li>
@@ -41,7 +35,14 @@
             <p>Inicio</p>
         </a>
     </li>
-    <!-- ADMINISTRACIÓN -->
+    <li class="nav-item nav-main-item">
+        <a href="{% url 'changelog' %}"
+           class="nav-link {% if 'novedades' in pagina_actual %}active{% endif %}">
+            <i class="nav-icon bi bi-megaphone-fill"></i>
+            <p>Novedades del sistema</p>
+        </a>
+    </li>
+
     {% if request.user|has_group:"Administrador" %}
         <li class="nav-item nav-main-item">
             <a href="#" class="nav-link">
@@ -142,7 +143,7 @@
         {% endif %}
     {% endwith %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual %}menu-open{% endif %}">
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
             <p>
@@ -354,7 +355,7 @@
                 </li>
             {% endif %}
             <!-- CELIAQUÍA -->
-            {% if request.user|has_group:"TecnicoCeliaquia" or request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"ProvinciaCeliaquia" %}
+            {% if request.user|has_group:"TecnicoCeliaquia" or request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"ProvinciaCeliaquia" or request.user.is_superuser %}
                 <li class="nav-item">
                     <a href="#" class="nav-link nav-dot ms-2">
                         <p>
@@ -374,6 +375,14 @@
                                 <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
                                     <i class="nav-icon fas fa-chart-bar"></i>
                                     <p>Dashboard Cupos</p>
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
+                            <li class="nav-item">
+                                <a href="{% url 'reporter_provincias' %}" class="nav-link ms-2">
+                                    <i class="nav-icon fas fa-chart-pie"></i>
+                                    <p>Reporte</p>
                                 </a>
                             </li>
                         {% endif %}

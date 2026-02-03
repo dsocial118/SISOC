@@ -135,6 +135,8 @@ class CiudadanoService:
         nacionalidad = CiudadanoService._resolver_nacionalidad(
             datos.get("nacionalidad")
         )
+        if datos.get("nacionalidad") not in (None, "") and nacionalidad is None:
+            raise ValidationError(f"Nacionalidad invalida: {datos.get('nacionalidad')}")
         calle = (datos.get("calle") or "").strip()
         altura = datos.get("altura")
         codigo_postal = datos.get("codigo_postal")

@@ -1,16 +1,23 @@
+import json
 import os
+from collections import defaultdict
 from typing import Any
 
+from auditlog.models import LogEntry
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Count
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.text import Truncator
+from django.utils.decorators import method_decorator
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -18,15 +25,22 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from django.views.decorators.csrf import ensure_csrf_cookie
 
-from admisiones.models.admisiones import Admision, EstadoAdmision
+from admisiones.models.admisiones import Admision, EstadoAdmision, InformeTecnico
 from comedores.forms.comedor_form import ComedorForm, ReferenteForm
-from comedores.models import Comedor, HistorialValidacion, ImagenComedor
+from comedores.forms.observacion_form import ObservacionForm
+from comedores.models import Comedor, HistorialValidacion, ImagenComedor, Observacion
 from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
+from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.utils import convert_string_to_int
+from intervenciones.models.intervenciones import Intervencion
+from intervenciones.forms import IntervencionForm
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class ComedorListView(LoginRequiredMixin, ListView):
     model = Comedor
     template_name = "comedor/comedor_list.html"
@@ -40,6 +54,75 @@ class ComedorListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        headers = [
+            {"title": "ID"},
+            {"title": "Nombre"},
+            {"title": "Tipo"},
+            {"title": "Organización"},
+            {"title": "Programa"},
+            {"title": "Dupla"},
+            {"title": "Estado general"},
+            {"title": "Estado actividad"},
+            {"title": "Estado proceso"},
+            {"title": "Estado detalle"},
+            {"title": "Provincia"},
+            {"title": "Municipio"},
+            {"title": "Localidad"},
+            {"title": "Barrio"},
+            {"title": "Partido"},
+            {"title": "Calle"},
+            {"title": "Número"},
+            {"title": "Ubicación"},
+            {"title": "Dirección"},
+            {"title": "Referente"},
+            {"title": "Referente celular"},
+            {"title": "Validación"},
+            {"title": "Fecha validación"},
+        ]
+        fields = [
+            {"name": "id"},
+            {"name": "nombre"},
+            {"name": "tipo"},
+            {"name": "organizacion"},
+            {"name": "programa"},
+            {"name": "dupla"},
+            {"name": "estado_general"},
+            {"name": "estado_actividad"},
+            {"name": "estado_proceso"},
+            {"name": "estado_detalle"},
+            {"name": "provincia"},
+            {"name": "municipio"},
+            {"name": "localidad"},
+            {"name": "barrio"},
+            {"name": "partido"},
+            {"name": "calle"},
+            {"name": "numero"},
+            {"name": "ubicacion"},
+            {"name": "direccion"},
+            {"name": "referente"},
+            {"name": "referente_celular"},
+            {"name": "validacion"},
+            {"name": "fecha_validado"},
+        ]
+        columns_context = build_columns_context_from_fields(
+            self.request,
+            "comedores_list",
+            headers,
+            fields,
+            default_keys=[
+                "nombre",
+                "tipo",
+                "ubicacion",
+                "direccion",
+                "referente",
+                "validacion",
+            ],
+            required_keys=["nombre"],
+        )
+        active_columns = columns_context.get("column_active_keys") or [
+            field["name"] for field in fields
+        ]
 
         # Datos para componentes reutilizables
         context.update(
@@ -57,8 +140,11 @@ class ComedorListView(LoginRequiredMixin, ListView):
                 "filters_action": reverse("comedores"),
                 "filters_config": get_filters_ui_config(),
                 "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.COMEDORES,
+                "column_keys_all": [field["name"] for field in fields],
+                "active_columns": active_columns,
             }
         )
+        context.update(columns_context)
 
         return context
 
@@ -123,7 +209,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             hasattr(self.object, "relevamientos_optimized")
             and self.object.relevamientos_optimized
         ):
-            cache_key = f"presupuestos_comedor_{self.object.id}"
+            cache_key = f"presupuestos_comedor_{self.object.id}_v2"
             cached_presupuestos = cache.get(cache_key)
 
             if cached_presupuestos:
@@ -147,6 +233,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             valor_desayuno,
             valor_almuerzo,
             valor_merienda,
+            monto_prestacion_mensual,
         ) = presupuestos_tuple
 
         return {
@@ -155,6 +242,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "presupuesto_almuerzo": valor_almuerzo,
             "presupuesto_merienda": valor_merienda,
             "presupuesto_cena": valor_cena,
+            "monto_prestacion_mensual": monto_prestacion_mensual,
         }
 
     def post(self, request, *args, **kwargs):
@@ -200,11 +288,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
     def get_relaciones_optimizadas(self):  # pylint: disable=too-many-locals
         """Obtiene datos de relaciones usando prefetch cuando sea posible."""
-        relevamientos = (
-            self.object.relevamientos_optimized[:1]
+        relevamientos_prefetched = (
+            self.object.relevamientos_optimized
             if hasattr(self.object, "relevamientos_optimized")
-            else []
+            else None
         )
+        relevamiento_actual = ComedorService.get_relevamiento_resumen(
+            relevamientos_prefetched or []
+        )
+        relevamientos = [relevamiento_actual] if relevamiento_actual else []
         observaciones = (
             self.object.observaciones_optimized
             if hasattr(self.object, "observaciones_optimized")
@@ -212,12 +304,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         )
 
         count_relevamientos = (
-            len(self.object.relevamientos_optimized)
-            if hasattr(self.object, "relevamientos_optimized")
+            len(relevamientos_prefetched)
+            if relevamientos_prefetched is not None
             else self.object.relevamiento_set.count()
         )
 
-        relevamiento_actual = relevamientos[0] if relevamientos else None
         anexo = (
             getattr(relevamiento_actual, "anexo", None) if relevamiento_actual else None
         )
@@ -250,6 +341,230 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             .order_by("-id")
         )
         admision = admisiones_qs
+        timeline_context = ComedorService.get_admision_timeline_context(admisiones_qs)
+        (
+            _nomina_page_obj,
+            nomina_m,
+            nomina_f,
+            _nomina_x,
+            nomina_espera,
+            nomina_total,
+            nomina_rangos,
+        ) = ComedorService.get_nomina_detail(self.object.pk, page=1, per_page=1)
+        nomina_menores = (nomina_rangos.get("ninos") or 0) + (
+            nomina_rangos.get("adolescentes") or 0
+        )
+        nomina_total_safe = nomina_total or 0
+        nomina_activos = nomina_rangos.get("total_activos") or 0
+        nomina_sin_dato = max(nomina_total_safe - nomina_activos, 0)
+
+        def _pct(value):
+            if not nomina_total_safe:
+                return 0
+            return int(round((value or 0) * 100 / nomina_total_safe))
+
+        def _safe_cell(value):
+            if value is None or value == "":
+                return "-"
+            return escape(value)
+
+        intervenciones_qs = (
+            Intervencion.objects.filter(comedor=self.object)
+            .select_related("tipo_intervencion", "subintervencion", "destinatario")
+            .order_by("-fecha")
+        )
+        intervenciones_paginator = Paginator(intervenciones_qs, 10)
+        intervenciones_page_number = self.request.GET.get("intervenciones_page", 1)
+        intervenciones_page_obj = intervenciones_paginator.get_page(
+            intervenciones_page_number
+        )
+        intervenciones_page_range = intervenciones_paginator.get_elided_page_range(
+            number=intervenciones_page_obj.number
+        )
+        intervencion_ids = [
+            intervencion.pk
+            for intervencion in intervenciones_page_obj
+            if intervencion.pk
+        ]
+        creator_map: dict[int, Any] = {}
+        if intervencion_ids:
+            content_type = ContentType.objects.get_for_model(Intervencion)
+            logs_qs = (
+                LogEntry.objects.filter(
+                    content_type=content_type,
+                    object_pk__in=[str(pk) for pk in intervencion_ids],
+                    action=LogEntry.Action.CREATE,
+                )
+                .select_related("actor")
+                .order_by("timestamp")
+            )
+            for log in logs_qs:
+                try:
+                    object_pk = int(log.object_pk)
+                except (TypeError, ValueError):
+                    continue
+                creator_map.setdefault(object_pk, log.actor)
+
+        intervenciones_headers = [
+            {"title": "Fecha"},
+            {"title": "Intervención"},
+            {"title": "Sub intervención"},
+            {"title": "Doc. adjunta"},
+            {"title": "Destinatario"},
+            {"title": "Usuario creador"},
+            {"title": "Acciones"},
+        ]
+        intervenciones_items = []
+        for intervencion in intervenciones_page_obj:
+            doc_badge = (
+                format_html('<span class="badge bg-success">Sí</span>')
+                if getattr(intervencion, "tiene_documentacion", False)
+                else format_html('<span class="badge bg-secondary">No</span>')
+            )
+            fecha_display = (
+                intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
+            )
+            actor = creator_map.get(intervencion.pk)
+            usuario_creador = "-"
+            if actor:
+                full_name = actor.get_full_name()
+                usuario_creador = full_name or getattr(actor, "username", None) or "-"
+
+            actions = [
+                format_html(
+                    '<a href="{}" class="btn btn-sm btn-primary">Ver</a>',
+                    reverse("intervencion_detalle", args=[intervencion.id]),
+                )
+            ]
+            if self.request.user.is_superuser:
+                actions.append(
+                    format_html(
+                        '<a href="{}" class="btn btn-sm btn-danger">Eliminar</a>',
+                        reverse(
+                            "comedor_intervencion_borrar",
+                            args=[self.object.id, intervencion.id],
+                        ),
+                    )
+                )
+            actions_html = format_html_join(
+                " ", "{}", ((action,) for action in actions)
+            )
+
+            intervenciones_items.append(
+                {
+                    "cells": [
+                        {"content": _safe_cell(fecha_display)},
+                        {
+                            "content": _safe_cell(
+                                str(intervencion.tipo_intervencion)
+                                if intervencion.tipo_intervencion
+                                else None
+                            )
+                        },
+                        {
+                            "content": _safe_cell(
+                                str(intervencion.subintervencion)
+                                if intervencion.subintervencion
+                                else None
+                            )
+                        },
+                        {"content": doc_badge},
+                        {
+                            "content": _safe_cell(
+                                str(intervencion.destinatario)
+                                if intervencion.destinatario
+                                else None
+                            )
+                        },
+                        {"content": _safe_cell(usuario_creador)},
+                        {"content": actions_html},
+                    ]
+                }
+            )
+
+        observaciones_qs = (
+            Observacion.objects.filter(comedor=self.object)
+            .order_by("-fecha_visita")
+            .select_related("comedor")
+        )
+        observaciones_paginator = Paginator(observaciones_qs, 5)
+        observaciones_page_number = self.request.GET.get("observaciones_page", 1)
+        observaciones_page_obj = observaciones_paginator.get_page(
+            observaciones_page_number
+        )
+        observaciones_page_range = observaciones_paginator.get_elided_page_range(
+            number=observaciones_page_obj.number
+        )
+        observaciones_headers = [
+            {"title": "Fecha"},
+            {"title": "Observador"},
+            {"title": "Observación"},
+            {"title": "Acciones"},
+        ]
+        observaciones_items = []
+        for obs in observaciones_page_obj:
+            fecha_obs = "-"
+            if obs.fecha_visita:
+                fecha_visita = obs.fecha_visita
+                if timezone.is_naive(fecha_visita):
+                    fecha_visita = timezone.make_aware(fecha_visita)
+                fecha_visita = timezone.localtime(fecha_visita)
+                fecha_obs = fecha_visita.strftime("%d/%m/%Y %H:%M")
+
+            observaciones_items.append(
+                {
+                    "cells": [
+                        {"content": fecha_obs},
+                        {"content": _safe_cell(obs.observador or "Sin observador")},
+                        {
+                            "content": _safe_cell(
+                                Truncator(obs.observacion or "").chars(80)
+                            )
+                        },
+                        {
+                            "content": format_html(
+                                '<a href="{}" class="btn btn-sm btn-primary">Ver</a>',
+                                reverse("observacion_detalle", kwargs={"pk": obs.id}),
+                            )
+                        },
+                    ]
+                }
+            )
+
+        intervenciones_list = (
+            Intervencion.objects.filter(comedor=self.object, fecha__isnull=False)
+            .values_list("fecha", flat=True)
+            .order_by("fecha")
+        )
+
+        mes_counter = defaultdict(int)
+        for fecha in intervenciones_list:
+            if fecha:
+                mes_key = (fecha.year, fecha.month)
+                mes_counter[mes_key] += 1
+
+        meses_ordenados = sorted(mes_counter.keys())
+
+        meses_es = [
+            "Ene",
+            "Feb",
+            "Mar",
+            "Abr",
+            "May",
+            "Jun",
+            "Jul",
+            "Ago",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dic",
+        ]
+        interacciones_labels = []
+        interacciones_values = []
+        for year, month in meses_ordenados:
+            label = f"{meses_es[month - 1]} {year}"
+            interacciones_labels.append(label)
+            interacciones_values.append(mes_counter[(year, month)])
 
         # Preparar datos para la tabla de admisiones
         admisiones_headers = [
@@ -270,11 +585,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         admisiones_page_range = admisiones_paginator.get_elided_page_range(
             number=admisiones_page_obj.number
         )
-
-        def _safe_cell(value):
-            if value is None or value == "":
-                return "-"
-            return escape(value)
 
         admisiones_items = []
         for a in admisiones_page_obj:
@@ -471,6 +781,32 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "comedor_categoria": comedor_categoria,
             "rendicion_cuentas_final_activo": True,  # rendiciones_mensuales >= 5, (esta validación se saca temporalmente)
             "admision": admision,
+            **timeline_context,
+            "nomina_total": nomina_total,
+            "nomina_hombres": nomina_m,
+            "nomina_mujeres": nomina_f,
+            "nomina_menores": nomina_menores,
+            "nomina_espera": nomina_espera,
+            "nomina_pct_sin_dato": _pct(nomina_sin_dato),
+            "nomina_pct_ninos": _pct(nomina_rangos.get("ninos")),
+            "nomina_pct_adolescentes": _pct(nomina_rangos.get("adolescentes")),
+            "nomina_pct_adultos": _pct(nomina_rangos.get("adultos")),
+            "nomina_pct_adultos_mayores": _pct(nomina_rangos.get("adultos_mayores")),
+            "nomina_pct_adulto_mayor_avanzado": _pct(
+                nomina_rangos.get("adulto_mayor_avanzado")
+            ),
+            "intervenciones_headers": intervenciones_headers,
+            "intervenciones_items": intervenciones_items,
+            "intervenciones_page_obj": intervenciones_page_obj,
+            "intervenciones_is_paginated": (intervenciones_page_obj.has_other_pages()),
+            "intervenciones_page_range": intervenciones_page_range,
+            "observaciones_headers": observaciones_headers,
+            "observaciones_items": observaciones_items,
+            "observaciones_page_obj": observaciones_page_obj,
+            "observaciones_is_paginated": observaciones_page_obj.has_other_pages(),
+            "observaciones_page_range": observaciones_page_range,
+            "interacciones_labels": json.dumps(interacciones_labels),
+            "interacciones_values": json.dumps(interacciones_values),
             "admisiones_headers": admisiones_headers,
             "admisiones_items": admisiones_items,
             "admisiones_page_obj": admisiones_page_obj,
@@ -496,12 +832,84 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         presupuestos_data = self.get_presupuestos_data()
         relaciones_data = self.get_relaciones_optimizadas()
         env_config = self._get_environment_config()
+        intervencion_form = IntervencionForm()
+
+        selected_admision_pk = None
+        selected_param = self.request.GET.get("admision_id")
+        if selected_param:
+            try:
+                selected_admision_pk = int(selected_param)
+            except (TypeError, ValueError):
+                selected_admision_pk = None
+
+        admisiones_qs = relaciones_data.get("admision")
+        selected_admision = None
+        if admisiones_qs and selected_admision_pk:
+            selected_admision = admisiones_qs.filter(id=selected_admision_pk).first()
+
+        if not selected_admision:
+            selected_admision = relaciones_data.get("admision_activa")
+
+        informe_tecnico = None
+        if selected_admision:
+            informe_tecnico = (
+                InformeTecnico.objects.filter(
+                    admision=selected_admision, estado_formulario="finalizado"
+                )
+                .order_by("-id")
+                .first()
+            )
+
+        selected_convenio_numero = None
+        if selected_admision:
+            selected_convenio_numero = getattr(
+                selected_admision, "convenio_numero", None
+            )
+            if selected_convenio_numero in ("", None):
+                selected_convenio_numero = convert_string_to_int(
+                    getattr(selected_admision, "numero_convenio", "")
+                )
+
+        prestaciones_aprobadas_total = None
+        monto_prestacion_mensual_aprobadas = None
+        if informe_tecnico:
+            prestaciones_por_tipo = ComedorService.get_prestaciones_aprobadas_por_tipo(
+                informe_tecnico
+            )
+            if prestaciones_por_tipo is not None:
+                prestaciones_aprobadas_total = sum(prestaciones_por_tipo.values())
+                monto_prestacion_mensual_aprobadas = (
+                    ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(
+                        prestaciones_por_tipo
+                    )
+                )
+
+        total_admisiones = admisiones_qs.count() if admisiones_qs is not None else 0
 
         # Agregar opciones de validación
 
         context["opciones_no_validar"] = HistorialValidacion.get_opciones_no_validar()
 
-        context.update({**presupuestos_data, **relaciones_data, **env_config})
+        context.update(
+            {
+                **presupuestos_data,
+                **relaciones_data,
+                **env_config,
+                "intervencion_form": intervencion_form,
+                "observacion_form": ObservacionForm(),
+                "selected_admision": selected_admision,
+                "selected_admision_id": getattr(selected_admision, "id", None),
+                "admisiones_informetecnico": informe_tecnico,
+                "selected_convenio_numero": selected_convenio_numero,
+                "total_admisiones": total_admisiones,
+                "prestaciones_aprobadas_total": prestaciones_aprobadas_total,
+                "monto_prestacion_mensual": monto_prestacion_mensual_aprobadas,
+            }
+        )
+        timeline_selected = ComedorService.get_admision_timeline_context_from_admision(
+            selected_admision
+        )
+        context.update(timeline_selected)
         return context
 
 

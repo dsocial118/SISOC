@@ -8,6 +8,9 @@ from .models import (
     ExpedienteCiudadano,
     AsignacionTecnico,
     ExpedienteEstadoHistorial,
+    HistorialComentarios,
+    TipoDocumento,
+    DocumentoLegajo,
 )
 
 
@@ -67,3 +70,46 @@ class ExpedienteEstadoHistorialAdmin(admin.ModelAdmin):
         "fecha",
     )
     list_filter = ("expediente", "estado_nuevo")
+
+
+@admin.register(HistorialComentarios)
+class HistorialComentariosAdmin(admin.ModelAdmin):
+    list_display = (
+        "legajo",
+        "tipo_comentario",
+        "comentario_truncado",
+        "usuario",
+        "fecha_creacion",
+    )
+    list_filter = ("tipo_comentario", "fecha_creacion", "usuario")
+    search_fields = ("legajo__ciudadano__documento", "comentario")
+    readonly_fields = ("fecha_creacion",)
+
+    def comentario_truncado(self, obj):
+        return (
+            obj.comentario[:50] + "..." if len(obj.comentario) > 50 else obj.comentario
+        )
+
+    comentario_truncado.short_description = "Comentario"
+
+
+@admin.register(TipoDocumento)
+class TipoDocumentoAdmin(admin.ModelAdmin):
+    list_display = ("nombre", "requerido", "orden", "activo")
+    list_filter = ("requerido", "activo")
+    search_fields = ("nombre", "descripcion")
+    ordering = ("orden", "nombre")
+
+
+class DocumentoLegajoInline(admin.TabularInline):
+    model = DocumentoLegajo
+    extra = 0
+    readonly_fields = ("fecha_carga",)
+
+
+@admin.register(DocumentoLegajo)
+class DocumentoLegajoAdmin(admin.ModelAdmin):
+    list_display = ("legajo", "tipo_documento", "fecha_carga", "usuario_carga")
+    list_filter = ("tipo_documento", "fecha_carga")
+    search_fields = ("legajo__ciudadano__documento", "tipo_documento__nombre")
+    readonly_fields = ("fecha_carga",)
