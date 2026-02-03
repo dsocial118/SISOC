@@ -91,9 +91,9 @@ class ExpedienteService:
             )
 
         for leg in expediente.expediente_ciudadanos.all():
-            if hasattr(leg, 'archivos_ok'):
+            if hasattr(leg, "archivos_ok"):
                 leg.archivos_ok = bool(leg.archivo2 and leg.archivo3)
-                leg.save(update_fields=['archivos_ok'])
+                leg.save(update_fields=["archivos_ok"])
 
         if not LegajoService.all_legajos_loaded(expediente):
             raise ValidationError(
