@@ -180,6 +180,12 @@ class EspacioCocina(models.Model):
     almacenamiento_alimentos_secos = models.BooleanField(
         default=False, blank=True, null=True
     )
+    almacenamiento_alimentos_secos_otro = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="2.2.2.1 Si respondió 'No', especificar dónde almacenan",
+    )
     heladera = models.BooleanField(default=False, blank=True, null=True)
     freezer = models.BooleanField(default=False, blank=True, null=True)
     recipiente_residuos_organicos = models.BooleanField(
