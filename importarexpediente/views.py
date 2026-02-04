@@ -97,11 +97,12 @@ HEADER_MAP = {
     "resolucion": "expediente_convenio",
     "resolución de pago": "expediente_convenio",
     # Comedor identificación (por nombre o por id)
-    "comedor": "anexo",
+    "comedor": "comedor",
+    "anexo": "anexo",
     "id": "comedor",
     # Monto total
-    "monto": "monto",
-    "total": "monto",
+    "monto": "total",
+    "total": "total",
     # Orden de pago
     "numero orden pago": "numero_orden_pago",
     "número de orden de pago": "numero_orden_pago",
@@ -110,6 +111,11 @@ HEADER_MAP = {
     "fecha de pago al banco": "fecha_pago_al_banco",
     "fecha acreditacion": "fecha_acreditacion",
     "fecha de acreditación": "fecha_acreditacion",
+    # Mes y Año
+    "mes": "mes_pago",
+    "mes de pago": "mes_pago",
+    "año": "ano",
+    "ano": "ano",
     # Otros
     "observaciones": "observaciones",
     "if cantidad de prestaciones": "if_cantidad_de_prestaciones",
@@ -133,10 +139,12 @@ FIELD_LABELS = {
     "expediente_convenio": "Expediente del convenio",
     "comedor": "Comedor",
     "anexo": "Comedor (anexo)",
-    "monto": "Monto",
+    "total": "Total",
     "numero_orden_pago": "Número de orden de pago",
     "fecha_pago_al_banco": "Fecha de pago al banco",
     "fecha_acreditacion": "Fecha de acreditación",
+    "mes_pago": "Mes de pago",
+    "ano": "Año",
     "observaciones": "Observaciones",
     "if_cantidad_de_prestaciones": "IF cantidad de prestaciones",
     "if_pagado": "IF pagado",
@@ -297,6 +305,14 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
             mapped.append(HEADER_MAP.get(key, None))
         # Nota: cabeceras no mapeadas se omiten si no son requeridas en la importación
 
+        # Localizar la columna "Expediente de Pago" para capturar su número una sola vez
+        exp_pago_col_idx = None
+        for idx, h in enumerate(headers):
+            if h == "expediente de pago":
+                exp_pago_col_idx = idx
+                break
+        numero_expediente_guardado = False
+
         success_count = 0
         error_count = 0
         expected_cols = len(headers)
@@ -317,7 +333,21 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                         if not field:
                             continue
                         val = (cell or "").strip()
-                        if field == "monto":
+                        # Capturar numero_expedinte_pago (como string) una sola vez desde la columna correspondiente
+                        if (
+                            not numero_expediente_guardado
+                            and exp_pago_col_idx is not None
+                            and col_idx == exp_pago_col_idx
+                            and val
+                        ):
+                            try:
+                                base_upload.numero_expedinte_pago = val
+                                base_upload.save(update_fields=["numero_expedinte_pago"]) 
+                                numero_expediente_guardado = True
+                            except Exception:
+                                # Si falla el guardado, continuar sin interrumpir la validación
+                                pass
+                        if field == "total":
                             parsed = self.parse_decimal(val)
                             kwargs[field] = parsed
                         elif field.startswith("monto_mensual_"):
@@ -521,6 +551,7 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         )
         context["query"] = self.request.GET.get("busqueda", "")
         context["batch_id"] = self.batch_id
+        context["batch"] = self.batch
         context["error_count"] = errores.count()
         context["exito_count"] = exitos.count()
         return context
@@ -680,7 +711,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                         if not field:
                             continue
                         val = (cell or "").strip()
-                        if field == "monto":
+                        if field == "total":
                             kwargs[field] = _parse_decimal(val)
                         elif field.startswith("monto_mensual_"):
                             kwargs[field] = _parse_decimal(val)

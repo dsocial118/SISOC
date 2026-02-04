@@ -3,6 +3,66 @@
 from django.db import migrations, models
 
 
+def drop_resolucion_pago_if_exists(apps, schema_editor):
+    table = 'expedientespagos_expedientepago'
+    column = 'resolucion_pago'
+    connection = schema_editor.connection
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+            [table, column],
+        )
+        exists = cursor.fetchone()[0] > 0
+    if exists:
+        with connection.cursor() as cursor:
+            cursor.execute(f"ALTER TABLE `{table}` DROP COLUMN `{column}`")
+
+
+def add_column_if_missing(schema_editor, table, column, definition_sql):
+    connection = schema_editor.connection
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s",
+            [table, column],
+        )
+        exists = cursor.fetchone()[0] > 0
+    if not exists:
+        with connection.cursor() as cursor:
+            cursor.execute(f"ALTER TABLE `{table}` ADD COLUMN `{column}` {definition_sql}")
+
+
+def add_monto_mensual_almuerzo(apps, schema_editor):
+    add_column_if_missing(schema_editor, 'expedientespagos_expedientepago', 'monto_mensual_almuerzo', 'DECIMAL(10,2) NULL')
+
+
+def add_monto_mensual_cena(apps, schema_editor):
+    add_column_if_missing(schema_editor, 'expedientespagos_expedientepago', 'monto_mensual_cena', 'DECIMAL(10,2) NULL')
+
+
+def add_monto_mensual_desayuno(apps, schema_editor):
+    add_column_if_missing(schema_editor, 'expedientespagos_expedientepago', 'monto_mensual_desayuno', 'DECIMAL(10,2) NULL')
+
+
+def add_monto_mensual_merienda(apps, schema_editor):
+    add_column_if_missing(schema_editor, 'expedientespagos_expedientepago', 'monto_mensual_merienda', 'DECIMAL(10,2) NULL')
+
+
+def add_prestaciones_mensuales_almuerzo(apps, schema_editor):
+    add_column_if_missing(schema_editor, 'expedientespagos_expedientepago', 'prestaciones_mensuales_almuerzo', 'INT NULL')
+
+
+def add_prestaciones_mensuales_cena(apps, schema_editor):
+    add_column_if_missing(schema_editor, 'expedientespagos_expedientepago', 'prestaciones_mensuales_cena', 'INT NULL')
+
+
+def add_prestaciones_mensuales_desayuno(apps, schema_editor):
+    add_column_if_missing(schema_editor, 'expedientespagos_expedientepago', 'prestaciones_mensuales_desayuno', 'INT NULL')
+
+
+def add_prestaciones_mensuales_merienda(apps, schema_editor):
+    add_column_if_missing(schema_editor, 'expedientespagos_expedientepago', 'prestaciones_mensuales_merienda', 'INT NULL')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,91 +70,16 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name="expedientepago",
-            old_name="resolucion_pago",
-            new_name="expediente_convenio",
-        ),
-        migrations.AlterField(
-            model_name="expedientepago",
-            name="expediente_convenio",
-            field=models.CharField(
-                blank=True,
-                max_length=255,
-                null=True,
-                verbose_name="Expediente del Convenio",
-            ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="monto_mensual_almuerzo",
-            field=models.DecimalField(
-                blank=True,
-                decimal_places=2,
-                max_digits=10,
-                null=True,
-                verbose_name="Monto mensual almuerzo",
-            ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="monto_mensual_cena",
-            field=models.DecimalField(
-                blank=True,
-                decimal_places=2,
-                max_digits=10,
-                null=True,
-                verbose_name="Monto mensual cena",
-            ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="monto_mensual_desayuno",
-            field=models.DecimalField(
-                blank=True,
-                decimal_places=2,
-                max_digits=10,
-                null=True,
-                verbose_name="Monto mensual desayuno",
-            ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="monto_mensual_merienda",
-            field=models.DecimalField(
-                blank=True,
-                decimal_places=2,
-                max_digits=10,
-                null=True,
-                verbose_name="Monto mensual merienda",
-            ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="prestaciones_mensuales_almuerzo",
-            field=models.IntegerField(
-                blank=True, null=True, verbose_name="Prestaciones mensuales almuerzo"
-            ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="prestaciones_mensuales_cena",
-            field=models.IntegerField(
-                blank=True, null=True, verbose_name="Prestaciones mensuales cena"
-            ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="prestaciones_mensuales_desayuno",
-            field=models.IntegerField(
-                blank=True, null=True, verbose_name="Prestaciones mensuales desayuno"
-            ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="prestaciones_mensuales_merienda",
-            field=models.IntegerField(
-                blank=True, null=True, verbose_name="Prestaciones mensuales merienda"
-            ),
-        ),
+        # En entornos donde el otro branch ya agregó 'expediente_convenio',
+        # renombrar puede fallar. Eliminamos el campo antiguo con SQL tolerante.
+        migrations.RunPython(drop_resolucion_pago_if_exists, migrations.RunPython.noop),
+        # No alter on expediente_convenio here to avoid dependency on field order
+        migrations.RunPython(add_monto_mensual_almuerzo, migrations.RunPython.noop),
+        migrations.RunPython(add_monto_mensual_cena, migrations.RunPython.noop),
+        migrations.RunPython(add_monto_mensual_desayuno, migrations.RunPython.noop),
+        migrations.RunPython(add_monto_mensual_merienda, migrations.RunPython.noop),
+        migrations.RunPython(add_prestaciones_mensuales_almuerzo, migrations.RunPython.noop),
+        migrations.RunPython(add_prestaciones_mensuales_cena, migrations.RunPython.noop),
+        migrations.RunPython(add_prestaciones_mensuales_desayuno, migrations.RunPython.noop),
+        migrations.RunPython(add_prestaciones_mensuales_merienda, migrations.RunPython.noop),
     ]
