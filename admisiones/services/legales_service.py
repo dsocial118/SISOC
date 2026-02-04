@@ -99,7 +99,7 @@ class LegalesService:
         return safe_redirect(
             request,
             default=reverse("admisiones_legales_ver", kwargs={"pk": admision.pk}),
-            target=request.path,
+            target=request.get_full_path(),
         )
 
     @staticmethod
