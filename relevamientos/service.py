@@ -596,6 +596,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         transformations = {
             "espacio_elaboracion_alimentos": convert_to_boolean,
             "almacenamiento_alimentos_secos": convert_to_boolean,
+            "almacenamiento_alimentos_secos_otro": lambda x: x,
             "heladera": convert_to_boolean,
             "freezer": convert_to_boolean,
             "recipiente_residuos_organicos": convert_to_boolean,

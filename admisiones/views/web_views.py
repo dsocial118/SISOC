@@ -392,7 +392,7 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
                             request,
                             "Estado inválido para subir el DOCX final del informe técnico.",
                         )
-                        return redirect(request.path_info)
+                        return redirect(request.path)
                     resultado = InformeService.subir_docx_editado(
                         informe_tecnico, archivo_docx, request.user
                     )
@@ -413,7 +413,7 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
                 default=reverse(
                     "admisiones_tecnicos_editar", kwargs={"pk": self.get_object().pk}
                 ),
-                target=request.path_info,
+                target=request.path,
             )
 
         admision = self.get_object()
@@ -429,7 +429,7 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
                 default=reverse(
                     "admisiones_tecnicos_editar", kwargs={"pk": admision.pk}
                 ),
-                target=self.request.path_info,
+                target=self.request.path,
             )
 
         return super().post(request, *args, **kwargs)
@@ -702,7 +702,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                             "pk": self.kwargs["pk"],
                         },
                     ),
-                    target=request.path_info,
+                    target=request.path,
                 )
 
             admision = self.get_object()
@@ -719,7 +719,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                             "pk": self.kwargs["pk"],
                         },
                     ),
-                    target=request.path_info,
+                    target=request.path,
                 )
 
             admision.activa = False
@@ -761,7 +761,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                         "pk": self.kwargs["pk"],
                     },
                 ),
-                target=request.path_info,
+                target=request.path,
             )
 
         # Manejar carga de archivos adicionales
@@ -833,7 +833,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                             request,
                             "Estado inválido para subir el DOCX final del informe técnico.",
                         )
-                        return redirect(request.path_info)
+                        return redirect(request.path)
                     resultado = InformeService.subir_docx_editado(
                         informe_tecnico, archivo_docx, request.user
                     )
@@ -858,7 +858,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                         "pk": self.kwargs["pk"],
                     },
                 ),
-                target=request.path_info,
+                target=request.path,
             )
 
         return super().get(request, *args, **kwargs)
@@ -1084,7 +1084,7 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
                         request,
                         "Estado inválido para subir el DOCX editado del informe técnico.",
                     )
-                    return HttpResponseRedirect(request.path_info)
+                    return HttpResponseRedirect(request.path)
                 resultado = InformeService.subir_docx_editado(
                     informe, archivo_docx, request.user
                 )
@@ -1099,7 +1099,7 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
                 default=reverse(
                     "informe_tecnico_ver", kwargs={"tipo": tipo, "pk": informe.pk}
                 ),
-                target=request.path_info,
+                target=request.path,
             )
 
         # Manejar revisión del informe (abogados)
@@ -1265,7 +1265,7 @@ class InformeTecnicoComplementarioDetailView(LoginRequiredMixin, DetailView):
                     "informe_complementario_ver",
                     kwargs={"tipo": tipo, "pk": self.kwargs["pk"]},
                 ),
-                target=request.path_info,
+                target=request.path,
             )
 
         informe_complementario = InformeService.guardar_campos_complementarios(
@@ -1284,7 +1284,7 @@ class InformeTecnicoComplementarioDetailView(LoginRequiredMixin, DetailView):
                     "informe_complementario_ver",
                     kwargs={"tipo": tipo, "pk": self.kwargs["pk"]},
                 ),
-                target=request.path_info,
+                target=request.path,
             )
 
         informe_complementario.estado = "enviado_validacion"
