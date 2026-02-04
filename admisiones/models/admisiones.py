@@ -89,6 +89,8 @@ class Admision(models.Model):
         ("documentacion_aprobada", "Documentación aprobada"),
         ("expediente_cargado", "Expediente cargado"),
         ("informe_tecnico_en_proceso", "Informe técnico en proceso"),
+        ("informe_tecnico_finalizado", "Informe técnico finalizado"),
+        ("informe_tecnico_docx_editado", "Informe técnico DOCX editado"),
         ("informe_tecnico_en_revision", "Informe técnico en revisión"),
         ("informe_tecnico_en_subsanacion", "Informe técnico en subsanación"),
         ("informe_tecnico_aprobado", "Informe técnico aprobado"),
@@ -349,6 +351,8 @@ class InformeTecnico(models.Model):
     ESTADOS = [
         ("Iniciado", "Iniciado"),
         ("Para revision", "Para revisión"),
+        ("Docx generado", "DOCX generado"),
+        ("Docx editado", "DOCX editado"),
         ("Validado", "Validado"),
         ("A subsanar", "A subsanar"),
     ]
@@ -498,6 +502,10 @@ class InformeTecnico(models.Model):
         "IF de relevamiento territorial", max_length=255
     )
     conclusiones = models.TextField("Aplicación de Criterios", null=True, blank=True)
+    observaciones_subsanacion = models.TextField(
+        "Observaciones de Subsanación", null=True, blank=True,
+        help_text="Observaciones del abogado para subsanar el informe técnico"
+    )
     estado = models.CharField(
         max_length=20,
         choices=ESTADOS,
@@ -983,6 +991,10 @@ class InformeTecnicoPDF(models.Model):
     archivo = models.FileField(upload_to="admisiones/informes_tecnicos/pdf")
     archivo_docx = models.FileField(
         upload_to="admisiones/informes_tecnicos/docx", null=True, blank=True
+    )
+    archivo_docx_editado = models.FileField(
+        upload_to="admisiones/informes_tecnicos/docx_editado", null=True, blank=True,
+        help_text="DOCX editado por el técnico"
     )
     creado = models.DateTimeField(auto_now_add=True)
 
