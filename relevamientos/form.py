@@ -145,6 +145,10 @@ class EspacioPrestacionForm(forms.ModelForm):
             "de gestión de quejas, reclamos y sugerencias del Comedor y/o Merendero?"
         ),
     )
+    frecuencia_limpieza_otro = forms.CharField(
+        required=False,
+        label="2.4.2 Si eligió 'Otra frecuencia', especificar",
+    )
 
     class Meta:
         model = EspacioPrestacion
