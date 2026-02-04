@@ -1,4 +1,3 @@
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.db import models
@@ -24,6 +23,7 @@ from django.db import transaction
 import unicodedata
 import traceback
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.security import safe_redirect
 
 logger = logging.getLogger("django")
 
@@ -96,11 +96,11 @@ class LegalesService:
     @staticmethod
     def _safe_redirect(request, admision):
         """Helper method for safe redirects"""
-        if url_has_allowed_host_and_scheme(
-            request.path_info, allowed_hosts={request.get_host()}
-        ):
-            return redirect(request.path_info)
-        return redirect("admisiones_legales_ver", pk=admision.pk)
+        return safe_redirect(
+            request,
+            default=reverse("admisiones_legales_ver", kwargs={"pk": admision.pk}),
+            target=request.path_info,
+        )
 
     @staticmethod
     def _save_formulario_with_user(form, admision, request):
@@ -434,7 +434,7 @@ class LegalesService:
                 messages.error(
                     request, "Error al guardar el número IF de Proyecto de Convenio."
                 )
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
         except Exception:
             logger.exception(
                 "Error en guardar_convenio_num_if", extra={"admision_pk": admision.pk}
@@ -443,7 +443,7 @@ class LegalesService:
                 request,
                 "Error inesperado al guardar el número IF de Proyecto de Convenio.",
             )
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def guardar_reinicio_expediente(request, admision):
@@ -462,7 +462,7 @@ class LegalesService:
                 )
             else:
                 messages.error(request, "Error al guardar el reinicio de expediente.")
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
         except Exception:
             logger.exception(
                 "Error en guardar_reinicio_expediente",
@@ -471,7 +471,7 @@ class LegalesService:
             messages.error(
                 request, "Error inesperado al guardar el reinicio de expediente."
             )
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def revisar_informe_complementario(request, admision):
@@ -484,7 +484,7 @@ class LegalesService:
                 messages.error(
                     request, "No se encontró informe complementario para revisar."
                 )
-                return redirect(request.path_info)
+                return LegalesService._safe_redirect(request, admision)
 
             accion = request.POST.get("accion_complementario")
             observaciones = request.POST.get("observaciones_complementario", "")
@@ -518,7 +518,7 @@ class LegalesService:
                     messages.error(
                         request, "Las observaciones son obligatorias para rectificar."
                     )
-                    return redirect(request.path_info)
+                    return LegalesService._safe_redirect(request, admision)
 
                 informe_complementario.estado = "rectificar"
                 informe_complementario.observaciones_legales = observaciones
@@ -530,7 +530,7 @@ class LegalesService:
                 )
             else:
                 messages.error(request, "Acción no válida.")
-                return redirect(request.path_info)
+                return LegalesService._safe_redirect(request, admision)
 
             return redirect("admisiones_legales_ver", pk=admision.pk)
         except Exception:
@@ -541,7 +541,7 @@ class LegalesService:
             messages.error(
                 request, "Error inesperado al revisar informe complementario."
             )
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def guardar_if_informe_complementario(request, admision):
@@ -549,7 +549,7 @@ class LegalesService:
             numero_if = request.POST.get("numero_if_complementario", "").strip()
             if not numero_if:
                 messages.error(request, "El número IF es obligatorio.")
-                return redirect(request.path_info)
+                return LegalesService._safe_redirect(request, admision)
 
             from admisiones.models.admisiones import InformeTecnicoComplementarioPDF
 
@@ -572,7 +572,7 @@ class LegalesService:
                     request, "No se encontró PDF de informe complementario validado."
                 )
 
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
         except Exception:
             logger.exception(
                 "Error en guardar_if_informe_complementario",
@@ -581,7 +581,7 @@ class LegalesService:
             messages.error(
                 request, "Error inesperado al guardar IF del informe complementario."
             )
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def _limpiar_flujo_anterior(admision):
@@ -620,7 +620,7 @@ class LegalesService:
                 messages.success(request, "Informe complementario solicitado.")
             else:
                 messages.error(request, "Error al solicitar informe complementario.")
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
         except Exception:
             logger.exception(
                 "Error en guardar_observaciones_informe_complementario",
@@ -629,7 +629,7 @@ class LegalesService:
             messages.error(
                 request, "Error inesperado al solicitar informe complementario."
             )
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def guardar_dispo_num_if(request, admision):
@@ -650,7 +650,7 @@ class LegalesService:
                 messages.error(
                     request, "Error al guardar el número IF de Proyecto de Disposición."
                 )
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
         except Exception:
             logger.exception(
                 "Error en guardar_dispo_num_if", extra={"admision_pk": admision.pk}
@@ -659,7 +659,7 @@ class LegalesService:
                 request,
                 "Error inesperado al guardar el número IF de Proyecto de Disposición.",
             )
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def validar_juridicos(request, admision):
@@ -964,7 +964,7 @@ class LegalesService:
                 success_msg += " (DOCX no disponible)"
 
             messages.success(request, success_msg)
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
 
         except Exception as e:
             logger.exception(
@@ -975,7 +975,7 @@ class LegalesService:
                 request,
                 f"Error inesperado al guardar formulario Proyecto de Convenio: {str(e)}",
             )
-            return redirect(request.path_info)
+            return LegalesService._safe_redirect(request, admision)
 
     @staticmethod
     def get_admisiones_legales_filtradas(request_or_query="", user=None):
