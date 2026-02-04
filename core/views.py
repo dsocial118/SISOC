@@ -348,24 +348,24 @@ def get_current_version():
 def fetch_changelog_content():
     """
     Obtiene el contenido del CHANGELOG.md.
-    Primero intenta leer el archivo local, si falla intenta obtenerlo desde GitHub.
+    Primero intenta obtenerlo desde GitHub y, si no puede, usa el archivo local.
     """
-    # Intentar leer el archivo local primero
     changelog_path = Path(settings.BASE_DIR) / "CHANGELOG.md"
 
-    try:
-        with open(changelog_path, "r", encoding="utf-8") as file:
-            return file.read()
-    except (FileNotFoundError, IOError) as e:
-        logger.warning(f"No se pudo leer CHANGELOG.md local: {e}")
-
-    # Si falla, intentar obtener desde GitHub
+    # Intentar obtener desde GitHub primero
     try:
         response = requests.get(settings.CHANGELOG_GITHUB_URL, timeout=10)
         response.raise_for_status()
         return response.text
     except requests.RequestException as e:
-        logger.error(f"Error al obtener CHANGELOG.md desde GitHub: {e}")
+        logger.warning(f"No se pudo obtener CHANGELOG.md desde GitHub: {e}")
+
+    # Como fallback, intentar leer el archivo local
+    try:
+        with open(changelog_path, "r", encoding="utf-8") as file:
+            return file.read()
+    except (FileNotFoundError, IOError) as e:
+        logger.error(f"No se pudo leer CHANGELOG.md local: {e}")
         return None
 
 
