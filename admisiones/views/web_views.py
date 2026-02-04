@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.db.models import Q
-from django.http import Http404, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponseRedirect, JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, get_object_or_404
@@ -22,6 +22,7 @@ from admisiones.models.admisiones import (
     Admision,
     ArchivoAdmision,
     InformeComplementario,
+    InformeTecnico,
 )
 from admisiones.services.admisiones_service import AdmisionService
 from admisiones.services.admisiones_filter_config import (
@@ -347,6 +348,33 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        logger.debug(f"POST data keys: {list(request.POST.keys())}")
+        logger.debug(f"FILES data keys: {list(request.FILES.keys())}")
+        
+        # Manejar subida de DOCX final del informe técnico
+        if "subir_docx_final" in request.POST:
+            logger.debug("Processing DOCX final upload in technicos form")
+            archivo_docx = request.FILES.get("docx_final")
+            logger.debug(f"DOCX file received: {archivo_docx}")
+            
+            if archivo_docx:
+                admision = self.get_object()
+                informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
+                logger.debug(f"Informe tecnico found: {informe_tecnico}")
+                
+                if informe_tecnico:
+                    resultado = InformeService.subir_docx_editado(informe_tecnico, archivo_docx, request.user)
+                    logger.debug(f"Upload result: {resultado}")
+                    if resultado:
+                        messages.success(request, "DOCX final subido correctamente. El informe está ahora en revisión.")
+                    else:
+                        messages.error(request, "Error al subir el DOCX final.")
+                else:
+                    messages.error(request, "No se encontró el informe técnico.")
+            else:
+                messages.error(request, "Debe seleccionar un archivo DOCX.")
+            return redirect(request.path_info)
+        
         admision = self.get_object()
         success, message = AdmisionService.procesar_post_update(request, admision)
 
@@ -684,6 +712,33 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 {"success": False, "error": error or "Error al subir archivo"},
                 status=400,
             )
+        
+        # Manejar subida de DOCX final del informe técnico
+        logger.debug(f"POST data keys: {list(request.POST.keys())}")
+        logger.debug(f"FILES data keys: {list(request.FILES.keys())}")
+        
+        if "subir_docx_final" in request.POST:
+            logger.debug("Processing DOCX final upload")
+            archivo_docx = request.FILES.get("docx_final")
+            logger.debug(f"DOCX file received: {archivo_docx}")
+            
+            if archivo_docx:
+                admision = self.get_object()
+                informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
+                logger.debug(f"Informe tecnico found: {informe_tecnico}")
+                
+                if informe_tecnico:
+                    resultado = InformeService.subir_docx_editado(informe_tecnico, archivo_docx, request.user)
+                    logger.debug(f"Upload result: {resultado}")
+                    if resultado:
+                        messages.success(request, "DOCX final subido correctamente. El informe está ahora en revisión.")
+                    else:
+                        messages.error(request, "Error al subir el DOCX final.")
+                else:
+                    messages.error(request, "No se encontró el informe técnico.")
+            else:
+                messages.error(request, "Debe seleccionar un archivo DOCX.")
+            return redirect(request.path_info)
 
         return super().get(request, *args, **kwargs)
 
@@ -890,6 +945,22 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
     def post(self, request, *args, **kwargs):
         tipo = self.kwargs.get("tipo", "base")
         informe = InformeService.get_informe_por_tipo_y_pk(tipo, kwargs["pk"])
+        
+        # Manejar subida de DOCX editado
+        if "subir_docx" in request.POST:
+            archivo_docx = request.FILES.get("docx_editado")
+            if archivo_docx:
+                resultado = InformeService.subir_docx_editado(informe, archivo_docx, request.user)
+                if resultado:
+                    messages.success(request, "DOCX editado subido correctamente.")
+                else:
+                    messages.error(request, "Error al subir el DOCX editado.")
+            else:
+                messages.error(request, "Debe seleccionar un archivo DOCX.")
+            return HttpResponseRedirect(request.path_info)
+        
+        # Manejar revisión del informe (abogados)
+        logger.debug(f"Processing informe revision - POST keys: {list(request.POST.keys())}")
         InformeService.procesar_revision_informe(request, tipo, informe)
         return HttpResponseRedirect(
             reverse("admisiones_tecnicos_editar", args=[informe.admision.id])
@@ -902,6 +973,14 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
                 self.object, self.kwargs.get("tipo", "base")
             )
         )
+        
+        # Agregar información para el botón de revisión del técnico
+        if (
+            self.request.user.groups.filter(name="Tecnico Comedor").exists()
+            and self.object.estado == "Docx generado"
+        ):
+            context["mostrar_revision_tecnico"] = True
+            
         return context
 
 
