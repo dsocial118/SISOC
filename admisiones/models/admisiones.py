@@ -503,8 +503,10 @@ class InformeTecnico(models.Model):
     )
     conclusiones = models.TextField("Aplicación de Criterios", null=True, blank=True)
     observaciones_subsanacion = models.TextField(
-        "Observaciones de Subsanación", null=True, blank=True,
-        help_text="Observaciones del abogado para subsanar el informe técnico"
+        "Observaciones de Subsanación",
+        null=True,
+        blank=True,
+        help_text="Observaciones del abogado para subsanar el informe técnico",
     )
     estado = models.CharField(
         max_length=20,
@@ -993,8 +995,10 @@ class InformeTecnicoPDF(models.Model):
         upload_to="admisiones/informes_tecnicos/docx", null=True, blank=True
     )
     archivo_docx_editado = models.FileField(
-        upload_to="admisiones/informes_tecnicos/docx_editado", null=True, blank=True,
-        help_text="DOCX editado por el técnico"
+        upload_to="admisiones/informes_tecnicos/docx_editado",
+        null=True,
+        blank=True,
+        help_text="DOCX editado por el técnico",
     )
     creado = models.DateTimeField(auto_now_add=True)
 
