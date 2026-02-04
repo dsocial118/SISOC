@@ -327,6 +327,7 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
 
                 kwargs = {}
                 comedor_obj = None
+                specific_errors = []
                 try:
                     for col_idx, cell in enumerate(row):
                         field = mapped[col_idx]
@@ -349,9 +350,17 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                                 pass
                         if field == "total":
                             parsed = self.parse_decimal(val)
+                            if val and parsed is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
                             kwargs[field] = parsed
                         elif field.startswith("monto_mensual_"):
                             parsed = self.parse_decimal(val)
+                            if val and parsed is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
                             kwargs[field] = parsed
                         elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
                             parsed = self.parse_date(val)
@@ -363,12 +372,37 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                             elif val:
                                 unresolved_comedor_rows.add(i)
                         elif field.startswith("prestaciones_mensuales_"):
-                            kwargs[field] = _parse_int(val)
+                            parsed_int = _parse_int(val)
+                            if val and parsed_int is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = parsed_int
+                        elif field == "ano":
+                            val_digits = val.replace(" ", "")
+                            if val and not val_digits.isdigit():
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = val or None
                         else:
                             kwargs[field] = val or None
 
                     if comedor_obj:
                         kwargs["comedor"] = comedor_obj
+
+                    # Si hubo errores específicos, registrarlos y continuar sin éxito
+                    if specific_errors:
+                        for emsg in specific_errors:
+                            if error_count < MAX_ERROR_MESSAGES:
+                                messages.error(self.request, f"Fila {i} (Excel): {emsg}")
+                            ErroresImportacion.objects.create(
+                                archivo_importado=base_upload,
+                                fila=i,
+                                mensaje=emsg,
+                            )
+                        error_count += len(specific_errors)
+                        continue
 
                     # Validar sin guardar en ExpedientePago
                     inst = ExpedientePago(**kwargs)
@@ -705,6 +739,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
 
                 kwargs = {}
                 comedor_obj = None
+                specific_errors = []
                 try:
                     for col_idx, cell in enumerate(row):
                         field = mapped[col_idx]
@@ -712,9 +747,19 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                             continue
                         val = (cell or "").strip()
                         if field == "total":
-                            kwargs[field] = _parse_decimal(val)
+                            parsed = _parse_decimal(val)
+                            if val and parsed is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = parsed
                         elif field.startswith("monto_mensual_"):
-                            kwargs[field] = _parse_decimal(val)
+                            parsed = _parse_decimal(val)
+                            if val and parsed is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = parsed
                         elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
                             # Parseo de fechas (formatos comunes)
                             parsed = None
@@ -739,12 +784,37 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                             elif val:
                                 unresolved_comedor_rows.add(i)
                         elif field.startswith("prestaciones_mensuales_"):
-                            kwargs[field] = _parse_int(val)
+                            parsed_int = _parse_int(val)
+                            if val and parsed_int is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = parsed_int
+                        elif field == "ano":
+                            val_digits = val.replace(" ", "")
+                            if val and not val_digits.isdigit():
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = val or None
                         else:
                             kwargs[field] = val or None
 
                     if comedor_obj:
                         kwargs["comedor"] = comedor_obj
+
+                    # Si hubo errores específicos, registrarlos y continuar sin importar la fila
+                    if specific_errors:
+                        for emsg in specific_errors:
+                            if error_count < MAX_ERROR_MESSAGES:
+                                messages.error(request, f"Fila {i} (Excel): {emsg}")
+                            ErroresImportacion.objects.create(
+                                archivo_importado=batch,
+                                fila=i,
+                                mensaje=emsg,
+                            )
+                        error_count += len(specific_errors)
+                        continue
 
                     # Crear y validar instancia
                     inst = ExpedientePago(**kwargs)
