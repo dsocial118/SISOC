@@ -34,50 +34,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="expedientepago",
-            name="monto_mensual_almuerzo",
-            field=models.DecimalField(
-                decimal_places=2,
-                default=1,
-                max_digits=10,
-                verbose_name="Monto Mensual Almuerzo",
-            ),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="monto_mensual_cena",
-            field=models.DecimalField(
-                decimal_places=2,
-                default=1,
-                max_digits=10,
-                verbose_name="Monto Mensual Cena",
-            ),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="monto_mensual_desayuno",
-            field=models.DecimalField(
-                decimal_places=2,
-                default=1,
-                max_digits=10,
-                verbose_name="Monto Mensual Desayuno",
-            ),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="monto_mensual_merienda",
-            field=models.DecimalField(
-                decimal_places=2,
-                default=1,
-                max_digits=10,
-                verbose_name="Monto Mensual Merienda",
-            ),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
             name="organizacion_creacion",
             field=models.CharField(
                 blank=True,
@@ -85,46 +41,6 @@ class Migration(migrations.Migration):
                 null=True,
                 verbose_name="Organización de creación",
             ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="prestacioin_mensual_desayuno",
-            field=models.CharField(
-                default=1,
-                max_length=255,
-                verbose_name="Prestaciones Mensuales Desayuno",
-            ),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="prestacion_mensual_almuerzo",
-            field=models.CharField(
-                default=1,
-                max_length=255,
-                verbose_name="Prestaciones Mensuales Almuerzo",
-            ),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="prestacion_mensual_cena",
-            field=models.CharField(
-                blank=True,
-                max_length=255,
-                null=True,
-                verbose_name="Prestaciones Mensuales Cena",
-            ),
-        ),
-        migrations.AddField(
-            model_name="expedientepago",
-            name="prestacion_mensual_merienda",
-            field=models.CharField(
-                default=1,
-                max_length=255,
-                verbose_name="Prestaciones Mensuales Merienda",
-            ),
-            preserve_default=False,
         ),
         migrations.AddField(
             model_name="expedientepago",

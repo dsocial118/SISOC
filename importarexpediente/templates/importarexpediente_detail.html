@@ -17,6 +17,21 @@
     {% include 'components/search_bar.html' with titulo='Buscar Errores' placeholder='Buscar por Fila' help_text='Ingresar una Fila.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
 
     <div class="row text-center mb-3">
+        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-file-alt fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ batch.numero_expedinte_pago|default:"-" }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Nº Expediente de Pago</h5>
+                </div>
+            </div>
+        </div>
         <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
             <div class="info-card bg-card">
                 <div class="row">
