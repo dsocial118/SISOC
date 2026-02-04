@@ -370,6 +370,12 @@ class EspacioPrestacion(models.Model):
         blank=True,
         null=True,
     )
+    frecuencia_limpieza_otro = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="2.4.2 Si eligió 'Otra frecuencia', especificar",
+    )
 
     class Meta:
         verbose_name = "Espacio donde se brinda la prestacion del Comedor/Merendero"
