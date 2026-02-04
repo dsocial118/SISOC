@@ -170,6 +170,11 @@ def render_boton_tecnicos(boton, admision=None, informe_tecnico=None):
             "url": True,
             "clase": "btn-primary",
         },
+        "revisar_informe_tecnico": {
+            "texto": "Revisar Informe Técnico",
+            "modal": "#modalRevisarInformeTecnico",
+            "clase": "btn-warning",
+        },
         "informe_tecnico_complementario": {
             "texto": "Informe Técnico Complementario",
             "url": True,
