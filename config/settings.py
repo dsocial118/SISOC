@@ -250,7 +250,7 @@ GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 # Changelog
 CHANGELOG_GITHUB_URL = os.getenv(
     "CHANGELOG_GITHUB_URL",
-    "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/development/CHANGELOG.md",
+    "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/main/CHANGELOG.md",
 )
 
 # IPs internas
