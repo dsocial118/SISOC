@@ -26,10 +26,10 @@
                     {% endif %}
                 {% endif %}
                 {% if request.user|has_group:"Abogado Dupla" or request.user.is_superuser %}
-                    {% if object.estado == "Docx editado" and pdf and pdf.archivo_docx_editado %}
-                        <a href="{{ pdf.archivo_docx_editado.url }}" class="btn btn-info mr-1" target="_blank">📄 Ver DOCX Editado</a>
+                    {% if object.estado == "Docx editado" and pdf_borrador and pdf_borrador.archivo_docx_editado %}
+                        <a href="{{ pdf_borrador.archivo_docx_editado.url }}" class="btn btn-info mr-1" target="_blank">📄 Ver DOCX Editado</a>
                     {% endif %}
-                    {% if object.estado not in "Validado,Docx generado" %}
+                    {% if object.estado not in ["Validado", "Docx generado"] %}
                         <a href="#"
                            class="btn btn-primary mr-1"
                            data-bs-toggle="modal"
@@ -91,6 +91,7 @@
         <div class="modal-dialog">
             <form method="post" enctype="multipart/form-data" action="#">
                 {% csrf_token %}
+                <input type="hidden" name="informe_id" value="{{ object.id }}">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="subirDocxModalLabel">Subir DOCX Editado</h5>
