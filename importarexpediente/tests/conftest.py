@@ -1,10 +1,11 @@
 import pytest
 
 
-def pytest_ignore_collect(path, config):
+def pytest_ignore_collect(collection_path, config):
     # Avoid import mismatch by ignoring sibling module importarexpediente/tests.py
     try:
-        return path.basename == "tests.py"
+        basename = collection_path.name if hasattr(collection_path, "name") else collection_path.basename
+        return basename == "tests.py"
     except Exception:
         return False
 
