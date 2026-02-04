@@ -489,6 +489,11 @@ class InformeService:
                     .first()
                 )
                 if existente:
+                    if existente.estado == "Validado":
+                        return {
+                            "success": False,
+                            "error": "El informe técnico ya fue validado y no puede editarse.",
+                        }
                     form.instance.pk = existente.pk
                     form.instance._state.adding = False
                     es_creacion = False
@@ -864,8 +869,19 @@ class InformeService:
                 f"informe-{informe.id}-admision-{informe.admision_id}-{informe.tipo}-final"
             )
             archivo_docx.name = f"{base_filename}.docx"
-            pdf_obj.archivo_docx = archivo_docx
-            pdf_obj.save()
+            pdf_obj.archivo_docx_editado = archivo_docx
+            if not created:
+                pdf_obj.tipo = informe.tipo
+                pdf_obj.informe_id = informe.id
+                pdf_obj.comedor = informe.admision.comedor
+            pdf_obj.save(
+                update_fields=[
+                    "archivo_docx_editado",
+                    "tipo",
+                    "informe_id",
+                    "comedor",
+                ]
+            )
             
             # Actualizar estado del informe
             informe.estado = "Docx editado"

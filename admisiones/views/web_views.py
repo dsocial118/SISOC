@@ -360,10 +360,39 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
             
             if archivo_docx:
                 admision = self.get_object()
-                informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
+                if not (
+                    request.user.is_superuser
+                    or AdmisionService._verificar_permiso_tecnico_dupla(
+                        request.user, admision.comedor
+                    )
+                ):
+                    return HttpResponse(status=403)
+
+                informe_id = request.POST.get("informe_id")
+                if informe_id:
+                    informe_tecnico = InformeTecnico.objects.filter(
+                        admision=admision, id=informe_id
+                    ).first()
+                else:
+                    informe_tecnico = (
+                        InformeTecnico.objects.filter(
+                            admision=admision, estado="Docx generado"
+                        )
+                        .order_by("-id")
+                        .first()
+                    )
                 logger.debug(f"Informe tecnico found: {informe_tecnico}")
                 
                 if informe_tecnico:
+                    if (
+                        admision.estado_admision != "informe_tecnico_finalizado"
+                        or informe_tecnico.estado != "Docx generado"
+                    ):
+                        messages.error(
+                            request,
+                            "Estado inválido para subir el DOCX final del informe técnico.",
+                        )
+                        return redirect(request.path_info)
                     resultado = InformeService.subir_docx_editado(informe_tecnico, archivo_docx, request.user)
                     logger.debug(f"Upload result: {resultado}")
                     if resultado:
@@ -767,10 +796,39 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
             
             if archivo_docx:
                 admision = self.get_object()
-                informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
+                if not (
+                    request.user.is_superuser
+                    or AdmisionService._verificar_permiso_tecnico_dupla(
+                        request.user, admision.comedor
+                    )
+                ):
+                    return HttpResponse(status=403)
+
+                informe_id = request.POST.get("informe_id")
+                if informe_id:
+                    informe_tecnico = InformeTecnico.objects.filter(
+                        admision=admision, id=informe_id
+                    ).first()
+                else:
+                    informe_tecnico = (
+                        InformeTecnico.objects.filter(
+                            admision=admision, estado="Docx generado"
+                        )
+                        .order_by("-id")
+                        .first()
+                    )
                 logger.debug(f"Informe tecnico found: {informe_tecnico}")
                 
                 if informe_tecnico:
+                    if (
+                        admision.estado_admision != "informe_tecnico_finalizado"
+                        or informe_tecnico.estado != "Docx generado"
+                    ):
+                        messages.error(
+                            request,
+                            "Estado inválido para subir el DOCX final del informe técnico.",
+                        )
+                        return redirect(request.path_info)
                     resultado = InformeService.subir_docx_editado(informe_tecnico, archivo_docx, request.user)
                     logger.debug(f"Upload result: {resultado}")
                     if resultado:
@@ -1003,6 +1061,20 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
         if "subir_docx" in request.POST:
             archivo_docx = request.FILES.get("docx_editado")
             if archivo_docx:
+                if not (
+                    request.user.is_superuser
+                    or AdmisionService._verificar_permiso_tecnico_dupla(
+                        request.user, informe.admision.comedor
+                    )
+                ):
+                    return HttpResponse(status=403)
+
+                if informe.estado != "Docx generado":
+                    messages.error(
+                        request,
+                        "Estado inválido para subir el DOCX editado del informe técnico.",
+                    )
+                    return HttpResponseRedirect(request.path_info)
                 resultado = InformeService.subir_docx_editado(informe, archivo_docx, request.user)
                 if resultado:
                     messages.success(request, "DOCX editado subido correctamente.")

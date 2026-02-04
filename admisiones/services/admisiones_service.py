@@ -453,7 +453,11 @@ class AdmisionService:
             form_if_informe_tecnico = (
                 IFInformeTecnicoForm(instance=admision) if admision else None
             )
-            informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
+            informe_tecnico = (
+                InformeTecnico.objects.filter(admision=admision)
+                .order_by("-id")
+                .first()
+            )
             informes_complementarios = InformeComplementario.objects.filter(
                 admision=admision
             )
@@ -1668,6 +1672,7 @@ class AdmisionService:
                 "expediente_cargado", 
                 "informe_tecnico_en_proceso",
                 "informe_tecnico_finalizado",
+                "informe_tecnico_docx_editado",
                 "informe_tecnico_en_revision",
                 "informe_tecnico_en_subsanacion",
                 "informe_tecnico_aprobado",

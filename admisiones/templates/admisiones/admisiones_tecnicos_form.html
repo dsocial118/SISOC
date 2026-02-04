@@ -721,6 +721,9 @@
                         <div class="modal-dialog">
                             <form method="post" enctype="multipart/form-data" action="">
                                 {% csrf_token %}
+                                {% if informe_tecnico %}
+                                    <input type="hidden" name="informe_id" value="{{ informe_tecnico.id }}">
+                                {% endif %}
                                 <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title" id="modalSubirDocxFinalLabel">Subir DOCX Informe técnico Final</h5>
