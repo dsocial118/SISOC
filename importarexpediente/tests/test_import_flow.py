@@ -1,5 +1,6 @@
 import io
 from datetime import date
+from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -41,13 +42,19 @@ def tmp_media(settings, tmp_path):
 
 
 def _make_csv(comedor_pk):
-    # Headers are case-insensitive and mapped via HEADER_MAP in views
-    # Use comma delimiter and quote localized decimal to avoid column split
-    content = (
-        "Expediente,Comedor,ID,Monto,Fecha pago al banco,Fecha acreditacion,Numero Orden Pago,Observaciones\n"
-        f'EXP-001,Anexo Norte,{comedor_pk},"1.234,56",05/01/2024,10/01/2024,OP-9,Observación de prueba\n'
+    # Sample aligned to new HEADER_MAP (semicolon-delimited)
+    headers = (
+        "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;"
+        "Prestaciones Mensuales Desayuno;Prestaciones Mensuales Almuerzo;"
+        "Prestaciones Mensuales Merienda;Prestaciones Mensuales Cena;"
+        "Monto Mensuales Desayuno;Monto Mensuales Almuerzo;"
+        "Monto Mensuales Merienda;Monto Mensuales Cena;TOTAL;Mes de Pago;Año\n"
     )
-    return content
+    row = (
+        f"{comedor_pk};Comedor Prueba;Org X;EX-2024-AAA;EX-2025-BBB;150;0;0;750;"
+        "$ 57.450,00;$ 0,00;$ 0,00;$ 572.250,00;$ 629.700,00;septiembre;2025\n"
+    )
+    return headers + row
 
 
 def test_upload_validation_success_creates_batch_and_logs_success(
@@ -63,7 +70,7 @@ def test_upload_validation_success_creates_batch_and_logs_success(
         url,
         {
             "file": uploaded,
-            "delimiter": ",",
+            "delimiter": ";",
             "has_header": True,
         },
         follow=True,
@@ -78,6 +85,8 @@ def test_upload_validation_success_creates_batch_and_logs_success(
     # Success logged, no errors
     assert ExitoImportacion.objects.filter(archivo_importado=batch).count() == 1
     assert ErroresImportacion.objects.filter(archivo_importado=batch).count() == 0
+    # Captured expediente de pago number in batch
+    assert batch.numero_expedinte_pago == "EX-2025-BBB"
 
     # Counters persisted in master
     batch.refresh_from_db()
@@ -125,7 +134,7 @@ def test_import_persists_expedientepago_and_marks_completed(
         upload_url,
         {
             "file": uploaded,
-            "delimiter": ",",
+            "delimiter": ";",
             "has_header": True,
         },
     )
@@ -141,11 +150,17 @@ def test_import_persists_expedientepago_and_marks_completed(
     assert ExpedientePago.objects.count() == 1
     exp = ExpedientePago.objects.first()
     assert exp is not None
-    # Check key fields parsed
-    assert exp.anexo == "Anexo Norte"
-    assert exp.comedor == comedor
-    assert exp.fecha_pago_al_banco == date(2024, 1, 5)
-    assert exp.fecha_acreditacion == date(2024, 1, 10)
+    # Check key fields parsed according to new headers
+    assert exp.comedor_id == comedor.id
+    assert exp.expediente_pago == "EX-2025-BBB"
+    assert exp.expediente_convenio == "EX-2024-AAA"
+    assert exp.prestaciones_mensuales_desayuno == 150
+    assert exp.prestaciones_mensuales_cena == 750
+    assert exp.monto_mensual_desayuno == Decimal("57450")
+    assert exp.monto_mensual_cena == Decimal("572250")
+    assert exp.total == Decimal("629700")
+    assert str(exp.mes_pago).lower() == "septiembre"
+    assert str(exp.ano) == "2025"
 
     # RegistroImportado linking success entry with expediente
     assert RegistroImportado.objects.count() == 1
@@ -162,7 +177,7 @@ def test_import_is_idempotent_when_completed(client_logged, tmp_media, db):
     uploaded = SimpleUploadedFile("expedientes.csv", csv_bytes, content_type="text/csv")
     client_logged.post(
         reverse("upload"),
-        {"file": uploaded, "delimiter": ",", "has_header": True},
+        {"file": uploaded, "delimiter": ";", "has_header": True},
     )
     batch = ArchivosImportados.objects.latest("id")
 
