@@ -1,6 +1,28 @@
 # CHANGELOG
 Todas las versiones desplegadas deberan estar aca con su descripcion de cambios. Ordenar de mas a menos reciente,
 
+## Despliegue: 2026.02.03
+### Added
+- Preferencias de columnas por usuario/listado con endpoint dedicado, modal de configuración en tablas y persistencia en `PreferenciaColumnas`.
+- Exportación CSV en listados principales (comedores, usuarios/grupos, ciudadanos, CDI, organizaciones, duplas y acompañamientos) con helper frontend y permisos.
+- Pantalla “Novedades del Sistema” que muestra el `CHANGELOG.md`, con cache y fallback a GitHub configurable vía `CHANGELOG_GITHUB_URL`.
+- Celiaquía: nuevos modelos para documentos y comentarios (DocumentoLegajo, HistorialComentarios, TipoDocumento) y comando para migrar comentarios históricos.
+- Celiaquía: exportación de padrón final en Excel y reporter de provincias con filtros por expediente/documento/estado.
+- Documentación y colecciones Postman para APIs, además de guías de migración/validación de Celiaquía.
+
+### Changed
+- Detalle nuevo de comedores: layout, modales y observaciones reorganizados; ajustes visuales en barras etarias y componentes.
+- Importación Celiaquía: validaciones más estrictas de documentos y edad del responsable, gestión de rol y servicios refactorizados.
+- Tablas reutilizables: layout centrado por defecto, paginación/headers actualizados y soporte de configuración de columnas.
+- Expedientes de pago: nuevos campos de montos/prestaciones mensuales y renombre de expediente de convenio en formularios.
+- Reporter Provincias y grids de admisiones/usuarios con estilos y alineación refinados.
+
+### Fixed
+- Orden y badges de estados en nóminas, fecha en detalle de comedor nuevo y línea de tiempo.
+- Orden de intervenciones y botones en comedores; eliminación de acciones obsoletas (imprimir).
+- Scroll horizontal y layout en listados; correcciones menores de UI/lint/tests.
+- Fix de seguridad por alerta de code scanning (DOM text reinterpreted as HTML) y errores de importación.
+
 ## Despliegue: 2026.01.23
 ### Added
 - Nueva utilidad `validar_comedores_csv` en `comedores.management.commands` para validar/activar lotes de comedores vía CSV, con validación de entradas, dry-run y registro histórico de cambios.
