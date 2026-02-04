@@ -21,13 +21,20 @@
             <div class="col-auto">
                 {% if request.user|has_group:"Tecnico Comedor" or request.user.is_superuser %}
                     {% if object.estado == "Docx generado" and pdf_borrador and pdf_borrador.archivo_docx %}
-                        <a href="{{ pdf_borrador.archivo_docx.url }}" class="btn btn-success mr-1" download>📄 Descargar DOCX</a>
-                        <button type="button" class="btn btn-warning mr-1" data-bs-toggle="modal" data-bs-target="#subirDocxModal">📤 Subir DOCX Editado</button>
+                        <a href="{{ pdf_borrador.archivo_docx.url }}"
+                           class="btn btn-success mr-1"
+                           download>📄 Descargar DOCX</a>
+                        <button type="button"
+                                class="btn btn-warning mr-1"
+                                data-bs-toggle="modal"
+                                data-bs-target="#subirDocxModal">📤 Subir DOCX Editado</button>
                     {% endif %}
                 {% endif %}
                 {% if request.user|has_group:"Abogado Dupla" or request.user.is_superuser %}
                     {% if object.estado == "Docx editado" and pdf_borrador and pdf_borrador.archivo_docx_editado %}
-                        <a href="{{ pdf_borrador.archivo_docx_editado.url }}" class="btn btn-info mr-1" target="_blank">📄 Ver DOCX Editado</a>
+                        <a href="{{ pdf_borrador.archivo_docx_editado.url }}"
+                           class="btn btn-info mr-1"
+                           target="_blank">📄 Ver DOCX Editado</a>
                     {% endif %}
                     {% if object.estado not in ["Validado", "Docx generado"] %}
                         <a href="#"
@@ -40,9 +47,13 @@
                     <a href="{{ pdf.archivo.url }}" class="btn btn-primary" target="_blank">📄 PDF Final</a>
                 {% elif pdf_borrador %}
                     {% if pdf_borrador.archivo_docx_editado %}
-                        <a href="{{ pdf_borrador.archivo_docx_editado.url }}" class="btn btn-info" target="_blank">📄 DOCX Editado</a>
+                        <a href="{{ pdf_borrador.archivo_docx_editado.url }}"
+                           class="btn btn-info"
+                           target="_blank">📄 DOCX Editado</a>
                     {% elif pdf_borrador.archivo_docx %}
-                        <a href="{{ pdf_borrador.archivo_docx.url }}" class="btn btn-warning" target="_blank">📄 DOCX Final</a>
+                        <a href="{{ pdf_borrador.archivo_docx.url }}"
+                           class="btn btn-warning"
+                           target="_blank">📄 DOCX Final</a>
                     {% endif %}
                 {% endif %}
             </div>
@@ -51,7 +62,9 @@
             {% if object.observaciones_subsanacion %}
                 <div class="col-12 mb-3">
                     <div class="alert alert-warning">
-                        <h6><i class="bi bi-exclamation-triangle-fill"></i> Observaciones de Subsanación:</h6>
+                        <h6>
+                            <i class="bi bi-exclamation-triangle-fill"></i> Observaciones de Subsanación:
+                        </h6>
                         <p class="mb-0">{{ object.observaciones_subsanacion }}</p>
                     </div>
                 </div>
@@ -91,7 +104,7 @@
         <div class="modal-dialog">
             <form method="post" enctype="multipart/form-data" action="#">
                 {% csrf_token %}
-                <input type="hidden" name="informe_id" value="{{ object.id }}">
+                <input type="hidden" name="informe_id" value="{{ object.id }}" />
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="subirDocxModalLabel">Subir DOCX Editado</h5>
@@ -103,7 +116,12 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="docx_editado" class="form-label">Archivo DOCX editado</label>
-                            <input type="file" class="form-control" id="docx_editado" name="docx_editado" accept=".docx" required>
+                            <input type="file"
+                                   class="form-control"
+                                   id="docx_editado"
+                                   name="docx_editado"
+                                   accept=".docx"
+                                   required />
                             <div class="form-text">Seleccione el archivo DOCX que editó manualmente.</div>
                         </div>
                     </div>

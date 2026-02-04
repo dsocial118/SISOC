@@ -8,7 +8,7 @@ def safe_redirect(request, default, next_param="next", allowed_hosts=None, targe
 
     This helper prevents open redirect vulnerabilities by validating the target
     against allowed hosts (local by default). Use it whenever redirecting based
-    on request data like `next`, `HTTP_REFERER`, or `request.path_info`.
+    on request data like `next`, `HTTP_REFERER`, or `request.path`.
     """
 
     if target is None:

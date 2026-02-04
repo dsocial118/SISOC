@@ -686,24 +686,16 @@
                                 <div class="modal-body">
                                     <div class="d-grid gap-2">
                                         {% if pdf and pdf.archivo_docx %}
-                                            <a href="{{ pdf.archivo_docx.url }}" 
-                                               class="btn btn-success" 
-                                               download>
-                                                📄 Descargar DOCX de informe técnico generado
-                                            </a>
+                                            <a href="{{ pdf.archivo_docx.url }}" class="btn btn-success" download>📄 Descargar DOCX de informe técnico generado</a>
                                         {% else %}
-                                            <button class="btn btn-secondary" disabled>
-                                                📄 DOCX no disponible
-                                            </button>
+                                            <button class="btn btn-secondary" disabled>📄 DOCX no disponible</button>
                                         {% endif %}
-                                        
-                                        <button type="button" 
-                                                class="btn btn-warning" 
-                                                data-bs-toggle="modal" 
+ 
+                                        <button type="button"
+                                                class="btn btn-warning"
+                                                data-bs-toggle="modal"
                                                 data-bs-target="#modalSubirDocxFinal"
-                                                data-bs-dismiss="modal">
-                                            📤 Subir DOCX Informe técnico Final
-                                        </button>
+                                                data-bs-dismiss="modal">📤 Subir DOCX Informe técnico Final</button>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -721,9 +713,7 @@
                         <div class="modal-dialog">
                             <form method="post" enctype="multipart/form-data" action="">
                                 {% csrf_token %}
-                                {% if informe_tecnico %}
-                                    <input type="hidden" name="informe_id" value="{{ informe_tecnico.id }}">
-                                {% endif %}
+                                {% if informe_tecnico %}<input type="hidden" name="informe_id" value="{{ informe_tecnico.id }}" />{% endif %}
                                 <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title" id="modalSubirDocxFinalLabel">Subir DOCX Informe técnico Final</h5>
@@ -735,12 +725,12 @@
                                     <div class="modal-body">
                                         <div class="mb-3">
                                             <label for="docx_final" class="form-label">Archivo DOCX final</label>
-                                            <input type="file" 
-                                                   class="form-control" 
-                                                   id="docx_final" 
-                                                   name="docx_final" 
-                                                   accept=".docx" 
-                                                   required>
+                                            <input type="file"
+                                                   class="form-control"
+                                                   id="docx_final"
+                                                   name="docx_final"
+                                                   accept=".docx"
+                                                   required />
                                             <div class="form-text">Seleccione el archivo DOCX final que será revisado por el abogado.</div>
                                         </div>
                                     </div>
