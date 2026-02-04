@@ -53,6 +53,7 @@ from duplas.models import Dupla
 logger = logging.getLogger("django")
 
 from core.constants import UserGroups
+from core.security import safe_redirect
 from core.services.advanced_filters import AdvancedFilterEngine
 from comedores.services.filter_config import (
     CHOICE_OPS,
@@ -1159,7 +1160,11 @@ class ComedorService:
                     request,
                     "Ya existen 4 admisiones de Renovacion activas para este comedor.",
                 )
-                return redirect(request.path)
+                return safe_redirect(
+                    request,
+                    default=reverse("comedor_detalle", kwargs={"pk": comedor.pk}),
+                    target=request.path,
+                )
 
         nueva_admision = Admision.objects.create(
             comedor=comedor,

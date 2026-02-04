@@ -35,6 +35,7 @@ from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.security import safe_redirect
 from django.views.generic.edit import FormMixin
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -373,7 +374,13 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
                     messages.error(request, "No se encontró el informe técnico.")
             else:
                 messages.error(request, "Debe seleccionar un archivo DOCX.")
-            return redirect(request.path_info)
+            return safe_redirect(
+                request,
+                default=reverse(
+                    "admisiones_tecnicos_editar", kwargs={"pk": self.get_object().pk}
+                ),
+                target=request.path_info,
+            )
         
         admision = self.get_object()
         success, message = AdmisionService.procesar_post_update(request, admision)
@@ -383,7 +390,13 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
                 messages.success(request, message)
             else:
                 messages.error(request, message)
-            return redirect(self.request.path_info)
+            return safe_redirect(
+                self.request,
+                default=reverse(
+                    "admisiones_tecnicos_editar", kwargs={"pk": admision.pk}
+                ),
+                target=self.request.path_info,
+            )
 
         return super().post(request, *args, **kwargs)
 
@@ -646,14 +659,34 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 ).exists()
             ):
                 messages.error(request, "No tiene permisos para realizar esta acción.")
-                return redirect(request.path_info)
+                return safe_redirect(
+                    request,
+                    default=reverse(
+                        "admision_detalle",
+                        kwargs={
+                            "comedor_pk": self.kwargs["comedor_pk"],
+                            "pk": self.kwargs["pk"],
+                        },
+                    ),
+                    target=request.path_info,
+                )
 
             admision = self.get_object()
             motivo = request.POST.get("motivo_forzar_cierre", "").strip()
 
             if not motivo:
                 messages.error(request, "El motivo del cierre forzado es obligatorio.")
-                return redirect(request.path_info)
+                return safe_redirect(
+                    request,
+                    default=reverse(
+                        "admision_detalle",
+                        kwargs={
+                            "comedor_pk": self.kwargs["comedor_pk"],
+                            "pk": self.kwargs["pk"],
+                        },
+                    ),
+                    target=request.path_info,
+                )
 
             admision.activa = False
             admision.motivo_forzar_cierre = motivo
@@ -685,7 +718,17 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                 )
 
             messages.success(request, "La admisión ha sido cerrada forzadamente.")
-            return redirect(request.path_info)
+            return safe_redirect(
+                request,
+                default=reverse(
+                    "admision_detalle",
+                    kwargs={
+                        "comedor_pk": self.kwargs["comedor_pk"],
+                        "pk": self.kwargs["pk"],
+                    },
+                ),
+                target=request.path_info,
+            )
 
         # Manejar carga de archivos adicionales
         if request.FILES.get("archivo") or request.POST.get("nombre"):
@@ -738,7 +781,17 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
                     messages.error(request, "No se encontró el informe técnico.")
             else:
                 messages.error(request, "Debe seleccionar un archivo DOCX.")
-            return redirect(request.path_info)
+            return safe_redirect(
+                request,
+                default=reverse(
+                    "admision_detalle",
+                    kwargs={
+                        "comedor_pk": self.kwargs["comedor_pk"],
+                        "pk": self.kwargs["pk"],
+                    },
+                ),
+                target=request.path_info,
+            )
 
         return super().get(request, *args, **kwargs)
 
@@ -957,7 +1010,13 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
                     messages.error(request, "Error al subir el DOCX editado.")
             else:
                 messages.error(request, "Debe seleccionar un archivo DOCX.")
-            return HttpResponseRedirect(request.path_info)
+            return safe_redirect(
+                request,
+                default=reverse(
+                    "informe_tecnico_ver", kwargs={"tipo": tipo, "pk": informe.pk}
+                ),
+                target=request.path_info,
+            )
         
         # Manejar revisión del informe (abogados)
         logger.debug(f"Processing informe revision - POST keys: {list(request.POST.keys())}")
@@ -1114,7 +1173,14 @@ class InformeTecnicoComplementarioDetailView(LoginRequiredMixin, DetailView):
 
         if not campos_modificados:
             messages.error(request, "No se han realizado cambios en el informe.")
-            return HttpResponseRedirect(request.path_info)
+            return safe_redirect(
+                request,
+                default=reverse(
+                    "informe_complementario_ver",
+                    kwargs={"tipo": tipo, "pk": self.kwargs["pk"]},
+                ),
+                target=request.path_info,
+            )
 
         informe_complementario = InformeService.guardar_campos_complementarios(
             informe_tecnico=self.object,
@@ -1126,7 +1192,14 @@ class InformeTecnicoComplementarioDetailView(LoginRequiredMixin, DetailView):
             messages.error(
                 request, "Error al guardar los cambios del informe complementario."
             )
-            return HttpResponseRedirect(request.path_info)
+            return safe_redirect(
+                request,
+                default=reverse(
+                    "informe_complementario_ver",
+                    kwargs={"tipo": tipo, "pk": self.kwargs["pk"]},
+                ),
+                target=request.path_info,
+            )
 
         informe_complementario.estado = "enviado_validacion"
         informe_complementario.save()
