@@ -539,6 +539,9 @@
                         <div class="comment-text comment-text d-flex flex-column text-sm">
                             ¿Con qué frecuencia se realiza la limpieza de las instalaciones?
                             <span class="username fw-bold fs-5">{{ relevamiento.espacio.prestacion.frecuencia_limpieza.nombre | default_if_none:"Sin información" }}</span>
+                            {% if relevamiento.espacio.prestacion.frecuencia_limpieza and relevamiento.espacio.prestacion.frecuencia_limpieza.nombre == "Otra frecuencia" %}
+                                <span class="username fw-bold fs-5">{{ relevamiento.espacio.prestacion.frecuencia_limpieza_otro | default_if_none:"Sin información" }}</span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
