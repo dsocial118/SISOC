@@ -454,9 +454,7 @@ class AdmisionService:
                 IFInformeTecnicoForm(instance=admision) if admision else None
             )
             informe_tecnico = (
-                InformeTecnico.objects.filter(admision=admision)
-                .order_by("-id")
-                .first()
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
             )
             informes_complementarios = InformeComplementario.objects.filter(
                 admision=admision
@@ -1501,10 +1499,10 @@ class AdmisionService:
     ):
         """Determina qué botones deben estar disponibles según el estado de la admisión y el usuario"""
         botones = []
-        
+
         # Determinar grupo del usuario
         es_tecnico = user and user.groups.filter(name="Tecnico Comedor").exists()
-        es_abogado = user and user.groups.filter(name="Abogado Dupla").exists()   
+        es_abogado = user and user.groups.filter(name="Abogado Dupla").exists()
 
         # Botón para comenzar acompañamiento
         if admision.numero_disposicion and not admision.enviado_acompaniamiento:
@@ -1533,10 +1531,7 @@ class AdmisionService:
                 and informe_tecnico.estado_formulario == "borrador"
             ):
                 botones.append("editar_informe_tecnico")
-            elif (
-                informe_tecnico
-                and informe_tecnico.estado == "A subsanar"
-            ):
+            elif informe_tecnico and informe_tecnico.estado == "A subsanar":
                 botones.append("editar_informe_tecnico")
             elif (
                 admision.estado_admision == "informe_tecnico_finalizado"
@@ -1572,13 +1567,13 @@ class AdmisionService:
 
         # Botón para ver informe técnico (abogados solo cuando el DOCX editado está subido)
         if (
-            es_abogado 
-            and informe_tecnico 
+            es_abogado
+            and informe_tecnico
             and admision.estado_admision == "informe_tecnico_docx_editado"
             and informe_tecnico.estado == "Docx editado"
         ):
             botones.append("ver_informe_tecnico")
-        
+
         return botones
 
     @staticmethod
@@ -1669,7 +1664,7 @@ class AdmisionService:
             # Esto evita que documentos adicionales hagan retroceder el estado
             if admision.estado_admision in [
                 "documentacion_aprobada",
-                "expediente_cargado", 
+                "expediente_cargado",
                 "informe_tecnico_en_proceso",
                 "informe_tecnico_finalizado",
                 "informe_tecnico_docx_editado",
@@ -1678,7 +1673,7 @@ class AdmisionService:
                 "informe_tecnico_aprobado",
                 "if_informe_tecnico_cargado",
                 "enviado_a_legales",
-                "enviado_a_acompaniamiento"
+                "enviado_a_acompaniamiento",
             ]:
                 return
 

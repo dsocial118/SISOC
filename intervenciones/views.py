@@ -135,7 +135,9 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
         next_url = self.request.POST.get("next") or self.request.GET.get("next")
         return safe_redirect(
             self.request,
-            default=reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]}),
+            default=reverse(
+                "comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]}
+            ),
             target=next_url,
         )
 

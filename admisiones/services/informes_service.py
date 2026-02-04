@@ -517,7 +517,7 @@ class InformeService:
             # Limpiar observaciones de subsanación cuando se finaliza el informe
             if action == "submit" and informe.observaciones_subsanacion:
                 informe.observaciones_subsanacion = None
-                
+
             informe.save()
             if hasattr(form, "save_m2m"):
                 form.save_m2m()
@@ -606,7 +606,7 @@ class InformeService:
                 # Guardar observaciones de subsanación en el informe
                 informe.observaciones_subsanacion = observacion
                 informe.save()
-                
+
                 obs_obj, _ = ObservacionGeneralInforme.objects.get_or_create(
                     informe=informe
                 )
@@ -786,8 +786,10 @@ class InformeService:
                     "informe": informe,
                     "texto_comidas": generar_texto_comidas(informe),
                 }
-                
-                admision_tipo = InformeService._normalizar_tipo_admision(informe.admision)
+
+                admision_tipo = InformeService._normalizar_tipo_admision(
+                    informe.admision
+                )
                 informe_tipo_map = {
                     "base": "base",
                     "juridico": "juridico",
@@ -795,7 +797,7 @@ class InformeService:
                 }
                 informe_tipo = informe_tipo_map.get(informe.tipo, "base")
                 docx_template = f"admisiones/docx/{admision_tipo}_docx_informe_tecnico_{informe_tipo}.html"
-                
+
                 try:
                     html_docx = render_to_string(docx_template, context)
                     docx_content = InformeService._generate_docx_content(
@@ -825,16 +827,16 @@ class InformeService:
                         "archivo_docx": docx_content,
                     },
                 )
-                
+
                 # Actualizar estado del informe
                 informe.estado = "Docx generado"
                 informe.save()
-                
+
                 logger.info(
                     "DOCX borrador generado para informe %s, estado actualizado",
                     informe.id,
                 )
-                
+
                 return pdf_borrador
             else:
                 logger.info(
@@ -861,9 +863,9 @@ class InformeService:
                     "tipo": informe.tipo,
                     "informe_id": informe.id,
                     "comedor": informe.admision.comedor,
-                }
+                },
             )
-            
+
             # Pisar el DOCX borrador con el editado
             base_filename = slugify(
                 f"informe-{informe.id}-admision-{informe.admision_id}-{informe.tipo}-final"
@@ -882,24 +884,25 @@ class InformeService:
                     "comedor",
                 ]
             )
-            
+
             # Actualizar estado del informe
             informe.estado = "Docx editado"
             informe.save()
-            
+
             # Actualizar estado de admisión - ahora pasa a revisión
             from .admisiones_service import AdmisionService
+
             AdmisionService.actualizar_estado_admision(
                 informe.admision, "enviar_informe_revision"
             )
-            
+
             logger.info(
                 "DOCX editado subido exitosamente para informe %s",
                 informe.id,
             )
-            
+
             return pdf_obj
-            
+
         except Exception:
             logger.exception(
                 "Error en subir_docx_editado",

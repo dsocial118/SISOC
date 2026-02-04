@@ -11,6 +11,7 @@ from django.views.generic import DetailView, ListView
 from django.views.decorators.http import require_POST
 
 from core.decorators import group_required
+from core.security import safe_redirect
 
 from comedores.models import Comedor
 from historial.services.historial_service import HistorialService
@@ -23,7 +24,6 @@ from rendicioncuentasfinal.models import (
 from rendicioncuentasfinal.rendicion_cuentas_final_service import (
     RendicionCuentasFinalService,
 )
-from core.security import safe_redirect
 
 
 @login_required

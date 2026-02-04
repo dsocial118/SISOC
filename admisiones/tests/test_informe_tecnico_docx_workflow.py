@@ -69,9 +69,7 @@ def crear_informe_tecnico(admision, **overrides):
 
 class InformeTecnicoDocxWorkflowServiceTest(TestCase):
     def test_subir_docx_editado_actualiza_estado_y_campo(self):
-        admision = Admision.objects.create(
-            estado_admision="informe_tecnico_finalizado"
-        )
+        admision = Admision.objects.create(estado_admision="informe_tecnico_finalizado")
         informe = crear_informe_tecnico(
             admision,
             estado="Docx generado",
@@ -164,6 +162,8 @@ class InformeTecnicoDocxViewPermsTest(TestCase):
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             ),
         )
-        response = self.client.post(url, data={"subir_docx": "1", "docx_editado": archivo})
+        response = self.client.post(
+            url, data={"subir_docx": "1", "docx_editado": archivo}
+        )
 
         self.assertEqual(response.status_code, 403)
