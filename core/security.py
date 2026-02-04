@@ -1,5 +1,4 @@
-from django.shortcuts import redirect
-from django.urls import resolve_url
+from django.shortcuts import redirect, resolve_url
 from django.utils.http import url_has_allowed_host_and_scheme
 
 
