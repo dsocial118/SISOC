@@ -118,9 +118,9 @@
                     {% endif %}
                     {% for tablero in tableros %}
                         {% with tablero_url=tablero.get_absolute_url %}
-                            <li class="nav-item {% if request.path == tablero_url %}menu-open{% endif %}">
+                            <li class="nav-item {% if request.get_full_path == tablero_url %}menu-open{% endif %}">
                                 <a href="#"
-                                   class="nav-link nav-dot ms-2 {% if request.path == tablero_url %}active{% endif %}">
+                                   class="nav-link nav-dot ms-2 {% if request.get_full_path == tablero_url %}active{% endif %}">
                                     <p>
                                         {{ tablero.nombre }}
                                         <i class="nav-arrow bi bi-chevron-right"></i>
@@ -129,7 +129,7 @@
                                 <ul class="nav nav-treeview">
                                     <li class="nav-item">
                                         <a href="{{ tablero_url }}"
-                                           class="nav-link ms-4 {% if request.path == tablero_url %}active{% endif %}">
+                                           class="nav-link ms-4 {% if request.get_full_path == tablero_url %}active{% endif %}">
                                             <i class="nav-icon bi bi-arrow-return-right"></i>
                                             <p>Ver</p>
                                         </a>

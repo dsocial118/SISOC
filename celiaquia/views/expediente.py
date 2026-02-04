@@ -349,7 +349,7 @@ class ExpedientePlantillaExcelView(View):
 @method_decorator(csrf_protect, name="dispatch")
 class ExpedientePreviewExcelView(View):
     def post(self, request, *args, **kwargs):
-        logger.debug("PREVIEW: %s %s", request.method, request.path)
+        logger.debug("PREVIEW: %s %s", request.method, request.get_full_path())
         archivo = request.FILES.get("excel_masivo")
         if not archivo:
             return JsonResponse({"error": "No se recibió ningún archivo."}, status=400)

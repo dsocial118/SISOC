@@ -5,7 +5,7 @@ from django.core.paginator import Paginator
 from django.db.models.base import Model
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.template.loader import render_to_stringW
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.generic import DetailView, ListView
 from django.views.decorators.http import require_POST

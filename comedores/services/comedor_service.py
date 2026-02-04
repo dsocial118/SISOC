@@ -1163,7 +1163,7 @@ class ComedorService:
                 return safe_redirect(
                     request,
                     default=reverse("comedor_detalle", kwargs={"pk": comedor.pk}),
-                    target=request.path,
+                    target=request.get_full_path(),
                 )
 
         nueva_admision = Admision.objects.create(
