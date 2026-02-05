@@ -24,6 +24,12 @@ class UserGroups:
     ACOMPANAMIENTO_LISTAR = "Acompanamiento Listar"
     ACOMPANAMIENTO_DETALLE = "Acompanamiento Detalle"
 
+    # Grupos de permisos de Comunicados
+    COMUNICADO_CREAR = "Comunicado Crear"
+    COMUNICADO_EDITAR = "Comunicado Editar"
+    COMUNICADO_PUBLICAR = "Comunicado Publicar"
+    COMUNICADO_ARCHIVAR = "Comunicado Archivar"
+
     # Agrupaciones comunes para permisos
     COMEDORES_ACCESO = [
         COMEDORES_LISTAR,
@@ -51,6 +57,14 @@ class UserGroups:
         AREA_CONTABLE,
         TECNICO_COMEDOR,
         COORDINADOR_GESTION,
+    ]
+
+    # Grupos con acceso a gestión de comunicados
+    COMUNICADO_GESTION = [
+        COMUNICADO_CREAR,
+        COMUNICADO_EDITAR,
+        COMUNICADO_PUBLICAR,
+        COMUNICADO_ARCHIVAR,
     ]
 
 
