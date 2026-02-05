@@ -52,15 +52,28 @@ def run_django_commands():
     """
     Ejecuta los comandos de Django necesarios para la preparación y el funcionamiento de la aplicación.
     """
-    subprocess.run(["python", "manage.py", "makemigrations"])
-    subprocess.run(["python", "manage.py", "migrate", "auth"])
-    subprocess.run(["python", "manage.py", "migrate", "--noinput"])
+    environment = os.getenv("ENVIRONMENT", "dev").lower()
 
-    # Cargar los fixtures condicionalmente, si se quiere forzar añadir `--force`
-    subprocess.run(["python", "manage.py", "load_fixtures"])
+    def flag(name: str, default: bool) -> bool:
+        return os.getenv(name, str(default)).lower() == "true"
 
-    subprocess.run(["python", "manage.py", "create_test_users"])
-    subprocess.run(["python", "manage.py", "create_groups"])
+    run_makemigrations = flag("RUN_MAKEMIGRATIONS", environment == "dev")
+    run_migrations = flag("RUN_MIGRATIONS", True)
+    load_fixtures = flag("LOAD_FIXTURES", environment == "dev")
+    create_test_users = flag("CREATE_TEST_USERS", environment == "dev")
+    create_groups = flag("CREATE_GROUPS", True)
+
+    if run_makemigrations:
+        subprocess.run(["python", "manage.py", "makemigrations"], check=True)
+    if run_migrations:
+        subprocess.run(["python", "manage.py", "migrate", "auth"], check=True)
+        subprocess.run(["python", "manage.py", "migrate", "--noinput"], check=True)
+    if load_fixtures:
+        subprocess.run(["python", "manage.py", "load_fixtures"], check=True)
+    if create_test_users:
+        subprocess.run(["python", "manage.py", "create_test_users"], check=True)
+    if create_groups:
+        subprocess.run(["python", "manage.py", "create_groups"], check=True)
     run_server()
 
 
