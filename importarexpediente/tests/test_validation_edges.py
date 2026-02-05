@@ -35,9 +35,7 @@ def tmp_media(settings, tmp_path):
 
 def test_upload_without_header_is_rejected(client_logged, tmp_media):
     comedor = Comedor.objects.create(nombre="C")
-    content = "ID;COMEDOR;Expediente de Pago\n{};Anexo;EX-2025-ERR\n".format(
-        comedor.pk
-    )
+    content = "ID;COMEDOR;Expediente de Pago\n{};Anexo;EX-2025-ERR\n".format(comedor.pk)
     uploaded = SimpleUploadedFile(
         "x.csv", content.encode("utf-8"), content_type="text/csv"
     )
