@@ -7,7 +7,7 @@ function getFooterVisiblePixels() {
 
   try {
     const rect = footer.getBoundingClientRect();
-    const footerHeight = 110;
+    const footerHeight =136;
     const viewportHeight = window.innerHeight;
 
     if (rect.bottom <= 0 || rect.top >= viewportHeight) {
