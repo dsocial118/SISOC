@@ -47,8 +47,8 @@ class ImportarExpedienteViewsTests(TestCase):
         csv_text = (
             "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
             # Dos filas válidas a nivel de datos; el mock fuerza error en la segunda
-            f"{self.comedor.id};{self.comedor.nombre};Org;EX-2024-X;EX-2025-AAA;\"$ 1.000,00\";enero;2025\n"
-            f"{self.comedor.id};{self.comedor.nombre};Org;EX-2024-Y;EX-2025-BBB;\"$ 2.000,00\";enero;2025\n"
+            f'{self.comedor.id};{self.comedor.nombre};Org;EX-2024-X;EX-2025-AAA;"$ 1.000,00";enero;2025\n'
+            f'{self.comedor.id};{self.comedor.nombre};Org;EX-2024-Y;EX-2025-BBB;"$ 2.000,00";enero;2025\n'
         )
         uploaded = self._make_csv_file(csv_text)
 
@@ -105,7 +105,7 @@ class ImportarExpedienteViewsTests(TestCase):
         # CSV almacenado en el FileField del maestro
         csv_text = (
             "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
-            f"{self.comedor.id};{self.comedor.nombre};Org;EX-2024-Z;EX-2025-CCC;\"$ 3.000,00\";enero;2025\n"
+            f'{self.comedor.id};{self.comedor.nombre};Org;EX-2024-Z;EX-2025-CCC;"$ 3.000,00";enero;2025\n'
         )
         uploaded = self._make_csv_file(csv_text, name="stored.csv")
 

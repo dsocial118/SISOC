@@ -37,9 +37,6 @@ from importarexpediente.services import (
 MAX_ERROR_MESSAGES = 20
 
 
- 
-
-
 class ImportExpedientesView(LoginRequiredMixin, FormView):
     template_name = "upload.html"
     form_class = CSVUploadForm
@@ -47,7 +44,7 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
 
     def parse_date(self, value):
         return parse_date(value)
- 
+
     def parse_decimal(self, value):
         return parse_decimal(value)
 
@@ -184,7 +181,9 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                         ):
                             try:
                                 base_upload.numero_expedinte_pago = val
-                                base_upload.save(update_fields=["numero_expedinte_pago"]) 
+                                base_upload.save(
+                                    update_fields=["numero_expedinte_pago"]
+                                )
                                 numero_expediente_guardado = True
                             except Exception:
                                 # Si falla el guardado, continuar sin interrumpir la validación
@@ -236,7 +235,9 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                     if specific_errors:
                         for emsg in specific_errors:
                             if error_count < MAX_ERROR_MESSAGES:
-                                messages.error(self.request, f"Fila {i} (Excel): {emsg}")
+                                messages.error(
+                                    self.request, f"Fila {i} (Excel): {emsg}"
+                                )
                             ErroresImportacion.objects.create(
                                 archivo_importado=base_upload,
                                 fila=i,

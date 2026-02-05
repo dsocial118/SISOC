@@ -4,12 +4,15 @@ from comedores.models import Comedor
 
 class ExpedientePago(models.Model):
     expediente_convenio = models.CharField(
-        max_length=255, verbose_name="Expediente del Convenio", 
+        max_length=255,
+        verbose_name="Expediente del Convenio",
     )
     expediente_pago = models.CharField(
         max_length=255, verbose_name="Expediente de Pago", blank=True, null=True
     )
-    anexo = models.CharField(max_length=255, verbose_name="Anexo",blank=True, null=True)
+    anexo = models.CharField(
+        max_length=255, verbose_name="Anexo", blank=True, null=True
+    )
     if_cantidad_de_prestaciones = models.CharField(
         max_length=255,
         verbose_name="IF Cantidad de Prestaciones",
@@ -50,8 +53,9 @@ class ExpedientePago(models.Model):
         max_length=20, verbose_name="Mes de Pago", blank=True, null=True
     )
     ano = models.CharField(
-        max_length=4, verbose_name="Año",
-    )    
+        max_length=4,
+        verbose_name="Año",
+    )
     prestaciones_mensuales_desayuno = models.IntegerField(
         verbose_name="Prestaciones mensuales desayuno",
     )
@@ -84,6 +88,7 @@ class ExpedientePago(models.Model):
         decimal_places=2,
         verbose_name="Monto mensual cena",
     )
+
     class Meta:
         verbose_name = "Expediente de Pago"
         verbose_name_plural = "Expedientes de Pago"

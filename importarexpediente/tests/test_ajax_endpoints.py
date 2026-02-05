@@ -31,11 +31,11 @@ def tmp_media(settings, tmp_path):
 @pytest.fixture
 def seed_imports(client_logged, tmp_media):
     # Create a couple of batches to paginate/search using new headers
-    headers = (
-        "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
-    )
+    headers = "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
     for i in range(3):
-        row = f"{i+1};Comedor {i};Org {i};EX-2024-{i};EX-2025-{i};$ 1.000,00;enero;2025\n"
+        row = (
+            f"{i+1};Comedor {i};Org {i};EX-2024-{i};EX-2025-{i};$ 1.000,00;enero;2025\n"
+        )
         content = headers + row
         uploaded = SimpleUploadedFile(
             f"expedientes_{i}.csv", content.encode("utf-8"), content_type="text/csv"
