@@ -248,25 +248,7 @@ class InformeService:
                 AdmisionService.actualizar_estado_admision(
                     informe.admision, "aprobar_informe_tecnico"
                 )
-                try:
-                    pdf_obj = InformeService.generar_y_guardar_pdf(informe, tipo)
-                    if pdf_obj:
-                        logger.info(
-                            "Archivos generados exitosamente para informe %s",
-                            informe.id,
-                        )
-                    else:
-                        logger.error(
-                            "No se pudieron generar archivos para informe %s",
-                            informe.id,
-                        )
-                except Exception as e:
-                    logger.error(
-                        "Error generando archivos para informe %s: %s",
-                        informe.id,
-                        str(e),
-                    )
-                    # No re-lanzar la excepción para que el estado se mantenga como Validado
+                # No generar nuevos archivos - el DOCX del técnico es el final
         except Exception as e:
             logger.exception(
                 f"Error en actualizar_estado_informe: {str(e)}",
@@ -498,6 +480,25 @@ class InformeService:
         """Guarda el informe técnico."""
         try:
             if es_creacion:
+                existente = (
+                    InformeTecnico.objects.filter(
+                        admision=admision,
+                        tipo=form.instance.tipo,
+                    )
+                    .order_by("-id")
+                    .first()
+                )
+                if existente:
+                    if existente.estado == "Validado":
+                        return {
+                            "success": False,
+                            "error": "El informe técnico ya fue validado y no puede editarse.",
+                        }
+                    form.instance.pk = existente.pk
+                    form.instance._state.adding = False
+                    es_creacion = False
+
+            if es_creacion:
                 InformeService.preparar_informe_para_creacion(
                     form.instance, admision.id, action
                 )
@@ -513,23 +514,29 @@ class InformeService:
                     informe.creado_por = usuario
                 informe.modificado_por = usuario
 
+            # Limpiar observaciones de subsanación cuando se finaliza el informe
+            if action == "submit" and informe.observaciones_subsanacion:
+                informe.observaciones_subsanacion = None
+
             informe.save()
             if hasattr(form, "save_m2m"):
                 form.save_m2m()
 
             if action == "submit" and informe.estado_formulario == "finalizado":
-                InformeService.generar_pdf_borrador(informe)
+                resultado_docx = InformeService.generar_docx_borrador(informe)
+                if resultado_docx:
+                    # Solo actualizar estado si el DOCX se generó exitosamente
+                    admision.estado_admision = "informe_tecnico_finalizado"
+                    admision.save()
+                else:
+                    raise Exception("No se pudo generar el DOCX borrador")
 
             # Actualizar estado de admisión según la acción
             from .admisiones_service import AdmisionService
 
-            if es_creacion:
+            if es_creacion and action != "submit":
                 AdmisionService.actualizar_estado_admision(
                     admision, "iniciar_informe_tecnico"
-                )
-            elif action == "submit" and informe.estado_formulario == "finalizado":
-                AdmisionService.actualizar_estado_admision(
-                    admision, "enviar_informe_revision"
                 )
 
             return {"success": True, "informe": informe}
@@ -596,6 +603,10 @@ class InformeService:
                     field_name = verbose_to_field.get(campo, campo)
                     CampoASubsanar.objects.create(informe=informe, campo=field_name)
 
+                # Guardar observaciones de subsanación en el informe
+                informe.observaciones_subsanacion = observacion
+                informe.save()
+
                 obs_obj, _ = ObservacionGeneralInforme.objects.get_or_create(
                     informe=informe
                 )
@@ -604,6 +615,9 @@ class InformeService:
             else:
                 CampoASubsanar.objects.filter(informe=informe).delete()
                 ObservacionGeneralInforme.objects.filter(informe=informe).delete()
+                # Limpiar observaciones de subsanación
+                informe.observaciones_subsanacion = None
+                informe.save()
         except Exception:
             logger.exception(
                 "Error en procesar_revision_informe",
@@ -725,7 +739,7 @@ class InformeService:
                 )
 
                 base_filename = slugify(
-                    f"informe-tecnico-complementario-{informe.tipo}-{informe.id}"
+                    f"informe-complementario-{informe.id}-admision-{informe.admision_id}-{informe.tipo}"
                 )
 
                 defaults = {
@@ -754,33 +768,53 @@ class InformeService:
             return None
 
     @staticmethod
-    def generar_pdf_borrador(informe):
-        """Genera un PDF borrador del informe técnico para revisión"""
+    def generar_docx_borrador(informe):
+        """Genera un DOCX borrador del informe técnico para edición del técnico"""
         try:
-            context = {
-                "informe": informe,
-                "texto_comidas": generar_texto_comidas(informe),
-            }
+            # Generar DOCX con docxtpl
+            docx_content = None
+            try:
+                docx_buffer = InformeService.generar_docx_con_template(informe)
+                if docx_buffer:
+                    docx_content = ContentFile(docx_buffer.getvalue(), name="tmp.docx")
+                else:
+                    raise ValueError("Template DOCX retornó None")
+            except Exception as e:
+                logger.warning("Template DOCX falló: %s, usando fallback HTML", str(e))
+                # Fallback: generar desde HTML
+                context = {
+                    "informe": informe,
+                    "texto_comidas": generar_texto_comidas(informe),
+                }
 
-            # Seleccionar template basado en tipo
-            admision_tipo = informe.admision.tipo.lower()
-            informe_tipo = informe.tipo
-            pdf_template = f"admisiones/pdf/{admision_tipo}_pdf_informe_tecnico_{informe_tipo}.html"
+                admision_tipo = InformeService._normalizar_tipo_admision(
+                    informe.admision
+                )
+                informe_tipo_map = {
+                    "base": "base",
+                    "juridico": "juridico",
+                    "juridico eclesiastico": "juridico",
+                }
+                informe_tipo = informe_tipo_map.get(informe.tipo, "base")
+                docx_template = f"admisiones/docx/{admision_tipo}_docx_informe_tecnico_{informe_tipo}.html"
 
-            html_pdf = render_to_string(pdf_template, context)
+                try:
+                    html_docx = render_to_string(docx_template, context)
+                    docx_content = InformeService._generate_docx_content(
+                        html_docx, getattr(informe, "pk", None)
+                    )
+                except Exception:
+                    logger.error("Fallback DOCX generation también falló")
+                    return None
 
-            if not html_pdf.strip():
+            if not docx_content:
                 return None
 
-            pdf_bytes = HTML(
-                string=html_pdf, base_url=InformeService._get_base_url()
-            ).write_pdf()
-            if not pdf_bytes:
-                return None
-
-            pdf_content = ContentFile(
-                pdf_bytes, name=f"borrador-{informe.tipo}-{informe.id}.pdf"
+            # Guardar DOCX borrador
+            base_filename = slugify(
+                f"informe-{informe.id}-admision-{informe.admision_id}-{informe.tipo}-borrador"
             )
+            docx_content.name = f"{base_filename}.docx"
 
             # Solo crear/actualizar si no existe un PDF final (validado)
             if informe.estado != "Validado":
@@ -790,21 +824,88 @@ class InformeService:
                         "tipo": informe.tipo,
                         "informe_id": informe.id,
                         "comedor": informe.admision.comedor,
-                        "archivo": pdf_content,
+                        "archivo_docx": docx_content,
                     },
                 )
+
+                # Actualizar estado del informe
+                informe.estado = "Docx generado"
+                informe.save()
+
+                logger.info(
+                    "DOCX borrador generado para informe %s, estado actualizado",
+                    informe.id,
+                )
+
                 return pdf_borrador
             else:
-                # Si ya existe un PDF final, no sobrescribir
                 logger.info(
-                    "No se genera PDF borrador porque ya existe PDF final validado para informe %s",
+                    "No se genera DOCX borrador porque ya existe PDF final validado para informe %s",
                     informe.id,
                 )
                 return None
 
         except Exception:
             logger.exception(
-                "Error en generar_pdf_borrador",
+                "Error en generar_docx_borrador",
+                extra={"informe_pk": getattr(informe, "pk", None)},
+            )
+            return None
+
+    @staticmethod
+    def subir_docx_editado(informe, archivo_docx, usuario=None):
+        """Maneja la subida del DOCX editado por el técnico"""
+        try:
+            # Obtener o crear el registro PDF
+            pdf_obj, created = InformeTecnicoPDF.objects.get_or_create(
+                admision=informe.admision,
+                defaults={
+                    "tipo": informe.tipo,
+                    "informe_id": informe.id,
+                    "comedor": informe.admision.comedor,
+                },
+            )
+
+            # Pisar el DOCX borrador con el editado
+            base_filename = slugify(
+                f"informe-{informe.id}-admision-{informe.admision_id}-{informe.tipo}-final"
+            )
+            archivo_docx.name = f"{base_filename}.docx"
+            pdf_obj.archivo_docx_editado = archivo_docx
+            if not created:
+                pdf_obj.tipo = informe.tipo
+                pdf_obj.informe_id = informe.id
+                pdf_obj.comedor = informe.admision.comedor
+            pdf_obj.save(
+                update_fields=[
+                    "archivo_docx_editado",
+                    "tipo",
+                    "informe_id",
+                    "comedor",
+                ]
+            )
+
+            # Actualizar estado del informe
+            informe.estado = "Docx editado"
+            informe.save()
+
+            # Actualizar estado de admisión - ahora pasa a revisión
+            from .admisiones_service import AdmisionService
+
+            AdmisionService.actualizar_estado_admision(
+                informe.admision, "enviar_informe_revision"
+            )
+
+            logger.info(
+                "DOCX editado subido exitosamente para informe %s",
+                informe.id,
+            )
+
+            return pdf_obj
+
+        except Exception:
+            logger.exception(
+                "Error en subir_docx_editado",
                 extra={"informe_pk": getattr(informe, "pk", None)},
             )
             return None
