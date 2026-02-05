@@ -138,9 +138,11 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             )
 
         if "responsable_es_referente" in self.initial_data:
-            self.initial_data["responsable_es_referente"] = (
-                self.initial_data["responsable_es_referente"] == "Y"
-            )
+            responsable_es_referente = self.initial_data["responsable_es_referente"]
+            if isinstance(responsable_es_referente, str):
+                self.initial_data["responsable_es_referente"] = (
+                    responsable_es_referente.upper() == "Y"
+                )
         if "referente_comedor" in self.initial_data:
             if "celular" in self.initial_data["referente_comedor"]:
                 # TODO: Crear una funcion que limpie todo

@@ -378,15 +378,22 @@
                 </div>
                 <div class="mt-3">
                     {% if informe_tecnico_pdf %}
-                        <a href="{{ informe_tecnico_pdf.archivo.url }}"
-                           class="btn btn-outline-primary btn-sm me-2"
-                           target="_blank"
-                           rel="noopener">Descargar PDF</a>
-                        {% if informe_tecnico_pdf.archivo_docx %}
+                        {% if informe_tecnico.estado == "Validado" and informe_tecnico_pdf.archivo_docx %}
                             <a href="{{ informe_tecnico_pdf.archivo_docx.url }}"
-                               class="btn btn-outline-primary btn-sm"
+                               class="btn btn-success btn-sm me-2"
                                target="_blank"
-                               rel="noopener">Descargar Word</a>
+                               rel="noopener">Descargar Informe Final</a>
+                        {% else %}
+                            <a href="{{ informe_tecnico_pdf.archivo.url }}"
+                               class="btn btn-outline-primary btn-sm me-2"
+                               target="_blank"
+                               rel="noopener">Descargar PDF</a>
+                            {% if informe_tecnico_pdf.archivo_docx %}
+                                <a href="{{ informe_tecnico_pdf.archivo_docx.url }}"
+                                   class="btn btn-outline-primary btn-sm"
+                                   target="_blank"
+                                   rel="noopener">Descargar Word</a>
+                            {% endif %}
                         {% endif %}
                     {% else %}
                         <p class="text-muted mb-0">No hay archivos generados para el informe tecnico.</p>
