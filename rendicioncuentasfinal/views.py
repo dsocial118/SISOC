@@ -4,13 +4,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models.base import Model
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.generic import DetailView, ListView
 from django.views.decorators.http import require_POST
 
 from core.decorators import group_required
+from core.security import safe_redirect
 
 from comedores.models import Comedor
 from historial.services.historial_service import HistorialService
@@ -42,7 +43,11 @@ def subsanar_documento_rendicion_cuentas_final(request, documento_id):
 
     messages.success(request, "Documento enviado a subsanar correctamente.")
 
-    return redirect(request.META.get("HTTP_REFERER", "/"))
+    return safe_redirect(
+        request,
+        default="rendicion_cuentas_final_listar",
+        target=request.META.get("HTTP_REFERER"),
+    )
 
 
 class DocumentosRendicionCuentasFinalListView(LoginRequiredMixin, ListView):
@@ -84,9 +89,11 @@ def validar_documento_rendicion_cuentas_final(request, documento_id):
     messages.success(request, "Documento validado correctamente.")
 
     next_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
-    if next_url:
-        return redirect(next_url)
-    return redirect(request.META.get("HTTP_REFERER", "/"))
+    return safe_redirect(
+        request,
+        default="rendicion_cuentas_final_listar",
+        target=next_url,
+    )
 
 
 @login_required
@@ -111,7 +118,11 @@ def eliminar_documento_rendicion_cuentas_final(request, documento_id):
 
     messages.success(request, "Documento eliminado correctamente.")
 
-    return redirect(request.META.get("HTTP_REFERER", "/"))
+    return safe_redirect(
+        request,
+        default="rendicion_cuentas_final_listar",
+        target=request.META.get("HTTP_REFERER"),
+    )
 
 
 @login_required
@@ -133,7 +144,11 @@ def crear_documento_rendicion_cuentas_final(request, rendicion_id):
             documento, archivo
         )
 
-    return redirect(request.META.get("HTTP_REFERER", "/"))
+    return safe_redirect(
+        request,
+        default="rendicion_cuentas_final_listar",
+        target=request.META.get("HTTP_REFERER"),
+    )
 
 
 @login_required
@@ -151,7 +166,11 @@ def adjuntar_documento_rendicion_cuenta_final(request):
     else:
         messages.success(request, "Archivo adjuntado correctamente.")
 
-    return redirect(request.META.get("HTTP_REFERER", "/"))
+    return safe_redirect(
+        request,
+        default="rendicion_cuentas_final_listar",
+        target=request.META.get("HTTP_REFERER"),
+    )
 
 
 class RendicionCuentasFinalDetailView(LoginRequiredMixin, DetailView):
@@ -202,7 +221,11 @@ def switch_rendicion_final_fisicamente_presentada(request, rendicion_id):
 
     messages.success(request, "Estado de revisión actualizado.")
 
-    return redirect(request.META.get("HTTP_REFERER", "/"))
+    return safe_redirect(
+        request,
+        default="rendicion_cuentas_final_listar",
+        target=request.META.get("HTTP_REFERER"),
+    )
 
 
 def documentos_rendicion_cuentas_final_ajax(request):
