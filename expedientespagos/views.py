@@ -38,43 +38,21 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
         context["comedorid"] = comedor_id
 
         headers = [
+            {"title": "Mes de Pago"},
+            {"title": "Año"},
             {"title": "Número de Expediente"},
             {"title": "Expediente del Convenio"},
-            {"title": "Monto"},
-            {"title": "Anexo"},
-            {"title": "Número de Orden de Pago"},
-            {"title": "Fecha de pago al banco"},
-            {"title": "Fecha de acreditación"},
-            {"title": "Observaciones"},
+            {"title": "Total"},
             {"title": "Fecha de creación"},
-            {"title": "Prestaciones mensuales desayuno"},
-            {"title": "Prestaciones mensuales almuerzo"},
-            {"title": "Prestaciones mensuales merienda"},
-            {"title": "Prestaciones mensuales cena"},
-            {"title": "Monto mensual desayuno"},
-            {"title": "Monto mensual almuerzo"},
-            {"title": "Monto mensual merienda"},
-            {"title": "Monto mensual cena"},
         ]
 
         fields = [
+            {"name": "mes_pago"},
+            {"name": "ano"},
             {"name": "expediente_pago"},
             {"name": "expediente_convenio"},
-            {"name": "monto"},
-            {"name": "anexo"},
-            {"name": "numero_orden_pago"},
-            {"name": "fecha_pago_al_banco"},
-            {"name": "fecha_acreditacion"},
-            {"name": "observaciones"},
+            {"name": "total"},
             {"name": "fecha_creacion"},
-            {"name": "prestaciones_mensuales_desayuno"},
-            {"name": "prestaciones_mensuales_almuerzo"},
-            {"name": "prestaciones_mensuales_merienda"},
-            {"name": "prestaciones_mensuales_cena"},
-            {"name": "monto_mensual_desayuno"},
-            {"name": "monto_mensual_almuerzo"},
-            {"name": "monto_mensual_merienda"},
-            {"name": "monto_mensual_cena"},
         ]
 
         context.update(
