@@ -1,139 +1,1214 @@
-services:
-  mysql:
-    image: mysql:8.0
-    restart: unless-stopped
-    pull_policy: if_not_present
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.5'
-          memory: 256M
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: nodo_db
-      MYSQL_USER: nodo_user
-      MYSQL_PASSWORD: nodo_password
-    ports:
-      - "3310:3306"
-    volumes:
-      - ./dbdata:/var/lib/mysql
-    command: >
-      --default-authentication-plugin=mysql_native_password
-      --max_connections=200
-      --innodb_buffer_pool_size=256M
-      --innodb_log_file_size=64M
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+{% extends "includes/main.html" %}
+{% load static image_tags custom_filters %}
+{% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
+{% block titulo-pagina %}
+    {{ comedor.nombre }}
+    <span class="ms-2 h5">| {{ comedor.provincia.nombre | default_if_none:"Sin información" }}, {{ comedor.municipio.nombre | default_if_none:"Sin información" }}, {{ comedor.localidad.nombre | default_if_none:"Sin información" }}</span>
+    <span class="ms-2 h5">- {{ comedor.programa.nombre }} - {{ comedor_categoria.categoria.nombre }}</span>
+    {% if comedor.estado_validacion == "Validado" %}
+        <span class="badge bg-success badge-sm ms-2">Validado</span>
+    {% elif comedor.estado_validacion == "No Validado" %}
+        <span class="badge bg-danger badge-sm ms-2">No Validado</span>
+    {% else %}
+        <span class="badge bg-warning badge-sm ms-2">Validación Pendiente</span>
+    {% endif %}
+{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+{% load crispy_forms_tags %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/cardsDetail.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/galeria-imagenes.css' %}" />
+    <div class="d-print-none mb-3">
+        <div class="mb-2">
+            <a href="{% url 'comedores' %}"
+               class="btn btn-secondary backbutton-handler">Volver</a>
+        </div>
+        <div class="d-flex justify-content-end flex-wrap gap-1">
+            <button type="button"
+                    class="btn btn-sm btn-warning text-white fw-bold"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalValidacion">
+                <i class="bi bi-clipboard-check me-1"></i> Validar
+            </button>
+            {% comment %}
+            {% if rendicion_cuentas_final_activo == True %}
+                <a href="{% url 'rendicion_cuentas_final' pk=comedor.id %}" class="btn btn-sm btn-primary">Rendicion de Cuentas Final</a>
+            {% endif %}
+            {% endcomment %}
+            <a href="{% url 'nomina_ver' pk=comedor.id %}"
+               class="btn btn-sm btn-primary">Nomina</a>
+            {% if comedor.estado == "Sin Ingreso" %}
+                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                   class="btn btn-sm btn-primary">Asignar Equipo Técnico</a>
+            {% else %}
+                <button type="button"
+                        class="btn btn-sm btn-warning text-white fw-bold"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalAdmision">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Comenzar Admisión
+                </button>
+                <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                   class="btn btn-sm btn-primary">Modificar Equipo Técnico</a>
+            {% endif %}
+            <a href="{% url 'comedor_intervencion_ver' comedor.id %}"
+               class="btn btn-sm btn-primary">Intervenciones</a>
+            <a href="{% url 'comedor_editar' comedor.id %}"
+               class="btn btn-sm btn-primary">Editar</a>
+            {% if perms.auditlog.view_logentry %}
+                <a href="{% url 'audittrail:log_instance' 'comedores' 'comedor' comedor.pk %}"
+                   class="btn btn-sm btn-outline-light">Historial</a>
+            {% endif %}
+            <a href="#" class="btn btn-sm btn-secondary print d-none d-sm-inline">Imprimir</a>
+            <a href="{% url 'comedor_eliminar' comedor.id %}"
+               class="btn btn-sm btn-danger">Eliminar</a>
+        </div>
+    </div>
+    <div class="row text-center mb-3">
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-clipboard fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ count_relevamientos }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Relevamientos</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-users fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ count_beneficiarios }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Beneficiarios</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-coffee fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ presupuesto_desayuno }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Presupuesto Desayuno</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-utensils fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ presupuesto_almuerzo }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Presupuesto Almuerzo</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-mug-hot fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ presupuesto_merienda }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Presupuesto Merienda</h5>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 pt-3">
+            <div class="info-card bg-card">
+                <div class="row">
+                    <div class="col-3">
+                        <i class="fa fa-concierge-bell fa-2x"></i>
+                    </div>
+                    <div class="col-9 text-start">
+                        <p>{{ presupuesto_cena }}</p>
+                    </div>
+                </div>
+                <div class="row info-card-label">
+                    <h5 class="mt-2">Presupuesto Cena</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row relevamiento-container">
+        <div class="col-6">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-informacion">
+                        <div class="card-header">
+                            <h3 class="card-title fw-bold me-3 pt-1">Información</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body card-comments p-0 pb-1">
+                            <div class="nav nav-pills row my-3">
+                                <div class="col-6">
+                                    <div class="row">
+                                        <div class="col-6 w-100">
+                                            <div class="nav-item d-flex">
+                                                <div class="comment-text comment-text d-flex flex-column min-width-100">
+                                                    {% if comedor.foto_legajo %}
+                                                        {% optimized_image comedor.foto_legajo "Foto del comedor" css_class="img-fluid mw-100 rounded" %}
+                                                    {% else %}
+                                                        <img src="{% static 'custom/img/default.png' %}"
+                                                             alt="Imagen del comedor"
+                                                             class="img-fluid mw-100 rounded" />
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Nombre
+                                                <span class="username">{{ comedor.nombre | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                ID Externo
+                                                <span class="username">{{ comedor.id_externo | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Codigo de Proyecto
+                                                <span class="username">{{ comedor.codigo_de_proyecto | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Tipo de Comedor
+                                                <span class="username">{{ comedor.tipocomedor.nombre | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Organización
+                                                <span class="username">{{ comedor.organizacion.nombre | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Año de comienzo
+                                                <span class="username">{{ comedor.comienzo | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Provincia
+                                                <span class="username">{{ comedor.provincia.nombre | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Municipio
+                                                <span class="username">{{ comedor.municipio.nombre | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Localidad
+                                                <span class="username">{{ comedor.localidad.nombre | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Partido
+                                                <span class="username">{{ comedor.partido | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Barrio
+                                                <span class="username">{{ comedor.barrio | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Codigo postal
+                                                <span class="username">{{ comedor.codigo_postal | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Calle
+                                                <span class="username">{{ comedor.calle | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Número
+                                                <span class="username">{{ comedor.numero | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Piso
+                                                <span class="username">{{ comedor.piso | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Departamento
+                                                <span class="username">{{ comedor.departamento | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Manzana
+                                                <span class="username">{{ comedor.manzana | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Lote
+                                                <span class="username">{{ comedor.lote | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Entre calle 1
+                                                <span class="username">{{ comedor.entre_calle_1 | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Entre calle 2
+                                                <span class="username">{{ comedor.entre_calle_2 | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Longitud
+                                                <span class="username">{{ comedor.longitud | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Latitud
+                                                <span class="username">{{ comedor.latitud | default_if_none:"Sin información" }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Estado
+                                                <span class="username">{{ comedor.estado }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text comment-text d-flex flex-column">
+                                                Estado general
+                                                <span class="username">
+                                                    {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_actividad %}
+                                                        {{ comedor.ultimo_estado.estado_general.estado_actividad.estado }}
+                                                    {% else %}
+                                                        Sin información
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text d-flex flex-column">
+                                                Subestado
+                                                <span class="username">
+                                                    {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_proceso %}
+                                                        {{ comedor.ultimo_estado.estado_general.estado_proceso.estado }}
+                                                    {% else %}
+                                                        Sin información
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="nav-item d-flex col-6">
+                                            <div class="comment-text d-flex flex-column">
+                                                Motivo
+                                                <span class="username">
+                                                    {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_detalle %}
+                                                        {{ comedor.ultimo_estado.estado_general.estado_detalle.estado }}
+                                                    {% else %}
+                                                        Sin información
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold">Ubicación</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0" style="height: 400px;">
+                    {% google_maps_query comedor.latitud comedor.longitud as maps_query %}
+                    {% if maps_query %}
+                        <iframe width="100%"
+                                height="100%"
+                                frameborder="0"
+                                style="border:0"
+                                src="https://maps.google.com/maps?q={{ maps_query }}&output=embed"
+                                allowfullscreen>
+                        </iframe>
+                    {% elif comedor.calle and comedor.numero and comedor.localidad and comedor.municipio and comedor.provincia %}
+                        <iframe width="100%"
+                                height="100%"
+                                frameborder="0"
+                                style="border:0"
+                                src="https://maps.google.com/maps?q={{ comedor.calle|urlencode }}+{{ comedor.numero }},+{{ comedor.localidad.nombre|urlencode }},+{{ comedor.municipio.nombre|urlencode }},+{{ comedor.provincia.nombre|urlencode }}&output=embed"
+                                allowfullscreen>
+                        </iframe>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            No hay coordenadas ni datos de dirección suficientes para mostrar el mapa.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="row relevamiento-container">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Referente</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body card-comments p-0 pb-1">
+                        <div class="nav nav-pills row my-3">
+                            <div class="nav-item col-3 d-flex">
+                                <div class="comment-text comment-text d-flex flex-column">
+                                    Nombre completo
+                                    {% if comedor.referente.nombre %}
+                                        <span class="username">{{ comedor.referente.nombre | default_if_none:"Sin información" }}, {{ comedor.referente.apellido | default_if_none:"Sin información" }}</span>
+                                    {% else %}
+                                        <span class="username">Sin información</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="nav-item col-3 d-flex">
+                                <div class="comment-text comment-text d-flex flex-column">
+                                    Numero de contacto
+                                    <span class="username">{{ comedor.referente.celular | default_if_none:"Sin información" }}</span>
+                                </div>
+                            </div>
+                            <div class="nav-item col-3 d-flex">
+                                <div class="comment-text comment-text d-flex flex-column">
+                                    Mail de contacto
+                                    <span class="username" style="word-break: break-all;"><a href="mailto:{{ relevamiento.comedor.referente.mail }}">{{ comedor.referente.mail |   default_if_none:"Sin información" }}</a></span>
+                                </div>
+                            </div>
+                            <div class="nav-item col-3 d-flex">
+                                <div class="comment-text comment-text d-flex flex-column">
+                                    Documento
+                                    <span class="username">{{ comedor.referente.documento |   default_if_none:"Sin información" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Relevamientos</h3>
+                        <div class="card-tools">
+                            <a href="{% url 'relevamientos' comedor.id %}"
+                               class="btn btn-primary btn-sm me-3">Ver mas</a>
+                            <button type="button"
+                                    class="btn btn-primary btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#RelevamientoModal">Agregar</button>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body row card-comments p-0 pb-1">
+                        {% for relevamiento in relevamientos %}
+                            <div class="nav nav-pills row my-3">
+                                <div class="col-4 d-flex align-self-center">
+                                    <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Pendiente" }}</a>
+                                </div>
+                                <div class="col-4 d-flex align-self-center">
+                                    <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}
+                                       class="m-0">{{ relevamiento.estado }}</p>
+                                </div>
+                                {% if relevamiento.estado != "Finalizado" and relevamiento.estado != "Finalizado/Excepciones" %}
+                                    <button type="button"
+                                            class="btn btn-primary col-4"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#RelevamientoModalEditar-{{ relevamiento.id }}">
+                                        Asignar
+                                    </button>
+                                    <div class="modal fade"
+                                         id="RelevamientoModalEditar-{{ relevamiento.id }}"
+                                         tabindex="-1"
+                                         aria-labelledby="RelevamientoModalEditarLabel"
+                                         aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="RelevamientoModalEditarLabel">Asignar territorial a relevamiento {{ relevamiento.id }}</h5>
+                                                    <button type="button"
+                                                            class="btn-close"
+                                                            data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                </div>
+                                                <form method="post"
+                                                      action="{% url 'relevamiento_create_edit_ajax' comedor.pk %}">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body">
+                                                        <div class="mb-3">
+                                                            <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
+                                                            <label for="inputField" class="form-label">Territorial</label>
+                                                            <select name="territorial_editar"
+                                                                    id="update_territorial_select"
+                                                                    class="form-control">
+                                                                <option value="">No definido</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                        <button type="submit" class="btn btn-primary">Guardar</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="modal fade"
+                             id="RelevamientoModal"
+                             tabindex="-1"
+                             aria-labelledby="RelevamientoModalLabel"
+                             aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="RelevamientoModalLabel">Nuevo relevamiento</h5>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <form method="post"
+                                          action="{% url 'relevamiento_create_edit_ajax' comedor.pk %}">
+                                        {% csrf_token %}
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label for="inputField" class="form-label">Territorial</label>
+                                                <select name="territorial" id="new_territorial_select" class="form-control">
+                                                    <option value="">No definido</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                            <button type="submit" class="btn btn-primary">Guardar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row relevamiento-container">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Convenios</h3>
+                        <div class="card-tools">
+                            <a href="{% url 'dupla_asignar' pk=comedor.id %}"
+                               class="btn btn-primary me-1 btn-sm">
+                                {% if comedor.estado == "Sin Ingreso" %}
+                                    Asignar Equipo Técnico
+                                {% else %}
+                                    Modificar Equipo Técnico
+                                {% endif %}
+                            </a>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-1 m-1">
+                        <style>
+                        .table-compact {
+                            font-size: 0.85rem;
+                        }
+                        .table-compact th,
+                        .table-compact td {
+                            padding: 0.3rem 0.5rem;
+                            vertical-align: middle;
+                        }
+                        .table-compact .btn {
+                            padding: 0.2rem 0.5rem;
+                            font-size: 0.8rem;
+                        }
+                        </style>
+                        {% include 'components/data_table.html' with headers=admisiones_headers items=admisiones_items custom_cells=True empty_message='No hay admisiones registradas.' include_pagination=True is_paginated=admisiones_is_paginated page_obj=admisiones_page_obj page_range=admisiones_page_range page_param='admisiones_page' table_class='table-sm table-compact' %}
+                    </div>
+                </div>
+            </div>
+        </div>
 
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    pull_policy: if_not_present
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save 60 1 --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+        <!-- Modal Descartar Expediente -->
+        <div class="modal fade"
+             id="descartarModal"
+             tabindex="-1"
+             aria-labelledby="descartarModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="descartarModalLabel">Descartar Expediente</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form method="post" action="{% url 'comedor_detalle' comedor.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="descartar_expediente" />
+                        <input type="hidden" name="admision_id" id="admisionId" />
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="motivoDescarte" class="form-label">Motivo de descarte del expediente *</label>
+                                <textarea class="form-control"
+                                          id="motivoDescarte"
+                                          name="motivo_descarte"
+                                          rows="4"
+                                          required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Descartar Expediente</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-  # adminer:
-  #   image: adminer:4.8.1
-  #   restart: unless-stopped
-  #   pull_policy: if_not_present
-  #   ports:
-  #     - "8080:8080"
-  #   depends_on:
-  #     mysql:
-  #       condition: service_healthy
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const descartarModal = document.getElementById('descartarModal');
+            descartarModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const admisionId = button.getAttribute('data-admision-id');
+                document.getElementById('admisionId').value = admisionId;
+            });
+        });
+        </script>
 
-  backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
-    env_file: .env
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    command: >
-      sh -c "
-      mkdir -p /app/logs &&
-      pip install -r requirements.txt &&
-      python manage.py makemigrations --no-input &&
-      python manage.py migrate --no-input &&
-      python create_test_data.py &&
-      python manage.py collectstatic --no-input --clear &&
-      echo 'Starting Gunicorn server...' &&
-      gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 2 --timeout 60 --access-logfile - --error-logfile - --log-level info
-      "
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - static_volume:/app/staticfiles
-      - media_volume:/app/media
-      - logs_volume:/app/logs
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      - DATABASE_HOST=mysql
+        <div class="row relevamiento-container">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Observaciones</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body row card-comments p-0 pb-1">
+                        <div class="nav nav-pills row col-10 my-3">
+                            {% for observacion in observaciones %}
+                                <div class="col-2 d-flex">
+                                    <a href="{% url 'observacion_detalle' observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="card-tools col-2 d-flex justify-content-end align-items-start my-3">
+                            <a href="{% url 'observacion_crear' comedor.id %}"
+                               class="btn btn-primary">Agregar</a>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row relevamiento-container">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Historial de validaciones</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% include 'components/data_table.html' with headers=validaciones_headers items=validaciones_items custom_cells=True empty_message='No se han registrado validaciones.' include_pagination=True %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row relevamiento-container">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold me-3 pt-1">Historial de programas</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if programa_history %}
+                            <div class="table-responsive">
+                                <table class="table table-striped table-bordered table-hover table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Programa anterior</th>
+                                            <th>Programa actual</th>
+                                            <th>Usuario</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for change in programa_history %}
+                                            <tr>
+                                                <td>{{ change.changed_at|date:"d/m/Y H:i" }}</td>
+                                                <td>{{ change.from_programa.nombre|default:"Sin información" }}</td>
+                                                <td>{{ change.to_programa.nombre|default:"Sin información" }}</td>
+                                                <td>{{ change.changed_by.get_full_name|default:change.changed_by.username|default:"Sin información" }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p class="mb-0 text-muted">No se han registrado actualizaciones en el programa.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row relevamiento-container">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title font-weight-bold me-3 pt-1">
+                            <i class="fas fa-images me-2"></i>
+                            Galería de Imágenes
+                        </h3>
+                        <div class="card-tools">
+                            <span class="badge badge-primary me-2">{{ imagenes|length }} imagen{{ imagenes|length|pluralize:"es" }}</span>
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-3">
+                        {% if imagenes %}
+                            <div class="galeria-imagenes">
+                                {% for imagen in imagenes %}
+                                    {% if imagen.imagen %}
+                                        <div class="imagen-item" data-index="{{ forloop.counter0 }}">
+                                            <div class="imagen-container" data-image-url="{{ imagen.imagen.url }}">
+                                                <div class="placeholder-imagen">
+                                                    <i class="fas fa-image"></i>
+                                                    <div class="loader">
+                                                        <div class="spinner-border spinner-border-sm" role="status">
+                                                            <span class="sr-only">Cargando...</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="imagen-overlay">
+                                                    <button type="button"
+                                                            class="btn-expandir"
+                                                            onclick="abrirModal({{ forloop.counter0 }})">
+                                                        <i class="fas fa-expand-alt"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="imagen-info">
+                                                <div class="imagen-nombre">
+                                                    {% if imagen.imagen.name and "comedor/" in imagen.imagen.name %}
+                                                        {{ imagen.imagen.name|slice:"8:" }}
+                                                    {% else %}
+                                                        {{ imagen.imagen.name }}
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="imagen-item" data-index="{{ forloop.counter0 }}">
+                                            <div class="imagen-container">
+                                                <div class="placeholder-imagen">
+                                                    <i class="fas fa-image"></i>
+                                                </div>
+                                                <div class="imagen-overlay">
+                                                    <span class="text-muted small">Imagen sin archivo</span>
+                                                </div>
+                                            </div>
+                                            <div class="imagen-info">
+                                                <div class="imagen-nombre">Sin archivo</div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="sin-imagenes">
+                                <div class="sin-imagenes__body text-center py-5">
+                                    <i class="fas fa-image fa-3x sin-imagenes__icon mb-3"></i>
+                                    <h5 class="sin-imagenes__title">No hay imágenes disponibles</h5>
+                                    <p class="sin-imagenes__description">Las imágenes del comedor aparecerán aquí una vez que sean cargadas.</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if contactos_duplas_cargados %}
+            <div class="row relevamiento-container">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title font-weight-bold me-3 pt-1">Contactos Duplas</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-1">
+                            <div class="container m-0 table-responsive">
+                                <table class="table table-striped table-bordered table-hover table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Usuario</th>
+                                            <th>Tipo</th>
+                                            <th>Observaciones</th>
+                                        </tr>
+                                    </thead>
+                                    {% for contacto  in contactos_duplas_cargados %}
+                                        <tbody>
+                                            <td>{{ contacto.fecha |date:'d/m/Y' }}</td>
+                                            <td>{{ contacto.usuario | default_if_none:"Sin información" }}</td>
+                                            <td>{{ contacto.tipo | default_if_none:"Sin información" }}</td>
+                                            <td>{{ contacto.observaciones | default_if_none:"Sin información" }}</td>
+                                        </tbody>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        <!-- Modal para vista ampliada de imágenes -->
+        <div class="modal fade"
+             id="imagenModal"
+             tabindex="-1"
+             aria-labelledby="imagenModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-centered">
+                <div class="modal-content modal-imagen">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title" id="imagenModalLabel">
+                            <i class="fas fa-image me-2"></i>
+                            Imagen del comedor
+                        </h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div class="imagen-modal-container">
+                            <div class="imagen-principal">
+                                <img id="imagenPrincipal" src="" alt="Imagen ampliada" class="img-fluid" />
+                                <div class="controles-navegacion">
+                                    <button type="button"
+                                            class="btn-nav btn-anterior"
+                                            onclick="cambiarImagen(-1)">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="btn-nav btn-siguiente"
+                                            onclick="cambiarImagen(1)">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-between">
+                        <div class="info-imagen">
+                            <span class="nombre-archivo" id="nombreArchivo">imagen.jpg</span>
+                            <span class="contador-imagenes" id="contadorImagenes">1 de 5</span>
+                        </div>
+                        <div class="acciones-imagen">
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    onclick="descargarImagen()">
+                                <i class="fas fa-download me-1"></i>Descargar
+                            </button>
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i>Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- MODAL SELECCION ADMISION -->
+        <div class="modal fade"
+             id="modalAdmision"
+             tabindex="-1"
+             aria-labelledby="modalAdmisionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST" action="">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Seleccione el tipo de Admisión</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <select name="admision"
+                                    id="admisionID"
+                                    class="form-control form-select"
+                                    required>
+                                <option value="" disabled selected>-- Seleccione --</option>
+                                <option value="incorporacion">Incorporación</option>
+                                <option value="renovacion">Renovación</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="seleccionAdmision">Seleccionar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Modal Validación -->
+        <div class="modal fade"
+             id="modalValidacion"
+             tabindex="-1"
+             aria-labelledby="modalValidacionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalValidacionLabel">Validación del Comedor</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <p class="mb-4">Seleccione una opción para validar el comedor:</p>
+                        <div class="d-grid gap-2">
+                            <button type="button"
+                                    class="btn btn-success btn-lg"
+                                    onclick="validarComedor()">Validar</button>
+                            <button type="button"
+                                    class="btn btn-danger btn-lg"
+                                    onclick="mostrarOpcionesNoValidar()">No Validar</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-  frontend:
-    build: 
-      context: ./frontend
-      dockerfile: Dockerfile
-    env_file: .env
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    command: npm run dev -- -p 3000 -H 0.0.0.0
-    depends_on:
-      - backend
-    ports:
-      - "3010:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - frontend_next:/app/.next
-    environment:
-      - NODE_ENV=development
-      - NEXT_TELEMETRY_DISABLED=1
-      - NEXT_PUBLIC_API_BASE=http://localhost:8000/api
-      - API_BASE_INTERNAL=http://backend:8000/api
+        <!-- Modal No Validar -->
+        <div class="modal fade"
+             id="modalNoValidar"
+             tabindex="-1"
+             aria-labelledby="modalNoValidarLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST"
+                          action="{% url 'validar_comedor' comedor.pk %}"
+                          id="formNoValidar">
+                        {% csrf_token %}
+                        <input type="hidden" name="accion" value="no_validar" />
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validación</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="opcionesSelect" class="form-label">Seleccione uno o más motivos: *</label>
+                                <select class="form-control" id="opcionesSelect" name="opciones" multiple>
+                                    {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3" id="comentarioDiv" style="display: none;">
+                                <label for="comentario" class="form-label">Comentario: *</label>
+                                <textarea class="form-control"
+                                          id="comentario"
+                                          name="comentario"
+                                          rows="3"
+                                          placeholder="Especifique el motivo..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit"
+                                    class="btn btn-danger"
+                                    onclick="return validarFormNoValidar()">No Validar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endblock %}
+    {% block customJS %}
+        <!-- CSS personalizado para Select2 Bootstrap 5 tema oscuro -->
+        <style>
+        .select2-container .select2-selection--multiple {
+            background-color: #495057 !important;
+            border: 1px solid #6c757d !important;
+            border-radius: 0.375rem !important;
+            color: #fff !important;
+            min-height: 38px !important;
+            padding: 0.375rem 0.75rem !important;
+        }
 
-volumes:
-  static_volume:
-  media_volume:
-  logs_volume:
-  redis_data:
-  frontend_next:
+        .select2-container .select2-selection--multiple .select2-selection__choice {
+            background-color: #0d6efd !important;
+            border: 1px solid #0d6efd !important;
+            border-radius: 0.25rem !important;
+            color: #fff !important;
+            font-size: 0.875rem !important;
+            margin: 0.125rem 0.25rem 0.125rem 0 !important;
+            padding: 0.25rem 0.5rem !important;
+        }
+
+        .select2-container .select2-selection--multiple .select2-selection__choice__remove {
+            color: #fff !important;
+            margin-right: 0.25rem !important;
+        }
+
+        .select2-container .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #f8f9fa !important;
+        }
+
+        .select2-dropdown {
+            background-color: #343a40 !important;
+            border: 1px solid #6c757d !important;
+            border-radius: 0.375rem !important;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .select2-results__option {
+            background-color: #343a40 !important;
+            color: #fff !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        .select2-results__option--highlighted {
+            background-color: #0d6efd !important;
+            color: #fff !important;
+        }
+
+        .select2-search__field {
+            background-color: #495057 !important;
+            border: 1px solid #6c757d !important;
+            border-radius: 0.25rem !important;
+            color: #fff !important;
+            padding: 0.25rem 0.5rem !important;
+        }
+
+        .select2-container .select2-selection--multiple .select2-selection__placeholder {
+            color: #adb5bd !important;
+            margin-top: 0.25rem !important;
+        }
+
+        .select2-container--focus .select2-selection--multiple {
+            border-color: #86b7fe !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+        }
+        </style>
+
+        <script>
+        const comedorId = "{{ comedor.id }}"
+        const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
+        const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
+
+        function validarComedor() {
+            // Crear form para validar
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "validar_comedor" comedor.pk %}';
+
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden';
+            csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            const accion = document.createElement('input');
+            accion.type = 'hidden';
+            accion.name = 'accion';
+            accion.value = 'validar';
+
+            form.appendChild(csrf);
+            form.appendChild(accion);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function mostrarOpcionesNoValidar() {
+            const modalValidacion = bootstrap.Modal.getInstance(document.getElementById('modalValidacion'));
+            modalValidacion.hide();
+
+            const modalNoValidar = new bootstrap.Modal(document.getElementById('modalNoValidar'));
+            modalNoValidar.show();
+        }
+
+        // Inicializar Select2 cuando se abre el modal
+        document.getElementById('modalNoValidar').addEventListener('shown.bs.modal', function() {
+            if (typeof $ !== 'undefined' && $.fn.select2) {
+                $('#opcionesSelect').select2({
+                    placeholder: 'Seleccione una o más opciones...',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#modalNoValidar')
+                });
+
+                // Escuchar cambios para mostrar/ocultar comentario
+                $('#opcionesSelect').on('change', function() {
+                    toggleComentario();
+                });
+            }
+        });
+
+        function toggleComentario() {
+            const selectedValues = $('#opcionesSelect').val() || [];
+            const comentarioDiv = document.getElementById('comentarioDiv');
+            const comentarioTextarea = document.getElementById('comentario');
+
+            if (selectedValues.includes('otro')) {
+                comentarioDiv.style.display = 'block';
+                comentarioTextarea.required = true;
+            } else {
+                comentarioDiv.style.display = 'none';
+                comentarioTextarea.required = false;
+                comentarioTextarea.value = '';
+            }
+        }
+
+        function validarFormNoValidar() {
+            const selectedValues = $('#opcionesSelect').val() || [];
+            const comentario = document.getElementById('comentario').value.trim();
+
+            if (selectedValues.length === 0) {
+                alert('Debe seleccionar al menos una opción.');
+                return false;
+            }
+
+            if (selectedValues.includes('otro') && !comentario) {
+                alert('El comentario es obligatorio cuando selecciona "Otro".');
+                return false;
+            }
+
+            return true;
+        }
+        </script>
+        <script src="{% static 'custom/js/galeria-imagenes.js' %}"></script>
+        <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
+        <script src="{% static 'custom/js/comedordetail.js' %}"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+                crossorigin="anonymous"></script>
+    {% endblock %}
