@@ -35,9 +35,5 @@ RUN pip install --upgrade pip && pip install -r requirements.txt && \
 # Agrega el script de entrypoint y hazlo ejecutable
 COPY ./docker/django/entrypoint.py ./docker/django/entrypoint.py
 
-# Usuario no root por defecto (recomendado para prod)
-RUN useradd -m -u 10001 appuser && chown -R appuser:appuser /sisoc
-USER appuser
-
 # Comando de inicio de la aplicación
 CMD ["python", "./docker/django/entrypoint.py"]
