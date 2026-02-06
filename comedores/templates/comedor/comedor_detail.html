@@ -3,8 +3,36 @@
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 {% block titulo-pagina %}
     {{ comedor.nombre }}
-    <span class="ms-2 h5">| {{ comedor.provincia.nombre | default_if_none:"Sin información" }}, {{ comedor.municipio.nombre | default_if_none:"Sin información" }}, {{ comedor.localidad.nombre | default_if_none:"Sin información" }}</span>
-    <span class="ms-2 h5">- {{ comedor.programa.nombre }} - {{ comedor_categoria.categoria.nombre }}</span>
+    <span class="ms-2 h5">|
+        {% if comedor.provincia %}
+            {{ comedor.provincia.nombre }}
+        {% else %}
+            Sin información
+        {% endif %},
+        {% if comedor.municipio %}
+            {{ comedor.municipio.nombre }}
+        {% else %}
+            Sin información
+        {% endif %},
+        {% if comedor.localidad %}
+            {{ comedor.localidad.nombre }}
+        {% else %}
+            Sin información
+        {% endif %}
+    </span>
+    <span class="ms-2 h5">-
+        {% if comedor.programa %}
+            {{ comedor.programa.nombre }}
+        {% else %}
+            Sin programa
+        {% endif %}
+        -
+        {% if comedor_categoria and comedor_categoria.categoria %}
+            {{ comedor_categoria.categoria.nombre }}
+        {% else %}
+            Sin categoría
+        {% endif %}
+    </span>
     {% if comedor.estado_validacion == "Validado" %}
         <span class="badge bg-success badge-sm ms-2">Validado</span>
     {% elif comedor.estado_validacion == "No Validado" %}
