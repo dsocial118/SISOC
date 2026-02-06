@@ -24,7 +24,6 @@ from importarexpediente.models import (
 )
 
 from importarexpediente.services import (
-    DATE_FORMATS,
     HEADER_MAP,
     FIELD_LABELS,
     parse_date,
@@ -209,7 +208,7 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                             parsed_id = parse_int(val)
                             if val and parsed_id is None:
                                 specific_errors.append(
-                                    f'Error en validación columna "ID": Advertencia "El campo debe ser numérico"'
+                                    'Error en validación columna "ID": Advertencia "El campo debe ser numérico"'
                                 )
                             kwargs["comedor_id"] = parsed_id
                         elif field.startswith("prestaciones_mensuales_"):
@@ -549,7 +548,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         expected_cols = len(headers)
         imported_count = 0
         error_count = 0
-        unresolved_comedor_rows = set()
+        # No se mantiene registro de filas con comedor no resuelto; se importa por ID
 
         # no se usan caches de comedor; se importa por ID del CSV
 
@@ -599,7 +598,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                             parsed_id = parse_int(val)
                             if val and parsed_id is None:
                                 specific_errors.append(
-                                    f'Error en validación columna "ID": Advertencia "El campo debe ser numérico"'
+                                    'Error en validación columna "ID": Advertencia "El campo debe ser numérico"'
                                 )
                             kwargs["comedor_id"] = parsed_id
                         elif field.startswith("prestaciones_mensuales_"):
