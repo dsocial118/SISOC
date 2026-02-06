@@ -791,7 +791,13 @@
                                                 <td>{{ change.changed_at|date:"d/m/Y H:i" }}</td>
                                                 <td>{{ change.from_programa.nombre|default:"Sin información" }}</td>
                                                 <td>{{ change.to_programa.nombre|default:"Sin información" }}</td>
-                                                <td>{{ change.changed_by.get_full_name|default:change.changed_by.username|default:"Sin información" }}</td>
+                                                <td>
+                                                    {% if change.changed_by %}
+                                                        {{ change.changed_by.get_full_name|default:change.changed_by.username|default:"Sin información" }}
+                                                    {% else %}
+                                                        Sin información
+                                                    {% endif %}
+                                                </td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
