@@ -57,6 +57,21 @@
             </div>
         </div>
     {% endif %}
+    {% if informe_tecnico and informe_tecnico.observaciones_subsanacion and request.user|has_group:"Tecnico Comedor" %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert alert-danger" role="alert">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i> Informe Técnico a Subsanar
+                    </h5>
+                    <p class="mb-0">
+                        <strong>Observaciones del Abogado:</strong>
+                    </p>
+                    <p class="mb-0">{{ informe_tecnico.observaciones_subsanacion }}</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     {% if not admision.tipo_convenio and not admision.enviada_a_archivo %}
         <!-- MODAL DE SELECCIÓN INICIAL -->
         <div class="modal fade"
@@ -231,19 +246,27 @@
                                             <li class="nav-item">
                                                 <div class="comment-text">
                                                     Informe Técnico:
-                                                    {% if pdf.archivo %}
-                                                        <span class="fw-bold">
-                                                            <a href="{{ pdf.archivo.url }}" target="_blank">
-                                                                <i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>
-                                                            </a>
-                                                        </span>
-                                                    {% endif %}
-                                                    {% if pdf.archivo_docx %}
+                                                    {% if informe_tecnico.estado == "Validado" and pdf.archivo_docx %}
                                                         <span class="fw-bold">
                                                             <a href="{{ pdf.archivo_docx.url }}" target="_blank">
-                                                                <i class="bi bi-filetype-docx text-info h4 ms-3 text-bold"></i>
+                                                                <i class="bi bi-filetype-docx text-success h4 ms-3 text-bold"></i>
                                                             </a>
                                                         </span>
+                                                    {% else %}
+                                                        {% if pdf.archivo %}
+                                                            <span class="fw-bold">
+                                                                <a href="{{ pdf.archivo.url }}" target="_blank">
+                                                                    <i class="bi bi-filetype-pdf text-info h4 ms-3 text-bold"></i>
+                                                                </a>
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if pdf.archivo_docx %}
+                                                            <span class="fw-bold">
+                                                                <a href="{{ pdf.archivo_docx.url }}" target="_blank">
+                                                                    <i class="bi bi-filetype-docx text-info h4 ms-3 text-bold"></i>
+                                                                </a>
+                                                            </span>
+                                                        {% endif %}
                                                     {% endif %}
                                                 </div>
                                             </li>
@@ -643,6 +666,80 @@
                                     </form>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <!-- Modal para revisar informe técnico -->
+                    <div class="modal fade"
+                         id="modalRevisarInformeTecnico"
+                         tabindex="-1"
+                         aria-labelledby="modalRevisarInformeTecnicoLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalRevisarInformeTecnicoLabel">Revisar Informe Técnico</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="d-grid gap-2">
+                                        {% if pdf and pdf.archivo_docx %}
+                                            <a href="{{ pdf.archivo_docx.url }}" class="btn btn-success" download>📄 Descargar DOCX de informe técnico generado</a>
+                                        {% else %}
+                                            <button class="btn btn-secondary" disabled>📄 DOCX no disponible</button>
+                                        {% endif %}
+ 
+                                        <button type="button"
+                                                class="btn btn-warning"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalSubirDocxFinal"
+                                                data-bs-dismiss="modal">📤 Subir DOCX Informe técnico Final</button>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Modal para subir DOCX final -->
+                    <div class="modal fade"
+                         id="modalSubirDocxFinal"
+                         tabindex="-1"
+                         aria-labelledby="modalSubirDocxFinalLabel"
+                         aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form method="post" enctype="multipart/form-data" action="">
+                                {% csrf_token %}
+                                {% if informe_tecnico %}<input type="hidden" name="informe_id" value="{{ informe_tecnico.id }}" />{% endif %}
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="modalSubirDocxFinalLabel">Subir DOCX Informe técnico Final</h5>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label for="docx_final" class="form-label">Archivo DOCX final</label>
+                                            <input type="file"
+                                                   class="form-control"
+                                                   id="docx_final"
+                                                   name="docx_final"
+                                                   accept=".docx"
+                                                   required />
+                                            <div class="form-text">Seleccione el archivo DOCX final que será revisado por el abogado.</div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                        <button type="submit" name="subir_docx_final" class="btn btn-primary">Subir Archivo</button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
                     <!-- Toast de éxito -->
