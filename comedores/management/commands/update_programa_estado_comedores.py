@@ -6,12 +6,14 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from comedores.models import (
     Comedor,
     EstadoActividad,
     EstadoDetalle,
     EstadoProceso,
+    HistorialValidacion,
     Programas,
 )
 from comedores.services.estado_manager import registrar_cambio_estado
@@ -19,6 +21,7 @@ from comedores.services.estado_manager import registrar_cambio_estado
 DEFAULT_PROGRAMA_ID = 3
 DEFAULT_ESTADO_ACTIVIDAD = "Activo"
 DEFAULT_ESTADO_PROCESO = "En ejecución"
+VALIDACION_ESTADO = "Validado"
 
 HEADER_ALIASES = {
     "comedor_id": "comedor_id",
@@ -122,6 +125,8 @@ class Command(BaseCommand):
             "programa_skipped": 0,
             "estado_updates": 0,
             "estado_skipped": 0,
+            "validacion_updates": 0,
+            "validacion_skipped": 0,
         }
         missing_comedores: List[Dict[str, object]] = []
         error_details: List[str] = []
@@ -156,6 +161,10 @@ class Command(BaseCommand):
                 continue
 
             programa_needs_update = comedor.programa_id != programa.id
+            validacion_needs_update = (
+                comedor.estado_validacion != VALIDACION_ESTADO
+                or comedor.fecha_validado is None
+            )
             estado_needs_update = not self._matches_estado_actual(
                 comedor, actividad, proceso, detalle
             )
@@ -168,18 +177,27 @@ class Command(BaseCommand):
                 cambios = []
                 if programa_needs_update:
                     cambios.append("programa")
+                if validacion_needs_update:
+                    cambios.append("validación")
                 if estado_needs_update:
                     cambios.append("estado")
                 cambios_txt = ", ".join(cambios) if cambios else "sin cambios"
                 self.stdout.write(f"[DRY-RUN] {description} -> {cambios_txt}")
                 self._update_stats(
-                    stats, programa_needs_update, estado_needs_update, applied=bool(cambios)
+                    stats,
+                    programa_needs_update,
+                    validacion_needs_update,
+                    estado_needs_update,
+                    applied=bool(cambios),
                 )
                 continue
 
-            if not (programa_needs_update or estado_needs_update):
+            if not (
+                programa_needs_update or validacion_needs_update or estado_needs_update
+            ):
                 stats["skipped"] += 1
                 stats["programa_skipped"] += 1
+                stats["validacion_skipped"] += 1
                 stats["estado_skipped"] += 1
                 self.stdout.write(self.style.WARNING(f"{description} (sin cambios)"))
                 continue
@@ -189,9 +207,22 @@ class Command(BaseCommand):
             )
 
             with transaction.atomic():
+                update_fields = []
                 if programa_needs_update:
                     comedor.programa = programa
-                    comedor.save(update_fields=["programa"])
+                    update_fields.append("programa")
+                if validacion_needs_update:
+                    comedor.estado_validacion = VALIDACION_ESTADO
+                    comedor.fecha_validado = timezone.now()
+                    update_fields.extend(["estado_validacion", "fecha_validado"])
+                if update_fields:
+                    comedor.save(update_fields=update_fields)
+                if validacion_needs_update:
+                    HistorialValidacion.objects.create(
+                        comedor=comedor,
+                        usuario=None,
+                        estado_validacion=VALIDACION_ESTADO,
+                    )
 
                 historial = None
                 if estado_needs_update:
@@ -210,8 +241,9 @@ class Command(BaseCommand):
             self._update_stats(
                 stats,
                 programa_needs_update,
+                validacion_needs_update,
                 estado_changed,
-                applied=programa_needs_update or estado_changed,
+                applied=programa_needs_update or validacion_needs_update or estado_changed,
             )
             self.stdout.write(self.style.SUCCESS(description))
 
@@ -400,17 +432,22 @@ class Command(BaseCommand):
         self,
         stats: Dict[str, int],
         programa_changed: bool,
+        validacion_changed: bool,
         estado_changed: bool,
         applied: bool,
     ) -> None:
         if applied:
             stats["applied"] += 1
-        elif not (programa_changed or estado_changed):
+        elif not (programa_changed or validacion_changed or estado_changed):
             stats["skipped"] += 1
         if programa_changed:
             stats["programa_updates"] += 1
         else:
             stats["programa_skipped"] += 1
+        if validacion_changed:
+            stats["validacion_updates"] += 1
+        else:
+            stats["validacion_skipped"] += 1
         if estado_changed:
             stats["estado_updates"] += 1
         else:
@@ -428,6 +465,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Filas procesadas: {stats['rows']}")
         self.stdout.write(f"Filas con cambios: {stats['applied']}")
         self.stdout.write(f"Programas actualizados: {stats['programa_updates']}")
+        self.stdout.write(f"Validaciones actualizadas: {stats['validacion_updates']}")
         self.stdout.write(f"Estados actualizados: {stats['estado_updates']}")
         self.stdout.write(f"Filas sin cambios: {stats['skipped']}")
         self.stdout.write(f"Filas con errores: {stats['errors']}")
