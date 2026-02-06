@@ -120,6 +120,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             "modificado",
             "creado_por",
             "modificado_por",
+            "observaciones_subsanacion",
             "declaracion_jurada_recepcion_subsidios",
             "constancia_inexistencia_percepcion_otros_subsidios",
             "organizacion_avalista_1",
@@ -333,6 +334,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             "modificado",
             "creado_por",
             "modificado_por",
+            "observaciones_subsanacion",
             "validacion_registro_nacional",
             "IF_relevamiento_territorial",
         ]
