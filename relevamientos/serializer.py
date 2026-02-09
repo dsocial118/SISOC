@@ -3,11 +3,11 @@ from rest_framework import serializers
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from core.validators import validate_unicode_email
+from core.utils import format_fecha_django
 
 from relevamientos.models import Relevamiento
 
 from relevamientos.service import RelevamientoService
-from core.utils import format_fecha_django
 
 logger = logging.getLogger("django")
 
@@ -15,7 +15,9 @@ logger = logging.getLogger("django")
 class RelevamientoSerializer(serializers.ModelSerializer):
 
     # TODO: Refactorizar
-    def clean(self):  # pylint: disable=too-many-statements,too-many-branches
+    def clean(  # pylint: disable=too-many-statements,too-many-branches, too-many-locals
+        self,
+    ):
         # Convertir valores Y/N a booleanos automáticamente
         self._convert_yn_to_boolean(self.initial_data)
 
@@ -188,12 +190,12 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                     self.initial_data["responsable_relevamiento"]["documento"] = None
                 else:
                     self.initial_data["responsable_relevamiento"]["documento"] = (
-                    self.initial_data["responsable_relevamiento"]["documento"]
-                    .strip()
-                    .replace(" ", "")
-                    .replace("-", "")
-                    .replace(".", "")
-                )
+                        self.initial_data["responsable_relevamiento"]["documento"]
+                        .strip()
+                        .replace(" ", "")
+                        .replace("-", "")
+                        .replace(".", "")
+                    )
 
         email_errors = {}
         self._validate_nested_email(
