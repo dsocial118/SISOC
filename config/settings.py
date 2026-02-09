@@ -12,6 +12,7 @@ load_dotenv()
 # Entorno
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")  # dev|qa|prd
+ENABLE_API_DOCS = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Secret Key
