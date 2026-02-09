@@ -13,7 +13,7 @@ class ArchivosImportados(models.Model):
     count_errores = models.IntegerField(default=0)
     count_exitos = models.IntegerField(default=0)
     importacion_completada = models.BooleanField(default=False)
-    numero_expedinte_pago = models.CharField(max_length=255, blank=True, null=True)
+    numero_expediente_pago = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"Archivo importado {self.archivo.name} por {self.usuario.username} el {self.fecha_subida}"
