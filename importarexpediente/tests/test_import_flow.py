@@ -86,7 +86,7 @@ def test_upload_validation_success_creates_batch_and_logs_success(
     assert ExitoImportacion.objects.filter(archivo_importado=batch).count() == 1
     assert ErroresImportacion.objects.filter(archivo_importado=batch).count() == 0
     # Captured expediente de pago number in batch
-    assert batch.numero_expedinte_pago == "EX-2025-BBB"
+    assert batch.numero_expediente_pago == "EX-2025-BBB"
 
     # Counters persisted in master
     batch.refresh_from_db()

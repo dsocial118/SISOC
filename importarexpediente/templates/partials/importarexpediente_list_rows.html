@@ -2,7 +2,7 @@
 {% for expediente in importarexpedientes %}
     <tr>
         <td data-cuit="{{ expediente.cuit|default:'' }}">
-            {{ expediente.numero_expedinte_pago |default_if_none:"Sin información" }}
+            {{ expediente.numero_expediente_pago |default_if_none:"Sin información" }}
         </td>
         <td data-nombre="{{ organizacion.nombre }}">
             <a href="{% url 'importarexpediente_detail' expediente.id %}"

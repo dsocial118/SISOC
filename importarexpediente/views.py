@@ -171,7 +171,7 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                         if not field:
                             continue
                         val = (cell or "").strip()
-                        # Capturar numero_expedinte_pago (como string) una sola vez desde la columna correspondiente
+                        # Capturar numero_expediente_pago (como string) una sola vez desde la columna correspondiente
                         if (
                             not numero_expediente_guardado
                             and exp_pago_col_idx is not None
@@ -179,9 +179,9 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                             and val
                         ):
                             try:
-                                base_upload.numero_expedinte_pago = val
+                                base_upload.numero_expediente_pago = val
                                 base_upload.save(
-                                    update_fields=["numero_expedinte_pago"]
+                                    update_fields=["numero_expediente_pago"]
                                 )
                                 numero_expediente_guardado = True
                             except Exception:
