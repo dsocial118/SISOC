@@ -1,5 +1,8 @@
 import logging
 from rest_framework import serializers
+from django.core.exceptions import ValidationError as DjangoValidationError
+
+from core.validators import validate_unicode_email
 
 from relevamientos.models import Relevamiento
 
@@ -185,12 +188,26 @@ class RelevamientoSerializer(serializers.ModelSerializer):
                     self.initial_data["responsable_relevamiento"]["documento"] = None
                 else:
                     self.initial_data["responsable_relevamiento"]["documento"] = (
-                        self.initial_data["responsable_relevamiento"]["documento"]
-                        .strip()
-                        .replace(" ", "")
-                        .replace("-", "")
-                        .replace(".", "")
-                    )
+                    self.initial_data["responsable_relevamiento"]["documento"]
+                    .strip()
+                    .replace(" ", "")
+                    .replace("-", "")
+                    .replace(".", "")
+                )
+
+        email_errors = {}
+        self._validate_nested_email(
+            self.initial_data.get("referente_comedor"),
+            "referente_comedor",
+            email_errors,
+        )
+        self._validate_nested_email(
+            self.initial_data.get("responsable_relevamiento"),
+            "responsable_relevamiento",
+            email_errors,
+        )
+        if email_errors:
+            raise serializers.ValidationError(email_errors)
 
         if (
             "referente_comedor" in self.initial_data
@@ -320,6 +337,37 @@ class RelevamientoSerializer(serializers.ModelSerializer):
             for item in data:
                 if isinstance(item, (dict, list)):
                     self._convert_yn_recursive(item, boolean_fields)
+
+    def _normalize_email(self, value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
+
+    def _validate_nested_email(self, data, field_name, errors):
+        if not isinstance(data, dict):
+            return
+
+        if "mail" not in data:
+            return
+
+        data["mail"] = self._normalize_email(data.get("mail"))
+        mail = data["mail"]
+        if mail is None:
+            return
+
+        if not isinstance(mail, str):
+            errors.setdefault(field_name, {})["mail"] = [
+                "El correo electrónico debe ser una cadena válida."
+            ]
+            return
+
+        try:
+            validate_unicode_email(mail)
+        except DjangoValidationError as exc:
+            errors.setdefault(field_name, {})["mail"] = exc.messages
 
     class Meta:
         model = Relevamiento
