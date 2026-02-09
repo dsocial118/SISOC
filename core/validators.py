@@ -1,16 +1,28 @@
-from django.forms import ValidationError
+"""Validadores personalizados del proyecto."""
+
+import re
+
+from django.core.validators import EmailValidator
+from django.utils.deconstruct import deconstructible
 
 
-class MaxSizeFileValidator:
+UNICODE_USER_REGEX = re.compile(
+    r"(^[-!#$%&'*+/=?^_`{}|~0-9A-Z\u00C0-\u00FF]+"
+    r"(\.[-!#$%&'*+/=?^_`{}|~0-9A-Z\u00C0-\u00FF]+)*\Z"
+    r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]'
+    r'|\\[\001-\011\013\014\016-\177])*"\Z)',
+    re.IGNORECASE,
+)
 
-    def __init__(self, max_file_size=5):
-        self.max_file_size = max_file_size
 
-    def __call__(self, value):
-        size = value.size
-        max_size = self.max_file_size * 1048576
+@deconstructible
+class UnicodeEmailValidator(EmailValidator):
+    """EmailValidator que permite tildes en la parte local."""
 
-        if size > max_size:
-            raise ValidationError(f"Tamaño maximo archivo: {self.max_file_size}MB")
+    user_regex = UNICODE_USER_REGEX
 
-        return value
+
+def validate_unicode_email(value):
+    """Validar email permitiendo tildes en la parte local."""
+
+    return UnicodeEmailValidator()(value)
