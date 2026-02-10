@@ -36,7 +36,7 @@
                 {% endif %}
                 <!-- Campos visibles solo para el grupo "Técnico Comedor" -->
                 {% if es_tecnico_comedor %}
-                    <div class="col-md-6">
+                    <div class="col-md-8">
                         <div class="form-group" style="display: none;">
                             {{ form.expediente_pago|as_crispy_field }}
                             {{ form.expediente_convenio|as_crispy_field }}
@@ -44,12 +44,14 @@
                             {{ form.if_cantidad_de_prestaciones|as_crispy_field }}
                             {{ form.if_pagado|as_crispy_field }}
                         </div>
-                        <div class="form-group">{{ form.monto|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.total|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.mes_pago|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.ano|as_crispy_field }}</div>
+                        <div class="form-group">{{ form.organizacion_creacion|as_crispy_field }}</div>
                         <div class="form-group">{{ form.numero_orden_pago|as_crispy_field }}</div>
                         <div class="form-group">{{ form.fecha_pago_al_banco|as_crispy_field }}</div>
                         <div class="form-group">{{ form.fecha_acreditacion|as_crispy_field }}</div>
                         <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
-                        <hr />
                         <div class="form-group">{{ form.prestaciones_mensuales_desayuno|as_crispy_field }}</div>
                         <div class="form-group">{{ form.prestaciones_mensuales_almuerzo|as_crispy_field }}</div>
                         <div class="form-group">{{ form.prestaciones_mensuales_merienda|as_crispy_field }}</div>

@@ -13,7 +13,7 @@
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'importarexpedientes_ajax' as ajax_url %}
-    {% include 'components/search_bar.html' with titulo='Buscar Importar Expediente' placeholder='Buscar por Usuario' help_text='Ingresar Usuario.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
+    {% include 'components/search_bar.html' with titulo='Buscar Expedientes de Pago' placeholder='Buscar por Usuario' help_text='Ingresar Usuario.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
     <div class="action-buttons">
         <a href="{% url 'upload' %}"
            class="btn btn-primary"
@@ -29,6 +29,10 @@
                     <table class="table table-bordered table-striped projects">
                         <thead>
                             <tr>
+                                <th class="sortable" data-column="numero_expediente_pago">
+                                    Nº Expediente de Pago
+                                    <i class="fas fa-sort sort-icon"></i>
+                                </th>
                                 <th class="sortable" data-column="nombre">
                                     Archivo
                                     <i class="fas fa-sort sort-icon"></i>
@@ -42,11 +46,11 @@
                                     <i class="fas fa-sort sort-icon"></i>
                                 </th>
                                 <th class="sortable" data-column="email">
-                                    Exitos
+                                    Válidos
                                     <i class="fas fa-sort sort-icon"></i>
                                 </th>
                                 <th class="sortable" data-column="email">
-                                    Error
+                                    Errores
                                     <i class="fas fa-sort sort-icon"></i>
                                 </th>
                                 <th class="sortable" data-column="email">
