@@ -65,7 +65,7 @@ class CSVExportMixin:
             if isinstance(value, bool):
                 return "Si" if value else "No"
             if hasattr(value, "strftime"):  # Fechas
-                # Format dates as YYYY-MM-DD HH:MM:SS
+                # Format dates as YYYY-MM-DD HH:mm:ss
                 if hasattr(value, "hour"):  # datetime
                     return value.strftime("%Y-%m-%d %H:%M:%S")
                 else:  # date

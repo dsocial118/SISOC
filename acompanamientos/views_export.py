@@ -63,7 +63,7 @@ class AcompanamientoExportView(LoginRequiredMixin, CSVExportMixin, View):
 
             if field_path == "custom_modificado":
                 if admision and admision.modificado:
-                    # Format dates as YYYY-MM-DD HH:MM:SS
+                    # Format dates as YYYY-MM-DD HH:mm:ss
                     if hasattr(admision.modificado, "hour"):  # datetime
                         return admision.modificado.strftime("%Y-%m-%d %H:%M:%S")
                     else:  # date

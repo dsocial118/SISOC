@@ -93,7 +93,7 @@ class TestCSVExportMixin:
         
         # Check that semicolons are used
         assert ";" in content
-        assert "," not in content or content.count(",") == 0  # No commas as delimiters
+        assert "," not in content  # No commas as delimiters
         
         # Parse CSV with semicolon delimiter
         reader = csv.DictReader(StringIO(content), delimiter=";")
