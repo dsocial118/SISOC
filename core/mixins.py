@@ -66,7 +66,7 @@ class CSVExportMixin:
                 return "Si" if value else "No"
             if hasattr(value, "strftime"):  # Fechas
                 # Format dates as YYYY-MM-DD HH:MM:SS
-                if hasattr(value, 'hour'):  # datetime
+                if hasattr(value, "hour"):  # datetime
                     return value.strftime("%Y-%m-%d %H:%M:%S")
                 else:  # date
                     return value.strftime("%Y-%m-%d 00:00:00")
@@ -102,7 +102,7 @@ class CSVExportMixin:
 
         pseudo_buffer = self.Echo()
         # Use semicolon as delimiter
-        writer = csv.writer(pseudo_buffer, delimiter=';')
+        writer = csv.writer(pseudo_buffer, delimiter=";")
 
         def stream_rows():
             yield writer.writerow(headers)

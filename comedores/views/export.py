@@ -175,7 +175,7 @@ class ComedorExportView(LoginRequiredMixin, CSVExportMixin, View):
             fecha = obj.get("fecha_validado") if isinstance(obj, dict) else None
             if fecha and hasattr(fecha, "strftime"):
                 # Format dates as YYYY-MM-DD HH:MM:SS
-                if hasattr(fecha, 'hour'):  # datetime
+                if hasattr(fecha, "hour"):  # datetime
                     fecha = fecha.strftime("%Y-%m-%d %H:%M:%S")
                 else:  # date
                     fecha = fecha.strftime("%Y-%m-%d 00:00:00")
