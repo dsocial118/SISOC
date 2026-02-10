@@ -181,7 +181,7 @@ def render_boton_tecnicos(boton, admision=None, informe_tecnico=None):
             "clase": "btn-primary",
         },
         "if_informe_tecnico": {
-            "texto": "IF Informe Técnico",
+            "texto": "Cargar Informe Técnico -GDE",
             "modal": "#modalIFInformeTecnico",
             "clase": "btn-primary",
         },
