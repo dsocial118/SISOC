@@ -22,10 +22,12 @@ from .permissions import (
     can_archive_comunicado,
     can_delete_comunicado,
     can_manage_comunicados,
+    can_toggle_destacado,
     require_create_permission,
     require_edit_permission,
     require_publish_permission,
     require_archive_permission,
+    require_toggle_destacado_permission,
 )
 
 
@@ -95,6 +97,7 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
         ctx["can_create"] = can_create_comunicado(self.request.user)
         ctx["can_publish"] = can_publish_comunicado(self.request.user)
         ctx["can_archive"] = can_archive_comunicado(self.request.user)
+        ctx["can_toggle_destacado"] = can_toggle_destacado(self.request.user)
         ctx["filtro_titulo"] = self.request.GET.get("titulo", "")
         ctx["filtro_estado"] = self.request.GET.get("estado", "")
         ctx["estados"] = EstadoComunicado.choices
@@ -273,5 +276,27 @@ class ComunicadoArchivarView(LoginRequiredMixin, View):
         else:
             comunicado.archivar(request.user)
             messages.success(request, "Comunicado archivado correctamente.")
+
+        return redirect("comunicados_gestion")
+
+
+class ComunicadoToggleDestacadoView(LoginRequiredMixin, View):
+    """Vista para cambiar el estado destacado de un comunicado publicado."""
+
+    def post(self, request, pk):
+        require_toggle_destacado_permission(request.user)
+        comunicado = get_object_or_404(Comunicado, pk=pk)
+
+        if comunicado.estado != EstadoComunicado.PUBLICADO:
+            messages.error(request, "Solo se puede modificar el destacado de comunicados publicados.")
+        else:
+            comunicado.destacado = not comunicado.destacado
+            comunicado.usuario_ultima_modificacion = request.user
+            comunicado.save()
+
+            if comunicado.destacado:
+                messages.success(request, "Comunicado marcado como destacado.")
+            else:
+                messages.success(request, "Comunicado desmarcado como destacado.")
 
         return redirect("comunicados_gestion")
