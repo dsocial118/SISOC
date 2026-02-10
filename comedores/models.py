@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from core.models import Municipio, Provincia
 from core.models import Localidad
+from core.fields import UnicodeEmailField
 from organizaciones.models import Organizacion
 from ciudadanos.models import Ciudadano
 from duplas.models import Dupla
@@ -46,7 +47,7 @@ class Referente(models.Model):
     apellido = models.CharField(
         max_length=255, verbose_name="Apellido del referente", blank=True, null=True
     )
-    mail = models.EmailField(verbose_name="Mail del referente", blank=True, null=True)
+    mail = UnicodeEmailField(verbose_name="Mail del referente", blank=True, null=True)
     celular = models.BigIntegerField(
         verbose_name="Celular del referente", blank=True, null=True
     )

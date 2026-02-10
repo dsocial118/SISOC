@@ -105,3 +105,32 @@ def format_serializer_errors(serializer):
 
     error_message_str = " | ".join(error_messages)
     return error_message_str
+
+
+def format_error_detail(detail):
+    """Formatear errores (dict/list/str) en un mensaje legible."""
+
+    error_messages = []
+
+    def _flatten(current_detail, field_path):
+        if isinstance(current_detail, dict):
+            for key, value in current_detail.items():
+                _flatten(value, field_path + [str(key)])
+            return
+
+        if isinstance(current_detail, (list, tuple)):
+            for item in current_detail:
+                _flatten(item, field_path)
+            return
+
+        if field_path and field_path[-1] == "non_field_errors":
+            error_messages.append(str(current_detail))
+            return
+
+        if field_path:
+            error_messages.append(f"{'.'.join(field_path)}: {str(current_detail)}")
+        else:
+            error_messages.append(str(current_detail))
+
+    _flatten(detail, [])
+    return " | ".join(error_messages)

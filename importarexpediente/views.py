@@ -1,8 +1,6 @@
 import csv
 import io
-
 from decimal import Decimal
-from datetime import datetime
 
 from django.views.generic import FormView
 from django.urls import reverse_lazy
@@ -16,9 +14,7 @@ from django.http import JsonResponse, HttpResponseNotAllowed
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.db.models import Q
-from django.core.exceptions import ValidationError
 from expedientespagos.models import ExpedientePago
-from comedores.models import Comedor
 from importarexpediente.forms import CSVUploadForm
 from importarexpediente.models import (
     ArchivosImportados,
@@ -27,149 +23,17 @@ from importarexpediente.models import (
     RegistroImportado,
 )
 
+from importarexpediente.services import (
+    HEADER_MAP,
+    FIELD_LABELS,
+    parse_date,
+    parse_decimal,
+    parse_int,
+    friendly_error_message,
+)
 
-DATE_FORMATS = ["%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"]
+
 MAX_ERROR_MESSAGES = 20
-
-
-def _resolve_comedor_cached(raw, cache_by_id, cache_by_name):
-    if not raw:
-        return None
-    r = str(raw).strip()
-    if not r:
-        return None
-    if r.isdigit():
-        pk = int(r)
-        if pk in cache_by_id:
-            return cache_by_id[pk]
-        try:
-            obj = Comedor.objects.filter(pk=pk).first()
-        except Exception:
-            obj = None
-        cache_by_id[pk] = obj
-        return obj
-    key = r.lower()
-    if key in cache_by_name:
-        return cache_by_name[key]
-    try:
-        obj = Comedor.objects.filter(nombre__iexact=r).first()
-    except Exception:
-        obj = None
-    cache_by_name[key] = obj
-    return obj
-
-
-def _parse_decimal(value):
-    if value is None or value == "":
-        return None
-    s = str(value)
-    # Quitar símbolos de moneda, espacios y separadores de miles
-    s = s.replace("$", "").replace(" ", "")
-    s = s.replace(".", "")  # remover separador de miles
-    s = s.replace(",", ".")  # usar punto como separador decimal
-    s = s.strip()
-    try:
-        return Decimal(s)
-    except Exception:
-        return None
-
-
-def _parse_int(value):
-    if value is None or value == "":
-        return None
-    s = str(value).replace(".", "").replace(",", "").replace(" ", "")
-    s = s.strip()
-    if not s:
-        return None
-    try:
-        return int(s)
-    except Exception:
-        return None
-
-
-# mapeo de cabeceras posibles -> campo de modelo
-HEADER_MAP = {
-    # Expedientes
-    "expediente": "expediente_pago",
-    "expediente de pago": "expediente_pago",
-    # El modelo ahora usa 'expediente_convenio' en lugar de 'resolucion_pago'
-    "expediente del convenio": "expediente_convenio",
-    "resolucion": "expediente_convenio",
-    "resolución de pago": "expediente_convenio",
-    # Comedor identificación (por nombre o por id)
-    "comedor": "anexo",
-    "id": "comedor",
-    # Monto total
-    "monto": "monto",
-    "total": "monto",
-    # Orden de pago
-    "numero orden pago": "numero_orden_pago",
-    "número de orden de pago": "numero_orden_pago",
-    # Fechas
-    "fecha pago al banco": "fecha_pago_al_banco",
-    "fecha de pago al banco": "fecha_pago_al_banco",
-    "fecha acreditacion": "fecha_acreditacion",
-    "fecha de acreditación": "fecha_acreditacion",
-    # Otros
-    "observaciones": "observaciones",
-    "if cantidad de prestaciones": "if_cantidad_de_prestaciones",
-    "if pagado": "if_pagado",
-    # Prestaciones mensuales
-    "prestaciones mensuales desayuno": "prestaciones_mensuales_desayuno",
-    "prestaciones mensuales almuerzo": "prestaciones_mensuales_almuerzo",
-    "prestaciones mensuales merienda": "prestaciones_mensuales_merienda",
-    "prestaciones mensuales cena": "prestaciones_mensuales_cena",
-    # Montos mensuales
-    "monto mensual desayuno": "monto_mensual_desayuno",
-    "monto mensual almuerzo": "monto_mensual_almuerzo",
-    "monto mensual merienda": "monto_mensual_merienda",
-    "monto mensual cena": "monto_mensual_cena",
-}
-
-# Etiquetas amigables para usuarios no técnicos
-FIELD_LABELS = {
-    "expediente_pago": "Expediente de pago",
-    # El modelo cambió: usar 'Expediente del convenio'
-    "expediente_convenio": "Expediente del convenio",
-    "comedor": "Comedor",
-    "anexo": "Comedor (anexo)",
-    "monto": "Monto",
-    "numero_orden_pago": "Número de orden de pago",
-    "fecha_pago_al_banco": "Fecha de pago al banco",
-    "fecha_acreditacion": "Fecha de acreditación",
-    "observaciones": "Observaciones",
-    "if_cantidad_de_prestaciones": "IF cantidad de prestaciones",
-    "if_pagado": "IF pagado",
-    # Nuevos campos mensuales
-    "prestaciones_mensuales_desayuno": "Prestaciones mensuales desayuno",
-    "prestaciones_mensuales_almuerzo": "Prestaciones mensuales almuerzo",
-    "prestaciones_mensuales_merienda": "Prestaciones mensuales merienda",
-    "prestaciones_mensuales_cena": "Prestaciones mensuales cena",
-    "monto_mensual_desayuno": "Monto mensual desayuno",
-    "monto_mensual_almuerzo": "Monto mensual almuerzo",
-    "monto_mensual_merienda": "Monto mensual merienda",
-    "monto_mensual_cena": "Monto mensual cena",
-}
-
-
-def _friendly_error_message(exc: Exception) -> str:
-    """Convierte errores técnicos en mensajes claros para usuarios finales."""
-    # ValidationError con detalles por campo
-    if isinstance(exc, ValidationError):
-        if hasattr(exc, "message_dict") and exc.message_dict:
-            partes = []
-            for campo, mensajes in exc.message_dict.items():
-                etiqueta = FIELD_LABELS.get(campo, campo)
-                detalle = "; ".join(str(m) for m in mensajes)
-                partes.append(f"{etiqueta}: {detalle}")
-            return ". ".join(partes)
-        if hasattr(exc, "messages"):
-            return "; ".join(str(m) for m in exc.messages)
-    # Fallback genérico no técnico
-    return (
-        "No se pudo procesar la fila. Verifica que las fechas tengan formato DD/MM/AAAA, "
-        "los montos sean numéricos y el comedor exista. Detalle: " + str(exc)
-    )
 
 
 class ImportExpedientesView(LoginRequiredMixin, FormView):
@@ -178,30 +42,10 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
     success_url = reverse_lazy("importarexpedientes_list")
 
     def parse_date(self, value):
-        if not value:
-            return None
-        s = str(value).strip()
-        for fmt in DATE_FORMATS:
-            try:
-                return datetime.strptime(s, fmt).date()
-            except Exception:
-                continue
-        # intentar ISO
-        try:
-            return datetime.fromisoformat(s).date()
-        except Exception:
-            return None
+        return parse_date(value)
 
     def parse_decimal(self, value):
-        return _parse_decimal(value)
-
-    def resolve_comedor(self, raw):
-        if not hasattr(self, "_comedor_cache_by_id"):
-            self._comedor_cache_by_id = {}
-            self._comedor_cache_by_name = {}
-        return _resolve_comedor_cached(
-            raw, self._comedor_cache_by_id, self._comedor_cache_by_name
-        )
+        return parse_decimal(value)
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def form_valid(self, form):
@@ -243,9 +87,11 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                 self.request,
                 (
                     f"El delimitador seleccionado fue '{delim}', pero el archivo "
-                    f"parece usar '{detected_delim}'. Se usara '{delim}'."
+                    f"parece usar '{detected_delim}'. Se usará '{detected_delim}'."
                 ),
             )
+            # Usar el delimitador detectado para procesar correctamente el CSV
+            delim = detected_delim
 
         stream = io.StringIO(decoded)
         reader = csv.reader(stream, delimiter=delim)
@@ -297,10 +143,18 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
             mapped.append(HEADER_MAP.get(key, None))
         # Nota: cabeceras no mapeadas se omiten si no son requeridas en la importación
 
+        # Localizar la columna "Expediente de Pago" para capturar su número una sola vez
+        exp_pago_col_idx = None
+        for idx, h in enumerate(headers):
+            if h == "expediente de pago":
+                exp_pago_col_idx = idx
+                break
+        numero_expediente_guardado = False
+
         success_count = 0
         error_count = 0
         expected_cols = len(headers)
-        unresolved_comedor_rows = set()
+        # no se realiza resolución de comedor por nombre; se usa siempre el ID del CSV
         with transaction.atomic():
             for i, row in enumerate(data_rows, start=2):
                 # normalizar cantidad de columnas
@@ -310,35 +164,86 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
                     row = row[:expected_cols]
 
                 kwargs = {}
-                comedor_obj = None
+                specific_errors = []
                 try:
                     for col_idx, cell in enumerate(row):
                         field = mapped[col_idx]
                         if not field:
                             continue
                         val = (cell or "").strip()
-                        if field == "monto":
+                        # Capturar numero_expediente_pago (como string) una sola vez desde la columna correspondiente
+                        if (
+                            not numero_expediente_guardado
+                            and exp_pago_col_idx is not None
+                            and col_idx == exp_pago_col_idx
+                            and val
+                        ):
+                            try:
+                                base_upload.numero_expediente_pago = val
+                                base_upload.save(
+                                    update_fields=["numero_expediente_pago"]
+                                )
+                                numero_expediente_guardado = True
+                            except Exception:
+                                # Si falla el guardado, continuar sin interrumpir la validación
+                                pass
+                        if field == "total":
                             parsed = self.parse_decimal(val)
+                            if val and parsed is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
                             kwargs[field] = parsed
                         elif field.startswith("monto_mensual_"):
                             parsed = self.parse_decimal(val)
+                            if val and parsed is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
                             kwargs[field] = parsed
                         elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
                             parsed = self.parse_date(val)
                             kwargs[field] = parsed
-                        elif field == "comedor":
-                            resolved_comedor = self.resolve_comedor(val)
-                            if resolved_comedor is not None:
-                                comedor_obj = resolved_comedor
-                            elif val:
-                                unresolved_comedor_rows.add(i)
+                        elif field == "comedor_id":
+                            parsed_id = parse_int(val)
+                            if val and parsed_id is None:
+                                specific_errors.append(
+                                    'Error en validación columna "ID": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs["comedor_id"] = parsed_id
                         elif field.startswith("prestaciones_mensuales_"):
-                            kwargs[field] = _parse_int(val)
+                            parsed_int = parse_int(val)
+                            if val and parsed_int is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = parsed_int
+                        elif field == "ano":
+                            val_digits = val.replace(" ", "")
+                            if val and not val_digits.isdigit():
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = val or None
                         else:
                             kwargs[field] = val or None
 
-                    if comedor_obj:
-                        kwargs["comedor"] = comedor_obj
+                    # comedor se setea por ID directamente en kwargs
+
+                    # Si hubo errores específicos, registrarlos y continuar sin éxito
+                    if specific_errors:
+                        for emsg in specific_errors:
+                            if error_count < MAX_ERROR_MESSAGES:
+                                messages.error(
+                                    self.request, f"Fila {i} (Excel): {emsg}"
+                                )
+                            ErroresImportacion.objects.create(
+                                archivo_importado=base_upload,
+                                fila=i,
+                                mensaje=emsg,
+                            )
+                        error_count += len(specific_errors)
+                        continue
 
                     # Validar sin guardar en ExpedientePago
                     inst = ExpedientePago(**kwargs)
@@ -354,7 +259,7 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
 
                 except Exception as e:
                     # Registrar un error por cada fila inválida
-                    friendly = _friendly_error_message(e)
+                    friendly = friendly_error_message(e)
                     msg = f"Fila {i} (Excel): {friendly}"
                     if error_count < MAX_ERROR_MESSAGES:
                         messages.error(self.request, msg)
@@ -367,17 +272,7 @@ class ImportExpedientesView(LoginRequiredMixin, FormView):
 
             # No se guarda nada en ExpedientePago por requerimiento
 
-        if unresolved_comedor_rows:
-            rows = sorted(unresolved_comedor_rows)
-            preview = ", ".join(str(r) for r in rows[:5])
-            suffix = "..." if len(rows) > 5 else ""
-            messages.warning(
-                self.request,
-                (
-                    "No se pudo resolver el comedor en "
-                    f"{len(rows)} fila(s) (Excel): {preview}{suffix}."
-                ),
-            )
+        # No se intentan resolver nombres de comedor; validación usa ID
         if error_count:
             # Persistir contadores finales en el maestro
             try:
@@ -521,6 +416,7 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         )
         context["query"] = self.request.GET.get("busqueda", "")
         context["batch_id"] = self.batch_id
+        context["batch"] = self.batch
         context["error_count"] = errores.count()
         context["exito_count"] = exitos.count()
         return context
@@ -626,10 +522,12 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                 request,
                 (
                     f"El delimitador seleccionado fue '{chosen_delim}', pero el archivo "
-                    f"parece usar '{detected_delim}'. Se usara '{chosen_delim}'."
+                    f"parece usar '{detected_delim}'. Se usará '{detected_delim}'."
                 ),
             )
-        delim = chosen_delim
+            delim = detected_delim
+        else:
+            delim = chosen_delim
 
         stream = io.StringIO(decoded)
         reader = csv.reader(stream, delimiter=delim)
@@ -650,10 +548,9 @@ class ImportDatosView(LoginRequiredMixin, FormView):
         expected_cols = len(headers)
         imported_count = 0
         error_count = 0
-        unresolved_comedor_rows = set()
+        # No se mantiene registro de filas con comedor no resuelto; se importa por ID
 
-        comedor_cache_by_id = {}
-        comedor_cache_by_name = {}
+        # no se usan caches de comedor; se importa por ID del CSV
 
         with transaction.atomic():
             batch = ArchivosImportados.objects.select_for_update().get(
@@ -673,47 +570,84 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                     row = row[:expected_cols]
 
                 kwargs = {}
-                comedor_obj = None
+                specific_errors = []
                 try:
                     for col_idx, cell in enumerate(row):
                         field = mapped[col_idx]
                         if not field:
                             continue
                         val = (cell or "").strip()
-                        if field == "monto":
-                            kwargs[field] = _parse_decimal(val)
-                        elif field.startswith("monto_mensual_"):
-                            kwargs[field] = _parse_decimal(val)
-                        elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
-                            # Parseo de fechas (formatos comunes)
-                            parsed = None
-                            for fmt in DATE_FORMATS:
-                                try:
-                                    parsed = datetime.strptime(val, fmt).date()
-                                    break
-                                except Exception:
-                                    continue
-                            if parsed is None:
-                                try:
-                                    parsed = datetime.fromisoformat(val).date()
-                                except Exception:
-                                    parsed = None
+                        if field == "total":
+                            parsed = parse_decimal(val)
+                            if val and parsed is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
                             kwargs[field] = parsed
-                        elif field == "comedor":
-                            resolved = _resolve_comedor_cached(
-                                val, comedor_cache_by_id, comedor_cache_by_name
-                            )
-                            if resolved is not None:
-                                comedor_obj = resolved
-                            elif val:
-                                unresolved_comedor_rows.add(i)
+                        elif field.startswith("monto_mensual_"):
+                            parsed = parse_decimal(val)
+                            if val and parsed is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = parsed
+                        elif field in ("fecha_pago_al_banco", "fecha_acreditacion"):
+                            parsed = parse_date(val)
+                            kwargs[field] = parsed
+                        elif field == "comedor_id":
+                            parsed_id = parse_int(val)
+                            if val and parsed_id is None:
+                                specific_errors.append(
+                                    'Error en validación columna "ID": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs["comedor_id"] = parsed_id
                         elif field.startswith("prestaciones_mensuales_"):
-                            kwargs[field] = _parse_int(val)
+                            parsed_int = parse_int(val)
+                            if val and parsed_int is None:
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = parsed_int
+                        elif field == "ano":
+                            val_digits = val.replace(" ", "")
+                            if val and not val_digits.isdigit():
+                                specific_errors.append(
+                                    f'Error en validación columna "{FIELD_LABELS.get(field, field)}": Advertencia "El campo debe ser numérico"'
+                                )
+                            kwargs[field] = val or None
                         else:
                             kwargs[field] = val or None
 
-                    if comedor_obj:
-                        kwargs["comedor"] = comedor_obj
+                    # comedor se setea por ID directamente en kwargs
+
+                    # Si hubo errores específicos, registrarlos y continuar sin importar la fila
+                    if specific_errors:
+                        for emsg in specific_errors:
+                            if error_count < MAX_ERROR_MESSAGES:
+                                messages.error(request, f"Fila {i} (Excel): {emsg}")
+                            ErroresImportacion.objects.create(
+                                archivo_importado=batch,
+                                fila=i,
+                                mensaje=emsg,
+                            )
+                        error_count += len(specific_errors)
+                        continue
+
+                    # Asegurar valores requeridos por modelo aunque no estén en CSV
+                    for f in (
+                        "prestaciones_mensuales_desayuno",
+                        "prestaciones_mensuales_almuerzo",
+                        "prestaciones_mensuales_merienda",
+                        "prestaciones_mensuales_cena",
+                    ):
+                        kwargs.setdefault(f, 0)
+                    for f in (
+                        "monto_mensual_desayuno",
+                        "monto_mensual_almuerzo",
+                        "monto_mensual_merienda",
+                        "monto_mensual_cena",
+                    ):
+                        kwargs.setdefault(f, Decimal("0"))
 
                     # Crear y validar instancia
                     inst = ExpedientePago(**kwargs)
@@ -738,7 +672,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                     imported_count += 1
 
                 except Exception as e:
-                    friendly = _friendly_error_message(e)
+                    friendly = friendly_error_message(e)
                     if error_count < MAX_ERROR_MESSAGES:
                         messages.error(request, f"Fila {i} (Excel): {friendly}")
                     error_count += 1
@@ -753,17 +687,7 @@ class ImportDatosView(LoginRequiredMixin, FormView):
                     request, f"No se pudo marcar el lote como completado: {e}"
                 )
 
-        if unresolved_comedor_rows:
-            rows = sorted(unresolved_comedor_rows)
-            preview = ", ".join(str(r) for r in rows[:5])
-            suffix = "..." if len(rows) > 5 else ""
-            messages.warning(
-                request,
-                (
-                    "No se pudo resolver el comedor en "
-                    f"{len(rows)} fila(s) (Excel): {preview}{suffix}."
-                ),
-            )
+        # No se intentan resolver nombres de comedor; importación usa ID
         if error_count:
             messages.warning(
                 request,

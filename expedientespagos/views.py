@@ -38,43 +38,21 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
         context["comedorid"] = comedor_id
 
         headers = [
+            {"title": "Mes de Pago"},
+            {"title": "Año"},
             {"title": "Número de Expediente"},
             {"title": "Expediente del Convenio"},
-            {"title": "Monto"},
-            {"title": "Anexo"},
-            {"title": "Número de Orden de Pago"},
-            {"title": "Fecha de pago al banco"},
-            {"title": "Fecha de acreditación"},
-            {"title": "Observaciones"},
+            {"title": "Total"},
             {"title": "Fecha de creación"},
-            {"title": "Prestaciones mensuales desayuno"},
-            {"title": "Prestaciones mensuales almuerzo"},
-            {"title": "Prestaciones mensuales merienda"},
-            {"title": "Prestaciones mensuales cena"},
-            {"title": "Monto mensual desayuno"},
-            {"title": "Monto mensual almuerzo"},
-            {"title": "Monto mensual merienda"},
-            {"title": "Monto mensual cena"},
         ]
 
         fields = [
+            {"name": "mes_pago"},
+            {"name": "ano"},
             {"name": "expediente_pago"},
             {"name": "expediente_convenio"},
-            {"name": "monto"},
-            {"name": "anexo"},
-            {"name": "numero_orden_pago"},
-            {"name": "fecha_pago_al_banco"},
-            {"name": "fecha_acreditacion"},
-            {"name": "observaciones"},
+            {"name": "total"},
             {"name": "fecha_creacion"},
-            {"name": "prestaciones_mensuales_desayuno"},
-            {"name": "prestaciones_mensuales_almuerzo"},
-            {"name": "prestaciones_mensuales_merienda"},
-            {"name": "prestaciones_mensuales_cena"},
-            {"name": "monto_mensual_desayuno"},
-            {"name": "monto_mensual_almuerzo"},
-            {"name": "monto_mensual_merienda"},
-            {"name": "monto_mensual_cena"},
         ]
 
         context.update(
@@ -111,6 +89,28 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
     template_name = "expedientespagos_form.html"
     form_class = ExpedientePagoForm
 
+    def _get_role_flags(self):
+        es_area_legales = (
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="Area Legales").exists()
+        )
+        es_tecnico_comedor = (
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+        )
+        return es_area_legales, es_tecnico_comedor
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        es_area_legales, es_tecnico_comedor = self._get_role_flags()
+        kwargs.update(
+            {
+                "es_area_legales": es_area_legales,
+                "es_tecnico_comedor": es_tecnico_comedor,
+            }
+        )
+        return kwargs
+
     def get_success_url(self):
         return reverse_lazy(
             "expedientespagos_list", kwargs={"pk": self.kwargs.get("pk")}
@@ -121,14 +121,9 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
         comedor_id = self.kwargs.get("pk")
         context["comedorid"] = comedor_id
         context["form"] = ExpedientePagoForm()
-        context["es_area_legales"] = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Area Legales").exists()
-        )
-        context["es_tecnico_comedor"] = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
-        )
+        es_area_legales, es_tecnico_comedor = self._get_role_flags()
+        context["es_area_legales"] = es_area_legales
+        context["es_tecnico_comedor"] = es_tecnico_comedor
         # URL de cancelación para el componente form_buttons
         context["expedientes_list_url"] = reverse(
             "expedientespagos_list", kwargs={"pk": comedor_id}
@@ -136,8 +131,9 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        self.object = None
         comedor_id = self.kwargs.get("pk")
-        form = ExpedientePagoForm(request.POST)
+        form = self.get_form()
         comedor = Comedor.objects.get(pk=comedor_id)
         if form.is_valid():
             # Crear el objeto y asignarlo a self.object
@@ -154,6 +150,28 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "expedientespagos_form.html"
     form_class = ExpedientePagoForm
 
+    def _get_role_flags(self):
+        es_area_legales = (
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="Area Legales").exists()
+        )
+        es_tecnico_comedor = (
+            self.request.user.is_superuser
+            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+        )
+        return es_area_legales, es_tecnico_comedor
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        es_area_legales, es_tecnico_comedor = self._get_role_flags()
+        kwargs.update(
+            {
+                "es_area_legales": es_area_legales,
+                "es_tecnico_comedor": es_tecnico_comedor,
+            }
+        )
+        return kwargs
+
     def get_success_url(self):
         return reverse_lazy(
             "expedientespagos_list", kwargs={"pk": self.object.comedor.id}
@@ -168,14 +186,9 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         expediente = self.get_object()
         context["comedorid"] = expediente.comedor.id
-        context["es_area_legales"] = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Area Legales").exists()
-        )
-        context["es_tecnico_comedor"] = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
-        )
+        es_area_legales, es_tecnico_comedor = self._get_role_flags()
+        context["es_area_legales"] = es_area_legales
+        context["es_tecnico_comedor"] = es_tecnico_comedor
         # URL de cancelación para el componente form_buttons
         context["expedientes_list_url"] = reverse(
             "expedientespagos_list", kwargs={"pk": expediente.comedor.id}

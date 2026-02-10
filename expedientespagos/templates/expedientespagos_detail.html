@@ -28,7 +28,16 @@
                     <strong>Expediente del Convenio:</strong> {{ expediente.expediente_convenio }}
                 </p>
                 <p>
-                    <strong>Monto:</strong> ${{ expediente.monto|floatformat:2 }}
+                    <strong>Total:</strong> ${{ expediente.total|floatformat:2 }}
+                </p>
+                <p>
+                    <strong>Mes de Pago:</strong> {{ expediente.mes_pago|default:"-" }}
+                </p>
+                <p>
+                    <strong>Año:</strong> {{ expediente.ano|default:"-" }}
+                </p>
+                <p>
+                    <strong>Organización:</strong> {{ expediente.organizacion_creacion|default:"-" }}
                 </p>
                 <p>
                     <strong>Anexo:</strong> {{ expediente.anexo }}
