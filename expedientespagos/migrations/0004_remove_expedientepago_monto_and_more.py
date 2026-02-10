@@ -5,7 +5,6 @@ from decimal import Decimal
 from django.db import migrations, models
 from django.db.models import F, Value
 from django.db.models.functions import Cast, Coalesce, ExtractYear
-from django.utils import timezone
 
 
 def backfill_expedientepago_fields(apps, schema_editor):
@@ -47,7 +46,7 @@ def backfill_expedientepago_fields(apps, schema_editor):
         expediente_convenio=Coalesce("expediente_pago", Value(""))
     )
 
-    # Completar año desde fechas disponibles; si no hay fechas, usar año actual
+    # Completar año desde fechas disponibles (sin fallback global)
     date_expr = Coalesce(
         "fecha_pago_al_banco",
         "fecha_acreditacion",
@@ -56,9 +55,6 @@ def backfill_expedientepago_fields(apps, schema_editor):
     ExpedientePago.objects.filter(ano__isnull=True).update(
         ano=Cast(ExtractYear(date_expr), models.CharField())
     )
-    current_year = str(timezone.now().year)
-    ExpedientePago.objects.filter(ano__isnull=True).update(ano=current_year)
-    ExpedientePago.objects.filter(ano="").update(ano=current_year)
 
 
 class Migration(migrations.Migration):
@@ -117,11 +113,6 @@ class Migration(migrations.Migration):
             model_name="expedientepago",
             name="expediente_convenio",
             field=models.CharField(max_length=255, verbose_name="Expediente del Convenio"),
-        ),
-        migrations.AlterField(
-            model_name="expedientepago",
-            name="ano",
-            field=models.CharField(max_length=4, verbose_name="Año"),
         ),
         migrations.AlterField(
             model_name="expedientepago",
