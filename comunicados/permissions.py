@@ -115,3 +115,19 @@ def require_archive_permission(user):
     """Decorator helper: lanza PermissionDenied si no puede archivar."""
     if not can_archive_comunicado(user):
         raise PermissionDenied("No tiene permisos para archivar comunicados.")
+
+
+def can_toggle_destacado(user) -> bool:
+    """
+    Verifica si el usuario puede cambiar el estado destacado de un comunicado.
+    Admin y usuarios con permiso de publicar pueden hacerlo.
+    """
+    if not user.is_authenticated:
+        return False
+    return is_admin(user) or _in_group(user, UserGroups.COMUNICADO_PUBLICAR)
+
+
+def require_toggle_destacado_permission(user):
+    """Decorator helper: lanza PermissionDenied si no puede toggle destacado."""
+    if not can_toggle_destacado(user):
+        raise PermissionDenied("No tiene permisos para modificar el estado destacado.")

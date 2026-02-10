@@ -52,4 +52,9 @@ urlpatterns = [
         views.ComunicadoArchivarView.as_view(),
         name="comunicados_archivar",
     ),
+    path(
+        "comunicados/toggle-destacado/<int:pk>/",
+        views.ComunicadoToggleDestacadoView.as_view(),
+        name="comunicados_toggle_destacado",
+    ),
 ]
