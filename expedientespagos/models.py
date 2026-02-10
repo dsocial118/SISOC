@@ -55,6 +55,8 @@ class ExpedientePago(models.Model):
     ano = models.CharField(
         max_length=4,
         verbose_name="Año",
+        blank=True,
+        null=True,
     )
     prestaciones_mensuales_desayuno = models.IntegerField(
         verbose_name="Prestaciones mensuales desayuno",
