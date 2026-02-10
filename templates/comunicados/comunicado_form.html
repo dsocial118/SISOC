@@ -1,0 +1,167 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block titulo-pagina %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Datos del Comunicado -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-newspaper"></i> Datos del Comunicado
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="id_titulo" class="form-label">Título <span class="text-danger">*</span></label>
+                        {{ form.titulo }}
+                        {% if form.titulo.errors %}
+                            <div class="invalid-feedback d-block">{{ form.titulo.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_cuerpo" class="form-label">Contenido <span class="text-danger">*</span></label>
+                        {{ form.cuerpo }}
+                        {% if form.cuerpo.errors %}
+                            <div class="invalid-feedback d-block">{{ form.cuerpo.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Escribe el contenido del comunicado en texto plano.
+                        </small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="id_fecha_vencimiento" class="form-label">Fecha de Vencimiento (opcional)</label>
+                                {{ form.fecha_vencimiento }}
+                                {% if form.fecha_vencimiento.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.fecha_vencimiento.errors.0 }}</div>
+                                {% endif %}
+                                <small class="form-text text-muted">
+                                    Si se establece, el comunicado dejará de mostrarse después de esta fecha.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check form-switch mt-4">
+                                    {{ form.destacado }}
+                                    <label class="form-check-label" for="id_destacado">
+                                        <i class="fas fa-star text-warning"></i> Marcar como Destacado
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Los comunicados destacados aparecen fijados arriba de la lista.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Archivos Adjuntos -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-paperclip"></i> Archivos Adjuntos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {{ adjuntos_formset.management_form }}
+
+                    <div id="adjuntos-container">
+                        {% for adjunto_form in adjuntos_formset %}
+                            <div class="adjunto-row mb-3 p-3 border rounded {% if adjunto_form.instance.pk %}bg-light{% endif %}">
+                                {% if adjunto_form.instance.pk %}
+                                    <div class="mb-2">
+                                        <strong>Archivo actual:</strong>
+                                        <a href="{{ adjunto_form.instance.archivo.url }}" target="_blank">
+                                            {{ adjunto_form.instance.nombre_original }}
+                                        </a>
+                                    </div>
+                                {% endif %}
+
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        {{ adjunto_form.archivo }}
+                                        {% for hidden in adjunto_form.hidden_fields %}
+                                            {{ hidden }}
+                                        {% endfor %}
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        {% if adjunto_form.instance.pk %}
+                                            <div class="form-check d-inline-block">
+                                                {{ adjunto_form.DELETE }}
+                                                <label class="form-check-label text-danger" for="{{ adjunto_form.DELETE.id_for_label }}">
+                                                    Eliminar
+                                                </label>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {% for error in adjunto_form.non_field_errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <small class="form-text text-muted">
+                        Puedes adjuntar documentos, imágenes u otros archivos relevantes.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Estado actual (solo en edición) -->
+            {% if is_edit and object %}
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i> Información del Comunicado
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Estado:</strong>
+                                {% if object.estado == 'borrador' %}
+                                    <span class="badge bg-secondary">Borrador</span>
+                                {% elif object.estado == 'publicado' %}
+                                    <span class="badge bg-success">Publicado</span>
+                                {% elif object.estado == 'archivado' %}
+                                    <span class="badge bg-dark">Archivado</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Creado:</strong>
+                                {{ object.fecha_creacion|date:"d/m/Y H:i" }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Creador:</strong>
+                                {{ object.usuario_creador.get_full_name|default:object.usuario_creador.username }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'comunicados_gestion' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar Comunicado
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
