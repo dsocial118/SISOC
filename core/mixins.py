@@ -1,5 +1,6 @@
 import csv
 import logging
+from datetime import datetime
 from django.http import StreamingHttpResponse
 from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
@@ -30,8 +31,11 @@ class CSVExportMixin:
         return True
 
     def get_export_filename(self):
-        """Devuelve el nombre del archivo. Puede ser sobreescrito."""
-        return self.export_filename
+        """Devuelve el nombre del archivo con timestamp."""
+        # Extract module name from export_filename (e.g., "listado_comedores.csv" -> "comedores")
+        base_name = self.export_filename.replace("listado_", "").replace(".csv", "")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        return f"exportacion_{base_name}_{timestamp}.csv"
 
     def get_export_columns(self):
         """
@@ -61,7 +65,11 @@ class CSVExportMixin:
             if isinstance(value, bool):
                 return "Si" if value else "No"
             if hasattr(value, "strftime"):  # Fechas
-                return value.strftime("%d/%m/%Y")
+                # Format dates as YYYY-MM-DD HH:MM:SS
+                if hasattr(value, 'hour'):  # datetime
+                    return value.strftime("%Y-%m-%d %H:%M:%S")
+                else:  # date
+                    return value.strftime("%Y-%m-%d 00:00:00")
 
             return str(value)
         except Exception:
@@ -93,7 +101,8 @@ class CSVExportMixin:
         fields = [col[1] for col in columns]
 
         pseudo_buffer = self.Echo()
-        writer = csv.writer(pseudo_buffer)
+        # Use semicolon as delimiter
+        writer = csv.writer(pseudo_buffer, delimiter=';')
 
         def stream_rows():
             yield writer.writerow(headers)
