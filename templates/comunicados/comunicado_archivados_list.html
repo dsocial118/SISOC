@@ -1,0 +1,86 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Comunicados Archivados{% endblock %}
+{% block titulo-pagina %}Comunicados Archivados{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    <div class="container mt-4">
+        <!-- Barra de búsqueda y navegación -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <form method="get" class="d-flex gap-2">
+                            <input type="text"
+                                   name="titulo"
+                                   class="form-control"
+                                   placeholder="Buscar por título..."
+                                   value="{{ filtro_titulo }}">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            {% if filtro_titulo %}
+                                <a href="{% url 'comunicados_archivados' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            {% endif %}
+                        </form>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{% url 'comunicados' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> Volver a Comunicados
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-info-circle"></i>
+            Estos son los comunicados que han sido archivados. Ya no se muestran en la vista principal.
+        </div>
+
+        <!-- Lista de comunicados archivados -->
+        {% for comunicado in comunicados %}
+            <div class="card mb-3 border-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'comunicados_ver' comunicado.pk %}" class="text-decoration-none text-muted">
+                            {{ comunicado.titulo }}
+                        </a>
+                        <span class="badge bg-dark ms-2">Archivado</span>
+                    </h5>
+                    <p class="card-text text-muted small">
+                        <i class="fas fa-calendar"></i>
+                        Publicado: {{ comunicado.fecha_publicacion|date:"d/m/Y H:i"|default:"-" }}
+                        <span class="ms-3">
+                            <i class="fas fa-user"></i> {{ comunicado.usuario_creador.get_full_name|default:comunicado.usuario_creador.username }}
+                        </span>
+                    </p>
+                    <p class="card-text">
+                        {{ comunicado.cuerpo|truncatewords:30 }}
+                    </p>
+                    <a href="{% url 'comunicados_ver' comunicado.pk %}" class="btn btn-sm btn-outline-secondary">
+                        Ver detalle <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-archive fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-0">No hay comunicados archivados.</p>
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+            {% include 'components/pagination.html' %}
+        {% endif %}
+    </div>
+{% endblock %}
