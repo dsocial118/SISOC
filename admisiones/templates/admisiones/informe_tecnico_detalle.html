@@ -36,7 +36,7 @@
                            class="btn btn-info mr-1"
                            target="_blank">📄 Ver DOCX Editado</a>
                     {% endif %}
-                    {% if object.estado not in ["Validado", "Docx generado"] %}
+                    {% if object.estado != "Validado" and object.estado != "Docx generado" %}
                         <a href="#"
                            class="btn btn-primary mr-1"
                            data-bs-toggle="modal"
@@ -44,18 +44,27 @@
                     {% endif %}
                 {% endif %}
                 {% if pdf %}
-                    <a href="{{ pdf.archivo.url }}" class="btn btn-primary" target="_blank">📄 PDF Final</a>
+                    <a href="{{ pdf.archivo.url }}" class="btn btn-primary" target="_blank">&#128196; PDF Final</a>
                 {% elif pdf_borrador %}
                     {% if pdf_borrador.archivo_docx_editado %}
-                        <a href="{{ pdf_borrador.archivo_docx_editado.url }}"
-                           class="btn btn-info"
-                           target="_blank">📄 DOCX Editado</a>
+                        {% if request.user|has_group:"Abogado Dupla" or request.user.is_superuser %}
+                            {% if object.estado != "Docx editado" %}
+                                <a href="{{ pdf_borrador.archivo_docx_editado.url }}"
+                                   class="btn btn-info"
+                                   target="_blank">&#128196; DOCX Editado</a>
+                            {% endif %}
+                        {% else %}
+                            <a href="{{ pdf_borrador.archivo_docx_editado.url }}"
+                               class="btn btn-info"
+                               target="_blank">&#128196; DOCX Editado</a>
+                        {% endif %}
                     {% elif pdf_borrador.archivo_docx %}
                         <a href="{{ pdf_borrador.archivo_docx.url }}"
                            class="btn btn-warning"
-                           target="_blank">📄 DOCX Final</a>
+                           target="_blank">&#128196; DOCX Final</a>
                     {% endif %}
                 {% endif %}
+
             </div>
         </div>
         <div class="row">
