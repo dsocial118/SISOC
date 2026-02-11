@@ -1,0 +1,69 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Prestaciones{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'prestacion' %}">Prestaciones</a>
+        </li>
+        <li class="breadcrumb-item active">Listar</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <div class="action-bar mb-3">
+        <a href="{% url 'prestacion_crear' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Agregar
+        </a>
+    </div>
+    <div class="row mt-3 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-bordered table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Programa</th>
+                                <th>Valor desayuno</th>
+                                <th>Valor almuerzo</th>
+                                <th>Valor merienda</th>
+                                <th>Valor cena</th>
+                                <th>Usuario creador</th>
+                                <th>Fecha creación</th>
+                                <th>Fecha modificación</th>
+                                <th style="width: 18%" class="notexport">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prestaciones-tbody">
+                            {% for p in prestaciones %}
+                                <tr>
+                                    <td>{{ p.programa }}</td>
+                                    <td>{{ p.desayuno_valor }}</td>
+                                    <td>{{ p.almuerzo_valor }}</td>
+                                    <td>{{ p.merienda_valor }}</td>
+                                    <td>{{ p.cena_valor }}</td>
+                                    <td>{{ p.usuario_creador }}</td>
+                                    <td>{{ p.fecha_creacion|date:'d/m/Y H:i' }}</td>
+                                    <td>{{ p.fecha_modificacion|date:'d/m/Y H:i' }}</td>
+                                    <td>
+                                        <a href="{% url 'prestacion_detalle' p.pk %}" class="btn btn-sm btn-info">Ver</a>
+                                        <a href="{% url 'prestacion_editar' p.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                                        <a href="{% url 'prestacion_eliminar' p.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="9" class="text-center">No hay prestaciones cargadas.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="pagination-container">
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+{% endblock %}
