@@ -20,11 +20,13 @@ from prestaciones.models import Prestacion
 from prestaciones.forms import PrestacionForm
 from historial.services.historial_service import HistorialService
 
+
 class PrestacionListView(LoginRequiredMixin, ListView):
     model = Prestacion
     template_name = "prestacion_list.html"
     context_object_name = "prestaciones"
     paginate_by = 10
+
 
 class PrestacionCreateView(LoginRequiredMixin, CreateView):
     model = Prestacion
@@ -58,6 +60,7 @@ class PrestacionCreateView(LoginRequiredMixin, CreateView):
         context["guardar_otro_send"] = False
         return context
 
+
 class PrestacionUpdateView(LoginRequiredMixin, UpdateView):
     model = Prestacion
     form_class = PrestacionForm
@@ -73,6 +76,7 @@ class PrestacionUpdateView(LoginRequiredMixin, UpdateView):
             diferencias=form.cleaned_data,
         )
         return HttpResponseRedirect(self.get_success_url())
+
 
 class PrestacionDeleteView(LoginRequiredMixin, DeleteView):
     model = Prestacion
@@ -102,6 +106,7 @@ class PrestacionDeleteView(LoginRequiredMixin, DeleteView):
             diferencias={"nombre": self.object.nombre},
         )
         return response
+
 
 class PrestacionDetailView(LoginRequiredMixin, DetailView):
     model = Prestacion
