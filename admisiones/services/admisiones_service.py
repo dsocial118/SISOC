@@ -1012,7 +1012,7 @@ class AdmisionService:
 
         try:
 
-            form = IFInformeTecnicoForm(request.POST, instance=admision)
+            form = IFInformeTecnicoForm(request.POST, request.FILES, instance=admision)
 
             if form.is_valid():
 
