@@ -1,6 +1,9 @@
 {% load custom_filters %}
 {% for expediente in importarexpedientes %}
     <tr>
+        <td data-cuit="{{ expediente.cuit|default:'' }}">
+            {{ expediente.numero_expediente_pago |default_if_none:"Sin información" }}
+        </td>
         <td data-nombre="{{ organizacion.nombre }}">
             <a href="{% url 'importarexpediente_detail' expediente.id %}"
                class="font-weight-bold link-handler"
@@ -19,7 +22,7 @@
             {{ expediente.count_errores | default_if_none:"Sin información" }}
         </td>
         <td data-email="{{ expediente.email|default:'' }}">
-            {{ expediente.importacion_completada | default_if_none:"Sin información" }}
+            {{ expediente.importacion_completada|yesno:"Si,No,Sin información" }}
         </td>
         <td class="project-actions text-right">
             <div class="action-buttons" role="group">

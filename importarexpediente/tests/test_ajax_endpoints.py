@@ -30,17 +30,19 @@ def tmp_media(settings, tmp_path):
 
 @pytest.fixture
 def seed_imports(client_logged, tmp_media):
-    # Create a couple of batches to paginate/search
+    # Create a couple of batches to paginate/search using new headers
+    headers = "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
     for i in range(3):
-        # Minimal CSV with header and empty body still creates a batch via view,
-        # but we want at least one row to avoid early-empty handling
-        content = "Expediente,Comedor,ID\nX,Anexo,1\n"
+        row = (
+            f"{i+1};Comedor {i};Org {i};EX-2024-{i};EX-2025-{i};$ 1.000,00;enero;2025\n"
+        )
+        content = headers + row
         uploaded = SimpleUploadedFile(
             f"expedientes_{i}.csv", content.encode("utf-8"), content_type="text/csv"
         )
         client_logged.post(
             reverse("upload"),
-            {"file": uploaded, "delimiter": ",", "has_header": True},
+            {"file": uploaded, "delimiter": ";", "has_header": True},
         )
     assert ArchivosImportados.objects.count() >= 3
 

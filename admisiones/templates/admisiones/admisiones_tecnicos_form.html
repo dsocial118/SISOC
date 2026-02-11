@@ -233,25 +233,24 @@
                                                 </i>
                                             </div>
                                         </li>
-                                        {% if admision.numero_if_tecnico %}
-                                            <li class="nav-item">
-                                                <div class="comment-text">
-                                                    IF Informe Técnico:
-                                                    <span class="fw-bold">{{ admision.numero_if_tecnico }}</span>
-                                                    <i class="bi bi-check-circle-fill text-success"></i>
-                                                </div>
-                                            </li>
-                                        {% endif %}
                                         {% if pdf %}
                                             <li class="nav-item">
                                                 <div class="comment-text">
-                                                    Informe Técnico:
-                                                    {% if informe_tecnico.estado == "Validado" and pdf.archivo_docx %}
-                                                        <span class="fw-bold">
-                                                            <a href="{{ pdf.archivo_docx.url }}" target="_blank">
-                                                                <i class="bi bi-filetype-docx text-success h4 ms-3 text-bold"></i>
-                                                            </a>
-                                                        </span>
+                                                    Informe Técnico SISOC:
+                                                    {% if informe_tecnico.estado == "Validado" %}
+                                                        {% if pdf.archivo_docx_editado %}
+                                                            <span class="fw-bold">
+                                                                <a href="{{ pdf.archivo_docx_editado.url }}" target="_blank">
+                                                                    <i class="bi bi-filetype-docx text-success h4 ms-3 text-bold"></i>
+                                                                </a>
+                                                            </span>
+                                                        {% elif pdf.archivo_docx %}
+                                                            <span class="fw-bold">
+                                                                <a href="{{ pdf.archivo_docx.url }}" target="_blank">
+                                                                    <i class="bi bi-filetype-docx text-info h4 ms-3 text-bold"></i>
+                                                                </a>
+                                                            </span>
+                                                        {% endif %}
                                                     {% else %}
                                                         {% if pdf.archivo %}
                                                             <span class="fw-bold">
@@ -267,6 +266,23 @@
                                                                 </a>
                                                             </span>
                                                         {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                            </li>
+                                        {% endif %}
+                                        {% if admision.numero_if_tecnico %}
+                                            <li class="nav-item">
+                                                <div class="comment-text">
+                                                    Informe Técnico GDE:
+                                                    <span class="fw-bold">{{ admision.numero_if_tecnico }}</span>
+                                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                                    {% if admision.archivo_informe_tecnico_GDE %}
+                                                        <span class="fw-bold">
+                                                            <a href="{{ admision.archivo_informe_tecnico_GDE.url }}"
+                                                               target="_blank">
+                                                                <i class="bi bi-file-earmark-check text-info h4 ms-1 text-bold"></i>
+                                                            </a>
+                                                        </span>
                                                     {% endif %}
                                                 </div>
                                             </li>
@@ -582,10 +598,10 @@
                          aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
-                                <form method="POST" action="">
+                                <form method="POST" action="" enctype="multipart/form-data">
                                     {% csrf_token %}
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="modalIFInformeTecnicoLabel">IF Informe Técnico</h5>
+                                        <h5 class="modal-title" id="modalIFInformeTecnicoLabel">Cargar Informe Técnico -GDE</h5>
                                         <button type="button"
                                                 class="btn-close"
                                                 data-bs-dismiss="modal"
@@ -594,11 +610,16 @@
                                     <div class="modal-body">
                                         {% if form_if_informe_tecnico %}
                                             {{ form_if_informe_tecnico.numero_if_tecnico|as_crispy_field }}
+                                            {{ form_if_informe_tecnico.archivo_informe_tecnico_GDE|as_crispy_field }}
                                         {% else %}
                                             <input type="text"
                                                    name="numero_if_tecnico"
                                                    class="form-control"
                                                    placeholder="Número IF Informe Técnico"
+                                                   required />
+                                            <input type="file"
+                                                   name="archivo_informe_tecnico_GDE"
+                                                   class="form-control mt-2"
                                                    required />
                                         {% endif %}
                                     </div>
