@@ -266,7 +266,15 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
 APROBADAS_FIELDS = tuple(
     f"aprobadas_{tipo}_{dia}"
     for tipo in ("desayuno", "almuerzo", "merienda", "cena")
-    for dia in ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
+    for dia in (
+        "lunes",
+        "martes",
+        "miercoles",
+        "jueves",
+        "viernes",
+        "sabado",
+        "domingo",
+    )
 )
 
 
@@ -407,9 +415,7 @@ class NominaCreateSerializer(serializers.Serializer):
         ciudadano = attrs.get("ciudadano")
         estado = attrs.get("estado")
         if not ciudadano_id and not ciudadano:
-            raise serializers.ValidationError(
-                "Debe enviar ciudadano_id o ciudadano."
-            )
+            raise serializers.ValidationError("Debe enviar ciudadano_id o ciudadano.")
         if ciudadano_id and ciudadano:
             raise serializers.ValidationError(
                 "Enviar solo ciudadano_id o ciudadano, no ambos."
