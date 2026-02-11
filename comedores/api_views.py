@@ -5,8 +5,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from comedores.api_serializers import (
+    APROBADAS_FIELDS,
     ComedorDetailSerializer,
     DocumentoComedorSerializer,
+    InformeTecnicoPrestacionSerializer,
     NominaCreateSerializer,
     NominaSerializer,
     NominaUpdateSerializer,
@@ -21,7 +23,11 @@ from comedores.models import (
 from core.api_auth import HasAPIKey
 from django.core.paginator import Paginator
 from django.http import FileResponse, Http404
+import calendar
+from datetime import date
+
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
 from django.db.models import Prefetch
 from django.db.models.fields.files import FieldFile
@@ -31,6 +37,7 @@ from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from comedores.services.comedor_service import ComedorService
 from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
+from admisiones.models.admisiones import InformeTecnico
 
 
 @extend_schema(tags=["Comedores"])
@@ -159,6 +166,25 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return field.path
         except (ValueError, NotImplementedError):
             return None
+
+    def _parse_period_date(self, value, *, is_end=False):
+        if not value:
+            return None
+        parsed = parse_date(value)
+        if parsed:
+            return parsed
+        try:
+            parts = value.split("-")
+            if len(parts) == 2:
+                year = int(parts[0])
+                month = int(parts[1])
+                if is_end:
+                    last_day = calendar.monthrange(year, month)[1]
+                    return date(year, month, last_day)
+                return date(year, month, 1)
+        except (TypeError, ValueError, IndexError):
+            return None
+        return None
 
     def _collect_documentos(self, comedor, request):
         documentos = []
@@ -477,6 +503,112 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response({"detail": msg}, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        responses=InformeTecnicoPrestacionSerializer,
+        tags=["Comedores"],
+    )
+    @action(detail=True, methods=["get"], url_path="prestacion-alimentaria")
+    def prestacion_alimentaria(self, request, pk=None):
+        comedor = self.get_object()
+        informe = (
+            InformeTecnico.objects.filter(
+                admision__comedor=comedor,
+                estado_formulario="finalizado",
+            )
+            .order_by("-modificado", "-id")
+            .first()
+        )
+        if not informe:
+            payload = {
+                "informe_id": None,
+                "admision_id": None,
+                "tipo": None,
+                "estado_formulario": None,
+                "creado": None,
+                "modificado": None,
+            }
+            payload.update({field: None for field in APROBADAS_FIELDS})
+            return Response(
+                payload,
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            InformeTecnicoPrestacionSerializer(informe).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="desde",
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                description="Fecha desde (YYYY-MM-DD o YYYY-MM).",
+            ),
+            OpenApiParameter(
+                name="hasta",
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                description="Fecha hasta (YYYY-MM-DD o YYYY-MM).",
+            ),
+            OpenApiParameter(
+                name="page",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Página (paginación).",
+            ),
+        ],
+        responses=InformeTecnicoPrestacionSerializer(many=True),
+        tags=["Comedores"],
+    )
+    @action(detail=True, methods=["get"], url_path="prestacion-alimentaria/historial")
+    def prestacion_alimentaria_historial(self, request, pk=None):
+        comedor = self.get_object()
+        queryset = (
+            InformeTecnico.objects.filter(
+                admision__comedor=comedor,
+                estado_formulario="finalizado",
+            )
+            .order_by("-modificado", "-id")
+        )
+
+        desde = request.query_params.get("desde")
+        hasta = request.query_params.get("hasta")
+        desde_date = self._parse_period_date(desde, is_end=False) if desde else None
+        hasta_date = self._parse_period_date(hasta, is_end=True) if hasta else None
+
+        if (desde and not desde_date) or (hasta and not hasta_date):
+            return Response(
+                {"detail": "Formato de fecha inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if desde_date and hasta_date and desde_date > hasta_date:
+            return Response(
+                {"detail": "Rango de fechas inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if desde_date:
+            queryset = queryset.filter(modificado__gte=desde_date)
+        if hasta_date:
+            queryset = queryset.filter(modificado__lte=hasta_date)
+
+        paginator = Paginator(queryset, 20)
+        page_number = request.query_params.get("page", 1)
+        page_obj = paginator.get_page(page_number)
+
+        return Response(
+            {
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "current_page": page_obj.number,
+                "results": InformeTecnicoPrestacionSerializer(
+                    page_obj.object_list, many=True
+                ).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(tags=["Nomina"])
