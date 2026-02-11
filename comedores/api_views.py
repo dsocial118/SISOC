@@ -7,11 +7,15 @@ from rest_framework.response import Response
 from comedores.api_serializers import (
     ComedorDetailSerializer,
     DocumentoComedorSerializer,
+    NominaCreateSerializer,
+    NominaSerializer,
+    NominaUpdateSerializer,
 )
 from comedores.models import (
     AuditComedorPrograma,
     Comedor,
     ImagenComedor,
+    Nomina,
     Observacion,
 )
 from core.api_auth import HasAPIKey
@@ -25,13 +29,16 @@ from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import RendicionCuentaMensual
+from comedores.services.comedor_service import ComedorService
+from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
 
 
 @extend_schema(tags=["Comedores"])
 class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = ComedorDetailSerializer
+    authentication_classes = []
     permission_classes = [HasAPIKey]
-    http_method_names = ["get", "head", "options"]
+    http_method_names = ["get", "post", "head", "options"]
 
     def list(self, request, *args, **kwargs):
         return Response(
@@ -394,3 +401,105 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return FileResponse(open(file_path, "rb"), as_attachment=True)
         except FileNotFoundError as exc:
             raise Http404("Archivo no encontrado.") from exc
+
+    @extend_schema(
+        request=NominaCreateSerializer,
+        responses=NominaSerializer(many=True),
+        tags=["Nomina"],
+    )
+    @action(detail=True, methods=["get", "post"], url_path="nomina")
+    def nomina(self, request, pk=None):
+        comedor = self.get_object()
+        if request.method.lower() == "get":
+            page = request.query_params.get("page", 1)
+            page_obj, _, _, _, _, total, rangos = ComedorService.get_nomina_detail(
+                comedor.pk, page
+            )
+            return Response(
+                {
+                    "count": total,
+                    "current_page": page_obj.number,
+                    "num_pages": page_obj.paginator.num_pages,
+                    "rangos": rangos,
+                    "results": NominaSerializer(page_obj.object_list, many=True).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        serializer = NominaCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        estado = data.get("estado")
+        observaciones = data.get("observaciones")
+
+        if estado is not None:
+            nomina_form = NominaExtraForm(
+                {"estado": estado, "observaciones": observaciones or ""}
+            )
+            if not nomina_form.is_valid():
+                return Response(
+                    {"detail": nomina_form.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if data.get("ciudadano_id"):
+            ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+                comedor_id=comedor.pk,
+                ciudadano_id=data["ciudadano_id"],
+                user=request.user,
+                estado=estado,
+                observaciones=observaciones,
+            )
+            if not ok:
+                return Response(
+                    {"detail": msg},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response({"detail": msg}, status=status.HTTP_201_CREATED)
+
+        ciudadano_payload = data.get("ciudadano") or {}
+        ciudadano_form = CiudadanoFormParaNomina(ciudadano_payload)
+        if not ciudadano_form.is_valid():
+            return Response(
+                {"detail": ciudadano_form.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
+            ciudadano_data=ciudadano_form.cleaned_data,
+            comedor_id=comedor.pk,
+            user=request.user,
+            estado=estado,
+            observaciones=observaciones,
+        )
+        if not ok:
+            return Response(
+                {"detail": msg},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response({"detail": msg}, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(tags=["Nomina"])
+class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    serializer_class = NominaUpdateSerializer
+    authentication_classes = []
+    permission_classes = [HasAPIKey]
+    queryset = Nomina.objects.select_related("ciudadano", "ciudadano__sexo", "comedor")
+    http_method_names = ["patch", "head", "options"]
+
+    @extend_schema(request=NominaUpdateSerializer)
+    def partial_update(self, request, *args, **kwargs):
+        nomina = self.get_object()
+        serializer = self.get_serializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        if "estado" in data:
+            nomina.estado = data["estado"]
+        if "observaciones" in data:
+            nomina.observaciones = data["observaciones"]
+        nomina.save(update_fields=["estado", "observaciones"])
+        return Response(
+            NominaSerializer(nomina).data,
+            status=status.HTTP_200_OK,
+        )

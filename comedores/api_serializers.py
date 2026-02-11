@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from comedores.models import Comedor
+from comedores.models import Comedor, Nomina
 from core.models import Localidad, Municipio, Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
@@ -331,3 +331,77 @@ class DocumentoComedorSerializer(serializers.Serializer):
     fecha = serializers.DateTimeField(allow_null=True)
     url = serializers.CharField(allow_null=True)
     path = serializers.CharField(allow_null=True, write_only=True)
+
+
+class NominaCiudadanoSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nombre = serializers.CharField(allow_null=True)
+    apellido = serializers.CharField(allow_null=True)
+    documento = serializers.CharField(allow_null=True)
+    sexo = serializers.CharField(allow_null=True)
+
+
+class NominaSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    fecha = serializers.DateTimeField()
+    estado = serializers.CharField()
+    observaciones = serializers.CharField(allow_null=True)
+    ciudadano = NominaCiudadanoSerializer(allow_null=True)
+
+    def to_representation(self, instance):
+        if isinstance(instance, dict):
+            return super().to_representation(instance)
+        ciudadano = getattr(instance, "ciudadano", None)
+        return {
+            "id": instance.id,
+            "fecha": instance.fecha,
+            "estado": instance.estado,
+            "observaciones": instance.observaciones,
+            "ciudadano": (
+                {
+                    "id": ciudadano.id,
+                    "nombre": ciudadano.nombre,
+                    "apellido": ciudadano.apellido,
+                    "documento": ciudadano.documento,
+                    "sexo": ciudadano.sexo.sexo if ciudadano.sexo else None,
+                }
+                if ciudadano
+                else None
+            ),
+        }
+
+
+class NominaCreateSerializer(serializers.Serializer):
+    ciudadano_id = serializers.IntegerField(required=False)
+    ciudadano = serializers.DictField(required=False)
+    estado = serializers.CharField(required=False)
+    observaciones = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        ciudadano_id = attrs.get("ciudadano_id")
+        ciudadano = attrs.get("ciudadano")
+        estado = attrs.get("estado")
+        if not ciudadano_id and not ciudadano:
+            raise serializers.ValidationError(
+                "Debe enviar ciudadano_id o ciudadano."
+            )
+        if ciudadano_id and ciudadano:
+            raise serializers.ValidationError(
+                "Enviar solo ciudadano_id o ciudadano, no ambos."
+            )
+        if estado and estado not in dict(Nomina.ESTADO_CHOICES):
+            raise serializers.ValidationError("Estado inválido.")
+        return attrs
+
+
+class NominaUpdateSerializer(serializers.Serializer):
+    estado = serializers.CharField(required=False)
+    observaciones = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        estado = attrs.get("estado")
+        if estado and estado not in dict(Nomina.ESTADO_CHOICES):
+            raise serializers.ValidationError("Estado inválido.")
+        if not attrs:
+            raise serializers.ValidationError("Debe enviar al menos un campo.")
+        return attrs
