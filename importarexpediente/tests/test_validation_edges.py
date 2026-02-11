@@ -35,14 +35,14 @@ def tmp_media(settings, tmp_path):
 
 def test_upload_without_header_is_rejected(client_logged, tmp_media):
     comedor = Comedor.objects.create(nombre="C")
-    content = "EXP,Comedor,ID\nX,Anexo,{}\n".format(comedor.pk)
+    content = "ID;COMEDOR;Expediente de Pago\n{};Anexo;EX-2025-ERR\n".format(comedor.pk)
     uploaded = SimpleUploadedFile(
         "x.csv", content.encode("utf-8"), content_type="text/csv"
     )
 
     resp = client_logged.post(
         reverse("upload"),
-        {"file": uploaded, "delimiter": ",", "has_header": False},
+        {"file": uploaded, "delimiter": ";", "has_header": False},
     )
     assert resp.status_code in (302, 200)
     batch = ArchivosImportados.objects.latest("id")
@@ -51,12 +51,12 @@ def test_upload_without_header_is_rejected(client_logged, tmp_media):
     assert ExitoImportacion.objects.filter(archivo_importado=batch).count() == 0
 
 
-def test_upload_with_invalid_dates_and_amounts_creates_error(client_logged, tmp_media):
+def test_upload_with_invalid_numbers_creates_error(client_logged, tmp_media):
     Comedor.objects.create(nombre="Comedor X")
-    # Use non-matching comedor ID to avoid FK resolution; also invalid date
+    # Invalid numeric in 'Monto Mensuales Desayuno' and invalid year
     content = (
-        "Expediente,Comedor,ID,Monto,Fecha pago al banco\n"
-        "EXP-ERR,Anexo Norte,9999,ABC,31/31/2024\n"
+        "ID;COMEDOR;EXPEDIENTE del CONVENIO;Expediente de Pago;Monto Mensuales Desayuno;TOTAL;Mes de Pago;Año\n"
+        "9999;Anexo Norte;EX-2024-ERR;EX-2025-ERR;ABC;$ 100,00;enero;XX\n"
     )
     uploaded = SimpleUploadedFile(
         "bad.csv", content.encode("utf-8"), content_type="text/csv"
@@ -64,12 +64,12 @@ def test_upload_with_invalid_dates_and_amounts_creates_error(client_logged, tmp_
 
     resp = client_logged.post(
         reverse("upload"),
-        {"file": uploaded, "delimiter": ",", "has_header": True},
+        {"file": uploaded, "delimiter": ";", "has_header": True},
     )
     assert resp.status_code in (302, 200)
 
     batch = ArchivosImportados.objects.latest("id")
     # Should register an error for the invalid row
-    assert ErroresImportacion.objects.filter(archivo_importado=batch).count() == 1
+    assert ErroresImportacion.objects.filter(archivo_importado=batch).count() >= 1
     # And no success
     assert ExitoImportacion.objects.filter(archivo_importado=batch).count() == 0

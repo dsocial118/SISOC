@@ -1,4 +1,3 @@
-import re
 from django import forms
 from django.core.exceptions import ValidationError
 from ciudadanos.models import Ciudadano
@@ -17,6 +16,7 @@ from comedores.services.estado_manager import registrar_cambio_estado
 from core.models import Municipio, Provincia
 from core.models import Localidad
 from organizaciones.models import Organizacion
+from core.validators import validate_unicode_email
 
 
 class ReferenteForm(forms.ModelForm):
@@ -36,11 +36,15 @@ class ReferenteForm(forms.ModelForm):
         mail = self.cleaned_data.get("mail")
         if not mail:
             return mail
-        email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if not isinstance(mail, str):
             raise ValidationError("El correo electrónico debe ser una cadena válida.")
-        if not re.match(email_regex, mail):
-            raise ValidationError("Por favor, ingresa un correo electrónico válido.")
+        mail = mail.strip()
+        if not mail:
+            return None
+        try:
+            validate_unicode_email(mail)
+        except ValidationError as exc:
+            raise ValidationError(exc.messages) from exc
         return mail
 
     class Meta:
