@@ -11,28 +11,28 @@ from prestaciones.views import (
 
 urlpatterns = [
     path(
-        "prestaciones/listar",
-        group_required(["Prestaciones"])(PrestacionListView.as_view()),
-        name="prestaciones",
+        "prestacion/listar",
+        group_required(["Prestacion"])(PrestacionListView.as_view()),
+        name="prestacion",
     ),
     path(
-        "prestaciones/crear",
-        group_required(["Prestaciones"])(PrestacionCreateView.as_view()),
+        "prestacion/crear",
+        group_required(["Prestacion"])(PrestacionCreateView.as_view()),
         name="prestacion_crear",
     ),
     path(
-        "prestaciones/<int:pk>/editar",
-        group_required(["Prestaciones"])(PrestacionUpdateView.as_view()),
+        "prestacion/<int:pk>/editar",
+        group_required(["Prestacion"])(PrestacionUpdateView.as_view()),
         name="prestacion_editar",
     ),
     path(
-        "prestaciones/<int:pk>/eliminar",
-        group_required(["Prestaciones"])(PrestacionDeleteView.as_view()),
+        "prestacion/<int:pk>/eliminar",
+        group_required(["Prestacion"])(PrestacionDeleteView.as_view()),
         name="prestacion_eliminar",
     ),
     path(
-        "prestaciones/<int:pk>/detalle",
-        group_required(["Prestaciones"])(PrestacionDetailView.as_view()),
+        "prestacion/<int:pk>/detalle",
+        group_required(["Prestacion"])(PrestacionDetailView.as_view()),
         name="prestacion_detalle",
      ),
 ]

@@ -43,6 +43,7 @@ urlpatterns = [
     # API URLs
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     path("", include("importarexpediente.urls")),
+    path("prestaciones/", include("prestaciones.urls")),
 ]
 
 if settings.DEBUG:
