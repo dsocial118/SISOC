@@ -97,15 +97,18 @@ class PrestacionDeleteView(LoginRequiredMixin, DeleteView):
         context["cancel_url"] = reverse("prestacion")
         return context
 
-    def delete(self, request, *args, **kwargs):
-        response = super().delete(request, *args, **kwargs)
+    def form_valid(self, form):
+        obj = self.get_object()
         messages.success(self.request, "Prestación eliminada correctamente.")
-        HistorialService.registrar_historial(
-            accion="Eliminación de Prestación",
-            instancia=self.object,
-            diferencias={"nombre": self.object.nombre},
-        )
-        return response
+        try:
+            HistorialService.registrar_historial(
+                accion="Eliminación de Prestación",
+                instancia=obj,
+                diferencias={"programa": getattr(obj, "programa", None)},
+            )
+        except Exception:
+            pass
+        return super().form_valid(form)
 
 
 class PrestacionDetailView(LoginRequiredMixin, DetailView):
