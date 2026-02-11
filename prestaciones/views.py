@@ -22,7 +22,7 @@ from prestaciones.forms import PrestacionForm
 class PrestacionListView(LoginRequiredMixin, ListView):
     model = Prestacion
     template_name = "prestacion_list.html"
-    context_object_name = "prestacion"
+    context_object_name = "prestaciones"
     paginate_by = 10
 
 class PrestacionCreateView(LoginRequiredMixin, CreateView):
@@ -62,6 +62,25 @@ class PrestacionDeleteView(LoginRequiredMixin, DeleteView):
     model = Prestacion
     template_name = "prestacion_confirm_delete.html"
     success_url = reverse_lazy("prestacion")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = getattr(self, "object", None) or self.get_object()
+        context["breadcrumb_items"] = [
+            {"name": "Prestaciones", "url": reverse("prestacion")},
+            {"name": "Eliminar Prestación"},
+        ]
+        context["object_title"] = str(obj)
+        context["delete_message"] = (
+            "¿Desea eliminar esta prestación? Esta acción no se puede deshacer."
+        )
+        context["cancel_url"] = reverse("prestacion")
+        return context
+
+    def delete(self, request, *args, **kwargs):
+        response = super().delete(request, *args, **kwargs)
+        messages.success(self.request, "Prestación eliminada correctamente.")
+        return response
 
 class PrestacionDetailView(LoginRequiredMixin, DetailView):
     model = Prestacion
