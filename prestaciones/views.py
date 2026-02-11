@@ -18,6 +18,7 @@ from django.views.generic import (
 
 from prestaciones.models import Prestacion
 from prestaciones.forms import PrestacionForm
+from historial.services.historial_service import HistorialService
 
 class PrestacionListView(LoginRequiredMixin, ListView):
     model = Prestacion
@@ -38,6 +39,11 @@ class PrestacionCreateView(LoginRequiredMixin, CreateView):
         obj.save()
         self.object = obj
         messages.success(self.request, "Prestación creada correctamente.")
+        HistorialService.registrar_historial(
+            accion="Creación de Prestación",
+            instancia=obj,
+            diferencias=form.cleaned_data,
+        )
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
@@ -57,6 +63,16 @@ class PrestacionUpdateView(LoginRequiredMixin, UpdateView):
     form_class = PrestacionForm
     template_name = "prestacion_form.html"
     success_url = reverse_lazy("prestacion")
+
+    def form_valid(self, form):
+        obj = form.save()
+        messages.success(self.request, "Prestación actualizada correctamente.")
+        HistorialService.registrar_historial(
+            accion="Edición de Prestación",
+            instancia=obj,
+            diferencias=form.cleaned_data,
+        )
+        return HttpResponseRedirect(self.get_success_url())
 
 class PrestacionDeleteView(LoginRequiredMixin, DeleteView):
     model = Prestacion
@@ -80,6 +96,11 @@ class PrestacionDeleteView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         response = super().delete(request, *args, **kwargs)
         messages.success(self.request, "Prestación eliminada correctamente.")
+        HistorialService.registrar_historial(
+            accion="Eliminación de Prestación",
+            instancia=self.object,
+            diferencias={"nombre": self.object.nombre},
+        )
         return response
 
 class PrestacionDetailView(LoginRequiredMixin, DetailView):
