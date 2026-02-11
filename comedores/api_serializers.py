@@ -4,6 +4,7 @@ from comedores.models import Comedor, Nomina
 from core.models import Localidad, Municipio, Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
+from admisiones.models.admisiones import InformeTecnico
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 
@@ -260,6 +261,30 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             }
             for clasificacion in clasificaciones
         ]
+
+
+APROBADAS_FIELDS = tuple(
+    f"aprobadas_{tipo}_{dia}"
+    for tipo in ("desayuno", "almuerzo", "merienda", "cena")
+    for dia in ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
+)
+
+
+class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
+    informe_id = serializers.IntegerField(source="id", read_only=True)
+    admision_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = InformeTecnico
+        fields = (
+            "informe_id",
+            "admision_id",
+            "tipo",
+            "estado_formulario",
+            "creado",
+            "modificado",
+            *APROBADAS_FIELDS,
+        )
 
     def get_rendiciones_mensuales(self, obj):
         rendiciones = getattr(obj, "rendiciones_optimized", None)
