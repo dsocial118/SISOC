@@ -378,11 +378,18 @@
                 </div>
                 <div class="mt-3">
                     {% if informe_tecnico_pdf %}
-                        {% if informe_tecnico.estado == "Validado" and informe_tecnico_pdf.archivo_docx %}
-                            <a href="{{ informe_tecnico_pdf.archivo_docx.url }}"
-                               class="btn btn-success btn-sm me-2"
-                               target="_blank"
-                               rel="noopener">Descargar Informe Final</a>
+                        {% if informe_tecnico.estado == "Validado" %}
+                            {% if informe_tecnico_pdf.archivo_docx_editado %}
+                                <a href="{{ informe_tecnico_pdf.archivo_docx_editado.url }}"
+                                   class="btn btn-success btn-sm me-2"
+                                   target="_blank"
+                                   rel="noopener">Descargar Informe SISOC Final</a>
+                            {% elif informe_tecnico_pdf.archivo_docx %}
+                                <a href="{{ informe_tecnico_pdf.archivo_docx.url }}"
+                                   class="btn btn-outline-primary btn-sm me-2"
+                                   target="_blank"
+                                   rel="noopener">Descargar Word</a>
+                            {% endif %}
                         {% else %}
                             <a href="{{ informe_tecnico_pdf.archivo.url }}"
                                class="btn btn-outline-primary btn-sm me-2"
@@ -402,7 +409,19 @@
             {% else %}
                 <p class="text-muted">No se registran informes tecnicos cargados.</p>
             {% endif %}
-
+            <hr class="my-4" />
+            {% if admision.numero_if_tecnico or admision.archivo_informe_tecnico_GDE %}
+                                    <div class="mt-2">
+                                        <span class="fw-bold">Informe Técnico GDE:</span>
+                                        <span>{{ admision.numero_if_tecnico|default:"-" }}</span>
+                                        {% if admision.archivo_informe_tecnico_GDE %}
+                                            <a href="{{ admision.archivo_informe_tecnico_GDE.url }}"
+                                               class="btn btn-success btn-sm me-2 ms-3"
+                                               target="_blank"
+                                               rel="noopener">Descargar Informe Técnico GDE</a>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
             <hr class="my-4" />
 
             <h5>Informes tecnicos complementarios</h5>
