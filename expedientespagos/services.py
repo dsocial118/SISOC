@@ -14,7 +14,10 @@ class ExpedientesPagosService:
                 anexo=data.get("anexo"),
                 if_cantidad_de_prestaciones=data.get("if_cantidad_de_prestaciones"),
                 if_pagado=data.get("if_pagado"),
-                monto=data.get("monto"),
+                total=data.get("total"),
+                mes_pago=data.get("mes_pago"),
+                ano=data.get("ano"),
+                organizacion_creacion=data.get("organizacion_creacion"),
                 numero_orden_pago=data.get("numero_orden_pago"),
                 fecha_pago_al_banco=data.get("fecha_pago_al_banco"),
                 fecha_acreditacion=data.get("fecha_acreditacion"),
@@ -53,7 +56,10 @@ class ExpedientesPagosService:
                 "if_cantidad_de_prestaciones"
             )
             expediente_pago.if_pagado = data.get("if_pagado")
-            expediente_pago.monto = data.get("monto")
+            expediente_pago.total = data.get("total")
+            expediente_pago.mes_pago = data.get("mes_pago")
+            expediente_pago.ano = data.get("ano")
+            expediente_pago.organizacion_creacion = data.get("organizacion_creacion")
             expediente_pago.numero_orden_pago = data.get("numero_orden_pago")
             expediente_pago.fecha_pago_al_banco = data.get("fecha_pago_al_banco")
             expediente_pago.fecha_acreditacion = data.get("fecha_acreditacion")
