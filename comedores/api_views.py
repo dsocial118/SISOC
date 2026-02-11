@@ -99,15 +99,15 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 ),
                 Prefetch(
                     "clasificacioncomedor_set",
-                    queryset=ClasificacionComedor.objects.select_related(
-                        "categoria"
-                    ).only(
+                    queryset=ClasificacionComedor.objects.select_related("categoria")
+                    .only(
                         "id",
                         "puntuacion_total",
                         "fecha",
                         "categoria__nombre",
                         "relevamiento",
-                    ).order_by("-fecha")[:3],
+                    )
+                    .order_by("-fecha")[:3],
                     to_attr="clasificaciones_optimized",
                 ),
                 Prefetch(
@@ -202,7 +202,9 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 }
             )
 
-        imagenes = getattr(comedor, "imagenes_optimized", None) or comedor.imagenes.all()
+        imagenes = (
+            getattr(comedor, "imagenes_optimized", None) or comedor.imagenes.all()
+        )
         for imagen in imagenes:
             documentos.append(
                 {
@@ -344,16 +346,12 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         if desde or hasta:
             try:
                 desde_dt = (
-                    timezone.make_aware(
-                        timezone.datetime.strptime(desde, "%Y-%m-%d")
-                    )
+                    timezone.make_aware(timezone.datetime.strptime(desde, "%Y-%m-%d"))
                     if desde
                     else None
                 )
                 hasta_dt = (
-                    timezone.make_aware(
-                        timezone.datetime.strptime(hasta, "%Y-%m-%d")
-                    )
+                    timezone.make_aware(timezone.datetime.strptime(hasta, "%Y-%m-%d"))
                     if hasta
                     else None
                 )
@@ -565,13 +563,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     @action(detail=True, methods=["get"], url_path="prestacion-alimentaria/historial")
     def prestacion_alimentaria_historial(self, request, pk=None):
         comedor = self.get_object()
-        queryset = (
-            InformeTecnico.objects.filter(
-                admision__comedor=comedor,
-                estado_formulario="finalizado",
-            )
-            .order_by("-modificado", "-id")
-        )
+        queryset = InformeTecnico.objects.filter(
+            admision__comedor=comedor,
+            estado_formulario="finalizado",
+        ).order_by("-modificado", "-id")
 
         desde = request.query_params.get("desde")
         hasta = request.query_params.get("hasta")
