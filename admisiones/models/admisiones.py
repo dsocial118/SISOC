@@ -160,6 +160,7 @@ class Admision(models.Model):
     numero_if_tecnico = models.CharField(
         max_length=255, blank=True, null=True, verbose_name="Número IF Informe Técnico"
     )
+    archivo_informe_tecnico_GDE = models.FileField(upload_to="admisiones/informe_tecnico_GDE/", null=True, blank=True)
     numero_convenio = models.CharField(max_length=100, blank=True, null=True)
     archivo_convenio = models.FileField(
         upload_to="admisiones/convenios/", null=True, blank=True
