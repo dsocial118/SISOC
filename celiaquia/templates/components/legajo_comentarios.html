@@ -1,0 +1,18 @@
+<!-- Sección de Comentarios Técnicos -->
+<div class="mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0"><i class="fas fa-comments"></i> Comentarios Técnicos</h6>
+        {% if is_tec or is_coord %}
+            <button type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalAgregarComentario"
+                    data-legajo-id="{{ legajo.pk }}">
+                <i class="fas fa-plus"></i> Agregar
+            </button>
+        {% endif %}
+    </div>
+    <div id="comentarios-list-{{ legajo.pk }}" class="comentarios-container">
+        <p class="text-muted small">Cargando comentarios...</p>
+    </div>
+</div>

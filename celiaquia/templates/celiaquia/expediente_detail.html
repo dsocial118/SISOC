@@ -491,9 +491,12 @@
                                                         {% endif %}
                                                     {% endif %}
                                                 </div>
-                                                <!-- Col 3: Archivos -->
+                                                <!-- Col 3: Archivos y Comentarios -->
                                                 <div class="col-lg-5">
                                                     {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
+                                                    
+                                                    <!-- Comentarios Técnicos -->
+                                                    {% include 'components/legajo_comentarios.html' with legajo=leg is_tec=is_tec is_coord=is_coord %}
                                                     <!-- Botón confirmar subsanación individual (solo para subsanación técnica, no Renaper) -->
                                                     {% if is_prov and leg.revision_tecnico == 'SUBSANAR' and leg.estado_validacion_renaper != 3 and leg.archivo2 and leg.archivo3 %}
                                                         <div class="mt-3">
@@ -1655,6 +1658,56 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Agregar Comentario Técnico -->
+<div class="modal fade"
+     id="modalAgregarComentario"
+     tabindex="-1"
+     aria-labelledby="modalAgregarComentarioLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="form-agregar-comentario" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarComentarioLabel">
+                        <i class="fas fa-comment-medical"></i> Agregar Comentario Técnico
+                    </h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="comentario-texto" class="form-label">Comentario *</label>
+                        <textarea id="comentario-texto"
+                                  name="comentario"
+                                  class="form-control"
+                                  rows="4"
+                                  required
+                                  placeholder="Escriba su observación técnica..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comentario-archivo" class="form-label">Archivo adjunto (opcional)</label>
+                        <input type="file"
+                               name="archivo"
+                               id="comentario-archivo"
+                               class="form-control"
+                               accept=".pdf,.jpg,.jpeg,.png" />
+                        <small class="text-muted">PDF o imagen</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Comentario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endwith %}
 {% endblock %}
 <!-- Modales movidos fuera del contenido principal para evitar interferencia con sidebar -->
@@ -1737,10 +1790,12 @@
           content="{% url 'registro_erroneo_eliminar' expediente.pk 0 %}" />
     <meta name="editar-legajo-url-template"
           content="{% url 'legajo_editar' expediente.pk 0 %}" />
+    <meta name="expediente-id" content="{{ expediente.pk }}" />
     <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
     <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
+    <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
 {% endblock %}
