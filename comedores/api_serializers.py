@@ -330,3 +330,4 @@ class DocumentoComedorSerializer(serializers.Serializer):
     nombre = serializers.CharField(allow_null=True)
     fecha = serializers.DateTimeField(allow_null=True)
     url = serializers.CharField(allow_null=True)
+    path = serializers.CharField(allow_null=True, write_only=True)
