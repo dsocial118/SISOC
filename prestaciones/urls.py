@@ -34,5 +34,5 @@ urlpatterns = [
         "prestacion/<int:pk>/detalle",
         group_required(["Prestacion"])(PrestacionDetailView.as_view()),
         name="prestacion_detalle",
-     ),
+    ),
 ]
