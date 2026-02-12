@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "multiselectfield",
     "auditlog",
     "rest_framework",
+    "rest_framework.authtoken",
     "rest_framework_api_key",
     "drf_spectacular",
     "corsheaders",
@@ -203,6 +204,10 @@ CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 
 # REST Framework
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -259,7 +264,7 @@ CHANGELOG_GITHUB_URL = os.getenv(
 INTERNAL_IPS = ["127.0.0.1", "::1"]
 
 # Logging (asegurar directorio)
-LOG_DIR = BASE_DIR / "logs"
+LOG_DIR = Path(os.getenv("LOG_DIR", str(BASE_DIR / "logs")))
 os.makedirs(LOG_DIR, exist_ok=True)
 
 LOGGING = {
