@@ -1,7 +1,9 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import mixins, status, viewsets
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from comedores.api_serializers import (
@@ -20,7 +22,6 @@ from comedores.models import (
     Nomina,
     Observacion,
 )
-from core.api_auth import HasAPIKey
 from django.core.paginator import Paginator
 from django.http import FileResponse, Http404
 import calendar
@@ -43,8 +44,8 @@ from admisiones.models.admisiones import InformeTecnico
 @extend_schema(tags=["Comedores"])
 class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = ComedorDetailSerializer
-    authentication_classes = []
-    permission_classes = [HasAPIKey]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "head", "options"]
 
     def list(self, request, *args, **kwargs):
@@ -609,8 +610,8 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 @extend_schema(tags=["Nomina"])
 class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     serializer_class = NominaUpdateSerializer
-    authentication_classes = []
-    permission_classes = [HasAPIKey]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Nomina.objects.select_related("ciudadano", "ciudadano__sexo", "comedor")
     http_method_names = ["patch", "head", "options"]
 
