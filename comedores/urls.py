@@ -158,11 +158,13 @@ urlpatterns = [
         name="ajax_load_subestadosintervenciones",
     ),
     path(
+        # TODO: Migrar a router DRF (estilo centrodefamilia).
         "intervencion/<int:intervencion_id>/documentacion/subir/",
         group_required(["Tecnico Comedor"])(subir_archivo_intervencion),
         name="subir_archivo_intervencion",
     ),
     path(
+        # TODO: Migrar a router DRF (estilo centrodefamilia).
         "intervencion/<int:intervencion_id>/documentacion/eliminar/",
         group_required(["Tecnico Comedor"])(eliminar_archivo_intervencion),
         name="eliminar_archivo_intervencion",
