@@ -65,6 +65,7 @@ urlpatterns = [
     ),
     # AJAX endpoint
     path(
+        # TODO: Migrar a router DRF (estilo centrodefamilia).
         "rendicion_cuentas_final/ajax/",
         documentos_rendicion_cuentas_final_ajax,
         name="documentos_rendicion_cuentas_final_ajax",

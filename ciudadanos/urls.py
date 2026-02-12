@@ -56,6 +56,7 @@ urlpatterns = [
         name="grupofamiliar_eliminar",
     ),
     path(
+        # TODO: Migrar a router DRF (estilo centrodefamilia).
         "api/ciudadanos/buscar/",
         login_required(buscar_ciudadanos),
         name="api_buscar_ciudadanos",
