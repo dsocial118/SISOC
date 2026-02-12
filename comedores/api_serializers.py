@@ -262,38 +262,6 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             for clasificacion in clasificaciones
         ]
 
-
-APROBADAS_FIELDS = tuple(
-    f"aprobadas_{tipo}_{dia}"
-    for tipo in ("desayuno", "almuerzo", "merienda", "cena")
-    for dia in (
-        "lunes",
-        "martes",
-        "miercoles",
-        "jueves",
-        "viernes",
-        "sabado",
-        "domingo",
-    )
-)
-
-
-class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
-    informe_id = serializers.IntegerField(source="id", read_only=True)
-    admision_id = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = InformeTecnico
-        fields = (
-            "informe_id",
-            "admision_id",
-            "tipo",
-            "estado_formulario",
-            "creado",
-            "modificado",
-            *APROBADAS_FIELDS,
-        )
-
     def get_rendiciones_mensuales(self, obj):
         rendiciones = getattr(obj, "rendiciones_optimized", None)
         if rendiciones is None:
@@ -356,7 +324,52 @@ class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
         ]
 
 
-class DocumentoComedorSerializer(serializers.Serializer):
+APROBADAS_FIELDS = tuple(
+    f"aprobadas_{tipo}_{dia}"
+    for tipo in ("desayuno", "almuerzo", "merienda", "cena")
+    for dia in (
+        "lunes",
+        "martes",
+        "miercoles",
+        "jueves",
+        "viernes",
+        "sabado",
+        "domingo",
+    )
+)
+
+
+class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
+    informe_id = serializers.IntegerField(source="id", read_only=True)
+    admision_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = InformeTecnico
+        fields = (
+            "informe_id",
+            "admision_id",
+            "tipo",
+            "estado_formulario",
+            "creado",
+            "modificado",
+            *APROBADAS_FIELDS,
+        )
+
+
+class NoSaveSerializer(serializers.Serializer):
+    """Serializer base para casos sin create/update."""
+
+    def _raise_read_only(self):
+        raise NotImplementedError("Serializer de solo lectura.")
+
+    def create(self, validated_data):
+        return self._raise_read_only()
+
+    def update(self, instance, validated_data):
+        return self._raise_read_only()
+
+
+class DocumentoComedorSerializer(NoSaveSerializer):
     id = serializers.CharField()
     origen = serializers.CharField()
     tipo = serializers.CharField()
@@ -366,7 +379,7 @@ class DocumentoComedorSerializer(serializers.Serializer):
     path = serializers.CharField(allow_null=True, write_only=True)
 
 
-class NominaCiudadanoSerializer(serializers.Serializer):
+class NominaCiudadanoSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField(allow_null=True)
     apellido = serializers.CharField(allow_null=True)
@@ -374,7 +387,7 @@ class NominaCiudadanoSerializer(serializers.Serializer):
     sexo = serializers.CharField(allow_null=True)
 
 
-class NominaSerializer(serializers.Serializer):
+class NominaSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     fecha = serializers.DateTimeField()
     estado = serializers.CharField()
@@ -404,7 +417,7 @@ class NominaSerializer(serializers.Serializer):
         }
 
 
-class NominaCreateSerializer(serializers.Serializer):
+class NominaCreateSerializer(NoSaveSerializer):
     ciudadano_id = serializers.IntegerField(required=False)
     ciudadano = serializers.DictField(required=False)
     estado = serializers.CharField(required=False)
@@ -425,7 +438,7 @@ class NominaCreateSerializer(serializers.Serializer):
         return attrs
 
 
-class NominaUpdateSerializer(serializers.Serializer):
+class NominaUpdateSerializer(NoSaveSerializer):
     estado = serializers.CharField(required=False)
     observaciones = serializers.CharField(required=False, allow_blank=True)
 
