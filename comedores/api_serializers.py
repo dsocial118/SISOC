@@ -262,38 +262,6 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             for clasificacion in clasificaciones
         ]
 
-
-APROBADAS_FIELDS = tuple(
-    f"aprobadas_{tipo}_{dia}"
-    for tipo in ("desayuno", "almuerzo", "merienda", "cena")
-    for dia in (
-        "lunes",
-        "martes",
-        "miercoles",
-        "jueves",
-        "viernes",
-        "sabado",
-        "domingo",
-    )
-)
-
-
-class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
-    informe_id = serializers.IntegerField(source="id", read_only=True)
-    admision_id = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = InformeTecnico
-        fields = (
-            "informe_id",
-            "admision_id",
-            "tipo",
-            "estado_formulario",
-            "creado",
-            "modificado",
-            *APROBADAS_FIELDS,
-        )
-
     def get_rendiciones_mensuales(self, obj):
         rendiciones = getattr(obj, "rendiciones_optimized", None)
         if rendiciones is None:
@@ -354,6 +322,38 @@ class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
             }
             for cambio in cambios
         ]
+
+
+APROBADAS_FIELDS = tuple(
+    f"aprobadas_{tipo}_{dia}"
+    for tipo in ("desayuno", "almuerzo", "merienda", "cena")
+    for dia in (
+        "lunes",
+        "martes",
+        "miercoles",
+        "jueves",
+        "viernes",
+        "sabado",
+        "domingo",
+    )
+)
+
+
+class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
+    informe_id = serializers.IntegerField(source="id", read_only=True)
+    admision_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = InformeTecnico
+        fields = (
+            "informe_id",
+            "admision_id",
+            "tipo",
+            "estado_formulario",
+            "creado",
+            "modificado",
+            *APROBADAS_FIELDS,
+        )
 
 
 class DocumentoComedorSerializer(serializers.Serializer):
