@@ -149,11 +149,26 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const csvEscape = (value) => {
+      const text = String(value ?? "");
+      const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+
     // Crear CSV con BOM UTF-8 para Excel
     const BOM = "\uFEFF";
     let csv = BOM + "Provincia ID,Provincia,Municipio ID,Municipio,Localidad ID,Localidad\n";
     localidadesData.forEach((item) => {
-      csv += `${item.provincia_id},${item.provincia_nombre},${item.municipio_id},${item.municipio_nombre},${item.localidad_id},${item.localidad_nombre}\n`;
+      csv += [
+        item.provincia_id,
+        item.provincia_nombre,
+        item.municipio_id,
+        item.municipio_nombre,
+        item.localidad_id,
+        item.localidad_nombre,
+      ]
+        .map(csvEscape)
+        .join(",") + "\n";
     });
 
     // Crear blob y descargar
@@ -166,6 +181,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   // Inicializar
