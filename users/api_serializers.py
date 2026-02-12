@@ -15,6 +15,15 @@ class UserContextSerializer(serializers.Serializer):
     profile = serializers.SerializerMethodField()
     scope = serializers.SerializerMethodField()
 
+    def _raise_read_only(self):
+        raise NotImplementedError("Serializer de solo lectura.")
+
+    def create(self, validated_data):
+        return self._raise_read_only()
+
+    def update(self, instance, validated_data):
+        return self._raise_read_only()
+
     def get_groups(self, obj):
         if not getattr(obj, "is_authenticated", False):
             return []
