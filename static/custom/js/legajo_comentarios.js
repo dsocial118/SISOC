@@ -1,5 +1,14 @@
 // Gestión de comentarios técnicos en legajos
 
+function escapeHtml(value = "") {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Cargar comentarios al abrir detalle del legajo
     document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(btn => {
@@ -52,6 +61,10 @@ function mostrarComentarios(legajoId, comentarios) {
     }
 
     container.innerHTML = comentarios.map(c => {
+        const usuario = escapeHtml(c.usuario || "");
+        const fecha = escapeHtml(c.fecha || "");
+        const texto = escapeHtml(c.texto || "");
+        const archivoUrl = c.archivo_url ? escapeHtml(encodeURI(c.archivo_url)) : "";
         const bgColor = c.es_provincia ? 'rgba(13, 110, 253, .1)' : 'rgba(25, 135, 84, .1)';
         const borderColor = c.es_provincia ? 'rgba(13, 110, 253, .3)' : 'rgba(25, 135, 84, .3)';
         const badge = c.es_provincia ? '<span class="badge bg-primary">Provincia</span>' : '<span class="badge bg-success">Técnico</span>';
@@ -59,11 +72,11 @@ function mostrarComentarios(legajoId, comentarios) {
         return `
         <div class="comentario-item mb-2 p-2 rounded" style="background:${bgColor}; border:1px solid ${borderColor}">
             <div class="d-flex justify-content-between align-items-start mb-1">
-                <small class="text-muted"><i class="fas fa-user"></i> ${c.usuario} ${badge}</small>
-                <small class="text-muted">${c.fecha}</small>
+                <small class="text-muted"><i class="fas fa-user"></i> ${usuario} ${badge}</small>
+                <small class="text-muted">${fecha}</small>
             </div>
-            <p class="mb-1 small">${c.texto}</p>
-            ${c.tiene_archivo ? `<a href="${c.archivo_url}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fas fa-paperclip"></i> Ver archivo</a>` : ''}
+            <p class="mb-1 small">${texto}</p>
+            ${c.tiene_archivo ? `<a href="${archivoUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary"><i class="fas fa-paperclip"></i> Ver archivo</a>` : ''}
         </div>
     `;
     }).join('');
@@ -117,7 +130,7 @@ function mostrarAlerta(tipo, mensaje) {
     const alert = document.createElement('div');
     alert.className = `alert alert-${tipo} alert-dismissible fade show`;
     alert.innerHTML = `
-        ${mensaje}
+        ${escapeHtml(mensaje)}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     alertContainer.appendChild(alert);

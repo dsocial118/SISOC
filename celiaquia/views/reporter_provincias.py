@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q, F, Case, When, IntegerField
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from datetime import timedelta
 from core.models import Provincia
@@ -19,11 +20,13 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         es_usuario_provincial = False
         provincia_usuario = None
         try:
-            if hasattr(user, 'profile') and user.profile.es_usuario_provincial:
-                es_usuario_provincial = True
-                provincia_usuario = user.profile.provincia
-        except Exception:
-            pass
+            profile = user.profile
+        except ObjectDoesNotExist:
+            profile = None
+
+        if profile and profile.es_usuario_provincial:
+            es_usuario_provincial = True
+            provincia_usuario = profile.provincia
 
         # Obtener parámetros de filtro
         provincia_id = self.request.GET.get("provincia")
