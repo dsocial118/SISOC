@@ -1,5 +1,6 @@
-import pytest
+# pylint: disable=redefined-outer-name
 from decimal import Decimal
+import pytest
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -81,7 +82,7 @@ class TestPermissions:
         assert resp.status_code == 403
 
     def test_logged_in_without_group_forbidden(self, client, db):
-        user = User.objects.create_user(username="nogroup", password="x")
+        User.objects.create_user(username="nogroup", password="x")
         client.login(username="nogroup", password="x")
         resp = client.get(reverse("prestacion"))
         assert resp.status_code == 403
