@@ -5,6 +5,7 @@ from relevamientos.views.api_views import (
 )
 
 urlpatterns = [
+    # TODO: Migrar a router DRF (estilo centrodefamilia).
     path(
         "api/relevamiento",
         RelevamientoApiView.as_view(),
