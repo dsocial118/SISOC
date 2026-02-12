@@ -1,9 +1,22 @@
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+import calendar
+from datetime import date
+
+from django.core.paginator import Paginator
+from django.db.models import Prefetch
+from django.db.models.fields.files import FieldFile
+from django.http import FileResponse, Http404
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+from django.utils.timezone import make_aware
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, status, viewsets
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from admisiones.models.admisiones import InformeTecnico
 from comedores.api_serializers import (
     APROBADAS_FIELDS,
     ComedorDetailSerializer,
@@ -13,6 +26,7 @@ from comedores.api_serializers import (
     NominaSerializer,
     NominaUpdateSerializer,
 )
+from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
 from comedores.models import (
     AuditComedorPrograma,
     Comedor,
@@ -20,31 +34,18 @@ from comedores.models import (
     Nomina,
     Observacion,
 )
-from core.api_auth import HasAPIKey
-from django.core.paginator import Paginator
-from django.http import FileResponse, Http404
-import calendar
-from datetime import date
-
-from django.utils import timezone
-from django.utils.dateparse import parse_date
-from django.utils.timezone import make_aware
-from django.db.models import Prefetch
-from django.db.models.fields.files import FieldFile
+from comedores.services.comedor_service import ComedorService
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import RendicionCuentaMensual
-from comedores.services.comedor_service import ComedorService
-from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
-from admisiones.models.admisiones import InformeTecnico
 
 
 @extend_schema(tags=["Comedores"])
 class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = ComedorDetailSerializer
-    authentication_classes = []
-    permission_classes = [HasAPIKey]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "head", "options"]
 
     def list(self, request, *args, **kwargs):
@@ -426,30 +427,23 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         except FileNotFoundError as exc:
             raise Http404("Archivo no encontrado.") from exc
 
-    @extend_schema(
-        request=NominaCreateSerializer,
-        responses=NominaSerializer(many=True),
-        tags=["Nomina"],
-    )
-    @action(detail=True, methods=["get", "post"], url_path="nomina")
-    def nomina(self, request, pk=None):
-        comedor = self.get_object()
-        if request.method.lower() == "get":
-            page = request.query_params.get("page", 1)
-            page_obj, _, _, _, _, total, rangos = ComedorService.get_nomina_detail(
-                comedor.pk, page
-            )
-            return Response(
-                {
-                    "count": total,
-                    "current_page": page_obj.number,
-                    "num_pages": page_obj.paginator.num_pages,
-                    "rangos": rangos,
-                    "results": NominaSerializer(page_obj.object_list, many=True).data,
-                },
-                status=status.HTTP_200_OK,
-            )
+    def _nomina_get(self, request, comedor):
+        page = request.query_params.get("page", 1)
+        page_obj, _, _, _, _, total, rangos = ComedorService.get_nomina_detail(
+            comedor.pk, page
+        )
+        return Response(
+            {
+                "count": total,
+                "current_page": page_obj.number,
+                "num_pages": page_obj.paginator.num_pages,
+                "rangos": rangos,
+                "results": NominaSerializer(page_obj.object_list, many=True).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
+    def _nomina_post(self, request, comedor):
         serializer = NominaCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -501,6 +495,18 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response({"detail": msg}, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        request=NominaCreateSerializer,
+        responses=NominaSerializer(many=True),
+        tags=["Nomina"],
+    )
+    @action(detail=True, methods=["get", "post"], url_path="nomina")
+    def nomina(self, request, pk=None):
+        comedor = self.get_object()
+        if request.method.lower() == "get":
+            return self._nomina_get(request, comedor)
+        return self._nomina_post(request, comedor)
 
     @extend_schema(
         responses=InformeTecnicoPrestacionSerializer,
@@ -609,8 +615,8 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 @extend_schema(tags=["Nomina"])
 class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     serializer_class = NominaUpdateSerializer
-    authentication_classes = []
-    permission_classes = [HasAPIKey]
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Nomina.objects.select_related("ciudadano", "ciudadano__sexo", "comedor")
     http_method_names = ["patch", "head", "options"]
 
