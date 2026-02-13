@@ -2,7 +2,37 @@ from django import forms
 from .models import Comunicado, ComunicadoAdjunto
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        # Si no hay datos, retornar lista vacía
+        if not data:
+            return []
+
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            # Filtrar valores vacíos/None de la lista
+            result = [single_file_clean(d, initial) for d in data if d]
+        else:
+            # Un solo archivo
+            result = [single_file_clean(data, initial)]
+        return result
+
+
 class ComunicadoForm(forms.ModelForm):
+    # Campo para subir múltiples archivos a la vez
+    archivos_adjuntos = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(attrs={"class": "form-control", "multiple": True}),
+    )
+
     class Meta:
         model = Comunicado
         fields = [

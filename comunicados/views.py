@@ -14,7 +14,7 @@ from django.views.generic import (
 )
 
 from .forms import ComunicadoForm, ComunicadoAdjuntoFormSet
-from .models import Comunicado, EstadoComunicado
+from .models import Comunicado, ComunicadoAdjunto, EstadoComunicado
 from .permissions import (
     can_create_comunicado,
     can_edit_comunicado,
@@ -140,6 +140,7 @@ class ComunicadoDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        ctx["can_manage"] = can_manage_comunicados(self.request.user)
         ctx["can_edit"] = can_edit_comunicado(self.request.user, self.object)
         ctx["can_publish"] = can_publish_comunicado(self.request.user)
         ctx["can_archive"] = can_archive_comunicado(self.request.user)
@@ -182,6 +183,16 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
             self.object = form.save()
             adjuntos_formset.instance = self.object
             adjuntos_formset.save()
+
+            # Manejar archivos múltiples del campo archivos_adjuntos
+            archivos = self.request.FILES.getlist("archivos_adjuntos")
+            for archivo in archivos:
+                ComunicadoAdjunto.objects.create(
+                    comunicado=self.object,
+                    archivo=archivo,
+                    nombre_original=archivo.name,
+                )
+
             messages.success(self.request, "Comunicado creado correctamente.")
             return redirect(self.success_url)
         else:
@@ -222,6 +233,16 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
         if adjuntos_formset.is_valid():
             self.object = form.save()
             adjuntos_formset.save()
+
+            # Manejar archivos múltiples del campo archivos_adjuntos
+            archivos = self.request.FILES.getlist("archivos_adjuntos")
+            for archivo in archivos:
+                ComunicadoAdjunto.objects.create(
+                    comunicado=self.object,
+                    archivo=archivo,
+                    nombre_original=archivo.name,
+                )
+
             messages.success(self.request, "Comunicado actualizado correctamente.")
             return redirect(self.success_url)
         else:
