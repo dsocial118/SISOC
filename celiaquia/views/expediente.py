@@ -103,8 +103,9 @@ class LocalidadesLookupView(View):
 
         localidades = Localidad.objects.select_related("municipio__provincia")
 
-        # Filtrar por provincia del usuario si es provincial
-        if _is_provincial(user):
+        # Filtrar por provincia del usuario solo si es provincial Y NO es coordinador
+        is_coord = _user_in_group(user, "CoordinadorCeliaquia")
+        if _is_provincial(user) and not is_coord:
             prov = _user_provincia(user)
             if prov:
                 localidades = localidades.filter(municipio__provincia=prov)
