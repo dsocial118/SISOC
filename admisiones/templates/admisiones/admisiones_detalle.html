@@ -411,17 +411,17 @@
             {% endif %}
             <hr class="my-4" />
             {% if admision.numero_if_tecnico or admision.archivo_informe_tecnico_GDE %}
-                                    <div class="mt-2">
-                                        <span class="fw-bold">Informe Técnico GDE:</span>
-                                        <span>{{ admision.numero_if_tecnico|default:"-" }}</span>
-                                        {% if admision.archivo_informe_tecnico_GDE %}
-                                            <a href="{{ admision.archivo_informe_tecnico_GDE.url }}"
-                                               class="btn btn-success btn-sm me-2 ms-3"
-                                               target="_blank"
-                                               rel="noopener">Descargar Informe Técnico GDE</a>
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
+                <div class="mt-2">
+                    <span class="fw-bold">Informe Técnico GDE:</span>
+                    <span>{{ admision.numero_if_tecnico|default:"-" }}</span>
+                    {% if admision.archivo_informe_tecnico_GDE %}
+                        <a href="{{ admision.archivo_informe_tecnico_GDE.url }}"
+                           class="btn btn-success btn-sm me-2 ms-3"
+                           target="_blank"
+                           rel="noopener">Descargar Informe Técnico GDE</a>
+                    {% endif %}
+                </div>
+            {% endif %}
             <hr class="my-4" />
 
             <h5>Informes tecnicos complementarios</h5>
