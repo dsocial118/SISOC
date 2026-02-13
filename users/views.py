@@ -6,7 +6,11 @@ from django.utils.decorators import method_decorator
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.decorators.csrf import ensure_csrf_cookie
 from core.services.column_preferences import build_columns_context
-from .forms import CustomUserChangeForm, UserCreationForm
+from .forms import (
+    BackofficeAuthenticationForm,
+    CustomUserChangeForm,
+    UserCreationForm,
+)
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from .services import UsuariosService
 
@@ -18,6 +22,7 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 
 class UsuariosLoginView(LoginView):
     template_name = "user/login.html"
+    authentication_form = BackofficeAuthenticationForm
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
