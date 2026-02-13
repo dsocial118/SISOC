@@ -1,12 +1,16 @@
+from datetime import date
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import models
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
-from comedores.models import Comedor, Nomina
+from admisiones.models.admisiones import Admision, InformeTecnico
+from comedores.models import Comedor, ImagenComedor, Nomina
 from core.models import Provincia
-from rendicioncuentasmensual.models import RendicionCuentaMensual
+from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 from users.models import AccesoComedorPWA
 
 
@@ -47,6 +51,55 @@ def _token_client(user):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
     return client
+
+
+def _fake_value_for_field(field):
+    if field.choices:
+        return field.choices[0][0]
+    if isinstance(field, models.EmailField):
+        return "test@example.com"
+    if isinstance(field, (models.CharField, models.TextField)):
+        return "test"
+    if isinstance(field, models.BooleanField):
+        return False
+    if isinstance(field, models.DecimalField):
+        return 1
+    if isinstance(field, models.FloatField):
+        return 1.0
+    if isinstance(field, models.DateTimeField):
+        return date(2026, 1, 1)
+    if isinstance(field, models.DateField):
+        return date(2026, 1, 1)
+    if isinstance(field, models.IntegerField):
+        return 1
+    return "test"
+
+
+def _create_informe_tecnico(admision, **overrides):
+    payload = {}
+    for field in InformeTecnico._meta.fields:
+        if field.primary_key or field.auto_created:
+            continue
+        if getattr(field, "auto_now", False) or getattr(field, "auto_now_add", False):
+            continue
+        if field.has_default():
+            continue
+        if isinstance(field, models.ForeignKey):
+            continue
+        if field.null:
+            continue
+        payload[field.name] = _fake_value_for_field(field)
+
+    payload.update(
+        {
+            "admision": admision,
+            "tipo": "base",
+            "estado": "Iniciado",
+            "estado_formulario": "finalizado",
+        }
+    )
+    payload.update(overrides)
+    return InformeTecnico.objects.create(**payload)
 
 
 @pytest.mark.django_db
@@ -322,3 +375,182 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     assert present_response.status_code == 200
     rendicion.refresh_from_db()
     assert rendicion.documento_adjunto is True
+
+
+@pytest.mark.django_db
+def test_documentos_list_filter_and_download(comedores, settings, tmp_path):
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor_1, comedor_2 = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_documentos",
+    )
+    client = _token_client(representante)
+
+    comedor_1.foto_legajo = SimpleUploadedFile(
+        "legajo_test.jpg",
+        b"fake-jpeg-content",
+        content_type="image/jpeg",
+    )
+    comedor_1.save(update_fields=["foto_legajo"])
+    ImagenComedor.objects.create(
+        comedor=comedor_1,
+        imagen=SimpleUploadedFile(
+            "imagen_test.jpg",
+            b"fake-image-content",
+            content_type="image/jpeg",
+        ),
+    )
+
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1,
+        mes=4,
+        anio=2026,
+    )
+    DocumentacionAdjunta.objects.create(
+        nombre="Comprobante abril",
+        archivo=SimpleUploadedFile(
+            "comprobante_test.pdf",
+            b"%PDF-1.4 fake content",
+            content_type="application/pdf",
+        ),
+        rendicion_cuenta_mensual=rendicion,
+    )
+
+    list_response = client.get(f"/api/comedores/{comedor_1.id}/documentos/")
+    assert list_response.status_code == 200
+    assert list_response.data["count"] >= 3
+
+    tipos = {item["tipo"] for item in list_response.data["results"]}
+    assert "foto_legajo" in tipos
+    assert "imagen_comedor" in tipos
+    assert "documento_rendicion_mensual" in tipos
+
+    by_type_response = client.get(
+        f"/api/comedores/{comedor_1.id}/documentos/",
+        {"tipo": "documento_rendicion_mensual"},
+    )
+    assert by_type_response.status_code == 200
+    assert by_type_response.data["count"] == 1
+
+    by_query_response = client.get(
+        f"/api/comedores/{comedor_1.id}/documentos/",
+        {"q": "comprobante_test"},
+    )
+    assert by_query_response.status_code == 200
+    assert by_query_response.data["count"] == 1
+
+    invalid_date_response = client.get(
+        f"/api/comedores/{comedor_1.id}/documentos/",
+        {"desde": "2026-13-01"},
+    )
+    assert invalid_date_response.status_code == 400
+
+    documento_id = by_type_response.data["results"][0]["id"]
+    download_response = client.get(
+        f"/api/comedores/{comedor_1.id}/documentos/{documento_id}/download/"
+    )
+    assert download_response.status_code == 200
+    assert "attachment" in download_response["Content-Disposition"]
+
+    outside_scope_response = client.get(f"/api/comedores/{comedor_2.id}/documentos/")
+    assert outside_scope_response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_returns_empty_payload_when_no_informes(comedores):
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_prestacion_empty",
+    )
+    client = _token_client(representante)
+
+    response = client.get(f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/")
+    assert response.status_code == 200
+    assert response.data["informe_id"] is None
+    assert response.data["aprobadas_almuerzo_lunes"] is None
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_uses_latest_finalizado(comedores):
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_prestacion_latest",
+    )
+    client = _token_client(representante)
+
+    admision = Admision.objects.create(comedor=comedor_1)
+    informe_viejo = _create_informe_tecnico(
+        admision,
+        estado_formulario="finalizado",
+        aprobadas_almuerzo_lunes=50,
+    )
+    informe_nuevo = _create_informe_tecnico(
+        admision,
+        estado_formulario="finalizado",
+        aprobadas_almuerzo_lunes=120,
+    )
+    _create_informe_tecnico(
+        admision,
+        estado_formulario="borrador",
+        aprobadas_almuerzo_lunes=999,
+    )
+    InformeTecnico.objects.filter(pk=informe_viejo.pk).update(
+        modificado=date(2026, 1, 15)
+    )
+    InformeTecnico.objects.filter(pk=informe_nuevo.pk).update(
+        modificado=date(2026, 2, 15)
+    )
+
+    response = client.get(f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/")
+    assert response.status_code == 200
+    assert response.data["informe_id"] == informe_nuevo.id
+    assert response.data["aprobadas_almuerzo_lunes"] == 120
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_historial_filters_by_period(comedores):
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_prestacion_historial",
+    )
+    client = _token_client(representante)
+
+    admision = Admision.objects.create(comedor=comedor_1)
+    informe_enero = _create_informe_tecnico(admision, estado_formulario="finalizado")
+    informe_febrero = _create_informe_tecnico(admision, estado_formulario="finalizado")
+    informe_marzo = _create_informe_tecnico(admision, estado_formulario="finalizado")
+
+    InformeTecnico.objects.filter(pk=informe_enero.pk).update(
+        modificado=date(2026, 1, 20)
+    )
+    InformeTecnico.objects.filter(pk=informe_febrero.pk).update(
+        modificado=date(2026, 2, 15)
+    )
+    InformeTecnico.objects.filter(pk=informe_marzo.pk).update(
+        modificado=date(2026, 3, 10)
+    )
+
+    response = client.get(
+        f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/historial/",
+        {"desde": "2026-02", "hasta": "2026-03"},
+    )
+    assert response.status_code == 200
+    assert response.data["count"] == 2
+    assert [item["informe_id"] for item in response.data["results"]] == [
+        informe_marzo.id,
+        informe_febrero.id,
+    ]
+
+    invalid_range_response = client.get(
+        f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/historial/",
+        {"desde": "2026-05", "hasta": "2026-03"},
+    )
+    assert invalid_range_response.status_code == 400
