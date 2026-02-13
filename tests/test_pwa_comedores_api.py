@@ -378,6 +378,68 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
 
 
 @pytest.mark.django_db
+def test_adjuntar_comprobante_rechaza_tipo_no_permitido(comedores, settings, tmp_path):
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_tipo_invalido",
+    )
+    client = _token_client(representante)
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1,
+        mes=5,
+        anio=2026,
+    )
+
+    archivo = SimpleUploadedFile(
+        "comprobante.exe",
+        b"binary",
+        content_type="application/octet-stream",
+    )
+    response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/comprobantes/",
+        {"archivo": archivo},
+        format="multipart",
+    )
+
+    assert response.status_code == 400
+    assert "Tipo de archivo no permitido" in response.data["detail"]
+
+
+@pytest.mark.django_db
+def test_adjuntar_comprobante_rechaza_archivo_excedido(comedores, settings, tmp_path):
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_size_invalido",
+    )
+    client = _token_client(representante)
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1,
+        mes=6,
+        anio=2026,
+    )
+
+    archivo = SimpleUploadedFile(
+        "comprobante_grande.pdf",
+        b"a" * (10 * 1024 * 1024 + 1),
+        content_type="application/pdf",
+    )
+    response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/comprobantes/",
+        {"archivo": archivo},
+        format="multipart",
+    )
+
+    assert response.status_code == 400
+    assert "excede el tamaño máximo" in response.data["detail"]
+
+
+@pytest.mark.django_db
 def test_documentos_list_filter_and_download(comedores, settings, tmp_path):
     settings.MEDIA_ROOT = str(tmp_path)
     comedor_1, comedor_2 = comedores

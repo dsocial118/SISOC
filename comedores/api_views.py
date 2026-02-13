@@ -57,6 +57,13 @@ from users.services_pwa import (
     list_operadores_for_comedor,
 )
 
+MAX_COMPROBANTE_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+ALLOWED_COMPROBANTE_CONTENT_TYPES = {
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+}
+
 
 @extend_schema(tags=["Comedores"])
 class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -549,6 +556,15 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return exc.messages
         return str(exc)
 
+    def _validate_comprobante_file(self, archivo):
+        if not archivo:
+            return "Debe adjuntar un archivo."
+        if archivo.content_type not in ALLOWED_COMPROBANTE_CONTENT_TYPES:
+            return "Tipo de archivo no permitido. Formatos válidos: PDF, JPG, PNG."
+        if archivo.size > MAX_COMPROBANTE_FILE_SIZE:
+            return "El archivo excede el tamaño máximo permitido de 10 MB."
+        return None
+
     @extend_schema(
         request=OperadorCreateSerializer,
         responses=OperadorListSerializer(many=True),
@@ -788,9 +804,10 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             raise Http404("Rendición no encontrada.")
 
         archivo = request.FILES.get("archivo")
-        if not archivo:
+        file_error = self._validate_comprobante_file(archivo)
+        if file_error:
             return Response(
-                {"detail": "Debe adjuntar un archivo."},
+                {"detail": file_error},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

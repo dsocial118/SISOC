@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import Group, User
+from django.db import transaction
 
 from comedores.models import Comedor
 from core.models import Provincia
@@ -161,6 +162,10 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
         return self._clean_pwa_fields(cleaned)
 
     def save(self, commit=True):
+        with transaction.atomic():
+            return self._save_atomic(commit=commit)
+
+    def _save_atomic(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password"])
 
@@ -279,6 +284,10 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
         return self._clean_pwa_fields(cleaned)
 
     def save(self, commit=True):
+        with transaction.atomic():
+            return self._save_atomic(commit=commit)
+
+    def _save_atomic(self, commit=True):
         new_pwd = self.cleaned_data.get("password")
         user = super().save(commit=False)
 
