@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from django.contrib.auth import authenticate
+from django.core.exceptions import PermissionDenied
 from rest_framework import serializers, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
@@ -7,6 +8,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from core.api_auth import HasAPIKeyOrToken
 from users.api_serializers import UserContextSerializer
 
 
@@ -41,7 +43,18 @@ class UserLoginViewSet(viewsets.ViewSet):
     @extend_schema(request=LoginSerializer)
     def create(self, request):
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except (AuthenticationFailed, PermissionDenied) as exc:
+            detail = (
+                str(exc)
+                if isinstance(exc, AuthenticationFailed)
+                else "Credenciales inválidas."
+            )
+            return Response(
+                {"detail": detail},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         user = serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
         return Response(
@@ -73,7 +86,7 @@ class UserLogoutViewSet(viewsets.ViewSet):
 @extend_schema(tags=["Auth"])
 class UserContextViewSet(viewsets.ViewSet):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasAPIKeyOrToken]
 
     @extend_schema(responses=UserContextSerializer)
     def list(self, request):

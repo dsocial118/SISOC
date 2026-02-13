@@ -32,18 +32,20 @@
         <div class="card-body">
             <form method="get">
                 <div class="row g-3">
-                    <div class="col-md-3">
-                        <label for="provincia" class="form-label">Provincia</label>
-                        <select name="provincia" id="provincia" class="form-select">
-                            <option value="">Todas las provincias</option>
-                            {% for provincia in provincias %}
-                                <option value="{{ provincia.id }}"
-                                        {% if provincia.id|stringformat:"s" == provincia_seleccionada %}selected{% endif %}>
-                                    {{ provincia.nombre }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                    {% if not es_usuario_provincial %}
+                        <div class="col-md-3">
+                            <label for="provincia" class="form-label">Provincia</label>
+                            <select name="provincia" id="provincia" class="form-select">
+                                <option value="">Todas las provincias</option>
+                                {% for provincia in provincias %}
+                                    <option value="{{ provincia.id }}"
+                                            {% if provincia.id|stringformat:"s" == provincia_seleccionada %}selected{% endif %}>
+                                        {{ provincia.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
 
                     <div class="col-md-3">
                         <label for="fecha_desde" class="form-label">Desde</label>
