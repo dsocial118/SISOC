@@ -1,6 +1,7 @@
 import calendar
 from datetime import date
 
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Prefetch
 from django.db.models.fields.files import FieldFile
@@ -35,32 +36,48 @@ from comedores.models import (
     Observacion,
 )
 from comedores.services.comedor_service import ComedorService
-from core.api_auth import HasAPIKeyOrToken
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import RendicionCuentaMensual
+from users.api_permissions import IsPWARepresentativeForComedor
+from users.api_serializers import (
+    OperadorCreateResponseSerializer,
+    OperadorCreateSerializer,
+    OperadorListSerializer,
+)
+from users.services_pwa import (
+    create_operador_for_comedor,
+    deactivate_operador,
+    get_accessible_comedor_ids,
+    is_pwa_user,
+    list_operadores_for_comedor,
+)
 
 
 @extend_schema(tags=["Comedores"])
 class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = ComedorDetailSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [HasAPIKeyOrToken]
-    http_method_names = ["get", "post", "head", "options"]
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "post", "patch", "head", "options"]
 
-    def get_permissions(self):
-        if self.request.method in {"GET", "HEAD", "OPTIONS"}:
-            permission_classes = [HasAPIKeyOrToken]
-        else:
-            permission_classes = [IsAuthenticated]
-        return [permission() for permission in permission_classes]
+    def _get_scoped_comedor_ids(self):
+        user = self.request.user
+        if is_pwa_user(user):
+            return get_accessible_comedor_ids(user)
+        filtered_rows = ComedorService.get_filtered_comedores(self.request, user=user)
+        return [row["id"] for row in filtered_rows]
 
     def list(self, request, *args, **kwargs):
-        user = (
-            request.user if getattr(request.user, "is_authenticated", False) else None
-        )
-        queryset = ComedorService.get_filtered_comedores(request, user=user)
+        user = request.user
+        if is_pwa_user(user):
+            scoped_ids = self._get_scoped_comedor_ids()
+            queryset = ComedorService.get_filtered_comedores(request).filter(
+                id__in=scoped_ids
+            )
+        else:
+            queryset = ComedorService.get_filtered_comedores(request, user=user)
         page = self.paginate_queryset(queryset)
         if page is not None:
             return self.get_paginated_response(page)
@@ -69,6 +86,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     # Los métodos de documentos se definen más abajo con su implementación real.
 
     def get_queryset(self):
+        scoped_ids = self._get_scoped_comedor_ids()
         return (
             Comedor.objects.select_related(
                 "provincia",
@@ -156,6 +174,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
                     to_attr="programa_changes_optimized",
                 ),
             )
+            .filter(id__in=scoped_ids)
             .order_by("-id")
         )
 
@@ -520,6 +539,108 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return self._nomina_get(request, comedor)
         return self._nomina_post(request, comedor)
 
+    def _format_validation_error(self, exc: ValidationError):
+        if hasattr(exc, "message_dict"):
+            return exc.message_dict
+        if hasattr(exc, "messages"):
+            return exc.messages
+        return str(exc)
+
+    @extend_schema(
+        request=OperadorCreateSerializer,
+        responses=OperadorListSerializer(many=True),
+        tags=["Comedores"],
+    )
+    @action(
+        detail=True,
+        methods=["get", "post"],
+        url_path="usuarios",
+        permission_classes=[IsPWARepresentativeForComedor],
+    )
+    def usuarios(self, request, pk=None):
+        comedor = self.get_object()
+        if request.method.lower() == "get":
+            queryset = list_operadores_for_comedor(comedor.id)
+            paginator = Paginator(queryset, 20)
+            page_number = request.query_params.get("page", 1)
+            page_obj = paginator.get_page(page_number)
+            return Response(
+                {
+                    "count": paginator.count,
+                    "num_pages": paginator.num_pages,
+                    "current_page": page_obj.number,
+                    "results": OperadorListSerializer(
+                        page_obj.object_list, many=True
+                    ).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        serializer = OperadorCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            acceso = create_operador_for_comedor(
+                comedor_id=comedor.id,
+                actor=request.user,
+                username=serializer.validated_data["username"],
+                email=serializer.validated_data["email"],
+                password=serializer.validated_data["password"],
+            )
+        except PermissionDenied as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValidationError as exc:
+            return Response(
+                {"detail": self._format_validation_error(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            OperadorCreateResponseSerializer(acceso).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(
+        request=None,
+        tags=["Comedores"],
+    )
+    @action(
+        detail=True,
+        methods=["patch"],
+        url_path=r"usuarios/(?P<user_id>[^/.]+)/desactivar",
+        permission_classes=[IsPWARepresentativeForComedor],
+    )
+    def desactivar_usuario(self, request, pk=None, user_id=None):
+        comedor = self.get_object()
+        try:
+            deactivate_operador(
+                comedor_id=comedor.id,
+                user_id=int(user_id),
+                actor=request.user,
+            )
+        except ValueError:
+            return Response(
+                {"detail": "user_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except PermissionDenied as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValidationError as exc:
+            return Response(
+                {"detail": self._format_validation_error(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {"detail": "Usuario desactivado."},
+            status=status.HTTP_200_OK,
+        )
+
     @extend_schema(
         responses=InformeTecnicoPrestacionSerializer,
         tags=["Comedores"],
@@ -631,6 +752,17 @@ class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Nomina.objects.select_related("ciudadano", "ciudadano__sexo", "comedor")
     http_method_names = ["patch", "head", "options"]
+
+    def get_queryset(self):
+        user = self.request.user
+        if is_pwa_user(user):
+            comedor_ids = get_accessible_comedor_ids(user)
+        else:
+            filtered_rows = ComedorService.get_filtered_comedores(
+                self.request, user=user
+            )
+            comedor_ids = [row["id"] for row in filtered_rows]
+        return self.queryset.filter(comedor_id__in=comedor_ids)
 
     @extend_schema(request=NominaUpdateSerializer)
     def partial_update(self, request, *args, **kwargs):
