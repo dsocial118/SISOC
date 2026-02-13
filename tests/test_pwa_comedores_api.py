@@ -1,10 +1,12 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from comedores.models import Comedor, Nomina
 from core.models import Provincia
+from rendicioncuentasmensual.models import RendicionCuentaMensual
 from users.models import AccesoComedorPWA
 
 
@@ -233,3 +235,90 @@ def test_nomina_scope_is_filtered_by_pwa_access(comedores):
 
     assert ok_response.status_code == 200
     assert forbidden_scope_response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_rendiciones_list_and_detail_by_scope(comedores):
+    comedor_1, comedor_2 = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_rendiciones",
+    )
+    client = _token_client(representante)
+
+    rendicion_1 = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1,
+        mes=1,
+        anio=2026,
+        observaciones="Rendición enero",
+    )
+    RendicionCuentaMensual.objects.create(
+        comedor=comedor_2,
+        mes=2,
+        anio=2026,
+        observaciones="Rendición fuera de scope",
+    )
+
+    list_response = client.get(f"/api/comedores/{comedor_1.id}/rendiciones/")
+    assert list_response.status_code == 200
+    assert list_response.data["count"] == 1
+    assert list_response.data["results"][0]["id"] == rendicion_1.id
+
+    detail_response = client.get(
+        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion_1.id}/"
+    )
+    assert detail_response.status_code == 200
+    assert detail_response.data["id"] == rendicion_1.id
+
+    forbidden_scope_response = client.get(
+        f"/api/comedores/{comedor_2.id}/rendiciones/{rendicion_1.id}/"
+    )
+    assert forbidden_scope_response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_adjuntar_rendicion",
+    )
+    client = _token_client(representante)
+
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1,
+        mes=3,
+        anio=2026,
+    )
+
+    present_without_docs_response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/presentar/",
+        {},
+        format="json",
+    )
+    assert present_without_docs_response.status_code == 400
+
+    archivo = SimpleUploadedFile(
+        "comprobante_test.pdf",
+        b"%PDF-1.4 test content",
+        content_type="application/pdf",
+    )
+    upload_response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/comprobantes/",
+        {"archivo": archivo},
+        format="multipart",
+    )
+    assert upload_response.status_code == 201
+    assert len(upload_response.data["comprobantes"]) == 1
+
+    present_response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/presentar/",
+        {},
+        format="json",
+    )
+    assert present_response.status_code == 200
+    rendicion.refresh_from_db()
+    assert rendicion.documento_adjunto is True

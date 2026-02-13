@@ -3,7 +3,7 @@ from datetime import date
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.db.models.fields.files import FieldFile
 from django.http import FileResponse, Http404
 from django.utils import timezone
@@ -14,6 +14,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -26,6 +27,8 @@ from comedores.api_serializers import (
     NominaCreateSerializer,
     NominaSerializer,
     NominaUpdateSerializer,
+    RendicionMensualDetailSerializer,
+    RendicionMensualListSerializer,
 )
 from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
 from comedores.models import (
@@ -39,7 +42,7 @@ from comedores.services.comedor_service import ComedorService
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
-from rendicioncuentasmensual.models import RendicionCuentaMensual
+from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 from users.api_permissions import IsPWARepresentativeForComedor
 from users.api_serializers import (
     OperadorCreateResponseSerializer,
@@ -638,6 +641,214 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
         return Response(
             {"detail": "Usuario desactivado."},
+            status=status.HTTP_200_OK,
+        )
+
+    def _get_rendiciones_queryset(self, comedor):
+        return (
+            RendicionCuentaMensual.objects.filter(comedor=comedor)
+            .prefetch_related("arvhios_adjuntos")
+            .order_by("-anio", "-mes", "-id")
+        )
+
+    def _apply_periodo_filters_rendiciones(self, queryset, request):
+        anio = request.query_params.get("anio")
+        mes = request.query_params.get("mes")
+
+        if anio:
+            try:
+                queryset = queryset.filter(anio=int(anio))
+            except (TypeError, ValueError):
+                raise ValidationError("Parámetro anio inválido.")
+
+        if mes:
+            try:
+                mes_int = int(mes)
+            except (TypeError, ValueError) as exc:
+                raise ValidationError("Parámetro mes inválido.") from exc
+            if mes_int < 1 or mes_int > 12:
+                raise ValidationError("Parámetro mes inválido.")
+            queryset = queryset.filter(mes=mes_int)
+
+        desde = request.query_params.get("desde")
+        hasta = request.query_params.get("hasta")
+        if not desde and not hasta:
+            return queryset
+
+        desde_date = self._parse_period_date(desde, is_end=False) if desde else None
+        hasta_date = self._parse_period_date(hasta, is_end=True) if hasta else None
+
+        if (desde and not desde_date) or (hasta and not hasta_date):
+            raise ValidationError("Formato de período inválido.")
+        if desde_date and hasta_date and desde_date > hasta_date:
+            raise ValidationError("Rango de períodos inválido.")
+
+        if desde_date:
+            queryset = queryset.filter(
+                Q(anio__gt=desde_date.year)
+                | (Q(anio=desde_date.year) & Q(mes__gte=desde_date.month))
+            )
+        if hasta_date:
+            queryset = queryset.filter(
+                Q(anio__lt=hasta_date.year)
+                | (Q(anio=hasta_date.year) & Q(mes__lte=hasta_date.month))
+            )
+        return queryset
+
+    @extend_schema(
+        responses=RendicionMensualListSerializer(many=True),
+        tags=["Rendiciones"],
+    )
+    @action(detail=True, methods=["get"], url_path="rendiciones")
+    def rendiciones(self, request, pk=None):
+        comedor = self.get_object()
+        queryset = self._get_rendiciones_queryset(comedor)
+        try:
+            queryset = self._apply_periodo_filters_rendiciones(queryset, request)
+        except ValidationError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        paginator = Paginator(queryset, 20)
+        page_number = request.query_params.get("page", 1)
+        page_obj = paginator.get_page(page_number)
+
+        serializer = RendicionMensualListSerializer(
+            page_obj.object_list,
+            many=True,
+        )
+        return Response(
+            {
+                "count": paginator.count,
+                "num_pages": paginator.num_pages,
+                "current_page": page_obj.number,
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        responses=RendicionMensualDetailSerializer,
+        tags=["Rendiciones"],
+    )
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)",
+    )
+    def rendicion_detalle(self, request, pk=None, rendicion_id=None):
+        comedor = self.get_object()
+        try:
+            rendicion_id = int(rendicion_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "rendicion_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rendicion = (
+            self._get_rendiciones_queryset(comedor).filter(id=rendicion_id).first()
+        )
+        if not rendicion:
+            raise Http404("Rendición no encontrada.")
+
+        serializer = RendicionMensualDetailSerializer(
+            rendicion,
+            context={"request": request},
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        request=None,
+        responses=RendicionMensualDetailSerializer,
+        tags=["Rendiciones"],
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/comprobantes",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def adjuntar_comprobante_rendicion(self, request, pk=None, rendicion_id=None):
+        comedor = self.get_object()
+        try:
+            rendicion_id = int(rendicion_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "rendicion_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rendicion = (
+            self._get_rendiciones_queryset(comedor).filter(id=rendicion_id).first()
+        )
+        if not rendicion:
+            raise Http404("Rendición no encontrada.")
+
+        archivo = request.FILES.get("archivo")
+        if not archivo:
+            return Response(
+                {"detail": "Debe adjuntar un archivo."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        nombre = (request.data.get("nombre") or "").strip() or archivo.name
+        DocumentacionAdjunta.objects.create(
+            nombre=nombre,
+            archivo=archivo,
+            rendicion_cuenta_mensual=rendicion,
+        )
+        if not rendicion.documento_adjunto:
+            rendicion.documento_adjunto = True
+            rendicion.save(update_fields=["documento_adjunto", "ultima_modificacion"])
+
+        serializer = RendicionMensualDetailSerializer(
+            self._get_rendiciones_queryset(comedor).get(id=rendicion.id),
+            context={"request": request},
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        request=None,
+        tags=["Rendiciones"],
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path=r"rendiciones/(?P<rendicion_id>[^/.]+)/presentar",
+    )
+    def presentar_rendicion(self, request, pk=None, rendicion_id=None):
+        comedor = self.get_object()
+        try:
+            rendicion_id = int(rendicion_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "rendicion_id inválido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rendicion = (
+            self._get_rendiciones_queryset(comedor).filter(id=rendicion_id).first()
+        )
+        if not rendicion:
+            raise Http404("Rendición no encontrada.")
+
+        if not rendicion.arvhios_adjuntos.exists():
+            return Response(
+                {
+                    "detail": "No se puede presentar una rendición sin comprobantes adjuntos."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not rendicion.documento_adjunto:
+            rendicion.documento_adjunto = True
+            rendicion.save(update_fields=["documento_adjunto", "ultima_modificacion"])
+
+        return Response(
+            {"detail": "Rendición presentada."},
             status=status.HTTP_200_OK,
         )
 
