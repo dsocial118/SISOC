@@ -68,9 +68,10 @@
                 <ul class="dropdown-menu dropdown-menu-end">
                     {% for admision_item in admision %}
                         {% with selected_admision_id|default:0 as safe_selected_id %}
+                                    {% replace_query request.get_full_path 'admision_id' admision_item.id as adm_url %}
                             <li>
-                                <a class="dropdown-item d-flex justify-content-between align-items-center {% if admision_item.id == safe_selected_id %}active{% endif %}"
-                                   href="{{ request.get_full_path }}?admision_id={{ admision_item.id }}">
+                                        <a class="dropdown-item d-flex justify-content-between align-items-center {% if admision_item.id == safe_selected_id %}active{% endif %}"
+                                           href="{{ adm_url }}">
                                     <div>
                                         <strong class="d-block">{{ admision_item.get_tipo_display }}</strong>
                                         <small class="text-muted">
@@ -430,37 +431,65 @@
                                         <th scope="row" class="text-start prestaciones-row">Desayuno</th>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_desayuno_lunes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_desayuno_martes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_desayuno_miercoles" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_desayuno_jueves" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_desayuno_viernes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_desayuno_sabado" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_desayuno_domingo" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                     </tr>
@@ -468,37 +497,65 @@
                                         <th scope="row" class="text-start prestaciones-row">Almuerzo</th>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_almuerzo_lunes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_almuerzo_martes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_almuerzo_miercoles" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_almuerzo_jueves" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_almuerzo_viernes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_almuerzo_sabado" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_almuerzo_domingo" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                     </tr>
@@ -506,37 +563,65 @@
                                         <th scope="row" class="text-start prestaciones-row">Merienda</th>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_merienda_lunes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_merienda_martes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_merienda_miercoles" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_merienda_jueves" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_merienda_viernes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_merienda_sabado" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_merienda_domingo" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                     </tr>
@@ -544,37 +629,65 @@
                                         <th scope="row" class="text-start prestaciones-row">Cena</th>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_cena_lunes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_cena_martes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_cena_miercoles" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_cena_jueves" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_cena_viernes" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_cena_sabado" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                         <td>
                                             {% with val=informe_tecnico|getattr:"aprobadas_cena_domingo" %}
-                                                {% if val == "0" %}-{% else %}{{ val|default_if_none:"-" }}{% endif %}
+                                                {% if val == "0" %}
+                                                    -
+                                                {% else %}
+                                                    {{ val|default_if_none:"-" }}
+                                                {% endif %}
                                             {% endwith %}
                                         </td>
                                     </tr>
