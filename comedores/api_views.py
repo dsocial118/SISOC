@@ -35,6 +35,7 @@ from comedores.models import (
     Observacion,
 )
 from comedores.services.comedor_service import ComedorService
+from core.api_auth import HasAPIKeyOrToken
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
@@ -45,14 +46,25 @@ from rendicioncuentasmensual.models import RendicionCuentaMensual
 class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = ComedorDetailSerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [HasAPIKeyOrToken]
     http_method_names = ["get", "post", "head", "options"]
 
+    def get_permissions(self):
+        if self.request.method in {"GET", "HEAD", "OPTIONS"}:
+            permission_classes = [HasAPIKeyOrToken]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
+
     def list(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Listado no disponible en este endpoint."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        user = (
+            request.user if getattr(request.user, "is_authenticated", False) else None
         )
+        queryset = ComedorService.get_filtered_comedores(request, user=user)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            return self.get_paginated_response(page)
+        return Response(list(queryset), status=status.HTTP_200_OK)
 
     # Los métodos de documentos se definen más abajo con su implementación real.
 
