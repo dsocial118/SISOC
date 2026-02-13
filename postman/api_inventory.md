@@ -14,6 +14,27 @@
 | `api/relevamiento` | PATCH | Relevamientos | [relevamientos/views/api_views.py](file:///home/juanikitro/BACKOFFICE/relevamientos/views/api_views.py) | Yes (HasAPIKeyOrToken) |
 | `api/schema/` | GET | OpenAPI | [config/urls.py](file:///home/juanikitro/BACKOFFICE/config/urls.py) | AllowAny |
 
+## PWA APIs (Token)
+
+| Endpoint | Method | Module | Source File | Auth Required |
+|----------|--------|--------|-------------|---------------|
+| `api/users/login/` | POST | Users/Auth | `users/api_views.py` | No (credenciales) |
+| `api/users/me/` | GET | Users/Auth | `users/api_views.py` | Yes (`Token`) |
+| `api/users/logout/` | POST | Users/Auth | `users/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/` | GET | Comedores | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/documentos/` | GET | Comedores | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/documentos/{documento_id}/download/` | GET | Comedores | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/nomina/` | GET, POST | Comedores/Nómina | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/nomina/{id}/` | PATCH | Comedores/Nómina | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/prestacion-alimentaria/` | GET | Comedores | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/prestacion-alimentaria/historial/` | GET | Comedores | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/rendiciones/` | GET | Comedores/Rendiciones | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/rendiciones/{rendicion_id}/` | GET | Comedores/Rendiciones | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/rendiciones/{rendicion_id}/comprobantes/` | POST | Comedores/Rendiciones | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/rendiciones/{rendicion_id}/presentar/` | POST | Comedores/Rendiciones | `comedores/api_views.py` | Yes (`Token`) |
+| `api/comedores/{id}/usuarios/` | GET, POST | Comedores/Usuarios PWA | `comedores/api_views.py` | Yes (`Token` + representante) |
+| `api/comedores/{id}/usuarios/{user_id}/desactivar/` | PATCH | Comedores/Usuarios PWA | `comedores/api_views.py` | Yes (`Token` + representante) |
+
 ## External APIs (Integrations)
 
 | Service | Endpoint Description | Env Method | Source File |
