@@ -46,8 +46,6 @@
                                     <td>{{ p.fecha_creacion|date:'d/m/Y H:i' }}</td>
                                     <td>{{ p.fecha_modificacion|date:'d/m/Y H:i' }}</td>
                                     <td>
-                                        <a href="{% url 'prestacion_detalle' p.pk %}"
-                                           class="btn btn-sm btn-info">Ver</a>
                                         <a href="{% url 'prestacion_editar' p.pk %}"
                                            class="btn btn-sm btn-warning">Editar</a>
                                         <a href="{% url 'prestacion_eliminar' p.pk %}"

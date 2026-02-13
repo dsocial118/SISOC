@@ -11,6 +11,7 @@ class Command(BaseCommand):
             "Comedores",
             "Exportar a csv",
             "Organizaciones",
+            "Gestor prestaciones",
             "CDI",
             "Ciudadanos",
             "Tecnico Comedor",
