@@ -68,10 +68,10 @@
                 <ul class="dropdown-menu dropdown-menu-end">
                     {% for admision_item in admision %}
                         {% with selected_admision_id|default:0 as safe_selected_id %}
-                                    {% replace_query request.get_full_path 'admision_id' admision_item.id as adm_url %}
+                            {% replace_query request.get_full_path 'admision_id' admision_item.id as adm_url %}
                             <li>
-                                        <a class="dropdown-item d-flex justify-content-between align-items-center {% if admision_item.id == safe_selected_id %}active{% endif %}"
-                                           href="{{ adm_url }}">
+                                <a class="dropdown-item d-flex justify-content-between align-items-center {% if admision_item.id == safe_selected_id %}active{% endif %}"
+                                   href="{{ adm_url }}">
                                     <div>
                                         <strong class="d-block">{{ admision_item.get_tipo_display }}</strong>
                                         <small class="text-muted">
