@@ -360,7 +360,7 @@ class NoSaveSerializer(serializers.Serializer):
     """Serializer base para casos sin create/update."""
 
     def _raise_read_only(self):
-        raise NotImplementedError("Serializer de solo lectura.")
+        raise serializers.ValidationError("Serializer de solo lectura.")
 
     def create(self, validated_data):
         return self._raise_read_only()
