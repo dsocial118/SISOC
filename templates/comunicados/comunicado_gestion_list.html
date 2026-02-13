@@ -61,9 +61,9 @@
                         <thead>
                             <tr>
                                 <th style="width: 5%">ID</th>
+                                <th style="width: 8%">Destacado</th>
                                 <th>Título</th>
                                 <th style="width: 10%">Estado</th>
-                                <th style="width: 8%">Destacado</th>
                                 <th style="width: 12%">Creación</th>
                                 <th style="width: 12%">Publicación</th>
                                 <th style="width: 15%">Creador</th>
@@ -74,6 +74,13 @@
                             {% for comunicado in comunicados %}
                                 <tr>
                                     <td>{{ comunicado.pk }}</td>
+                                    <td class="text-center">
+                                        {% if comunicado.destacado %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-muted"></i>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <a href="{% url 'comunicados_ver' comunicado.pk %}">
                                             {{ comunicado.titulo|truncatewords:8 }}
@@ -86,13 +93,6 @@
                                             <span class="badge bg-success">Publicado</span>
                                         {% elif comunicado.estado == 'archivado' %}
                                             <span class="badge bg-dark">Archivado</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center">
-                                        {% if comunicado.destacado %}
-                                            <i class="fas fa-star text-warning"></i>
-                                        {% else %}
-                                            <i class="far fa-star text-muted"></i>
                                         {% endif %}
                                     </td>
                                     <td>{{ comunicado.fecha_creacion|date:"d/m/Y" }}</td>

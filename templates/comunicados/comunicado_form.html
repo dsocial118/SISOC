@@ -74,49 +74,59 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    {{ adjuntos_formset.management_form }}
-
-                    <div id="adjuntos-container">
-                        {% for adjunto_form in adjuntos_formset %}
-                            <div class="adjunto-row mb-3 p-3 border rounded {% if adjunto_form.instance.pk %}bg-light{% endif %}">
-                                {% if adjunto_form.instance.pk %}
-                                    <div class="mb-2">
-                                        <strong>Archivo actual:</strong>
-                                        <a href="{{ adjunto_form.instance.archivo.url }}" target="_blank">
-                                            {{ adjunto_form.instance.nombre_original }}
-                                        </a>
-                                    </div>
-                                {% endif %}
-
-                                <div class="row align-items-center">
-                                    <div class="col-md-8">
-                                        {{ adjunto_form.archivo }}
-                                        {% for hidden in adjunto_form.hidden_fields %}
-                                            {{ hidden }}
-                                        {% endfor %}
-                                    </div>
-                                    <div class="col-md-4 text-end">
-                                        {% if adjunto_form.instance.pk %}
-                                            <div class="form-check d-inline-block">
-                                                {{ adjunto_form.DELETE }}
-                                                <label class="form-check-label text-danger" for="{{ adjunto_form.DELETE.id_for_label }}">
-                                                    Eliminar
-                                                </label>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                {% for error in adjunto_form.non_field_errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
+                    <!-- Campo para subir múltiples archivos -->
+                    <div class="mb-3">
+                        <label class="form-label">Subir archivos</label>
+                        <input type="file" name="archivos_adjuntos" id="archivosInput" class="d-none" multiple>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" id="addFilesBtn" class="btn btn-outline-primary">
+                                <i class="fas fa-plus"></i> Agregar archivos
+                            </button>
+                            <div id="selectedFilesInfo" class="d-none">
+                                <span class="badge bg-info"><span id="fileCount">0</span> archivo(s) seleccionado(s)</span>
                             </div>
-                        {% endfor %}
+                        </div>
+                        <small class="form-text text-muted d-block mt-2">
+                            Puedes agregar múltiples archivos haciendo clic varias veces en el botón.
+                        </small>
                     </div>
 
-                    <small class="form-text text-muted">
-                        Puedes adjuntar documentos, imágenes u otros archivos relevantes.
-                    </small>
+                    <!-- Contenedor para vista previa de archivos -->
+                    <div id="filePreviewContainer" class="mt-3"></div>
+
+                    <!-- Management form del formset (siempre necesario) -->
+                    {% if adjuntos_formset %}
+                        {{ adjuntos_formset.management_form }}
+                    {% endif %}
+
+                    <!-- Archivos existentes (solo en edición) -->
+                    {% if is_edit and adjuntos_formset.forms %}
+                        <hr>
+                        <h6 class="mb-3">Archivos actuales</h6>
+                        <div id="adjuntos-container">
+                            {% for adjunto_form in adjuntos_formset %}
+                                {% if adjunto_form.instance.pk %}
+                                    <div class="adjunto-row mb-2 p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-file me-2"></i>
+                                            <a href="{{ adjunto_form.instance.archivo.url }}" target="_blank">
+                                                {{ adjunto_form.instance.nombre_original }}
+                                            </a>
+                                            {% for hidden in adjunto_form.hidden_fields %}
+                                                {{ hidden }}
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-check">
+                                            {{ adjunto_form.DELETE }}
+                                            <label class="form-check-label text-danger" for="{{ adjunto_form.DELETE.id_for_label }}">
+                                                Eliminar
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -164,4 +174,174 @@
             </div>
         </form>
     </div>
+
+    <script>
+    (function() {
+        console.log("=== COMUNICADOS FORM JS INICIADO ===");
+
+        // Array para almacenar todos los archivos seleccionados
+        let selectedFiles = [];
+
+        const addFilesBtn = document.getElementById("addFilesBtn");
+        const archivosInput = document.getElementById("archivosInput");
+        const selectedFilesInfo = document.getElementById("selectedFilesInfo");
+        const fileCount = document.getElementById("fileCount");
+        const filePreviewContainer = document.getElementById("filePreviewContainer");
+
+        console.log("addFilesBtn:", addFilesBtn);
+        console.log("archivosInput:", archivosInput);
+
+        if (addFilesBtn && archivosInput) {
+            console.log("Elementos encontrados, agregando listeners...");
+
+            // Event listener para el botón de agregar archivos
+            addFilesBtn.addEventListener("click", function () {
+                console.log("Click en addFilesBtn");
+                archivosInput.click();
+            });
+
+            // Event listener para cuando se seleccionan archivos
+            archivosInput.addEventListener("change", function () {
+                console.log("Change en archivosInput, files:", this.files.length);
+                const files = Array.from(this.files);
+
+                // Concatenar archivos en lugar de reemplazar
+                selectedFiles = selectedFiles.concat(files);
+                console.log("Total selectedFiles:", selectedFiles.length);
+
+                // Actualizar la vista
+                updateFileDisplay();
+            });
+
+            function updateFileDisplay() {
+                // Mostrar contador
+                if (selectedFiles.length > 0) {
+                    if (selectedFilesInfo) selectedFilesInfo.classList.remove("d-none");
+                    if (fileCount) fileCount.textContent = selectedFiles.length;
+                } else {
+                    if (selectedFilesInfo) selectedFilesInfo.classList.add("d-none");
+                }
+
+                // Limpiar contenedor de vistas previas
+                if (filePreviewContainer) {
+                    filePreviewContainer.innerHTML = "";
+
+                    // Mostrar cada archivo
+                    selectedFiles.forEach(function(file, index) {
+                        const previewDiv = document.createElement("div");
+                        previewDiv.className = "archivo-preview-item d-flex align-items-center justify-content-between p-2 mb-2 border rounded bg-light";
+                        previewDiv.setAttribute("data-index", index);
+
+                        // Icono según tipo de archivo
+                        let iconClass = "fas fa-file";
+                        if (file.type.startsWith("image/")) {
+                            iconClass = "fas fa-file-image text-primary";
+                        } else if (file.type.includes("pdf")) {
+                            iconClass = "fas fa-file-pdf text-danger";
+                        } else if (file.type.includes("word") || file.name.endsWith(".doc") || file.name.endsWith(".docx")) {
+                            iconClass = "fas fa-file-word text-primary";
+                        } else if (file.type.includes("excel") || file.name.endsWith(".xls") || file.name.endsWith(".xlsx")) {
+                            iconClass = "fas fa-file-excel text-success";
+                        }
+
+                        const sizeStr = formatFileSize(file.size);
+
+                        previewDiv.innerHTML =
+                            '<div class="d-flex align-items-center">' +
+                                '<i class="' + iconClass + ' me-2"></i>' +
+                                '<div>' +
+                                    '<div class="fw-bold small">' + file.name + '</div>' +
+                                    '<div class="text-muted small">' + sizeStr + '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-file" data-index="' + index + '" title="Eliminar">' +
+                                '<i class="fas fa-times"></i>' +
+                            '</button>';
+
+                        filePreviewContainer.appendChild(previewDiv);
+                    });
+
+                    // Agregar listeners a botones de eliminar
+                    filePreviewContainer.querySelectorAll(".btn-remove-file").forEach(function(btn) {
+                        btn.addEventListener("click", function() {
+                            const idx = parseInt(this.getAttribute("data-index"));
+                            selectedFiles.splice(idx, 1);
+                            updateFileDisplay();
+                        });
+                    });
+                }
+            }
+
+            function formatFileSize(bytes) {
+                if (bytes === 0) return "0 Bytes";
+                const k = 1024;
+                const sizes = ["Bytes", "KB", "MB", "GB"];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+            }
+
+            // Interceptar submit del formulario
+            const comunicadoForm = document.querySelector('form[enctype="multipart/form-data"]');
+            console.log("comunicadoForm:", comunicadoForm);
+
+            if (comunicadoForm) {
+                comunicadoForm.addEventListener("submit", function (e) {
+                    console.log("=== SUBMIT COMUNICADO ===");
+                    console.log("selectedFiles.length:", selectedFiles.length);
+
+                    // Si hay archivos seleccionados, usar FormData
+                    if (selectedFiles.length > 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("Enviando con FormData manual...");
+
+                        const formData = new FormData(comunicadoForm);
+
+                        // Remover el campo archivos vacío/existente
+                        formData.delete("archivos_adjuntos");
+
+                        // Agregar los archivos manualmente
+                        selectedFiles.forEach(function(file, index) {
+                            console.log("Agregando archivo " + (index + 1) + ":", file.name);
+                            formData.append("archivos_adjuntos", file);
+                        });
+
+                        // Enviar con fetch
+                        fetch(comunicadoForm.action || window.location.href, {
+                            method: "POST",
+                            body: formData
+                        })
+                        .then(function(response) {
+                            console.log("Response status:", response.status);
+                            console.log("Response redirected:", response.redirected);
+                            console.log("Response url:", response.url);
+
+                            if (response.redirected) {
+                                window.location.href = response.url;
+                            } else if (response.ok) {
+                                // Verificar si es un redirect manual o éxito
+                                if (response.url && response.url.includes("/gestion")) {
+                                    window.location.href = response.url;
+                                } else {
+                                    // Puede haber errores de validación, recargar la página
+                                    window.location.reload();
+                                }
+                            } else {
+                                alert("Error al guardar el comunicado (Status: " + response.status + ")");
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error("Error:", error);
+                            alert("Error al enviar el formulario: " + error.message);
+                        });
+
+                        return false;
+                    }
+                }, true);
+            }
+        } else {
+            console.error("ERROR: No se encontraron los elementos addFilesBtn o archivosInput");
+        }
+    })();
+    </script>
 {% endblock %}
