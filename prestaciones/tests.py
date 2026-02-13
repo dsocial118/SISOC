@@ -45,7 +45,7 @@ def mute_historial(monkeypatch):
 
 @pytest.fixture
 def prestacion_group(db):
-    group, _ = Group.objects.get_or_create(name="Prestacion")
+    group, _ = Group.objects.get_or_create(name="Gestor prestaciones")
     return group
 
 

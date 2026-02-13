@@ -21,6 +21,9 @@ class PrestacionListView(LoginRequiredMixin, ListView):
     context_object_name = "prestaciones"
     paginate_by = 10
 
+    def get_queryset(self):
+        return super().get_queryset().select_related("usuario_creador")
+
 
 class PrestacionCreateView(LoginRequiredMixin, CreateView):
     model = Prestacion
