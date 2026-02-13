@@ -57,7 +57,9 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         return [permission() for permission in permission_classes]
 
     def list(self, request, *args, **kwargs):
-        user = request.user if getattr(request.user, "is_authenticated", False) else None
+        user = (
+            request.user if getattr(request.user, "is_authenticated", False) else None
+        )
         queryset = ComedorService.get_filtered_comedores(request, user=user)
         page = self.paginate_queryset(queryset)
         if page is not None:
