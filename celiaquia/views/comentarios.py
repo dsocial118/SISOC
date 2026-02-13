@@ -12,7 +12,11 @@ logger = logging.getLogger("django")
 
 
 def _in_group(user, group_name):
-    return bool(user) and user.is_authenticated and user.groups.filter(name=group_name).exists()
+    return (
+        bool(user)
+        and user.is_authenticated
+        and user.groups.filter(name=group_name).exists()
+    )
 
 
 def _safe_profile(user):
@@ -63,7 +67,9 @@ class LegajoComentarioCreateView(View):
 
         # Validar que el técnico esté asignado
         if is_tec and not (is_admin or is_coord):
-            if not legajo.expediente.asignaciones_tecnicos.filter(tecnico=user).exists():
+            if not legajo.expediente.asignaciones_tecnicos.filter(
+                tecnico=user
+            ).exists():
                 return JsonResponse(
                     {
                         "success": False,
@@ -118,7 +124,11 @@ class LegajoComentarioCreateView(View):
                     "usuario": user.get_full_name() or user.username,
                     "fecha": comentario.fecha_creacion.strftime("%d/%m/%Y %H:%M"),
                     "tiene_archivo": bool(comentario.archivo_adjunto),
-                    "archivo_url": comentario.archivo_adjunto.url if comentario.archivo_adjunto else None,
+                    "archivo_url": (
+                        comentario.archivo_adjunto.url
+                        if comentario.archivo_adjunto
+                        else None
+                    ),
                     "es_provincia": _in_group(user, "ProvinciaCeliaquia"),
                 },
             }
@@ -157,7 +167,9 @@ class LegajoComentarioListView(View):
 
         # Técnico: debe estar asignado
         if is_tec and not (is_admin or is_coord):
-            if not legajo.expediente.asignaciones_tecnicos.filter(tecnico=user).exists():
+            if not legajo.expediente.asignaciones_tecnicos.filter(
+                tecnico=user
+            ).exists():
                 return JsonResponse(
                     {
                         "success": False,
@@ -175,7 +187,8 @@ class LegajoComentarioListView(View):
                 not owner
                 or not up
                 or not op
-                or getattr(up, "provincia_id", None) != getattr(op, "provincia_id", None)
+                or getattr(up, "provincia_id", None)
+                != getattr(op, "provincia_id", None)
             ):
                 return JsonResponse(
                     {
@@ -185,13 +198,16 @@ class LegajoComentarioListView(View):
                     status=403,
                 )
 
-        comentarios = legajo.historial_comentarios.filter(
-            tipo_comentario__in=[
-                HistorialComentarios.TIPO_OBSERVACION_GENERAL,
-                HistorialComentarios.TIPO_VALIDACION_TECNICA,
-            ]
-        ).select_related("usuario").prefetch_related("usuario__groups").order_by(
-            "-fecha_creacion"
+        comentarios = (
+            legajo.historial_comentarios.filter(
+                tipo_comentario__in=[
+                    HistorialComentarios.TIPO_OBSERVACION_GENERAL,
+                    HistorialComentarios.TIPO_VALIDACION_TECNICA,
+                ]
+            )
+            .select_related("usuario")
+            .prefetch_related("usuario__groups")
+            .order_by("-fecha_creacion")
         )
 
         data = [

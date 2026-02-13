@@ -494,7 +494,7 @@
                                                 <!-- Col 3: Archivos y Comentarios -->
                                                 <div class="col-lg-5">
                                                     {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
-                                                    
+ 
                                                     <!-- Comentarios Técnicos -->
                                                     {% include 'components/legajo_comentarios.html' with legajo=leg is_tec=is_tec is_coord=is_coord %}
                                                     <!-- Botón confirmar subsanación individual (solo para subsanación técnica, no Renaper) -->
@@ -1667,7 +1667,9 @@
      aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="form-agregar-comentario" method="post" enctype="multipart/form-data">
+            <form id="form-agregar-comentario"
+                  method="post"
+                  enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalAgregarComentarioLabel">

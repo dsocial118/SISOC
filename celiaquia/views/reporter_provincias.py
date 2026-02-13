@@ -30,11 +30,11 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
 
         # Obtener parámetros de filtro
         provincia_id = self.request.GET.get("provincia")
-        
+
         # Si es usuario provincial, forzar su provincia
         if es_usuario_provincial and provincia_usuario:
             provincia_id = str(provincia_usuario.id)
-        
+
         fecha_desde = self.request.GET.get("fecha_desde")
         fecha_hasta = self.request.GET.get("fecha_hasta")
         expediente_numero = self.request.GET.get("expediente_numero")
