@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import IntegrityError
 
 from comedores.models import Comedor
 from core.models import Provincia
@@ -115,6 +116,35 @@ def test_create_operador_for_comedor_rejects_duplicate_email(comedores):
             actor=representante,
             username="op_dup",
             email="duplicado@example.com",
+            password="Secreta123!",
+        )
+
+
+@pytest.mark.django_db
+def test_create_operador_for_comedor_handles_integrity_error(comedores, monkeypatch):
+    comedor_1, _ = comedores
+    representante = _create_user("rep_race")
+    AccesoComedorPWA.objects.create(
+        user=representante,
+        comedor=comedor_1,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
+    )
+
+    def _raise_integrity_error(*args, **kwargs):
+        raise IntegrityError("duplicate key")
+
+    monkeypatch.setattr(
+        "users.services_pwa.User.objects.create_user",
+        _raise_integrity_error,
+    )
+
+    with pytest.raises(ValidationError):
+        create_operador_for_comedor(
+            comedor_id=comedor_1.id,
+            actor=representante,
+            username="op_race",
+            email="op_race@example.com",
             password="Secreta123!",
         )
 

@@ -6,7 +6,7 @@ from typing import Iterable
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from users.models import AccesoComedorPWA
@@ -128,13 +128,18 @@ def create_operador_for_comedor(
     if User.objects.filter(email__iexact=email).exists():
         raise ValidationError({"email": "Ya existe un usuario con ese email."})
 
-    operador = User.objects.create_user(
-        username=username,
-        email=email,
-        password=password,
-        is_staff=False,
-        is_active=True,
-    )
+    try:
+        operador = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            is_staff=False,
+            is_active=True,
+        )
+    except IntegrityError as exc:
+        raise ValidationError(
+            {"username": "Ya existe un usuario con ese username."}
+        ) from exc
     operador.groups.clear()
 
     acceso = AccesoComedorPWA.objects.create(
