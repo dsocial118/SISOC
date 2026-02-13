@@ -212,3 +212,37 @@ def dias_prestacion_semana(prestacion):
                 break
 
     return dias_con_servicio if dias_con_servicio > 0 else "-"
+
+
+@register.simple_tag
+def replace_query(url, key, value):
+    """Return the URL with the query param `key` set to `value`.
+
+    - If the key exists, it is replaced.
+    - If the key is missing, it is added.
+    - Preserves other query params and fragments.
+    Usage:
+        {% replace_query request.get_full_path 'admision_id' admision_item.id as adm_url %}
+        <a href="{{ adm_url }}">...</a>
+    """
+    try:
+        from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+
+        parsed = urlparse(str(url))
+        query_items = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        query_items[str(key)] = str(value)
+        new_query = urlencode(query_items, doseq=True)
+        return urlunparse(
+            (
+                parsed.scheme,
+                parsed.netloc,
+                parsed.path,
+                parsed.params,
+                new_query,
+                parsed.fragment,
+            )
+        )
+    except Exception:
+        # Fallback: naive concatenation ensuring single '?'
+        base, _, _ = str(url).partition("?")
+        return f"{base}?{key}={value}"
