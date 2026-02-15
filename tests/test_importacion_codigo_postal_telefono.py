@@ -35,5 +35,5 @@ def test_import_with_postal_code_and_phone():
     ImportacionService.importar_legajos_desde_excel(expediente, bio, user)
 
     ciudadano = Ciudadano.objects.get(documento=1234567890)
-    assert ciudadano.telefono == 3815237945
-    assert ciudadano.codigo_postal == 1406
+    assert ciudadano.telefono == "3815237945"
+    assert ciudadano.codigo_postal == "1406"
