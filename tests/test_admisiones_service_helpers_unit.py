@@ -140,3 +140,86 @@ def test_get_admisiones_tecnicos_queryset_superuser_and_query_modes(mocker):
     assert module.AdmisionService.get_admisiones_tecnicos_queryset(user, req_map) == "ordered"
 
     assert module.AdmisionService.get_admisiones_tecnicos_queryset(user, "texto") == "ordered"
+
+
+def test_post_update_router_and_update_convenio(mocker):
+    """POST update router should dispatch each action and update convenio branch."""
+    adm = SimpleNamespace(pk=1, estado_admision="convenio_seleccionado", save=mocker.Mock(), refresh_from_db=mocker.Mock())
+    req = SimpleNamespace(POST={"mandarLegales": "1"}, user=SimpleNamespace())
+
+    mocker.patch.object(module.AdmisionService, "marcar_como_enviado_a_legales", return_value=True)
+    upd = mocker.patch.object(module.AdmisionService, "actualizar_estado_admision")
+    ok, _msg = module.AdmisionService.procesar_post_update(req, adm)
+    assert ok is True
+    assert upd.called
+
+    req_if = SimpleNamespace(POST={"btnIFInformeTecnico": "1"}, user=SimpleNamespace())
+    mocker.patch.object(module.AdmisionService, "guardar_if_informe_tecnico", return_value=(True, "ok"))
+    ok_if, _ = module.AdmisionService.procesar_post_update(req_if, adm)
+    assert ok_if is True
+
+    # update_convenio
+    conv = SimpleNamespace(pk=8)
+    mocker.patch("admisiones.services.admisiones_service.TipoConvenio.objects.get", return_value=conv)
+    mocker.patch("admisiones.services.admisiones_service.ArchivoAdmision.objects.filter", return_value=SimpleNamespace(delete=mocker.Mock()))
+    assert module.AdmisionService.update_convenio(adm, 8) is True
+
+
+def test_handle_upload_personalizado_and_delete_file(mocker):
+    """Upload and delete helpers should manage file records and transitions."""
+    admision = SimpleNamespace(pk=1, estado_admision="convenio_seleccionado", save=mocker.Mock())
+    doc = SimpleNamespace(pk=2, convenios=SimpleNamespace(exists=lambda: False), delete=mocker.Mock())
+    archivo_obj = SimpleNamespace(documentacion=doc, archivo="f.txt", delete=mocker.Mock(), admision=admision, pk=4)
+
+    mocker.patch("admisiones.services.admisiones_service.get_object_or_404", side_effect=[admision, doc])
+    upsert = mocker.patch(
+        "admisiones.services.admisiones_service.ArchivoAdmision.objects.update_or_create",
+        return_value=(SimpleNamespace(creado_por=None, save=mocker.Mock(), admision=admision), True),
+    )
+    mocker.patch.object(module.AdmisionService, "actualizar_estado_admision")
+    got, created = module.AdmisionService.handle_file_upload(1, 2, archivo="x", usuario=SimpleNamespace(is_authenticated=True))
+    assert created is True
+    assert got is not None
+    assert upsert.called
+
+    # crear documento personalizado
+    mocker.patch("admisiones.services.admisiones_service.get_object_or_404", return_value=SimpleNamespace(comedor="c"))
+    mocker.patch.object(module.AdmisionService, "_verificar_permiso_dupla", return_value=True)
+    mocker.patch("admisiones.services.admisiones_service.transaction.atomic", return_value=__import__("contextlib").nullcontext())
+    create = mocker.patch("admisiones.services.admisiones_service.ArchivoAdmision.objects.create", return_value=SimpleNamespace(pk=9))
+    docx, err = module.AdmisionService.crear_documento_personalizado(1, "Nombre", archivo="bin", usuario=SimpleNamespace(is_superuser=False, is_authenticated=True))
+    assert err is None and docx.pk == 9
+    assert create.called
+
+    # delete file helper
+    mocker.patch("admisiones.services.admisiones_service.os.path.exists", return_value=False)
+    mocker.patch("admisiones.services.admisiones_service.ArchivoAdmision.objects.filter", return_value=SimpleNamespace(exists=lambda: False))
+    module.AdmisionService.delete_admision_file(archivo_obj)
+    assert archivo_obj.delete.called
+
+
+def test_actualizar_estado_ajax_and_update_estado_archivo(mocker):
+    """AJAX state update should validate payload, permissions and observation rules."""
+    req_bad = SimpleNamespace(POST={}, user=SimpleNamespace(is_superuser=True))
+    out_bad = module.AdmisionService.actualizar_estado_ajax(req_bad)
+    assert out_bad["success"] is False
+
+    adm = SimpleNamespace(comedor=SimpleNamespace())
+    archivo = SimpleNamespace(observaciones="", admision=adm, save=mocker.Mock())
+
+    req = SimpleNamespace(
+        POST={"estado": "Rectificar", "documento_id": "2", "admision_id": "1", "observacion": "obs"},
+        user=SimpleNamespace(is_superuser=False),
+    )
+    mocker.patch("admisiones.services.admisiones_service.get_object_or_404", side_effect=[adm, archivo])
+    mocker.patch.object(module.AdmisionService, "_verificar_permiso_dupla", return_value=True)
+    mocker.patch.object(module.AdmisionService, "get_dupla_grupo_por_usuario", return_value="Abogado Dupla")
+    upd_mock = mocker.patch.object(module.AdmisionService, "update_estado_archivo", return_value=True)
+    out = module.AdmisionService.actualizar_estado_ajax(req)
+    assert out["success"] is True
+    assert upd_mock.called
+
+
+def test_update_estado_archivo_none_returns_false():
+    """update_estado_archivo should fail fast for empty file object."""
+    assert module.AdmisionService.update_estado_archivo(None, "x") is False
