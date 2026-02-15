@@ -15,7 +15,7 @@ class CentroDesarrolloInfantilService:
         Filtra los centros de desarrollo infantil según la consulta.
         """
         try:
-            CentroDesarrolloInfantil.objects.values(
+            queryset = CentroDesarrolloInfantil.objects.values(
                 "id", "nombre", "provincia", "municipio", "localidad", "direccion"
             )
 
