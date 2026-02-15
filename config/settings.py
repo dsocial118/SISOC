@@ -381,8 +381,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Herramientas debug/perf en desarrollo
-if DEBUG:
+# Herramientas debug/perf en desarrollo (desactivadas en tests para estabilidad y velocidad)
+if DEBUG and not RUNNING_TESTS:
     INSTALLED_APPS += ["debug_toolbar", "silk"]
     MIDDLEWARE.insert(
         3, "debug_toolbar.middleware.DebugToolbarMiddleware"

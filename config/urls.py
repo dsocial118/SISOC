@@ -49,7 +49,7 @@ urlpatterns = [
     path("", include("importarexpediente.urls")),
 ]
 
-if settings.DEBUG:
+if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):
     urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
     urlpatterns += staticfiles_urlpatterns()
