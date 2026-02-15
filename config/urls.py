@@ -10,8 +10,10 @@ from drf_spectacular.views import (
 )
 from celiaquia.views.reporter_provincias import ReporterProvinciasView
 from core.decorators import group_required
+from users.views import UsuariosLoginView
 
 urlpatterns = [
+    path("login/", UsuariosLoginView.as_view(), name="login"),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
     path("", include("django.contrib.auth.urls")),
