@@ -1,3 +1,5 @@
+"""Tests for test urls no 500."""
+
 import re
 
 import pytest

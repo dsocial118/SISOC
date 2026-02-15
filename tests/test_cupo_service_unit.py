@@ -1,3 +1,5 @@
+"""Tests for test cupo service unit."""
+
 from types import SimpleNamespace
 
 import pytest

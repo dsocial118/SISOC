@@ -1,3 +1,5 @@
+"""Tests for test image service unit."""
+
 from pathlib import Path
 
 from PIL import Image

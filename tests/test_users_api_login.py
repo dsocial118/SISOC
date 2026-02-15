@@ -1,3 +1,5 @@
+"""Tests for test users api login."""
+
 import pytest
 from django.contrib.auth import SESSION_KEY, get_user_model
 from rest_framework.authtoken.models import Token

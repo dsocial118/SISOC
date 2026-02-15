@@ -1,3 +1,5 @@
+"""Tests for test celiaquia expediente view helpers unit."""
+
 from types import SimpleNamespace
 
 from django.http import JsonResponse

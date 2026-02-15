@@ -1,3 +1,5 @@
+"""Tests for test legajo views unit."""
+
 from contextlib import nullcontext
 from types import SimpleNamespace
 

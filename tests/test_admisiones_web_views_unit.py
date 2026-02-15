@@ -1,3 +1,5 @@
+"""Tests for test admisiones web views unit."""
+
 from types import SimpleNamespace
 
 from admisiones.views import web_views as module

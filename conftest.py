@@ -1,3 +1,5 @@
+"""Tests for conftest."""
+
 import pytest
 
 

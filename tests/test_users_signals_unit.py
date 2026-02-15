@@ -1,3 +1,5 @@
+"""Tests for test users signals unit."""
+
 import sys
 from types import ModuleType, SimpleNamespace
 

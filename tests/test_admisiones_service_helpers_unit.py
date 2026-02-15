@@ -1,3 +1,5 @@
+"""Tests for test admisiones service helpers unit."""
+
 from datetime import datetime
 from types import SimpleNamespace
 

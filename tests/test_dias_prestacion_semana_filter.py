@@ -1,3 +1,5 @@
+"""Tests for test dias prestacion semana filter."""
+
 from types import SimpleNamespace
 
 from core.templatetags.custom_filters import dias_prestacion_semana

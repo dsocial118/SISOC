@@ -1,3 +1,5 @@
+"""Tests for test users pwa forms."""
+
 import pytest
 from django.contrib.auth.models import Group
 

@@ -1,3 +1,5 @@
+"""Tests for test familia service unit."""
+
 from contextlib import nullcontext
 from types import SimpleNamespace
 

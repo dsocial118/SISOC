@@ -1,3 +1,5 @@
+"""Tests for test image tags unit."""
+
 from types import SimpleNamespace
 
 from core.templatetags.image_tags import (
