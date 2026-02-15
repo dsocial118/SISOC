@@ -1,11 +1,51 @@
 """Tests for test legales service unit."""
 
+from contextlib import nullcontext
+from io import BytesIO
 from datetime import datetime
 from types import SimpleNamespace
 
 from django.utils import timezone
 
 from admisiones.services import legales_service as module
+
+
+class _Chain:
+    def __init__(self, data):
+        self._data = data
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __getitem__(self, item):
+        return self._data[item]
+
+    def first(self):
+        return self._data[0] if self._data else None
+
+    def order_by(self, *_args, **_kwargs):
+        return self
+
+    def filter(self, **kwargs):
+        data = self._data
+        if "tipo" in kwargs:
+            target = kwargs["tipo"]
+            data = [item for item in data if getattr(item, "tipo", None) == target]
+        return _Chain(data)
+
+
+def _build_formulario_fake(mocker):
+    return SimpleNamespace(
+        admision=None,
+        tipo=None,
+        creado_por=None,
+        archivo=SimpleNamespace(delete=mocker.Mock(), save=mocker.Mock()),
+        archivo_docx=SimpleNamespace(delete=mocker.Mock(), save=mocker.Mock()),
+        save=mocker.Mock(),
+    )
 
 
 def test_normalizar_and_format_datetime():
@@ -317,3 +357,201 @@ def test_table_data_filtering_and_post_router(mocker):
     req = SimpleNamespace(POST={"btnConvenio": "1"})
     mocker.patch.object(module.LegalesService, "guardar_convenio", return_value="ok")
     assert module.LegalesService.procesar_post_legales(req, SimpleNamespace(pk=1)) == "ok"
+
+
+def test_procesar_post_legales_cubre_botones_restantes(mocker):
+    """Enruta correctamente cada botón de POST hacia su handler."""
+    adm = SimpleNamespace(pk=1)
+    handlers = {
+        "btnLegalesNumIF": "guardar_legales_num_if",
+        "BtnIntervencionJuridicos": "guardar_intervencion_juridicos",
+        "btnDisposicion": "guardar_disposicion",
+        "btnConvenioNumIF": "guardar_convenio_num_if",
+        "btnDispoNumIF": "guardar_dispo_num_if",
+        "btnReinicioExpediente": "guardar_reinicio_expediente",
+        "btnInformeComplementario": "guardar_observaciones_informe_complementario",
+        "btnRevisarInformeComplementario": "revisar_informe_complementario",
+        "btnIFInformeComplementario": "guardar_if_informe_complementario",
+        "ValidacionJuridicos": "validar_juridicos",
+        "btnRESO": "guardar_formulario_reso",
+        "btnProyectoConvenio": "guardar_formulario_proyecto_convenio",
+        "btnObservaciones": "enviar_a_rectificar",
+    }
+    for post_key, method_name in handlers.items():
+        expected = f"ok-{post_key}"
+        mocked = mocker.patch.object(module.LegalesService, method_name, return_value=expected)
+        out = module.LegalesService.procesar_post_legales(SimpleNamespace(POST={post_key: "1"}), adm)
+        assert out == expected
+        mocked.assert_called_once()
+
+
+def test_procesar_post_legales_default_and_exception(mocker):
+    """Sin botón redirige y ante excepción muestra error controlado."""
+    adm = SimpleNamespace(pk=2)
+    red = mocker.patch("admisiones.services.legales_service.redirect", return_value="redir")
+    msg = mocker.patch("admisiones.services.legales_service.messages.error")
+
+    assert module.LegalesService.procesar_post_legales(SimpleNamespace(POST={}), adm) == "redir"
+
+    mocker.patch.object(module.LegalesService, "guardar_convenio", side_effect=RuntimeError("boom"))
+    out = module.LegalesService.procesar_post_legales(SimpleNamespace(POST={"btnConvenio": "1"}), adm)
+    assert out == "redir"
+    assert red.called
+    assert msg.called
+
+
+def test_guardar_formulario_proyecto_convenio_success_y_docx_fallback(mocker):
+    """Guarda convenio generando PDF y soporta fallback cuando DOCX falla."""
+    req = SimpleNamespace(POST={}, user=SimpleNamespace(is_authenticated=True), get_full_path=lambda: "/x")
+    adm = SimpleNamespace(
+        pk=10,
+        tipo="incorporacion",
+        tipo_convenio=SimpleNamespace(nombre="Personeria Juridica"),
+        comedor=SimpleNamespace(nombre="Comedor Uno"),
+    )
+
+    form_obj = _build_formulario_fake(mocker)
+    form = mocker.Mock(is_valid=mocker.Mock(return_value=True), save=mocker.Mock(return_value=form_obj))
+    mocker.patch("admisiones.services.legales_service.FormularioProyectoDeConvenio.objects.filter", return_value=SimpleNamespace(first=lambda: None))
+    mocker.patch("admisiones.services.legales_service.ProyectoConvenioForm", return_value=form)
+    mocker.patch("admisiones.services.legales_service.InformeTecnico.objects.filter", return_value=SimpleNamespace(order_by=lambda *_: SimpleNamespace(first=lambda: None)))
+    mocker.patch("admisiones.services.legales_service.render_to_string", return_value="<html>ok</html>")
+    mocker.patch("admisiones.services.legales_service.HTML", return_value=SimpleNamespace(write_pdf=lambda: b"pdf"))
+    mocker.patch("admisiones.services.legales_service.slugify", return_value="convenio-test")
+    mocker.patch("admisiones.services.legales_service.transaction.atomic", return_value=nullcontext())
+    mocker.patch.object(module.LegalesService, "actualizar_estado_por_accion")
+    mocker.patch.object(module.LegalesService, "_safe_redirect", return_value="sr")
+    success = mocker.patch("admisiones.services.legales_service.messages.success")
+
+    mocker.patch("admisiones.services.legales_service.DocumentTemplateService.generar_docx", return_value=BytesIO(b"docx"))
+    out = module.LegalesService.guardar_formulario_proyecto_convenio(req, adm)
+    assert out == "sr"
+    assert form_obj.archivo.save.called
+    assert form_obj.archivo_docx.save.called
+
+    success.reset_mock()
+    mocker.patch("admisiones.services.legales_service.DocumentTemplateService.generar_docx", side_effect=RuntimeError("no-docx"))
+    out2 = module.LegalesService.guardar_formulario_proyecto_convenio(req, adm)
+    assert out2 == "sr"
+    assert success.called
+
+
+def test_guardar_formulario_proyecto_convenio_invalid_and_exception(mocker):
+    """Cuando el formulario es inválido o falla, retorna safe redirect con error."""
+    req = SimpleNamespace(POST={}, user=SimpleNamespace(is_authenticated=True), get_full_path=lambda: "/x")
+    adm = SimpleNamespace(pk=11, tipo="incorporacion", tipo_convenio=SimpleNamespace(nombre="Base"), comedor=None)
+
+    invalid_form = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    mocker.patch("admisiones.services.legales_service.FormularioProyectoDeConvenio.objects.filter", return_value=SimpleNamespace(first=lambda: None))
+    mocker.patch("admisiones.services.legales_service.ProyectoConvenioForm", return_value=invalid_form)
+    mocker.patch.object(module.LegalesService, "_safe_redirect", return_value="sr")
+    red = mocker.patch("admisiones.services.legales_service.redirect", return_value="r")
+    error = mocker.patch("admisiones.services.legales_service.messages.error")
+    assert module.LegalesService.guardar_formulario_proyecto_convenio(req, adm) == "r"
+    assert red.called
+    assert error.called
+
+    mocker.patch("admisiones.services.legales_service.ProyectoConvenioForm", side_effect=RuntimeError("boom"))
+    assert module.LegalesService.guardar_formulario_proyecto_convenio(req, adm) == "sr"
+
+
+def test_guardar_formulario_reso_success_and_invalid(mocker):
+    """Guarda formulario de disposición con generación de PDF/DOCX y cubre inválido."""
+    req = SimpleNamespace(POST={}, user=SimpleNamespace(is_authenticated=True))
+    adm = SimpleNamespace(
+        pk=12,
+        tipo="renovacion",
+        comedor=SimpleNamespace(nombre="Comedor Dos"),
+        admisiones_proyecto_convenio=SimpleNamespace(first=lambda: SimpleNamespace(numero_if="IF-9")),
+    )
+
+    form_obj = _build_formulario_fake(mocker)
+    form = mocker.Mock(is_valid=mocker.Mock(return_value=True), save=mocker.Mock(return_value=form_obj))
+    mocker.patch("admisiones.services.legales_service.transaction.atomic", return_value=nullcontext())
+    mocker.patch("admisiones.services.legales_service.FormularioProyectoDisposicion.objects.filter", return_value=SimpleNamespace(first=lambda: None))
+    mocker.patch("admisiones.services.legales_service.ProyectoDisposicionForm", return_value=form)
+    mocker.patch("admisiones.services.legales_service.InformeTecnico.objects.filter", return_value=SimpleNamespace(order_by=lambda *_: SimpleNamespace(first=lambda: None)))
+    mocker.patch("admisiones.services.legales_service.FormularioProyectoDeConvenio.objects.filter", return_value=SimpleNamespace(first=lambda: SimpleNamespace(numero_if="IF-10")))
+    mocker.patch("admisiones.services.legales_service.render_to_string", return_value="<html>ok</html>")
+    mocker.patch("admisiones.services.legales_service.HTML", return_value=SimpleNamespace(write_pdf=lambda: b"pdf"))
+    mocker.patch("admisiones.services.legales_service.DocumentTemplateService.generar_docx", return_value=BytesIO(b"docx"))
+    mocker.patch("admisiones.services.legales_service.slugify", return_value="dispo-test")
+    mocker.patch.object(module.LegalesService, "actualizar_estado_por_accion")
+    mocker.patch("admisiones.services.legales_service.messages.success")
+    mocker.patch("admisiones.services.legales_service.messages.error")
+    red = mocker.patch("admisiones.services.legales_service.redirect", return_value="r")
+    assert module.LegalesService.guardar_formulario_reso(req, adm) == "r"
+    assert form_obj.archivo.save.called
+    assert form_obj.archivo_docx.save.called
+    assert red.called
+
+    invalid = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    mocker.patch("admisiones.services.legales_service.ProyectoDisposicionForm", return_value=invalid)
+    assert module.LegalesService.guardar_formulario_reso(req, adm) == "r"
+
+
+def test_get_legales_context_and_helpers(mocker):
+    """Construye contexto legal, cubre helper de informe y generación de documentos."""
+    adm = SimpleNamespace(
+        pk=20,
+        tipo_convenio=object(),
+        historial=SimpleNamespace(all=lambda: _Chain([SimpleNamespace(fecha=datetime(2026, 1, 1, 10, 0), campo="x", valor_nuevo="True", usuario=SimpleNamespace(username="u"))])),
+        historial_estados=SimpleNamespace(all=lambda: _Chain([SimpleNamespace(fecha=datetime(2026, 1, 2, 10, 0), estado_anterior="A Rectificar", estado_nuevo="Pendiente de Validacion", usuario=SimpleNamespace(username="u"))])),
+        admisiones_proyecto_disposicion=SimpleNamespace(first=lambda: None),
+        admisiones_proyecto_convenio=SimpleNamespace(first=lambda: None),
+        informe_pdf=None,
+        tipo_informe="base",
+    )
+    req = SimpleNamespace(GET={"historial_page": "1", "historial_estados_page": "1"})
+
+    docs = [SimpleNamespace(id=1, nombre="Doc 1")]
+    archs = [
+        SimpleNamespace(documentacion_id=1, archivo=SimpleNamespace(url="/a.pdf"), id=1, nombre_personalizado=None),
+        SimpleNamespace(documentacion_id=None, archivo=SimpleNamespace(url="/b.pdf"), id=2, nombre_personalizado="Personalizado"),
+    ]
+    expedientes = _Chain([
+        SimpleNamespace(tipo="Informe SGA", value="v1"),
+        SimpleNamespace(tipo="Disposición", value="v2"),
+    ])
+
+    mocker.patch("admisiones.services.legales_service.Documentacion.objects.filter", return_value=SimpleNamespace(distinct=lambda: docs))
+    mocker.patch.object(module.LegalesService, "get_informe_por_tipo_convenio", return_value=SimpleNamespace(pk=1))
+    mocker.patch("admisiones.services.legales_service.ArchivoAdmision.objects.filter", return_value=archs)
+    mocker.patch("admisiones.services.legales_service.InformeComplementario.objects.filter", return_value=SimpleNamespace(order_by=lambda *_: []))
+    mocker.patch("admisiones.models.admisiones.InformeTecnicoComplementarioPDF.objects.filter", return_value=SimpleNamespace(first=lambda: None))
+    mocker.patch("admisiones.services.legales_service.DocumentosExpediente.objects.filter", return_value=expedientes)
+    mocker.patch("admisiones.services.legales_service.ProyectoDisposicionForm", return_value="fdis")
+    mocker.patch("admisiones.services.legales_service.DisposicionNumIFFORM", return_value="fdisif")
+    mocker.patch("admisiones.services.legales_service.ProyectoConvenioForm", return_value="fconv")
+    mocker.patch("admisiones.services.legales_service.ConvenioNumIFFORM", return_value="fconvif")
+    mocker.patch("admisiones.services.legales_service.LegalesNumIFForm", return_value="flnum")
+    mocker.patch("admisiones.services.legales_service.DocumentosExpedienteForm", return_value="fdoc")
+    mocker.patch("admisiones.services.legales_service.IntervencionJuridicosForm", return_value="fint")
+    mocker.patch("admisiones.services.legales_service.InformeSGAForm", return_value="fsga")
+    mocker.patch("admisiones.services.legales_service.ConvenioForm", return_value="fco")
+    mocker.patch("admisiones.services.legales_service.DisposicionForm", return_value="fdi")
+    mocker.patch("admisiones.services.legales_service.ReinicioExpedienteForm", return_value="fre")
+    mocker.patch("admisiones.services.legales_service.SolicitarInformeComplementarioForm", return_value="fsol")
+    mocker.patch.object(module.LegalesService, "get_botones_disponibles", return_value=["x"])
+
+    ctx = module.LegalesService.get_legales_context(adm, req)
+    assert ctx["documentos"]
+    assert ctx["botones_disponibles"] == ["x"]
+
+
+def test_legales_informe_y_documentos_helpers(mocker):
+    """Resuelve helper de informe por tipo y genera DOCX de convenio/disposición."""
+    adm = SimpleNamespace(pk=30, tipo_informe="base")
+
+    mocker.patch("admisiones.services.legales_service.InformeTecnico.objects.filter", return_value=SimpleNamespace(first=lambda: "ok"))
+    assert module.LegalesService.get_informe_por_tipo_convenio(adm) == "ok"
+    assert module.LegalesService.get_informe_por_tipo_convenio(SimpleNamespace(tipo_informe=None, pk=99)) is None
+
+    mocker.patch("admisiones.services.legales_service.TextFormatterService.preparar_contexto_proyecto_convenio", return_value={})
+    mocker.patch("admisiones.services.legales_service.DocumentTemplateService.generar_docx", return_value=BytesIO(b"x"))
+    out_doc = module.LegalesService.generar_documento_convenio(SimpleNamespace(id=1))
+    assert out_doc is not None
+
+    mocker.patch("admisiones.services.legales_service.TextFormatterService.preparar_contexto_proyecto_disposicion", return_value={})
+    out_doc2 = module.LegalesService.generar_documento_disposicion(SimpleNamespace(id=2))
+    assert out_doc2 is not None
