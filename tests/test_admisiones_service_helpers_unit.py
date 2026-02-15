@@ -2,10 +2,27 @@
 
 from datetime import datetime
 from types import SimpleNamespace
+from io import BytesIO
 
 from django.utils import timezone
 
 from admisiones.services import admisiones_service as module
+
+
+class _ListChain(list):
+    """Minimal queryset-like list for service unit tests."""
+
+    def select_related(self, *_args, **_kwargs):
+        return self
+
+    def order_by(self, *_args, **_kwargs):
+        return self
+
+    def first(self):
+        return self[0] if self else None
+
+    def filter(self, **_kwargs):
+        return self
 
 
 def test_estado_normalization_and_resumen_helpers():
@@ -223,3 +240,190 @@ def test_actualizar_estado_ajax_and_update_estado_archivo(mocker):
 def test_update_estado_archivo_none_returns_false():
     """update_estado_archivo should fail fast for empty file object."""
     assert module.AdmisionService.update_estado_archivo(None, "x") is False
+
+
+def test_marcar_envios_y_rectificacion_documentacion():
+    """Cubre cambios de flags para legales, acompañamiento y rectificación."""
+    adm = SimpleNamespace(
+        pk=1,
+        enviado_legales=False,
+        enviado_acompaniamiento=False,
+        estado_legales="X",
+        estado_id=1,
+        observaciones="obs",
+        save=lambda: None,
+    )
+    assert module.AdmisionService.marcar_como_enviado_a_legales(adm) is True
+    assert adm.enviado_legales is True
+    assert module.AdmisionService.marcar_como_enviado_a_acompaniamiento(adm) is True
+    assert adm.enviado_acompaniamiento is True
+    assert module.AdmisionService.marcar_como_documentacion_rectificada(adm) is True
+    assert adm.estado_legales == "Rectificado"
+    assert adm.observaciones is None
+
+
+def test_guardar_if_informe_tecnico_paths(mocker):
+    """Valida ramas de formulario IF técnico válido, inválido y excepción."""
+    req = SimpleNamespace(POST={}, FILES={})
+    adm = SimpleNamespace(pk=2)
+
+    valid = mocker.Mock(is_valid=mocker.Mock(return_value=True), save=mocker.Mock())
+    mocker.patch("admisiones.services.admisiones_service.IFInformeTecnicoForm", return_value=valid)
+    ok, _ = module.AdmisionService.guardar_if_informe_tecnico(req, adm)
+    assert ok is True
+
+    invalid = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    mocker.patch("admisiones.services.admisiones_service.IFInformeTecnicoForm", return_value=invalid)
+    ok2, _ = module.AdmisionService.guardar_if_informe_tecnico(req, adm)
+    assert ok2 is False
+
+    mocker.patch("admisiones.services.admisiones_service.IFInformeTecnicoForm", side_effect=RuntimeError("boom"))
+    ok3, _ = module.AdmisionService.guardar_if_informe_tecnico(req, adm)
+    assert ok3 is False
+
+
+def test_actualizar_numero_gde_ajax_validations(mocker):
+    """Cubre validaciones y éxito del endpoint AJAX de número GDE."""
+    req_missing = SimpleNamespace(POST={}, user=SimpleNamespace(is_superuser=True))
+    assert module.AdmisionService.actualizar_numero_gde_ajax(req_missing)["success"] is False
+
+    archivo = SimpleNamespace(
+        estado="Aceptado",
+        numero_gde="OLD",
+        admision=SimpleNamespace(comedor=SimpleNamespace()),
+        save=mocker.Mock(),
+    )
+    req = SimpleNamespace(
+        POST={"documento_id": "1", "numero_gde": "GDE-1"},
+        user=SimpleNamespace(is_superuser=False),
+    )
+    mocker.patch("admisiones.services.admisiones_service.get_object_or_404", return_value=archivo)
+    mocker.patch.object(module.AdmisionService, "_verificar_permiso_dupla", return_value=True)
+    out = module.AdmisionService.actualizar_numero_gde_ajax(req)
+    assert out["success"] is True
+    assert out["numero_gde"] == "GDE-1"
+
+    archivo.estado = "Pendiente"
+    out2 = module.AdmisionService.actualizar_numero_gde_ajax(req)
+    assert out2["success"] is False
+
+
+def test_actualizar_convenio_numero_ajax_branches(mocker):
+    """Valida permisos, parseo numérico y persistencia de convenio_numero."""
+    req_no_id = SimpleNamespace(POST={}, user=SimpleNamespace(is_superuser=True))
+    assert module.AdmisionService.actualizar_convenio_numero_ajax(req_no_id)["success"] is False
+
+    adm = SimpleNamespace(convenio_numero=2, comedor=SimpleNamespace(), save=mocker.Mock())
+    req = SimpleNamespace(POST={"admision_id": "1", "convenio_numero": "5"}, user=SimpleNamespace(is_superuser=True))
+    mocker.patch("admisiones.services.admisiones_service.get_object_or_404", return_value=adm)
+    out = module.AdmisionService.actualizar_convenio_numero_ajax(req)
+    assert out["success"] is True
+    assert out["convenio_numero"] == 5
+
+    req_bad = SimpleNamespace(POST={"admision_id": "1", "convenio_numero": "abc"}, user=SimpleNamespace(is_superuser=True))
+    assert module.AdmisionService.actualizar_convenio_numero_ajax(req_bad)["success"] is False
+
+
+def test_permiso_helpers_y_botones_disponibles():
+    """Verifica permisos técnicos/dupla y cálculo de botones en estados clave."""
+    user = SimpleNamespace(
+        id=9,
+        groups=SimpleNamespace(filter=lambda **k: SimpleNamespace(exists=lambda: k.get("name") == "Tecnico Comedor")),
+    )
+    comedor = SimpleNamespace(dupla=SimpleNamespace(tecnico=SimpleNamespace(filter=lambda **k: SimpleNamespace(exists=lambda: True)), abogado=None, estado="Activo"))
+    assert module.AdmisionService._verificar_permiso_tecnico_dupla(user, comedor) is True
+    assert module.AdmisionService._verificar_permiso_dupla(SimpleNamespace(id=3), comedor) is True
+
+    adm = SimpleNamespace(
+        numero_disposicion=None,
+        enviado_acompaniamiento=False,
+        estado_legales="A Rectificar",
+        estado_admision="if_informe_tecnico_cargado",
+        num_expediente="EXP",
+        numero_if_tecnico=None,
+        enviado_legales=False,
+    )
+    informe = SimpleNamespace(estado="Validado", estado_formulario="borrador")
+    botones = module.AdmisionService._get_botones_disponibles(adm, informe, True, user=SimpleNamespace(groups=user.groups))
+    assert "rectificar_documentacion" in botones
+
+
+def test_transiciones_estado_y_helpers_obligatorios(mocker):
+    """Cubre transiciones de estado y chequeos de documentos obligatorios."""
+    adm = SimpleNamespace(pk=4, estado_admision="convenio_seleccionado", estado_id=1, tipo_convenio=object(), save=mocker.Mock())
+    assert module.AdmisionService.actualizar_estado_admision(adm, "cargar_documento") is True
+    assert adm.estado_admision == "documentacion_en_proceso"
+    assert module.AdmisionService.actualizar_estado_admision(adm, "accion_inexistente") is False
+
+    docs = [SimpleNamespace(pk=1), SimpleNamespace(pk=2)]
+    mocker.patch("admisiones.services.admisiones_service.Documentacion.objects.filter", return_value=docs)
+    mocker.patch(
+        "admisiones.services.admisiones_service.ArchivoAdmision.objects.filter",
+        side_effect=[SimpleNamespace(first=lambda: SimpleNamespace()), SimpleNamespace(first=lambda: None)],
+    )
+    assert module.AdmisionService._todos_obligatorios_aceptados(adm) is False
+
+    mocker.patch("admisiones.services.admisiones_service.Documentacion.objects.filter", return_value=[SimpleNamespace(pk=1)])
+    mocker.patch("admisiones.services.admisiones_service.ArchivoAdmision.objects.filter", return_value=SimpleNamespace(first=lambda: SimpleNamespace(archivo="x")))
+    assert module.AdmisionService._todos_obligatorios_tienen_archivos(adm) is True
+
+
+def test_actualizar_estados_por_cambio_documento(mocker):
+    """Actualiza estado documental según rectificación y completitud obligatoria."""
+    adm = SimpleNamespace(pk=5, estado_admision="documentacion_finalizada", estado_id=1, save=mocker.Mock())
+    mocker.patch.object(module.AdmisionService, "_todos_obligatorios_aceptados", return_value=False)
+    module.AdmisionService._actualizar_estados_por_cambio_documento(adm, "Rectificar")
+    assert adm.estado_admision == "documentacion_en_proceso"
+
+    adm2 = SimpleNamespace(pk=6, estado_admision="documentacion_en_proceso", estado_id=1, save=mocker.Mock())
+    mocker.patch.object(module.AdmisionService, "_todos_obligatorios_tienen_archivos", return_value=True)
+    mocker.patch.object(module.AdmisionService, "_todos_obligatorios_aceptados", return_value=True)
+    module.AdmisionService._actualizar_estados_por_cambio_documento(adm2, "Aceptado")
+    assert adm2.estado_admision == "documentacion_aprobada"
+
+
+def test_get_contexts_and_comenzar_acompanamiento(mocker):
+    """Valida context builders y flujo de comienzo de acompañamiento."""
+    adm = SimpleNamespace(pk=7, comedor=SimpleNamespace(nombre="C"), save=mocker.Mock())
+    mocker.patch("admisiones.services.admisiones_service.get_object_or_404", return_value=adm)
+    mocker.patch("admisiones.services.admisiones_service.EstadoAdmision.objects.get", return_value="estado")
+    importar = mocker.patch("admisiones.services.admisiones_service.AcompanamientoService.importar_datos_desde_admision")
+    assert module.AdmisionService.comenzar_acompanamiento(7) is adm
+    assert importar.called
+
+    ctx = module.AdmisionService.get_admision_context(7)
+    assert ctx["admision"] is adm
+    assert module.AdmisionService.get_admision_instance(7) is adm
+
+
+def test_generar_documento_admision_and_update_context(mocker):
+    """Genera DOCX de admisión y arma contexto update con estadísticas."""
+    adm = SimpleNamespace(
+        pk=8,
+        tipo_convenio=object(),
+        comedor=SimpleNamespace(nombre="Comedor X"),
+        estado_legales="Informe Complementario Solicitado",
+        observaciones_informe_tecnico_complementario="obs",
+    )
+    mocker.patch("admisiones.services.admisiones_service.TextFormatterService.preparar_contexto_admision", return_value={})
+    mocker.patch("admisiones.services.admisiones_service.DocumentTemplateService.generar_docx", return_value=BytesIO(b"doc"))
+    out = module.AdmisionService.generar_documento_admision(SimpleNamespace(id=1, comedor=SimpleNamespace(nombre="Comedor X")))
+    assert out is not None
+
+    docs = [SimpleNamespace(id=1, nombre="Doc", obligatorio=True)]
+    archs = _ListChain([SimpleNamespace(id=2, documentacion_id=1, documentacion=SimpleNamespace(id=1), estado="Aceptado", archivo=SimpleNamespace(url="/a"), numero_gde="1", observaciones="o")])
+    informes_comp = _ListChain([SimpleNamespace(estado="rectificar", observaciones_legales="detalle")])
+    mocker.patch("admisiones.services.admisiones_service.Documentacion.objects.filter", return_value=SimpleNamespace(distinct=lambda: SimpleNamespace(order_by=lambda *_: docs)))
+    mocker.patch("admisiones.services.admisiones_service.ArchivoAdmision.objects.filter", return_value=archs)
+    mocker.patch("admisiones.services.admisiones_service.TipoConvenio.objects.exclude", return_value=["conv"])
+    mocker.patch("admisiones.services.admisiones_service.CaratularForm", return_value="f1")
+    mocker.patch("admisiones.services.admisiones_service.IFInformeTecnicoForm", return_value="f2")
+    mocker.patch("admisiones.services.admisiones_service.InformeTecnico.objects.filter", return_value=SimpleNamespace(order_by=lambda *_: SimpleNamespace(first=lambda: None)))
+    mocker.patch("admisiones.services.admisiones_service.InformeComplementario.objects.filter", return_value=informes_comp)
+    mocker.patch("admisiones.services.admisiones_service.InformeTecnicoPDF.objects.filter", return_value=SimpleNamespace(first=lambda: None))
+    mocker.patch.object(module.AdmisionService, "_get_botones_disponibles", return_value=["b"])
+    mocker.patch.object(module.AdmisionService, "_verificar_permiso_tecnico_dupla", return_value=True)
+
+    ctx = module.AdmisionService.get_admision_update_context(adm, user=SimpleNamespace(is_superuser=False))
+    assert ctx["obligatorios_totales"] == 1
+    assert ctx["stats"]["aceptados"] == 1
