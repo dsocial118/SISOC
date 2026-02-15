@@ -8,6 +8,9 @@ import pytest
 from django.core.exceptions import ValidationError
 
 from celiaquia.services.cruce_service import CruceService
+from celiaquia.services import cruce_service as cruce_module
+
+pytestmark = pytest.mark.django_db
 
 
 def test_normalization_and_cuit_resolution():
@@ -117,3 +120,68 @@ def test_generar_nomina_sintys_excel_without_db(mocker):
     data = CruceService.generar_nomina_sintys_excel(expediente)
     assert isinstance(data, (bytes, bytearray))
     assert len(data) > 0
+
+
+def test_leer_tabla_csv_fallback_and_prd_csv_generation(mocker):
+    """Table reader should fallback to CSV and PRD CSV should include summary sections."""
+
+    class F:
+        def __init__(self):
+            self._b = io.BytesIO(b"documento;nombre\n20123456783;A\n")
+
+        def open(self):
+            return None
+
+        def read(self):
+            return self._b.read()
+
+        def seek(self, x):
+            return self._b.seek(x)
+
+    # force excel/csv comma fail, then csv semicolon success
+    mocker.patch("celiaquia.services.cruce_service.pd.read_excel", side_effect=ValueError("x"))
+
+    def _read_csv(_bio, dtype=str, sep=","):
+        if sep == ";":
+            return pd.DataFrame({"documento": ["20123456783"], "nombre": ["A"]})
+        raise ValueError("bad")
+
+    mocker.patch("celiaquia.services.cruce_service.pd.read_csv", side_effect=_read_csv)
+    df = CruceService._leer_tabla(F())
+    assert "documento" in df.columns
+
+    with pytest.raises(TypeError):
+        CruceService._generar_prd_csv(
+            expediente=SimpleNamespace(),
+            resumen={
+                "total_legajos": 2,
+                "total_cuits_archivo": 1,
+                "total_dnis_archivo": 1,
+                "matcheados": 1,
+                "no_matcheados": 1,
+                "cupo": {"total_asignado": 10, "usados": 5, "disponibles": 5},
+                "cupo_fuera_count": 0,
+                "detalle_no_match": ["x"],
+                "detalle_fuera_cupo": ["y"],
+            },
+        )
+
+
+def test_procesar_cruce_validations(mocker):
+    """Cruce should reject invalid expediente state and missing provincial cupo config."""
+    exp_bad = SimpleNamespace(estado=SimpleNamespace(nombre="CREADO"))
+    with pytest.raises(ValidationError):
+        CruceService.procesar_cruce_por_cuit(exp_bad, archivo_excel=object(), usuario="u")
+
+    exp = SimpleNamespace(
+        id=1,
+        estado=SimpleNamespace(nombre="ASIGNADO"),
+        provincia="P",
+        save=mocker.Mock(),
+    )
+    mocker.patch(
+        "celiaquia.services.cruce_service.CupoService.metrics_por_provincia",
+        side_effect=cruce_module.CupoNoConfigurado("sin cupo"),
+    )
+    with pytest.raises(ValidationError):
+        CruceService.procesar_cruce_por_cuit(exp, archivo_excel=object(), usuario="u")
