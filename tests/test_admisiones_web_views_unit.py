@@ -122,3 +122,74 @@ def test_subir_archivo_admision_paths(mocker):
     mocker.patch("admisiones.views.web_views.AdmisionService._serialize_documentacion", return_value={"row_id": "r", "estado": "Pendiente", "estado_valor": "pendiente"})
     mocker.patch("admisiones.views.web_views.render_to_string", return_value="<tr></tr>")
     assert module.subir_archivo_admision(req, 1, 2).status_code == 200
+
+
+def test_tecnicos_list_view_queryset_and_context(mocker):
+    """Technicians list view should delegate queryset and table context builders."""
+    view = module.AdmisionesTecnicosListView()
+    req = _Req(user=_user(), GET={})
+    view.request = req
+
+    qs = [SimpleNamespace()]
+    mocker.patch("admisiones.views.web_views.AdmisionService.get_admisiones_tecnicos_queryset", return_value=qs)
+    assert view.get_queryset() == qs
+
+    mocker.patch("django.views.generic.list.MultipleObjectMixin.get_context_data", return_value={"admisiones": qs})
+    mocker.patch("admisiones.views.web_views.AdmisionService.get_admisiones_tecnicos_table_data", return_value=[{"cells": []}])
+    mocker.patch("admisiones.views.web_views.reverse", side_effect=lambda name: f"/{name}")
+    mocker.patch("admisiones.views.web_views.get_tecnicos_filters_ui_config", return_value={})
+    mocker.patch("admisiones.views.web_views.build_columns_context_for_custom_cells", return_value={"table_items": [1]})
+
+    ctx = view.get_context_data()
+    assert "table_items" in ctx
+
+
+def test_tecnicos_create_view_post_branches(mocker):
+    """Create view should create admision when tipo_convenio is present."""
+    view = module.AdmisionesTecnicosCreateView()
+    view.kwargs = {"pk": 99}
+
+    req = _Req(POST={"tipo_convenio": "1"}, user=_user())
+    adm = SimpleNamespace(pk=7)
+    mocker.patch("admisiones.views.web_views.AdmisionService.create_admision", return_value=adm)
+    mocker.patch("admisiones.views.web_views.redirect", return_value="redir")
+    assert view.post(req) == "redir"
+
+    req2 = _Req(POST={}, user=_user())
+    mocker.patch("django.views.generic.edit.ProcessFormView.get", return_value="getresp")
+    assert view.post(req2) == "getresp"
+
+
+def test_tecnicos_update_view_post_docx_and_router_paths(mocker):
+    """Update view should handle DOCX upload branch and standard POST router."""
+    view = module.AdmisionesTecnicosUpdateView()
+    adm = SimpleNamespace(pk=1, comedor=SimpleNamespace(), estado_admision="informe_tecnico_finalizado")
+    view.get_object = lambda: adm
+
+    # docx branch without file
+    req_docx = _Req(POST={"subir_docx_final": "1"}, FILES={}, user=_user(), get_full_path=lambda: "/x")
+    view.request = req_docx
+    mocker.patch("admisiones.views.web_views.messages.error")
+    mocker.patch("admisiones.views.web_views.safe_redirect", return_value="sr")
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/edit")
+    assert view.post(req_docx) == "sr"
+
+    # router branch
+    req_router = _Req(POST={"btnX": "1"}, FILES={}, user=_user(), get_full_path=lambda: "/x")
+    view.request = req_router
+    mocker.patch("admisiones.views.web_views.AdmisionService.procesar_post_update", return_value=(True, "ok"))
+    mocker.patch("admisiones.views.web_views.messages.success")
+    mocker.patch("admisiones.views.web_views.safe_redirect", return_value="sr2")
+    assert view.post(req_router) == "sr2"
+
+
+def test_admision_detail_get_object_mismatch_raises(mocker):
+    """Detail view should reject comedor/admision mismatch."""
+    view = module.AdmisionDetailView()
+    view.kwargs = {"comedor_pk": 2}
+    mocker.patch("django.views.generic.detail.SingleObjectMixin.get_object", return_value=SimpleNamespace(comedor_id=1))
+
+    import pytest
+
+    with pytest.raises(module.Http404):
+        view.get_object()
