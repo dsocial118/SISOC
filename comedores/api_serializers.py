@@ -7,6 +7,7 @@ from organizaciones.models import Organizacion
 from admisiones.models.admisiones import InformeTecnico
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasmensual.models import RendicionCuentaMensual
+from rendicioncuentasmensual.models import DocumentacionAdjunta
 
 
 class SimpleUbicacionSerializer(serializers.ModelSerializer):
@@ -449,3 +450,47 @@ class NominaUpdateSerializer(NoSaveSerializer):
         if not attrs:
             raise serializers.ValidationError("Debe enviar al menos un campo.")
         return attrs
+
+
+class ComprobanteRendicionSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DocumentacionAdjunta
+        fields = (
+            "id",
+            "nombre",
+            "url",
+            "fecha_creacion",
+            "ultima_modificacion",
+        )
+
+    def get_url(self, obj):
+        if not obj.archivo:
+            return None
+        request = self.context.get("request")
+        url = obj.archivo.url
+        return request.build_absolute_uri(url) if request else url
+
+
+class RendicionMensualListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RendicionCuentaMensual
+        fields = (
+            "id",
+            "mes",
+            "anio",
+            "documento_adjunto",
+            "observaciones",
+            "fecha_creacion",
+            "ultima_modificacion",
+        )
+
+
+class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
+    comprobantes = ComprobanteRendicionSerializer(
+        source="arvhios_adjuntos", many=True, read_only=True
+    )
+
+    class Meta(RendicionMensualListSerializer.Meta):
+        fields = RendicionMensualListSerializer.Meta.fields + ("comprobantes",)
