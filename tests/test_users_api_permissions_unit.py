@@ -1,3 +1,5 @@
+"""Tests for test users api permissions unit."""
+
 from types import SimpleNamespace
 
 from users.api_permissions import (

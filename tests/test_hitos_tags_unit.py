@@ -1,3 +1,5 @@
+"""Tests for test hitos tags unit."""
+
 from types import SimpleNamespace
 
 from acompanamientos.templatetags.hitos_tags import render_hito

@@ -1,3 +1,5 @@
+"""Tests for test legajo service unit."""
+
 from types import SimpleNamespace
 
 import pytest

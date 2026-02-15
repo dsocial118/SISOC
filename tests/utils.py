@@ -1,3 +1,5 @@
+"""Tests for utils."""
+
 import json
 from pathlib import Path
 from comedores.models import Comedor

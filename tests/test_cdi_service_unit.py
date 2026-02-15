@@ -1,3 +1,5 @@
+"""Tests for test cdi service unit."""
+
 import sys
 from types import ModuleType, SimpleNamespace
 

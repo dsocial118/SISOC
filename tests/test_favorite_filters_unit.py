@@ -1,3 +1,5 @@
+"""Tests for test favorite filters unit."""
+
 from core.services.favorite_filters import (
     ConfiguracionFiltrosSeccion,
     SeccionesFiltrosFavoritos,

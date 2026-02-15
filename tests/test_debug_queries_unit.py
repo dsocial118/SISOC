@@ -1,3 +1,5 @@
+"""Tests for test debug queries unit."""
+
 from types import SimpleNamespace
 
 from core import debug_queries as module

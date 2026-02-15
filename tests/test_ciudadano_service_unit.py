@@ -1,3 +1,5 @@
+"""Tests for test ciudadano service unit."""
+
 from contextlib import nullcontext
 from datetime import date, datetime
 from types import SimpleNamespace

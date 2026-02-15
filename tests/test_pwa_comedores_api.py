@@ -1,3 +1,5 @@
+"""Tests for test pwa comedores api."""
+
 from datetime import date
 
 import pytest
