@@ -7,7 +7,9 @@ import pytest
 
 from admisiones.forms.admisiones_forms import (
     IntervencionJuridicosForm,
+    InformeTecnicoBaseForm,
     InformeTecnicoEstadoForm,
+    InformeTecnicoJuridicoForm,
     LegalesNumIFForm,
     MontoDecimalField,
     _armar_domicilio,
@@ -77,6 +79,11 @@ def test_ultimo_numero_gde_arma_query_y_devuelve_first(mocker):
     )
 
 
+def test_ultimo_numero_gde_devuelve_none_sin_admision():
+    """Retorna None cuando no hay admisión para filtrar."""
+    assert _ultimo_numero_gde(None, "Relevamiento Programa PAC") is None
+
+
 def test_if_relevamiento_a_pac_setea_iniciales(mocker):
     """Propaga el último GDE a ambos campos de relevamiento cuando existe."""
     mocker.patch(
@@ -103,6 +110,84 @@ def test_if_relevamiento_a_pac_no_modifica_sin_admision(mocker):
 
     assert out["if_relevamiento"].initial == "ORIGINAL"
     spy.assert_not_called()
+
+
+def test_if_relevamiento_a_pac_no_modifica_si_no_hay_numero(mocker):
+    """Mantiene valores cuando no existe GDE previo."""
+    mocker.patch(
+        "admisiones.forms.admisiones_forms._ultimo_numero_gde",
+        return_value=None,
+    )
+    fields = {
+        "if_relevamiento": SimpleNamespace(initial="A"),
+        "IF_relevamiento_territorial": SimpleNamespace(initial="B"),
+    }
+
+    out = _if_relevamiento_a_pac(fields, admision=object())
+
+    assert out["if_relevamiento"].initial == "A"
+    assert out["IF_relevamiento_territorial"].initial == "B"
+
+
+def test_informe_tecnico_juridico_clean_error_si_no_corresponde_invalido(mocker):
+    """Agrega error cuando se marca no corresponde y el convenio no lo permite."""
+    form = InformeTecnicoJuridicoForm()
+    form.permite_no_corresponde_fecha_vencimiento = False
+    form.require_full = False
+    form.cleaned_data = {}
+
+    mocker.patch(
+        "django.forms.models.BaseModelForm.clean",
+        return_value={
+            "no_corresponde_fecha_vencimiento": True,
+            "fecha_vencimiento_mandatos": None,
+        },
+    )
+
+    cleaned = form.clean()
+
+    assert "no_corresponde_fecha_vencimiento" in form.errors
+    assert cleaned["fecha_vencimiento_mandatos"] is None
+
+
+def test_informe_tecnico_juridico_clean_exige_fecha_o_check_si_require_full(mocker):
+    """Exige fecha o marcar no corresponde cuando el flujo es completo."""
+    form = InformeTecnicoJuridicoForm()
+    form.permite_no_corresponde_fecha_vencimiento = True
+    form.require_full = True
+    form.cleaned_data = {}
+
+    mocker.patch(
+        "django.forms.models.BaseModelForm.clean",
+        return_value={
+            "no_corresponde_fecha_vencimiento": False,
+            "fecha_vencimiento_mandatos": None,
+        },
+    )
+
+    form.clean()
+
+    assert "fecha_vencimiento_mandatos" in form.errors
+
+
+def test_informe_tecnico_base_clean_setea_fecha_none_si_no_corresponde(mocker):
+    """Al marcar no corresponde, limpia la fecha en el formulario base."""
+    form = InformeTecnicoBaseForm()
+    form.permite_no_corresponde_fecha_vencimiento = True
+    form.require_full = False
+    form.cleaned_data = {}
+
+    mocker.patch(
+        "django.forms.models.BaseModelForm.clean",
+        return_value={
+            "no_corresponde_fecha_vencimiento": True,
+            "fecha_vencimiento_mandatos": "2030-01-01",
+        },
+    )
+
+    cleaned = form.clean()
+
+    assert cleaned["fecha_vencimiento_mandatos"] is None
 
 
 def test_informe_tecnico_estado_form_requiere_campos_para_subsanar():
