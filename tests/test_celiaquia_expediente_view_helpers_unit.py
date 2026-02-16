@@ -238,3 +238,178 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     req_subs = SimpleNamespace(user=SimpleNamespace(id=1), POST={"accion": "SUBSANAR", "motivo": "faltan docs"})
     resp_sub = revisar.post(req_subs, pk=1, legajo_id=3)
     assert resp_sub.status_code == 200
+
+
+def test_expediente_import_view_success_and_errors(mocker):
+    view = module.ExpedienteImportView()
+    request = SimpleNamespace(user=SimpleNamespace(), headers={})
+    view.request = request
+
+    expediente = SimpleNamespace(excel_masivo=object())
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=expediente)
+    redirect_mock = mocker.patch("celiaquia.views.expediente.redirect", side_effect=lambda *args, **kwargs: (args, kwargs))
+    msg_success = mocker.patch("celiaquia.views.expediente.messages.success")
+    msg_error = mocker.patch("celiaquia.views.expediente.messages.error")
+    msg_warning = mocker.patch("celiaquia.views.expediente.messages.warning")
+
+    mocker.patch(
+        "celiaquia.views.expediente.ImportacionService.importar_legajos_desde_excel",
+        return_value={
+            "validos": 3,
+            "errores": 1,
+            "detalles_errores": [{"fila": 2, "error": "dato inválido"}],
+            "warnings": [{"fila": 2, "detalle": "telefono corto"}],
+        },
+    )
+    resp_ok = view.post(request, pk=1)
+    assert resp_ok[0][0] == "expediente_detail"
+    assert msg_success.called
+    assert msg_error.called
+    assert msg_warning.called
+
+    from django.core.exceptions import ValidationError
+
+    mocker.patch(
+        "celiaquia.views.expediente.ImportacionService.importar_legajos_desde_excel",
+        side_effect=ValidationError("bad"),
+    )
+    resp_validation = view.post(request, pk=1)
+    assert resp_validation[0][0] == "expediente_detail"
+
+    mocker.patch(
+        "celiaquia.views.expediente.ImportacionService.importar_legajos_desde_excel",
+        side_effect=RuntimeError("boom"),
+    )
+    resp_exception = view.post(request, pk=1)
+    assert resp_exception[0][0] == "expediente_detail"
+    assert redirect_mock.called
+
+
+def test_expediente_confirm_view_non_ajax_success_and_error_paths(mocker):
+    view = module.ExpedienteConfirmView()
+    request = SimpleNamespace(user=SimpleNamespace(), headers={})
+    view.request = request
+
+    expediente = SimpleNamespace()
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=expediente)
+    mocker.patch(
+        "celiaquia.models.RegistroErroneo.objects.filter",
+        return_value=SimpleNamespace(exists=lambda: False),
+    )
+    mocker.patch("celiaquia.views.expediente.redirect", side_effect=lambda *args, **kwargs: (args, kwargs))
+    msg_success = mocker.patch("celiaquia.views.expediente.messages.success")
+    msg_error = mocker.patch("celiaquia.views.expediente.messages.error")
+
+    mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.confirmar_envio",
+        return_value={"validos": 5, "errores": 0},
+    )
+    ok = view.post(request, pk=1)
+    assert ok[0][0] == "expediente_detail"
+    assert msg_success.called
+
+    from django.core.exceptions import ValidationError
+
+    mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.confirmar_envio",
+        side_effect=ValidationError("x"),
+    )
+    validation = view.post(request, pk=1)
+    assert validation[0][0] == "expediente_detail"
+
+    mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.confirmar_envio",
+        side_effect=RuntimeError("boom"),
+    )
+    err = view.post(request, pk=1)
+    assert err[0][0] == "expediente_detail"
+    assert msg_error.called
+
+
+def test_recepcionar_get_and_asignar_delete_extra_branches(mocker):
+    view_recepcionar = module.RecepcionarExpedienteView()
+    resp_get = view_recepcionar.get()
+    assert resp_get.status_code == 405
+
+    view_asignar = module.AsignarTecnicoView()
+    req = SimpleNamespace(user=SimpleNamespace(), GET={})
+    view_asignar.request = req
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=SimpleNamespace())
+
+    missing = view_asignar.delete(req, pk=1)
+    assert missing.status_code == 400
+
+    req2 = SimpleNamespace(user=SimpleNamespace(), GET={"tecnico_id": "9"})
+    view_asignar.request = req2
+    mocker.patch(
+        "celiaquia.views.expediente.AsignacionTecnico.objects.get",
+        side_effect=module.AsignacionTecnico.DoesNotExist,
+    )
+    not_found = view_asignar.delete(req2, pk=1)
+    assert not_found.status_code == 404
+
+
+def test_subir_cruce_view_validation_error_and_get_not_allowed(mocker):
+    view = module.SubirCruceExcelView()
+    req = SimpleNamespace(user=SimpleNamespace(id=1), FILES={"archivo": object()}, headers={})
+    view.request = req
+
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=SimpleNamespace(asignaciones_tecnicos=SimpleNamespace(all=lambda: [])))
+
+    from django.core.exceptions import ValidationError
+
+    mocker.patch(
+        "celiaquia.views.expediente.CruceService.procesar_cruce_por_cuit",
+        side_effect=ValidationError("invalid"),
+    )
+    bad = view.post(req, pk=1)
+    assert bad.status_code == 400
+
+    resp_get = view.get()
+    assert resp_get.status_code == 405
+
+
+def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
+    view = module.RevisarLegajoView()
+    expediente = SimpleNamespace(asignaciones_tecnicos=SimpleNamespace(all=lambda: [SimpleNamespace(tecnico_id=1)]))
+    leg = SimpleNamespace(
+        pk=3,
+        revision_tecnico="PENDIENTE",
+        estado_cupo="DENTRO",
+        es_titular_activo=True,
+        save=mocker.Mock(),
+        delete=mocker.Mock(),
+    )
+
+    def _go404(obj, **kwargs):
+        if obj is module.Expediente:
+            return expediente
+        return leg
+
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", side_effect=_go404)
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch("celiaquia.views.expediente._user_in_group", side_effect=lambda _u, g: g == "TecnicoCeliaquia")
+
+    invalid_req = SimpleNamespace(user=SimpleNamespace(id=1), POST={"accion": "foo"})
+    invalid = view.post(invalid_req, pk=1, legajo_id=3)
+    assert invalid.status_code == 400
+
+    no_motivo_req = SimpleNamespace(user=SimpleNamespace(id=1), POST={"accion": "SUBSANAR", "motivo": ""})
+    no_motivo = view.post(no_motivo_req, pk=1, legajo_id=3)
+    assert no_motivo.status_code == 400
+
+    liberar = mocker.patch("celiaquia.views.expediente.CupoService.liberar_slot")
+    mocker.patch("celiaquia.views.expediente.HistorialValidacionTecnica.objects.create")
+    rechazar_req = SimpleNamespace(user=SimpleNamespace(id=1), POST={"accion": "RECHAZAR"})
+    rechazar = view.post(rechazar_req, pk=1, legajo_id=3)
+    assert rechazar.status_code == 200
+    assert liberar.called
+
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    eliminar_req = SimpleNamespace(user=SimpleNamespace(id=1), POST={"accion": "ELIMINAR"})
+    eliminar = view.post(eliminar_req, pk=1, legajo_id=3)
+    assert eliminar.status_code == 200
