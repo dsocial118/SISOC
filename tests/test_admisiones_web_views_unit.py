@@ -433,3 +433,134 @@ def test_admision_detail_post_file_and_docx_paths(mocker):
         return_value=_ListChain([SimpleNamespace(estado="Docx generado")]),
     )
     assert view.post(req_docx_invalid_state) == "redir"
+
+
+def test_informe_tecnicos_create_dispatch_branches(mocker):
+    view = module.InformeTecnicosCreateView()
+    view.kwargs = {"pk": 10, "tipo": "base"}
+    request = _Req(user=_user(), method="GET")
+
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_admision_y_tipo_from_kwargs",
+        return_value=(None, "base"),
+    )
+
+    import pytest
+
+    with pytest.raises(module.Http404):
+        view.dispatch(request)
+
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_admision_y_tipo_from_kwargs",
+        return_value=(SimpleNamespace(id=5), "otro"),
+    )
+    mocker.patch("admisiones.views.web_views.messages.error")
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/edit/5")
+    resp = view.dispatch(request)
+    assert resp.status_code == 302
+
+
+def test_informe_tecnicos_create_get_form_kwargs_y_success_url(mocker):
+    view = module.InformeTecnicosCreateView()
+    view.admision_obj = SimpleNamespace(id=10)
+    view.request = _Req(method="POST", POST={"action": "submit"})
+    mocker.patch(
+        "django.views.generic.edit.ModelFormMixin.get_form_kwargs",
+        return_value={"base": True},
+    )
+
+    kwargs = view.get_form_kwargs()
+
+    assert kwargs["admision"].id == 10
+    assert kwargs["require_full"] is True
+
+    view.object = SimpleNamespace(admision=SimpleNamespace(id=99))
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/ok")
+    assert view.get_success_url() == "/ok"
+
+
+def test_informe_tecnicos_create_form_invalid_agrega_error(mocker):
+    view = module.InformeTecnicosCreateView()
+    view.request = _Req(user=_user())
+    form = SimpleNamespace(
+        errors={"campo_x": ["error 1"]},
+        fields={"campo_x": SimpleNamespace(label="Campo X")},
+    )
+    mocker.patch("admisiones.views.web_views.messages.error")
+    super_invalid = mocker.patch(
+        "django.views.generic.edit.ModelFormMixin.form_invalid",
+        return_value="INVALID",
+    )
+
+    result = view.form_invalid(form)
+
+    assert result == "INVALID"
+    assert super_invalid.called
+
+
+def test_informe_tecnicos_update_dispatch_and_form_kwargs(mocker):
+    view = module.InformeTecnicosUpdateView()
+    view.request = _Req(method="POST", POST={"action": "save"})
+    admision = SimpleNamespace(id=22)
+    view.get_object = lambda: SimpleNamespace(tipo="otro", admision=admision)
+
+    mocker.patch("admisiones.views.web_views.messages.error")
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/edit")
+    response = view.dispatch(view.request)
+    assert response.status_code == 302
+
+    view.object = SimpleNamespace(tipo="base", admision=admision)
+    mocker.patch(
+        "django.views.generic.edit.ModelFormMixin.get_form_kwargs",
+        return_value={"seed": 1},
+    )
+    kwargs = view.get_form_kwargs()
+    assert kwargs["admision"].id == 22
+    assert kwargs["require_full"] is False
+
+
+def test_informe_tecnico_detail_context_muestra_revision_tecnico(mocker):
+    view = module.InformeTecnicoDetailView()
+    view.request = _Req(
+        user=SimpleNamespace(
+            groups=SimpleNamespace(
+                filter=lambda **kwargs: SimpleNamespace(exists=lambda: True)
+            )
+        )
+    )
+    view.object = SimpleNamespace(estado="Docx generado")
+    view.kwargs = {"tipo": "base"}
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_context_informe_detail",
+        return_value={"k": "v"},
+    )
+
+    context = view.get_context_data()
+
+    assert context["k"] == "v"
+    assert context["mostrar_revision_tecnico"] is True
+
+
+def test_admisiones_legales_ajax_devuelve_json(mocker):
+    request = _Req(GET={"busqueda": "abc", "page": 1}, user=_user())
+
+    mocker.patch(
+        "core.decorators.group_required",
+        return_value=lambda fn: fn,
+    )
+    mocker.patch(
+        "admisiones.views.web_views.LegalesService.get_admisiones_legales_filtradas",
+        return_value=[1, 2, 3],
+    )
+    mocker.patch(
+        "django.template.loader.render_to_string",
+        side_effect=["<tr></tr>", "<nav></nav>"],
+    )
+
+    response = module.admisiones_legales_ajax(request)
+
+    assert response.status_code == 200
