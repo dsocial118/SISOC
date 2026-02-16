@@ -193,3 +193,243 @@ def test_admision_detail_get_object_mismatch_raises(mocker):
 
     with pytest.raises(module.Http404):
         view.get_object()
+
+
+class _ListChain:
+    def __init__(self, items):
+        self._items = items
+
+    def select_related(self, *args, **kwargs):
+        return self
+
+    def prefetch_related(self, *args, **kwargs):
+        return self
+
+    def order_by(self, *args, **kwargs):
+        return self
+
+    def first(self):
+        return self._items[0] if self._items else None
+
+    def __iter__(self):
+        return iter(self._items)
+
+    def __len__(self):
+        return len(self._items)
+
+    def __getitem__(self, index):
+        return self._items[index]
+
+
+def _groups_user(is_superuser=False, allowed=False):
+    groups = SimpleNamespace(
+        filter=lambda **kwargs: SimpleNamespace(exists=lambda: allowed)
+    )
+    return SimpleNamespace(is_superuser=is_superuser, groups=groups)
+
+
+def test_admision_detail_get_context_data_builds_full_context(mocker):
+    """Detail context should compose historial, acompanamiento and rendicion data."""
+    view = module.AdmisionDetailView()
+    tecnico = SimpleNamespace(get_full_name=lambda: "", username="tec")
+    dupla = SimpleNamespace(tecnico=SimpleNamespace(all=lambda: [tecnico]), abogado="ab")
+    comedor = SimpleNamespace(dupla=dupla)
+    admision = SimpleNamespace(
+        comedor=comedor,
+        historial=_ListChain(
+            [
+                SimpleNamespace(
+                    fecha=None,
+                    usuario=SimpleNamespace(get_full_name=lambda: "", username="u1"),
+                    campo="c",
+                    valor_nuevo="n",
+                    valor_anterior="a",
+                )
+            ]
+        ),
+        historial_estados=_ListChain(
+            [
+                SimpleNamespace(
+                    fecha=None,
+                    usuario=SimpleNamespace(get_full_name=lambda: "", username="u2"),
+                    estado_anterior="pendiente",
+                    estado_nuevo="aprobada",
+                )
+            ]
+        ),
+    )
+    view.object = admision
+    view.request = _Req(user=_user(), GET={})
+
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.get_admision_update_context",
+        return_value={"documentos": [1], "documentos_personalizados": [2], "informe_tecnico": "i", "pdf": "p"},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._verificar_permiso_tecnico_dupla",
+        return_value=True,
+    )
+    mocker.patch(
+        "admisiones.views.web_views.InformeComplementario.objects.filter",
+        return_value=_ListChain([SimpleNamespace()]),
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AcompanamientoService.obtener_datos_admision",
+        return_value={"anexo": "x", "info_relevante": "info", "numero_if": "if", "numero_disposicion": "disp"},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AcompanamientoService.obtener_prestaciones_detalladas",
+        return_value={"prestaciones_por_dia": [1], "prestaciones_dias": [2], "dias_semana": [3]},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.ExpedientesPagosService.obtener_expedientes_pagos",
+        return_value=["exp"],
+    )
+    mocker.patch(
+        "admisiones.views.web_views.RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales",
+        return_value=["rm"],
+    )
+    mocker.patch(
+        "admisiones.views.web_views.RendicionCuentasFinal.objects.filter",
+        return_value=_ListChain([SimpleNamespace()]),
+    )
+    mocker.patch(
+        "admisiones.views.web_views.RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final",
+        return_value=["d"],
+    )
+    mocker.patch(
+        "admisiones.views.web_views.HistorialService.get_historial_documentos_by_rendicion_cuentas_final",
+        return_value=["h"],
+    )
+    mocker.patch("admisiones.templatetags.estado_filters.format_estado", side_effect=lambda x: f"fmt:{x}")
+
+    ctx = view.get_context_data()
+    assert ctx["dupla_abogado"] == "ab"
+    assert ctx["documentos"] == [1]
+    assert ctx["informes_complementarios"]
+    assert ctx["acompanamiento_info"] == "info"
+    assert ctx["expedientes_pagos"] == ["exp"]
+    assert ctx["rendicion_final_documentos"] == ["d"]
+    assert ctx["admision_historial_items"]
+    assert ctx["historial_estados_items"]
+
+
+def test_admision_detail_post_forzar_cierre_permission_and_validation(mocker):
+    """Detail post should enforce permissions and require reason for forced close."""
+    view = module.AdmisionDetailView()
+    view.kwargs = {"comedor_pk": 2, "pk": 7}
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/detalle")
+    mocker.patch("admisiones.views.web_views.safe_redirect", return_value="redir")
+    err = mocker.patch("admisiones.views.web_views.messages.error")
+
+    req_no_perm = _Req(
+        POST={"forzar_cierre": "1"},
+        FILES={},
+        user=_groups_user(allowed=False),
+        get_full_path=lambda: "/x",
+    )
+    assert view.post(req_no_perm) == "redir"
+    assert err.called
+
+    admision = SimpleNamespace(save=mocker.Mock())
+    view.get_object = lambda: admision
+    req_no_reason = _Req(
+        POST={"forzar_cierre": "1", "motivo_forzar_cierre": "   "},
+        FILES={},
+        user=_groups_user(allowed=True),
+        get_full_path=lambda: "/x",
+    )
+    assert view.post(req_no_reason) == "redir"
+
+
+def test_admision_detail_post_forzar_cierre_success_branches(mocker):
+    """Forced close should persist either legales or admision state path."""
+    view = module.AdmisionDetailView()
+    view.kwargs = {"comedor_pk": 2, "pk": 7}
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/detalle")
+    mocker.patch("admisiones.views.web_views.safe_redirect", return_value="ok")
+    mocker.patch("admisiones.views.web_views.messages.success")
+
+    req = _Req(
+        POST={"forzar_cierre": "1", "motivo_forzar_cierre": "motivo"},
+        FILES={},
+        user=_groups_user(allowed=True),
+        get_full_path=lambda: "/x",
+    )
+
+    adm_legales = SimpleNamespace(
+        activa=True,
+        estado_legales="A validar",
+        save=mocker.Mock(),
+    )
+    view.get_object = lambda: adm_legales
+    assert view.post(req) == "ok"
+    assert adm_legales.save.called
+
+    adm_no_legales = SimpleNamespace(
+        activa=True,
+        estado_legales=None,
+        save=mocker.Mock(),
+    )
+    view.get_object = lambda: adm_no_legales
+    assert view.post(req) == "ok"
+    assert adm_no_legales.save.called
+
+
+def test_admision_detail_post_file_and_docx_paths(mocker):
+    """Detail post should handle additional files and DOCX branch errors."""
+    view = module.AdmisionDetailView()
+    view.kwargs = {"comedor_pk": 2, "pk": 7}
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/detalle")
+    mocker.patch("admisiones.views.web_views.safe_redirect", return_value="redir")
+    mocker.patch("admisiones.views.web_views.messages.error")
+
+    req_bad = _Req(
+        POST={"nombre": "Doc"},
+        FILES={},
+        user=_groups_user(allowed=True),
+        get_full_path=lambda: "/x",
+    )
+    assert view.post(req_bad).status_code == 400
+
+    admision = SimpleNamespace(id=5, comedor=SimpleNamespace(), estado_admision="otro")
+    view.get_object = lambda: admision
+    req_upload = _Req(
+        POST={"nombre": "Doc"},
+        FILES={"archivo": object()},
+        user=_groups_user(allowed=True),
+        get_full_path=lambda: "/x",
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.crear_documento_personalizado",
+        return_value=(SimpleNamespace(), None),
+    )
+    assert view.post(req_upload).status_code == 200
+
+    req_docx_forbidden = _Req(
+        POST={"subir_docx_final": "1"},
+        FILES={"docx_final": object()},
+        user=_user(False),
+        get_full_path=lambda: "/x",
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._verificar_permiso_tecnico_dupla",
+        return_value=False,
+    )
+    assert view.post(req_docx_forbidden).status_code == 403
+
+    req_docx_invalid_state = _Req(
+        POST={"subir_docx_final": "1"},
+        FILES={"docx_final": object()},
+        user=_user(True),
+        get_full_path=lambda: "/x",
+    )
+    mocker.patch(
+        "admisiones.views.web_views.InformeTecnico.objects.filter",
+        return_value=_ListChain([SimpleNamespace(estado="Docx generado")]),
+    )
+    assert view.post(req_docx_invalid_state) == "redir"
