@@ -301,3 +301,104 @@ def test_populate_excepcion_data_parses_motivo_and_adjuntos(mocker):
     )
     assert parsed["motivo"] == "motivo_obj"
     assert parsed["adjuntos"] == ["a", "b"]
+
+
+def test_populate_relevamiento_and_update_territorial_without_data(mocker):
+    """populate_relevamiento and update_territorial should handle default branches."""
+    rel = SimpleNamespace(save=mocker.Mock())
+    relevamiento_form = SimpleNamespace(
+        save=lambda commit=False: rel,
+        cleaned_data={"responsable_es_referente": "True"},
+        data={"x": 1},
+    )
+    espacio = SimpleNamespace(save=mocker.Mock())
+    extra_forms = {
+        "funcionamiento_form": SimpleNamespace(save=lambda: "fun"),
+        "espacio_form": SimpleNamespace(save=lambda commit=False: espacio),
+        "espacio_cocina_form": SimpleNamespace(save=lambda commit=True: "coc"),
+        "espacio_prestacion_form": SimpleNamespace(save=lambda commit=True: "prep"),
+        "colaboradores_form": SimpleNamespace(save=lambda: "col"),
+        "recursos_form": SimpleNamespace(save=lambda: "rec"),
+        "anexo_form": SimpleNamespace(save=lambda: "an"),
+        "compras_form": SimpleNamespace(save=lambda: "comp"),
+        "prestacion_form": SimpleNamespace(save=lambda: "pres"),
+        "referente_form": SimpleNamespace(save=lambda: "ref"),
+        "punto_entregas_form": SimpleNamespace(save=lambda: "punto"),
+    }
+    mocker.patch("relevamientos.service.timezone.now", return_value="now")
+    out = module.RelevamientoService.populate_relevamiento(relevamiento_form, extra_forms)
+    assert out is rel
+    assert rel.responsable_es_referente is True
+
+    rel2 = SimpleNamespace(
+        territorial_nombre="x",
+        territorial_uid="y",
+        estado="Visita pendiente",
+        id=2,
+        save=mocker.Mock(),
+    )
+    mocker.patch("relevamientos.service.Relevamiento.objects.get", return_value=rel2)
+    mocker.patch("relevamientos.service.build_relevamiento_payload", return_value={"k": 1})
+    starter = mocker.patch("relevamientos.service.AsyncSendRelevamientoToGestionar")
+    req = SimpleNamespace(POST={"relevamiento_id": "2", "territorial_editar": ""})
+    out2 = module.RelevamientoService.update_territorial(req)
+    assert out2 is rel2
+    assert rel2.estado == "Pendiente"
+    assert starter.called
+
+
+def test_create_or_update_anexo_and_populate_helpers(mocker):
+    """Anexo/punto/compras populate helpers should transform and persist data."""
+    mocker.patch("relevamientos.service.populate_data", side_effect=lambda data, _tr: {**data, "ok": True})
+    mocker.patch("relevamientos.service.convert_string_to_int", return_value=3)
+    parsed = module.RelevamientoService.populate_anexo_data({"veces_recibio_insumos_2024": "3"})
+    assert parsed["ok"] is True
+    assert parsed["veces_recibio_insumos_2024"] == 3
+
+    mocker.patch(
+        "relevamientos.service.Anexo.objects.create",
+        return_value=SimpleNamespace(),
+    )
+    mocker.patch.object(module.RelevamientoService, "populate_anexo_data", return_value={"a": 1})
+    assert module.RelevamientoService.create_or_update_anexo({"a": 1}) is not None
+
+    p = module.RelevamientoService.populate_punto_entregas_data({"existe_punto_entregas": "Y"})
+    c = module.RelevamientoService.populate_compras_data({"almacen_cercano": "N"})
+    assert p["ok"] and c["ok"]
+
+
+def test_responsable_referente_create_and_self_reference(mocker):
+    """When responsable_es_referente is true, both IDs should point to the same record."""
+    mocker.patch(
+        "relevamientos.service.Referente.objects.filter",
+        return_value=SimpleNamespace(last=lambda: None),
+    )
+    created = SimpleNamespace(id=20)
+    mocker.patch("relevamientos.service.Referente.objects.create", return_value=created)
+
+    rid, fid = module.RelevamientoService.create_or_update_responsable_y_referente(
+        True,
+        {"documento": "1", "nombre": "R"},
+        {},
+        sisoc_id=None,
+    )
+    assert rid == 20
+    assert fid == 20
+
+
+@pytest.mark.parametrize(
+    "method_name, patch_target",
+    [
+        ("create_or_update_compras", "populate_compras_data"),
+        ("create_or_update_anexo", "populate_anexo_data"),
+        ("create_or_update_punto_entregas", "populate_punto_entregas_data"),
+        ("create_or_update_prestacion", "populate_prestacion_data"),
+        ("create_or_update_excepcion", "populate_excepcion_data"),
+    ],
+)
+def test_builder_exception_paths_raise(mocker, method_name, patch_target):
+    """Builder methods should log and re-raise on unexpected internal errors."""
+    mocker.patch.object(module.RelevamientoService, patch_target, side_effect=RuntimeError("boom"))
+    method = getattr(module.RelevamientoService, method_name)
+    with pytest.raises(RuntimeError, match="boom"):
+        method({"x": 1})
