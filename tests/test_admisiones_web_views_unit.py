@@ -564,3 +564,154 @@ def test_admisiones_legales_ajax_devuelve_json(mocker):
     response = module.admisiones_legales_ajax(request)
 
     assert response.status_code == 200
+
+
+def test_admisiones_legales_list_view_queryset_y_contexto(mocker):
+    view = module.AdmisionesLegalesListView()
+    view.request = _Req(user=_user(), GET={})
+
+    qs = [SimpleNamespace(id=1)]
+    mocker.patch(
+        "admisiones.views.web_views.LegalesService.get_admisiones_legales_filtradas",
+        return_value=qs,
+    )
+    assert view.get_queryset() == qs
+
+    mocker.patch(
+        "django.views.generic.list.MultipleObjectMixin.get_context_data",
+        return_value={"admisiones": qs},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.LegalesService.get_admisiones_legales_table_data",
+        return_value=[{"id": 1}],
+    )
+    mocker.patch("admisiones.views.web_views.reverse", side_effect=lambda name: f"/{name}")
+    mocker.patch("admisiones.views.web_views.get_legales_filters_ui_config", return_value={"k": "v"})
+    mocker.patch(
+        "admisiones.views.web_views.build_columns_context_for_custom_cells",
+        return_value={"table_items": [1]},
+    )
+
+    ctx = view.get_context_data()
+    assert ctx["filters_mode"] is True
+    assert ctx["table_items"] == [1]
+
+
+def test_admisiones_legales_detail_contexto_y_post(mocker):
+    view = module.AdmisionesLegalesDetailView()
+    obj = SimpleNamespace(pk=99)
+    view.get_object = lambda: obj
+    view.request = _Req(user=_user(), GET={})
+
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.LegalesService.get_legales_context",
+        return_value={"ctx": 1},
+    )
+    mocker.patch.object(view, "get_form", return_value="FORM")
+    mocker.patch("admisiones.views.web_views.LegalesNumIFForm", return_value="FORM_IF")
+
+    context = view.get_context_data()
+    assert context["ctx"] == 1
+    assert context["form"] == "FORM"
+    assert context["form_legales_num_if"] == "FORM_IF"
+
+    mocker.patch(
+        "admisiones.views.web_views.LegalesService.procesar_post_legales",
+        return_value="OK_POST",
+    )
+    assert view.post(_Req(user=_user()), pk=99) == "OK_POST"
+
+
+def test_informe_complementario_review_contexto_con_y_sin_informe(mocker):
+    view = module.InformeTecnicoComplementarioReviewView()
+    view.object = SimpleNamespace()
+
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
+
+    filtro_mock = mocker.patch(
+        "admisiones.models.admisiones.InformeComplementario.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
+    )
+    ctx = view.get_context_data()
+    assert "informe_complementario" not in ctx
+    assert filtro_mock.called
+
+    informe = SimpleNamespace(id=3)
+    mocker.patch(
+        "admisiones.models.admisiones.InformeComplementario.objects.filter",
+        return_value=SimpleNamespace(first=lambda: informe),
+    )
+    mocker.patch(
+        "admisiones.models.admisiones.InformeComplementarioCampos.objects.filter",
+        return_value=["campo"],
+    )
+    ctx2 = view.get_context_data()
+    assert ctx2["informe_complementario"].id == 3
+    assert ctx2["campos_modificados"] == ["campo"]
+
+
+def test_informe_complementario_review_post_delega_servicio(mocker):
+    view = module.InformeTecnicoComplementarioReviewView()
+    view.get_object = lambda: SimpleNamespace(id=7)
+    mocker.patch(
+        "admisiones.views.web_views.LegalesService.revisar_informe_complementario",
+        return_value="DONE",
+    )
+
+    result = view.post(_Req(user=_user()), pk=7)
+
+    assert result == "DONE"
+
+
+def test_informe_complementario_detail_contexto_y_post_success(mocker):
+    view = module.InformeTecnicoComplementarioDetailView()
+    admision = SimpleNamespace(id=12)
+    informe_tecnico = SimpleNamespace(admision=admision)
+    view.object = informe_tecnico
+    view.kwargs = {"tipo": "base", "pk": 88}
+    req = _Req(
+        POST={"campo_estado": " valor "},
+        user=_user(),
+        get_full_path=lambda: "/x",
+    )
+    view.request = req
+    view.get_object = lambda: informe_tecnico
+
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_context_informe_detail",
+        return_value={"base": True},
+    )
+    mocker.patch(
+        "admisiones.models.admisiones.InformeComplementario.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
+    )
+    context = view.get_context_data()
+    assert context["base"] is True
+
+    informe_complementario = SimpleNamespace(estado=None, save=mocker.Mock())
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_campos_complementarios",
+        return_value=informe_complementario,
+    )
+    mocker.patch(
+        "admisiones.services.legales_service.LegalesService.actualizar_estado_por_accion",
+        return_value=None,
+    )
+    mocker.patch("admisiones.views.web_views.messages.success")
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/dest")
+
+    response = view.post(req, pk=88)
+    assert response.status_code == 302
+    assert informe_complementario.estado == "enviado_validacion"
+    assert informe_complementario.save.called
