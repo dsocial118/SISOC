@@ -6,12 +6,24 @@ from types import SimpleNamespace
 import pytest
 
 from admisiones.forms.admisiones_forms import (
+    ConvenioForm,
+    ConvenioNumIFFORM,
+    DisposicionForm,
+    DisposicionNumIFFORM,
+    DocumentosExpedienteForm,
+    IFInformeTecnicoForm,
     IntervencionJuridicosForm,
     InformeTecnicoBaseForm,
     InformeTecnicoEstadoForm,
     InformeTecnicoJuridicoForm,
+    InformeSGAForm,
     LegalesNumIFForm,
+    LegalesRectificarForm,
     MontoDecimalField,
+    ProyectoConvenioForm,
+    ProyectoDisposicionForm,
+    ReinicioExpedienteForm,
+    SolicitarInformeComplementarioForm,
     _armar_domicilio,
     _if_relevamiento_a_pac,
     _permite_no_corresponde_fecha_vencimiento,
@@ -258,3 +270,41 @@ def test_intervencion_juridicos_form_valido_cuando_rechazado_completo():
     )
 
     assert form.is_valid()
+
+
+@pytest.mark.parametrize(
+    "form_class",
+    [
+        LegalesRectificarForm,
+        ProyectoDisposicionForm,
+        ProyectoConvenioForm,
+        DocumentosExpedienteForm,
+        ConvenioNumIFFORM,
+        DisposicionNumIFFORM,
+        InformeSGAForm,
+        ConvenioForm,
+        DisposicionForm,
+        IFInformeTecnicoForm,
+        ReinicioExpedienteForm,
+        SolicitarInformeComplementarioForm,
+    ],
+)
+def test_forms_marcan_todos_los_campos_como_obligatorios(form_class):
+    """Los formularios operativos de flujo legal/tecnico deben marcar required=True."""
+    form = form_class()
+    assert all(field.required for field in form.fields.values())
+
+
+def test_documentos_expediente_form_label_vacio_en_value():
+    """El label de value debe quedar vacío para render de tabla."""
+    form = DocumentosExpedienteForm()
+    assert form.fields["value"].label == ""
+
+
+def test_convenio_y_disposicion_num_if_labels_configurados():
+    """Verifica labels explícitos de formularios de número IF."""
+    form_convenio = ConvenioNumIFFORM()
+    form_disposicion = DisposicionNumIFFORM()
+
+    assert "Proyecto de Convenio" in form_convenio.fields["numero_if"].label
+    assert "Proyecto Disposición" in form_disposicion.fields["numero_if"].label
