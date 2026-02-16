@@ -413,3 +413,132 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     eliminar_req = SimpleNamespace(user=SimpleNamespace(id=1), POST={"accion": "ELIMINAR"})
     eliminar = view.post(eliminar_req, pk=1, legajo_id=3)
     assert eliminar.status_code == 200
+
+
+def test_procesar_expediente_view_ajax_and_error_paths(mocker):
+    view = module.ProcesarExpedienteView()
+    user = SimpleNamespace()
+    request = SimpleNamespace(user=user, headers={"X-Requested-With": "XMLHttpRequest"})
+    view.request = request
+
+    expediente = SimpleNamespace(id=10)
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=expediente)
+
+    mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.procesar_expediente",
+        return_value={"creados": 2, "errores": 1, "excluidos": 0, "excluidos_detalle": []},
+    )
+    ok = view.post(request, pk=10)
+    assert ok.status_code == 200
+
+    from django.core.exceptions import ValidationError
+
+    mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.procesar_expediente",
+        side_effect=ValidationError("bad"),
+    )
+    bad_validation = view.post(request, pk=10)
+    assert bad_validation.status_code == 400
+
+    mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.procesar_expediente",
+        side_effect=RuntimeError("boom"),
+    )
+    bad_exception = view.post(request, pk=10)
+    assert bad_exception.status_code == 500
+
+
+def test_expediente_nomina_sintys_export_view(mocker):
+    view = module.ExpedienteNominaSintysExportView()
+    expediente = SimpleNamespace(pk=7)
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=expediente)
+    mocker.patch("celiaquia.views.expediente.CruceService.generar_nomina_sintys_excel", return_value=b"xlsx")
+
+    response = view.get(SimpleNamespace(), pk=7)
+    assert response.status_code == 200
+    assert "nomina_sintys_7.xlsx" in response["Content-Disposition"]
+
+
+def test_actualizar_registro_erroneo_view_paths(mocker):
+    view = module.ActualizarRegistroErroneoView()
+    expediente = SimpleNamespace()
+    registro = SimpleNamespace(datos_raw={}, save=mocker.Mock())
+
+    # Sin permisos
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=expediente)
+    req_forbidden = SimpleNamespace(user=SimpleNamespace(), body=b"{}")
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch("celiaquia.views.expediente._is_provincial", return_value=False)
+    forbidden = view.post(req_forbidden, pk=1, registro_id=2)
+    assert forbidden.status_code == 403
+
+    # Con permisos y actualización OK
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", side_effect=[expediente, registro])
+    req_ok = SimpleNamespace(user=SimpleNamespace(), body=b'{"apellido":"Perez","nombre":"","documento":"123"}')
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    ok = view.post(req_ok, pk=1, registro_id=2)
+    assert ok.status_code == 200
+    assert registro.datos_raw == {"apellido": "Perez", "documento": "123"}
+
+    # Error interno
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", side_effect=[expediente, registro])
+    req_error = SimpleNamespace(user=SimpleNamespace(), body=b"{")
+    error = view.post(req_error, pk=1, registro_id=2)
+    assert error.status_code == 500
+
+
+def test_reprocesar_registros_erroneos_early_branches(mocker):
+    view = module.ReprocesarRegistrosErroneosView()
+    expediente = SimpleNamespace(registros_erroneos=SimpleNamespace(filter=mocker.Mock()))
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=expediente)
+
+    # Sin permisos
+    req_forbidden = SimpleNamespace(user=SimpleNamespace())
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch("celiaquia.views.expediente._is_provincial", return_value=False)
+    forbidden = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
+        view, req_forbidden, pk=1
+    )
+    assert forbidden.status_code == 403
+
+    # Sin registros erróneos
+    req_ok = SimpleNamespace(user=SimpleNamespace(profile=SimpleNamespace(provincia_id=1)))
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
+    expediente.registros_erroneos.filter.return_value = SimpleNamespace(exists=lambda: False)
+    no_records = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
+        view, req_ok, pk=1
+    )
+    assert no_records.status_code == 400
+
+    # Con registros pero sin provincia
+    req_no_prov = SimpleNamespace(user=SimpleNamespace(profile=SimpleNamespace(provincia_id=None)))
+    expediente.registros_erroneos.filter.return_value = SimpleNamespace(exists=lambda: True)
+    mocker.patch("celiaquia.views.expediente.EstadoLegajo.objects.get", return_value=SimpleNamespace())
+    no_prov = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
+        view, req_no_prov, pk=1
+    )
+    assert no_prov.status_code == 400
+
+
+def test_eliminar_registro_erroneo_view_paths(mocker):
+    view = module.EliminarRegistroErroneoView()
+    expediente = SimpleNamespace()
+    registro = SimpleNamespace(delete=mocker.Mock())
+
+    # Sin permisos
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=expediente)
+    req_forbidden = SimpleNamespace(user=SimpleNamespace())
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch("celiaquia.views.expediente._is_provincial", return_value=False)
+    forbidden = view.post(req_forbidden, pk=1, registro_id=2)
+    assert forbidden.status_code == 403
+
+    # Eliminación OK
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", side_effect=[expediente, registro])
+    req_ok = SimpleNamespace(user=SimpleNamespace())
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    ok = view.post(req_ok, pk=1, registro_id=2)
+    assert ok.status_code == 200
+    assert registro.delete.called
