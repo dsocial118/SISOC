@@ -185,3 +185,80 @@ def test_procesar_cruce_validations(mocker):
     )
     with pytest.raises(ValidationError):
         CruceService.procesar_cruce_por_cuit(exp, archivo_excel=object(), usuario="u")
+
+
+def test_leer_tabla_raises_when_all_formats_fail(mocker):
+    class F:
+        def open(self):
+            return None
+
+        def read(self):
+            return b"xxx"
+
+        def seek(self, _):
+            return None
+
+    mocker.patch("celiaquia.services.cruce_service.pd.read_excel", side_effect=ValueError("x"))
+    mocker.patch("celiaquia.services.cruce_service.pd.read_csv", side_effect=ValueError("x"))
+
+    with pytest.raises(ValidationError):
+        CruceService._leer_tabla(F())
+
+
+def test_generar_prd_pdf_html_requires_weasy(monkeypatch):
+    monkeypatch.setattr(cruce_module, "_WEASY_OK", False)
+    with pytest.raises(RuntimeError):
+        CruceService._generar_prd_pdf_html(SimpleNamespace(), {})
+
+
+def test_generar_prd_pdf_html_success_with_weasy(mocker, monkeypatch):
+    monkeypatch.setattr(cruce_module, "_WEASY_OK", True)
+
+    expediente = SimpleNamespace(
+        asignaciones_tecnicos=SimpleNamespace(
+            all=lambda: SimpleNamespace(
+                exists=lambda: True,
+                first=lambda: SimpleNamespace(
+                    tecnico=SimpleNamespace(get_full_name=lambda: "Tec Name", username="tec")
+                ),
+            )
+        )
+    )
+    mocker.patch("celiaquia.services.cruce_service.render_to_string", return_value="<html></html>")
+    mocker.patch(
+        "celiaquia.services.cruce_service.WPHTML",
+        return_value=SimpleNamespace(write_pdf=lambda: b"pdf-bytes"),
+    )
+
+    out = CruceService._generar_prd_pdf_html(
+        expediente,
+        {"total_legajos": 10, "matcheados": 7, "no_matcheados": 3},
+    )
+    assert out == b"pdf-bytes"
+
+
+def test_generar_prd_pdf_prefers_html_and_falls_back(mocker, monkeypatch):
+    expediente = SimpleNamespace()
+    resumen = {"total_legajos": 1}
+
+    # Caso 1: Weasy deshabilitado -> ReportLab directo
+    monkeypatch.setattr(cruce_module, "_WEASY_OK", False)
+    reportlab = mocker.patch.object(CruceService, "_generar_prd_pdf_reportlab", return_value=b"r1")
+    html = mocker.patch.object(CruceService, "_generar_prd_pdf_html", return_value=b"h1")
+    out1 = CruceService._generar_prd_pdf(expediente, resumen)
+    assert out1 == b"r1"
+    assert reportlab.called
+    assert not html.called
+
+    # Caso 2: Weasy habilitado pero HTML falla -> fallback
+    monkeypatch.setattr(cruce_module, "_WEASY_OK", True)
+    mocker.patch.object(CruceService, "_generar_prd_pdf_html", side_effect=RuntimeError("boom"))
+    reportlab2 = mocker.patch.object(CruceService, "_generar_prd_pdf_reportlab", return_value=b"r2")
+    out2 = CruceService._generar_prd_pdf(expediente, resumen)
+    assert out2 == b"r2"
+    assert reportlab2.called
+
+    # Caso 3: Weasy habilitado y HTML OK
+    mocker.patch.object(CruceService, "_generar_prd_pdf_html", return_value=b"h3")
+    out3 = CruceService._generar_prd_pdf(expediente, resumen)
+    assert out3 == b"h3"
