@@ -427,3 +427,52 @@ def test_generar_documento_admision_and_update_context(mocker):
     ctx = module.AdmisionService.get_admision_update_context(adm, user=SimpleNamespace(is_superuser=False))
     assert ctx["obligatorios_totales"] == 1
     assert ctx["stats"]["aceptados"] == 1
+
+
+def test_contextos_create_admision_y_instancia_paths(mocker):
+    """Cubre éxito y excepción en context/create/get instance helpers."""
+    comedor = SimpleNamespace(id=11)
+    convenio = SimpleNamespace(id=3)
+    estado = SimpleNamespace(id=1)
+    admision = SimpleNamespace(id=99)
+
+    mocker.patch(
+        "admisiones.services.admisiones_service.get_object_or_404",
+        side_effect=[comedor, comedor, convenio, SimpleNamespace(id=77)],
+    )
+    mocker.patch("admisiones.services.admisiones_service.EstadoAdmision.objects.first", return_value=estado)
+    create_mock = mocker.patch("admisiones.services.admisiones_service.Admision.objects.create", return_value=admision)
+    mocker.patch("admisiones.services.admisiones_service.TipoConvenio.objects.exclude", return_value=[convenio])
+
+    create_ctx = module.AdmisionService.get_admision_create_context(11)
+    assert create_ctx["comedor"].id == 11
+    assert create_ctx["convenios"] == [convenio]
+
+    created = module.AdmisionService.create_admision(11, 3)
+    assert created.id == 99
+    assert create_mock.called
+
+    got = module.AdmisionService.get_admision_instance(77)
+    assert got.id == 77
+
+
+def test_helpers_contexto_instancia_y_create_admision_error(mocker):
+    """Si falla la carga de objetos, los helpers devuelven fallback seguro."""
+    mocker.patch("admisiones.services.admisiones_service.get_object_or_404", side_effect=RuntimeError("boom"))
+
+    assert module.AdmisionService.get_admision_context(1) == {}
+    assert module.AdmisionService.get_admision_create_context(2) == {}
+    assert module.AdmisionService.create_admision(2, 3) is None
+    assert module.AdmisionService.get_admision_instance(4) is None
+
+
+def test_generar_documento_admision_devuelve_none_en_paths_no_exitosos(mocker):
+    """Sin buffer o con excepción debe devolver None en generación DOCX."""
+    adm = SimpleNamespace(id=5, comedor=SimpleNamespace(nombre="Comedor Y"))
+    mocker.patch("admisiones.services.admisiones_service.TextFormatterService.preparar_contexto_admision", return_value={})
+
+    mocker.patch("admisiones.services.admisiones_service.DocumentTemplateService.generar_docx", return_value=None)
+    assert module.AdmisionService.generar_documento_admision(adm) is None
+
+    mocker.patch("admisiones.services.admisiones_service.DocumentTemplateService.generar_docx", side_effect=RuntimeError("x"))
+    assert module.AdmisionService.generar_documento_admision(adm) is None
