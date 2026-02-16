@@ -134,3 +134,170 @@ def test_create_or_update_recursos_and_compras(mocker):
     mocker.patch("relevamientos.service.FuenteCompras.objects.create", return_value=SimpleNamespace())
     cmp = module.RelevamientoService.create_or_update_compras({"k": 1})
     assert cmp is not None
+
+
+def test_get_relevamiento_detail_object_and_not_found(mocker):
+    """Detail object should normalize string fields and return None on missing record."""
+
+    class _ValuesChain:
+        def values(self, *args, **kwargs):
+            return self
+
+        def get(self, **kwargs):
+            return {"excepcion__adjuntos": "u", "imagenes": "img"}
+
+    mocker.patch(
+        "relevamientos.service.Relevamiento.objects.prefetch_related",
+        return_value=_ValuesChain(),
+    )
+
+    detail = module.RelevamientoService.get_relevamiento_detail_object(1)
+    assert detail["excepcion__adjuntos"] == ["u"]
+    assert detail["imagenes"] == ["img"]
+
+    mocker.patch(
+        "relevamientos.service.Relevamiento.objects.prefetch_related",
+        return_value=SimpleNamespace(
+            values=lambda *a, **k: SimpleNamespace(
+                get=mocker.Mock(side_effect=module.Relevamiento.DoesNotExist())
+            )
+        ),
+    )
+    assert module.RelevamientoService.get_relevamiento_detail_object(999) is None
+
+
+def test_create_or_update_funcionamiento_create_and_update(mocker):
+    """Funcionamiento should parse inputs and support create and update flows."""
+    modalidad_qs = SimpleNamespace(first=lambda: "mod")
+    mocker.patch(
+        "relevamientos.service.TipoModalidadPrestacion.objects.filter",
+        return_value=modalidad_qs,
+    )
+    mocker.patch("relevamientos.service.convert_to_boolean", return_value=True)
+    created = SimpleNamespace()
+    mocker.patch(
+        "relevamientos.service.FuncionamientoPrestacion.objects.create",
+        return_value=created,
+    )
+
+    out = module.RelevamientoService.create_or_update_funcionamiento(
+        {
+            "modalidad_prestacion": "  M ",
+            "servicio_por_turnos": "si",
+            "cantidad_turnos": "2",
+        }
+    )
+    assert out is created
+
+    assigner = mocker.patch(
+        "relevamientos.service.assign_values_to_instance", return_value="updated"
+    )
+    out2 = module.RelevamientoService.create_or_update_funcionamiento(
+        {
+            "modalidad_prestacion": "",
+            "servicio_por_turnos": "no",
+            "cantidad_turnos": "",
+        },
+        funcionamiento_instance=SimpleNamespace(),
+    )
+    assert out2 == "updated"
+    assert assigner.called
+
+
+def test_create_or_update_punto_entregas_and_prestacion_flows(mocker):
+    """Punto entregas and prestación should apply parsing and persist properly."""
+    mocker.patch.object(
+        module.RelevamientoService,
+        "populate_punto_entregas_data",
+        return_value={"frecuencia_recepcion_mercaderias": "Semanal, Mensual", "x": 1},
+    )
+    freq_qs = SimpleNamespace(exists=lambda: True)
+    mocker.patch(
+        "relevamientos.service.TipoFrecuenciaBolsones.objects.filter",
+        return_value=freq_qs,
+    )
+    punto_instance = SimpleNamespace(
+        frecuencia_recepcion_mercaderias=SimpleNamespace(set=mocker.Mock()),
+        save=mocker.Mock(),
+    )
+    mocker.patch(
+        "relevamientos.service.PuntoEntregas.objects.create",
+        return_value=punto_instance,
+    )
+    out = module.RelevamientoService.create_or_update_punto_entregas({"k": 1})
+    assert out is punto_instance
+
+    mocker.patch.object(
+        module.RelevamientoService,
+        "populate_prestacion_data",
+        return_value={"lunes_almuerzo_actual": 5},
+    )
+    mocker.patch(
+        "relevamientos.service.Prestacion.objects.create",
+        return_value=SimpleNamespace(),
+    )
+    assert module.RelevamientoService.create_or_update_prestacion({"k": 1}) is not None
+
+
+def test_populate_prestacion_data_converts_day_meals(mocker):
+    """populate_prestacion_data should convert known day/meal keys to integers."""
+    converted = mocker.patch(
+        "relevamientos.service.convert_string_to_int", side_effect=lambda x: int(x)
+    )
+    data = {"lunes_desayuno_actual": "1", "martes_cena_espera": "2"}
+    out_data = module.RelevamientoService.populate_prestacion_data(data)
+    assert out_data["lunes_desayuno_actual"] == 1
+    assert out_data["martes_cena_espera"] == 2
+    assert converted.call_count >= 2
+
+
+def test_create_or_update_responsable_referente_and_excepcion(mocker):
+    """Responsable/referente and excepción flows should resolve entities and update links."""
+    responsable = SimpleNamespace(id=10, save=mocker.Mock())
+    referente = SimpleNamespace(id=11, save=mocker.Mock())
+
+    mocker.patch(
+        "relevamientos.service.Referente.objects.filter",
+        side_effect=[
+            SimpleNamespace(last=lambda: responsable),
+            SimpleNamespace(last=lambda: referente),
+        ],
+    )
+    comedor = SimpleNamespace(referente=None, save=mocker.Mock())
+    mocker.patch(
+        "relevamientos.service.Relevamiento.objects.get",
+        return_value=SimpleNamespace(comedor=comedor),
+    )
+
+    rid, fid = module.RelevamientoService.create_or_update_responsable_y_referente(
+        False,
+        {"documento": "1", "nombre": "R"},
+        {"documento": "2", "nombre": "F"},
+        sisoc_id=99,
+    )
+    assert rid == 10
+    assert fid == 11
+    assert comedor.save.called
+
+    mocker.patch.object(
+        module.RelevamientoService,
+        "populate_excepcion_data",
+        return_value={"motivo": "M", "adjuntos": ["u"]},
+    )
+    mocker.patch(
+        "relevamientos.service.Excepcion.objects.create", return_value=SimpleNamespace()
+    )
+    assert (
+        module.RelevamientoService.create_or_update_excepcion({"motivo": "x"})
+        is not None
+    )
+
+
+def test_populate_excepcion_data_parses_motivo_and_adjuntos(mocker):
+    """populate_excepcion_data should map motivo object and split attachments."""
+    mocker.patch("relevamientos.service.get_object_or_none", return_value="motivo_obj")
+    parsed = module.RelevamientoService.populate_excepcion_data(
+        {"motivo": "M", "adjuntos": "a, b"}
+    )
+    assert parsed["motivo"] == "motivo_obj"
+    assert parsed["adjuntos"] == ["a", "b"]
