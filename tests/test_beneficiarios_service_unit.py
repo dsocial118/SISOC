@@ -1,5 +1,7 @@
 """Unit tests for centrodefamilia beneficiarios service helpers."""
 
+import contextlib
+
 from types import SimpleNamespace
 
 import pytest
@@ -331,3 +333,272 @@ def test_get_responsable_detail_context_filtra_y_select_related(mocker):
 
     filter_mock.assert_called_once_with(responsable=responsable)
     assert ctx["vinculos_beneficiarios"] == "QS"
+
+
+def test_obtener_o_crear_responsable_ramas_principales(mocker):
+    """Cubre paths de responsable existente, nuevo y formularios inválidos."""
+    data = {"dni": "123"}
+    usuario = object()
+
+    existing = object()
+    form_ok = SimpleNamespace(is_valid=lambda: True, save=mocker.Mock())
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Responsable.objects.get",
+        return_value=existing,
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.ResponsableForm",
+        return_value=form_ok,
+    )
+    resp, form, created = service.obtener_o_crear_responsable(data, usuario)
+    assert resp is existing and form is form_ok and created is False
+
+    form_bad = SimpleNamespace(is_valid=lambda: False)
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.ResponsableForm",
+        return_value=form_bad,
+    )
+    resp2, form2, created2 = service.obtener_o_crear_responsable(data, usuario)
+    assert resp2 is None and form2 is form_bad and created2 is False
+
+    new_obj = SimpleNamespace(creado_por=None, save=mocker.Mock())
+    form_new = SimpleNamespace(
+        is_valid=lambda: True,
+        save=lambda commit=False: new_obj,
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Responsable.objects.get",
+        side_effect=service.Responsable.DoesNotExist(),
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.ResponsableForm",
+        return_value=form_new,
+    )
+    resp3, _form3, created3 = service.obtener_o_crear_responsable(data, usuario)
+    assert resp3 is new_obj and created3 is True
+    assert new_obj.creado_por is usuario
+
+
+def test_crear_beneficiario_invalido_y_valido(mocker):
+    """Valida ramas de formulario inválido y persistencia correcta."""
+    resp = object()
+    usuario = object()
+
+    bad_form = SimpleNamespace(is_valid=lambda: False)
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.BeneficiarioForm",
+        return_value=bad_form,
+    )
+    ben, form = service.crear_beneficiario({}, resp, "madre", usuario)
+    assert ben is None and form is bad_form
+
+    ben_obj = SimpleNamespace(
+        responsable=None,
+        creado_por=None,
+        actividad_preferida=None,
+        save=mocker.Mock(),
+    )
+    ok_form = SimpleNamespace(
+        is_valid=lambda: True,
+        save=lambda commit=False: ben_obj,
+        save_m2m=mocker.Mock(),
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.BeneficiarioForm",
+        return_value=ok_form,
+    )
+    br_create = mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.BeneficiarioResponsable.objects.create"
+    )
+
+    ben2, _form2 = service.crear_beneficiario(
+        {
+            "actividad_preferida": "arte",
+            "actividades_detalle": ["a"],
+        },
+        resp,
+        "madre",
+        usuario,
+    )
+    assert ben2 is ben_obj
+    assert ben_obj.actividad_preferida == ["arte"]
+    assert ben_obj.responsable is resp
+    assert ben_obj.creado_por is usuario
+    assert br_create.called
+    assert ok_form.save_m2m.called
+
+
+def test_procesar_formularios_ramas(mocker, rf):
+    """Cubre falta de vínculo, error de responsable y path exitoso."""
+    request = rf.post("/")
+    request.user = object()
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.transaction.atomic",
+        return_value=contextlib.nullcontext(),
+    )
+
+    assert service.procesar_formularios(request, {}, {}) == (None, None, None)
+
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.obtener_o_crear_responsable",
+        return_value=(None, "resp_form", False),
+    )
+    out_err_resp = service.procesar_formularios(
+        request, {}, {"vinculo_parental": "madre"}
+    )
+    assert out_err_resp == (None, None, "resp_form")
+
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.obtener_o_crear_responsable",
+        return_value=("resp", "resp_form", True),
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.crear_beneficiario",
+        return_value=("ben", "ben_form"),
+    )
+    guardar = mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.guardar_datos_renaper"
+    )
+    out_ok = service.procesar_formularios(
+        request, {"x": 1}, {"vinculo_parental": "madre"}
+    )
+    assert out_ok == ("ben", "ben_form", "resp_form")
+    assert guardar.call_count == 2
+
+
+def test_buscar_responsable_renaper_ramas(rf, mocker):
+    """Cubre validaciones, existente, no encontrado y cache de RENAPER."""
+    request = rf.get("/")
+    request.session = DummySession()
+
+    missing = service.buscar_responsable_renaper(request, "", "")
+    assert missing.status_code == 400
+
+    responsable = SimpleNamespace(
+        nombre="Ana",
+        apellido="Perez",
+        genero="F",
+        fecha_nacimiento=None,
+        cuil="20-1",
+        dni="1",
+        correo_electronico="a@a.com",
+        calle="x",
+        altura="10",
+        piso_vivienda=None,
+        departamento_vivienda=None,
+        codigo_postal=None,
+        barrio=None,
+        monoblock=None,
+        provincia=None,
+        municipio=None,
+        localidad=None,
+        prefijo_celular=None,
+        numero_celular=None,
+        prefijo_telefono_fijo=None,
+        numero_telefono_fijo=None,
+        beneficiarios=SimpleNamespace(count=lambda: 2),
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Responsable.objects.get",
+        return_value=responsable,
+    )
+    exists_resp = service.buscar_responsable_renaper(request, "1", "F")
+    assert b'"status": "exists"' in exists_resp.content
+
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Responsable.objects.get",
+        side_effect=service.Responsable.DoesNotExist(),
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.consultar_datos_renaper",
+        return_value={"success": False, "error": "nf"},
+    )
+    nf_resp = service.buscar_responsable_renaper(request, "2", "M")
+    assert b'"status": "not_found"' in nf_resp.content
+
+    request2 = rf.get("/")
+    request2.session = DummySession()
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Responsable.objects.get",
+        side_effect=service.Responsable.DoesNotExist(),
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.consultar_datos_renaper",
+        return_value={"success": True, "datos_api": {"dni": "2"}, "data": {"n": 1}},
+    )
+    ok_resp = service.buscar_responsable_renaper(request2, "2", "M")
+    assert b'"status": "possible"' in ok_resp.content
+    assert request2.session.modified is True
+
+
+def test_buscar_cuil_beneficiario_ramas(rf, mocker):
+    """Cubre validaciones, existencia local, padrón y éxito con cache."""
+    request = rf.get("/")
+    request.session = DummySession()
+
+    missing = service.buscar_cuil_beneficiario(request, "")
+    assert missing.status_code == 400
+
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Beneficiario.objects.filter",
+        return_value=SimpleNamespace(exists=lambda: True),
+    )
+    exists = service.buscar_cuil_beneficiario(request, "20")
+    assert b'"status": "exists"' in exists.content
+
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.Beneficiario.objects.filter",
+        return_value=SimpleNamespace(exists=lambda: False),
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.PadronBeneficiarios.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
+    )
+    nf = service.buscar_cuil_beneficiario(request, "21")
+    assert b'"status": "not_found"' in nf.content
+
+    padron = SimpleNamespace(
+        dni="12345678",
+        genero="F",
+        provincia_tabla="BA",
+        municipio_tabla="LP",
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.PadronBeneficiarios.objects.filter",
+        return_value=SimpleNamespace(first=lambda: padron),
+    )
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.consultar_datos_renaper",
+        return_value={"success": False, "error": "nf"},
+    )
+    nf2 = service.buscar_cuil_beneficiario(request, "22")
+    assert b'"status": "not_found"' in nf2.content
+
+    request_ok = rf.get("/")
+    request_ok.session = DummySession()
+    mocker.patch(
+        "centrodefamilia.services.beneficiarios_service.consultar_datos_renaper",
+        return_value={
+            "success": True,
+            "datos_api": {
+                "nombres": "Ana",
+                "apellido": "Perez",
+                "genero": "F",
+                "fechaNacimiento": "2000-01-01",
+                "cuil": "20",
+                "calle": "Mitre",
+                "numero": "10",
+                "piso": "2",
+                "departamento": "A",
+                "cpostal": "1900",
+                "barrio": "Centro",
+                "monoblock": "B",
+                "provincia": "BA",
+                "municipio": "LP",
+                "ciudad": "LP",
+            },
+        },
+    )
+    ok = service.buscar_cuil_beneficiario(request_ok, "23")
+    assert b'"status": "possible"' in ok.content
+    assert request_ok.session.modified is True
