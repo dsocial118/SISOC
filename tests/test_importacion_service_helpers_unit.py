@@ -112,3 +112,51 @@ def test_preview_excel_parses_all_and_semicolon_fallback(mocker):
     out = module.ImportacionService.preview_excel(f, max_rows="all")
     assert out["shown_rows"] == 1
     assert out["total_rows"] == 1
+
+
+def test_validar_edad_exception_and_preview_limit_variants(mocker):
+    ok, warnings, err = module.validar_edad_responsable("x", date.today())
+    assert ok is True
+    assert warnings == []
+    assert err is None
+
+    raw_csv = "nombre,municipio\nJuan,1\n".encode("utf-8")
+    f = _DummyFile(raw_csv, name="limites.csv")
+    mocker.patch(
+        "celiaquia.services.importacion_service.Municipio.objects.get",
+        return_value=SimpleNamespace(nombre="M1"),
+    )
+
+    out_zero = module.ImportacionService.preview_excel(f, max_rows="0")
+    assert out_zero["shown_rows"] == 1
+
+    f2 = _DummyFile(raw_csv, name="limites2.csv")
+    out_todos = module.ImportacionService.preview_excel(f2, max_rows="todos")
+    assert out_todos["shown_rows"] == 1
+
+
+def test_importar_legajos_raises_validation_on_invalid_excel(mocker):
+    class _F:
+        def open(self):
+            return None
+
+        def seek(self, _pos):
+            return None
+
+        def read(self):
+            return b"not-an-excel"
+
+    expediente = SimpleNamespace()
+    usuario = SimpleNamespace()
+
+    mocker.patch(
+        "celiaquia.services.importacion_service.pd.read_excel",
+        side_effect=ValueError("broken file"),
+    )
+
+    with pytest.raises(ValidationError):
+        module.ImportacionService.importar_legajos_desde_excel(
+            expediente,
+            _F(),
+            usuario,
+        )
