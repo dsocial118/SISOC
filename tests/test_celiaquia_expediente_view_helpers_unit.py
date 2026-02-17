@@ -40,6 +40,25 @@ def test_provincial_helpers_and_parse_limit():
     assert module._parse_limit("x", default=10) == 10
 
 
+def test_provincial_helpers_object_does_not_exist_branches(mocker):
+    user = SimpleNamespace(is_authenticated=True)
+    mocker.patch.object(
+        module,
+        "ObjectDoesNotExist",
+        type("_E", (Exception,), {}),
+    )
+
+    class _ProfileExc:
+        @property
+        def profile(self):
+            raise module.ObjectDoesNotExist()
+
+    u = _ProfileExc()
+    u.is_authenticated = True
+    assert module._is_provincial(u) is False
+    assert module._user_provincia(u) is None
+
+
 def test_localidades_lookup_view_filters_and_returns_json(mocker):
     view = module.LocalidadesLookupView()
 
@@ -447,6 +466,75 @@ def test_procesar_expediente_view_ajax_and_error_paths(mocker):
     )
     bad_exception = view.post(request, pk=10)
     assert bad_exception.status_code == 500
+
+
+def test_procesar_expediente_view_non_ajax_success_and_errors(mocker):
+    view = module.ProcesarExpedienteView()
+    user = SimpleNamespace()
+    request = SimpleNamespace(user=user, headers={})
+    view.request = request
+
+    expediente = SimpleNamespace(id=10)
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=True)
+    mocker.patch("celiaquia.views.expediente.get_object_or_404", return_value=expediente)
+    redirect = mocker.patch("celiaquia.views.expediente.redirect", return_value="redir")
+    msg_success = mocker.patch("celiaquia.views.expediente.messages.success")
+    msg_warning = mocker.patch("celiaquia.views.expediente.messages.warning")
+    msg_error = mocker.patch("celiaquia.views.expediente.messages.error")
+
+    excluidos = [
+        {
+            "documento": str(i),
+            "apellido": "A",
+            "nombre": "B",
+            "estado_programa": "X",
+            "expediente_origen_id": i,
+        }
+        for i in range(12)
+    ]
+    mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.procesar_expediente",
+        return_value={"creados": 2, "errores": 1, "excluidos": 12, "excluidos_detalle": excluidos},
+    )
+    ok = view.post(request, pk=10)
+    assert ok == "redir"
+    assert msg_success.called and msg_warning.called and redirect.called
+
+    from django.core.exceptions import ValidationError
+
+    mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.procesar_expediente",
+        side_effect=ValidationError("bad"),
+    )
+    bad_validation = view.post(request, pk=10)
+    assert bad_validation == "redir"
+
+    mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.procesar_expediente",
+        side_effect=RuntimeError("boom"),
+    )
+    bad_exception = view.post(request, pk=10)
+    assert bad_exception == "redir"
+    assert msg_error.called
+
+
+def test_expediente_create_form_valid_calls_service_and_redirect(mocker):
+    view = module.ExpedienteCreateView()
+    req = SimpleNamespace(user=SimpleNamespace())
+    view.request = req
+    form = SimpleNamespace(cleaned_data={"excel_masivo": "xlsx", "foo": "bar"})
+
+    expediente = SimpleNamespace(pk=77)
+    create = mocker.patch(
+        "celiaquia.views.expediente.ExpedienteService.create_expediente",
+        return_value=expediente,
+    )
+    mocker.patch("celiaquia.views.expediente.messages.success")
+    redir = mocker.patch("celiaquia.views.expediente.redirect", return_value="redir")
+
+    out = view.form_valid(form)
+    assert out == "redir"
+    assert create.called and redir.called
 
 
 def test_expediente_nomina_sintys_export_view(mocker):
