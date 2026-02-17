@@ -262,3 +262,78 @@ def test_generar_prd_pdf_prefers_html_and_falls_back(mocker, monkeypatch):
     mocker.patch.object(CruceService, "_generar_prd_pdf_html", return_value=b"h3")
     out3 = CruceService._generar_prd_pdf(expediente, resumen)
     assert out3 == b"h3"
+
+
+def test_read_file_bytes_rejects_non_binary_payload_type():
+    class Weird:
+        def open(self):
+            return None
+
+        def read(self):
+            return 123
+
+        def seek(self, _):
+            return None
+
+    with pytest.raises(ValidationError):
+        CruceService._read_file_bytes(Weird())
+
+
+def test_generar_prd_pdf_reportlab_with_detail_sections():
+    expediente = SimpleNamespace(
+        asignaciones_tecnicos=SimpleNamespace(
+            all=lambda: SimpleNamespace(
+                exists=lambda: True,
+                first=lambda: SimpleNamespace(
+                    tecnico=SimpleNamespace(get_full_name=lambda: "Tec", username="tec")
+                ),
+            )
+        )
+    )
+    resumen = {
+        "total_legajos": 10,
+        "matcheados": 6,
+        "no_matcheados": 4,
+        "total_cuits_archivo": 5,
+        "total_dnis_archivo": 5,
+        "cupo_total": 100,
+        "cupo_usados": 50,
+        "cupo_disponibles": 50,
+        "fuera_cupo": 1,
+        "detalle_match": [{"dni": "1", "cuit": "20", "nombre": "A", "apellido": "B", "por": "DNI"}],
+        "detalle_no_match": [{"dni": "2", "cuit": "30", "observacion": "No match"}],
+        "detalle_fuera_cupo": [{"dni": "3", "cuit": "40", "nombre": "C", "apellido": "D"}],
+    }
+
+    pdf = CruceService._generar_prd_pdf_reportlab(expediente, resumen)
+    assert isinstance(pdf, (bytes, bytearray))
+    assert len(pdf) > 0
+
+
+def test_generar_prd_csv_with_writer_stub(mocker):
+    rows = []
+
+    class _Writer:
+        def writerow(self, row):
+            rows.append(row)
+
+    mocker.patch("celiaquia.services.cruce_service.csv.writer", return_value=_Writer())
+
+    out = CruceService._generar_prd_csv(
+        expediente=SimpleNamespace(),
+        resumen={
+            "total_legajos": 2,
+            "total_cuits_archivo": 1,
+            "total_dnis_archivo": 1,
+            "matcheados": 1,
+            "no_matcheados": 1,
+            "cupo": {"total_asignado": 10, "usados": 5, "disponibles": 5},
+            "cupo_fuera_count": 0,
+            "detalle_no_match": ["no1"],
+            "detalle_fuera_cupo": ["fc1"],
+        },
+    )
+
+    assert isinstance(out, (bytes, bytearray))
+    assert any(r and r[0] == "Resumen" for r in rows)
+    assert any(r and r[0] == "Detalle_no_matcheados" for r in rows)
