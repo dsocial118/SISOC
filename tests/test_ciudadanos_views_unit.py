@@ -157,3 +157,90 @@ def test_grupofamiliar_delete_get_success_url_uses_safe_redirect(mocker):
     )
 
     assert view.get_success_url() == "/destino"
+
+
+def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
+    ciudadano = SimpleNamespace(pk=9)
+
+    # CDF import error
+    orig_import = __import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "centrodefamilia.models":
+            raise ImportError("no cdf")
+        return orig_import(name, *args, **kwargs)
+
+    mocker.patch("builtins.__import__", side_effect=fake_import)
+    cdf_ctx = module.CiudadanosDetailView().get_cdf_context(ciudadano)
+    assert cdf_ctx == {"participaciones_cdf": [], "costo_total_cdf": 0}
+
+    mocker.patch("builtins.__import__", side_effect=orig_import)
+    part_qs = _ExpedientesList([SimpleNamespace(id=1)])
+    mocker.patch(
+        "centrodefamilia.models.ParticipanteActividad.objects.filter",
+        side_effect=[
+            SimpleNamespace(
+                select_related=lambda *a, **k: SimpleNamespace(order_by=lambda *x, **y: part_qs)
+            ),
+            SimpleNamespace(aggregate=lambda **_k: {"total": 1200}),
+        ],
+    )
+    cdf_ok = module.CiudadanosDetailView().get_cdf_context(ciudadano)
+    assert cdf_ok["costo_total_cdf"] == 1200
+
+    # Comedor import error
+    def fake_import2(name, *args, **kwargs):
+        if name == "comedores.models":
+            raise ImportError("no comedor")
+        return orig_import(name, *args, **kwargs)
+
+    mocker.patch("builtins.__import__", side_effect=fake_import2)
+    comedor_ctx = module.CiudadanosDetailView().get_comedor_context(ciudadano)
+    assert comedor_ctx == {"nominas_comedor": []}
+
+    mocker.patch("builtins.__import__", side_effect=orig_import)
+    nom_qs = _ExpedientesList([SimpleNamespace(id=7)])
+    mocker.patch(
+        "comedores.models.Nomina.objects.filter",
+        return_value=SimpleNamespace(
+            select_related=lambda *a, **k: SimpleNamespace(order_by=lambda *x, **y: nom_qs)
+        ),
+    )
+    comedor_ok = module.CiudadanosDetailView().get_comedor_context(ciudadano)
+    assert comedor_ok["nomina_actual"].id == 7
+
+
+def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
+    create_view = module.CiudadanosCreateView()
+    create_view.request = SimpleNamespace(GET={"sexo": "Z"}, user=SimpleNamespace(id=1))
+    mocker.patch("django.views.generic.edit.FormMixin.get_context_data", return_value={})
+    ctx = create_view.get_context_data()
+    assert ctx["sexo_busqueda"] == "M"
+
+    # get_initial consumes prefill from session
+    create_view.request = SimpleNamespace(session={"ciudadano_prefill": {"nombre": "Ana"}})
+    mocker.patch("django.views.generic.edit.FormMixin.get_initial", return_value={})
+    initial = create_view.get_initial()
+    assert initial["nombre"] == "Ana"
+
+    ciudadano = SimpleNamespace(
+        creado_por=None,
+        modificado_por=None,
+        save=mocker.Mock(),
+        get_absolute_url=lambda: "/ciudadano/1/",
+    )
+    form = SimpleNamespace(save=lambda commit=False: ciudadano, save_m2m=mocker.Mock())
+    create_view.request = SimpleNamespace(user=SimpleNamespace(id=2))
+    mocker.patch("ciudadanos.views.messages.success")
+    mocker.patch("ciudadanos.views.redirect", return_value="redir")
+    assert create_view.form_valid(form) == "redir"
+    assert ciudadano.creado_por.id == 2
+
+    update_view = module.CiudadanosUpdateView()
+    update_view.request = SimpleNamespace(user=SimpleNamespace(id=3))
+    ciudadano2 = SimpleNamespace(modificado_por=None, save=mocker.Mock(), get_absolute_url=lambda: "/c/2/")
+    form2 = SimpleNamespace(save=lambda commit=False: ciudadano2, save_m2m=mocker.Mock())
+    mocker.patch("ciudadanos.views.messages.success")
+    mocker.patch("ciudadanos.views.redirect", return_value="redir2")
+    assert update_view.form_valid(form2) == "redir2"
+    assert ciudadano2.modificado_por.id == 3
