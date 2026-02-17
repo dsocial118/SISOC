@@ -1,5 +1,6 @@
 """Tests unitarios para helpers de acompanamientos.acompanamiento_service."""
 
+from contextlib import nullcontext
 from datetime import date, datetime
 from types import SimpleNamespace
 
@@ -164,3 +165,140 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
     out_none = AcompanamientoService.obtener_datos_admision(comedor)
     assert out_none["admision"] is None
     assert out_none["numero_if"] is None
+
+
+def test_crear_hitos_crea_subintervencion_y_nuevo_hito(mocker):
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos._meta.fields",
+        [SimpleNamespace(verbose_name="Hito Uno", name="hito_uno")],
+    )
+
+    chain = SimpleNamespace(
+        filter=lambda **_k: SimpleNamespace(first=lambda: None),
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.select_related",
+        return_value=chain,
+    )
+
+    sub = SimpleNamespace(nombre="Sub 1")
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.SubIntervencion.objects.create",
+        return_value=sub,
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.HitosIntervenciones.objects.filter",
+        return_value=[SimpleNamespace(hito="Hito Uno")],
+    )
+
+    nuevo = SimpleNamespace(hito_uno=False, save=mocker.Mock())
+    crear_hito = mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos.objects.create",
+        return_value=nuevo,
+    )
+
+    intervencion = SimpleNamespace(
+        comedor=SimpleNamespace(id=1),
+        subintervencion_id=None,
+        subintervencion=SimpleNamespace(nombre=""),
+        tipo_intervencion=SimpleNamespace(nombre="Intervencion 1"),
+    )
+
+    AcompanamientoService.crear_hitos(intervencion)
+
+    crear_hito.assert_called_once()
+    assert intervencion.subintervencion is sub
+    assert nuevo.hito_uno is True
+    nuevo.save.assert_called_once()
+
+
+def test_obtener_fechas_hitos_mapea_hito_y_omite_sin_tipo(mocker):
+    class _IntervQs:
+        def __init__(self, data):
+            self._data = data
+
+        def select_related(self, *_a, **_k):
+            return self
+
+        def order_by(self, *_a, **_k):
+            return self
+
+        def __iter__(self):
+            return iter(self._data)
+
+    intervenciones = [
+        SimpleNamespace(tipo_intervencion=None, subintervencion=None, fecha=date(2024, 1, 1)),
+        SimpleNamespace(
+            tipo_intervencion=SimpleNamespace(nombre="Intervencion 1"),
+            subintervencion=SimpleNamespace(nombre="Sub 1"),
+            fecha=date(2024, 2, 2),
+        ),
+    ]
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Intervencion.objects.filter",
+        return_value=_IntervQs(intervenciones),
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Hitos._meta.fields",
+        [SimpleNamespace(verbose_name="Hito Uno", name="hito_uno")],
+    )
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.HitosIntervenciones.objects.filter",
+        return_value=[SimpleNamespace(hito="Hito Uno")],
+    )
+    mocker.patch.object(AcompanamientoService, "_format_date", return_value="02/02/2024")
+
+    out = AcompanamientoService.obtener_fechas_hitos(SimpleNamespace(pk=11))
+    assert out == {"hito_uno": "02/02/2024"}
+
+
+def test_importar_datos_desde_admision_ok_y_sin_admision(mocker):
+    class _Missing(Exception):
+        pass
+
+    mocker.patch("acompanamientos.acompanamiento_service.Admision.DoesNotExist", _Missing)
+
+    update_or_create = mocker.patch(
+        "acompanamientos.acompanamiento_service.InformacionRelevante.objects.update_or_create"
+    )
+    delete_qs = SimpleNamespace(delete=mocker.Mock())
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Prestacion.objects.filter",
+        return_value=delete_qs,
+    )
+    crear_prestacion = mocker.patch(
+        "acompanamientos.acompanamiento_service.Prestacion.objects.create"
+    )
+    mocker.patch("acompanamientos.acompanamiento_service.transaction.atomic", return_value=nullcontext())
+
+    admision = SimpleNamespace(
+        numero_expediente="EX-1",
+        numero_resolucion="RES-1",
+        vencimiento_mandato=date(2026, 1, 1),
+        if_relevamiento="IF-1",
+        prestaciones=SimpleNamespace(
+            all=lambda: [
+                SimpleNamespace(dia="lunes", desayuno=1, almuerzo=2, merienda=0, cena=0),
+                SimpleNamespace(dia="martes", desayuno=0, almuerzo=1, merienda=1, cena=0),
+            ]
+        ),
+    )
+    get_admision = mocker.patch(
+        "acompanamientos.acompanamiento_service.Admision.objects.get",
+        return_value=admision,
+    )
+
+    comedor = SimpleNamespace(pk=10)
+    AcompanamientoService.importar_datos_desde_admision(comedor)
+
+    get_admision.assert_called_once_with(comedor=comedor)
+    update_or_create.assert_called_once()
+    delete_qs.delete.assert_called_once()
+    assert crear_prestacion.call_count == 2
+
+    get_admision.side_effect = _Missing("no admision")
+    try:
+        AcompanamientoService.importar_datos_desde_admision(comedor)
+        assert False, "Se esperaba ValueError"
+    except ValueError as exc:
+        assert "No se encontró una admisión" in str(exc)
