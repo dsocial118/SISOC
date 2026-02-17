@@ -160,3 +160,101 @@ def test_importar_legajos_raises_validation_on_invalid_excel(mocker):
             _F(),
             usuario,
         )
+
+
+def test_preview_excel_uses_xlsx_reader_and_normalizes_datetime(mocker):
+    f = _DummyFile(b"fake-xlsx", name="datos.xlsx")
+
+    mocker.patch(
+        "celiaquia.services.importacion_service.pd.read_excel",
+        return_value=pd.DataFrame(
+            {
+                "Fecha Nacimiento": [pd.Timestamp("2020-01-01")],
+                "Nombre": ["Ana"],
+            }
+        ),
+    )
+
+    out = module.ImportacionService.preview_excel(f)
+    assert out["headers"] == ["ID", "fecha_nacimiento", "nombre"]
+    assert out["rows"][0]["ID"] == 1
+    assert str(out["rows"][0]["fecha_nacimiento"]) == "2020-01-01"
+
+
+def test_importar_legajos_guarda_registros_erroneos_y_sin_bulk_legajos(mocker):
+    class _FakeQs:
+        def select_related(self, *_a, **_k):
+            return self
+
+        def exclude(self, *_a, **_k):
+            return self
+
+        def filter(self, *_a, **_k):
+            return self
+
+        def values(self, *_a, **_k):
+            return []
+
+        def values_list(self, *_a, **_k):
+            return []
+
+        def first(self):
+            return None
+
+        def __iter__(self):
+            return iter([])
+
+    fake_qs = _FakeQs()
+    bulk_legajos = mocker.Mock()
+    fake_manager = SimpleNamespace(
+        filter=lambda *_a, **_k: fake_qs,
+        select_related=lambda *_a, **_k: fake_qs,
+        bulk_create=bulk_legajos,
+    )
+    mocker.patch.object(module.ExpedienteCiudadano, "objects", fake_manager)
+
+    registros_guardados = mocker.Mock()
+
+    class _RegistroErroneo:
+        objects = SimpleNamespace(bulk_create=registros_guardados)
+
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    mocker.patch("celiaquia.models.RegistroErroneo", _RegistroErroneo)
+    mocker.patch("celiaquia.services.importacion_service._estado_doc_pendiente_id", return_value=9)
+    mocker.patch(
+        "celiaquia.services.importacion_service.pd.read_excel",
+        return_value=pd.DataFrame(
+            [
+                {
+                    "nombre": "Juan",
+                    "documento": "1234567890",
+                    "fecha_nacimiento": "2000-01-01",
+                }
+            ]
+        ),
+    )
+    mocker.patch("celiaquia.services.importacion_service.Sexo.objects.all", return_value=[])
+
+    class _UserBrokenProfile:
+        @property
+        def profile(self):
+            raise RuntimeError("sin profile")
+
+    expediente = SimpleNamespace(id=55, estado=SimpleNamespace(nombre="CREADO"))
+    archivo = _DummyFile(b"excel", name="data.xlsx")
+
+    result = module.ImportacionService.importar_legajos_desde_excel(
+        expediente,
+        archivo,
+        _UserBrokenProfile(),
+        batch_size=25,
+    )
+
+    assert result["validos"] == 0
+    assert result["errores"] == 1
+    assert len(result["detalles_errores"]) == 1
+    assert "Campo obligatorio faltante" in result["detalles_errores"][0]["error"]
+    bulk_legajos.assert_not_called()
+    registros_guardados.assert_called_once()
