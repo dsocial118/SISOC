@@ -16,10 +16,17 @@
 
 ## Estandares de autenticacion y sesion
 
-- El backend actual usa sesiones Django y API Keys (no JWT). - Alinea el esquema de auth del cliente con el backend real.
-- Para UI web: cookies httpOnly + CSRF. - Evita exponer tokens al JS y protege acciones sensibles.
-- Para integraciones API: API Keys via header, nunca embebidas en el cliente. - Las API Keys son secretas y no deben vivir en frontend.
-- Nunca exponer API keys del backend en el cliente.
+- La API PWA actual usa `TokenAuthentication` (DRF Token) con flujo `login -> me -> logout`:
+  - `POST /api/users/login/`
+  - `GET /api/users/me/`
+  - `POST /api/users/logout/`
+- Para la PWA:
+  - usar header `Authorization: Token <token>`;
+  - tratar el token como secreto de sesión;
+  - borrar token local al hacer logout o expirar sesión.
+- El login web (`/login/`) bloquea usuarios PWA con acceso activo.
+- `api/relevamiento` mantiene su esquema propio (`HasAPIKeyOrToken`) y queda fuera del flujo estricto PWA.
+- Nunca exponer API keys del backend en frontend público.
 
 ## Caching y Service Worker
 

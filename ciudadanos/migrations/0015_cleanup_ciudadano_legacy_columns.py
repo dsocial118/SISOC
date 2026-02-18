@@ -9,6 +9,8 @@ def drop_legacy_columns(apps, schema_editor):
     """
 
     connection = schema_editor.connection
+    if connection.vendor == "sqlite":
+        return
     quote = schema_editor.quote_name
     table = "ciudadanos_ciudadano"
 

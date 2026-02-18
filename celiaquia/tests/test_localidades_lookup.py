@@ -1,3 +1,5 @@
+"""Tests for test localidades lookup."""
+
 import pytest
 from django.urls import reverse
 from django.contrib.auth.models import Group, User

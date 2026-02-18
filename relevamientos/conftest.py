@@ -1,3 +1,5 @@
+"""Tests for conftest."""
+
 from unittest import mock
 
 import factory

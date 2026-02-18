@@ -1,3 +1,5 @@
+"""Tests for test urls no 500."""
+
 import re
 
 import pytest
@@ -16,6 +18,7 @@ _SKIP_PATHS = {
     "/login/",
 }
 _SKIP_PATH_SUBSTRINGS = (
+    "/__debug__/",
     "/ajax/",
     "/buscar-",
     "/informecabal/preview",
@@ -161,5 +164,5 @@ def test_urls_no_500(request, path, name):
     response = client.get(path)
 
     assert (
-        response.status_code < 400
+        response.status_code < 500
     ), f"GET {path} ({name}) devolvio {response.status_code}"
