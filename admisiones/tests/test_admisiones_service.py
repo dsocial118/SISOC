@@ -1,3 +1,5 @@
+"""Tests for test admisiones service."""
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 

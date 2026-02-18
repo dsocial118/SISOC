@@ -8,7 +8,6 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from core.api_auth import HasAPIKeyOrToken
 from users.api_serializers import UserContextSerializer
 
 
@@ -86,7 +85,7 @@ class UserLogoutViewSet(viewsets.ViewSet):
 @extend_schema(tags=["Auth"])
 class UserContextViewSet(viewsets.ViewSet):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [HasAPIKeyOrToken]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(responses=UserContextSerializer)
     def list(self, request):

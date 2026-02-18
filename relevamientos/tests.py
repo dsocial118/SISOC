@@ -1,3 +1,5 @@
+"""Tests for tests."""
+
 import pytest
 from django.urls import reverse
 
