@@ -1,10 +1,10 @@
 from django import forms
-from prestaciones.models import Prestacion
+from core.models import MontoPrestacionPrograma
 
 
-class PrestacionForm(forms.ModelForm):
+class MontoPrestacionProgramaForm(forms.ModelForm):
     class Meta:
-        model = Prestacion
+        model = MontoPrestacionPrograma
         fields = [
             "programa",
             "desayuno_valor",

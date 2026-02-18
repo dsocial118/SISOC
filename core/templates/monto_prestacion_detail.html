@@ -1,0 +1,64 @@
+{% extends "includes/main.html" %};
+{% load static %}
+;
+{% block title %}Monto de Prestación{% endblock %}
+;
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item active">
+            <a href="{% url 'montoprestacion_listar' %}">Monto de Prestación</a>
+        </div>
+    </ol>
+{% endblock %}
+;
+{% load crispy_forms_tags %}
+;
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/detailModerno.css' %}" />
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Detalle de Monto de Prestación</h3>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr>
+                        <th>Programa</th>
+                        <td>{{ prestacion.programa }}</td>
+                    </tr>
+                    <tr>
+                        <th>Valor desayuno</th>
+                        <td>{{ prestacion.desayuno_valor }}</td>
+                    </tr>
+                    <tr>
+                        <th>Valor almuerzo</th>
+                        <td>{{ prestacion.almuerzo_valor }}</td>
+                    </tr>
+                    <tr>
+                        <th>Valor merienda</th>
+                        <td>{{ prestacion.merienda_valor }}</td>
+                    </tr>
+                    <tr>
+                        <th>Valor cena</th>
+                        <td>{{ prestacion.cena_valor }}</td>
+                    </tr>
+                    <tr>
+                        <th>Usuario creador</th>
+                        <td>{{ prestacion.usuario_creador }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha creación</th>
+                        <td>{{ prestacion.fecha_creacion|date:'d/m/Y H:i' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha modificación</th>
+                        <td>{{ prestacion.fecha_modificacion|date:'d/m/Y H:i' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            {% include 'components/action_buttons.html' with back_button=back_button buttons=action_buttons button_group=True %}
+        </div>
+    </div>
+
+{% endblock %}
