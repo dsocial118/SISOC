@@ -8,8 +8,6 @@ import pytest
 
 from comedores.services import comedor_service as module
 
-pytestmark = pytest.mark.django_db
-
 
 class _QS(list):
     def filter(self, **kwargs):
@@ -181,6 +179,299 @@ def test_agregar_nomina_and_crear_y_agregar(mocker):
     c = SimpleNamespace(id=9, delete=mocker.Mock())
     mocker.patch("comedores.services.comedor_service.Ciudadano.objects.create", return_value=c)
     mocker.patch.object(module.ComedorService, "agregar_ciudadano_a_nomina", return_value=(False, "x"))
-    ok3, _msg3 = module.ComedorService.crear_ciudadano_y_agregar_a_nomina({}, 1, "u", None, None)
+    ok3, _msg3 = module.ComedorService.crear_ciudadano_y_agregar_a_nomina.__wrapped__(
+        {}, 1, "u", None, None
+    )
     assert ok3 is False
     assert c.delete.called
+
+
+def test_timeline_context_helpers_cover_both_states():
+    admision_enviada = SimpleNamespace(
+        enviado_acompaniamiento=True, creado="2024-01-01"
+    )
+    qs = SimpleNamespace(
+        filter=lambda **kwargs: SimpleNamespace(
+            order_by=lambda *args, **kwargs: SimpleNamespace(
+                first=lambda: admision_enviada
+            )
+        )
+    )
+
+    ctx = module.ComedorService.get_admision_timeline_context(qs)
+    assert ctx["timeline_admision_step_class"] == "step completed"
+    assert ctx["timeline_connector_class"] == "connector completed"
+
+    ctx2 = module.ComedorService.get_admision_timeline_context_from_admision(
+        SimpleNamespace(enviado_acompaniamiento=False, creado="2024-02-02")
+    )
+    assert ctx2["timeline_admision_step_class"] == "step active"
+    assert ctx2["timeline_connector_class"] == "connector"
+
+
+def test_asignar_dupla_y_delete_images(mocker):
+    comedor = SimpleNamespace(dupla_id=None, estado=None, save=mocker.Mock())
+    mocker.patch(
+        "comedores.services.comedor_service.Comedor.objects.get", return_value=comedor
+    )
+
+    out = module.ComedorService.asignar_dupla_a_comedor(5, 10)
+    assert out is comedor
+    assert comedor.dupla_id == 5
+    assert comedor.estado == "Asignado a Dupla Técnica"
+    comedor.save.assert_called_once()
+
+    filtered = SimpleNamespace(delete=mocker.Mock())
+    mocker.patch(
+        "comedores.services.comedor_service.ImagenComedor.objects.filter",
+        return_value=filtered,
+    )
+    module.ComedorService.delete_images(
+        {
+            "imagen_ciudadano-borrar-12": "on",
+            "otra_key": "x",
+            "imagen_ciudadano-borrar-34": "on",
+        }
+    )
+    module.ImagenComedor.objects.filter.assert_called_once_with(id__in=["12", "34"])
+    filtered.delete.assert_called_once()
+
+
+def test_delete_legajo_photo_handles_delete_exception(mocker):
+    comedor = SimpleNamespace(
+        pk=77,
+        foto_legajo=SimpleNamespace(name="a/b.jpg"),
+        save=mocker.Mock(),
+    )
+    mocker.patch(
+        "comedores.services.comedor_service.default_storage.delete",
+        side_effect=RuntimeError("boom"),
+    )
+    log_mock = mocker.patch("comedores.services.comedor_service.logger.exception")
+
+    module.ComedorService.delete_legajo_photo({"foto_legajo_borrar": "1"}, comedor)
+
+    assert comedor.foto_legajo is None
+    comedor.save.assert_called_once_with(update_fields=["foto_legajo"])
+    assert log_mock.called
+
+
+def test_get_ubicaciones_ids_and_referente_create_update(mocker):
+    mocker.patch(
+        "comedores.services.comedor_service.get_id_by_nombre",
+        side_effect=[1, 2, 3],
+    )
+    data = module.ComedorService.get_ubicaciones_ids(
+        {"provincia": "A", "municipio": "B", "localidad": "C"}
+    )
+    assert data == {"provincia": 1, "municipio": 2, "localidad": 3}
+
+    mocker.patch(
+        "comedores.services.comedor_service.normalize_field",
+        side_effect=lambda value, _char: value,
+    )
+    created = SimpleNamespace(pk=1)
+    mocker.patch(
+        "comedores.services.comedor_service.Referente.objects.create",
+        return_value=created,
+    )
+    out = module.ComedorService.create_or_update_referente(
+        {"referente": {"nombre": "Ana", "celular": "11-2222", "documento": "10.111"}}
+    )
+    assert out is created
+
+    existing = SimpleNamespace(save=mocker.Mock())
+    out2 = module.ComedorService.create_or_update_referente(
+        {"referente": {"nombre": "Luis", "celular": "123", "documento": "321"}},
+        referente_instance=existing,
+    )
+    assert out2 is existing
+    assert existing.nombre == "Luis"
+    existing.save.assert_called_once()
+
+
+def test_create_imagenes_valid_and_invalid(mocker):
+    valid_form = SimpleNamespace(is_valid=lambda: True, save=lambda: "ok")
+    invalid_form = SimpleNamespace(is_valid=lambda: False, errors={"imagen": ["x"]})
+    form_ctor = mocker.patch(
+        "comedores.services.comedor_service.ImagenComedorForm",
+        side_effect=[valid_form, invalid_form],
+    )
+
+    assert module.ComedorService.create_imagenes("img1", 9) == "ok"
+    assert module.ComedorService.create_imagenes("img2", 9) == {"imagen": ["x"]}
+    assert form_ctor.call_count == 2
+
+
+def test_relevamiento_resumen_presupuestos_and_aprobadas(mocker):
+    assert module.ComedorService.get_relevamiento_resumen([]) is None
+
+    r1 = SimpleNamespace(estado="Pendiente")
+    r2 = SimpleNamespace(estado="Finalizado")
+    assert module.ComedorService.get_relevamiento_resumen([r1, r2]) is r2
+    assert module.ComedorService.get_relevamiento_resumen([r1]) is r1
+
+    prestacion = SimpleNamespace()
+    for dia in [
+        "lunes",
+        "martes",
+        "miercoles",
+        "jueves",
+        "viernes",
+        "sabado",
+        "domingo",
+    ]:
+        setattr(prestacion, f"{dia}_desayuno_actual", 1)
+        setattr(prestacion, f"{dia}_almuerzo_actual", 2)
+        setattr(prestacion, f"{dia}_merienda_actual", 3)
+        setattr(prestacion, f"{dia}_cena_actual", 4)
+        setattr(prestacion, f"{dia}_merienda_reforzada_actual", 1)
+
+    mocker.patch(
+        "comedores.services.comedor_service.preload_valores_comida_cache",
+        return_value={"cena": 10, "desayuno": 20, "almuerzo": 30, "merienda": 40},
+    )
+    result = module.ComedorService.get_presupuestos(
+        1,
+        relevamientos_prefetched=[
+            SimpleNamespace(prestacion=prestacion, estado="Finalizado")
+        ],
+    )
+    assert result[0] > 0
+    assert result[1] == 280
+    assert result[2] == 140
+    assert result[3] == 420
+    assert result[4] == 840
+
+    informe = SimpleNamespace(
+        aprobadas_desayuno_lunes="2",
+        aprobadas_desayuno_martes=None,
+        aprobadas_almuerzo_lunes="x",
+        aprobadas_almuerzo_martes=3,
+        aprobadas_merienda_lunes=1,
+        aprobadas_cena_lunes=4,
+    )
+    apro = module.ComedorService.get_prestaciones_aprobadas_por_tipo(informe)
+    assert apro["desayuno"] == 2
+    assert apro["almuerzo"] == 3
+    assert apro["merienda"] == 1
+    assert apro["cena"] == 4
+    assert (
+        module.ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(apro)
+        == (3 + 4) * 763 + (2 + 1) * 383
+    )
+    assert (
+        module.ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(None)
+        is None
+    )
+
+
+def test_post_comedor_relevamiento_branches(mocker):
+    comedor = SimpleNamespace(id=22)
+    req = SimpleNamespace(POST={"territorial": "1"})
+    mocker.patch("comedores.services.comedor_service.reverse", return_value="/r/1")
+    ok_redirect = mocker.patch(
+        "comedores.services.comedor_service.redirect",
+        side_effect=lambda *args, **kwargs: (args, kwargs),
+    )
+    mocker.patch(
+        "comedores.services.comedor_service.RelevamientoService.create_pendiente",
+        return_value=SimpleNamespace(pk=9, comedor=SimpleNamespace(pk=22)),
+    )
+    out = module.ComedorService.post_comedor_relevamiento(req, comedor)
+    assert out[0][0] == "/r/1"
+
+    req2 = SimpleNamespace(POST={"territorial_editar": "1"})
+    msg_error = mocker.patch("comedores.services.comedor_service.messages.error")
+    mocker.patch(
+        "comedores.services.comedor_service.RelevamientoService.update_territorial",
+        return_value=SimpleNamespace(pk=1, comedor=None),
+    )
+    out2 = module.ComedorService.post_comedor_relevamiento(req2, comedor)
+    assert out2[0][0] == "comedor_detalle"
+    assert msg_error.called
+
+    req3 = SimpleNamespace(POST={})
+    out3 = module.ComedorService.post_comedor_relevamiento(req3, comedor)
+    assert out3[0][0] == "comedor_detalle"
+    assert ok_redirect.called
+
+
+def test_crear_admision_desde_comedor_flows(mocker):
+    comedor = SimpleNamespace(pk=5)
+    request = SimpleNamespace(POST={}, get_full_path=lambda: "/x")
+    warn = mocker.patch("comedores.services.comedor_service.messages.warning")
+    err = mocker.patch("comedores.services.comedor_service.messages.error")
+    success = mocker.patch("comedores.services.comedor_service.messages.success")
+    mocker.patch("comedores.services.comedor_service.messages.info")
+    red = mocker.patch(
+        "comedores.services.comedor_service.redirect",
+        side_effect=lambda *args, **kwargs: (args, kwargs),
+    )
+    safe = mocker.patch(
+        "comedores.services.comedor_service.safe_redirect", return_value="safe"
+    )
+    mocker.patch("comedores.services.comedor_service.reverse", return_value="/detalle")
+
+    out_missing = module.ComedorService.crear_admision_desde_comedor(request, comedor)
+    assert out_missing[0][0] == "comedor_detalle"
+    assert err.called
+
+    request.POST = {"admision": "renovacion"}
+    f = mocker.Mock()
+    f.exists.return_value = False
+    mocker.patch(
+        "comedores.services.comedor_service.Admision.objects.filter", return_value=f
+    )
+    out_no_incorp = module.ComedorService.crear_admision_desde_comedor(request, comedor)
+    assert out_no_incorp[0][0] == "comedor_detalle"
+
+    request.POST = {"admision": "incorporacion"}
+    f2 = mocker.Mock()
+    f2.exists.return_value = True
+    mocker.patch(
+        "comedores.services.comedor_service.Admision.objects.filter", return_value=f2
+    )
+    out_dup = module.ComedorService.crear_admision_desde_comedor(request, comedor)
+    assert out_dup[0][0] == "comedor_detalle"
+    assert warn.called
+
+    request.POST = {"admision": "renovacion"}
+    filt = mocker.Mock()
+    filt.exists.side_effect = [True]
+    filt.count.return_value = 4
+    mocker.patch(
+        "comedores.services.comedor_service.Admision.objects.filter", return_value=filt
+    )
+    out_safe = module.ComedorService.crear_admision_desde_comedor(request, comedor)
+    assert out_safe == "safe"
+
+    request.POST = {"admision": "renovacion"}
+
+    def _filter(*args, **kwargs):
+        if kwargs.get("tipo") == "incorporacion":
+            return SimpleNamespace(exists=lambda: True)
+        if kwargs.get("tipo") == "renovacion" and kwargs.get("activa") is True:
+            return SimpleNamespace(count=lambda: 0)
+        return SimpleNamespace(exists=lambda: False)
+
+    mocker.patch(
+        "comedores.services.comedor_service.Admision.objects.filter",
+        side_effect=_filter,
+    )
+    adm = SimpleNamespace(get_tipo_display=lambda: "Renovación")
+    mocker.patch(
+        "comedores.services.comedor_service.Admision.objects.create", return_value=adm
+    )
+    mocker.patch(
+        "comedores.services.comedor_service.Hitos.objects.filter",
+        return_value=SimpleNamespace(exists=lambda: False),
+    )
+    hitos_create = mocker.patch(
+        "comedores.services.comedor_service.Hitos.objects.create"
+    )
+
+    out_ok = module.ComedorService.crear_admision_desde_comedor(request, comedor)
+    assert out_ok[0][0] == "comedor_detalle"
+    assert hitos_create.called
+    assert success.call_count >= 1
