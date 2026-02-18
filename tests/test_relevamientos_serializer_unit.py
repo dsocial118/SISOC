@@ -25,7 +25,9 @@ def test_clean_maps_nested_data_and_ids(mocker):
         excepcion="exc_old",
     )
 
-    mocker.patch("relevamientos.serializer.format_fecha_django", return_value="2025-01-01")
+    mocker.patch(
+        "relevamientos.serializer.format_fecha_django", return_value="2025-01-01"
+    )
     mocker.patch("relevamientos.serializer.validate_unicode_email")
     update_comedor = mocker.patch(
         "relevamientos.serializer.RelevamientoService.update_comedor", return_value=7
@@ -177,7 +179,9 @@ def test_validate_success_and_reraise_on_error(mocker):
     serializer = RelevamientoSerializer(data={}, partial=True)
     attrs = {"a": 1}
 
-    mocker.patch("rest_framework.serializers.ModelSerializer.validate", return_value=attrs)
+    mocker.patch(
+        "rest_framework.serializers.ModelSerializer.validate", return_value=attrs
+    )
     assert serializer.validate(attrs) == attrs
 
     mocker.patch(

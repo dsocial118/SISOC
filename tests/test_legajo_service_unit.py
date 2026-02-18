@@ -12,7 +12,10 @@ pytestmark = pytest.mark.django_db
 
 def test_estado_helpers_and_recalc(mocker):
     module._estado_archivo_cargado_id.cache_clear()
-    mocker.patch("celiaquia.services.legajo_service.EstadoLegajo.objects.only", return_value=SimpleNamespace(get=lambda **k: SimpleNamespace(id=7)))
+    mocker.patch(
+        "celiaquia.services.legajo_service.EstadoLegajo.objects.only",
+        return_value=SimpleNamespace(get=lambda **k: SimpleNamespace(id=7)),
+    )
 
     obj = SimpleNamespace(estado_id=None)
     fields = []
@@ -28,9 +31,19 @@ def test_estado_helpers_and_recalc(mocker):
 
 def test_subir_archivo_individual_and_errors(mocker):
     module._estado_archivo_cargado_id.cache_clear()
-    mocker.patch("celiaquia.services.legajo_service._estado_archivo_cargado_id", return_value=1)
+    mocker.patch(
+        "celiaquia.services.legajo_service._estado_archivo_cargado_id", return_value=1
+    )
 
-    leg = SimpleNamespace(pk=1, archivo1=None, archivo2=None, archivo3=None, estado_id=None, archivos_ok=False, save=mocker.Mock())
+    leg = SimpleNamespace(
+        pk=1,
+        archivo1=None,
+        archivo2=None,
+        archivo3=None,
+        estado_id=None,
+        archivos_ok=False,
+        save=mocker.Mock(),
+    )
     with pytest.raises(ValidationError):
         module.LegajoService.subir_archivo_individual(leg, None)
     with pytest.raises(ValidationError):
@@ -42,8 +55,17 @@ def test_subir_archivo_individual_and_errors(mocker):
 
 
 def test_subir_archivos_iniciales_and_subsanacion(mocker):
-    mocker.patch("celiaquia.services.legajo_service._estado_archivo_cargado_id", return_value=1)
-    leg = SimpleNamespace(pk=1, archivo2=None, archivo3=None, estado_id=None, archivos_ok=False, save=mocker.Mock())
+    mocker.patch(
+        "celiaquia.services.legajo_service._estado_archivo_cargado_id", return_value=1
+    )
+    leg = SimpleNamespace(
+        pk=1,
+        archivo2=None,
+        archivo3=None,
+        estado_id=None,
+        archivos_ok=False,
+        save=mocker.Mock(),
+    )
 
     with pytest.raises(ValidationError):
         module.LegajoService.subir_archivos_iniciales(leg, None, None, object())
@@ -52,25 +74,44 @@ def test_subir_archivos_iniciales_and_subsanacion(mocker):
     assert leg.save.called
 
     vt = SimpleNamespace()
-    mocker.patch("celiaquia.services.legajo_service.ValidacionTecnica.objects.filter", return_value=SimpleNamespace(first=lambda: vt))
-    mocker.patch("celiaquia.services.legajo_service.SubsanacionRespuesta.objects.create")
+    mocker.patch(
+        "celiaquia.services.legajo_service.ValidacionTecnica.objects.filter",
+        return_value=SimpleNamespace(first=lambda: vt),
+    )
+    mocker.patch(
+        "celiaquia.services.legajo_service.SubsanacionRespuesta.objects.create"
+    )
 
-    leg2 = SimpleNamespace(pk=2, archivo1=None, archivo2=None, archivo3=None, estado_id=None, archivos_ok=False, save=mocker.Mock())
+    leg2 = SimpleNamespace(
+        pk=2,
+        archivo1=None,
+        archivo2=None,
+        archivo3=None,
+        estado_id=None,
+        archivos_ok=False,
+        save=mocker.Mock(),
+    )
     with pytest.raises(ValidationError):
         module.LegajoService.actualizar_archivos_subsanacion(leg2)
 
-    module.LegajoService.actualizar_archivos_subsanacion(leg2, archivo1=object(), usuario="u")
+    module.LegajoService.actualizar_archivos_subsanacion(
+        leg2, archivo1=object(), usuario="u"
+    )
     assert leg2.save.called
 
 
 def test_solicitar_subsanacion_all_loaded_and_faltantes(mocker):
     leg = SimpleNamespace(pk=1, revision_tecnico="APROBADO", save=mocker.Mock())
-    mocker.patch("celiaquia.services.legajo_service.HistorialValidacionTecnica.objects.create")
+    mocker.patch(
+        "celiaquia.services.legajo_service.HistorialValidacionTecnica.objects.create"
+    )
 
     with pytest.raises(ValidationError):
         module.LegajoService.solicitar_subsanacion(leg, "", usuario="u")
 
-    module.LegajoService.solicitar_subsanacion(leg, "motivo", usuario=SimpleNamespace(username="x"))
+    module.LegajoService.solicitar_subsanacion(
+        leg, "motivo", usuario=SimpleNamespace(username="x")
+    )
     assert leg.save.called
 
     qs = SimpleNamespace(filter=lambda **k: SimpleNamespace(exists=lambda: False))
@@ -83,7 +124,9 @@ def test_solicitar_subsanacion_all_loaded_and_faltantes(mocker):
             self.id = 9
             self.archivo2 = None
             self.archivo3 = None
-            self.ciudadano = SimpleNamespace(id=1, documento="123", nombre="A", apellido="B")
+            self.ciudadano = SimpleNamespace(
+                id=1, documento="123", nombre="A", apellido="B"
+            )
             self.ciudadano_id = 1
             self.estado = SimpleNamespace(nombre="E")
             self.revision_tecnico = "R"
@@ -106,8 +149,15 @@ def test_solicitar_subsanacion_all_loaded_and_faltantes(mocker):
             return iter([Leg()])
 
     exp2 = SimpleNamespace(id=1, expediente_ciudadanos=Qs())
-    mocker.patch("celiaquia.services.legajo_service.FamiliaService.obtener_ids_responsables", return_value={1})
-    mocker.patch.object(module.LegajoService, "get_archivos_requeridos_por_legajo", return_value={"archivo2": "A2", "archivo3": "A3"})
+    mocker.patch(
+        "celiaquia.services.legajo_service.FamiliaService.obtener_ids_responsables",
+        return_value={1},
+    )
+    mocker.patch.object(
+        module.LegajoService,
+        "get_archivos_requeridos_por_legajo",
+        return_value={"archivo2": "A2", "archivo3": "A3"},
+    )
     out = module.LegajoService.faltantes_archivos(exp2, limit=1)
     assert len(out) == 1
     assert out[0]["es_responsable"] is True
@@ -120,7 +170,9 @@ def test_listar_legajos_and_subir_individual_branches(mocker):
     )
     assert module.LegajoService.listar_legajos(exp) == "ordered"
 
-    mocker.patch("celiaquia.services.legajo_service._estado_archivo_cargado_id", return_value=1)
+    mocker.patch(
+        "celiaquia.services.legajo_service._estado_archivo_cargado_id", return_value=1
+    )
     leg = SimpleNamespace(
         pk=3,
         archivo1=object(),
@@ -150,7 +202,10 @@ def test_es_responsable_and_archivos_requeridos_fallbacks(mocker):
     assert module.LegajoService._es_responsable(SimpleNamespace(id=5), {5}) is True
     assert module.LegajoService._es_responsable(SimpleNamespace(id=6), {5}) is False
 
-    mocker.patch("celiaquia.services.legajo_service.FamiliaService.es_responsable", side_effect=RuntimeError("x"))
+    mocker.patch(
+        "celiaquia.services.legajo_service.FamiliaService.es_responsable",
+        side_effect=RuntimeError("x"),
+    )
     assert module.LegajoService._es_responsable(SimpleNamespace(id=7), None) is False
 
     leg_resp = SimpleNamespace(pk=10, ciudadano=SimpleNamespace(id=1))
@@ -159,7 +214,11 @@ def test_es_responsable_and_archivos_requeridos_fallbacks(mocker):
 
     leg_minor = SimpleNamespace(
         pk=11,
-        ciudadano=SimpleNamespace(id=2, documento="1", fecha_nacimiento=module.date(module.date.today().year - 10, 1, 1)),
+        ciudadano=SimpleNamespace(
+            id=2,
+            documento="1",
+            fecha_nacimiento=module.date(module.date.today().year - 10, 1, 1),
+        ),
     )
     out_minor = module.LegajoService.get_archivos_requeridos_por_legajo(leg_minor, {1})
     assert out_minor["archivo3"] == "Foto DNI"
@@ -190,5 +249,7 @@ def test_actualizar_subsanacion_warning_and_estado_cache_missing(mocker):
         "celiaquia.services.legajo_service.ValidacionTecnica.objects.filter",
         side_effect=Exception("db"),
     )
-    module.LegajoService.actualizar_archivos_subsanacion(leg, archivo2=object(), usuario="x")
+    module.LegajoService.actualizar_archivos_subsanacion(
+        leg, archivo2=object(), usuario="x"
+    )
     assert leg.save.called

@@ -32,7 +32,9 @@ def test_create_view_get_context_data_construye_forms_y_comedor(mocker):
     view = RelevamientoCreateView()
     view.request = SimpleNamespace(method="POST", POST={"x": 1})
     view.kwargs = {"comedor_pk": 7}
-    mocker.patch("django.views.generic.edit.FormMixin.get_context_data", return_value={"base": 1})
+    mocker.patch(
+        "django.views.generic.edit.FormMixin.get_context_data", return_value={"base": 1}
+    )
     mocker.patch(
         "relevamientos.views.web_views.RelevamientoFormManager.build_forms",
         return_value={"relevamiento_form": "FORM"},
@@ -67,13 +69,21 @@ def test_create_view_form_valid_redirige_si_forms_validos(mocker):
     view = RelevamientoCreateView()
     view.request = SimpleNamespace()
     view._context_data = _forms_context()
-    mocker.patch("relevamientos.views.web_views.RelevamientoFormManager.validate_forms", return_value={"ok": True})
-    mocker.patch("relevamientos.views.web_views.RelevamientoFormManager.all_valid", return_value=True)
+    mocker.patch(
+        "relevamientos.views.web_views.RelevamientoFormManager.validate_forms",
+        return_value={"ok": True},
+    )
+    mocker.patch(
+        "relevamientos.views.web_views.RelevamientoFormManager.all_valid",
+        return_value=True,
+    )
     mocker.patch(
         "relevamientos.views.web_views.RelevamientoService.populate_relevamiento",
         return_value=SimpleNamespace(id=55, comedor=SimpleNamespace(id=23)),
     )
-    redirect_mock = mocker.patch("relevamientos.views.web_views.redirect", return_value="REDIRECTED")
+    redirect_mock = mocker.patch(
+        "relevamientos.views.web_views.redirect", return_value="REDIRECTED"
+    )
 
     result = view.form_valid(form=SimpleNamespace())
 
@@ -86,9 +96,17 @@ def test_create_view_form_valid_muestra_errores_si_forms_invalidos(mocker):
     view.request = SimpleNamespace()
     view._context_data = _forms_context()
     validation_results = {"any": False}
-    mocker.patch("relevamientos.views.web_views.RelevamientoFormManager.validate_forms", return_value=validation_results)
-    mocker.patch("relevamientos.views.web_views.RelevamientoFormManager.all_valid", return_value=False)
-    show_errors = mocker.patch("relevamientos.views.web_views.RelevamientoFormManager.show_form_errors")
+    mocker.patch(
+        "relevamientos.views.web_views.RelevamientoFormManager.validate_forms",
+        return_value=validation_results,
+    )
+    mocker.patch(
+        "relevamientos.views.web_views.RelevamientoFormManager.all_valid",
+        return_value=False,
+    )
+    show_errors = mocker.patch(
+        "relevamientos.views.web_views.RelevamientoFormManager.show_form_errors"
+    )
     view.form_invalid = mocker.Mock(return_value="INVALID")
 
     result = view.form_valid(form=SimpleNamespace())
@@ -146,7 +164,9 @@ def test_update_view_get_context_data_construye_instance_map(mocker):
         espacio=SimpleNamespace(cocina="COCINA", prestacion="EPREST"),
         responsable="RESP",
     )
-    mocker.patch("django.views.generic.edit.FormMixin.get_context_data", return_value={"base": 1})
+    mocker.patch(
+        "django.views.generic.edit.FormMixin.get_context_data", return_value={"base": 1}
+    )
     build_forms = mocker.patch(
         "relevamientos.views.web_views.RelevamientoFormManager.build_forms",
         return_value={"relevamiento_form": "FORM"},
@@ -163,7 +183,9 @@ def test_update_view_get_context_data_construye_instance_map(mocker):
     assert context["responsable"] == "RESP"
     assert view._context_data == context
     assert "instance_map" in build_forms.call_args.kwargs
-    assert build_forms.call_args.kwargs["instance_map"]["espacio_cocina_form"] == "COCINA"
+    assert (
+        build_forms.call_args.kwargs["instance_map"]["espacio_cocina_form"] == "COCINA"
+    )
 
 
 def test_update_view_get_form_kwargs_agrega_comedor_pk(mocker):
@@ -196,7 +218,9 @@ def test_update_view_form_valid_redirige_y_error_message(mocker):
         "relevamientos.views.web_views.RelevamientoService.populate_relevamiento",
         return_value=SimpleNamespace(id=9, comedor=SimpleNamespace(id=2)),
     )
-    redirect_mock = mocker.patch("relevamientos.views.web_views.redirect", return_value="OK")
+    redirect_mock = mocker.patch(
+        "relevamientos.views.web_views.redirect", return_value="OK"
+    )
 
     result = view.form_valid(SimpleNamespace())
 
@@ -272,7 +296,10 @@ def test_detail_view_get_context_data_limita_timeline_y_agrega_datos(mocker):
         SimpleNamespace(id=3, fecha_visita="2024-01-03", estado="Visita pendiente"),
         SimpleNamespace(id=4, fecha_visita="2024-01-04", estado="Otro"),
     ]
-    mocker.patch("django.views.generic.detail.SingleObjectMixin.get_context_data", return_value={})
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
     filter_mock = mocker.patch(
         "relevamientos.views.web_views.Relevamiento.objects.filter",
         return_value=SimpleNamespace(
@@ -288,7 +315,9 @@ def test_detail_view_get_context_data_limita_timeline_y_agrega_datos(mocker):
 
     assert context["prestacion"] == "PREST"
     assert len(context["relevamientos_timeline"]) == 3
-    assert any(item["card_class"] == "active" for item in context["relevamientos_timeline"])
+    assert any(
+        item["card_class"] == "active" for item in context["relevamientos_timeline"]
+    )
     assert context["relevamiento_data"]["gas"] == "S-2"
     filter_mock.assert_called_once_with(comedor=relevamiento.comedor)
 

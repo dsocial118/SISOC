@@ -73,7 +73,9 @@ def test_ultimo_numero_gde_arma_query_y_devuelve_first(mocker):
     """Construye el queryset esperado y retorna el primer número GDE."""
     first_mock = mocker.Mock(return_value="GDE-123")
     values_list_mock = mocker.Mock(return_value=SimpleNamespace(first=first_mock))
-    order_by_mock = mocker.Mock(return_value=SimpleNamespace(values_list=values_list_mock))
+    order_by_mock = mocker.Mock(
+        return_value=SimpleNamespace(values_list=values_list_mock)
+    )
     exclude_second = SimpleNamespace(order_by=order_by_mock)
     exclude_first = SimpleNamespace(exclude=mocker.Mock(return_value=exclude_second))
     filter_mock = mocker.patch(

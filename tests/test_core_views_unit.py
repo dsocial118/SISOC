@@ -34,7 +34,7 @@ def test_parsear_datos_request_json_y_fallback():
     req_ok = SimpleNamespace(body=b'{"a": 1}', POST={})
     assert module._parsear_datos_request(req_ok)["a"] == 1
 
-    req_bad = SimpleNamespace(body=b'{bad', POST={"x": "1"})
+    req_bad = SimpleNamespace(body=b"{bad", POST={"x": "1"})
     assert module._parsear_datos_request(req_bad)["x"] == "1"
 
 
@@ -56,7 +56,11 @@ def test_columnas_preferencias_get_invalid_and_success(mocker):
     req_ok.user = _auth_user()
     mocker.patch(
         "core.views.PreferenciaColumnas.objects.filter",
-        return_value=SimpleNamespace(only=lambda *_a, **_k: SimpleNamespace(first=lambda: SimpleNamespace(columnas=["id"]))),
+        return_value=SimpleNamespace(
+            only=lambda *_a, **_k: SimpleNamespace(
+                first=lambda: SimpleNamespace(columnas=["id"])
+            )
+        ),
     )
     resp_ok = module._columnas_preferencias_get(req_ok)
     assert resp_ok.status_code == 200
@@ -108,7 +112,9 @@ def test_filtros_favoritos_post_validaciones_y_success(mocker):
     rf = RequestFactory()
     user = _auth_user()
 
-    req_dup = rf.post("/core/favoritos", {"seccion": "adm", "nombre": "A", "filtros": "[]"})
+    req_dup = rf.post(
+        "/core/favoritos", {"seccion": "adm", "nombre": "A", "filtros": "[]"}
+    )
     req_dup.user = user
     mocker.patch("core.views.obtener_configuracion_seccion", return_value={"x": 1})
     mocker.patch(
@@ -117,7 +123,9 @@ def test_filtros_favoritos_post_validaciones_y_success(mocker):
     )
     assert module._filtros_favoritos_post(req_dup).status_code == 400
 
-    req_obso = rf.post("/core/favoritos", {"seccion": "adm", "nombre": "B", "filtros": "[]"})
+    req_obso = rf.post(
+        "/core/favoritos", {"seccion": "adm", "nombre": "B", "filtros": "[]"}
+    )
     req_obso.user = user
     mocker.patch(
         "core.views.FiltroFavorito.objects.filter",
@@ -127,22 +135,32 @@ def test_filtros_favoritos_post_validaciones_y_success(mocker):
     mocker.patch("core.views.obtener_items_obsoletos", return_value=["old"])
     assert module._filtros_favoritos_post(req_obso).status_code == 409
 
-    req_ok = rf.post("/core/favoritos", {"seccion": "adm", "nombre": "C", "filtros": "[]"})
+    req_ok = rf.post(
+        "/core/favoritos", {"seccion": "adm", "nombre": "C", "filtros": "[]"}
+    )
     req_ok.user = user
     mocker.patch("core.views.obtener_items_obsoletos", return_value=[])
     mocker.patch(
         "core.views.FiltroFavorito.objects.create",
-        return_value=SimpleNamespace(id=9, nombre="C", fecha_creacion=SimpleNamespace(isoformat=lambda: "2026-01-01")),
+        return_value=SimpleNamespace(
+            id=9,
+            nombre="C",
+            fecha_creacion=SimpleNamespace(isoformat=lambda: "2026-01-01"),
+        ),
     )
     mocker.patch("core.views.clave_cache_filtros_favoritos", return_value="k")
     mocker.patch("core.views.cache.delete")
     resp_ok = module._filtros_favoritos_post(req_ok)
     assert resp_ok.status_code == 201
 
-    req_int = rf.post("/core/favoritos", {"seccion": "adm", "nombre": "D", "filtros": "[]"})
+    req_int = rf.post(
+        "/core/favoritos", {"seccion": "adm", "nombre": "D", "filtros": "[]"}
+    )
     req_int.user = user
     mocker.patch("core.views.obtener_items_obsoletos", return_value=[])
-    mocker.patch("core.views.FiltroFavorito.objects.create", side_effect=IntegrityError())
+    mocker.patch(
+        "core.views.FiltroFavorito.objects.create", side_effect=IntegrityError()
+    )
     assert module._filtros_favoritos_post(req_int).status_code == 400
 
 
@@ -152,20 +170,31 @@ def test_detalle_filtro_favorito_paths(mocker):
 
     req_nf = rf.get("/core/favoritos/1")
     req_nf.user = user
-    mocker.patch("core.views.FiltroFavorito.objects.filter", return_value=SimpleNamespace(first=lambda: None))
+    mocker.patch(
+        "core.views.FiltroFavorito.objects.filter",
+        return_value=SimpleNamespace(first=lambda: None),
+    )
     assert module.detalle_filtro_favorito(req_nf, 1).status_code == 404
 
-    favorito = SimpleNamespace(id=1, seccion="adm", nombre="F", filtros=[{"a": 1}], delete=mocker.Mock())
+    favorito = SimpleNamespace(
+        id=1, seccion="adm", nombre="F", filtros=[{"a": 1}], delete=mocker.Mock()
+    )
     req_del = rf.delete("/core/favoritos/1")
     req_del.user = user
-    mocker.patch("core.views.FiltroFavorito.objects.filter", return_value=SimpleNamespace(first=lambda: favorito))
+    mocker.patch(
+        "core.views.FiltroFavorito.objects.filter",
+        return_value=SimpleNamespace(first=lambda: favorito),
+    )
     mocker.patch("core.views.clave_cache_filtros_favoritos", return_value="k")
     mocker.patch("core.views.cache.delete")
     assert module.detalle_filtro_favorito(req_del, 1).status_code == 200
 
     req_bad_sec = rf.get("/core/favoritos/1", {"seccion": "otra"})
     req_bad_sec.user = user
-    mocker.patch("core.views.FiltroFavorito.objects.filter", return_value=SimpleNamespace(first=lambda: favorito))
+    mocker.patch(
+        "core.views.FiltroFavorito.objects.filter",
+        return_value=SimpleNamespace(first=lambda: favorito),
+    )
     assert module.detalle_filtro_favorito(req_bad_sec, 1).status_code == 400
 
 
@@ -177,7 +206,9 @@ def test_load_localidad_y_load_municipios(mocker):
     req_m.user = user
     mocker.patch(
         "core.views.Municipio.objects.filter",
-        return_value=SimpleNamespace(values=lambda *_a, **_k: [{"id": 1, "nombre": "M"}]),
+        return_value=SimpleNamespace(
+            values=lambda *_a, **_k: [{"id": 1, "nombre": "M"}]
+        ),
     )
     assert module.load_municipios(req_m).status_code == 200
 
@@ -193,7 +224,9 @@ def test_load_localidad_y_load_municipios(mocker):
     req_l.user = user
     mocker.patch(
         "core.views.Localidad.objects.filter",
-        return_value=SimpleNamespace(values=lambda *_a, **_k: [{"id": 1, "nombre": "L"}]),
+        return_value=SimpleNamespace(
+            values=lambda *_a, **_k: [{"id": 1, "nombre": "L"}]
+        ),
     )
     assert module.load_localidad(req_l).status_code == 200
 
@@ -203,7 +236,10 @@ def test_load_organizaciones_paginado(mocker):
     req = rf.get("/core/organizaciones", {"q": "org", "page": "1"})
     req.user = _auth_user()
 
-    items = [SimpleNamespace(id=1, nombre="Organizacion A"), SimpleNamespace(id=2, nombre="Otra")]
+    items = [
+        SimpleNamespace(id=1, nombre="Organizacion A"),
+        SimpleNamespace(id=2, nombre="Otra"),
+    ]
     mocker.patch("core.views.Organizacion.objects.all", return_value=_QS(items))
 
     resp = module.load_organizaciones(req)

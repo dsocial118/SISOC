@@ -16,17 +16,23 @@ class _Req(SimpleNamespace):
 def test_actualizar_estado_archivo_success_and_error(mocker):
     req = _Req(user=_user(), method="GET")
 
-    mocker.patch("admisiones.views.web_views.AdmisionService.actualizar_estado_ajax", return_value={
-        "success": True,
-        "nuevo_estado": "Aceptado",
-        "grupo_usuario": "g",
-        "mostrar_select": True,
-        "opciones": ["a"],
-    })
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.actualizar_estado_ajax",
+        return_value={
+            "success": True,
+            "nuevo_estado": "Aceptado",
+            "grupo_usuario": "g",
+            "mostrar_select": True,
+            "opciones": ["a"],
+        },
+    )
     resp = module.actualizar_estado_archivo(req)
     assert resp.status_code == 200
 
-    mocker.patch("admisiones.views.web_views.AdmisionService.actualizar_estado_ajax", return_value={"success": False, "error": "bad"})
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.actualizar_estado_ajax",
+        return_value={"success": False, "error": "bad"},
+    )
     resp2 = module.actualizar_estado_archivo(req)
     assert resp2.status_code == 400
 
@@ -34,32 +40,60 @@ def test_actualizar_estado_archivo_success_and_error(mocker):
 def test_actualizar_numero_gde_and_convenio_numero(mocker):
     req = _Req(user=_user(), method="POST")
 
-    mocker.patch("admisiones.views.web_views.AdmisionService.actualizar_numero_gde_ajax", return_value={"success": True, "numero_gde": "1", "valor_anterior": "0"})
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.actualizar_numero_gde_ajax",
+        return_value={"success": True, "numero_gde": "1", "valor_anterior": "0"},
+    )
     assert module.actualizar_numero_gde_archivo(req).status_code == 200
 
-    mocker.patch("admisiones.views.web_views.AdmisionService.actualizar_numero_gde_ajax", return_value={"success": False, "error": "e"})
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.actualizar_numero_gde_ajax",
+        return_value={"success": False, "error": "e"},
+    )
     assert module.actualizar_numero_gde_archivo(req).status_code == 400
 
-    mocker.patch("admisiones.views.web_views.AdmisionService.actualizar_convenio_numero_ajax", return_value={"success": True, "convenio_numero": "12", "valor_anterior": None})
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.actualizar_convenio_numero_ajax",
+        return_value={"success": True, "convenio_numero": "12", "valor_anterior": None},
+    )
     assert module.actualizar_convenio_numero(req).status_code == 200
 
-    mocker.patch("admisiones.views.web_views.AdmisionService.actualizar_convenio_numero_ajax", return_value={"success": False, "error": "e"})
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.actualizar_convenio_numero_ajax",
+        return_value={"success": False, "error": "e"},
+    )
     assert module.actualizar_convenio_numero(req).status_code == 400
 
 
 def test_crear_documento_personalizado_paths(mocker):
-    req = _Req(FILES={"archivo": object()}, POST={"nombre": "Doc"}, user=_user(), method="POST")
+    req = _Req(
+        FILES={"archivo": object()}, POST={"nombre": "Doc"}, user=_user(), method="POST"
+    )
 
     archivo = SimpleNamespace(admision=SimpleNamespace())
-    mocker.patch("admisiones.views.web_views.AdmisionService.crear_documento_personalizado", return_value=(archivo, None))
-    mocker.patch("admisiones.views.web_views.AdmisionService.serialize_documento_personalizado", return_value={"id": 1})
-    mocker.patch("admisiones.views.web_views.render_to_string", return_value="<tr></tr>")
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.crear_documento_personalizado",
+        return_value=(archivo, None),
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.serialize_documento_personalizado",
+        return_value={"id": 1},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.render_to_string", return_value="<tr></tr>"
+    )
     assert module.crear_documento_personalizado(req, 1).status_code == 201
 
-    mocker.patch("admisiones.views.web_views.AdmisionService.crear_documento_personalizado", return_value=(None, "sin permiso"))
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.crear_documento_personalizado",
+        return_value=(None, "sin permiso"),
+    )
     assert module.crear_documento_personalizado(req, 1).status_code == 403
 
-    mocker.patch("admisiones.views.web_views.AdmisionService.crear_documento_personalizado", return_value=(None, "otro"))
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.crear_documento_personalizado",
+        return_value=(None, "otro"),
+    )
     assert module.crear_documento_personalizado(req, 1).status_code == 400
 
 
@@ -80,12 +114,28 @@ def test_eliminar_archivo_admision_estado_no_permitido_and_success(mocker):
     admision = SimpleNamespace(comedor=comedor)
     req = _Req(method="DELETE", user=_user(False), GET={"archivo_id": "5"})
 
-    mocker.patch("admisiones.views.web_views.get_object_or_404", side_effect=[admision, SimpleNamespace()])
-    mocker.patch("admisiones.views.web_views.AdmisionService._verificar_permiso_dupla", return_value=True)
+    mocker.patch(
+        "admisiones.views.web_views.get_object_or_404",
+        side_effect=[admision, SimpleNamespace()],
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._verificar_permiso_dupla",
+        return_value=True,
+    )
 
     archivo_qs = mocker.Mock()
-    archivo_qs.first.side_effect = [None, SimpleNamespace(estado="Aceptado", documentacion=SimpleNamespace(nombre="D"), nombre_personalizado=None)]
-    mocker.patch("admisiones.views.web_views.ArchivoAdmision.objects.filter", return_value=archivo_qs)
+    archivo_qs.first.side_effect = [
+        None,
+        SimpleNamespace(
+            estado="Aceptado",
+            documentacion=SimpleNamespace(nombre="D"),
+            nombre_personalizado=None,
+        ),
+    ]
+    mocker.patch(
+        "admisiones.views.web_views.ArchivoAdmision.objects.filter",
+        return_value=archivo_qs,
+    )
 
     resp = module.eliminar_archivo_admision(req, 1, 2)
     assert resp.status_code == 400
@@ -100,10 +150,18 @@ def test_eliminar_archivo_admision_estado_no_permitido_and_success(mocker):
     )
     archivo_qs2 = mocker.Mock()
     archivo_qs2.first.side_effect = [archivo_ok]
-    mocker.patch("admisiones.views.web_views.ArchivoAdmision.objects.filter", return_value=archivo_qs2)
-    mocker.patch("admisiones.views.web_views.AdmisionService._serialize_documentacion", return_value={"row_id": "9"})
+    mocker.patch(
+        "admisiones.views.web_views.ArchivoAdmision.objects.filter",
+        return_value=archivo_qs2,
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._serialize_documentacion",
+        return_value={"row_id": "9"},
+    )
     mocker.patch("admisiones.views.web_views.AdmisionService.delete_admision_file")
-    mocker.patch("admisiones.views.web_views.render_to_string", return_value="<tr></tr>")
+    mocker.patch(
+        "admisiones.views.web_views.render_to_string", return_value="<tr></tr>"
+    )
 
     resp2 = module.eliminar_archivo_admision(req, 1, 2)
     assert resp2.status_code == 200
@@ -114,13 +172,30 @@ def test_subir_archivo_admision_paths(mocker):
     assert module.subir_archivo_admision(req_no, 1, 2).status_code == 400
 
     req = _Req(FILES={"archivo": object()}, user=_user(), method="POST")
-    mocker.patch("admisiones.views.web_views.AdmisionService.handle_file_upload", return_value=(None, False))
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.handle_file_upload",
+        return_value=(None, False),
+    )
     assert module.subir_archivo_admision(req, 1, 2).status_code == 400
 
-    archivo = SimpleNamespace(documentacion=SimpleNamespace(id=1), admision=SimpleNamespace(), id=3)
-    mocker.patch("admisiones.views.web_views.AdmisionService.handle_file_upload", return_value=(archivo, True))
-    mocker.patch("admisiones.views.web_views.AdmisionService._serialize_documentacion", return_value={"row_id": "r", "estado": "Pendiente", "estado_valor": "pendiente"})
-    mocker.patch("admisiones.views.web_views.render_to_string", return_value="<tr></tr>")
+    archivo = SimpleNamespace(
+        documentacion=SimpleNamespace(id=1), admision=SimpleNamespace(), id=3
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.handle_file_upload",
+        return_value=(archivo, True),
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._serialize_documentacion",
+        return_value={
+            "row_id": "r",
+            "estado": "Pendiente",
+            "estado_valor": "pendiente",
+        },
+    )
+    mocker.patch(
+        "admisiones.views.web_views.render_to_string", return_value="<tr></tr>"
+    )
     assert module.subir_archivo_admision(req, 1, 2).status_code == 200
 
 
@@ -131,14 +206,30 @@ def test_tecnicos_list_view_queryset_and_context(mocker):
     view.request = req
 
     qs = [SimpleNamespace()]
-    mocker.patch("admisiones.views.web_views.AdmisionService.get_admisiones_tecnicos_queryset", return_value=qs)
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.get_admisiones_tecnicos_queryset",
+        return_value=qs,
+    )
     assert view.get_queryset() == qs
 
-    mocker.patch("django.views.generic.list.MultipleObjectMixin.get_context_data", return_value={"admisiones": qs})
-    mocker.patch("admisiones.views.web_views.AdmisionService.get_admisiones_tecnicos_table_data", return_value=[{"cells": []}])
-    mocker.patch("admisiones.views.web_views.reverse", side_effect=lambda name: f"/{name}")
-    mocker.patch("admisiones.views.web_views.get_tecnicos_filters_ui_config", return_value={})
-    mocker.patch("admisiones.views.web_views.build_columns_context_for_custom_cells", return_value={"table_items": [1]})
+    mocker.patch(
+        "django.views.generic.list.MultipleObjectMixin.get_context_data",
+        return_value={"admisiones": qs},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.get_admisiones_tecnicos_table_data",
+        return_value=[{"cells": []}],
+    )
+    mocker.patch(
+        "admisiones.views.web_views.reverse", side_effect=lambda name: f"/{name}"
+    )
+    mocker.patch(
+        "admisiones.views.web_views.get_tecnicos_filters_ui_config", return_value={}
+    )
+    mocker.patch(
+        "admisiones.views.web_views.build_columns_context_for_custom_cells",
+        return_value={"table_items": [1]},
+    )
 
     ctx = view.get_context_data()
     assert "table_items" in ctx
@@ -151,23 +242,34 @@ def test_tecnicos_create_view_post_branches(mocker):
 
     req = _Req(POST={"tipo_convenio": "1"}, user=_user())
     adm = SimpleNamespace(pk=7)
-    mocker.patch("admisiones.views.web_views.AdmisionService.create_admision", return_value=adm)
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.create_admision", return_value=adm
+    )
     mocker.patch("admisiones.views.web_views.redirect", return_value="redir")
     assert view.post(req) == "redir"
 
     req2 = _Req(POST={}, user=_user())
-    mocker.patch("django.views.generic.edit.ProcessFormView.get", return_value="getresp")
+    mocker.patch(
+        "django.views.generic.edit.ProcessFormView.get", return_value="getresp"
+    )
     assert view.post(req2) == "getresp"
 
 
 def test_tecnicos_update_view_post_docx_and_router_paths(mocker):
     """Update view should handle DOCX upload branch and standard POST router."""
     view = module.AdmisionesTecnicosUpdateView()
-    adm = SimpleNamespace(pk=1, comedor=SimpleNamespace(), estado_admision="informe_tecnico_finalizado")
+    adm = SimpleNamespace(
+        pk=1, comedor=SimpleNamespace(), estado_admision="informe_tecnico_finalizado"
+    )
     view.get_object = lambda: adm
 
     # docx branch without file
-    req_docx = _Req(POST={"subir_docx_final": "1"}, FILES={}, user=_user(), get_full_path=lambda: "/x")
+    req_docx = _Req(
+        POST={"subir_docx_final": "1"},
+        FILES={},
+        user=_user(),
+        get_full_path=lambda: "/x",
+    )
     view.request = req_docx
     mocker.patch("admisiones.views.web_views.messages.error")
     mocker.patch("admisiones.views.web_views.safe_redirect", return_value="sr")
@@ -175,9 +277,14 @@ def test_tecnicos_update_view_post_docx_and_router_paths(mocker):
     assert view.post(req_docx) == "sr"
 
     # router branch
-    req_router = _Req(POST={"btnX": "1"}, FILES={}, user=_user(), get_full_path=lambda: "/x")
+    req_router = _Req(
+        POST={"btnX": "1"}, FILES={}, user=_user(), get_full_path=lambda: "/x"
+    )
     view.request = req_router
-    mocker.patch("admisiones.views.web_views.AdmisionService.procesar_post_update", return_value=(True, "ok"))
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.procesar_post_update",
+        return_value=(True, "ok"),
+    )
     mocker.patch("admisiones.views.web_views.messages.success")
     mocker.patch("admisiones.views.web_views.safe_redirect", return_value="sr2")
     assert view.post(req_router) == "sr2"
@@ -187,7 +294,10 @@ def test_admision_detail_get_object_mismatch_raises(mocker):
     """Detail view should reject comedor/admision mismatch."""
     view = module.AdmisionDetailView()
     view.kwargs = {"comedor_pk": 2}
-    mocker.patch("django.views.generic.detail.SingleObjectMixin.get_object", return_value=SimpleNamespace(comedor_id=1))
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_object",
+        return_value=SimpleNamespace(comedor_id=1),
+    )
 
     import pytest
 
@@ -232,7 +342,9 @@ def test_admision_detail_get_context_data_builds_full_context(mocker):
     """Detail context should compose historial, acompanamiento and rendicion data."""
     view = module.AdmisionDetailView()
     tecnico = SimpleNamespace(get_full_name=lambda: "", username="tec")
-    dupla = SimpleNamespace(tecnico=SimpleNamespace(all=lambda: [tecnico]), abogado="ab")
+    dupla = SimpleNamespace(
+        tecnico=SimpleNamespace(all=lambda: [tecnico]), abogado="ab"
+    )
     comedor = SimpleNamespace(dupla=dupla)
     admision = SimpleNamespace(
         comedor=comedor,
@@ -267,7 +379,12 @@ def test_admision_detail_get_context_data_builds_full_context(mocker):
     )
     mocker.patch(
         "admisiones.views.web_views.AdmisionService.get_admision_update_context",
-        return_value={"documentos": [1], "documentos_personalizados": [2], "informe_tecnico": "i", "pdf": "p"},
+        return_value={
+            "documentos": [1],
+            "documentos_personalizados": [2],
+            "informe_tecnico": "i",
+            "pdf": "p",
+        },
     )
     mocker.patch(
         "admisiones.views.web_views.AdmisionService._verificar_permiso_tecnico_dupla",
@@ -279,11 +396,20 @@ def test_admision_detail_get_context_data_builds_full_context(mocker):
     )
     mocker.patch(
         "admisiones.views.web_views.AcompanamientoService.obtener_datos_admision",
-        return_value={"anexo": "x", "info_relevante": "info", "numero_if": "if", "numero_disposicion": "disp"},
+        return_value={
+            "anexo": "x",
+            "info_relevante": "info",
+            "numero_if": "if",
+            "numero_disposicion": "disp",
+        },
     )
     mocker.patch(
         "admisiones.views.web_views.AcompanamientoService.obtener_prestaciones_detalladas",
-        return_value={"prestaciones_por_dia": [1], "prestaciones_dias": [2], "dias_semana": [3]},
+        return_value={
+            "prestaciones_por_dia": [1],
+            "prestaciones_dias": [2],
+            "dias_semana": [3],
+        },
     )
     mocker.patch(
         "admisiones.views.web_views.ExpedientesPagosService.obtener_expedientes_pagos",
@@ -305,7 +431,10 @@ def test_admision_detail_get_context_data_builds_full_context(mocker):
         "admisiones.views.web_views.HistorialService.get_historial_documentos_by_rendicion_cuentas_final",
         return_value=["h"],
     )
-    mocker.patch("admisiones.templatetags.estado_filters.format_estado", side_effect=lambda x: f"fmt:{x}")
+    mocker.patch(
+        "admisiones.templatetags.estado_filters.format_estado",
+        side_effect=lambda x: f"fmt:{x}",
+    )
 
     ctx = view.get_context_data()
     assert ctx["dupla_abogado"] == "ab"
@@ -585,8 +714,13 @@ def test_admisiones_legales_list_view_queryset_y_contexto(mocker):
         "admisiones.views.web_views.LegalesService.get_admisiones_legales_table_data",
         return_value=[{"id": 1}],
     )
-    mocker.patch("admisiones.views.web_views.reverse", side_effect=lambda name: f"/{name}")
-    mocker.patch("admisiones.views.web_views.get_legales_filters_ui_config", return_value={"k": "v"})
+    mocker.patch(
+        "admisiones.views.web_views.reverse", side_effect=lambda name: f"/{name}"
+    )
+    mocker.patch(
+        "admisiones.views.web_views.get_legales_filters_ui_config",
+        return_value={"k": "v"},
+    )
     mocker.patch(
         "admisiones.views.web_views.build_columns_context_for_custom_cells",
         return_value={"table_items": [1]},

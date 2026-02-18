@@ -22,7 +22,9 @@ class _Groups:
 
 
 def _user(auth=True, superuser=False, groups=None, provincial=False):
-    profile = SimpleNamespace(es_usuario_provincial=provincial, provincia_id=1 if provincial else None)
+    profile = SimpleNamespace(
+        es_usuario_provincial=provincial, provincia_id=1 if provincial else None
+    )
     return SimpleNamespace(
         is_authenticated=auth,
         is_superuser=superuser,
@@ -68,7 +70,9 @@ def test_get_permission_denied_paths(mocker):
 
     exp = SimpleNamespace(estado=SimpleNamespace(nombre="ENVIADO"))
     legajo = _build_legajo()
-    mocker.patch("celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo])
+    mocker.patch(
+        "celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo]
+    )
 
     # usuario sin permisos
     req = SimpleNamespace(user=_user())
@@ -76,7 +80,9 @@ def test_get_permission_denied_paths(mocker):
     assert out.status_code == 403
 
     # provincial con estado no editable
-    mocker.patch("celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo])
+    mocker.patch(
+        "celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo]
+    )
     req_prov = SimpleNamespace(user=_user(provincial=True))
     out_prov = view.get(req_prov, pk=1, legajo_id=2)
     assert out_prov.status_code == 403
@@ -87,7 +93,9 @@ def test_get_success_returns_legajo_data(mocker):
     exp = SimpleNamespace(estado=SimpleNamespace(nombre="CREADO"))
     legajo = _build_legajo()
 
-    mocker.patch("celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo])
+    mocker.patch(
+        "celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo]
+    )
     req = SimpleNamespace(user=_user(groups={"TecnicoCeliaquia"}))
 
     out = view.get(req, pk=1, legajo_id=2)
@@ -101,7 +109,9 @@ def test_post_validation_error_and_internal_error(mocker):
     exp = SimpleNamespace(estado=SimpleNamespace(nombre="CREADO"))
     legajo = _build_legajo()
 
-    mocker.patch("celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo])
+    mocker.patch(
+        "celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo]
+    )
     mocker.patch(
         "celiaquia.views.legajo_editar.transaction.atomic",
         return_value=contextlib.nullcontext(),
@@ -118,11 +128,23 @@ def test_post_validation_error_and_internal_error(mocker):
     # error interno al guardar
     legajo2 = _build_legajo()
     legajo2.ciudadano.save = lambda: (_ for _ in ()).throw(RuntimeError("boom"))
-    mocker.patch("celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo2])
-    mocker.patch("celiaquia.views.legajo_editar.Sexo.objects.get", return_value=SimpleNamespace(id=1))
-    mocker.patch("celiaquia.views.legajo_editar.Nacionalidad.objects.get", return_value=SimpleNamespace(id=2))
-    mocker.patch("core.models.Municipio.objects.get", return_value=SimpleNamespace(id=3))
-    mocker.patch("core.models.Localidad.objects.get", return_value=SimpleNamespace(id=4))
+    mocker.patch(
+        "celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo2]
+    )
+    mocker.patch(
+        "celiaquia.views.legajo_editar.Sexo.objects.get",
+        return_value=SimpleNamespace(id=1),
+    )
+    mocker.patch(
+        "celiaquia.views.legajo_editar.Nacionalidad.objects.get",
+        return_value=SimpleNamespace(id=2),
+    )
+    mocker.patch(
+        "core.models.Municipio.objects.get", return_value=SimpleNamespace(id=3)
+    )
+    mocker.patch(
+        "core.models.Localidad.objects.get", return_value=SimpleNamespace(id=4)
+    )
 
     req_err = SimpleNamespace(
         user=_user(groups={"TecnicoCeliaquia"}),
@@ -157,15 +179,27 @@ def test_post_success(mocker):
 
     legajo.ciudadano.save = _save
 
-    mocker.patch("celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo])
+    mocker.patch(
+        "celiaquia.views.legajo_editar.get_object_or_404", side_effect=[exp, legajo]
+    )
     mocker.patch(
         "celiaquia.views.legajo_editar.transaction.atomic",
         return_value=contextlib.nullcontext(),
     )
-    mocker.patch("celiaquia.views.legajo_editar.Sexo.objects.get", return_value=SimpleNamespace(id=1))
-    mocker.patch("celiaquia.views.legajo_editar.Nacionalidad.objects.get", return_value=SimpleNamespace(id=2))
-    mocker.patch("core.models.Municipio.objects.get", return_value=SimpleNamespace(id=3))
-    mocker.patch("core.models.Localidad.objects.get", return_value=SimpleNamespace(id=4))
+    mocker.patch(
+        "celiaquia.views.legajo_editar.Sexo.objects.get",
+        return_value=SimpleNamespace(id=1),
+    )
+    mocker.patch(
+        "celiaquia.views.legajo_editar.Nacionalidad.objects.get",
+        return_value=SimpleNamespace(id=2),
+    )
+    mocker.patch(
+        "core.models.Municipio.objects.get", return_value=SimpleNamespace(id=3)
+    )
+    mocker.patch(
+        "core.models.Localidad.objects.get", return_value=SimpleNamespace(id=4)
+    )
 
     req = SimpleNamespace(
         user=_user(groups={"TecnicoCeliaquia"}),

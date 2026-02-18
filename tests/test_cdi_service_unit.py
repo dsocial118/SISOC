@@ -54,7 +54,9 @@ def test_get_centros_filtrados_logs_and_raises_on_error(mocker):
 
 def test_get_centro_detail_object_success(mocker):
     expected = object()
-    mock_get = mocker.patch("cdi.services.cdi_service.get_object_or_404", return_value=expected)
+    mock_get = mocker.patch(
+        "cdi.services.cdi_service.get_object_or_404", return_value=expected
+    )
     select_related = mocker.patch(
         "cdi.services.cdi_service.CentroDesarrolloInfantil.objects.select_related",
         return_value="qs",
@@ -149,11 +151,15 @@ def test_get_mes_dia_turno_ids_success(mocker):
 
 
 def test_get_mes_dia_turno_ids_logs_and_raises(mocker):
-    mocker.patch("cdi.services.cdi_service.Mes.objects.filter", side_effect=RuntimeError("x"))
+    mocker.patch(
+        "cdi.services.cdi_service.Mes.objects.filter", side_effect=RuntimeError("x")
+    )
     mock_exc = mocker.patch("cdi.services.cdi_service.logger.exception")
 
     with pytest.raises(RuntimeError):
-        CentroDesarrolloInfantilService.get_mes_dia_turno_ids({"meses_funcionamiento": ["X"]})
+        CentroDesarrolloInfantilService.get_mes_dia_turno_ids(
+            {"meses_funcionamiento": ["X"]}
+        )
 
     mock_exc.assert_called_once()
 
@@ -165,7 +171,10 @@ def test_get_informacion_adicional_success(mocker):
         horario_inicio="08:00",
         horario_fin="16:00",
     )
-    mocker.patch("cdi.services.cdi_service.CentroDesarrolloInfantil.objects.get", return_value=centro)
+    mocker.patch(
+        "cdi.services.cdi_service.CentroDesarrolloInfantil.objects.get",
+        return_value=centro,
+    )
 
     result = CentroDesarrolloInfantilService.get_informacion_adicional(9)
 

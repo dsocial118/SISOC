@@ -100,10 +100,16 @@ def test_build_estado_tree_and_selected_helpers(mocker):
 
     assert form._get_selected_actividad() is actividad
 
-    mocker.patch("comedores.forms.comedor_form.EstadoProceso.objects.all", return_value=_QS(obj=proceso_ok))
+    mocker.patch(
+        "comedores.forms.comedor_form.EstadoProceso.objects.all",
+        return_value=_QS(obj=proceso_ok),
+    )
     assert form._get_selected_proceso(actividad) is proceso_ok
 
-    mocker.patch("comedores.forms.comedor_form.EstadoDetalle.objects.all", return_value=_QS(obj=detalle_ok))
+    mocker.patch(
+        "comedores.forms.comedor_form.EstadoDetalle.objects.all",
+        return_value=_QS(obj=detalle_ok),
+    )
     assert form._get_selected_detalle(proceso_ok) is detalle_ok
 
 
@@ -112,7 +118,9 @@ def test_clean_validates_missing_and_mismatches(mocker):
     errors = []
     form.add_error = lambda field, message: errors.append((field, message))
 
-    mocker.patch("django.forms.models.BaseModelForm.clean", return_value={"estado_general": None})
+    mocker.patch(
+        "django.forms.models.BaseModelForm.clean", return_value={"estado_general": None}
+    )
     out = form.clean()
     assert out["estado_general"] is None
     assert errors[0][0] == "estado_general"
@@ -122,7 +130,11 @@ def test_clean_validates_missing_and_mismatches(mocker):
     proceso_bad = SimpleNamespace(id=2, estado_actividad_id=999)
     mocker.patch(
         "django.forms.models.BaseModelForm.clean",
-        return_value={"estado_general": actividad, "subestado": proceso_bad, "motivo": None},
+        return_value={
+            "estado_general": actividad,
+            "subestado": proceso_bad,
+            "motivo": None,
+        },
     )
     form.clean()
     assert any(field == "subestado" for field, _ in errors)
@@ -132,7 +144,11 @@ def test_clean_validates_missing_and_mismatches(mocker):
     detalle_bad = SimpleNamespace(estado_proceso_id=999)
     mocker.patch(
         "django.forms.models.BaseModelForm.clean",
-        return_value={"estado_general": actividad, "subestado": proceso_ok, "motivo": detalle_bad},
+        return_value={
+            "estado_general": actividad,
+            "subestado": proceso_ok,
+            "motivo": detalle_bad,
+        },
     )
     form.clean()
     assert any(field == "motivo" for field, _ in errors)

@@ -63,8 +63,12 @@ def test_all_valid_and_get_errors_without_precomputed_results():
 
 def test_get_comedor_context_merges_extra_fields(mocker):
     fake_values = {"id": 1, "nombre": "Comedor Norte"}
-    mock_get = mocker.patch("relevamientos.helpers.get_object_or_404", return_value=fake_values)
-    mock_values = mocker.patch("relevamientos.helpers.Comedor.objects.values", return_value="queryset")
+    mock_get = mocker.patch(
+        "relevamientos.helpers.get_object_or_404", return_value=fake_values
+    )
+    mock_values = mocker.patch(
+        "relevamientos.helpers.Comedor.objects.values", return_value="queryset"
+    )
 
     result = RelevamientoFormManager.get_comedor_context(1, {"extra": "value"})
 
