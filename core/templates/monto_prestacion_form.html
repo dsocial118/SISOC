@@ -1,14 +1,14 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
-{% block title %}Prestacion{% endblock %}
-{% block titulo-pagina %}Prestacion{% endblock %}
+{% block title %}Monto Prestación{% endblock %}
+{% block titulo-pagina %}Monto de Prestación{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
     {% include 'components/action_buttons.html' with back_button=back_button buttons=action_buttons button_group=True %}
-    {% include 'components/form_card.html' with title="Datos de Prestaciones" hidden_fields=hidden_fields_send guardar_otro=guardar_otro_send %}
+    {% include 'components/form_card.html' with title="Datos de Monto de Prestación" hidden_fields=hidden_fields_send guardar_otro=guardar_otro_send %}
 {% endblock %}
 {% block customJS %}
-    <script src="{% static 'custom/js/prestacionform.js' %}"></script>
+    <script src="{% static 'custom/js/montoprestacionform.js' %}"></script>
 {% endblock %}

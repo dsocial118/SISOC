@@ -4,7 +4,7 @@
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
-            <a href="{% url 'prestacion' %}">Prestaciones</a>
+            <a href="{% url 'montoprestacion_listar' %}">Monto de Prestaciones</a>
         </li>
         <li class="breadcrumb-item active">Listar</li>
     </ol>
@@ -12,7 +12,7 @@
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <div class="action-bar mb-3">
-        <a href="{% url 'prestacion_crear' %}" class="btn btn-primary">
+        <a href="{% url 'montoprestacion_crear' %}" class="btn btn-primary">
             <i class="fas fa-plus"></i> Agregar
         </a>
     </div>
@@ -46,17 +46,17 @@
                                     <td>{{ p.fecha_creacion|date:'d/m/Y H:i' }}</td>
                                     <td>{{ p.fecha_modificacion|date:'d/m/Y H:i' }}</td>
                                     <td>
-                                        <a href="{% url 'prestacion_detalle' p.pk %}"
+                                        <a href="{% url 'montoprestacion_detalle' p.pk %}"
                                            class="btn btn-sm btn-info">Ver</a>
-                                        <a href="{% url 'prestacion_editar' p.pk %}"
+                                        <a href="{% url 'montoprestacion_editar' p.pk %}"
                                            class="btn btn-sm btn-warning">Editar</a>
-                                        <a href="{% url 'prestacion_eliminar' p.pk %}"
+                                        <a href="{% url 'montoprestacion_eliminar' p.pk %}"
                                            class="btn btn-sm btn-danger">Eliminar</a>
                                     </td>
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="9" class="text-center">No hay prestaciones cargadas.</td>
+                                    <td colspan="9" class="text-center">No hay montos de prestaciones cargados.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

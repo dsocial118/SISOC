@@ -47,7 +47,6 @@ urlpatterns = [
     path("api/comedores/", include("comedores.api_urls")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     path("", include("importarexpediente.urls")),
-    path("prestaciones/", include("prestaciones.urls")),
 ]
 
 if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):
