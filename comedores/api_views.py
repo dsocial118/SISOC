@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import calendar
 from datetime import date
 
@@ -674,8 +676,8 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         if anio:
             try:
                 queryset = queryset.filter(anio=int(anio))
-            except (TypeError, ValueError):
-                raise ValidationError("Parámetro anio inválido.")
+            except (TypeError, ValueError) as exc:
+                raise ValidationError("Parámetro anio inválido.") from exc
 
         if mes:
             try:

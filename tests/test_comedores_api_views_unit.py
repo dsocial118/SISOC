@@ -37,7 +37,9 @@ def test_list_pwa_and_non_pwa_paths(mocker):
     mocker.patch("comedores.api_views.is_pwa_user", return_value=True)
     mocker.patch.object(view, "_get_scoped_comedor_ids", return_value=[1])
     qs = SimpleNamespace(filter=lambda **_k: [{"id": 1}])
-    svc = mocker.patch("comedores.api_views.ComedorService.get_filtered_comedores", return_value=qs)
+    svc = mocker.patch(
+        "comedores.api_views.ComedorService.get_filtered_comedores", return_value=qs
+    )
     mocker.patch.object(view, "paginate_queryset", return_value=None)
 
     resp = view.list(req)
@@ -47,7 +49,10 @@ def test_list_pwa_and_non_pwa_paths(mocker):
 
     # rama no pwa con paginación
     mocker.patch("comedores.api_views.is_pwa_user", return_value=False)
-    mocker.patch("comedores.api_views.ComedorService.get_filtered_comedores", return_value=[{"id": 2}])
+    mocker.patch(
+        "comedores.api_views.ComedorService.get_filtered_comedores",
+        return_value=[{"id": 2}],
+    )
     mocker.patch.object(view, "paginate_queryset", return_value=[{"id": 2}])
     mocker.patch.object(view, "get_paginated_response", return_value="paginated")
 
@@ -107,7 +112,9 @@ def test_collect_documentos_aggregates_multiple_sources(mocker):
 
     mocker.patch(
         "comedores.api_views.Intervencion.objects.filter",
-        return_value=SimpleNamespace(only=lambda *_a: SimpleNamespace(order_by=lambda *_b: [intervencion])),
+        return_value=SimpleNamespace(
+            only=lambda *_a: SimpleNamespace(order_by=lambda *_b: [intervencion])
+        ),
     )
     mocker.patch(
         "comedores.api_views.DocumentoRendicionFinal.objects.filter",
@@ -133,7 +140,9 @@ def test_collect_documentos_aggregates_multiple_sources(mocker):
         imagenes=SimpleNamespace(all=lambda: []),
     )
 
-    docs = view._collect_documentos(comedor, request=SimpleNamespace(build_absolute_uri=lambda u: f"http://host{u}"))
+    docs = view._collect_documentos(
+        comedor, request=SimpleNamespace(build_absolute_uri=lambda u: f"http://host{u}")
+    )
     tipos = {doc["tipo"] for doc in docs}
     assert "foto_legajo" in tipos
     assert "imagen_comedor" in tipos

@@ -63,7 +63,9 @@ class _PaginatorFake:
 def test_organizacion_list_queryset_with_and_without_busqueda(mocker):
     qs = _QS()
     mocker.patch("organizaciones.views.Organizacion.objects.filter", return_value=qs)
-    mocker.patch("organizaciones.views.Organizacion.objects.select_related", return_value=qs)
+    mocker.patch(
+        "organizaciones.views.Organizacion.objects.select_related", return_value=qs
+    )
 
     view = module.OrganizacionListView()
     view.request = SimpleNamespace(GET={"busqueda": "abc"})
@@ -80,9 +82,15 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
     view = module.FirmanteCreateView()
 
     # get_allowed_roles_queryset branches
-    none_qs = mocker.patch("organizaciones.views.RolFirmante.objects.none", return_value="none")
-    all_qs = mocker.patch("organizaciones.views.RolFirmante.objects.all", return_value="all")
-    filt = mocker.patch("organizaciones.views.RolFirmante.objects.filter", return_value="filtered")
+    none_qs = mocker.patch(
+        "organizaciones.views.RolFirmante.objects.none", return_value="none"
+    )
+    all_qs = mocker.patch(
+        "organizaciones.views.RolFirmante.objects.all", return_value="all"
+    )
+    filt = mocker.patch(
+        "organizaciones.views.RolFirmante.objects.filter", return_value="filtered"
+    )
 
     assert view.get_allowed_roles_queryset(None) == "none"
     org_pj = SimpleNamespace(tipo_entidad=SimpleNamespace(nombre="Personería jurídica"))
@@ -107,7 +115,9 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
     assert out_form.fields["rol"].queryset == "roles"
 
     # form_valid: missing organizacion id
-    bad_form = SimpleNamespace(cleaned_data={"rol": None}, instance=SimpleNamespace(), add_error=mocker.Mock())
+    bad_form = SimpleNamespace(
+        cleaned_data={"rol": None}, instance=SimpleNamespace(), add_error=mocker.Mock()
+    )
     view.request = SimpleNamespace(POST={}, GET={})
     view.kwargs = {}
     mocker.patch("organizaciones.views.messages.error")
@@ -134,7 +144,9 @@ def test_firmante_create_roles_form_and_valid_paths(mocker):
         instance=SimpleNamespace(organizacion_id=None),
         save=lambda: SimpleNamespace(organizacion=SimpleNamespace(pk=5)),
     )
-    view.request = SimpleNamespace(POST={"organizacion_id": "9", "guardar_otro": "1"}, GET={})
+    view.request = SimpleNamespace(
+        POST={"organizacion_id": "9", "guardar_otro": "1"}, GET={}
+    )
     mocker.patch(
         "organizaciones.views.Firmante.objects.filter",
         return_value=SimpleNamespace(exists=lambda: False),
@@ -157,7 +169,9 @@ def test_aval_create_view_form_valid_paths(mocker):
         instance=SimpleNamespace(organizacion_id=None),
         save=lambda: SimpleNamespace(organizacion=SimpleNamespace(pk=3)),
     )
-    view.request = SimpleNamespace(POST={"organizacion_id": "3", "guardar_otro": "1"}, GET={})
+    view.request = SimpleNamespace(
+        POST={"organizacion_id": "3", "guardar_otro": "1"}, GET={}
+    )
     out = view.form_valid(form_ok)
     assert out.status_code == 302
 
@@ -178,7 +192,9 @@ def test_organizacion_delete_post_success_and_validation_error(mocker):
     assert ok.status_code == 302
     assert msg_success.called
 
-    obj2 = SimpleNamespace(nombre="Org2", delete=mocker.Mock(side_effect=ValidationError("bad")))
+    obj2 = SimpleNamespace(
+        nombre="Org2", delete=mocker.Mock(side_effect=ValidationError("bad"))
+    )
     mocker.patch.object(view, "get_object", return_value=obj2)
     err = view.post(req)
     assert err == "rendered"
@@ -192,7 +208,9 @@ def test_ajax_views_subtipo_and_organizaciones(mocker):
         "organizaciones.views.SubtipoEntidad.objects.filter",
         return_value=SimpleNamespace(order_by=lambda *_a, **_k: subtipos),
     )
-    req = SimpleNamespace(GET={"tipo_entidad": "2"}, user=SimpleNamespace(is_authenticated=True))
+    req = SimpleNamespace(
+        GET={"tipo_entidad": "2"}, user=SimpleNamespace(is_authenticated=True)
+    )
     resp = module.sub_tipo_entidad_ajax.__wrapped__(req)
     assert isinstance(resp, JsonResponse)
     assert resp.status_code == 200
@@ -201,7 +219,9 @@ def test_ajax_views_subtipo_and_organizaciones(mocker):
     org_qs = _QS()
     mocker.patch("organizaciones.views.Organizacion.objects.all", return_value=org_qs)
     mocker.patch("organizaciones.views.Paginator", _PaginatorFake)
-    mocker.patch("organizaciones.views.render_to_string", side_effect=["<rows>", "<pager>"])
+    mocker.patch(
+        "organizaciones.views.render_to_string", side_effect=["<rows>", "<pager>"]
+    )
 
     req2 = SimpleNamespace(
         GET={"busqueda": "abc", "page": "bad"},

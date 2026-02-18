@@ -68,7 +68,9 @@ def test_ciudadanos_create_busqueda_paths(mocker):
     msg_warn = mocker.patch("ciudadanos.views.messages.warning")
     msg_info = mocker.patch("ciudadanos.views.messages.info")
     msg_success = mocker.patch("ciudadanos.views.messages.success")
-    redir = mocker.patch("ciudadanos.views.redirect", side_effect=lambda *a, **k: (a, k))
+    redir = mocker.patch(
+        "ciudadanos.views.redirect", side_effect=lambda *a, **k: (a, k)
+    )
 
     invalid = view._handle_ciudadano_busqueda(request, "abc", None)
     assert invalid == "super-get"
@@ -96,7 +98,10 @@ def test_ciudadanos_create_busqueda_paths(mocker):
 
     mocker.patch(
         "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
-        return_value={"success": True, "data": {"documento": 123, "fecha_nacimiento": "2020-01-01"}},
+        return_value={
+            "success": True,
+            "data": {"documento": 123, "fecha_nacimiento": "2020-01-01"},
+        },
     )
     ok = view._handle_ciudadano_busqueda(request, "12345678", None)
     assert ok == "super-get"
@@ -119,10 +124,14 @@ def test_ciudadanos_create_get_form_and_safe_int(mocker):
     )
     mocker.patch("django.views.generic.edit.ModelFormMixin.get_form", return_value=form)
 
-    localidad_obj = SimpleNamespace(municipio_id=2, municipio=SimpleNamespace(provincia_id=1))
+    localidad_obj = SimpleNamespace(
+        municipio_id=2, municipio=SimpleNamespace(provincia_id=1)
+    )
     mocker.patch(
         "ciudadanos.views.Localidad.objects.select_related",
-        return_value=SimpleNamespace(filter=lambda **k: SimpleNamespace(first=lambda: localidad_obj)),
+        return_value=SimpleNamespace(
+            filter=lambda **k: SimpleNamespace(first=lambda: localidad_obj)
+        ),
     )
     mocker.patch(
         "ciudadanos.views.Municipio.objects.filter",
@@ -146,7 +155,9 @@ def test_ciudadanos_create_get_form_and_safe_int(mocker):
 def test_grupofamiliar_delete_get_success_url_uses_safe_redirect(mocker):
     view = module.GrupoFamiliarDeleteView()
     view.request = SimpleNamespace(POST={"next": "/volver"}, GET={})
-    view.object = SimpleNamespace(ciudadano_1=SimpleNamespace(get_absolute_url=lambda: "/base"))
+    view.object = SimpleNamespace(
+        ciudadano_1=SimpleNamespace(get_absolute_url=lambda: "/base")
+    )
 
     mocker.patch(
         "ciudadanos.views.messages.success",
@@ -180,7 +191,9 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
         "centrodefamilia.models.ParticipanteActividad.objects.filter",
         side_effect=[
             SimpleNamespace(
-                select_related=lambda *a, **k: SimpleNamespace(order_by=lambda *x, **y: part_qs)
+                select_related=lambda *a, **k: SimpleNamespace(
+                    order_by=lambda *x, **y: part_qs
+                )
             ),
             SimpleNamespace(aggregate=lambda **_k: {"total": 1200}),
         ],
@@ -203,7 +216,9 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
     mocker.patch(
         "comedores.models.Nomina.objects.filter",
         return_value=SimpleNamespace(
-            select_related=lambda *a, **k: SimpleNamespace(order_by=lambda *x, **y: nom_qs)
+            select_related=lambda *a, **k: SimpleNamespace(
+                order_by=lambda *x, **y: nom_qs
+            )
         ),
     )
     comedor_ok = module.CiudadanosDetailView().get_comedor_context(ciudadano)
@@ -213,12 +228,16 @@ def test_ciudadanos_detail_cdf_and_comedor_contexts(mocker):
 def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
     create_view = module.CiudadanosCreateView()
     create_view.request = SimpleNamespace(GET={"sexo": "Z"}, user=SimpleNamespace(id=1))
-    mocker.patch("django.views.generic.edit.FormMixin.get_context_data", return_value={})
+    mocker.patch(
+        "django.views.generic.edit.FormMixin.get_context_data", return_value={}
+    )
     ctx = create_view.get_context_data()
     assert ctx["sexo_busqueda"] == "M"
 
     # get_initial consumes prefill from session
-    create_view.request = SimpleNamespace(session={"ciudadano_prefill": {"nombre": "Ana"}})
+    create_view.request = SimpleNamespace(
+        session={"ciudadano_prefill": {"nombre": "Ana"}}
+    )
     mocker.patch("django.views.generic.edit.FormMixin.get_initial", return_value={})
     initial = create_view.get_initial()
     assert initial["nombre"] == "Ana"
@@ -238,8 +257,12 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
 
     update_view = module.CiudadanosUpdateView()
     update_view.request = SimpleNamespace(user=SimpleNamespace(id=3))
-    ciudadano2 = SimpleNamespace(modificado_por=None, save=mocker.Mock(), get_absolute_url=lambda: "/c/2/")
-    form2 = SimpleNamespace(save=lambda commit=False: ciudadano2, save_m2m=mocker.Mock())
+    ciudadano2 = SimpleNamespace(
+        modificado_por=None, save=mocker.Mock(), get_absolute_url=lambda: "/c/2/"
+    )
+    form2 = SimpleNamespace(
+        save=lambda commit=False: ciudadano2, save_m2m=mocker.Mock()
+    )
     mocker.patch("ciudadanos.views.messages.success")
     mocker.patch("ciudadanos.views.redirect", return_value="redir2")
     assert update_view.form_valid(form2) == "redir2"

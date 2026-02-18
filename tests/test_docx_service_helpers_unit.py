@@ -92,7 +92,9 @@ def test_reparar_docx_para_office_success_and_fallback(mocker):
     ok = module.DocumentTemplateService._reparar_docx_para_office(buffer)
     assert hasattr(ok, "seek")
 
-    mocker.patch("admisiones.services.docx_service.Document", side_effect=Exception("bad"))
+    mocker.patch(
+        "admisiones.services.docx_service.Document", side_effect=Exception("bad")
+    )
     fallback = module.DocumentTemplateService._reparar_docx_para_office(buffer)
     assert fallback is buffer
 
@@ -109,7 +111,9 @@ def test_text_formatter_variants():
     assert "2 (dos)" in formatted
     assert "1 (una) vez" in formatted
 
-    fallback = module.TextFormatterService.formatear_texto_comida_docx("<p>Texto libre</p>")
+    fallback = module.TextFormatterService.formatear_texto_comida_docx(
+        "<p>Texto libre</p>"
+    )
     assert fallback == "Texto libre"
 
 
@@ -177,7 +181,9 @@ def test_preparar_contextos_admision_convenio_disposicion(mocker):
     admision = SimpleNamespace(
         comedor="Comedor X",
         creado=datetime(2024, 2, 3, 4, 5, 0),
-        historial=SimpleNamespace(all=lambda: SimpleNamespace(order_by=lambda *_: ["h1", "h2"])),
+        historial=SimpleNamespace(
+            all=lambda: SimpleNamespace(order_by=lambda *_: ["h1", "h2"])
+        ),
     )
 
     archivo = SimpleNamespace(
@@ -217,6 +223,8 @@ def test_preparar_contextos_admision_convenio_disposicion(mocker):
     ctx_conv = module.TextFormatterService.preparar_contexto_proyecto_convenio(admision)
     assert ctx_conv["formulario"] == "conv"
 
-    ctx_disp = module.TextFormatterService.preparar_contexto_proyecto_disposicion(admision)
+    ctx_disp = module.TextFormatterService.preparar_contexto_proyecto_disposicion(
+        admision
+    )
     assert ctx_disp["formulario"] == "disp"
     assert ctx_disp["proyecto_convenio"] == "conv"

@@ -21,7 +21,9 @@ class _FirstResult:
 def test_to_date_parsing_and_invalid_cases():
     assert module.CiudadanoService._to_date(None) is None
     assert module.CiudadanoService._to_date(date(2020, 1, 1)) == date(2020, 1, 1)
-    assert module.CiudadanoService._to_date(datetime(2020, 1, 1, 10, 0, 0)) == datetime(2020, 1, 1, 10, 0, 0)
+    assert module.CiudadanoService._to_date(datetime(2020, 1, 1, 10, 0, 0)) == datetime(
+        2020, 1, 1, 10, 0, 0
+    )
     assert module.CiudadanoService._to_date("2020/02/03 11:22:33") == date(2020, 2, 3)
 
     with pytest.raises(ValidationError):
@@ -84,7 +86,9 @@ def test_resolver_ubicacion_paths(mocker):
 
 
 def test_get_or_create_ciudadano_validation_errors(mocker):
-    mocker.patch.object(module.CiudadanoService, "_normalizar_tipo_documento", return_value="DNI")
+    mocker.patch.object(
+        module.CiudadanoService, "_normalizar_tipo_documento", return_value="DNI"
+    )
     with pytest.raises(ValidationError):
         module.CiudadanoService.get_or_create_ciudadano({"tipo_documento": "DNI"})
 
@@ -94,12 +98,22 @@ def test_get_or_create_ciudadano_validation_errors(mocker):
             {"tipo_documento": "DNI", "documento": "1", "sexo": "X"}
         )
 
-    mocker.patch.object(module.CiudadanoService, "_resolver_sexo", return_value=SimpleNamespace(pk=1))
-    mocker.patch.object(module.CiudadanoService, "_resolver_provincia", return_value=None)
-    mocker.patch.object(module.CiudadanoService, "_resolver_municipio", return_value=None)
-    mocker.patch.object(module.CiudadanoService, "_resolver_localidad", return_value=None)
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_sexo", return_value=SimpleNamespace(pk=1)
+    )
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_provincia", return_value=None
+    )
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_municipio", return_value=None
+    )
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_localidad", return_value=None
+    )
     mocker.patch.object(module.CiudadanoService, "_to_date", return_value=None)
-    mocker.patch.object(module.CiudadanoService, "_resolver_nacionalidad", return_value=None)
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_nacionalidad", return_value=None
+    )
     with pytest.raises(ValidationError):
         module.CiudadanoService.get_or_create_ciudadano(
             {
@@ -137,13 +151,35 @@ def test_get_or_create_ciudadano_updates_existing(mocker):
         save=mocker.Mock(),
     )
 
-    mocker.patch.object(module.CiudadanoService, "_normalizar_tipo_documento", return_value="DNI")
-    mocker.patch.object(module.CiudadanoService, "_resolver_sexo", return_value=SimpleNamespace(pk=1))
-    mocker.patch.object(module.CiudadanoService, "_resolver_provincia", return_value=SimpleNamespace(pk=2))
-    mocker.patch.object(module.CiudadanoService, "_resolver_municipio", return_value=SimpleNamespace(pk=3))
-    mocker.patch.object(module.CiudadanoService, "_resolver_localidad", return_value=SimpleNamespace(pk=4))
-    mocker.patch.object(module.CiudadanoService, "_to_date", return_value=date(2000, 1, 1))
-    mocker.patch.object(module.CiudadanoService, "_resolver_nacionalidad", return_value=SimpleNamespace(pk=5))
+    mocker.patch.object(
+        module.CiudadanoService, "_normalizar_tipo_documento", return_value="DNI"
+    )
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_sexo", return_value=SimpleNamespace(pk=1)
+    )
+    mocker.patch.object(
+        module.CiudadanoService,
+        "_resolver_provincia",
+        return_value=SimpleNamespace(pk=2),
+    )
+    mocker.patch.object(
+        module.CiudadanoService,
+        "_resolver_municipio",
+        return_value=SimpleNamespace(pk=3),
+    )
+    mocker.patch.object(
+        module.CiudadanoService,
+        "_resolver_localidad",
+        return_value=SimpleNamespace(pk=4),
+    )
+    mocker.patch.object(
+        module.CiudadanoService, "_to_date", return_value=date(2000, 1, 1)
+    )
+    mocker.patch.object(
+        module.CiudadanoService,
+        "_resolver_nacionalidad",
+        return_value=SimpleNamespace(pk=5),
+    )
     mocker.patch(
         "celiaquia.services.ciudadano_service.Ciudadano.objects.filter",
         return_value=_FirstResult(existing),
@@ -171,13 +207,23 @@ def test_get_or_create_ciudadano_updates_existing(mocker):
 
 def test_get_or_create_ciudadano_create_path_handles_program_missing(mocker):
     created = SimpleNamespace(pk=1)
-    mocker.patch.object(module.CiudadanoService, "_normalizar_tipo_documento", return_value="DNI")
+    mocker.patch.object(
+        module.CiudadanoService, "_normalizar_tipo_documento", return_value="DNI"
+    )
     mocker.patch.object(module.CiudadanoService, "_resolver_sexo", return_value=None)
-    mocker.patch.object(module.CiudadanoService, "_resolver_provincia", return_value=None)
-    mocker.patch.object(module.CiudadanoService, "_resolver_municipio", return_value=None)
-    mocker.patch.object(module.CiudadanoService, "_resolver_localidad", return_value=None)
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_provincia", return_value=None
+    )
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_municipio", return_value=None
+    )
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_localidad", return_value=None
+    )
     mocker.patch.object(module.CiudadanoService, "_to_date", return_value=None)
-    mocker.patch.object(module.CiudadanoService, "_resolver_nacionalidad", return_value=None)
+    mocker.patch.object(
+        module.CiudadanoService, "_resolver_nacionalidad", return_value=None
+    )
 
     first_none = _FirstResult(None)
     mocker.patch(
@@ -188,7 +234,10 @@ def test_get_or_create_ciudadano_create_path_handles_program_missing(mocker):
         "celiaquia.services.ciudadano_service.Ciudadano.objects.create",
         return_value=created,
     )
-    mocker.patch("celiaquia.services.ciudadano_service.transaction.atomic", return_value=nullcontext())
+    mocker.patch(
+        "celiaquia.services.ciudadano_service.transaction.atomic",
+        return_value=nullcontext(),
+    )
 
     from core.models import Programa
 

@@ -8,7 +8,9 @@ from core import debug_queries as module
 def _patch_fake_connection(mocker, queries=None):
     fake = SimpleNamespace(queries=list(queries or []))
     mocker.patch.object(module, "connection", fake)
-    mocker.patch.object(module, "reset_queries", side_effect=lambda: fake.queries.clear())
+    mocker.patch.object(
+        module, "reset_queries", side_effect=lambda: fake.queries.clear()
+    )
     return fake
 
 
@@ -68,10 +70,16 @@ def test_debug_view_queries_detail_and_list_paths(mocker):
             fake_conn.queries.append({"sql": "SELECT 4", "time": "0.01"})
             return {}
 
-    mocker.patch.object(module, "RequestFactory", return_value=SimpleNamespace(get=lambda _: SimpleNamespace()))
+    mocker.patch.object(
+        module,
+        "RequestFactory",
+        return_value=SimpleNamespace(get=lambda _: SimpleNamespace()),
+    )
     mocker.patch.object(module.User.objects, "get", return_value=object())
 
-    ok, count = module.debug_view_queries(DetailView, "/x/{pk}/", Model, "Detail", pk=True, pk_kwarg="pk")
+    ok, count = module.debug_view_queries(
+        DetailView, "/x/{pk}/", Model, "Detail", pk=True, pk_kwarg="pk"
+    )
     assert (ok, count) == (True, 2)
 
     ok, count = module.debug_view_queries(ListView, "/x/", Model, "List", pk=False)
@@ -82,7 +90,11 @@ def test_debug_ciudadano_detail_queries_success_and_failure(mocker):
     fake_conn = _patch_fake_connection(mocker)
     ciudadano = SimpleNamespace(id=1, nombre="A", apellido="B")
     mocker.patch.object(module.Ciudadano.objects, "first", return_value=ciudadano)
-    mocker.patch.object(module, "RequestFactory", return_value=SimpleNamespace(get=lambda _: SimpleNamespace()))
+    mocker.patch.object(
+        module,
+        "RequestFactory",
+        return_value=SimpleNamespace(get=lambda _: SimpleNamespace()),
+    )
     mocker.patch.object(module.User.objects, "get", return_value=object())
 
     class View:
@@ -100,7 +112,9 @@ def test_debug_ciudadano_detail_queries_success_and_failure(mocker):
     mocker.patch.object(module, "CiudadanosDetailView", View)
     assert module.debug_ciudadano_detail_queries() is True
 
-    mocker.patch.object(module.Ciudadano.objects, "first", side_effect=RuntimeError("x"))
+    mocker.patch.object(
+        module.Ciudadano.objects, "first", side_effect=RuntimeError("x")
+    )
     assert module.debug_ciudadano_detail_queries() is False
 
 

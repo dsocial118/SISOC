@@ -48,7 +48,9 @@ def test_sync_profile_duplas_post_add_updates_coordinador(mocker):
     )
 
     dupla_manager.filter.assert_called_once_with(pk__in={1, 2})
-    dupla_manager.filter.return_value.update.assert_called_once_with(coordinador="user-1")
+    dupla_manager.filter.return_value.update.assert_called_once_with(
+        coordinador="user-1"
+    )
 
 
 def test_sync_profile_duplas_post_remove_clears_coordinador(mocker):
@@ -93,7 +95,9 @@ def test_assign_inherited_groups_adds_only_missing_groups(mocker):
     user = mocker.Mock()
     user.groups.filter.return_value.values_list.return_value = ["a"]
     groups_qs = ["group-b"]
-    mock_filter = mocker.patch("users.signals.Group.objects.filter", return_value=groups_qs)
+    mock_filter = mocker.patch(
+        "users.signals.Group.objects.filter", return_value=groups_qs
+    )
 
     signals._assign_inherited_groups(user, ["a", "b"])
 
@@ -114,7 +118,9 @@ def test_assign_inherited_groups_noops_when_empty_or_existing(mocker):
 def test_ensure_inherited_groups_post_add_non_reverse_assigns_inherited(mocker):
     user = SimpleNamespace()
     mock_group_filter = mocker.patch("users.signals.Group.objects.filter")
-    mock_group_filter.return_value.values_list.return_value = ["Coordinador Equipo Tecnico"]
+    mock_group_filter.return_value.values_list.return_value = [
+        "Coordinador Equipo Tecnico"
+    ]
     mock_assign = mocker.patch("users.signals._assign_inherited_groups")
 
     signals.ensure_inherited_groups(
@@ -132,7 +138,9 @@ def test_ensure_inherited_groups_post_add_non_reverse_assigns_inherited(mocker):
 def test_ensure_inherited_groups_reverse_mode_assigns_per_user(mocker):
     group = SimpleNamespace(name="Coordinador Equipo Tecnico")
     users = [SimpleNamespace(pk=1), SimpleNamespace(pk=2)]
-    mock_user_filter = mocker.patch("users.signals.User.objects.filter", return_value=users)
+    mock_user_filter = mocker.patch(
+        "users.signals.User.objects.filter", return_value=users
+    )
     mock_assign = mocker.patch("users.signals._assign_inherited_groups")
 
     signals.ensure_inherited_groups(

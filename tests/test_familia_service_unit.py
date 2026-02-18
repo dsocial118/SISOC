@@ -31,7 +31,10 @@ class _Chain:
 
 
 def test_crear_relacion_responsable_hijo_created_and_update(mocker):
-    mocker.patch("celiaquia.services.familia_service.transaction.atomic", return_value=nullcontext())
+    mocker.patch(
+        "celiaquia.services.familia_service.transaction.atomic",
+        return_value=nullcontext(),
+    )
 
     rel = SimpleNamespace(
         vinculo="OTRO",
@@ -59,7 +62,10 @@ def test_crear_relacion_responsable_hijo_created_and_update(mocker):
 
 
 def test_crear_relacion_responsable_hijo_error(mocker):
-    mocker.patch("celiaquia.services.familia_service.transaction.atomic", return_value=nullcontext())
+    mocker.patch(
+        "celiaquia.services.familia_service.transaction.atomic",
+        return_value=nullcontext(),
+    )
     mocker.patch(
         "celiaquia.services.familia_service.GrupoFamiliar.objects.get_or_create",
         side_effect=RuntimeError("boom"),
@@ -78,11 +84,16 @@ def test_obtener_hijos_responsables_and_fallbacks(mocker):
         "celiaquia.services.familia_service.GrupoFamiliar.objects.filter",
         return_value=_Chain(relaciones),
     )
-    exp = SimpleNamespace(expediente_ciudadanos=SimpleNamespace(values_list=lambda *a, **k: [20]))
+    exp = SimpleNamespace(
+        expediente_ciudadanos=SimpleNamespace(values_list=lambda *a, **k: [20])
+    )
     assert module.FamiliaService.obtener_hijos_a_cargo(1) == [h1, h2]
     assert module.FamiliaService.obtener_hijos_a_cargo(1, expediente=exp) == [h2]
 
-    responsables = [SimpleNamespace(ciudadano_1="r1"), SimpleNamespace(ciudadano_1="r2")]
+    responsables = [
+        SimpleNamespace(ciudadano_1="r1"),
+        SimpleNamespace(ciudadano_1="r2"),
+    ]
     mocker.patch(
         "celiaquia.services.familia_service.GrupoFamiliar.objects.filter",
         return_value=_Chain(responsables),
@@ -126,18 +137,34 @@ def test_obtener_estructura_familiar_expediente_and_error(mocker):
     leg_responsable = Legajo(1)
     leg_hijo = Legajo(2)
     exp = SimpleNamespace(
-        expediente_ciudadanos=SimpleNamespace(select_related=lambda *_a: [leg_responsable, leg_hijo])
+        expediente_ciudadanos=SimpleNamespace(
+            select_related=lambda *_a: [leg_responsable, leg_hijo]
+        )
     )
 
-    mocker.patch.object(module.FamiliaService, "obtener_ids_responsables", return_value={1})
-    mocker.patch.object(module.FamiliaService, "obtener_hijos_a_cargo", return_value=[SimpleNamespace(id=2)])
-    mocker.patch.object(module.FamiliaService, "obtener_responsables", return_value=[SimpleNamespace(id=1)])
+    mocker.patch.object(
+        module.FamiliaService, "obtener_ids_responsables", return_value={1}
+    )
+    mocker.patch.object(
+        module.FamiliaService,
+        "obtener_hijos_a_cargo",
+        return_value=[SimpleNamespace(id=2)],
+    )
+    mocker.patch.object(
+        module.FamiliaService,
+        "obtener_responsables",
+        return_value=[SimpleNamespace(id=1)],
+    )
 
     out = module.FamiliaService.obtener_estructura_familiar_expediente(exp)
     assert len(out["responsables"]) == 1
     assert out["hijos_sin_responsable"] == []
 
-    exp_broken = SimpleNamespace(expediente_ciudadanos=SimpleNamespace(select_related=lambda *_a: (_ for _ in ()).throw(RuntimeError("x"))))
+    exp_broken = SimpleNamespace(
+        expediente_ciudadanos=SimpleNamespace(
+            select_related=lambda *_a: (_ for _ in ()).throw(RuntimeError("x"))
+        )
+    )
     out_err = module.FamiliaService.obtener_estructura_familiar_expediente(exp_broken)
     assert out_err["responsables"] == {}
     assert "error" in out_err

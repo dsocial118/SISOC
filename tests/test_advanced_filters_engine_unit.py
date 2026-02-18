@@ -9,8 +9,20 @@ from core.services.advanced_filters import AdvancedFilterEngine
 
 def _engine(allowed_ops=None, field_casts=None):
     return AdvancedFilterEngine(
-        field_map={"name": "nombre", "age": "edad", "state": "estado", "dob": "nacimiento", "flag": "activo"},
-        field_types={"name": "text", "age": "number", "state": "choice", "dob": "date", "flag": "boolean"},
+        field_map={
+            "name": "nombre",
+            "age": "edad",
+            "state": "estado",
+            "dob": "nacimiento",
+            "flag": "activo",
+        },
+        field_types={
+            "name": "text",
+            "age": "number",
+            "state": "choice",
+            "dob": "date",
+            "flag": "boolean",
+        },
         allowed_ops=allowed_ops,
         field_casts=field_casts,
     )
@@ -47,10 +59,22 @@ def test_coerce_value_for_types_and_custom_cast():
     assert engine2._coerce_value("age", "10", "number") == (True, 10)
     assert engine2._coerce_value("age", "x", "number") == (False, None)
 
-    assert engine2._coerce_value("dob", date(2026, 1, 1), "date") == (True, date(2026, 1, 1))
-    assert engine2._coerce_value("dob", datetime(2026, 1, 1, 10, 0), "date") == (True, date(2026, 1, 1))
-    assert engine2._coerce_value("dob", "2026-01-01", "date") == (True, date(2026, 1, 1))
-    assert engine2._coerce_value("dob", "01/02/2026", "date") == (True, date(2026, 2, 1))
+    assert engine2._coerce_value("dob", date(2026, 1, 1), "date") == (
+        True,
+        date(2026, 1, 1),
+    )
+    assert engine2._coerce_value("dob", datetime(2026, 1, 1, 10, 0), "date") == (
+        True,
+        date(2026, 1, 1),
+    )
+    assert engine2._coerce_value("dob", "2026-01-01", "date") == (
+        True,
+        date(2026, 1, 1),
+    )
+    assert engine2._coerce_value("dob", "01/02/2026", "date") == (
+        True,
+        date(2026, 2, 1),
+    )
     assert engine2._coerce_value("dob", "x", "date") == (False, None)
 
     assert engine2._coerce_value("flag", "true", "boolean") == (True, True)
@@ -83,18 +107,27 @@ def test_build_q_for_item_text_choice_number_date_boolean_and_empty():
     q = engine._build_q_for_item({"field": "name", "op": "empty", "empty_mode": "both"})
     assert isinstance(q, Q)
 
-    q_null = engine._build_q_for_item({"field": "name", "op": "empty", "empty_mode": "null"})
+    q_null = engine._build_q_for_item(
+        {"field": "name", "op": "empty", "empty_mode": "null"}
+    )
     assert q_null.children == [("nombre__isnull", True)]
 
-    q_blank = engine._build_q_for_item({"field": "name", "op": "empty", "empty_mode": "blank"})
+    q_blank = engine._build_q_for_item(
+        {"field": "name", "op": "empty", "empty_mode": "blank"}
+    )
     assert q_blank.children == [("nombre__exact", "")]
 
 
 def test_build_q_for_item_invalid_returns_none():
     engine = _engine(allowed_ops={"text": {"eq"}})
 
-    assert engine._build_q_for_item({"field": "unknown", "op": "eq", "value": "x"}) is None
-    assert engine._build_q_for_item({"field": "name", "op": "contains", "value": "x"}) is None
+    assert (
+        engine._build_q_for_item({"field": "unknown", "op": "eq", "value": "x"}) is None
+    )
+    assert (
+        engine._build_q_for_item({"field": "name", "op": "contains", "value": "x"})
+        is None
+    )
     assert engine._build_q_for_item({"field": "name", "op": "eq", "value": ""}) is None
 
 
@@ -126,8 +159,7 @@ def test_filter_queryset_returns_original_or_filtered(mocker):
 
     assert engine.filter_queryset(qs, {}) is qs
     result = engine.filter_queryset(
-        qs,
-        {"filters": {"items": [{"field": "name", "op": "eq", "value": "Ana"}]}}
+        qs, {"filters": {"items": [{"field": "name", "op": "eq", "value": "Ana"}]}}
     )
     assert result == "filtered"
     qs.filter.assert_called_once()

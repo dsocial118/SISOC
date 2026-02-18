@@ -26,8 +26,12 @@ def test_comedor_list_queryset_and_context(mocker):
     get_filtered.assert_called_once_with(req, user=req.user)
 
     mocker.patch("django.views.generic.list.ListView.get_context_data", return_value={})
-    mocker.patch("comedores.views.comedor.reverse", side_effect=lambda name, **_k: f"/{name}/")
-    mocker.patch("comedores.views.comedor.get_filters_ui_config", return_value={"ok": 1})
+    mocker.patch(
+        "comedores.views.comedor.reverse", side_effect=lambda name, **_k: f"/{name}/"
+    )
+    mocker.patch(
+        "comedores.views.comedor.get_filters_ui_config", return_value={"ok": 1}
+    )
     mocker.patch(
         "comedores.views.comedor.build_columns_context_from_fields",
         return_value={"column_active_keys": ["nombre"], "columns": ["x"]},
@@ -48,11 +52,15 @@ def test_comedor_create_helpers_and_form_valid_paths(mocker):
     )
     view.request = req
 
-    mocker.patch("django.views.generic.edit.ModelFormMixin.get_form_kwargs", return_value={})
+    mocker.patch(
+        "django.views.generic.edit.ModelFormMixin.get_form_kwargs", return_value={}
+    )
     kwargs = view.get_form_kwargs()
     assert kwargs["user"] is user
 
-    mocker.patch("django.views.generic.edit.FormMixin.get_context_data", return_value={})
+    mocker.patch(
+        "django.views.generic.edit.FormMixin.get_context_data", return_value={}
+    )
     rf = mocker.patch("comedores.views.comedor.ReferenteForm", return_value="rform")
     ctx = view.get_context_data()
     assert ctx["referente_form"] == "rform"
@@ -60,19 +68,32 @@ def test_comedor_create_helpers_and_form_valid_paths(mocker):
 
     # form_valid success
     ref_form = SimpleNamespace(is_valid=lambda: True, save=lambda: "ref")
-    mocker.patch.object(view, "get_context_data", return_value={"referente_form": ref_form})
-    mocker.patch("comedores.views.comedor.transaction.atomic", return_value=contextlib.nullcontext())
+    mocker.patch.object(
+        view, "get_context_data", return_value={"referente_form": ref_form}
+    )
+    mocker.patch(
+        "comedores.views.comedor.transaction.atomic",
+        return_value=contextlib.nullcontext(),
+    )
     create_img = mocker.patch("comedores.views.comedor.ComedorService.create_imagenes")
-    super_valid = mocker.patch("django.views.generic.edit.ModelFormMixin.form_valid", return_value="ok")
+    super_valid = mocker.patch(
+        "django.views.generic.edit.ModelFormMixin.form_valid", return_value="ok"
+    )
 
-    form = SimpleNamespace(instance=SimpleNamespace(referente=None), save=lambda: SimpleNamespace(pk=9), add_error=mocker.Mock())
+    form = SimpleNamespace(
+        instance=SimpleNamespace(referente=None),
+        save=lambda: SimpleNamespace(pk=9),
+        add_error=mocker.Mock(),
+    )
     assert view.form_valid(form) == "ok"
     assert create_img.call_count == 2
     assert super_valid.called
 
     # form_valid invalid referente
     bad_ref = SimpleNamespace(is_valid=lambda: False)
-    mocker.patch.object(view, "get_context_data", return_value={"referente_form": bad_ref})
+    mocker.patch.object(
+        view, "get_context_data", return_value={"referente_form": bad_ref}
+    )
     mocker.patch.object(view, "form_invalid", return_value="invalid")
     assert view.form_valid(form) == "invalid"
 
@@ -96,7 +117,10 @@ def test_comedor_detail_get_object_presupuestos_and_post_paths(mocker):
     assert data["monto_prestacion_mensual"] == 6
 
     # post descartar_expediente sin permisos
-    req = _Req(user=SimpleNamespace(is_superuser=False), post={"action": "descartar_expediente"})
+    req = _Req(
+        user=SimpleNamespace(is_superuser=False),
+        post={"action": "descartar_expediente"},
+    )
     view.get_object = lambda: SimpleNamespace(pk=7)
     err = mocker.patch("comedores.views.comedor.messages.error")
     mocker.patch("comedores.views.comedor.redirect", return_value="redir")
@@ -114,11 +138,18 @@ def test_comedor_detail_get_object_presupuestos_and_post_paths(mocker):
     )
     req2 = _Req(
         user=SimpleNamespace(is_superuser=True),
-        post={"action": "descartar_expediente", "admision_id": "11", "motivo_descarte": "x"},
+        post={
+            "action": "descartar_expediente",
+            "admision_id": "11",
+            "motivo_descarte": "x",
+        },
     )
     view.get_object = lambda: SimpleNamespace(pk=7)
     mocker.patch("comedores.views.comedor.Admision.objects.get", return_value=admision)
-    mocker.patch("comedores.views.comedor.EstadoAdmision.objects.get_or_create", return_value=("desc", True))
+    mocker.patch(
+        "comedores.views.comedor.EstadoAdmision.objects.get_or_create",
+        return_value=("desc", True),
+    )
     success = mocker.patch("comedores.views.comedor.messages.success")
     mocker.patch("comedores.views.comedor.redirect", return_value="redir2")
     assert view.post(req2) == "redir2"

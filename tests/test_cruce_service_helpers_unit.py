@@ -74,7 +74,9 @@ def test_col_preferencias_and_identificadores(mocker):
     mocker.patch.object(
         CruceService,
         "_leer_tabla",
-        return_value=pd.DataFrame({"documento": ["20-12345678-3", "00123456", "", None]}),
+        return_value=pd.DataFrame(
+            {"documento": ["20-12345678-3", "00123456", "", None]}
+        ),
     )
     ids = CruceService._leer_identificadores(io.BytesIO(b"x"))
     assert "20123456783" in ids["cuits"]
@@ -83,11 +85,17 @@ def test_col_preferencias_and_identificadores(mocker):
 
 
 def test_leer_identificadores_validation_errors(mocker):
-    mocker.patch.object(CruceService, "_leer_tabla", return_value=pd.DataFrame({"foo": ["1"]}))
+    mocker.patch.object(
+        CruceService, "_leer_tabla", return_value=pd.DataFrame({"foo": ["1"]})
+    )
     with pytest.raises(ValidationError):
         CruceService._leer_identificadores(io.BytesIO(b"x"))
 
-    mocker.patch.object(CruceService, "_leer_tabla", return_value=pd.DataFrame({"documento": ["", None]}))
+    mocker.patch.object(
+        CruceService,
+        "_leer_tabla",
+        return_value=pd.DataFrame({"documento": ["", None]}),
+    )
     with pytest.raises(ValidationError):
         CruceService._leer_identificadores(io.BytesIO(b"x"))
 
@@ -114,8 +122,14 @@ def test_generar_nomina_sintys_excel_without_db(mocker):
     qs = Qs([Legajo(1, "20123456783", "A", "B"), Legajo(2, "12345678", "C", "D")])
     expediente = SimpleNamespace(expediente_ciudadanos=qs)
 
-    mocker.patch("celiaquia.services.familia_service.FamiliaService.obtener_ids_responsables", return_value={1})
-    mocker.patch("celiaquia.services.familia_service.FamiliaService.obtener_responsables_por_hijo", return_value={2: []})
+    mocker.patch(
+        "celiaquia.services.familia_service.FamiliaService.obtener_ids_responsables",
+        return_value={1},
+    )
+    mocker.patch(
+        "celiaquia.services.familia_service.FamiliaService.obtener_responsables_por_hijo",
+        return_value={2: []},
+    )
 
     data = CruceService.generar_nomina_sintys_excel(expediente)
     assert isinstance(data, (bytes, bytearray))
@@ -139,7 +153,9 @@ def test_leer_tabla_csv_fallback_and_prd_csv_generation(mocker):
             return self._b.seek(x)
 
     # force excel/csv comma fail, then csv semicolon success
-    mocker.patch("celiaquia.services.cruce_service.pd.read_excel", side_effect=ValueError("x"))
+    mocker.patch(
+        "celiaquia.services.cruce_service.pd.read_excel", side_effect=ValueError("x")
+    )
 
     def _read_csv(_bio, dtype=str, sep=","):
         if sep == ";":
@@ -171,7 +187,9 @@ def test_procesar_cruce_validations(mocker):
     """Cruce should reject invalid expediente state and missing provincial cupo config."""
     exp_bad = SimpleNamespace(estado=SimpleNamespace(nombre="CREADO"))
     with pytest.raises(ValidationError):
-        CruceService.procesar_cruce_por_cuit(exp_bad, archivo_excel=object(), usuario="u")
+        CruceService.procesar_cruce_por_cuit(
+            exp_bad, archivo_excel=object(), usuario="u"
+        )
 
     exp = SimpleNamespace(
         id=1,
@@ -198,8 +216,12 @@ def test_leer_tabla_raises_when_all_formats_fail(mocker):
         def seek(self, _):
             return None
 
-    mocker.patch("celiaquia.services.cruce_service.pd.read_excel", side_effect=ValueError("x"))
-    mocker.patch("celiaquia.services.cruce_service.pd.read_csv", side_effect=ValueError("x"))
+    mocker.patch(
+        "celiaquia.services.cruce_service.pd.read_excel", side_effect=ValueError("x")
+    )
+    mocker.patch(
+        "celiaquia.services.cruce_service.pd.read_csv", side_effect=ValueError("x")
+    )
 
     with pytest.raises(ValidationError):
         CruceService._leer_tabla(F())
@@ -219,12 +241,17 @@ def test_generar_prd_pdf_html_success_with_weasy(mocker, monkeypatch):
             all=lambda: SimpleNamespace(
                 exists=lambda: True,
                 first=lambda: SimpleNamespace(
-                    tecnico=SimpleNamespace(get_full_name=lambda: "Tec Name", username="tec")
+                    tecnico=SimpleNamespace(
+                        get_full_name=lambda: "Tec Name", username="tec"
+                    )
                 ),
             )
         )
     )
-    mocker.patch("celiaquia.services.cruce_service.render_to_string", return_value="<html></html>")
+    mocker.patch(
+        "celiaquia.services.cruce_service.render_to_string",
+        return_value="<html></html>",
+    )
     mocker.patch(
         "celiaquia.services.cruce_service.WPHTML",
         return_value=SimpleNamespace(write_pdf=lambda: b"pdf-bytes"),
@@ -243,8 +270,12 @@ def test_generar_prd_pdf_prefers_html_and_falls_back(mocker, monkeypatch):
 
     # Caso 1: Weasy deshabilitado -> ReportLab directo
     monkeypatch.setattr(cruce_module, "_WEASY_OK", False)
-    reportlab = mocker.patch.object(CruceService, "_generar_prd_pdf_reportlab", return_value=b"r1")
-    html = mocker.patch.object(CruceService, "_generar_prd_pdf_html", return_value=b"h1")
+    reportlab = mocker.patch.object(
+        CruceService, "_generar_prd_pdf_reportlab", return_value=b"r1"
+    )
+    html = mocker.patch.object(
+        CruceService, "_generar_prd_pdf_html", return_value=b"h1"
+    )
     out1 = CruceService._generar_prd_pdf(expediente, resumen)
     assert out1 == b"r1"
     assert reportlab.called
@@ -252,8 +283,12 @@ def test_generar_prd_pdf_prefers_html_and_falls_back(mocker, monkeypatch):
 
     # Caso 2: Weasy habilitado pero HTML falla -> fallback
     monkeypatch.setattr(cruce_module, "_WEASY_OK", True)
-    mocker.patch.object(CruceService, "_generar_prd_pdf_html", side_effect=RuntimeError("boom"))
-    reportlab2 = mocker.patch.object(CruceService, "_generar_prd_pdf_reportlab", return_value=b"r2")
+    mocker.patch.object(
+        CruceService, "_generar_prd_pdf_html", side_effect=RuntimeError("boom")
+    )
+    reportlab2 = mocker.patch.object(
+        CruceService, "_generar_prd_pdf_reportlab", return_value=b"r2"
+    )
     out2 = CruceService._generar_prd_pdf(expediente, resumen)
     assert out2 == b"r2"
     assert reportlab2.called
@@ -300,9 +335,13 @@ def test_generar_prd_pdf_reportlab_with_detail_sections():
         "cupo_usados": 50,
         "cupo_disponibles": 50,
         "fuera_cupo": 1,
-        "detalle_match": [{"dni": "1", "cuit": "20", "nombre": "A", "apellido": "B", "por": "DNI"}],
+        "detalle_match": [
+            {"dni": "1", "cuit": "20", "nombre": "A", "apellido": "B", "por": "DNI"}
+        ],
         "detalle_no_match": [{"dni": "2", "cuit": "30", "observacion": "No match"}],
-        "detalle_fuera_cupo": [{"dni": "3", "cuit": "40", "nombre": "C", "apellido": "D"}],
+        "detalle_fuera_cupo": [
+            {"dni": "3", "cuit": "40", "nombre": "C", "apellido": "D"}
+        ],
     }
 
     pdf = CruceService._generar_prd_pdf_reportlab(expediente, resumen)

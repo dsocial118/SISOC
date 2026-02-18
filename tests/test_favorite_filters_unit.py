@@ -11,7 +11,9 @@ from core.services.favorite_filters import (
 
 
 def test_clave_cache_filtros_favoritos():
-    assert clave_cache_filtros_favoritos(7, "comedores") == "filtros_favoritos_7_comedores"
+    assert (
+        clave_cache_filtros_favoritos(7, "comedores") == "filtros_favoritos_7_comedores"
+    )
 
 
 def test_obtener_configuracion_seccion_exists_and_missing():
@@ -30,7 +32,10 @@ def test_normalizar_carga_none_and_invalid_inputs():
 
 def test_normalizar_carga_defaults_and_logic_normalization():
     assert normalizar_carga({}) == {"logic": "AND", "items": []}
-    assert normalizar_carga({"logic": "or", "items": []}) == {"logic": "OR", "items": []}
+    assert normalizar_carga({"logic": "or", "items": []}) == {
+        "logic": "OR",
+        "items": [],
+    }
     assert normalizar_carga({"logic": "xor", "items": []}) == {
         "logic": "AND",
         "items": [],
@@ -47,7 +52,9 @@ def test_obtener_items_obsoletos_with_invalid_element_container():
         operadores_permitidos={"text": ["contains", "empty"]},
     )
 
-    assert obtener_items_obsoletos({"items": "bad"}, config) == [{"motivo": "elementos"}]
+    assert obtener_items_obsoletos({"items": "bad"}, config) == [
+        {"motivo": "elementos"}
+    ]
 
 
 def test_obtener_items_obsoletos_marks_all_invalid_cases():

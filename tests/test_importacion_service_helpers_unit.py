@@ -46,7 +46,9 @@ def test_norm_col_estado_tipo_doc_and_edad(mocker):
         pass
 
     module._estado_doc_pendiente_id.cache_clear()
-    mocker.patch("celiaquia.services.importacion_service.EstadoLegajo.DoesNotExist", Missing)
+    mocker.patch(
+        "celiaquia.services.importacion_service.EstadoLegajo.DoesNotExist", Missing
+    )
     mocker.patch(
         "celiaquia.services.importacion_service.EstadoLegajo.objects.only",
         return_value=SimpleNamespace(get=lambda **k: (_ for _ in ()).throw(Missing())),
@@ -70,9 +72,7 @@ def test_generar_plantilla_and_preview_csv(mocker):
     assert "apellido" in df.columns
 
     raw_csv = (
-        "municipio,localidad,nombre,nombre\n"
-        "1,2,Juan,Perez\n"
-        "3,4,Ana,Lopez\n"
+        "municipio,localidad,nombre,nombre\n" "1,2,Juan,Perez\n" "3,4,Ana,Lopez\n"
     ).encode("utf-8")
     f = _DummyFile(raw_csv, name="datos.csv")
 
@@ -103,7 +103,9 @@ def test_preview_excel_parses_all_and_semicolon_fallback(mocker):
             return pd.DataFrame({"nombre": ["Juan"], "municipio": ["1"]})
         raise ValueError("bad csv")
 
-    mocker.patch("celiaquia.services.importacion_service.pd.read_csv", side_effect=_read_csv)
+    mocker.patch(
+        "celiaquia.services.importacion_service.pd.read_csv", side_effect=_read_csv
+    )
     mocker.patch(
         "celiaquia.services.importacion_service.Municipio.objects.get",
         return_value=SimpleNamespace(nombre="M1"),
@@ -222,7 +224,10 @@ def test_importar_legajos_guarda_registros_erroneos_y_sin_bulk_legajos(mocker):
             self.kwargs = kwargs
 
     mocker.patch("celiaquia.models.RegistroErroneo", _RegistroErroneo)
-    mocker.patch("celiaquia.services.importacion_service._estado_doc_pendiente_id", return_value=9)
+    mocker.patch(
+        "celiaquia.services.importacion_service._estado_doc_pendiente_id",
+        return_value=9,
+    )
     mocker.patch(
         "celiaquia.services.importacion_service.pd.read_excel",
         return_value=pd.DataFrame(
@@ -235,7 +240,9 @@ def test_importar_legajos_guarda_registros_erroneos_y_sin_bulk_legajos(mocker):
             ]
         ),
     )
-    mocker.patch("celiaquia.services.importacion_service.Sexo.objects.all", return_value=[])
+    mocker.patch(
+        "celiaquia.services.importacion_service.Sexo.objects.all", return_value=[]
+    )
 
     class _UserBrokenProfile:
         @property

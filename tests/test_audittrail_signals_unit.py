@@ -12,14 +12,22 @@ class _Meta:
 
 
 def test_get_actor_and_log_event_helpers(mocker):
-    mocker.patch("audittrail.signals.get_current_user", return_value=SimpleNamespace(is_authenticated=True))
+    mocker.patch(
+        "audittrail.signals.get_current_user",
+        return_value=SimpleNamespace(is_authenticated=True),
+    )
     assert module._get_actor() is not None
 
-    mocker.patch("audittrail.signals.get_current_user", return_value=SimpleNamespace(is_authenticated=False))
+    mocker.patch(
+        "audittrail.signals.get_current_user",
+        return_value=SimpleNamespace(is_authenticated=False),
+    )
     assert module._get_actor() is None
 
     log_create = mocker.patch("audittrail.signals.LogEntry.objects.log_create")
-    mocker.patch("audittrail.signals.transaction.on_commit", side_effect=lambda cb: cb())
+    mocker.patch(
+        "audittrail.signals.transaction.on_commit", side_effect=lambda cb: cb()
+    )
     mocker.patch("audittrail.signals._get_actor", return_value="actor")
 
     comedor = SimpleNamespace(pk=1)
@@ -38,25 +46,48 @@ def test_log_creation_signals_for_admision_intervencion_relevamiento(mocker):
     assert log_comedor.called
 
     log_comedor.reset_mock()
-    module.log_admision_creation(None, SimpleNamespace(pk=1, comedor=None), created=True)
+    module.log_admision_creation(
+        None, SimpleNamespace(pk=1, comedor=None), created=True
+    )
     assert not log_comedor.called
 
     inter = SimpleNamespace(pk=2, comedor="comedor", tipo_intervencion="Visita")
     module.log_intervencion_creation(None, inter, created=True)
     assert log_comedor.called
 
-    rel = SimpleNamespace(pk=3, comedor="comedor", fecha_visita=SimpleNamespace(strftime=lambda *_: "2024-01-01"))
+    rel = SimpleNamespace(
+        pk=3,
+        comedor="comedor",
+        fecha_visita=SimpleNamespace(strftime=lambda *_: "2024-01-01"),
+    )
     module.log_relevamiento_creation(None, rel, created=True)
     assert log_comedor.called
 
 
 def test_cache_and_log_referente_update(mocker):
     sender = SimpleNamespace(
-        objects=SimpleNamespace(get=lambda **_k: SimpleNamespace(nombre="A", apellido="B", mail="a@a", celular="1", documento="2", funcion="F")),
+        objects=SimpleNamespace(
+            get=lambda **_k: SimpleNamespace(
+                nombre="A",
+                apellido="B",
+                mail="a@a",
+                celular="1",
+                documento="2",
+                funcion="F",
+            )
+        ),
         DoesNotExist=Exception,
         _meta=_Meta(),
     )
-    inst = SimpleNamespace(pk=1, nombre="A2", apellido="B", mail="a@a", celular="1", documento="2", funcion="F")
+    inst = SimpleNamespace(
+        pk=1,
+        nombre="A2",
+        apellido="B",
+        mail="a@a",
+        celular="1",
+        documento="2",
+        funcion="F",
+    )
 
     module.cache_referente_state(sender, inst)
     assert getattr(inst, "_previous_state", None) is not None
@@ -70,7 +101,9 @@ def test_cache_and_log_referente_update(mocker):
 
 def test_cache_and_log_imagen_comedor_change_and_delete(mocker):
     previous = SimpleNamespace(imagen=SimpleNamespace(name="old.jpg"), comedor_id=1)
-    sender = SimpleNamespace(objects=SimpleNamespace(get=lambda **_k: previous), DoesNotExist=Exception)
+    sender = SimpleNamespace(
+        objects=SimpleNamespace(get=lambda **_k: previous), DoesNotExist=Exception
+    )
 
     inst = SimpleNamespace(
         pk=1,
@@ -86,8 +119,12 @@ def test_cache_and_log_imagen_comedor_change_and_delete(mocker):
     assert log_comedor.called
     assert not hasattr(inst, "_previous_imagen")
 
-    module.log_imagen_comedor_change(sender, SimpleNamespace(imagen=None, comedor="comedor"), created=True)
-    module.log_imagen_comedor_deletion(sender, SimpleNamespace(imagen=None, comedor="comedor"))
+    module.log_imagen_comedor_change(
+        sender, SimpleNamespace(imagen=None, comedor="comedor"), created=True
+    )
+    module.log_imagen_comedor_deletion(
+        sender, SimpleNamespace(imagen=None, comedor="comedor")
+    )
     assert log_comedor.call_count >= 3
 
 
@@ -95,7 +132,14 @@ def test_firmante_and_aval_changes(mocker):
     log_org = mocker.patch("audittrail.signals._log_organizacion_event")
 
     # Firmante created
-    firmante = SimpleNamespace(organizacion="org", __str__=lambda self: "F", nombre="N", cuit="1", rol_id=1, rol="R")
+    firmante = SimpleNamespace(
+        organizacion="org",
+        __str__=lambda self: "F",
+        nombre="N",
+        cuit="1",
+        rol_id=1,
+        rol="R",
+    )
     module.log_firmante_changes(None, firmante, created=True)
     assert log_org.called
 
@@ -112,7 +156,9 @@ def test_firmante_and_aval_changes(mocker):
     assert not hasattr(firmante2, "_previous_state")
 
     # Aval created + updated
-    aval = SimpleNamespace(organizacion="org", __str__=lambda self: "A", nombre="N", cuit="1")
+    aval = SimpleNamespace(
+        organizacion="org", __str__=lambda self: "A", nombre="N", cuit="1"
+    )
     module.log_aval_changes(None, aval, created=True)
 
     aval2 = SimpleNamespace(
@@ -127,7 +173,11 @@ def test_firmante_and_aval_changes(mocker):
 
 def test_cache_firmante_and_aval_state_does_not_exist_paths():
     sender_f = SimpleNamespace(
-        objects=SimpleNamespace(select_related=lambda *_: SimpleNamespace(get=lambda **_k: (_ for _ in ()).throw(Exception()))),
+        objects=SimpleNamespace(
+            select_related=lambda *_: SimpleNamespace(
+                get=lambda **_k: (_ for _ in ()).throw(Exception())
+            )
+        ),
         DoesNotExist=Exception,
     )
     inst_f = SimpleNamespace(pk=1)
@@ -135,7 +185,11 @@ def test_cache_firmante_and_aval_state_does_not_exist_paths():
     assert getattr(inst_f, "_previous_state", None) is None
 
     sender_a = SimpleNamespace(
-        objects=SimpleNamespace(select_related=lambda *_: SimpleNamespace(get=lambda **_k: (_ for _ in ()).throw(Exception()))),
+        objects=SimpleNamespace(
+            select_related=lambda *_: SimpleNamespace(
+                get=lambda **_k: (_ for _ in ()).throw(Exception())
+            )
+        ),
         DoesNotExist=Exception,
     )
     inst_a = SimpleNamespace(pk=1)

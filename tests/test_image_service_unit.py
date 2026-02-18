@@ -75,7 +75,9 @@ def test_get_or_create_webp_converts_when_missing_webp(settings, tmp_path, mocke
     assert result == "a/foto.webp"
 
 
-def test_get_or_create_webp_returns_original_when_conversion_fails(settings, tmp_path, mocker):
+def test_get_or_create_webp_returns_original_when_conversion_fails(
+    settings, tmp_path, mocker
+):
     settings.MEDIA_ROOT = tmp_path
     original = tmp_path / "a" / "foto.jpg"
     _create_image(original)
@@ -88,7 +90,9 @@ def test_get_or_create_webp_returns_original_when_conversion_fails(settings, tmp
 
 
 def test_get_or_create_webp_handles_unexpected_exception(mocker):
-    mocker.patch("core.services.image_service._get_absolute_path", side_effect=RuntimeError)
+    mocker.patch(
+        "core.services.image_service._get_absolute_path", side_effect=RuntimeError
+    )
 
     assert get_or_create_webp("a/foto.jpg") == "a/foto.jpg"
 
@@ -111,9 +115,15 @@ def test_convert_to_webp_handles_rgba_l_and_other_modes(tmp_path):
     Image.new("L", (10, 10), color=120).save(l_path, format="PNG")
     Image.new("CMYK", (10, 10), color=(0, 0, 0, 0)).save(cmyk_path, format="JPEG")
 
-    assert _convert_to_webp(str(rgba_path), str(tmp_path / "rgba.webp"), quality=80) is True
+    assert (
+        _convert_to_webp(str(rgba_path), str(tmp_path / "rgba.webp"), quality=80)
+        is True
+    )
     assert _convert_to_webp(str(l_path), str(tmp_path / "l.webp"), quality=80) is True
-    assert _convert_to_webp(str(cmyk_path), str(tmp_path / "cmyk.webp"), quality=80) is True
+    assert (
+        _convert_to_webp(str(cmyk_path), str(tmp_path / "cmyk.webp"), quality=80)
+        is True
+    )
 
 
 def test_convert_to_webp_returns_false_when_output_is_empty(tmp_path, mocker):
@@ -128,7 +138,9 @@ def test_convert_to_webp_returns_false_when_output_is_empty(tmp_path, mocker):
 def test_convert_to_webp_cleans_partial_file_on_error(mocker, tmp_path):
     output_path = tmp_path / "out.webp"
     output_path.write_bytes(b"partial")
-    mocker.patch("core.services.image_service.Image.open", side_effect=RuntimeError("boom"))
+    mocker.patch(
+        "core.services.image_service.Image.open", side_effect=RuntimeError("boom")
+    )
     removed = {}
 
     def _remove(path):
@@ -144,7 +156,9 @@ def test_convert_to_webp_cleans_partial_file_on_error(mocker, tmp_path):
 def test_convert_to_webp_logs_cleanup_error(mocker, tmp_path):
     output_path = tmp_path / "out.webp"
     output_path.write_bytes(b"partial")
-    mocker.patch("core.services.image_service.Image.open", side_effect=RuntimeError("boom"))
+    mocker.patch(
+        "core.services.image_service.Image.open", side_effect=RuntimeError("boom")
+    )
     mocker.patch("core.services.image_service.os.remove", side_effect=OSError("nope"))
 
     assert _convert_to_webp("in.jpg", str(output_path), quality=80) is False
@@ -157,7 +171,9 @@ def test_get_absolute_path_variants(settings, tmp_path):
 
     assert _get_absolute_path(abs_path) == abs_path
     assert _get_absolute_path("/media/a/b.jpg") == str(tmp_path / "a" / "b.jpg")
-    assert _get_absolute_path("http://host/media/a/b.jpg") == str(tmp_path / "a" / "b.jpg")
+    assert _get_absolute_path("http://host/media/a/b.jpg") == str(
+        tmp_path / "a" / "b.jpg"
+    )
     assert _get_absolute_path("a/b.jpg") == str(tmp_path / "a" / "b.jpg")
 
 
@@ -176,7 +192,9 @@ def test_get_image_info_returns_none_when_missing(settings, tmp_path):
 
 
 def test_get_image_info_handles_exception(mocker):
-    mocker.patch("core.services.image_service._get_absolute_path", side_effect=RuntimeError)
+    mocker.patch(
+        "core.services.image_service._get_absolute_path", side_effect=RuntimeError
+    )
 
     assert get_image_info("broken.jpg") is None
 

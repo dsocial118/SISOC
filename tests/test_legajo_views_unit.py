@@ -48,7 +48,8 @@ def test_archivo_upload_dispatch_and_post_paths(mocker):
     req.user = _user()
     mocker.patch("celiaquia.views.legajo.get_object_or_404", return_value=leg)
     mocker.patch(
-        "celiaquia.views.legajo.can_edit_legajo_files", side_effect=PermissionDenied("x")
+        "celiaquia.views.legajo.can_edit_legajo_files",
+        side_effect=PermissionDenied("x"),
     )
     resp = module.LegajoArchivoUploadView().dispatch(req, pk=2, expediente_id=3)
     assert resp.status_code == 403
@@ -96,7 +97,9 @@ def test_archivo_upload_double_and_subsanacion_paths(mocker):
     )
     req.user = _user()
 
-    upd = mocker.patch("celiaquia.views.legajo.LegajoService.actualizar_archivos_subsanacion")
+    upd = mocker.patch(
+        "celiaquia.views.legajo.LegajoService.actualizar_archivos_subsanacion"
+    )
     resp = _call_post_unwrapped(view, req)
     assert resp.status_code == 200
     assert upd.called
@@ -113,7 +116,9 @@ def test_rechazar_view_paths(mocker):
     rf = RequestFactory()
     req = rf.post("/")
     req.user = _user()
-    leg = SimpleNamespace(pk=9, expediente=SimpleNamespace(), save=mocker.Mock(), revision_tecnico=None)
+    leg = SimpleNamespace(
+        pk=9, expediente=SimpleNamespace(), save=mocker.Mock(), revision_tecnico=None
+    )
 
     view = module.LegajoRechazarView()
     mocker.patch("celiaquia.views.legajo.get_object_or_404", return_value=leg)
@@ -164,10 +169,18 @@ def test_baja_subsanar_y_eliminar_views(mocker):
     # Baja
     req_baja = rf.post("/")
     req_baja.user = _user(groups={"CoordinadorCeliaquia"})
-    leg = SimpleNamespace(pk=3, expediente=SimpleNamespace(), save=mocker.Mock(), revision_tecnico=None, es_titular_activo=True)
+    leg = SimpleNamespace(
+        pk=3,
+        expediente=SimpleNamespace(),
+        save=mocker.Mock(),
+        revision_tecnico=None,
+        es_titular_activo=True,
+    )
     mocker.patch("celiaquia.views.legajo.get_object_or_404", return_value=leg)
     mocker.patch("celiaquia.views.legajo.CupoService.liberar_slot")
-    resp_baja = _call_post_unwrapped(module.LegajoBajaView(), req_baja, pk=3, expediente_id=1)
+    resp_baja = _call_post_unwrapped(
+        module.LegajoBajaView(), req_baja, pk=3, expediente_id=1
+    )
     assert resp_baja.status_code == 200
 
     # Subsanar
@@ -175,14 +188,23 @@ def test_baja_subsanar_y_eliminar_views(mocker):
     req_sub.user = _user(groups={"CoordinadorCeliaquia"})
     leg_sub = SimpleNamespace(
         pk=7,
-        expediente=SimpleNamespace(asignaciones_tecnicos=SimpleNamespace(filter=lambda **k: SimpleNamespace(exists=lambda: True))),
+        expediente=SimpleNamespace(
+            asignaciones_tecnicos=SimpleNamespace(
+                filter=lambda **k: SimpleNamespace(exists=lambda: True)
+            )
+        ),
         save=mocker.Mock(),
         revision_tecnico=None,
         comentario_subsanacion="",
     )
     mocker.patch("celiaquia.views.legajo.get_object_or_404", return_value=leg_sub)
-    mocker.patch("celiaquia.views.legajo.EstadoLegajo.objects.get_or_create", return_value=(SimpleNamespace(), True))
-    resp_sub = _call_post_unwrapped(module.LegajoSubsanarView(), req_sub, pk=1, legajo_id=7)
+    mocker.patch(
+        "celiaquia.views.legajo.EstadoLegajo.objects.get_or_create",
+        return_value=(SimpleNamespace(), True),
+    )
+    resp_sub = _call_post_unwrapped(
+        module.LegajoSubsanarView(), req_sub, pk=1, legajo_id=7
+    )
     assert resp_sub.status_code == 200
 
     # Eliminar
@@ -192,8 +214,16 @@ def test_baja_subsanar_y_eliminar_views(mocker):
     mocker.patch("celiaquia.views.legajo.get_object_or_404", return_value=leg_del)
     mocker.patch("django.db.transaction.atomic", return_value=nullcontext())
     mocker.patch("celiaquia.views.legajo.CupoService.liberar_slot")
-    mocker.patch("celiaquia.models.CupoMovimiento.objects.filter", return_value=SimpleNamespace(delete=mocker.Mock()))
-    mocker.patch("celiaquia.models.PagoNomina.objects.filter", return_value=SimpleNamespace(delete=mocker.Mock()))
+    mocker.patch(
+        "celiaquia.models.CupoMovimiento.objects.filter",
+        return_value=SimpleNamespace(delete=mocker.Mock()),
+    )
+    mocker.patch(
+        "celiaquia.models.PagoNomina.objects.filter",
+        return_value=SimpleNamespace(delete=mocker.Mock()),
+    )
 
-    resp_del = _call_post_unwrapped(module.LegajoEliminarView(), req_del, pk=1, legajo_id=10)
+    resp_del = _call_post_unwrapped(
+        module.LegajoEliminarView(), req_del, pk=1, legajo_id=10
+    )
     assert resp_del.status_code == 200

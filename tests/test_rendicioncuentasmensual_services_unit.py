@@ -82,7 +82,9 @@ def test_actualizar_rendicion_cuenta_mensual_success():
 
 def test_actualizar_rendicion_cuenta_mensual_logs_and_raises(mocker):
     payload = {"mes": 2}
-    rendicion = SimpleNamespace(pk=5, save=mocker.Mock(side_effect=RuntimeError("boom")))
+    rendicion = SimpleNamespace(
+        pk=5, save=mocker.Mock(side_effect=RuntimeError("boom"))
+    )
     mock_exc = mocker.patch("rendicioncuentasmensual.services.logger.exception")
 
     with pytest.raises(RuntimeError):
@@ -124,11 +126,15 @@ def test_obtener_rendiciones_cuentas_mensuales_success(mocker):
     )
     mock_filter.return_value.prefetch_related.return_value = prefetch_result
 
-    result = RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(comedor)
+    result = RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
+        comedor
+    )
 
     assert result is prefetch_result
     mock_filter.assert_called_once_with(comedor=comedor)
-    mock_filter.return_value.prefetch_related.assert_called_once_with("arvhios_adjuntos")
+    mock_filter.return_value.prefetch_related.assert_called_once_with(
+        "arvhios_adjuntos"
+    )
 
 
 def test_obtener_rendiciones_cuentas_mensuales_logs_and_raises(mocker):

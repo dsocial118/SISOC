@@ -91,8 +91,12 @@ def test_optimized_image_exception_without_url_returns_empty(mocker):
 
 
 def test_webp_exists_paths(mocker):
-    mocker.patch("core.services.image_service._get_absolute_path", return_value="/tmp/a.jpg")
-    mocker.patch("core.services.image_service._get_webp_path", return_value="/tmp/a.webp")
+    mocker.patch(
+        "core.services.image_service._get_absolute_path", return_value="/tmp/a.jpg"
+    )
+    mocker.patch(
+        "core.services.image_service._get_webp_path", return_value="/tmp/a.webp"
+    )
     mock_exists = mocker.patch("os.path.exists", return_value=True)
 
     assert webp_exists(SimpleNamespace(url="/media/a.jpg")) is True
@@ -101,19 +105,25 @@ def test_webp_exists_paths(mocker):
 
 def test_webp_exists_handles_empty_and_exception(mocker):
     assert webp_exists(None) is False
-    mocker.patch("core.services.image_service._get_absolute_path", side_effect=RuntimeError)
+    mocker.patch(
+        "core.services.image_service._get_absolute_path", side_effect=RuntimeError
+    )
 
     assert webp_exists("/media/a.jpg") is False
 
 
 def test_webp_url_branches(mocker):
-    mocker.patch("core.templatetags.image_tags.get_or_create_webp", return_value="/media/a.webp")
+    mocker.patch(
+        "core.templatetags.image_tags.get_or_create_webp", return_value="/media/a.webp"
+    )
     assert webp_url("/media/a.jpg") == "/media/a.webp"
     assert webp_url(None) == ""
 
 
 def test_webp_url_exception_fallback(mocker):
-    mocker.patch("core.templatetags.image_tags.get_or_create_webp", side_effect=RuntimeError)
+    mocker.patch(
+        "core.templatetags.image_tags.get_or_create_webp", side_effect=RuntimeError
+    )
     image = SimpleNamespace(url="/media/a.jpg")
 
     assert webp_url(image) == "/media/a.jpg"
@@ -121,7 +131,9 @@ def test_webp_url_exception_fallback(mocker):
 
 
 def test_picture_tag_alias(mocker):
-    spy = mocker.patch("core.templatetags.image_tags.optimized_image", return_value="ok")
+    spy = mocker.patch(
+        "core.templatetags.image_tags.optimized_image", return_value="ok"
+    )
 
     result = picture_tag("x.jpg", "Alt", css_class="c")
 
@@ -130,7 +142,9 @@ def test_picture_tag_alias(mocker):
 
 
 def test_image_info_branches(mocker):
-    mock_get_info = mocker.patch("core.services.image_service.get_image_info", return_value={"ok": True})
+    mock_get_info = mocker.patch(
+        "core.services.image_service.get_image_info", return_value={"ok": True}
+    )
 
     assert image_info(SimpleNamespace(url="/media/a.jpg")) == {"ok": True}
     assert image_info("x.jpg") == {"ok": True}

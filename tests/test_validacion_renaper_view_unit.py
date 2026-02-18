@@ -102,19 +102,28 @@ def test_guardar_validacion_estado_paths(mocker):
     view = module.ValidacionRenaperView()
     req = SimpleNamespace(user=_User(), POST={"comentario": "corregir"})
     legajo = _Legajo()
-    mocker.patch("celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo)
+    mocker.patch(
+        "celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo
+    )
 
-    invalid = view._guardar_validacion_estado(req, pk=1, legajo_id=2, validacion_estado="9")
+    invalid = view._guardar_validacion_estado(
+        req, pk=1, legajo_id=2, validacion_estado="9"
+    )
     body_invalid = json.loads(invalid.content)
     assert body_invalid["success"] is False
 
-    subsanar = view._guardar_validacion_estado(req, pk=1, legajo_id=2, validacion_estado="3")
+    subsanar = view._guardar_validacion_estado(
+        req, pk=1, legajo_id=2, validacion_estado="3"
+    )
     body_subsanar = json.loads(subsanar.content)
     assert body_subsanar["success"] is True
     assert legajo.revision_tecnico == "SUBSANAR"
     assert "subsanacion_motivo" in legajo.saved_fields
 
-    mocker.patch("celiaquia.views.validacion_renaper.get_object_or_404", side_effect=RuntimeError("boom"))
+    mocker.patch(
+        "celiaquia.views.validacion_renaper.get_object_or_404",
+        side_effect=RuntimeError("boom"),
+    )
     err = view._guardar_validacion_estado(req, pk=1, legajo_id=2, validacion_estado="1")
     assert err.status_code == 500
 
@@ -124,19 +133,27 @@ def test_consultar_renaper_guard_clauses(mocker):
     tecnico = _User(groups=_Groups({"TecnicoCeliaquia"}))
 
     # técnico no asignado
-    legajo_no_asig = _Legajo(ciudadano=SimpleNamespace(documento="12345678"), assigned=False)
-    mocker.patch(
-        "celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo_no_asig
+    legajo_no_asig = _Legajo(
+        ciudadano=SimpleNamespace(documento="12345678"), assigned=False
     )
-    resp_forbidden = view._consultar_renaper(SimpleNamespace(user=tecnico), pk=1, legajo_id=1)
+    mocker.patch(
+        "celiaquia.views.validacion_renaper.get_object_or_404",
+        return_value=legajo_no_asig,
+    )
+    resp_forbidden = view._consultar_renaper(
+        SimpleNamespace(user=tecnico), pk=1, legajo_id=1
+    )
     assert resp_forbidden.status_code == 403
 
     # ciudadano inexistente
     legajo_sin_ciudadano = _Legajo(ciudadano=None, assigned=True)
     mocker.patch(
-        "celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo_sin_ciudadano
+        "celiaquia.views.validacion_renaper.get_object_or_404",
+        return_value=legajo_sin_ciudadano,
     )
-    resp_no_cit = view._consultar_renaper(SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1)
+    resp_no_cit = view._consultar_renaper(
+        SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1
+    )
     assert json.loads(resp_no_cit.content)["success"] is False
 
     # documento inválido
@@ -155,9 +172,12 @@ def test_consultar_renaper_guard_clauses(mocker):
     )
     legajo_bad_doc = _Legajo(ciudadano=citizen, assigned=True)
     mocker.patch(
-        "celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo_bad_doc
+        "celiaquia.views.validacion_renaper.get_object_or_404",
+        return_value=legajo_bad_doc,
     )
-    resp_bad_doc = view._consultar_renaper(SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1)
+    resp_bad_doc = view._consultar_renaper(
+        SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1
+    )
     assert "DNI válido" in json.loads(resp_bad_doc.content)["error"]
 
 
@@ -179,27 +199,37 @@ def test_consultar_renaper_remote_error_fallecido_and_success(mocker):
 
     # Fallecido
     legajo_fall = _Legajo(ciudadano=SimpleNamespace(**base_ciudadano))
-    mocker.patch("celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo_fall)
+    mocker.patch(
+        "celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo_fall
+    )
     mocker.patch(
         "celiaquia.views.validacion_renaper.consultar_datos_renaper",
         return_value={"success": True, "fallecido": True, "data": {}},
     )
-    r1 = view._consultar_renaper(SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1)
+    r1 = view._consultar_renaper(
+        SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1
+    )
     assert "fallecida" in json.loads(r1.content)["error"]
 
     # Error remoto
     legajo_err = _Legajo(ciudadano=SimpleNamespace(**base_ciudadano))
-    mocker.patch("celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo_err)
+    mocker.patch(
+        "celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo_err
+    )
     mocker.patch(
         "celiaquia.views.validacion_renaper.consultar_datos_renaper",
         return_value={"success": False, "error": "x", "raw_response": "raw"},
     )
-    r2 = view._consultar_renaper(SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1)
+    r2 = view._consultar_renaper(
+        SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1
+    )
     assert "Cuit o el Sexo" in json.loads(r2.content)["error"]
 
     # Éxito + mapeo provincia por id
     legajo_ok = _Legajo(ciudadano=SimpleNamespace(**base_ciudadano))
-    mocker.patch("celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo_ok)
+    mocker.patch(
+        "celiaquia.views.validacion_renaper.get_object_or_404", return_value=legajo_ok
+    )
     mocker.patch(
         "celiaquia.views.validacion_renaper.consultar_datos_renaper",
         return_value={
@@ -219,8 +249,13 @@ def test_consultar_renaper_remote_error_fallecido_and_success(mocker):
             },
         },
     )
-    mocker.patch("core.models.Provincia.objects.get", return_value=SimpleNamespace(nombre="Buenos Aires"))
-    r3 = view._consultar_renaper(SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1)
+    mocker.patch(
+        "core.models.Provincia.objects.get",
+        return_value=SimpleNamespace(nombre="Buenos Aires"),
+    )
+    r3 = view._consultar_renaper(
+        SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1
+    )
     body = json.loads(r3.content)
     assert body["success"] is True
     assert body["datos_renaper"]["provincia"] == "Buenos Aires"

@@ -87,9 +87,7 @@ class TimestampDiffYears(Func):
     def as_sqlite(self, compiler, connection, **extra_context):
         left_sql, left_params = compiler.compile(self.source_expressions[0])
         right_sql, right_params = compiler.compile(self.source_expressions[1])
-        sql = (
-            f"CAST((julianday({right_sql}) - julianday({left_sql})) / 365.25 AS INTEGER)"
-        )
+        sql = f"CAST((julianday({right_sql}) - julianday({left_sql})) / 365.25 AS INTEGER)"
         return sql, right_params + left_params
 
 

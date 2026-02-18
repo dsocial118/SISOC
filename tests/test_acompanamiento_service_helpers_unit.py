@@ -126,11 +126,15 @@ def test_preparar_datos_tabla_comedores_and_permisos():
     rows_empty = AcompanamientoService.preparar_datos_tabla_comedores([comedor_empty])
     assert rows_empty[0]["cells"][1]["content"] == "-"
 
-    user_super = SimpleNamespace(is_superuser=True, groups=SimpleNamespace(filter=lambda **_k: None))
+    user_super = SimpleNamespace(
+        is_superuser=True, groups=SimpleNamespace(filter=lambda **_k: None)
+    )
     assert AcompanamientoService.verificar_permisos_tecnico_comedor(user_super) is True
 
     group_filter = lambda **_kwargs: SimpleNamespace(exists=lambda: True)
-    user_group = SimpleNamespace(is_superuser=False, groups=SimpleNamespace(filter=group_filter))
+    user_group = SimpleNamespace(
+        is_superuser=False, groups=SimpleNamespace(filter=group_filter)
+    )
     assert AcompanamientoService.verificar_permisos_tecnico_comedor(user_group) is True
 
 
@@ -145,7 +149,10 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
     )
     admision_qs = _QS(first_value=admision)
 
-    mocker.patch("acompanamientos.acompanamiento_service.Admision.objects.filter", return_value=admision_qs)
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Admision.objects.filter",
+        return_value=admision_qs,
+    )
     mocker.patch(
         "acompanamientos.acompanamiento_service.InformeTecnico.objects.filter",
         return_value=_QS(first_value="info"),
@@ -161,7 +168,10 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
     assert out["info_relevante"] == "info"
     assert out["numero_if"] == "IF-1"
 
-    mocker.patch("acompanamientos.acompanamiento_service.Admision.objects.filter", return_value=_QS(first_value=None))
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Admision.objects.filter",
+        return_value=_QS(first_value=None),
+    )
     out_none = AcompanamientoService.obtener_datos_admision(comedor)
     assert out_none["admision"] is None
     assert out_none["numero_if"] is None
@@ -227,7 +237,9 @@ def test_obtener_fechas_hitos_mapea_hito_y_omite_sin_tipo(mocker):
             return iter(self._data)
 
     intervenciones = [
-        SimpleNamespace(tipo_intervencion=None, subintervencion=None, fecha=date(2024, 1, 1)),
+        SimpleNamespace(
+            tipo_intervencion=None, subintervencion=None, fecha=date(2024, 1, 1)
+        ),
         SimpleNamespace(
             tipo_intervencion=SimpleNamespace(nombre="Intervencion 1"),
             subintervencion=SimpleNamespace(nombre="Sub 1"),
@@ -246,7 +258,9 @@ def test_obtener_fechas_hitos_mapea_hito_y_omite_sin_tipo(mocker):
         "acompanamientos.acompanamiento_service.HitosIntervenciones.objects.filter",
         return_value=[SimpleNamespace(hito="Hito Uno")],
     )
-    mocker.patch.object(AcompanamientoService, "_format_date", return_value="02/02/2024")
+    mocker.patch.object(
+        AcompanamientoService, "_format_date", return_value="02/02/2024"
+    )
 
     out = AcompanamientoService.obtener_fechas_hitos(SimpleNamespace(pk=11))
     assert out == {"hito_uno": "02/02/2024"}
@@ -256,7 +270,9 @@ def test_importar_datos_desde_admision_ok_y_sin_admision(mocker):
     class _Missing(Exception):
         pass
 
-    mocker.patch("acompanamientos.acompanamiento_service.Admision.DoesNotExist", _Missing)
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.Admision.DoesNotExist", _Missing
+    )
 
     update_or_create = mocker.patch(
         "acompanamientos.acompanamiento_service.InformacionRelevante.objects.update_or_create"
@@ -269,7 +285,10 @@ def test_importar_datos_desde_admision_ok_y_sin_admision(mocker):
     crear_prestacion = mocker.patch(
         "acompanamientos.acompanamiento_service.Prestacion.objects.create"
     )
-    mocker.patch("acompanamientos.acompanamiento_service.transaction.atomic", return_value=nullcontext())
+    mocker.patch(
+        "acompanamientos.acompanamiento_service.transaction.atomic",
+        return_value=nullcontext(),
+    )
 
     admision = SimpleNamespace(
         numero_expediente="EX-1",
@@ -278,8 +297,12 @@ def test_importar_datos_desde_admision_ok_y_sin_admision(mocker):
         if_relevamiento="IF-1",
         prestaciones=SimpleNamespace(
             all=lambda: [
-                SimpleNamespace(dia="lunes", desayuno=1, almuerzo=2, merienda=0, cena=0),
-                SimpleNamespace(dia="martes", desayuno=0, almuerzo=1, merienda=1, cena=0),
+                SimpleNamespace(
+                    dia="lunes", desayuno=1, almuerzo=2, merienda=0, cena=0
+                ),
+                SimpleNamespace(
+                    dia="martes", desayuno=0, almuerzo=1, merienda=1, cena=0
+                ),
             ]
         ),
     )

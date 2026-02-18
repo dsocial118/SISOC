@@ -78,13 +78,24 @@ class _PaginatorFake:
 
 def test_centro_list_get_queryset_permissions_and_filter(mocker):
     base_qs = _QS()
-    mocker.patch("centrodefamilia.views.centro.Centro.objects.select_related", return_value=base_qs)
-    none_qs = mocker.patch("centrodefamilia.views.centro.Centro.objects.none", return_value="none")
-    adv = mocker.patch("centrodefamilia.views.centro.BOOL_ADVANCED_FILTER.filter_queryset", return_value="filtered")
+    mocker.patch(
+        "centrodefamilia.views.centro.Centro.objects.select_related",
+        return_value=base_qs,
+    )
+    none_qs = mocker.patch(
+        "centrodefamilia.views.centro.Centro.objects.none", return_value="none"
+    )
+    adv = mocker.patch(
+        "centrodefamilia.views.centro.BOOL_ADVANCED_FILTER.filter_queryset",
+        return_value="filtered",
+    )
 
     # superuser
     view = module.CentroListView()
-    view.request = SimpleNamespace(user=SimpleNamespace(is_superuser=True, groups=_Groups()), GET={"busqueda": "abc"})
+    view.request = SimpleNamespace(
+        user=SimpleNamespace(is_superuser=True, groups=_Groups()),
+        GET={"busqueda": "abc"},
+    )
     assert view.get_queryset() == "filtered"
     assert adv.called
 
@@ -99,18 +110,27 @@ def test_centro_list_get_queryset_permissions_and_filter(mocker):
 
     # sin permisos
     view_no = module.CentroListView()
-    view_no.request = SimpleNamespace(user=SimpleNamespace(is_superuser=False, groups=_Groups()), GET={})
+    view_no.request = SimpleNamespace(
+        user=SimpleNamespace(is_superuser=False, groups=_Groups()), GET={}
+    )
     assert view_no.get_queryset() == "none"
     assert none_qs.called
 
 
 def test_centro_list_get_context_data_can_add_and_buttons(mocker):
     mocker.patch("django.views.generic.list.ListView.get_context_data", return_value={})
-    mocker.patch("centrodefamilia.views.centro.reverse", side_effect=lambda name: f"/{name}/")
-    mocker.patch("centrodefamilia.views.centro.get_centro_filters_ui_config", return_value={"ok": 1})
+    mocker.patch(
+        "centrodefamilia.views.centro.reverse", side_effect=lambda name: f"/{name}/"
+    )
+    mocker.patch(
+        "centrodefamilia.views.centro.get_centro_filters_ui_config",
+        return_value={"ok": 1},
+    )
 
     view = module.CentroListView()
-    view.request = SimpleNamespace(user=SimpleNamespace(is_superuser=False, groups=_Groups({"CDF SSE"})))
+    view.request = SimpleNamespace(
+        user=SimpleNamespace(is_superuser=False, groups=_Groups({"CDF SSE"}))
+    )
     ctx = view.get_context_data()
 
     assert ctx["can_add"] is True
@@ -127,7 +147,9 @@ def test_centro_create_helpers_and_form_valid(mocker):
 
     mocker.patch("django.views.generic.edit.FormMixin.get_initial", return_value={})
     mocker.patch("django.views.generic.edit.FormMixin.get_form_kwargs", return_value={})
-    super_valid = mocker.patch("django.views.generic.edit.ModelFormMixin.form_valid", return_value="ok")
+    super_valid = mocker.patch(
+        "django.views.generic.edit.ModelFormMixin.form_valid", return_value="ok"
+    )
     success = mocker.patch("centrodefamilia.views.centro.messages.success")
 
     initial = view.get_initial()
@@ -137,7 +159,10 @@ def test_centro_create_helpers_and_form_valid(mocker):
     kwargs = view.get_form_kwargs()
     assert kwargs["from_faro"] is True
 
-    form = SimpleNamespace(cleaned_data={"tipo": "adherido"}, instance=SimpleNamespace(faro_asociado_id=None))
+    form = SimpleNamespace(
+        cleaned_data={"tipo": "adherido"},
+        instance=SimpleNamespace(faro_asociado_id=None),
+    )
     assert view.form_valid(form) == "ok"
     assert form.instance.faro_asociado_id == "10"
     assert super_valid.called and success.called
@@ -188,14 +213,18 @@ def test_informe_cabal_archivo_por_centro_detail_context_paths(mocker):
 
     # centro_id inválido
     view.kwargs = {"centro_id": "x"}
-    mocker.patch("django.views.generic.detail.DetailView.get_context_data", return_value={})
+    mocker.patch(
+        "django.views.generic.detail.DetailView.get_context_data", return_value={}
+    )
     with pytest.raises(Http404):
         view.get_context_data()
 
     # centro_id válido + fallback de paginación
     view.kwargs = {"centro_id": "2"}
     view.request = SimpleNamespace(GET={"page": "boom"})
-    mocker.patch("centrodefamilia.views.centro.get_object_or_404", return_value="centro")
+    mocker.patch(
+        "centrodefamilia.views.centro.get_object_or_404", return_value="centro"
+    )
     mocker.patch(
         "centrodefamilia.views.centro.InformeCabalRegistro.objects.filter",
         return_value=_QS(),
@@ -209,9 +238,13 @@ def test_informe_cabal_archivo_por_centro_detail_context_paths(mocker):
 
 def test_centros_ajax_returns_json(mocker):
     qs = _QS()
-    mocker.patch("centrodefamilia.views.centro.Centro.objects.select_related", return_value=qs)
+    mocker.patch(
+        "centrodefamilia.views.centro.Centro.objects.select_related", return_value=qs
+    )
     mocker.patch("centrodefamilia.views.centro.Centro.objects.none", return_value=_QS())
-    mocker.patch("django.template.loader.render_to_string", side_effect=["<rows>", "<pag>"])
+    mocker.patch(
+        "django.template.loader.render_to_string", side_effect=["<rows>", "<pag>"]
+    )
     mocker.patch("django.core.paginator.Paginator", _PaginatorFake)
 
     request = SimpleNamespace(

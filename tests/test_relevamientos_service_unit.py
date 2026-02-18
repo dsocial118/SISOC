@@ -35,9 +35,18 @@ def test_update_comedor_and_separate_string(mocker):
         id=7,
     )
     mocker.patch("relevamientos.service.Provincia.objects.get", return_value=prov)
-    mocker.patch("relevamientos.service.Municipio.objects.get_or_create", return_value=(mun, True))
-    mocker.patch("relevamientos.service.Localidad.objects.get_or_create", return_value=(loc, True))
-    mocker.patch("relevamientos.service.convert_string_to_int", side_effect=lambda x: int(str(x)) if str(x).isdigit() else None)
+    mocker.patch(
+        "relevamientos.service.Municipio.objects.get_or_create",
+        return_value=(mun, True),
+    )
+    mocker.patch(
+        "relevamientos.service.Localidad.objects.get_or_create",
+        return_value=(loc, True),
+    )
+    mocker.patch(
+        "relevamientos.service.convert_string_to_int",
+        side_effect=lambda x: int(str(x)) if str(x).isdigit() else None,
+    )
 
     cid = module.RelevamientoService.update_comedor(
         {
@@ -60,22 +69,42 @@ def test_update_comedor_and_separate_string(mocker):
 
 def test_create_pendiente_and_update_territorial(mocker):
     """Territorial assignment should create pending records and trigger async sync."""
-    request = SimpleNamespace(POST={"territorial": '{"gestionar_uid":"u","nombre":"N"}'})
+    request = SimpleNamespace(
+        POST={"territorial": '{"gestionar_uid":"u","nombre":"N"}'}
+    )
     comedor = SimpleNamespace()
     mocker.patch("relevamientos.service.get_object_or_404", return_value=comedor)
 
-    created = SimpleNamespace(territorial_uid=None, territorial_nombre=None, estado="Pendiente", save=mocker.Mock())
+    created = SimpleNamespace(
+        territorial_uid=None,
+        territorial_nombre=None,
+        estado="Pendiente",
+        save=mocker.Mock(),
+    )
     mocker.patch("relevamientos.service.Relevamiento", return_value=created)
     out = module.RelevamientoService.create_pendiente(request, comedor_id=1)
     assert out is created
     assert out.estado == "Visita pendiente"
 
-    rel = SimpleNamespace(id=5, territorial_uid=None, territorial_nombre=None, estado="Pendiente", save=mocker.Mock())
+    rel = SimpleNamespace(
+        id=5,
+        territorial_uid=None,
+        territorial_nombre=None,
+        estado="Pendiente",
+        save=mocker.Mock(),
+    )
     mocker.patch("relevamientos.service.Relevamiento.objects.get", return_value=rel)
-    mocker.patch("relevamientos.service.build_relevamiento_payload", return_value={"x": 1})
+    mocker.patch(
+        "relevamientos.service.build_relevamiento_payload", return_value={"x": 1}
+    )
     starter = mocker.patch("relevamientos.service.AsyncSendRelevamientoToGestionar")
 
-    req_edit = SimpleNamespace(POST={"relevamiento_id": "5", "territorial_editar": '{"gestionar_uid":"u2","nombre":"N2"}'})
+    req_edit = SimpleNamespace(
+        POST={
+            "relevamiento_id": "5",
+            "territorial_editar": '{"gestionar_uid":"u2","nombre":"N2"}',
+        }
+    )
     out2 = module.RelevamientoService.update_territorial(req_edit)
     assert out2 is rel
     assert starter.called
@@ -83,34 +112,70 @@ def test_create_pendiente_and_update_territorial(mocker):
 
 def test_populate_data_helpers(mocker):
     """Populate helpers should delegate field transformation through populate_data."""
-    mocker.patch("relevamientos.service.populate_data", side_effect=lambda data, _tr: {**data, "_ok": True})
+    mocker.patch(
+        "relevamientos.service.populate_data",
+        side_effect=lambda data, _tr: {**data, "_ok": True},
+    )
 
     a = module.RelevamientoService.populate_cocina_data({"heladera": "si"})
-    b = module.RelevamientoService.populate_colaboradores_data({"cantidad_colaboradores": "1"})
+    b = module.RelevamientoService.populate_colaboradores_data(
+        {"cantidad_colaboradores": "1"}
+    )
     c = module.RelevamientoService.populate_recursos_data({"recibe_otros": "si"})
-    d = module.RelevamientoService.populate_espacio_prestacion_data({"espacio_equipado": "si"})
+    d = module.RelevamientoService.populate_espacio_prestacion_data(
+        {"espacio_equipado": "si"}
+    )
 
     assert a["_ok"] and b["_ok"] and c["_ok"] and d["_ok"]
 
 
 def test_create_or_update_cocina_espacio_and_colaboradores(mocker):
     """Entity builders should create/update instances and return them."""
-    mocker.patch.object(module.RelevamientoService, "populate_cocina_data", return_value={"abastecimiento_combustible": "Gas"})
+    mocker.patch.object(
+        module.RelevamientoService,
+        "populate_cocina_data",
+        return_value={"abastecimiento_combustible": "Gas"},
+    )
     qs = SimpleNamespace(exists=lambda: True)
-    mocker.patch("relevamientos.service.TipoCombustible.objects.filter", return_value=qs)
-    mocker.patch("relevamientos.service.EspacioCocina.objects.create", return_value=SimpleNamespace(abastecimiento_combustible=SimpleNamespace(set=mocker.Mock()), save=mocker.Mock()))
-    c = module.RelevamientoService.create_or_update_cocina({"abastecimiento_combustible": "Gas"})
+    mocker.patch(
+        "relevamientos.service.TipoCombustible.objects.filter", return_value=qs
+    )
+    mocker.patch(
+        "relevamientos.service.EspacioCocina.objects.create",
+        return_value=SimpleNamespace(
+            abastecimiento_combustible=SimpleNamespace(set=mocker.Mock()),
+            save=mocker.Mock(),
+        ),
+    )
+    c = module.RelevamientoService.create_or_update_cocina(
+        {"abastecimiento_combustible": "Gas"}
+    )
     assert c is not None
 
-    mocker.patch.object(module.RelevamientoService, "create_or_update_cocina", return_value="coc")
-    mocker.patch.object(module.RelevamientoService, "create_or_update_espacio_prestacion", return_value="pre")
+    mocker.patch.object(
+        module.RelevamientoService, "create_or_update_cocina", return_value="coc"
+    )
+    mocker.patch.object(
+        module.RelevamientoService,
+        "create_or_update_espacio_prestacion",
+        return_value="pre",
+    )
     mocker.patch("relevamientos.service.TipoEspacio.objects.get", return_value="tipo")
-    mocker.patch("relevamientos.service.Espacio.objects.create", return_value=SimpleNamespace())
-    esp = module.RelevamientoService.create_or_update_espacio({"cocina": {}, "prestacion": {}, "tipo_espacio_fisico": "Salon"})
+    mocker.patch(
+        "relevamientos.service.Espacio.objects.create", return_value=SimpleNamespace()
+    )
+    esp = module.RelevamientoService.create_or_update_espacio(
+        {"cocina": {}, "prestacion": {}, "tipo_espacio_fisico": "Salon"}
+    )
     assert esp is not None
 
-    mocker.patch.object(module.RelevamientoService, "populate_colaboradores_data", return_value={"x": 1})
-    mocker.patch("relevamientos.service.Colaboradores.objects.create", return_value=SimpleNamespace())
+    mocker.patch.object(
+        module.RelevamientoService, "populate_colaboradores_data", return_value={"x": 1}
+    )
+    mocker.patch(
+        "relevamientos.service.Colaboradores.objects.create",
+        return_value=SimpleNamespace(),
+    )
     col = module.RelevamientoService.create_or_update_colaboradores({"x": 1})
     assert col is not None
 
@@ -125,13 +190,26 @@ def test_create_or_update_recursos_and_compras(mocker):
         recursos_otros=SimpleNamespace(set=mocker.Mock()),
         save=mocker.Mock(),
     )
-    mocker.patch.object(module.RelevamientoService, "populate_recursos_data", return_value={"recibe_otros": True, "recursos_otros": [1]})
-    mocker.patch("relevamientos.service.FuenteRecursos.objects.create", return_value=rec_inst)
-    rec = module.RelevamientoService.create_or_update_recursos({"recibe_otros": True, "recursos_otros": [1]})
+    mocker.patch.object(
+        module.RelevamientoService,
+        "populate_recursos_data",
+        return_value={"recibe_otros": True, "recursos_otros": [1]},
+    )
+    mocker.patch(
+        "relevamientos.service.FuenteRecursos.objects.create", return_value=rec_inst
+    )
+    rec = module.RelevamientoService.create_or_update_recursos(
+        {"recibe_otros": True, "recursos_otros": [1]}
+    )
     assert rec is rec_inst
 
-    mocker.patch.object(module.RelevamientoService, "populate_compras_data", return_value={"k": 1})
-    mocker.patch("relevamientos.service.FuenteCompras.objects.create", return_value=SimpleNamespace())
+    mocker.patch.object(
+        module.RelevamientoService, "populate_compras_data", return_value={"k": 1}
+    )
+    mocker.patch(
+        "relevamientos.service.FuenteCompras.objects.create",
+        return_value=SimpleNamespace(),
+    )
     cmp = module.RelevamientoService.create_or_update_compras({"k": 1})
     assert cmp is not None
 
@@ -326,7 +404,9 @@ def test_populate_relevamiento_and_update_territorial_without_data(mocker):
         "punto_entregas_form": SimpleNamespace(save=lambda: "punto"),
     }
     mocker.patch("relevamientos.service.timezone.now", return_value="now")
-    out = module.RelevamientoService.populate_relevamiento(relevamiento_form, extra_forms)
+    out = module.RelevamientoService.populate_relevamiento(
+        relevamiento_form, extra_forms
+    )
     assert out is rel
     assert rel.responsable_es_referente is True
 
@@ -338,7 +418,9 @@ def test_populate_relevamiento_and_update_territorial_without_data(mocker):
         save=mocker.Mock(),
     )
     mocker.patch("relevamientos.service.Relevamiento.objects.get", return_value=rel2)
-    mocker.patch("relevamientos.service.build_relevamiento_payload", return_value={"k": 1})
+    mocker.patch(
+        "relevamientos.service.build_relevamiento_payload", return_value={"k": 1}
+    )
     starter = mocker.patch("relevamientos.service.AsyncSendRelevamientoToGestionar")
     req = SimpleNamespace(POST={"relevamiento_id": "2", "territorial_editar": ""})
     out2 = module.RelevamientoService.update_territorial(req)
@@ -349,9 +431,14 @@ def test_populate_relevamiento_and_update_territorial_without_data(mocker):
 
 def test_create_or_update_anexo_and_populate_helpers(mocker):
     """Anexo/punto/compras populate helpers should transform and persist data."""
-    mocker.patch("relevamientos.service.populate_data", side_effect=lambda data, _tr: {**data, "ok": True})
+    mocker.patch(
+        "relevamientos.service.populate_data",
+        side_effect=lambda data, _tr: {**data, "ok": True},
+    )
     mocker.patch("relevamientos.service.convert_string_to_int", return_value=3)
-    parsed = module.RelevamientoService.populate_anexo_data({"veces_recibio_insumos_2024": "3"})
+    parsed = module.RelevamientoService.populate_anexo_data(
+        {"veces_recibio_insumos_2024": "3"}
+    )
     assert parsed["ok"] is True
     assert parsed["veces_recibio_insumos_2024"] == 3
 
@@ -359,10 +446,14 @@ def test_create_or_update_anexo_and_populate_helpers(mocker):
         "relevamientos.service.Anexo.objects.create",
         return_value=SimpleNamespace(),
     )
-    mocker.patch.object(module.RelevamientoService, "populate_anexo_data", return_value={"a": 1})
+    mocker.patch.object(
+        module.RelevamientoService, "populate_anexo_data", return_value={"a": 1}
+    )
     assert module.RelevamientoService.create_or_update_anexo({"a": 1}) is not None
 
-    p = module.RelevamientoService.populate_punto_entregas_data({"existe_punto_entregas": "Y"})
+    p = module.RelevamientoService.populate_punto_entregas_data(
+        {"existe_punto_entregas": "Y"}
+    )
     c = module.RelevamientoService.populate_compras_data({"almacen_cercano": "N"})
     assert p["ok"] and c["ok"]
 
@@ -398,7 +489,9 @@ def test_responsable_referente_create_and_self_reference(mocker):
 )
 def test_builder_exception_paths_raise(mocker, method_name, patch_target):
     """Builder methods should log and re-raise on unexpected internal errors."""
-    mocker.patch.object(module.RelevamientoService, patch_target, side_effect=RuntimeError("boom"))
+    mocker.patch.object(
+        module.RelevamientoService, patch_target, side_effect=RuntimeError("boom")
+    )
     method = getattr(module.RelevamientoService, method_name)
     with pytest.raises(RuntimeError, match="boom"):
         method({"x": 1})

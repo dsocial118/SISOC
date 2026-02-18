@@ -91,7 +91,10 @@ def test_base_apply_filters_and_context_data(mocker):
     assert view._apply_filters(qs, invalid) is qs
 
     entry = SimpleNamespace()
-    mocker.patch("django.views.generic.list.ListView.get_context_data", return_value={"entries": [entry]})
+    mocker.patch(
+        "django.views.generic.list.ListView.get_context_data",
+        return_value={"entries": [entry]},
+    )
     mocker.patch.object(view, "resolve_entry_changes", return_value={"x": 1})
     view.request = SimpleNamespace(GET=QueryDict("page=3&actor=ana"))
     view.filter_form = form
@@ -115,7 +118,9 @@ def test_audit_instance_choices_form_and_context(mocker):
     assert form.initial["model"] == "core.ciudadano"
     assert form.initial["object_pk"] == 7
 
-    mocker.patch("audittrail.views.BaseAuditLogListView.get_context_data", return_value={})
+    mocker.patch(
+        "audittrail.views.BaseAuditLogListView.get_context_data", return_value={}
+    )
     ctx = view.get_context_data()
     assert ctx["is_instance_view"] is True
     assert ctx["instance_object_pk"] == 7
@@ -123,9 +128,13 @@ def test_audit_instance_choices_form_and_context(mocker):
 
 def test_audit_detail_get_context_data_and_resolver_passthrough(mocker):
     view = module.AuditLogDetailView()
-    view.object = SimpleNamespace(changes_display_dict={}, content_type=SimpleNamespace(model_class=lambda: None))
+    view.object = SimpleNamespace(
+        changes_display_dict={}, content_type=SimpleNamespace(model_class=lambda: None)
+    )
 
-    mocker.patch("django.views.generic.detail.DetailView.get_context_data", return_value={})
+    mocker.patch(
+        "django.views.generic.detail.DetailView.get_context_data", return_value={}
+    )
     mocker.patch.object(view, "resolve_entry_changes", return_value={"k": "v"})
 
     ctx = view.get_context_data()
