@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema
 from django.contrib.auth import authenticate
+from django.core.exceptions import PermissionDenied
 from rest_framework import serializers, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
@@ -41,7 +42,18 @@ class UserLoginViewSet(viewsets.ViewSet):
     @extend_schema(request=LoginSerializer)
     def create(self, request):
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except (AuthenticationFailed, PermissionDenied) as exc:
+            detail = (
+                str(exc)
+                if isinstance(exc, AuthenticationFailed)
+                else "Credenciales inválidas."
+            )
+            return Response(
+                {"detail": detail},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         user = serializer.validated_data["user"]
         token, _ = Token.objects.get_or_create(user=user)
         return Response(

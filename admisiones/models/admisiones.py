@@ -90,7 +90,7 @@ class Admision(models.Model):
         ("expediente_cargado", "Expediente cargado"),
         ("informe_tecnico_en_proceso", "Informe técnico en proceso"),
         ("informe_tecnico_finalizado", "Informe técnico finalizado"),
-        ("informe_tecnico_docx_editado", "Informe técnico DOCX editado"),
+        ("informe_tecnico_docx_editado", "Informe técnico DOCX enviado a validar"),
         ("informe_tecnico_en_revision", "Informe técnico en revisión"),
         ("informe_tecnico_en_subsanacion", "Informe técnico en subsanación"),
         ("informe_tecnico_aprobado", "Informe técnico aprobado"),
@@ -355,7 +355,7 @@ class InformeTecnico(models.Model):
         ("Iniciado", "Iniciado"),
         ("Para revision", "Para revisión"),
         ("Docx generado", "DOCX generado"),
-        ("Docx editado", "DOCX editado"),
+        ("Docx editado", "DOCX enviado a validar"),
         ("Validado", "Validado"),
         ("A subsanar", "A subsanar"),
     ]

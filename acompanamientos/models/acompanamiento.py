@@ -14,6 +14,7 @@ class InformacionRelevante(models.Model):
         return f"Información Relevante - {self.comedor.nombre}"
 
 
+# TODO: Cambiar el nombre de esta clase para que no se pise conceptualmente con el de relevamiento
 class Prestacion(models.Model):
     comedor = models.ForeignKey(Comedor, on_delete=models.CASCADE)
     dia = models.CharField(

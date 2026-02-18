@@ -1,3 +1,5 @@
+"""Tests for tests."""
+
 from unittest import mock
 
 import pytest

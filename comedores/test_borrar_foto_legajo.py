@@ -1,3 +1,5 @@
+"""Tests for test borrar foto legajo."""
+
 import pytest
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage

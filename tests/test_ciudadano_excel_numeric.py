@@ -1,3 +1,5 @@
+"""Tests for test ciudadano excel numeric."""
+
 from io import BytesIO
 from datetime import date
 
