@@ -26,34 +26,55 @@ def migrate_nacionalidades(apps, schema_editor):
         return
 
     if not table_exists("core_nacionalidad"):
+        if connection.vendor == "sqlite":
+            schema_editor.execute(
+                f"""
+                CREATE TABLE {quote("core_nacionalidad")} (
+                    {quote("id")} integer PRIMARY KEY AUTOINCREMENT,
+                    {quote("nacionalidad")} varchar(50) NOT NULL
+                );
+                """
+            )
+        else:
+            schema_editor.execute(
+                f"""
+                CREATE TABLE {quote("core_nacionalidad")} (
+                    {quote("id")} bigint AUTO_INCREMENT PRIMARY KEY,
+                    {quote("nacionalidad")} varchar(50) NOT NULL
+                );
+                """
+            )
+
+    if connection.vendor == "sqlite":
         schema_editor.execute(
-            f"""
-            CREATE TABLE {quote("core_nacionalidad")} (
-                {quote("id")} bigint AUTO_INCREMENT PRIMARY KEY,
-                {quote("nacionalidad")} varchar(50) NOT NULL
-            );
+            """
+            INSERT OR REPLACE INTO core_nacionalidad (id, nacionalidad)
+            SELECT id, nacionalidad FROM ciudadanos_nacionalidad;
+            """
+        )
+    else:
+        schema_editor.execute(
+            """
+            INSERT INTO core_nacionalidad (id, nacionalidad)
+            SELECT id, nacionalidad FROM ciudadanos_nacionalidad
+            ON DUPLICATE KEY UPDATE nacionalidad = VALUES(nacionalidad);
             """
         )
 
-    schema_editor.execute(
-        """
-        INSERT INTO core_nacionalidad (id, nacionalidad)
-        SELECT id, nacionalidad FROM ciudadanos_nacionalidad
-        ON DUPLICATE KEY UPDATE nacionalidad = VALUES(nacionalidad);
-        """
-    )
-
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT IFNULL(MAX(id), 0) + 1 FROM core_nacionalidad;")
-        next_id = cursor.fetchone()
-    if next_id:
-        schema_editor.execute(
-            f"ALTER TABLE {quote('core_nacionalidad')} AUTO_INCREMENT = {int(next_id[0])}"
-        )
+    if connection.vendor == "mysql":
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT IFNULL(MAX(id), 0) + 1 FROM core_nacionalidad;")
+            next_id = cursor.fetchone()
+        if next_id:
+            schema_editor.execute(
+                f"ALTER TABLE {quote('core_nacionalidad')} AUTO_INCREMENT = {int(next_id[0])}"
+            )
 
 
 def safe_cleanup(apps, schema_editor):
     connection = schema_editor.connection
+    if connection.vendor == "sqlite":
+        return
     quote = schema_editor.quote_name
 
     def table_exists(name: str) -> bool:

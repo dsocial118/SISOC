@@ -50,6 +50,10 @@ from celiaquia.views.cupo import (
     CupoSuspenderLegajoView,
 )
 from celiaquia.views.padron_final_export import ExpedientePadronFinalExportView
+from celiaquia.views.comentarios import (
+    LegajoComentarioCreateView,
+    LegajoComentarioListView,
+)
 
 urlpatterns = [
     path(
@@ -259,5 +263,19 @@ urlpatterns = [
             ExpedientePadronFinalExportView.as_view()
         ),
         name="expediente_padron_final_export",
+    ),
+    path(
+        "expedientes/<int:expediente_id>/legajos/<int:legajo_id>/comentarios/",
+        group_required(
+            ["ProvinciaCeliaquia", "TecnicoCeliaquia", "CoordinadorCeliaquia"]
+        )(LegajoComentarioListView.as_view()),
+        name="legajo_comentarios_list",
+    ),
+    path(
+        "expedientes/<int:expediente_id>/legajos/<int:legajo_id>/comentarios/crear/",
+        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(
+            LegajoComentarioCreateView.as_view()
+        ),
+        name="legajo_comentario_create",
     ),
 ]

@@ -1,3 +1,5 @@
+"""Tests for test auth permissions smoke."""
+
 import pytest
 from django.contrib.auth import SESSION_KEY
 

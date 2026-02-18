@@ -1,3 +1,5 @@
+"""Tests for test legacy views."""
+
 from unittest.mock import patch
 
 import pytest
