@@ -44,13 +44,26 @@
                             <div class="invalid-feedback d-block">{{ form.tipo.errors.0 }}</div>
                         {% endif %}
                         <small class="form-text text-muted">
-                            <strong>Interno:</strong> Visible en SISOC para usuarios del sistema.
-                            <strong>Comedores:</strong> Visible en la app móvil para los comedores seleccionados.
+                            <strong>Interna:</strong> Visible en SISOC para usuarios del sistema.
+                            <strong>Externa:</strong> Visible en la app móvil (PWA).
+                        </small>
+                    </div>
+
+                    <!-- Subtipo de Comunicado (solo para externos) -->
+                    <div id="subtipo-options" class="mb-3 {% if form.instance.tipo != 'externo' and not es_tecnico %}d-none{% endif %}">
+                        <label for="id_subtipo" class="form-label">Subtipo de Comunicado <span class="text-danger">*</span></label>
+                        {{ form.subtipo }}
+                        {% if form.subtipo.errors %}
+                            <div class="invalid-feedback d-block">{{ form.subtipo.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            <strong>Institucional:</strong> Se envía a todos, disponible en el módulo Institucional de la app.
+                            <strong>A Comedores:</strong> Se envía a comedores específicos, disponible en Notificaciones.
                         </small>
                     </div>
 
                     <!-- Opciones para Comunicados a Comedores -->
-                    <div id="comedores-options" class="{% if form.instance.tipo != 'externo' and not es_tecnico %}d-none{% endif %}">
+                    <div id="comedores-options" class="{% if form.instance.subtipo != 'comedores' %}d-none{% endif %}">
                         <div class="card mb-3">
                             <div class="card-body">
                                 <h6><i class="fas fa-utensils"></i> Destinatarios</h6>
@@ -223,8 +236,10 @@
 
     <script>
     (function() {
-        // Tipo de comunicado - mostrar/ocultar campos
+        // Tipo/Subtipo de comunicado - mostrar/ocultar campos
         const tipoSelect = document.getElementById("id_tipo");
+        const subtipoOptions = document.getElementById("subtipo-options");
+        const subtipoSelect = document.getElementById("id_subtipo");
         const comedoresOptions = document.getElementById("comedores-options");
         const destacadoOption = document.getElementById("destacado-option");
         const paraTodosCheckbox = document.getElementById("id_para_todos_comedores");
@@ -233,11 +248,30 @@
         function updateFieldsVisibility() {
             if (!tipoSelect) return;
             const isExterno = tipoSelect.value === "externo";
-            if (comedoresOptions) {
-                comedoresOptions.classList.toggle("d-none", !isExterno);
+
+            // Mostrar subtipo solo si es externo
+            if (subtipoOptions) {
+                subtipoOptions.classList.toggle("d-none", !isExterno);
             }
+            // Limpiar subtipo si cambia a interno
+            if (!isExterno && subtipoSelect) {
+                subtipoSelect.value = "";
+            }
+
+            // Mostrar comedores solo si subtipo es "comedores"
+            updateSubtipoVisibility();
+
+            // Destacado solo para internos
             if (destacadoOption) {
                 destacadoOption.classList.toggle("d-none", isExterno);
+            }
+        }
+
+        function updateSubtipoVisibility() {
+            if (!subtipoSelect) return;
+            const isComedores = subtipoSelect.value === "comedores";
+            if (comedoresOptions) {
+                comedoresOptions.classList.toggle("d-none", !isComedores);
             }
         }
 
@@ -249,6 +283,10 @@
         if (tipoSelect) {
             tipoSelect.addEventListener("change", updateFieldsVisibility);
             updateFieldsVisibility();
+        }
+
+        if (subtipoSelect) {
+            subtipoSelect.addEventListener("change", updateSubtipoVisibility);
         }
 
         if (paraTodosCheckbox) {

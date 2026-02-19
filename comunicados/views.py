@@ -14,7 +14,7 @@ from django.views.generic import (
 )
 
 from .forms import ComunicadoForm, ComunicadoAdjuntoFormSet
-from .models import Comunicado, ComunicadoAdjunto, EstadoComunicado, TipoComunicado
+from .models import Comunicado, ComunicadoAdjunto, EstadoComunicado, TipoComunicado, SubtipoComunicado
 from .permissions import (
     can_create_comunicado,
     can_edit_comunicado,
@@ -208,17 +208,21 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
             return self.render_to_response(ctx)
 
     def _handle_comedores(self, form):
-        """Maneja la asignación de comedores según el tipo de comunicado."""
+        """Maneja la asignación de comedores según tipo y subtipo."""
         if self.object.tipo == TipoComunicado.EXTERNO:
-            if form.cleaned_data.get('para_todos_comedores'):
-                # Asignar todos los comedores según permisos del usuario
+            if self.object.subtipo == SubtipoComunicado.INSTITUCIONAL:
+                # Institucional: broadcast, no necesita comedores
+                self.object.comedores.clear()
+                self.object.para_todos_comedores = False
+                self.object.save()
+            elif form.cleaned_data.get('para_todos_comedores'):
                 comedores = get_comedores_del_usuario(self.request.user)
                 self.object.comedores.set(comedores)
-            # Si no es para_todos_comedores, los comedores ya se guardaron del form
         else:
-            # Si es interno, limpiar comedores
+            # Interno: limpiar campos externos
             self.object.comedores.clear()
             self.object.para_todos_comedores = False
+            self.object.subtipo = ""
             self.object.save()
 
 
@@ -281,17 +285,21 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
             return self.render_to_response(ctx)
 
     def _handle_comedores(self, form):
-        """Maneja la asignación de comedores según el tipo de comunicado."""
+        """Maneja la asignación de comedores según tipo y subtipo."""
         if self.object.tipo == TipoComunicado.EXTERNO:
-            if form.cleaned_data.get('para_todos_comedores'):
-                # Asignar todos los comedores según permisos del usuario
+            if self.object.subtipo == SubtipoComunicado.INSTITUCIONAL:
+                # Institucional: broadcast, no necesita comedores
+                self.object.comedores.clear()
+                self.object.para_todos_comedores = False
+                self.object.save()
+            elif form.cleaned_data.get('para_todos_comedores'):
                 comedores = get_comedores_del_usuario(self.request.user)
                 self.object.comedores.set(comedores)
-            # Si no es para_todos_comedores, los comedores ya se guardaron del form
         else:
-            # Si es interno, limpiar comedores
+            # Interno: limpiar campos externos
             self.object.comedores.clear()
             self.object.para_todos_comedores = False
+            self.object.subtipo = ""
             self.object.save()
 
 
