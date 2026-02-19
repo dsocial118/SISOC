@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -9,11 +9,13 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from django.urls import reverse
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.models.hitos import Hitos
 from comedores.models import Comedor
 from core.services.column_preferences import build_columns_context_for_custom_cells
+from core.security import safe_redirect
 
 
 @login_required
@@ -33,7 +35,11 @@ def restaurar_hito(request, comedor_id):
         messages.error(request, f"El campo '{campo}' no existe en el modelo Hitos.")
 
     # Redirige a la página anterior
-    return redirect(request.META.get("HTTP_REFERER", "/"))
+    return safe_redirect(
+        request,
+        default=reverse("detalle_acompanamiento", kwargs={"comedor_id": comedor_id}),
+        target=request.META.get("HTTP_REFERER"),
+    )
 
 
 class AcompanamientoDetailView(LoginRequiredMixin, DetailView):

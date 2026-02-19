@@ -5,11 +5,11 @@ from django.core.cache import cache
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import CreateView, UpdateView, DeleteView, TemplateView
 
 from comedores.services.comedor_service import ComedorService
+from core.security import safe_redirect
 from intervenciones.models.intervenciones import (
     Intervencion,
     SubIntervencion,
@@ -133,12 +133,12 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
 
         form.instance.save()
         next_url = self.request.POST.get("next") or self.request.GET.get("next")
-        if next_url and url_has_allowed_host_and_scheme(
-            next_url, allowed_hosts={self.request.get_host()}
-        ):
-            return redirect(next_url)
-        return redirect(
-            reverse("comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]})
+        return safe_redirect(
+            self.request,
+            default=reverse(
+                "comedor_intervencion_ver", kwargs={"pk": self.kwargs["pk"]}
+            ),
+            target=next_url,
         )
 
     def get_context_data(self, **kwargs):

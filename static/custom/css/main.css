@@ -3,12 +3,13 @@
 footer.app-footer {
     position: sticky;
     width: 100%;
-    height: 110px !important;
+    height: 136px !important;
     background-color: #232d4f !important;
     border-top: 15px solid #e7ba61 !important;
     color: #ffffff !important;
     margin-top: auto;
-    z-index: 3 !important;
+    z-index: 3000 !important;
+    display: flex;
 }
 
 .app-sidebar {
@@ -30,7 +31,7 @@ footer.app-footer {
 }
 
 .main-header {
-    padding: 0.5rem 1rem;
+    padding: 0rem 1rem;
     z-index: 1050; /* Mayor que Select2 dropdown para evitar superposición */
 }
 
@@ -45,7 +46,11 @@ footer.app-footer {
 }
 
 .main-header .brand-image {
-    max-height: 32px;
+    max-height: 40px;
+}
+
+.main-header .nav-links>.nav-item {
+    padding-top: 10px;
 }
 
 .main-header .nav-link.nav-link-rounded {
@@ -100,7 +105,7 @@ body.sidebar-collapse .app-main {
 }
 
 .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
-        height: calc(100vh - 180px);
+        height: calc(100vh - 200px);
         overflow-x: hidden !important;
     }
 

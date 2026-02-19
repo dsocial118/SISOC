@@ -1,10 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect
-from django.utils.http import url_has_allowed_host_and_scheme
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from comedores.services.validacion_service import ValidacionService
+from core.security import safe_redirect
 
 
 @login_required
@@ -28,8 +28,8 @@ def validar_comedor(request, pk):
     else:
         messages.error(request, mensaje)
 
-    if next_url and url_has_allowed_host_and_scheme(
-        next_url, allowed_hosts={request.get_host()}
-    ):
-        return redirect(next_url)
-    return redirect("comedor_detalle", pk=pk)
+    return safe_redirect(
+        request,
+        default=reverse("comedor_detalle", kwargs={"pk": pk}),
+        target=next_url,
+    )

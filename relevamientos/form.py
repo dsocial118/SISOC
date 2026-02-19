@@ -50,6 +50,10 @@ class EspacioCocinaForm(forms.ModelForm):
         widget=forms.Select,
         label="2.2.2 ¿El espacio posee un lugar para el almacenamiento de los alimentos secos que compra/recibe? ",
     )
+    almacenamiento_alimentos_secos_otro = forms.CharField(
+        required=False,
+        label="2.2.2.1 Si respondió 'No', especificar dónde almacenan",
+    )
     heladera = forms.ChoiceField(
         choices=BOOLEAN_CHOICE,
         widget=forms.Select,
@@ -144,6 +148,10 @@ class EspacioPrestacionForm(forms.ModelForm):
             "2.3.11 ¿Hay en el lugar cartelería con información sobre los mecanismos "
             "de gestión de quejas, reclamos y sugerencias del Comedor y/o Merendero?"
         ),
+    )
+    frecuencia_limpieza_otro = forms.CharField(
+        required=False,
+        label="2.4.2 Si eligió 'Otra frecuencia', especificar",
     )
 
     class Meta:

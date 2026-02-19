@@ -545,6 +545,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             "frecuencia_limpieza": lambda x: get_object_or_none(
                 FrecuenciaLimpieza, "nombre__iexact", x
             ),
+            "frecuencia_limpieza_otro": lambda x: x,
         }
         # Se ejecuta el metodo populate_data que recorre la prestacion_data y aplica las transformaciones
         prestacion_data = populate_data(prestacion_data, transformations)
@@ -596,6 +597,7 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
         transformations = {
             "espacio_elaboracion_alimentos": convert_to_boolean,
             "almacenamiento_alimentos_secos": convert_to_boolean,
+            "almacenamiento_alimentos_secos_otro": lambda x: x,
             "heladera": convert_to_boolean,
             "freezer": convert_to_boolean,
             "recipiente_residuos_organicos": convert_to_boolean,

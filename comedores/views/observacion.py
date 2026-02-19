@@ -5,13 +5,13 @@ from django.db.models.base import Model
 from django.forms import BaseModelForm
 from django.http import HttpResponse
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import Comedor, Observacion
+from core.security import safe_redirect
 
 
 class ObservacionCreateView(LoginRequiredMixin, CreateView):
@@ -40,14 +40,11 @@ class ObservacionCreateView(LoginRequiredMixin, CreateView):
         form.instance.fecha_visita = timezone.now()
         self.object = form.save()
         next_url = self.request.POST.get("next") or self.request.GET.get("next")
-        if next_url and url_has_allowed_host_and_scheme(
-            next_url, allowed_hosts={self.request.get_host()}
-        ):
-            return redirect(next_url)
-
-        return redirect(
-            "observacion_detalle",
-            pk=int(self.object.id),
+        default_url = reverse("observacion_detalle", kwargs={"pk": int(self.object.id)})
+        return safe_redirect(
+            self.request,
+            default=default_url,
+            target=next_url,
         )
 
 

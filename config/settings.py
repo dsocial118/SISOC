@@ -12,6 +12,7 @@ load_dotenv()
 # Entorno
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")  # dev|qa|prd
+ENABLE_API_DOCS = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Secret Key
@@ -57,6 +58,7 @@ INSTALLED_APPS = [
     "multiselectfield",
     "auditlog",
     "rest_framework",
+    "rest_framework.authtoken",
     "rest_framework_api_key",
     "drf_spectacular",
     "corsheaders",
@@ -173,10 +175,16 @@ DATABASES = {
 RUNNING_TESTS = (
     any("pytest" in arg for arg in sys.argv) or os.environ.get("PYTEST_RUNNING") == "1"
 )
+if RUNNING_TESTS and not SECRET_KEY:
+    SECRET_KEY = "test-secret-key"
 USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
 if RUNNING_TESTS and (USE_SQLITE_FOR_TESTS or not os.environ.get("DATABASE_HOST")):
     DATABASES = {
-        "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+            "TEST": {"MIGRATE": False},
+        }
     }
 
 # Cache
@@ -201,6 +209,10 @@ CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
 
 # REST Framework
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -257,7 +269,7 @@ CHANGELOG_GITHUB_URL = os.getenv(
 INTERNAL_IPS = ["127.0.0.1", "::1"]
 
 # Logging (asegurar directorio)
-LOG_DIR = BASE_DIR / "logs"
+LOG_DIR = Path(os.getenv("LOG_DIR", str(BASE_DIR / "logs")))
 os.makedirs(LOG_DIR, exist_ok=True)
 
 LOGGING = {
@@ -369,8 +381,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Herramientas debug/perf en desarrollo
-if DEBUG:
+# Herramientas debug/perf en desarrollo (desactivadas en tests para estabilidad y velocidad)
+if DEBUG and not RUNNING_TESTS:
     INSTALLED_APPS += ["debug_toolbar", "silk"]
     MIDDLEWARE.insert(
         3, "debug_toolbar.middleware.DebugToolbarMiddleware"
@@ -381,9 +393,14 @@ if DEBUG:
 
 # Seguridad por entorno
 if ENVIRONMENT == "prd":
-    STATICFILES_STORAGE = (
-        "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
-    )
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+        },
+    }
     SECURE_HSTS_SECONDS = 1800  # 30 minutos
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_SSL_REDIRECT = True
@@ -397,7 +414,14 @@ if ENVIRONMENT == "prd":
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
     ENABLE_CSP = True
 else:
-    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
     SECURE_HSTS_SECONDS = 0
     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
     SECURE_SSL_REDIRECT = False

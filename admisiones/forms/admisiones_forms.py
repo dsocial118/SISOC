@@ -120,6 +120,7 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             "modificado",
             "creado_por",
             "modificado_por",
+            "observaciones_subsanacion",
             "declaracion_jurada_recepcion_subsidios",
             "constancia_inexistencia_percepcion_otros_subsidios",
             "organizacion_avalista_1",
@@ -333,6 +334,7 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             "modificado",
             "creado_por",
             "modificado_por",
+            "observaciones_subsanacion",
             "validacion_registro_nacional",
             "IF_relevamiento_territorial",
         ]
@@ -763,7 +765,11 @@ class DisposicionForm(forms.ModelForm):
 class IFInformeTecnicoForm(forms.ModelForm):
     class Meta:
         model = Admision
-        fields = ["numero_if_tecnico"]
+        fields = ["numero_if_tecnico", "archivo_informe_tecnico_GDE"]
+        labels = {
+            "numero_if_tecnico": "Número IF Informe Técnico",
+            "archivo_informe_tecnico_GDE": "Archivo Informe Técnico (GDE)",
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
