@@ -72,13 +72,14 @@
                         <thead>
                             <tr>
                                 <th style="width: 5%">ID</th>
-                                <th style="width: 8%">Destacado</th>
+                                <th style="width: 5%">Destacado</th>
                                 <th>Título</th>
-                                <th style="width: 10%">Estado</th>
-                                <th style="width: 12%">Creación</th>
-                                <th style="width: 12%">Publicación</th>
-                                <th style="width: 15%">Creador</th>
-                                <th style="width: 18%">Acciones</th>
+                                <th style="width: 8%">Tipo</th>
+                                <th style="width: 8%">Estado</th>
+                                <th style="width: 10%">Creación</th>
+                                <th style="width: 10%">Publicación</th>
+                                <th style="width: 12%">Creador</th>
+                                <th style="width: 15%">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -96,6 +97,13 @@
                                         <a href="{% url 'comunicados_ver' comunicado.pk %}">
                                             {{ comunicado.titulo|truncatewords:8 }}
                                         </a>
+                                    </td>
+                                    <td>
+                                        {% if comunicado.tipo == 'interno' %}
+                                            <span class="badge bg-info">Interno</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Externo</span>
+                                        {% endif %}
                                     </td>
                                     <td>
                                         {% if comunicado.estado == 'borrador' %}
@@ -184,7 +192,7 @@
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="8" class="text-center py-4">
+                                    <td colspan="9" class="text-center py-4">
                                         <i class="fas fa-newspaper fa-2x text-muted mb-2"></i>
                                         <p class="text-muted mb-0">No hay comunicados.</p>
                                     </td>
