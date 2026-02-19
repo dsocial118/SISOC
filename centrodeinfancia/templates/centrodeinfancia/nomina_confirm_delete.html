@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar registro de nómina{% endblock %}
+{% block titulo-pagina %}Eliminar registro de nómina{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <p>¿Confirmás eliminar este registro de nómina?</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button class="btn btn-danger" type="submit">Eliminar</button>
+                    <a href="{% url 'centrodeinfancia_nomina_ver' view.kwargs.pk %}"
+                       class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

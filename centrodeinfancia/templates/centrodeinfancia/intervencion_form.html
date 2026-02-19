@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Intervención Centro de Infancia{% endblock %}
+{% block titulo-pagina %}Intervención Centro de Infancia{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" type="submit">Guardar</button>
+                        <a href="{% url 'centrodeinfancia_detalle' view.kwargs.pk %}"
+                           class="btn btn-secondary">Volver</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

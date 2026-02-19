@@ -1,0 +1,20 @@
+{% for item in centros %}
+    <tr>
+        <td>
+            <a href="{% url 'centrodeinfancia_detalle' item.id %}">{{ item.nombre }}</a>
+        </td>
+        <td>{{ item.organizacion|default:"-" }}</td>
+        <td class="text-end">
+            <a href="{% url 'centrodeinfancia_detalle' item.id %}"
+               class="btn btn-sm btn-primary">Ver</a>
+            <a href="{% url 'centrodeinfancia_editar' item.id %}"
+               class="btn btn-sm btn-warning">Editar</a>
+            <a href="{% url 'centrodeinfancia_eliminar' item.id %}"
+               class="btn btn-sm btn-danger">Eliminar</a>
+        </td>
+    </tr>
+{% empty %}
+    <tr>
+        <td colspan="3" class="text-center text-muted">No hay resultados.</td>
+    </tr>
+{% endfor %}
