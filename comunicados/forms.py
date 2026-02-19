@@ -1,5 +1,9 @@
 from django import forms
-from .models import Comunicado, ComunicadoAdjunto
+from .models import Comunicado, ComunicadoAdjunto, TipoComunicado
+from .permissions import (
+    es_tecnico, is_admin, get_comedores_del_usuario,
+    can_create_comunicado_interno
+)
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -38,11 +42,15 @@ class ComunicadoForm(forms.ModelForm):
         fields = [
             "titulo",
             "cuerpo",
+            "tipo",
             "destacado",
+            "para_todos_comedores",
+            "comedores",
             "fecha_vencimiento",
         ]
         widgets = {
             "cuerpo": forms.Textarea(attrs={"rows": 6}),
+            "tipo": forms.Select(attrs={"class": "form-select"}),
             "fecha_vencimiento": forms.DateTimeInput(
                 attrs={"type": "datetime-local"},
                 format="%Y-%m-%dT%H:%M",
@@ -50,17 +58,48 @@ class ComunicadoForm(forms.ModelForm):
             "destacado": forms.CheckboxInput(
                 attrs={"class": "form-check-input", "role": "switch"}
             ),
+            "para_todos_comedores": forms.CheckboxInput(
+                attrs={"class": "form-check-input", "role": "switch"}
+            ),
+            "comedores": forms.SelectMultiple(attrs={"class": "form-select", "size": "6"}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
         self._apply_bootstrap_styles()
+        self._configure_fields_for_user()
 
         # Formatear fecha_vencimiento para el input datetime-local
         if self.instance and self.instance.fecha_vencimiento:
             self.initial["fecha_vencimiento"] = self.instance.fecha_vencimiento.strftime(
                 "%Y-%m-%dT%H:%M"
             )
+
+    def _configure_fields_for_user(self):
+        """Configura los campos según los permisos del usuario."""
+        if not self.user:
+            return
+
+        # Filtrar comedores según permisos del usuario
+        self.fields['comedores'].queryset = get_comedores_del_usuario(self.user)
+
+        # Si es técnico (no admin), solo puede crear comunicados externos
+        if es_tecnico(self.user) and not is_admin(self.user):
+            self.fields['tipo'].choices = [
+                (TipoComunicado.EXTERNO, 'Comunicación a Comedores')
+            ]
+            self.fields['tipo'].initial = TipoComunicado.EXTERNO
+            # Ocultar destacado para técnicos (solo aplica a internos)
+            self.fields['destacado'].widget = forms.HiddenInput()
+            self.fields['destacado'].initial = False
+
+        # Si no puede crear internos, forzar externo
+        elif not can_create_comunicado_interno(self.user):
+            self.fields['tipo'].choices = [
+                (TipoComunicado.EXTERNO, 'Comunicación a Comedores')
+            ]
+            self.fields['tipo'].initial = TipoComunicado.EXTERNO
 
     def _apply_bootstrap_styles(self):
         text_like = (
