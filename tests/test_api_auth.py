@@ -1,3 +1,5 @@
+"""Tests for test api auth."""
+
 import types
 
 import pytest

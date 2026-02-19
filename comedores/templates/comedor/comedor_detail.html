@@ -450,7 +450,13 @@
                             <div class="nav-item col-3 d-flex">
                                 <div class="comment-text comment-text d-flex flex-column">
                                     Mail de contacto
-                                    <span class="username" style="word-break: break-all;"><a href="mailto:{{ relevamiento.comedor.referente.mail }}">{{ comedor.referente.mail |   default_if_none:"Sin información" }}</a></span>
+                                    <span class="username" style="word-break: break-all;">
+                                        {% if comedor.referente and comedor.referente.mail %}
+                                            <a href="mailto:{{ comedor.referente.mail }}">{{ comedor.referente.mail }}</a>
+                                        {% else %}
+                                            Sin información
+                                        {% endif %}
+                                    </span>
                                 </div>
                             </div>
                             <div class="nav-item col-3 d-flex">
@@ -483,7 +489,11 @@
                         {% for relevamiento in relevamientos %}
                             <div class="nav nav-pills row my-3">
                                 <div class="col-4 d-flex align-self-center">
-                                    <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Pendiente" }}</a>
+                                    {% if relevamiento.id %}
+                                        <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Pendiente" }}</a>
+                                    {% else %}
+                                        <span>{{ relevamiento.id|default:"-" }} - {{ relevamiento.fecha_visita|default_if_none:"Pendiente" }}</span>
+                                    {% endif %}
                                 </div>
                                 <div class="col-4 d-flex align-self-center">
                                     <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}
@@ -676,7 +686,11 @@
                         <div class="nav nav-pills row col-10 my-3">
                             {% for observacion in observaciones %}
                                 <div class="col-2 d-flex">
-                                    <a href="{% url 'observacion_detalle' observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
+                                    {% if observacion.id %}
+                                        <a href="{% url 'observacion_detalle' observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a>
+                                    {% else %}
+                                        <span>{{ observacion.id|default:"-" }} - {{ observacion.fecha_visita }}</span>
+                                    {% endif %}
                                 </div>
                             {% endfor %}
                         </div>
@@ -735,7 +749,13 @@
                                                 <td>{{ change.changed_at|date:"d/m/Y H:i" }}</td>
                                                 <td>{{ change.from_programa.nombre|default:"Sin información" }}</td>
                                                 <td>{{ change.to_programa.nombre|default:"Sin información" }}</td>
-                                                <td>{{ change.changed_by.get_full_name|default:change.changed_by.username|default:"Sin información" }}</td>
+                                                <td>
+                                                    {% if change.changed_by %}
+                                                        {{ change.changed_by.get_full_name|default:change.changed_by.username|default:"Sin información" }}
+                                                    {% else %}
+                                                        Sin información
+                                                    {% endif %}
+                                                </td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>

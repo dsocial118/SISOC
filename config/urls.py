@@ -10,8 +10,10 @@ from drf_spectacular.views import (
 )
 from celiaquia.views.reporter_provincias import ReporterProvinciasView
 from core.decorators import group_required
+from users.views import UsuariosLoginView
 
 urlpatterns = [
+    path("login/", UsuariosLoginView.as_view(), name="login"),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
     path("", include("django.contrib.auth.urls")),
@@ -41,13 +43,15 @@ urlpatterns = [
     ),
     path("celiaquia/", include("celiaquia.urls")),
     # API URLs
+    path("api/users/", include("users.api_urls")),
+    path("api/comedores/", include("comedores.api_urls")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     path("api/comunicados/", include("comunicados.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
 ]
 
-if settings.DEBUG:
+if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):
     urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
     urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
     urlpatterns += staticfiles_urlpatterns()

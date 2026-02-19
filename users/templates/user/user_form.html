@@ -60,6 +60,19 @@
                 <div class="card card-custom mb-3 shadow-sm">
                     <div class="card-header card-header-custom">
                         <h5 class="mb-0">
+                            <i class="fas fa-mobile-alt mr-3"></i>Acceso PWA
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form.es_representante_pwa | as_crispy_field }}
+                        {{ form.comedores_pwa | as_crispy_field }}
+                    </div>
+                </div>
+
+                <!-- Permisos y Roles -->
+                <div class="card card-custom mb-3 shadow-sm" id="backoffice-permisos-card">
+                    <div class="card-header card-header-custom">
+                        <h5 class="mb-0">
                             <i class="fas fa-shield-alt mr-3"></i>Permisos y Roles
                         </h5>
                     </div>
@@ -70,7 +83,7 @@
                 </div>
 
                 <!-- Configuración Adicional -->
-                <div class="card card-custom mb-3 shadow-sm">
+                <div class="card card-custom mb-3 shadow-sm" id="backoffice-config-card">
                     <div class="card-header card-header-custom">
                         <h5 class="mb-0">
                             <i class="fas fa-cog mr-3"></i>Configuración Adicional
@@ -91,14 +104,28 @@
 {% endblock content %}
 {% block customJS %}
     <script>
-  id_imagen.setAttribute('accept', 'image/png,image/jpeg');
-  id_imagen.onchange = (evt) => {
-    const [file] = id_imagen.files;
-    if (file) {
-      blah.src = URL.createObjectURL(file);
-      document.querySelector('#label_id_imagen').innerText = 'Cambiar imagen';
+  (() => {
+    const repCheckbox = document.getElementById('id_es_representante_pwa');
+    const permisosCard = document.getElementById('backoffice-permisos-card');
+    const configCard = document.getElementById('backoffice-config-card');
+
+    if (!repCheckbox) {
+      return;
     }
-  };
+
+    const toggleBackofficeFields = () => {
+      const isPwaRep = repCheckbox.checked;
+      if (permisosCard) {
+        permisosCard.style.display = isPwaRep ? 'none' : '';
+      }
+      if (configCard) {
+        configCard.style.display = isPwaRep ? 'none' : '';
+      }
+    };
+
+    repCheckbox.addEventListener('change', toggleBackofficeFields);
+    toggleBackofficeFields();
+  })();
     </script>
     <script src="{% static 'custom/js/usuarioprovincial.js' %}"></script>
 {% endblock customJS %}
