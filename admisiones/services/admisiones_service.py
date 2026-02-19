@@ -453,7 +453,9 @@ class AdmisionService:
             form_if_informe_tecnico = (
                 IFInformeTecnicoForm(instance=admision) if admision else None
             )
-            informe_tecnico = InformeTecnico.objects.filter(admision=admision).first()
+            informe_tecnico = (
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+            )
             informes_complementarios = InformeComplementario.objects.filter(
                 admision=admision
             )
@@ -682,7 +684,8 @@ class AdmisionService:
                 archivo_admision.creado_por = usuario
                 archivo_admision.save(update_fields=["creado_por"])
 
-            # Actualizar estado de admisión si es la primera vez que se carga un documento
+            # Actualizar estado de admisión solo si es la primera vez que se carga un documento
+            # y el estado actual permite la transición
             if created and admision.estado_admision == "convenio_seleccionado":
                 AdmisionService.actualizar_estado_admision(admision, "cargar_documento")
                 # Forzar actualización del estado_mostrar
@@ -1009,7 +1012,7 @@ class AdmisionService:
 
         try:
 
-            form = IFInformeTecnicoForm(request.POST, instance=admision)
+            form = IFInformeTecnicoForm(request.POST, request.FILES, instance=admision)
 
             if form.is_valid():
 
@@ -1522,12 +1525,20 @@ class AdmisionService:
             if admision.estado_admision == "expediente_cargado" and not informe_tecnico:
                 botones.append("crear_informe_tecnico")
             elif (
-                admision.estado_admision
-                in ["informe_tecnico_en_proceso", "informe_tecnico_en_subsanacion"]
+                admision.estado_admision == "informe_tecnico_en_proceso"
                 and informe_tecnico
-                and informe_tecnico.estado != "Validado"
+                and informe_tecnico.estado in ["Iniciado", "Para revision"]
+                and informe_tecnico.estado_formulario == "borrador"
             ):
                 botones.append("editar_informe_tecnico")
+            elif informe_tecnico and informe_tecnico.estado == "A subsanar":
+                botones.append("editar_informe_tecnico")
+            elif (
+                admision.estado_admision == "informe_tecnico_finalizado"
+                and informe_tecnico
+                and informe_tecnico.estado == "Docx generado"
+            ):
+                botones.append("revisar_informe_tecnico")
 
         # Botón IF Informe Técnico cuando está aprobado (solo técnicos)
         if (
@@ -1554,8 +1565,13 @@ class AdmisionService:
         ):
             botones.append("informe_tecnico_complementario")
 
-        # Botón para ver informe técnico (abogados cuando existe y no está iniciado)
-        if informe_tecnico and informe_tecnico.estado != "Iniciado":
+        # Botón para ver informe técnico (abogados solo cuando el DOCX editado está subido)
+        if (
+            es_abogado
+            and informe_tecnico
+            and admision.estado_admision == "informe_tecnico_docx_editado"
+            and informe_tecnico.estado == "Docx editado"
+        ):
             botones.append("ver_informe_tecnico")
 
         return botones
@@ -1576,7 +1592,8 @@ class AdmisionService:
                 "rectificar_documento": "documentacion_en_proceso",
                 "cargar_expediente": "expediente_cargado",
                 "iniciar_informe_tecnico": "informe_tecnico_en_proceso",
-                "enviar_informe_revision": "informe_tecnico_en_revision",
+                "finalizar_informe_tecnico": "informe_tecnico_finalizado",
+                "enviar_informe_revision": "informe_tecnico_docx_editado",
                 "subsanar_informe": "informe_tecnico_en_subsanacion",
                 "aprobar_informe_tecnico": "informe_tecnico_aprobado",
                 "cargar_if_informe_tecnico": "if_informe_tecnico_cargado",
@@ -1588,7 +1605,7 @@ class AdmisionService:
 
             if nuevo_estado and nuevo_estado != estado_actual:
                 admision.estado_admision = nuevo_estado
-                admision.save()  # Save completo para que se actualice estado_mostrar
+                admision.save()
                 return True
 
             return False
@@ -1631,14 +1648,33 @@ class AdmisionService:
     def _actualizar_estados_por_cambio_documento(admision, estado_documento):
         """Actualiza estados de admisión basado en cambios de documentos"""
         try:
-            # Si un documento se marca como "Rectificar", volver a "documentacion_en_proceso"
+            # Si un documento se marca como "Rectificar", solo retroceder si es un documento obligatorio
             if estado_documento == "Rectificar":
                 if admision.estado_admision in [
                     "documentacion_finalizada",
                     "documentacion_aprobada",
                 ]:
-                    admision.estado_admision = "documentacion_en_proceso"
-                    admision.save()  # Save completo para actualizar estado_mostrar
+                    # Solo retroceder si hay documentos obligatorios que necesitan rectificación
+                    if not AdmisionService._todos_obligatorios_aceptados(admision):
+                        admision.estado_admision = "documentacion_en_proceso"
+                        admision.save()  # Save completo para actualizar estado_mostrar
+                return
+
+            # No avanzar estados si ya está en documentacion_aprobada o más adelante
+            # Esto evita que documentos adicionales hagan retroceder el estado
+            if admision.estado_admision in [
+                "documentacion_aprobada",
+                "expediente_cargado",
+                "informe_tecnico_en_proceso",
+                "informe_tecnico_finalizado",
+                "informe_tecnico_docx_editado",
+                "informe_tecnico_en_revision",
+                "informe_tecnico_en_subsanacion",
+                "informe_tecnico_aprobado",
+                "if_informe_tecnico_cargado",
+                "enviado_a_legales",
+                "enviado_a_acompaniamiento",
+            ]:
                 return
 
             # Verificar si todos los obligatorios tienen archivos (no necesariamente aceptados)

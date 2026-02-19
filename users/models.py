@@ -98,3 +98,54 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"Perfil de {self.user.username}"
+
+
+class AccesoComedorPWA(models.Model):
+    """Relación de alcance PWA entre usuario y comedor."""
+
+    ROL_REPRESENTANTE = "representante"
+    ROL_OPERADOR = "operador"
+    ROL_CHOICES = (
+        (ROL_REPRESENTANTE, "Representante"),
+        (ROL_OPERADOR, "Operador"),
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="accesos_pwa",
+    )
+    comedor = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.CASCADE,
+        related_name="accesos_pwa",
+    )
+    rol = models.CharField(max_length=20, choices=ROL_CHOICES)
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_pwa_creados",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Acceso PWA a comedor"
+        verbose_name_plural = "Accesos PWA a comedor"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "comedor"],
+                name="unique_pwa_user_comedor",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "activo"]),
+            models.Index(fields=["comedor", "rol", "activo"]),
+            models.Index(fields=["creado_por", "activo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.comedor_id} - {self.rol}"

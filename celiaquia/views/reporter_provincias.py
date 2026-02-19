@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q, F, Case, When, IntegerField
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from datetime import timedelta
 from core.models import Provincia
@@ -13,9 +14,27 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        # Detectar si es usuario provincial
+        es_usuario_provincial = False
+        provincia_usuario = None
+        try:
+            profile = user.profile
+        except ObjectDoesNotExist:
+            profile = None
+
+        if profile and profile.es_usuario_provincial:
+            es_usuario_provincial = True
+            provincia_usuario = profile.provincia
 
         # Obtener parámetros de filtro
         provincia_id = self.request.GET.get("provincia")
+
+        # Si es usuario provincial, forzar su provincia
+        if es_usuario_provincial and provincia_usuario:
+            provincia_id = str(provincia_usuario.id)
+
         fecha_desde = self.request.GET.get("fecha_desde")
         fecha_hasta = self.request.GET.get("fecha_hasta")
         expediente_numero = self.request.GET.get("expediente_numero")
@@ -163,6 +182,7 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
                 "revision_tecnico": revision_tecnico or "",
                 "resultado_sintys": resultado_sintys or "",
                 "estado_cupo": estado_cupo or "",
+                "es_usuario_provincial": es_usuario_provincial,
             }
         )
 

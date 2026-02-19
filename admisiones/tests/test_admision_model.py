@@ -1,3 +1,5 @@
+"""Tests for test admision model."""
+
 from datetime import datetime, timedelta
 from unittest import mock
 

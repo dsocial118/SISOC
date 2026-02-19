@@ -1,3 +1,5 @@
+"""Tests for test project integrity smoke."""
+
 import pytest
 from django.core.management import call_command
 

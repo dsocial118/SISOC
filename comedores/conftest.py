@@ -1,3 +1,5 @@
+"""Tests for conftest."""
+
 import django.urls
 import factory
 import pytest

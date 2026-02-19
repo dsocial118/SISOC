@@ -1,3 +1,5 @@
+"""Tests for test relevamiento serializer."""
+
 # import pytest
 # from comedores.serializers.relevamiento_serializer import RelevamientoSerializer
 
