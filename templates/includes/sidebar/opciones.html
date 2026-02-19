@@ -58,12 +58,6 @@
                     <p>Ver Comunicados</p>
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{% url 'comunicados_archivados' %}"
-                   class="nav-link nav-dot ms-2 {% if 'comunicados/archivados' in pagina_actual %}active{% endif %}">
-                    <p>Archivados</p>
-                </a>
-            </li>
             {% if request.user|has_group:"Comunicado Crear" or request.user|has_group:"Comunicado Editar" or request.user|has_group:"Comunicado Publicar" or request.user|has_group:"Comunicado Archivar" or request.user|has_group:"Administrador" %}
                 <li class="nav-item">
                     <a href="{% url 'comunicados_gestion' %}"

@@ -8,12 +8,6 @@ urlpatterns = [
         views.ComunicadoListView.as_view(),
         name="comunicados",
     ),
-    # Vista de archivados/historial
-    path(
-        "comunicados/archivados/",
-        views.ComunicadoArchivadosListView.as_view(),
-        name="comunicados_archivados",
-    ),
     # Vista de gestión (usuarios con permisos)
     path(
         "comunicados/gestion/",
