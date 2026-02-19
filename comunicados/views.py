@@ -42,18 +42,24 @@ class ComunicadoListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
+        from django.utils import timezone
+
+        estado = self.request.GET.get("estado", "publicado")
+
         queryset = Comunicado.objects.select_related(
             "usuario_creador"
         ).filter(
-            estado=EstadoComunicado.PUBLICADO,
             tipo=TipoComunicado.INTERNO  # Solo comunicados internos en la grilla pública
         )
 
-        # Excluir vencidos
-        from django.utils import timezone
-        queryset = queryset.filter(
-            Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now())
-        )
+        if estado == "archivado":
+            queryset = queryset.filter(estado=EstadoComunicado.ARCHIVADO)
+        else:
+            queryset = queryset.filter(estado=EstadoComunicado.PUBLICADO)
+            # Excluir vencidos solo para publicados
+            queryset = queryset.filter(
+                Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now())
+            )
 
         # Filtros
         titulo = self.request.GET.get("titulo")
@@ -67,6 +73,7 @@ class ComunicadoListView(LoginRequiredMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         ctx["can_manage"] = can_manage_comunicados(self.request.user)
         ctx["filtro_titulo"] = self.request.GET.get("titulo", "")
+        ctx["filtro_estado"] = self.request.GET.get("estado", "publicado")
         return ctx
 
 
@@ -122,32 +129,6 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
         ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(self.request.user)
         return ctx
 
-
-class ComunicadoArchivadosListView(LoginRequiredMixin, ListView):
-    """Vista de comunicados archivados (historial)."""
-
-    template_name = "comunicados/comunicado_archivados_list.html"
-    context_object_name = "comunicados"
-    paginate_by = 20
-
-    def get_queryset(self):
-        queryset = Comunicado.objects.select_related(
-            "usuario_creador"
-        ).filter(
-            estado=EstadoComunicado.ARCHIVADO
-        )
-
-        # Filtros
-        titulo = self.request.GET.get("titulo")
-        if titulo:
-            queryset = queryset.filter(titulo__icontains=titulo)
-
-        return queryset.order_by("-fecha_publicacion")
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["filtro_titulo"] = self.request.GET.get("titulo", "")
-        return ctx
 
 
 class ComunicadoDetailView(LoginRequiredMixin, DetailView):
