@@ -1,37 +1,25 @@
 # Crea tus vistas aqui.
+
+# Standard library
 import json
 import re
 import logging
 from pathlib import Path
 
+# Third-party
 import markdown
 import requests
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.db import IntegrityError
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods
-
-from core.models import (
-    FiltroFavorito,
-    Localidad,
-    Municipio,
-    PreferenciaColumnas,
-)
-from core.services.favorite_filters import (
-    TTL_CACHE_FILTROS_FAVORITOS,
-    clave_cache_filtros_favoritos,
-    normalizar_carga,
-    obtener_configuracion_seccion,
-    obtener_items_obsoletos,
-)
-from organizaciones.models import Organizacion
-from django.contrib import messages
-from django.http import HttpResponseRedirect
-from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -40,10 +28,24 @@ from django.views.generic import (
     UpdateView,
 )
 
-from core.models import MontoPrestacionPrograma
+# First-party (local)
+from core.models import (
+    FiltroFavorito,
+    Localidad,
+    Municipio,
+    PreferenciaColumnas,
+    MontoPrestacionPrograma,
+)
 from core.forms import MontoPrestacionProgramaForm
+from core.services.favorite_filters import (
+    TTL_CACHE_FILTROS_FAVORITOS,
+    clave_cache_filtros_favoritos,
+    normalizar_carga,
+    obtener_configuracion_seccion,
+    obtener_items_obsoletos,
+)
+from organizaciones.models import Organizacion
 from historial.services.historial_service import HistorialService
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 logger = logging.getLogger(__name__)
 
