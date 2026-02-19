@@ -9,6 +9,11 @@ class EstadoComunicado(models.TextChoices):
     ARCHIVADO = "archivado", "Archivado"
 
 
+class TipoComunicado(models.TextChoices):
+    INTERNO = "interno", "Comunicación Interna"
+    EXTERNO = "externo", "Comunicación a Comedores"
+
+
 class Comunicado(models.Model):
     titulo = models.CharField(max_length=255, verbose_name="Título")
     cuerpo = models.TextField(verbose_name="Cuerpo")
@@ -19,6 +24,22 @@ class Comunicado(models.Model):
         verbose_name="Estado",
     )
     destacado = models.BooleanField(default=False, verbose_name="Destacado")
+    tipo = models.CharField(
+        max_length=20,
+        choices=TipoComunicado.choices,
+        default=TipoComunicado.INTERNO,
+        verbose_name="Tipo de comunicado",
+    )
+    para_todos_comedores = models.BooleanField(
+        default=False,
+        verbose_name="Enviar a todos los comedores",
+    )
+    comedores = models.ManyToManyField(
+        'comedores.Comedor',
+        blank=True,
+        related_name='comunicados',
+        verbose_name="Comedores destinatarios",
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
     fecha_publicacion = models.DateTimeField(
         null=True, blank=True, verbose_name="Fecha de publicación"
