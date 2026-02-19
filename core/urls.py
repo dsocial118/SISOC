@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import (
+from core.views import (
     changelog_view,
     columnas_preferencias,
     detalle_filtro_favorito,
@@ -9,9 +9,6 @@ from .views import (
     load_localidad,
     load_municipios,
     load_organizaciones,
-)
-
-from core.views import (
     MontoPrestacionProgramaListView,
     MontoPrestacionProgramaCreateView,
     MontoPrestacionProgramaUpdateView,
