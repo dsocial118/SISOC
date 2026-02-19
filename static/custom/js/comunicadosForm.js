@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Mostrar cada archivo
                 selectedFiles.forEach((file, index) => {
                     const previewDiv = document.createElement("div");
-                    previewDiv.className = "archivo-preview-item d-flex align-items-center justify-content-between p-2 mb-2 border rounded bg-light";
+                    previewDiv.className = "archivo-preview-item d-flex align-items-center justify-content-between p-2 mb-2 border rounded";
                     previewDiv.setAttribute("data-index", index);
 
                     // Icono según tipo de archivo
@@ -90,7 +90,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         function updateFileInput() {
             try {
-                // Crear un nuevo DataTransfer para actualizar el input file
                 const dt = new DataTransfer();
                 selectedFiles.forEach((file) => {
                     if (file && file instanceof File) {
@@ -99,7 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
                 archivosInput.files = dt.files;
             } catch (error) {
-                console.warn("Error al actualizar input de archivos:", error);
+                // Silently fail - some browsers don't support DataTransfer
             }
         }
 
@@ -112,47 +111,30 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         };
 
-        // Interceptar submit para asegurar que los archivos se envíen
         const comunicadoForm = document.querySelector('form[enctype="multipart/form-data"]');
         if (comunicadoForm) {
             comunicadoForm.addEventListener("submit", function (e) {
-                console.log("=== SUBMIT COMUNICADO ===");
-                console.log("selectedFiles.length:", selectedFiles.length);
-                console.log("archivosInput.files.length:", archivosInput.files?.length || 0);
-
-                // SIEMPRE usar FormData si hay archivos seleccionados
                 if (selectedFiles.length > 0) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log("Enviando con FormData manual...");
 
                     const formData = new FormData(comunicadoForm);
-
-                    // Remover el campo archivos vacío/existente
                     formData.delete("archivos_adjuntos");
 
-                    // Agregar los archivos manualmente
-                    selectedFiles.forEach((file, index) => {
-                        console.log(`Agregando archivo ${index + 1}:`, file.name);
+                    selectedFiles.forEach((file) => {
                         formData.append("archivos_adjuntos", file);
                     });
 
-                    // Enviar con fetch
                     fetch(comunicadoForm.action || window.location.href, {
                         method: "POST",
                         body: formData,
                         redirect: "follow",
                     })
                         .then((response) => {
-                            console.log("Response status:", response.status);
-                            console.log("Response redirected:", response.redirected);
-
                             if (response.redirected) {
                                 window.location.href = response.url;
                             } else if (response.ok) {
-                                // Puede ser HTML con errores de validación
                                 return response.text().then((text) => {
-                                    // Si contiene errores de formulario, mostrar la página
                                     if (text.includes("invalid-feedback") || text.includes("errorlist")) {
                                         document.open();
                                         document.write(text);
@@ -162,12 +144,11 @@ document.addEventListener("DOMContentLoaded", function () {
                                     }
                                 });
                             } else {
-                                alert("Error al guardar el comunicado (Status: " + response.status + ")");
+                                alert("Error al guardar el comunicado");
                             }
                         })
-                        .catch((error) => {
+                        .catch(() => {
                             alert("Error al enviar el formulario");
-                            console.error("Error:", error);
                         });
 
                     return false;
