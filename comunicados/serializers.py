@@ -25,6 +25,7 @@ class ComunicadoSerializer(serializers.ModelSerializer):
             'titulo',
             'cuerpo',
             'estado',
+            'subtipo',
             'fecha_publicacion',
             'fecha_vencimiento',
             'adjuntos',

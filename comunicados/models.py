@@ -11,7 +11,12 @@ class EstadoComunicado(models.TextChoices):
 
 class TipoComunicado(models.TextChoices):
     INTERNO = "interno", "Comunicación Interna"
-    EXTERNO = "externo", "Comunicación a Comedores"
+    EXTERNO = "externo", "Comunicación Externa"
+
+
+class SubtipoComunicado(models.TextChoices):
+    INSTITUCIONAL = "institucional", "Comunicación Institucional"
+    COMEDORES = "comedores", "Comunicación a Comedores"
 
 
 class Comunicado(models.Model):
@@ -29,6 +34,13 @@ class Comunicado(models.Model):
         choices=TipoComunicado.choices,
         default=TipoComunicado.INTERNO,
         verbose_name="Tipo de comunicado",
+    )
+    subtipo = models.CharField(
+        max_length=20,
+        choices=SubtipoComunicado.choices,
+        default="",
+        blank=True,
+        verbose_name="Subtipo de comunicado",
     )
     para_todos_comedores = models.BooleanField(
         default=False,

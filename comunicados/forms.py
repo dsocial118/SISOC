@@ -1,5 +1,5 @@
 from django import forms
-from .models import Comunicado, ComunicadoAdjunto, TipoComunicado
+from .models import Comunicado, ComunicadoAdjunto, TipoComunicado, SubtipoComunicado
 from .permissions import (
     es_tecnico, is_admin, get_comedores_del_usuario,
     can_create_comunicado_interno
@@ -43,6 +43,7 @@ class ComunicadoForm(forms.ModelForm):
             "titulo",
             "cuerpo",
             "tipo",
+            "subtipo",
             "destacado",
             "para_todos_comedores",
             "comedores",
@@ -51,6 +52,7 @@ class ComunicadoForm(forms.ModelForm):
         widgets = {
             "cuerpo": forms.Textarea(attrs={"rows": 6}),
             "tipo": forms.Select(attrs={"class": "form-select"}),
+            "subtipo": forms.Select(attrs={"class": "form-select"}),
             "fecha_vencimiento": forms.DateTimeInput(
                 attrs={"type": "datetime-local"},
                 format="%Y-%m-%dT%H:%M",
@@ -84,12 +86,16 @@ class ComunicadoForm(forms.ModelForm):
         # Filtrar comedores según permisos del usuario
         self.fields['comedores'].queryset = get_comedores_del_usuario(self.user)
 
-        # Si es técnico (no admin), solo puede crear comunicados externos
+        # Si es técnico (no admin), solo puede crear comunicados externos a comedores
         if es_tecnico(self.user) and not is_admin(self.user):
             self.fields['tipo'].choices = [
-                (TipoComunicado.EXTERNO, 'Comunicación a Comedores')
+                (TipoComunicado.EXTERNO, 'Comunicación Externa')
             ]
             self.fields['tipo'].initial = TipoComunicado.EXTERNO
+            self.fields['subtipo'].choices = [
+                (SubtipoComunicado.COMEDORES, 'Comunicación a Comedores')
+            ]
+            self.fields['subtipo'].initial = SubtipoComunicado.COMEDORES
             # Ocultar destacado para técnicos (solo aplica a internos)
             self.fields['destacado'].widget = forms.HiddenInput()
             self.fields['destacado'].initial = False
@@ -97,7 +103,7 @@ class ComunicadoForm(forms.ModelForm):
         # Si no puede crear internos, forzar externo
         elif not can_create_comunicado_interno(self.user):
             self.fields['tipo'].choices = [
-                (TipoComunicado.EXTERNO, 'Comunicación a Comedores')
+                (TipoComunicado.EXTERNO, 'Comunicación Externa')
             ]
             self.fields['tipo'].initial = TipoComunicado.EXTERNO
 
