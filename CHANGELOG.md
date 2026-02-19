@@ -1,3 +1,26 @@
+# Despliegue: 2026.02.18
+
+## Nuevas Funcionalidades
+
+- Nuevo flujo de Informe Técnico DOCX en módulo Admisiones, con generación, edición, carga y cierre de informe
+- Incorporación de acceso PWA por comedor con autenticación por token y endpoints de sesión para operadores
+- Nuevas acciones API para gestión de usuarios y operadores en PWA, incluyendo asignación de comedores
+- Incorporación de endpoints para rendiciones de cuenta con detalle, validación, carga de comprobantes y presentación
+
+## Actualizaciones
+
+- Ampliación de estados y reglas de negocio en Admisiones para trazabilidad de informes, subsanaciones y documentación asociada
+- Mejora de segmentación en APIs de Comedores para limitar la información según permisos y alcance de acceso PWA
+- Reorganización de formularios, vistas y plantillas en módulos Admisiones y Usuarios para consolidar flujos operativos
+- Actualización de documentación técnica y de seguridad para backend PWA e inventario de APIs
+- Gran ampliación de cobertura de pruebas automáticas (test coverage de 75%), con nuevos casos en módulos críticos y escenarios de integración
+
+## Corrección de Errores
+
+- Refuerzo de redirecciones seguras para prevenir desvíos no confiables en flujos sensibles
+- Correcciones de consistencia en validaciones, serialización y respuestas de endpoints
+- Ajustes de compatibilidad en configuración y ejecución de pruebas para mejorar estabilidad general
+
 # Despliegue: 2026.02.03
 
 ## Nuevas Funcionalidades
