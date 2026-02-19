@@ -36,6 +36,51 @@
                         </small>
                     </div>
 
+                    <!-- Tipo de Comunicado -->
+                    <div class="mb-3">
+                        <label for="id_tipo" class="form-label">Tipo de Comunicado <span class="text-danger">*</span></label>
+                        {{ form.tipo }}
+                        {% if form.tipo.errors %}
+                            <div class="invalid-feedback d-block">{{ form.tipo.errors.0 }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            <strong>Interno:</strong> Visible en SISOC para usuarios del sistema.
+                            <strong>Comedores:</strong> Visible en la app móvil para los comedores seleccionados.
+                        </small>
+                    </div>
+
+                    <!-- Opciones para Comunicados a Comedores -->
+                    <div id="comedores-options" class="{% if form.instance.tipo != 'externo' and not es_tecnico %}d-none{% endif %}">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6><i class="fas fa-utensils"></i> Destinatarios</h6>
+
+                                <div class="mb-3">
+                                    <div class="form-check form-switch" style="display: flex; align-items: center;">
+                                        {{ form.para_todos_comedores }}
+                                        <label class="form-check-label" for="id_para_todos_comedores" style="margin-bottom: 0;">
+                                            Enviar a todos los comedores
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Si activa esta opción, el comunicado se enviará a todos los comedores que tiene asignados.
+                                    </small>
+                                </div>
+
+                                <div id="comedores-selector" class="{% if form.instance.para_todos_comedores %}d-none{% endif %}">
+                                    <label for="id_comedores" class="form-label">Seleccionar Comedores</label>
+                                    {{ form.comedores }}
+                                    {% if form.comedores.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.comedores.errors.0 }}</div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Mantenga Ctrl presionado para seleccionar múltiples comedores.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -50,10 +95,11 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <div class="form-check form-switch mt-4">
+                            <!-- Destacado - Solo para comunicados internos -->
+                            <div id="destacado-option" class="mb-3 {% if form.instance.tipo == 'externo' or es_tecnico %}d-none{% endif %}">
+                                <div class="form-check form-switch mt-4" style="display: flex; align-items: center;">
                                     {{ form.destacado }}
-                                    <label class="form-check-label" for="id_destacado">
+                                    <label class="form-check-label" for="id_destacado" style="margin-bottom: 0;">
                                         <i class="fas fa-star text-warning"></i> Marcar como Destacado
                                     </label>
                                 </div>
@@ -177,44 +223,59 @@
 
     <script>
     (function() {
-        console.log("=== COMUNICADOS FORM JS INICIADO ===");
+        // Tipo de comunicado - mostrar/ocultar campos
+        const tipoSelect = document.getElementById("id_tipo");
+        const comedoresOptions = document.getElementById("comedores-options");
+        const destacadoOption = document.getElementById("destacado-option");
+        const paraTodosCheckbox = document.getElementById("id_para_todos_comedores");
+        const comedoresSelector = document.getElementById("comedores-selector");
 
-        // Array para almacenar todos los archivos seleccionados
+        function updateFieldsVisibility() {
+            if (!tipoSelect) return;
+            const isExterno = tipoSelect.value === "externo";
+            if (comedoresOptions) {
+                comedoresOptions.classList.toggle("d-none", !isExterno);
+            }
+            if (destacadoOption) {
+                destacadoOption.classList.toggle("d-none", isExterno);
+            }
+        }
+
+        function updateComedoresSelector() {
+            if (!paraTodosCheckbox || !comedoresSelector) return;
+            comedoresSelector.classList.toggle("d-none", paraTodosCheckbox.checked);
+        }
+
+        if (tipoSelect) {
+            tipoSelect.addEventListener("change", updateFieldsVisibility);
+            updateFieldsVisibility();
+        }
+
+        if (paraTodosCheckbox) {
+            paraTodosCheckbox.addEventListener("change", updateComedoresSelector);
+            updateComedoresSelector();
+        }
+
+        // Manejo de archivos adjuntos
         let selectedFiles = [];
-
         const addFilesBtn = document.getElementById("addFilesBtn");
         const archivosInput = document.getElementById("archivosInput");
         const selectedFilesInfo = document.getElementById("selectedFilesInfo");
         const fileCount = document.getElementById("fileCount");
         const filePreviewContainer = document.getElementById("filePreviewContainer");
 
-        console.log("addFilesBtn:", addFilesBtn);
-        console.log("archivosInput:", archivosInput);
-
         if (addFilesBtn && archivosInput) {
-            console.log("Elementos encontrados, agregando listeners...");
-
-            // Event listener para el botón de agregar archivos
             addFilesBtn.addEventListener("click", function () {
-                console.log("Click en addFilesBtn");
                 archivosInput.click();
             });
 
-            // Event listener para cuando se seleccionan archivos
             archivosInput.addEventListener("change", function () {
-                console.log("Change en archivosInput, files:", this.files.length);
                 const files = Array.from(this.files);
-
-                // Concatenar archivos en lugar de reemplazar
                 selectedFiles = selectedFiles.concat(files);
-                console.log("Total selectedFiles:", selectedFiles.length);
-
-                // Actualizar la vista
                 updateFileDisplay();
             });
 
             function updateFileDisplay() {
-                // Mostrar contador
                 if (selectedFiles.length > 0) {
                     if (selectedFilesInfo) selectedFilesInfo.classList.remove("d-none");
                     if (fileCount) fileCount.textContent = selectedFiles.length;
@@ -222,17 +283,13 @@
                     if (selectedFilesInfo) selectedFilesInfo.classList.add("d-none");
                 }
 
-                // Limpiar contenedor de vistas previas
                 if (filePreviewContainer) {
                     filePreviewContainer.innerHTML = "";
-
-                    // Mostrar cada archivo
                     selectedFiles.forEach(function(file, index) {
                         const previewDiv = document.createElement("div");
-                        previewDiv.className = "archivo-preview-item d-flex align-items-center justify-content-between p-2 mb-2 border rounded bg-light";
+                        previewDiv.className = "archivo-preview-item d-flex align-items-center justify-content-between p-2 mb-2 border rounded";
                         previewDiv.setAttribute("data-index", index);
 
-                        // Icono según tipo de archivo
                         let iconClass = "fas fa-file";
                         if (file.type.startsWith("image/")) {
                             iconClass = "fas fa-file-image text-primary";
@@ -245,7 +302,6 @@
                         }
 
                         const sizeStr = formatFileSize(file.size);
-
                         previewDiv.innerHTML =
                             '<div class="d-flex align-items-center">' +
                                 '<i class="' + iconClass + ' me-2"></i>' +
@@ -261,7 +317,6 @@
                         filePreviewContainer.appendChild(previewDiv);
                     });
 
-                    // Agregar listeners a botones de eliminar
                     filePreviewContainer.querySelectorAll(".btn-remove-file").forEach(function(btn) {
                         btn.addEventListener("click", function() {
                             const idx = parseInt(this.getAttribute("data-index"));
@@ -280,67 +335,45 @@
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
             }
 
-            // Interceptar submit del formulario
             const comunicadoForm = document.querySelector('form[enctype="multipart/form-data"]');
-            console.log("comunicadoForm:", comunicadoForm);
-
             if (comunicadoForm) {
                 comunicadoForm.addEventListener("submit", function (e) {
-                    console.log("=== SUBMIT COMUNICADO ===");
-                    console.log("selectedFiles.length:", selectedFiles.length);
-
-                    // Si hay archivos seleccionados, usar FormData
                     if (selectedFiles.length > 0) {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log("Enviando con FormData manual...");
 
                         const formData = new FormData(comunicadoForm);
-
-                        // Remover el campo archivos vacío/existente
                         formData.delete("archivos_adjuntos");
 
-                        // Agregar los archivos manualmente
-                        selectedFiles.forEach(function(file, index) {
-                            console.log("Agregando archivo " + (index + 1) + ":", file.name);
+                        selectedFiles.forEach(function(file) {
                             formData.append("archivos_adjuntos", file);
                         });
 
-                        // Enviar con fetch
                         fetch(comunicadoForm.action || window.location.href, {
                             method: "POST",
                             body: formData
                         })
                         .then(function(response) {
-                            console.log("Response status:", response.status);
-                            console.log("Response redirected:", response.redirected);
-                            console.log("Response url:", response.url);
-
                             if (response.redirected) {
                                 window.location.href = response.url;
                             } else if (response.ok) {
-                                // Verificar si es un redirect manual o éxito
                                 if (response.url && response.url.includes("/gestion")) {
                                     window.location.href = response.url;
                                 } else {
-                                    // Puede haber errores de validación, recargar la página
                                     window.location.reload();
                                 }
                             } else {
-                                alert("Error al guardar el comunicado (Status: " + response.status + ")");
+                                alert("Error al guardar el comunicado");
                             }
                         })
-                        .catch(function(error) {
-                            console.error("Error:", error);
-                            alert("Error al enviar el formulario: " + error.message);
+                        .catch(function() {
+                            alert("Error al enviar el formulario");
                         });
 
                         return false;
                     }
                 }, true);
             }
-        } else {
-            console.error("ERROR: No se encontraron los elementos addFilesBtn o archivosInput");
         }
     })();
     </script>
