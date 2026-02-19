@@ -1,4 +1,4 @@
-# Despliegue: 2026.02.18
+# Versión SISOC 18.02.2026
 
 ## Nuevas Funcionalidades
 
@@ -21,7 +21,7 @@
 - Correcciones de consistencia en validaciones, serialización y respuestas de endpoints
 - Ajustes de compatibilidad en configuración y ejecución de pruebas para mejorar estabilidad general
 
-# Despliegue: 2026.02.03
+# Versión SISOC 03.02.2026
 
 ## Nuevas Funcionalidades
 
@@ -47,7 +47,7 @@
 - Mejoras de visualización en listados para facilitar navegación horizontal
 - Correcciones en la seguridad y estabilidad del sistema
 
-# Despliegue: 2026.01.23
+# Versión SISOC 23.01.2026
 
 ## Nuevas Funcionalidades
 
@@ -61,7 +61,7 @@
 - Modificación en campos obligatorios para la realización de Informes Técnicos de Comedores
 - Mejoras en plantillas de Informes Técnicos de Comedores
 
-# Despliegue: 2026.01.21
+# Versión SISOC 21.01.2026
 
 ## Nuevas Funcionalidades
 
@@ -83,7 +83,7 @@
 - Priorización de geolocalización por sobre dirección en mapas
 - Vista de la fecha de validación en módulo de Comedores
 
-# Despliegue: 2026.01.02
+# Versión SISOC 02.01.2026
 
 ## Nuevas Funcionalidades
 
@@ -95,7 +95,7 @@
 - Nueva vista del Detalle de Comedores
 - Unificación de Estados de Admisiones, con automatización y lógica de activación/inactivación centralizada
 
-# Despliegue: 2025.12.18
+# Versión SISOC 18.12.2025
 
 ## Nuevas Funcionalidades
 
@@ -116,7 +116,7 @@ Eliminado
 
 - Documentación DEPLOY_WEBP.md obsoleta
 
-# Despliegue: 2025.09.03
+# Vresión SISOC 03.09.2025
 
 ## Nuevas Funcionalidades
 
@@ -128,7 +128,7 @@ Eliminado
 
 - Reestructuración de la distribución de objetos en pantalla y navegación dentro del sistema
 
-# Despliegue: 2025.08.20
+# Versión SISOC 20.08.2025
 
 ## Nuevas Funcionalidades
 
