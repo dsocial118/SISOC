@@ -14,7 +14,7 @@ from django.views.generic import (
 )
 
 from .forms import ComunicadoForm, ComunicadoAdjuntoFormSet
-from .models import Comunicado, ComunicadoAdjunto, EstadoComunicado
+from .models import Comunicado, ComunicadoAdjunto, EstadoComunicado, TipoComunicado
 from .permissions import (
     can_create_comunicado,
     can_edit_comunicado,
@@ -28,6 +28,9 @@ from .permissions import (
     require_publish_permission,
     require_archive_permission,
     require_toggle_destacado_permission,
+    es_tecnico,
+    is_admin,
+    get_comedores_del_usuario,
 )
 
 
@@ -42,7 +45,8 @@ class ComunicadoListView(LoginRequiredMixin, ListView):
         queryset = Comunicado.objects.select_related(
             "usuario_creador"
         ).filter(
-            estado=EstadoComunicado.PUBLICADO
+            estado=EstadoComunicado.PUBLICADO,
+            tipo=TipoComunicado.INTERNO  # Solo comunicados internos en la grilla pública
         )
 
         # Excluir vencidos
@@ -80,15 +84,27 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = Comunicado.objects.select_related("usuario_creador")
+        user = self.request.user
+
+        # Si es técnico (no admin), solo ve comunicados externos de sus comedores
+        if es_tecnico(user) and not is_admin(user):
+            comedores_usuario = get_comedores_del_usuario(user)
+            queryset = queryset.filter(
+                tipo=TipoComunicado.EXTERNO,
+                comedores__in=comedores_usuario
+            ).distinct()
 
         # Filtros
         titulo = self.request.GET.get("titulo")
         estado = self.request.GET.get("estado")
+        tipo = self.request.GET.get("tipo")
 
         if titulo:
             queryset = queryset.filter(titulo__icontains=titulo)
         if estado:
             queryset = queryset.filter(estado=estado)
+        if tipo:
+            queryset = queryset.filter(tipo=tipo)
 
         return queryset.order_by("-fecha_creacion")
 
@@ -100,7 +116,10 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
         ctx["can_toggle_destacado"] = can_toggle_destacado(self.request.user)
         ctx["filtro_titulo"] = self.request.GET.get("titulo", "")
         ctx["filtro_estado"] = self.request.GET.get("estado", "")
+        ctx["filtro_tipo"] = self.request.GET.get("tipo", "")
         ctx["estados"] = EstadoComunicado.choices
+        ctx["tipos"] = TipoComunicado.choices
+        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(self.request.user)
         return ctx
 
 
@@ -160,6 +179,11 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
         require_create_permission(request.user)
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         if self.request.POST:
@@ -170,6 +194,7 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
             ctx["adjuntos_formset"] = ComunicadoAdjuntoFormSet()
         ctx["titulo_pagina"] = "Crear Comunicado"
         ctx["is_edit"] = False
+        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(self.request.user)
         return ctx
 
     def form_valid(self, form):
@@ -183,6 +208,9 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
             self.object = form.save()
             adjuntos_formset.instance = self.object
             adjuntos_formset.save()
+
+            # Manejar relación con comedores para comunicados externos
+            self._handle_comedores(form)
 
             # Manejar archivos múltiples del campo archivos_adjuntos
             archivos = self.request.FILES.getlist("archivos_adjuntos")
@@ -198,6 +226,20 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
         else:
             return self.render_to_response(ctx)
 
+    def _handle_comedores(self, form):
+        """Maneja la asignación de comedores según el tipo de comunicado."""
+        if self.object.tipo == TipoComunicado.EXTERNO:
+            if form.cleaned_data.get('para_todos_comedores'):
+                # Asignar todos los comedores según permisos del usuario
+                comedores = get_comedores_del_usuario(self.request.user)
+                self.object.comedores.set(comedores)
+            # Si no es para_todos_comedores, los comedores ya se guardaron del form
+        else:
+            # Si es interno, limpiar comedores
+            self.object.comedores.clear()
+            self.object.para_todos_comedores = False
+            self.object.save()
+
 
 class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
     """Vista para editar un comunicado."""
@@ -212,6 +254,11 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
         require_edit_permission(request.user, self.object)
         return super().dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         if self.request.POST:
@@ -222,6 +269,7 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
             ctx["adjuntos_formset"] = ComunicadoAdjuntoFormSet(instance=self.object)
         ctx["titulo_pagina"] = "Editar Comunicado"
         ctx["is_edit"] = True
+        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(self.request.user)
         return ctx
 
     def form_valid(self, form):
@@ -233,6 +281,9 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
         if adjuntos_formset.is_valid():
             self.object = form.save()
             adjuntos_formset.save()
+
+            # Manejar relación con comedores para comunicados externos
+            self._handle_comedores(form)
 
             # Manejar archivos múltiples del campo archivos_adjuntos
             archivos = self.request.FILES.getlist("archivos_adjuntos")
@@ -247,6 +298,20 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
             return redirect(self.success_url)
         else:
             return self.render_to_response(ctx)
+
+    def _handle_comedores(self, form):
+        """Maneja la asignación de comedores según el tipo de comunicado."""
+        if self.object.tipo == TipoComunicado.EXTERNO:
+            if form.cleaned_data.get('para_todos_comedores'):
+                # Asignar todos los comedores según permisos del usuario
+                comedores = get_comedores_del_usuario(self.request.user)
+                self.object.comedores.set(comedores)
+            # Si no es para_todos_comedores, los comedores ya se guardaron del form
+        else:
+            # Si es interno, limpiar comedores
+            self.object.comedores.clear()
+            self.object.para_todos_comedores = False
+            self.object.save()
 
 
 class ComunicadoDeleteView(LoginRequiredMixin, DeleteView):

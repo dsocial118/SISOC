@@ -42,6 +42,7 @@ urlpatterns = [
     path("celiaquia/", include("celiaquia.urls")),
     # API URLs
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
+    path("api/comunicados/", include("comunicados.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
 ]

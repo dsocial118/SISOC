@@ -24,11 +24,23 @@ class UserGroups:
     ACOMPANAMIENTO_LISTAR = "Acompanamiento Listar"
     ACOMPANAMIENTO_DETALLE = "Acompanamiento Detalle"
 
-    # Grupos de permisos de Comunicados
+    # Grupos de permisos de Comunicados (v1 - mantener por compatibilidad)
     COMUNICADO_CREAR = "Comunicado Crear"
     COMUNICADO_EDITAR = "Comunicado Editar"
     COMUNICADO_PUBLICAR = "Comunicado Publicar"
     COMUNICADO_ARCHIVAR = "Comunicado Archivar"
+
+    # Grupos de permisos de Comunicados Internos (v2)
+    COMUNICADO_INTERNO_CREAR = "Comunicado Interno Crear"
+    COMUNICADO_INTERNO_EDITAR = "Comunicado Interno Editar"
+    COMUNICADO_INTERNO_PUBLICAR = "Comunicado Interno Publicar"
+    COMUNICADO_INTERNO_ARCHIVAR = "Comunicado Interno Archivar"
+
+    # Grupos de permisos de Comunicados a Comedores (v2)
+    COMUNICADO_COMEDORES_CREAR = "Comunicado Comedores Crear"
+    COMUNICADO_COMEDORES_EDITAR = "Comunicado Comedores Editar"
+    COMUNICADO_COMEDORES_PUBLICAR = "Comunicado Comedores Publicar"
+    COMUNICADO_COMEDORES_ARCHIVAR = "Comunicado Comedores Archivar"
 
     # Agrupaciones comunes para permisos
     COMEDORES_ACCESO = [
