@@ -1113,7 +1113,7 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
                     informe, archivo_docx, request.user
                 )
                 if resultado:
-                    messages.success(request, "DOCX editado subido correctamente.")
+                    messages.success(request, "DOCX enviado a validar correctamente.")
                 else:
                     messages.error(request, "Error al subir el DOCX editado.")
             else:

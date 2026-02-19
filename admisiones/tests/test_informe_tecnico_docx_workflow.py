@@ -1,3 +1,5 @@
+"""Tests for test informe tecnico docx workflow."""
+
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model

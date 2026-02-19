@@ -1,3 +1,5 @@
+"""Tests for test google maps query."""
+
 import pytest
 
 from core.templatetags.custom_filters import google_maps_query

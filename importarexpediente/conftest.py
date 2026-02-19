@@ -1,3 +1,6 @@
+"""Tests for conftest."""
+
+
 def pytest_ignore_collect(collection_path, config):
     # Ignore the legacy module at importarexpediente/tests.py to avoid import name collision
     try:

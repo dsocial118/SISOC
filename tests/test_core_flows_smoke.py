@@ -1,3 +1,5 @@
+"""Tests for test core flows smoke."""
+
 import uuid
 
 import pytest

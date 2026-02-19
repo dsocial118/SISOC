@@ -18,6 +18,7 @@
 - `docs/implementaciones/filtros_avanzados.md`: motor compartido de filtros, favoritos y cómo integrarlos en un nuevo listado.
 - `docs/implementaciones/preferencias_columnas.md`: sistema de configuración de columnas, modal y helpers reutilizables.
 - `docs/implementaciones/exportar_listados.md`: mixin CSV y helper JS para exportar datos con filtros/columnas activos.
+- `docs/implementaciones/pwa_backend.md`: diseño e implementación actual de la API PWA (auth token, scope por comedor, endpoints y permisos).
 - `docs/agentes.md`: guía rápida para asistentes automáticos y workflows de documentación.
 
 ### 4. Flujos y sincronizaciones

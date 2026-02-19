@@ -84,6 +84,12 @@ class TimestampDiffYears(Func):
     template = "%(function)s(YEAR, %(expressions)s)"
     output_field = IntegerField()
 
+    def as_sqlite(self, compiler, connection, **extra_context):
+        left_sql, left_params = compiler.compile(self.source_expressions[0])
+        right_sql, right_params = compiler.compile(self.source_expressions[1])
+        sql = f"CAST((julianday({right_sql}) - julianday({left_sql})) / 365.25 AS INTEGER)"
+        return sql, right_params + left_params
+
 
 class ComedorService:
     """Operaciones de alto nivel relacionadas a comedores."""
