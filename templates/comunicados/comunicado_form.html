@@ -81,13 +81,23 @@
                                 </div>
 
                                 <div id="comedores-selector" class="{% if form.instance.para_todos_comedores %}d-none{% endif %}">
-                                    <label for="id_comedores" class="form-label">Seleccionar Comedores</label>
-                                    {{ form.comedores }}
+                                    <label for="comedorSearch" class="form-label">Seleccionar Comedores</label>
+                                    <!-- Select original oculto -->
+                                    <div class="d-none">{{ form.comedores }}</div>
                                     {% if form.comedores.errors %}
                                         <div class="invalid-feedback d-block">{{ form.comedores.errors.0 }}</div>
                                     {% endif %}
+                                    <!-- Comedores seleccionados -->
+                                    <div id="comedoresSeleccionados" class="mb-2"></div>
+                                    <!-- Buscador -->
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        <input type="text" id="comedorSearch" class="form-control" placeholder="Filtrar comedores por nombre...">
+                                    </div>
+                                    <!-- Lista de comedores disponibles -->
+                                    <div id="comedoresLista" class="border rounded" style="max-height: 250px; overflow-y: auto;"></div>
                                     <small class="form-text text-muted">
-                                        Mantenga Ctrl presionado para seleccionar múltiples comedores.
+                                        Use el buscador para filtrar la lista y haga clic en "Agregar" para seleccionar comedores.
                                     </small>
                                 </div>
                             </div>
@@ -411,6 +421,110 @@
                         return false;
                     }
                 }, true);
+            }
+        }
+
+        // Selector de comedores con lista + buscador
+        const comedorSearch = document.getElementById("comedorSearch");
+        const comedoresLista = document.getElementById("comedoresLista");
+        const seleccionadosContainer = document.getElementById("comedoresSeleccionados");
+        const selectOriginal = document.getElementById("id_comedores");
+
+        if (comedorSearch && selectOriginal && comedoresLista) {
+            var allOptions = [];
+            Array.from(selectOriginal.options).forEach(function(opt) {
+                allOptions.push({ value: opt.value, text: opt.text });
+            });
+
+            renderAll();
+
+            comedorSearch.addEventListener("input", function() {
+                renderLista(this.value.trim().toLowerCase());
+            });
+
+            function isSelected(value) {
+                var opt = selectOriginal.querySelector('option[value="' + value + '"]');
+                return opt ? opt.selected : false;
+            }
+
+            function toggleComedor(value, add) {
+                var opt = selectOriginal.querySelector('option[value="' + value + '"]');
+                if (opt) opt.selected = add;
+                renderAll();
+            }
+
+            function renderAll() {
+                renderSeleccionados();
+                renderLista(comedorSearch.value.trim().toLowerCase());
+            }
+
+            function renderSeleccionados() {
+                seleccionadosContainer.innerHTML = "";
+                var haySeleccionados = false;
+
+                allOptions.forEach(function(opt) {
+                    if (!isSelected(opt.value)) return;
+                    haySeleccionados = true;
+                    var badge = document.createElement("span");
+                    badge.className = "badge bg-primary me-1 mb-1 d-inline-flex align-items-center gap-1";
+                    badge.style.fontSize = "0.85em";
+                    badge.innerHTML = opt.text +
+                        ' <button type="button" class="btn-close btn-close-white" style="font-size: 0.6em;" data-value="' + opt.value + '"></button>';
+                    badge.querySelector(".btn-close").addEventListener("click", function() {
+                        toggleComedor(this.getAttribute("data-value"), false);
+                    });
+                    seleccionadosContainer.appendChild(badge);
+                });
+
+                if (!haySeleccionados) {
+                    seleccionadosContainer.innerHTML = '<p class="text-muted small mb-0">No hay comedores seleccionados.</p>';
+                }
+            }
+
+            function renderLista(query) {
+                comedoresLista.innerHTML = "";
+                var filtered = allOptions.filter(function(opt) {
+                    if (!query) return true;
+                    return opt.text.toLowerCase().indexOf(query) !== -1;
+                });
+
+                if (filtered.length === 0) {
+                    comedoresLista.innerHTML = '<div class="p-3 text-muted text-center">No se encontraron comedores.</div>';
+                    return;
+                }
+
+                filtered.forEach(function(opt) {
+                    var selected = isSelected(opt.value);
+                    var row = document.createElement("div");
+                    row.className = "d-flex justify-content-between align-items-center px-3 py-2 border-bottom";
+                    //if (selected) row.classList.add("bg-light");
+
+                    var nameSpan = document.createElement("span");
+                    nameSpan.className = "small";
+                    nameSpan.textContent = opt.text;
+
+                    var btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.setAttribute("data-value", opt.value);
+
+                    if (selected) {
+                        btn.className = "btn btn-sm btn-outline-danger";
+                        btn.innerHTML = '<i class="fas fa-times"></i> Quitar';
+                        btn.addEventListener("click", function() {
+                            toggleComedor(this.getAttribute("data-value"), false);
+                        });
+                    } else {
+                        btn.className = "btn btn-sm btn-outline-primary";
+                        btn.innerHTML = '<i class="fas fa-plus"></i> Agregar';
+                        btn.addEventListener("click", function() {
+                            toggleComedor(this.getAttribute("data-value"), true);
+                        });
+                    }
+
+                    row.appendChild(nameSpan);
+                    row.appendChild(btn);
+                    comedoresLista.appendChild(row);
+                });
             }
         }
     })();
