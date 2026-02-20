@@ -1,0 +1,61 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Confirmar Restauración{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Confirmar restauración</h4>
+            </div>
+            <div class="card-body">
+                <p>
+                    Se restaurará <strong>{{ instance }}</strong> (ID {{ instance.pk }}) y su cascada de registros relacionados.
+                </p>
+
+                <div class="alert alert-info">
+                    <div><strong>Total afectados:</strong> {{ preview.total_afectados }}</div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Modelo</th>
+                                <th>Cantidad</th>
+                                <th>Ejemplos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in preview.desglose_por_modelo %}
+                                <tr>
+                                    <td>{{ item.modelo }}</td>
+                                    <td>{{ item.cantidad }}</td>
+                                    <td>
+                                        {% if item.ejemplos %}
+                                            {{ item.ejemplos|join:", " }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-muted">No hay elementos a restaurar.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <form method="post" action="{{ restore_url }}" class="mt-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="confirmed" value="1" />
+                    <button type="submit" class="btn btn-success">Restaurar en cascada</button>
+                    <a href="{{ back_url }}" class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+

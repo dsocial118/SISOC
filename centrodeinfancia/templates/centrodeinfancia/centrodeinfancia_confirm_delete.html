@@ -4,18 +4,5 @@
 {% block titulo-pagina %}Eliminar Centro de Infancia{% endblock %}
 
 {% block content %}
-    <div class="container-fluid">
-        <div class="card">
-            <div class="card-body">
-                <p>
-                    ¿Estás seguro de que deseas eliminar <strong>{{ centro.nombre }}</strong>?
-                </p>
-                <form method="post">
-                    {% csrf_token %}
-                    <button class="btn btn-danger" type="submit">Eliminar</button>
-                    <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Cancelar</a>
-                </form>
-            </div>
-        </div>
-    </div>
+    {% include 'components/delete_confirm.html' with object_name=centro.nombre cancel_url='centrodeinfancia' confirm_text='Dar de baja' %}
 {% endblock %}

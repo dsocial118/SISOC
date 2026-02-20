@@ -80,6 +80,14 @@
                         </a>
                     </li>
                 {% endif %}
+                {% if request.user.is_superuser %}
+                    <li class="nav-item">
+                        <a href="{% url 'papelera_list' %}"
+                           class="nav-link nav-dot ms-2 {% if 'papelera/' in pagina_actual %}active{% endif %}">
+                            <p>Papelera</p>
+                        </a>
+                    </li>
+                {% endif %}
             </ul>
         </li>
     {% endif %}
