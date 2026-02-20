@@ -14,6 +14,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 from organizaciones.forms import OrganizacionForm, FirmanteForm, AvalForm
 from organizaciones.models import (
@@ -343,10 +344,11 @@ class AvalUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-class FirmanteDeleteView(LoginRequiredMixin, DeleteView):
+class FirmanteDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = Firmante
     template_name = "firmante_confirm_delete.html"
     context_object_name = "firmante"
+    success_message = "Firmante dado de baja correctamente."
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -360,7 +362,7 @@ class FirmanteDeleteView(LoginRequiredMixin, DeleteView):
             {"url": "", "label": "Confirmar Eliminación"},
         ]
         context["delete_message"] = (
-            f"¿Está seguro que desea eliminar al firmante {self.object.nombre}"
+            f"¿Está seguro que desea dar de baja al firmante {self.object.nombre}"
         )
         context["cancel_url"] = reverse(
             "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
@@ -373,10 +375,11 @@ class FirmanteDeleteView(LoginRequiredMixin, DeleteView):
         )
 
 
-class AvalDeleteView(LoginRequiredMixin, DeleteView):
+class AvalDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = Aval
     template_name = "aval_confirm_delete.html"
     context_object_name = "aval"
+    success_message = "Aval dado de baja correctamente."
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -390,7 +393,7 @@ class AvalDeleteView(LoginRequiredMixin, DeleteView):
             {"url": "", "label": "Confirmar Eliminación"},
         ]
         context["delete_message"] = (
-            f"¿Está seguro que desea eliminar el aval {self.object.nombre}"
+            f"¿Está seguro que desea dar de baja el aval {self.object.nombre}"
         )
         context["cancel_url"] = reverse(
             "organizacion_detalle", kwargs={"pk": self.object.organizacion.pk}
@@ -511,19 +514,26 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class OrganizacionDeleteView(LoginRequiredMixin, DeleteView):
+class OrganizacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = Organizacion
     template_name = "organizacion_confirm_delete.html"
     context_object_name = "organizacion"
     success_url = reverse_lazy("organizaciones")
+    success_message = "Organización dada de baja correctamente."
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         try:
-            self.object.delete()
+            if hasattr(self.object, "restore") and hasattr(self.object, "deleted_at"):
+                self.object.delete(
+                    user=request.user if getattr(request.user, "is_authenticated", False) else None,
+                    cascade=True,
+                )
+            else:
+                self.object.delete()
             messages.success(
                 request,
-                f"La organización {self.object.nombre} fue eliminada correctamente.",
+                f"La organización {self.object.nombre} fue dada de baja correctamente.",
             )
             return HttpResponseRedirect(self.success_url)
         except ValidationError as e:

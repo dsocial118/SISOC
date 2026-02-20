@@ -9,6 +9,8 @@ from celiaquia.models import EstadoLegajo, ExpedienteCiudadano, RevisionTecnico
 from celiaquia.services.legajo_service import LegajoService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from celiaquia.permissions import can_edit_legajo_files, can_review_legajo
+from core.soft_delete_preview import build_delete_preview
+from core.soft_delete_views import is_soft_deletable_instance
 
 
 logger = logging.getLogger("django")
@@ -422,6 +424,19 @@ class LegajoEliminarView(View):
                 ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk
             )
 
+            get_data = getattr(request, "GET", {})
+            post_data = getattr(request, "POST", {})
+            preview_enabled = str(post_data.get("preview") or get_data.get("preview") or "")
+            if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
+                legajo
+            ):
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "preview": build_delete_preview(legajo),
+                    }
+                )
+
             with transaction.atomic():
                 # Liberar cupo ocupado antes de eliminar el legajo
                 try:
@@ -453,7 +468,10 @@ class LegajoEliminarView(View):
                 PagoNomina.objects.filter(legajo=legajo).delete()
 
                 # Eliminar el legajo
-                legajo.delete()
+                if is_soft_deletable_instance(legajo):
+                    legajo.delete(user=user, cascade=True)
+                else:
+                    legajo.delete()
 
             return JsonResponse(
                 {"success": True, "message": "Legajo eliminado correctamente."}

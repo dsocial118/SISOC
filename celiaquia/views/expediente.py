@@ -46,6 +46,8 @@ from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
+from core.soft_delete_preview import build_delete_preview
+from core.soft_delete_views import is_soft_deletable_instance
 
 logger = logging.getLogger("django")
 
@@ -921,7 +923,23 @@ class AsignarTecnicoView(View):
             asignacion = AsignacionTecnico.objects.get(
                 expediente=expediente, tecnico_id=tecnico_id
             )
-            asignacion.delete()
+            get_data = getattr(request, "GET", {})
+            post_data = getattr(request, "POST", {})
+            preview_enabled = str(get_data.get("preview") or post_data.get("preview") or "")
+            if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
+                asignacion
+            ):
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "preview": build_delete_preview(asignacion),
+                    }
+                )
+
+            if is_soft_deletable_instance(asignacion):
+                asignacion.delete(user=user, cascade=True)
+            else:
+                asignacion.delete()
             return JsonResponse(
                 {"success": True, "message": "Técnico removido correctamente."}
             )
@@ -1119,6 +1137,19 @@ class RevisarLegajoView(View):
                 )
 
             try:
+                get_data = getattr(request, "GET", {})
+                post_data = getattr(request, "POST", {})
+                preview_enabled = str(post_data.get("preview") or get_data.get("preview") or "")
+                if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
+                    leg
+                ):
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "preview": build_delete_preview(leg),
+                        }
+                    )
+
                 # Liberar cupo si estaba ocupado
                 if leg.estado_cupo == "DENTRO":
                     try:
@@ -1135,7 +1166,10 @@ class RevisarLegajoView(View):
                             exc_info=True,
                         )
 
-                leg.delete()
+                if is_soft_deletable_instance(leg):
+                    leg.delete(user=user, cascade=True)
+                else:
+                    leg.delete()
                 return JsonResponse(
                     {"success": True, "message": "Legajo eliminado correctamente."}
                 )
@@ -1602,7 +1636,23 @@ class EliminarRegistroErroneoView(View):
             RegistroErroneo, pk=registro_id, expediente=expediente
         )
 
-        registro.delete()
+        get_data = getattr(request, "GET", {})
+        post_data = getattr(request, "POST", {})
+        preview_enabled = str(post_data.get("preview") or get_data.get("preview") or "")
+        if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
+            registro
+        ):
+            return JsonResponse(
+                {
+                    "success": True,
+                    "preview": build_delete_preview(registro),
+                }
+            )
+
+        if is_soft_deletable_instance(registro):
+            registro.delete(user=user, cascade=True)
+        else:
+            registro.delete()
         return JsonResponse(
             {"success": True, "message": "Registro eliminado correctamente."}
         )

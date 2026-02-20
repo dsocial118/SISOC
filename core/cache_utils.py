@@ -9,6 +9,7 @@ import logging
 from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from core.soft_delete_signals import post_soft_delete, post_restore
 
 logger = logging.getLogger("django")
 
@@ -150,6 +151,18 @@ def invalidate_ciudadano_cache_on_change(sender, instance, **kwargs):
     """Invalida cache cuando se modifica un ciudadano."""
     invalidate_ciudadano_cache(instance.id)
     invalidate_dashboard_cache()
+
+
+@receiver([post_soft_delete, post_restore])
+def invalidate_cache_on_soft_delete_events(sender, instance, **kwargs):
+    """Invalida cache relevante cuando hay baja lógica o restauración."""
+    label = instance._meta.label_lower
+    if label == "comedores.comedor":
+        invalidate_comedor_cache(instance.id)
+        invalidate_dashboard_cache()
+    elif label == "ciudadanos.ciudadano":
+        invalidate_ciudadano_cache(instance.id)
+        invalidate_dashboard_cache()
 
 
 @receiver([post_save, post_delete], sender="intervenciones.TipoIntervencion")
