@@ -206,6 +206,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
     def get_presupuestos_data(self):
         """Obtiene datos de presupuestos usando cache y datos prefetched cuando sea posible."""
+        programa_nombre = (
+            self.object.programa.nombre if self.object.programa else None
+        )
         if (
             hasattr(self.object, "relevamientos_optimized")
             and self.object.relevamientos_optimized
@@ -219,6 +222,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 presupuestos_tuple = ComedorService.get_presupuestos(
                     self.object.id,
                     relevamientos_prefetched=self.object.relevamientos_optimized,
+                    programa_nombre=programa_nombre,
                 )
                 cache.set(
                     cache_key,
@@ -226,7 +230,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     getattr(settings, "COMEDOR_CACHE_TIMEOUT", 300),
                 )
         else:
-            presupuestos_tuple = ComedorService.get_presupuestos(self.object.id)
+            presupuestos_tuple = ComedorService.get_presupuestos(
+                self.object.id, programa_nombre=programa_nombre
+            )
 
         (
             count_beneficiarios,
@@ -879,9 +885,12 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             )
             if prestaciones_por_tipo is not None:
                 prestaciones_aprobadas_total = sum(prestaciones_por_tipo.values())
+                programa_nombre = (
+                    self.object.programa.nombre if self.object.programa else None
+                )
                 monto_prestacion_mensual_aprobadas = (
                     ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(
-                        prestaciones_por_tipo
+                        prestaciones_por_tipo, programa_nombre=programa_nombre
                     )
                 )
 

@@ -18,6 +18,7 @@ from django.db import transaction
 from django.core.paginator import Paginator
 from django.core.files.storage import default_storage
 from django.contrib import messages
+from django.core.cache import cache
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
@@ -43,7 +44,7 @@ from comedores.utils import (
     preload_valores_comida_cache,
 )
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
-from core.models import Provincia, Municipio, Localidad, Nacionalidad
+from core.models import MontoPrestacionPrograma, Provincia, Municipio, Localidad, Nacionalidad
 from acompanamientos.models.hitos import Hitos
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -62,6 +63,9 @@ from comedores.services.filter_config import (
     NUM_OPS,
     TEXT_OPS,
 )
+
+
+_CACHE_MISS = object()
 
 
 COMEDOR_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -466,7 +470,44 @@ class ComedorService:
         return relevamientos[0]
 
     @staticmethod
-    def get_presupuestos(comedor_id: int, relevamientos_prefetched=None):
+    def _get_monto_prestacion_para_programa(programa_nombre):
+        """Devuelve el MontoPrestacionPrograma para el programa dado, usando cache."""
+        if not programa_nombre:
+            return None
+        cache_key = f"monto_prestacion_prog_{programa_nombre}"
+        cached = cache.get(cache_key, _CACHE_MISS)
+        if cached is not _CACHE_MISS:
+            return cached
+        monto_prog = MontoPrestacionPrograma.objects.filter(
+            programa=programa_nombre
+        ).first()
+        cache.set(cache_key, monto_prog, 3600)
+        return monto_prog
+
+    @staticmethod
+    def _calcular_monto_desde_count(count, monto_prog):
+        """Calcula el monto mensual dado el conteo de prestaciones y el registro de valores.
+
+        Si monto_prog es None usa valores por defecto (763 para almuerzo/cena, 383 para los demás).
+        """
+        if monto_prog:
+            return (
+                count.get("almuerzo", 0) * (monto_prog.almuerzo_valor or 0)
+                + count.get("cena", 0) * (monto_prog.cena_valor or 0)
+                + count.get("desayuno", 0) * (monto_prog.desayuno_valor or 0)
+                + count.get("merienda", 0) * (monto_prog.merienda_valor or 0)
+                + count.get("merienda_reforzada", 0) * (monto_prog.merienda_valor or 0)
+            )
+        total_almuerzo_cena = count.get("almuerzo", 0) + count.get("cena", 0)
+        total_desayuno_merienda = (
+            count.get("desayuno", 0)
+            + count.get("merienda", 0)
+            + count.get("merienda_reforzada", 0)
+        )
+        return total_almuerzo_cena * 763 + total_desayuno_merienda * 383
+
+    @staticmethod
+    def get_presupuestos(comedor_id: int, relevamientos_prefetched=None, programa_nombre=None):
         valor_map = preload_valores_comida_cache()
         if relevamientos_prefetched:
             relevamiento = ComedorService.get_relevamiento_resumen(
@@ -521,12 +562,9 @@ class ComedorService:
                     getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0 for dia in dias
                 )
         count_beneficiarios = sum(count.values())
-        total_almuerzo_cena = count["almuerzo"] + count["cena"]
-        total_desayuno_merienda = (
-            count["desayuno"] + count["merienda"] + count.get("merienda_reforzada", 0)
-        )
-        monto_prestacion_mensual = (
-            total_almuerzo_cena * 763 + total_desayuno_merienda * 383
+        monto_prog = ComedorService._get_monto_prestacion_para_programa(programa_nombre)
+        monto_prestacion_mensual = ComedorService._calcular_monto_desde_count(
+            count, monto_prog
         )
         valor_cena = count["cena"] * valor_map.get("cena", 0)
         valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
@@ -572,17 +610,16 @@ class ComedorService:
         return count
 
     @staticmethod
-    def calcular_monto_prestacion_mensual_por_aprobadas(prestaciones_por_tipo):
-        """Calcula el monto mensual usando prestaciones aprobadas."""
+    def calcular_monto_prestacion_mensual_por_aprobadas(prestaciones_por_tipo, programa_nombre=None):
+        """Calcula el monto mensual usando prestaciones aprobadas.
+
+        Si se provee programa_nombre, utiliza los valores de MontoPrestacionPrograma
+        para ese programa. En caso de no encontrar registro, usa valores por defecto.
+        """
         if not prestaciones_por_tipo:
             return None
-        total_almuerzo_cena = prestaciones_por_tipo.get(
-            "almuerzo", 0
-        ) + prestaciones_por_tipo.get("cena", 0)
-        total_desayuno_merienda = prestaciones_por_tipo.get(
-            "desayuno", 0
-        ) + prestaciones_por_tipo.get("merienda", 0)
-        return total_almuerzo_cena * 763 + total_desayuno_merienda * 383
+        monto_prog = ComedorService._get_monto_prestacion_para_programa(programa_nombre)
+        return ComedorService._calcular_monto_desde_count(prestaciones_por_tipo, monto_prog)
 
     @staticmethod
     def get_nomina_detail(comedor_pk, page=1, per_page=100):
