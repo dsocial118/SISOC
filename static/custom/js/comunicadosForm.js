@@ -81,17 +81,36 @@
                     else if (file.type.includes("word") || file.name.endsWith(".doc") || file.name.endsWith(".docx")) icon = "fas fa-file-word";
                     else if (file.type.includes("excel") || file.name.endsWith(".xls") || file.name.endsWith(".xlsx")) icon = "fas fa-file-excel";
 
-                    div.innerHTML =
-                        '<div class="d-flex align-items-center">' +
-                            '<i class="' + icon + ' me-2" style="color: #f39c12;"></i>' +
-                            '<div>' +
-                                '<div class="fw-bold small">' + file.name + '</div>' +
-                                '<div class="small" style="color: #6b7280;">' + formatSize(file.size) + '</div>' +
-                            '</div>' +
-                        '</div>' +
-                        '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-file" data-index="' + index + '">' +
-                            '<i class="fas fa-times"></i>' +
-                        '</button>';
+                    var infoWrap = document.createElement("div");
+                    infoWrap.className = "d-flex align-items-center";
+
+                    var iconEl = document.createElement("i");
+                    iconEl.className = icon + " me-2";
+                    iconEl.style.color = "#f39c12";
+                    infoWrap.appendChild(iconEl);
+
+                    var textWrap = document.createElement("div");
+                    var nameEl = document.createElement("div");
+                    nameEl.className = "fw-bold small";
+                    nameEl.textContent = file.name;
+                    textWrap.appendChild(nameEl);
+                    var sizeEl = document.createElement("div");
+                    sizeEl.className = "small";
+                    sizeEl.style.color = "#6b7280";
+                    sizeEl.textContent = formatSize(file.size);
+                    textWrap.appendChild(sizeEl);
+                    infoWrap.appendChild(textWrap);
+
+                    var removeBtn = document.createElement("button");
+                    removeBtn.type = "button";
+                    removeBtn.className = "btn btn-sm btn-outline-danger btn-remove-file";
+                    removeBtn.setAttribute("data-index", index);
+                    var removeIcon = document.createElement("i");
+                    removeIcon.className = "fas fa-times";
+                    removeBtn.appendChild(removeIcon);
+
+                    div.appendChild(infoWrap);
+                    div.appendChild(removeBtn);
 
                     filePreviewContainer.appendChild(div);
                 });
@@ -176,11 +195,17 @@
                 hay = true;
                 var badge = document.createElement("span");
                 badge.className = "badge me-1 mb-1 d-inline-flex align-items-center gap-1";
-                badge.innerHTML = opt.text +
-                    ' <button type="button" class="btn-close btn-close-white" style="font-size:0.55em;" data-value="' + opt.value + '"></button>';
-                badge.querySelector(".btn-close").addEventListener("click", function() {
+                var badgeText = document.createTextNode(opt.text + " ");
+                badge.appendChild(badgeText);
+                var closeBtn = document.createElement("button");
+                closeBtn.type = "button";
+                closeBtn.className = "btn-close btn-close-white";
+                closeBtn.style.fontSize = "0.55em";
+                closeBtn.setAttribute("data-value", opt.value);
+                closeBtn.addEventListener("click", function() {
                     toggleComedor(this.getAttribute("data-value"), false);
                 });
+                badge.appendChild(closeBtn);
                 seleccionadosContainer.appendChild(badge);
             });
             if (!hay) {
