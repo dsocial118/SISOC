@@ -7,6 +7,7 @@ from relevamientos.tasks import (
     AsyncRemoveRelevamientoToGestionar,
     build_relevamiento_payload,
 )
+from core.soft_delete_signals import post_soft_delete
 
 
 @receiver(post_save, sender=Relevamiento)
@@ -32,5 +33,6 @@ def update_comedor_geolocalizacion(sender, instance, created, **kwargs):
 
 
 @receiver(pre_delete, sender=Relevamiento)
-def remove_relevamiento_to_gestionar(sender, instance, using, **kwargs):
+@receiver(post_soft_delete, sender=Relevamiento)
+def remove_relevamiento_to_gestionar(sender, instance, **kwargs):
     AsyncRemoveRelevamientoToGestionar(instance.id).start()

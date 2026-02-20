@@ -35,13 +35,25 @@ from centrodefamilia.serializers import (
 )
 from core.api_auth import HasAPIKey
 from core.models import Provincia, Municipio, Localidad
+from core.soft_delete_views import is_soft_deletable_instance
 from core.utils import format_serializer_errors
 
 logger = logging.getLogger("django")
 
 
+class SoftDeleteDestroyMixin:
+    """Use logical delete for soft-delete capable models."""
+
+    def perform_destroy(self, instance):
+        if is_soft_deletable_instance(instance):
+            user = self.request.user if getattr(self.request.user, "is_authenticated", False) else None
+            instance.delete(user=user, cascade=True)
+            return
+        super().perform_destroy(instance)
+
+
 @extend_schema(tags=["Centros"])
-class CentroViewSet(viewsets.ModelViewSet):
+class CentroViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     API para gestionar Centros de Familia.
 
@@ -104,7 +116,7 @@ class CentroViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Actividades"])
-class ActividadViewSet(viewsets.ModelViewSet):
+class ActividadViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     API para gestionar Actividades.
 
@@ -130,7 +142,7 @@ class ActividadViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Categorías"])
-class CategoriaViewSet(viewsets.ModelViewSet):
+class CategoriaViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     API para gestionar Categorías de Actividades.
 
@@ -145,7 +157,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Actividades por Centro"])
-class ActividadCentroViewSet(viewsets.ModelViewSet):
+class ActividadCentroViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     API para gestionar Actividades por Centro.
 
@@ -223,7 +235,7 @@ class ActividadCentroViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Participantes"])
-class ParticipanteActividadViewSet(viewsets.ModelViewSet):
+class ParticipanteActividadViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     API para gestionar Participantes en Actividades.
 
@@ -301,7 +313,7 @@ class ParticipanteActividadViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Beneficiarios"])
-class BeneficiarioViewSet(viewsets.ModelViewSet):
+class BeneficiarioViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     API para gestionar Beneficiarios.
 
@@ -365,7 +377,7 @@ class BeneficiarioViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Responsables"])
-class ResponsableViewSet(viewsets.ModelViewSet):
+class ResponsableViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     API para gestionar Responsables.
 
@@ -400,7 +412,7 @@ class ResponsableViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Vínculos"])
-class BeneficiarioResponsableViewSet(viewsets.ModelViewSet):
+class BeneficiarioResponsableViewSet(SoftDeleteDestroyMixin, viewsets.ModelViewSet):
     """
     API para gestionar vínculos Beneficiario-Responsable.
 

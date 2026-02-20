@@ -11,6 +11,7 @@ from django.views.generic import (
 from django.urls import reverse_lazy, reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 from core.services.column_preferences import build_columns_context_from_fields
 from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
@@ -205,9 +206,10 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
             return self.form_invalid(form)
 
 
-class ExpedientesPagosDeleteView(LoginRequiredMixin, DeleteView):
+class ExpedientesPagosDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = ExpedientePago
     template_name = "expedientespagos_confirm_delete.html"
+    success_message = "Expediente dado de baja correctamente."
 
     def get_object(self, queryset=None):
         try:
@@ -217,9 +219,3 @@ class ExpedientesPagosDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_success_url(self):
         return reverse("lista_comedores_acompanamiento")
-
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.delete()
-        messages.success(request, "Expediente eliminado correctamente.")
-        return HttpResponseRedirect(self.get_success_url())

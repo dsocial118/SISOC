@@ -15,6 +15,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 from centrodeinfancia.forms import (
     CentroDeInfanciaForm,
@@ -102,11 +103,16 @@ class CentroDeInfanciaUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.object.pk})
 
 
-class CentroDeInfanciaDeleteView(LoginRequiredMixin, DeleteView):
+class CentroDeInfanciaDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
     model = CentroDeInfancia
     template_name = "centrodeinfancia/centrodeinfancia_confirm_delete.html"
     context_object_name = "centro"
     success_url = reverse_lazy("centrodeinfancia")
+    success_message = "Centro de infancia dado de baja correctamente."
 
 
 @login_required
@@ -178,10 +184,15 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         return context
 
 
-class NominaCentroInfanciaDeleteView(LoginRequiredMixin, DeleteView):
+class NominaCentroInfanciaDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
     model = NominaCentroInfancia
     template_name = "centrodeinfancia/nomina_confirm_delete.html"
     pk_url_kwarg = "pk2"
+    success_message = "Registro de nómina dado de baja correctamente."
 
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
@@ -230,10 +241,15 @@ class IntervencionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
 
 
-class IntervencionCentroInfanciaDeleteView(LoginRequiredMixin, DeleteView):
+class IntervencionCentroInfanciaDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
     model = IntervencionCentroInfancia
     template_name = "centrodeinfancia/intervencion_confirm_delete.html"
     pk_url_kwarg = "intervencion_id"
+    success_message = "Intervención dada de baja correctamente."
 
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})

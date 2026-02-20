@@ -34,6 +34,7 @@ from centrodefamilia.services.centro_filter_config import (
 from centrodefamilia.forms import CentroForm
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 
 BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -305,10 +306,11 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         return reverse("centro_detail", kwargs={"pk": self.object.pk})
 
 
-class CentroDeleteView(LoginRequiredMixin, DeleteView):
+class CentroDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = Centro
     success_url = reverse_lazy("centro_list")
-    template_name = "includes/confirm_delete.html"
+    template_name = "centros/centro_confirm_delete.html"
+    success_message = "Centro dado de baja correctamente."
 
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
@@ -318,9 +320,6 @@ class CentroDeleteView(LoginRequiredMixin, DeleteView):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
-        messages.success(self.request, "Centro eliminado correctamente.")
-        return super().delete(request, *args, **kwargs)
 
 
 class InformeCabalArchivoPorCentroDetailView(LoginRequiredMixin, DetailView):

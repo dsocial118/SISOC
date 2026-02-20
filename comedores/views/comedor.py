@@ -35,6 +35,7 @@ from comedores.services.comedor_service import ComedorService
 from comedores.services.filter_config import get_filters_ui_config
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm
@@ -971,8 +972,9 @@ class ComedorUpdateView(LoginRequiredMixin, UpdateView):
         return self.form_invalid(form)
 
 
-class ComedorDeleteView(LoginRequiredMixin, DeleteView):
+class ComedorDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = Comedor
     template_name = "comedor/comedor_confirm_delete.html"
     context_object_name = "comedor"
     success_url = reverse_lazy("comedores")
+    success_message = "Comedor dado de baja correctamente."
