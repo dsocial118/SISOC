@@ -1711,16 +1711,43 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (!confirm('¿Estás seguro de que querés eliminar este legajo? Esta acción no se puede deshacer.')) {
-        return;
-      }
-
       if (!window.REVISAR_URL_TEMPLATE) {
         showAlert('danger', 'No se configuró la URL de revisión de legajos.');
         return;
       }
 
       const url = window.REVISAR_URL_TEMPLATE.replace('{id}', legajoId);
+
+      let previewMsg = '¿Estás seguro de que querés dar de baja este legajo?';
+      try {
+        const previewFd = new FormData();
+        previewFd.append('accion', 'ELIMINAR');
+        previewFd.append('preview', '1');
+        const previewResp = await fetch(url, {
+          method: 'POST',
+          body: previewFd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+        const previewData = await previewResp.json();
+        if (previewResp.ok && previewData.success && previewData.preview) {
+          const desglose = (previewData.preview.desglose_por_modelo || [])
+            .map((item) => `- ${item.modelo}: ${item.cantidad}`)
+            .join('\n');
+          previewMsg = `Se aplicará baja lógica en cascada.\nTotal afectados: ${previewData.preview.total_afectados}\n${desglose}`;
+        }
+      } catch (error) {
+        console.warn('No se pudo obtener preview de eliminación:', error);
+      }
+
+      if (!confirm(previewMsg)) {
+        return;
+      }
+
       const original = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';

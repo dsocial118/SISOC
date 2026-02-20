@@ -10,6 +10,7 @@ from django.views.generic import CreateView, UpdateView, DeleteView, TemplateVie
 
 from comedores.services.comedor_service import ComedorService
 from core.security import safe_redirect
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 from intervenciones.models.intervenciones import (
     Intervencion,
     SubIntervencion,
@@ -179,11 +180,12 @@ class IntervencionUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
 
-class IntervencionDeleteView(LoginRequiredMixin, DeleteView):
+class IntervencionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     """Eliminar una intervención existente."""
 
     model = Intervencion
     template_name = "intervencion_confirm_delete.html"
+    success_message = "Intervención dada de baja correctamente."
 
     def get_object(self, queryset=None):
         """Obtener la intervención a eliminar."""

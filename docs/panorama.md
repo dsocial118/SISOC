@@ -30,7 +30,7 @@
 | dashboard | Tableros internos. Evidencia: config/settings.py:66; config/urls.py:18. |
 | comedores | Gestión de comedores, estados, sincronización GESTIONAR. Evidencia: config/settings.py:67; config/urls.py:19-20; comedores/tasks.py:1-249. |
 | organizaciones | Módulo de organizaciones vinculadas. Evidencia: config/settings.py:68; config/urls.py:20. |
-| cdi | Centros de desarrollo infantil. Evidencia: config/settings.py:69; config/urls.py:21. |
+| centrodeinfancia | Centros de infancia. Evidencia: config/settings.py:69; config/urls.py:21. |
 | ciudadanos | Gestión de ciudadanos/beneficiarios. Evidencia: config/settings.py:70; config/urls.py:24. |
 | duplas | Gestión de duplas técnicas. Evidencia: config/settings.py:71; config/urls.py:22. |
 | admisiones | Procesos de admisión. Evidencia: config/settings.py:72; config/urls.py:25. |
@@ -59,5 +59,5 @@
 - Cache in-memory (LocMem) no es compartida entre instancias; suposiciones de cache podrían no escalar en múltiples réplicas. Evidencia: config/settings.py:175-189.
 
 ## TODOs
-- Confirmar actores reales y su mapeo a grupos/permissions más allá de los grupos predefinidos. 
-- Validar y documentar explícitamente qué queda fuera de alcance (portal ciudadano, pagos, etc.). 
+- Confirmar actores reales y su mapeo a grupos/permissions más allá de los grupos predefinidos.
+- Validar y documentar explícitamente qué queda fuera de alcance (portal ciudadano, pagos, etc.).

@@ -315,10 +315,11 @@
       }
 
       const url = `/expedientes/${expId}/asignar-tecnico/?tecnico_id=${tecnicoId}`;
-      
-      withSpinner(btn, '...', async () => {
+
+      const fetchPreviewMessage = async () => {
         try {
-          const { ok, data, text, status } = await fetch(url, {
+          const previewUrl = `${url}&preview=1`;
+          const resp = await fetch(previewUrl, {
             method: 'DELETE',
             credentials: 'same-origin',
             headers: {
@@ -326,34 +327,65 @@
               'X-Requested-With': 'XMLHttpRequest',
               'Accept': 'application/json'
             }
-          }).then(async resp => {
-            const ct = resp.headers.get('Content-Type') || '';
-            if (ct.includes('application/json')) {
-              const data = await resp.json();
-              return { ok: resp.ok, data, text: null, status: resp.status };
-            }
-            const text = await resp.text();
-            return { ok: resp.ok, data: null, text, status: resp.status };
           });
-          
-          if (!ok) {
-            const msg = (data && data.error) || text || `HTTP ${status}`;
-            throw new Error(msg);
+          const data = await resp.json();
+          if (!resp.ok || !data.success || !data.preview) {
+            return '¿Confirmás la baja lógica de esta asignación técnica?';
           }
-          
-          showAlert('success', 'Técnico removido correctamente.');
-          
-          // Remover el badge del DOM
-          const badge = btn.closest('.badge');
-          if (badge) {
-            badge.remove();
-          }
-          
-        } catch (err) {
-          console.error('Remover técnico:', err);
-          showAlert('danger', 'No se pudo remover el técnico. ' + err.message);
+          const detalle = (data.preview.desglose_por_modelo || [])
+            .map((item) => `- ${item.modelo}: ${item.cantidad}`)
+            .join('\n');
+          return `Se aplicará baja lógica en cascada.\nTotal afectados: ${data.preview.total_afectados}\n${detalle}`;
+        } catch (error) {
+          console.warn('No se pudo obtener preview:', error);
+          return '¿Confirmás la baja lógica de esta asignación técnica?';
         }
-      })();
+      };
+
+      fetchPreviewMessage().then((previewMessage) => {
+        if (!confirm(previewMessage)) {
+          return;
+        }
+      
+        withSpinner(btn, '...', async () => {
+          try {
+            const { ok, data, text, status } = await fetch(url, {
+              method: 'DELETE',
+              credentials: 'same-origin',
+              headers: {
+                'X-CSRFToken': csrfToken(),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+              }
+            }).then(async resp => {
+              const ct = resp.headers.get('Content-Type') || '';
+              if (ct.includes('application/json')) {
+                const data = await resp.json();
+                return { ok: resp.ok, data, text: null, status: resp.status };
+              }
+              const text = await resp.text();
+              return { ok: resp.ok, data: null, text, status: resp.status };
+            });
+            
+            if (!ok) {
+              const msg = (data && data.error) || text || `HTTP ${status}`;
+              throw new Error(msg);
+            }
+            
+            showAlert('success', 'Técnico removido correctamente.');
+            
+            // Remover el badge del DOM
+            const badge = btn.closest('.badge');
+            if (badge) {
+              badge.remove();
+            }
+            
+          } catch (err) {
+            console.error('Remover técnico:', err);
+            showAlert('danger', 'No se pudo remover el técnico. ' + err.message);
+          }
+        })();
+      });
     });
   }
 

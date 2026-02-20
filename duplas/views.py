@@ -14,7 +14,6 @@ from django.views.generic import (
     UpdateView,
 )
 
-from comedores.services.comedor_service import ComedorService
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.column_preferences import (
     apply_queryset_column_hints,
@@ -22,6 +21,7 @@ from core.services.column_preferences import (
     resolve_column_state,
 )
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 from duplas.dupla_column_config import DUPLA_COLUMNS, DUPLA_LIST_KEY
 from duplas.dupla_filter_config import (
@@ -181,24 +181,11 @@ class DuplaDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class DuplaDeleteView(LoginRequiredMixin, DeleteView):
+class DuplaDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = Dupla
     template_name = "dupla_confirm_delete.html"
     success_url = reverse_lazy("dupla_list")
+    success_message = "Equipo técnico dado de baja correctamente."
 
     def get_success_url(self):
         return reverse("dupla_list")
-
-    def post(self, request, *args, **kwargs):
-        comedor = ComedorService.get_comedor_by_dupla(kwargs["pk"])
-        if comedor:
-            messages.error(
-                request,
-                "No se puede eliminar el equipo técnico porque está asignada al comedor "
-                + str(comedor.nombre),
-            )
-            return HttpResponseRedirect(self.get_success_url())
-        self.object = self.get_object()
-        self.object.delete()
-        messages.success(request, "Equipo técnico eliminado correctamente.")
-        return HttpResponseRedirect(self.get_success_url())

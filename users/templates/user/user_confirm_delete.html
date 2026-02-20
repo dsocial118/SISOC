@@ -2,7 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% block title %}Usuario{% endblock %}
-{% block titulo-pagina %}Eliminar Usuario{% endblock %}
+{% block titulo-pagina %}Desactivar Usuario{% endblock %}
 {% block content %}
-    {% include 'components/delete_confirm.html' with object_name=object.username title='Eliminar Usuario' cancel_url='usuarios' confirm_text='Eliminar' cancel_text='Cancelar' %}
+    {% include 'components/delete_confirm.html' with object_name=object.username title='Desactivar Usuario' cancel_url='usuarios' confirm_text='Desactivar' cancel_text='Cancelar' message='¿Estás seguro que deseas desactivar el usuario' %}
 {% endblock content %}

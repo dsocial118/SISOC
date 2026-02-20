@@ -6,11 +6,12 @@ from django.utils import timezone
 from django.core.validators import MaxValueValidator as MaxValidator
 
 from core.models import Localidad, Municipio, Nacionalidad, Programa, Provincia, Sexo
+from core.soft_delete import SoftDeleteModelMixin
 
 User = get_user_model()
 
 
-class Ciudadano(models.Model):
+class Ciudadano(SoftDeleteModelMixin, models.Model):
     """Datos básicos del ciudadano/a."""
 
     DOCUMENTO_DNI = "DNI"
@@ -164,7 +165,7 @@ class Ciudadano(models.Model):
         return reverse("ciudadanos_ver", kwargs={"pk": self.pk})
 
 
-class GrupoFamiliar(models.Model):
+class GrupoFamiliar(SoftDeleteModelMixin, models.Model):
     """Relación básica entre dos ciudadanos."""
 
     RELACION_PADRE = "PADRE/MADRE"

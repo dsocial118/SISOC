@@ -7,6 +7,7 @@ from django.forms import ValidationError
 from django.utils import timezone
 
 from comedores.models import CategoriaComedor, Comedor, Referente, TipoDeComedor
+from core.soft_delete import SoftDeleteModelMixin
 
 
 class TipoInsumos(models.Model):
@@ -995,7 +996,7 @@ class PuntoEntregas(models.Model):
         return f"Punto de entregas ({tipo})"
 
 
-class Relevamiento(models.Model):
+class Relevamiento(SoftDeleteModelMixin, models.Model):
 
     estado = models.CharField(max_length=255, blank=True, null=True)
     comedor = models.ForeignKey(

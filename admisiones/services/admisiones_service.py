@@ -762,13 +762,13 @@ class AdmisionService:
             return None, "No se pudo guardar el documento."
 
     @staticmethod
-    def delete_admision_file(archivo):
+    def delete_admision_file(archivo, user=None, hard=False):
 
         try:
 
             documentacion = archivo.documentacion
 
-            if archivo.archivo:
+            if hard and archivo.archivo:
 
                 file_path = os.path.join(settings.MEDIA_ROOT, str(archivo.archivo))
 
@@ -776,7 +776,12 @@ class AdmisionService:
 
                     os.remove(file_path)
 
-            archivo.delete()
+            if hasattr(archivo, "hard_delete") and not hard:
+                archivo.delete(user=user, cascade=True)
+            elif hasattr(archivo, "hard_delete") and hard:
+                archivo.hard_delete()
+            else:
+                archivo.delete()
 
             if (
                 documentacion

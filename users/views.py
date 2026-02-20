@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User, Group
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.views import LoginView
+from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -60,6 +62,13 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
     model = User
     template_name = "user/user_confirm_delete.html"
     success_url = reverse_lazy("usuarios")
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.is_active = False
+        self.object.save(update_fields=["is_active"])
+        messages.success(request, "Usuario desactivado correctamente.")
+        return HttpResponseRedirect(self.success_url)
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
