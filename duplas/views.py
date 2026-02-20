@@ -14,7 +14,6 @@ from django.views.generic import (
     UpdateView,
 )
 
-from comedores.services.comedor_service import ComedorService
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.column_preferences import (
     apply_queryset_column_hints,

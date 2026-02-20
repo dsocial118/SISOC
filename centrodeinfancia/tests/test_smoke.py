@@ -1,6 +1,7 @@
 from django.test import SimpleTestCase
 from django.urls import reverse
 
+
 class CentroDeInfanciaUrlsSmokeTests(SimpleTestCase):
     def test_reverse_main_routes(self):
         self.assertEqual(reverse("centrodeinfancia"), "/centrodeinfancia/listar")

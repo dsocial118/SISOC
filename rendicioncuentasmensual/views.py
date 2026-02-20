@@ -26,7 +26,9 @@ from rendicioncuentasmensual.forms import (
 @require_POST
 def eliminar_archivo(request, archivo_id):
     archivo = get_object_or_404(DocumentacionAdjunta, id=archivo_id)
-    preview_enabled = str(request.GET.get("preview") or request.POST.get("preview") or "")
+    preview_enabled = str(
+        request.GET.get("preview") or request.POST.get("preview") or ""
+    )
     if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(archivo):
         return JsonResponse(
             {

@@ -119,7 +119,7 @@ def _related_queryset(
             return queryset.filter(deleted_at__isnull=False)
         return queryset
 
-    return model._base_manager.filter(**field_filter)
+    return model._meta.base_manager.filter(**field_filter)  # noqa: SLF001
 
 
 def _protected_related_ids_from_parent(
@@ -137,15 +137,15 @@ def _protected_related_ids_from_parent(
     if restricted_delete is not None:
         protected_behaviors.add(restricted_delete)
 
-    for field in parent._meta.get_fields():  # noqa: SLF001
-        if not getattr(field, "concrete", False):
+    for relation_field in parent._meta.get_fields():  # noqa: SLF001
+        if not getattr(relation_field, "concrete", False):
             continue
-        if not getattr(field, "is_relation", False):
+        if not getattr(relation_field, "is_relation", False):
             continue
-        if getattr(field, "many_to_many", False):
+        if getattr(relation_field, "many_to_many", False):
             continue
 
-        remote_field = getattr(field, "remote_field", None)
+        remote_field = getattr(relation_field, "remote_field", None)
         if remote_field is None:
             continue
         if remote_field.model is not child_model:
@@ -153,7 +153,7 @@ def _protected_related_ids_from_parent(
         if getattr(remote_field, "on_delete", None) not in protected_behaviors:
             continue
 
-        rel_id = getattr(parent, field.attname, None)
+        rel_id = getattr(parent, relation_field.attname, None)
         if rel_id is not None:
             protected_ids.add(int(rel_id))
 
@@ -252,36 +252,45 @@ def build_restore_plan(instance: models.Model) -> CascadePlan:
     return plan
 
 
-def summarize_plan(plan: CascadePlan, *, sample_limit: int = 5) -> dict:
-    """Return UI-friendly preview payload for a plan."""
+def _summarize_group_key(node: CascadeNode) -> tuple[str, str, str]:
+    model = node.instance.__class__
+    return (
+        f"{model._meta.app_label}.{model.__name__}",  # noqa: SLF001
+        str(model._meta.verbose_name_plural).title(),  # noqa: SLF001
+        node.mode,
+    )
+
+
+def _collect_summary_groups(
+    plan: CascadePlan,
+    sample_limit: int,
+) -> tuple[dict[tuple[str, str, str], int], dict[tuple[str, str, str], list[str]]]:
     grouped_counts: dict[tuple[str, str, str], int] = defaultdict(int)
     grouped_examples: dict[tuple[str, str, str], list[str]] = defaultdict(list)
 
-    for node in sorted(plan.iter_nodes(), key=lambda item: (item.depth, str(item.instance))):
-        model = node.instance.__class__
-        model_key = f"{model._meta.app_label}.{model.__name__}"
-        model_label = str(model._meta.verbose_name_plural).title()
-        mode = node.mode
-        group_key = (model_key, model_label, mode)
+    for node in sorted(
+        plan.iter_nodes(), key=lambda item: (item.depth, str(item.instance))
+    ):
+        group_key = _summarize_group_key(node)
         grouped_counts[group_key] += 1
-        if len(grouped_examples[group_key]) < sample_limit:
-            grouped_examples[group_key].append(
-                f"{node.instance} (ID {node.instance.pk})"
-            )
+        examples = grouped_examples[group_key]
+        if len(examples) < sample_limit:
+            examples.append(f"{node.instance} (ID {node.instance.pk})")
+    return grouped_counts, grouped_examples
 
+
+def summarize_plan(plan: CascadePlan, *, sample_limit: int = 5) -> dict:
+    """Return UI-friendly preview payload for a plan."""
+    grouped_counts, grouped_examples = _collect_summary_groups(plan, sample_limit)
     breakdown = []
     ejemplos_por_modelo = {}
-    total_soft = 0
-    total_hard = 0
+    totals = defaultdict(int)
 
     for (model_key, model_label, mode), cantidad in sorted(
         grouped_counts.items(),
         key=lambda item: (item[0][1].lower(), item[0][2]),
     ):
-        if mode == MODE_SOFT:
-            total_soft += cantidad
-        else:
-            total_hard += cantidad
+        totals[mode] += cantidad
         examples = grouped_examples[(model_key, model_label, mode)]
         breakdown.append(
             {
@@ -296,8 +305,8 @@ def summarize_plan(plan: CascadePlan, *, sample_limit: int = 5) -> dict:
 
     return {
         "total_afectados": sum(grouped_counts.values()),
-        "total_baja_logica": total_soft,
-        "total_borrado_fisico": total_hard,
+        "total_baja_logica": totals[MODE_SOFT],
+        "total_borrado_fisico": totals[MODE_HARD],
         "desglose_por_modelo": breakdown,
         "ejemplos_por_modelo": ejemplos_por_modelo,
     }
@@ -371,7 +380,7 @@ def execute_delete_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
     updated_by_model: dict[type[models.Model], set[int]] = defaultdict(set)
 
     hard_nodes = sorted(
-        [node for node in plan.iter_nodes_by_mode(MODE_HARD)],
+        list(plan.iter_nodes_by_mode(MODE_HARD)),
         key=lambda node: node.depth,
         reverse=True,
     )
@@ -383,14 +392,16 @@ def execute_delete_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
             if _is_soft_delete_model(model):
                 instance = model.all_objects.filter(pk=pk).first()
             else:
-                instance = model._base_manager.filter(pk=pk).first()
+                instance = model._meta.base_manager.filter(pk=pk).first()  # noqa: SLF001
             if instance is None:
                 continue
             _hard_delete_instance(instance)
 
         for model, ids in _group_soft_nodes(plan).items():
             existing = set(
-                model.all_objects.filter(pk__in=ids, deleted_at__isnull=True).values_list(
+                model.all_objects.filter(
+                    pk__in=ids, deleted_at__isnull=True
+                ).values_list(
                     "pk",
                     flat=True,
                 )
@@ -428,7 +439,9 @@ def execute_restore_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
     with transaction.atomic():
         for model, ids in _group_soft_nodes(plan).items():
             existing = set(
-                model.all_objects.filter(pk__in=ids, deleted_at__isnull=False).values_list(
+                model.all_objects.filter(
+                    pk__in=ids, deleted_at__isnull=False
+                ).values_list(
                     "pk",
                     flat=True,
                 )

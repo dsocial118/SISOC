@@ -15,6 +15,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from core.decorators import group_required
 from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 from centrodeinfancia.forms import (
@@ -28,7 +29,6 @@ from centrodeinfancia.models import (
     IntervencionCentroInfancia,
     NominaCentroInfancia,
 )
-from core.decorators import group_required
 
 
 class CentroDeInfanciaListView(LoginRequiredMixin, ListView):

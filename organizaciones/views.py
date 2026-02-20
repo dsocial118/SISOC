@@ -526,7 +526,11 @@ class OrganizacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, Dele
         try:
             if hasattr(self.object, "restore") and hasattr(self.object, "deleted_at"):
                 self.object.delete(
-                    user=request.user if getattr(request.user, "is_authenticated", False) else None,
+                    user=(
+                        request.user
+                        if getattr(request.user, "is_authenticated", False)
+                        else None
+                    ),
                     cascade=True,
                 )
             else:

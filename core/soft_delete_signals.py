@@ -9,4 +9,3 @@ post_soft_delete = Signal()
 # Sent after a model instance was restored.
 # kwargs: user, cascade, root
 post_restore = Signal()
-

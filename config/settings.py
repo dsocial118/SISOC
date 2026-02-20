@@ -158,12 +158,9 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 DB_CONN_MAX_AGE = int(
     os.getenv("DB_CONN_MAX_AGE", "60" if ENVIRONMENT == "prd" else "0")
 )
-DB_CONN_HEALTH_CHECKS = (
-    os.getenv("DB_CONN_HEALTH_CHECKS", "true" if ENVIRONMENT == "prd" else "false")
-    .strip()
-    .lower()
-    in ("1", "true", "yes", "on")
-)
+DB_CONN_HEALTH_CHECKS = os.getenv(
+    "DB_CONN_HEALTH_CHECKS", "true" if ENVIRONMENT == "prd" else "false"
+).strip().lower() in ("1", "true", "yes", "on")
 
 DATABASES = {
     "default": {
