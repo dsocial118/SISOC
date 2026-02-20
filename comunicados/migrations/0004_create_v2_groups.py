@@ -4,40 +4,13 @@ from django.db import migrations
 
 
 def create_groups(apps, schema_editor):
-    """Crea los grupos de permisos para Comunicados v2."""
-    Group = apps.get_model('auth', 'Group')
-
-    grupos = [
-        "Comunicado Interno Crear",
-        "Comunicado Interno Editar",
-        "Comunicado Interno Publicar",
-        "Comunicado Interno Archivar",
-        "Comunicado Comedores Crear",
-        "Comunicado Comedores Editar",
-        "Comunicado Comedores Publicar",
-        "Comunicado Comedores Archivar",
-    ]
-
-    for nombre in grupos:
-        Group.objects.get_or_create(name=nombre)
+    """No-op: la creación de grupos se resuelve en bootstrap."""
+    return
 
 
 def remove_groups(apps, schema_editor):
-    """Elimina los grupos (rollback)."""
-    Group = apps.get_model('auth', 'Group')
-
-    grupos = [
-        "Comunicado Interno Crear",
-        "Comunicado Interno Editar",
-        "Comunicado Interno Publicar",
-        "Comunicado Interno Archivar",
-        "Comunicado Comedores Crear",
-        "Comunicado Comedores Editar",
-        "Comunicado Comedores Publicar",
-        "Comunicado Comedores Archivar",
-    ]
-
-    Group.objects.filter(name__in=grupos).delete()
+    """No-op: no se eliminan grupos en migraciones."""
+    return
 
 
 class Migration(migrations.Migration):
