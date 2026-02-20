@@ -170,7 +170,7 @@
                                                 </form>
                                             {% endif %}
 
-                                            {% if comunicado.estado == 'publicado' and can_toggle_destacado %}
+                                            {% if comunicado.estado == 'publicado' and comunicado.tipo != 'externo' and can_toggle_destacado %}
                                                 <form method="post"
                                                       action="{% url 'comunicados_toggle_destacado' comunicado.pk %}"
                                                       class="d-inline">
