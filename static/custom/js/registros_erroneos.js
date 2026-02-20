@@ -187,12 +187,50 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Eliminar registro erróneo
     document.querySelectorAll('.btn-eliminar-error').forEach(btn => {
-        btn.addEventListener('click', function() {
-            mostrarModalConfirmacion('¿Está seguro de eliminar este registro?', () => {
-                eliminarRegistro(this.dataset.registroId);
+        btn.addEventListener('click', async function() {
+            const registroId = this.dataset.registroId;
+            const mensajePreview = await obtenerMensajePreviewEliminar(registroId);
+            mostrarModalConfirmacion(mensajePreview, () => {
+                eliminarRegistro(registroId);
             });
         });
     });
+
+    async function obtenerMensajePreviewEliminar(registroId) {
+        const urlTemplate = document.querySelector('meta[name="eliminar-error-url-template"]')?.content;
+        if (!urlTemplate) {
+            return '¿Está seguro de realizar la baja lógica de este registro?';
+        }
+        const url = urlTemplate.replace('/0/', `/${registroId}/`);
+        const body = new URLSearchParams();
+        body.append('preview', '1');
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: body.toString()
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success || !data.preview) {
+                return '¿Está seguro de realizar la baja lógica de este registro?';
+            }
+            const desglose = (data.preview.desglose_por_modelo || [])
+                .map((item) => `- ${item.modelo}: ${item.cantidad}`)
+                .join('<br>');
+            return `
+                Se aplicará una baja lógica en cascada.<br>
+                <strong>Total afectados:</strong> ${data.preview.total_afectados}<br>
+                ${desglose || '-'}
+            `;
+        } catch (error) {
+            console.error('Error obteniendo preview de eliminación:', error);
+            return '¿Está seguro de realizar la baja lógica de este registro?';
+        }
+    }
     
     function eliminarRegistro(registroId) {
         const urlTemplate = document.querySelector('meta[name="eliminar-error-url-template"]')?.content;

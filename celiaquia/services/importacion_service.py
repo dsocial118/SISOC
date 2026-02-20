@@ -1138,8 +1138,11 @@ class ImportacionService:
                     )
                     legajo_beneficiario.save(update_fields=["rol"])
 
-                    # Eliminar el legajo duplicado del responsable
-                    legajo_responsable.delete()
+                    # Eliminar físicamente el legajo duplicado (limpieza técnica)
+                    if hasattr(legajo_responsable, "hard_delete"):
+                        legajo_responsable.hard_delete()
+                    else:
+                        legajo_responsable.delete()
                     relaciones_cruzadas_creadas += 1
                     logger.info(
                         "Consolidado ciudadano %s: rol actualizado a BENEFICIARIO_Y_RESPONSABLE",

@@ -21,6 +21,7 @@ from ciudadanos.models import Ciudadano, GrupoFamiliar
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio
 from core.security import safe_redirect
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 logger = logging.getLogger("django")
 
@@ -372,10 +373,11 @@ class CiudadanosUpdateView(LoginRequiredMixin, UpdateView):
         return redirect(ciudadano.get_absolute_url())
 
 
-class CiudadanosDeleteView(LoginRequiredMixin, DeleteView):
+class CiudadanosDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = Ciudadano
     template_name = "ciudadanos/ciudadano_confirm_delete.html"
     success_url = reverse_lazy("ciudadanos")
+    success_message = "Ciudadano dado de baja correctamente."
 
 
 class GrupoFamiliarCreateView(LoginRequiredMixin, FormView):
@@ -406,9 +408,14 @@ class GrupoFamiliarCreateView(LoginRequiredMixin, FormView):
         return ctx
 
 
-class GrupoFamiliarDeleteView(LoginRequiredMixin, DeleteView):
+class GrupoFamiliarDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
     model = GrupoFamiliar
     template_name = "ciudadanos/grupofamiliar_confirm_delete.html"
+    success_message = None
 
     def get_success_url(self):
         messages.success(self.request, "Relación familiar eliminada.")

@@ -15,5 +15,5 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% include 'components/delete_confirm.html' with object_name=object.expediente_pago title='Eliminar Expediente' cancel_url_with_id=True cancel_url='expedientespagos_detail' confirm_text='Eliminar' cancel_text='Cancelar' message='¿Estás seguro que deseas eliminar de manera permanente el expediente' %}
+    {% include 'components/delete_confirm.html' with object_name=object.expediente_pago title='Dar de baja Expediente' cancel_url_with_id=True cancel_url='expedientespagos_detail' confirm_text='Dar de baja' cancel_text='Cancelar' message='¿Estás seguro que deseas dar de baja lógica el expediente' %}
 {% endblock content %}

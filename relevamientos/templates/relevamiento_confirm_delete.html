@@ -19,22 +19,6 @@
 {% endblock %}
 ;
 {% block content %}
-    <div class="error-page mt-5 px-3">
-        <div class="error-content">
-            <h3>
-                <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
-            </h3>
-            <p>
-                ¿Estás seguro que deseas eliminar de manera permanente el relevamiento: <span class="font-weight-bold"><a href="{% url 'relevamiento_detalle' relevamiento.comedor.id relevamiento.id %}">{{ relevamiento.id }} {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}</a></span>?
-            </p>
-            <div class="text-left">
-                <form method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                    <a href="{% url 'relevamiento_detalle' relevamiento.comedor.id relevamiento.id %}"
-                       class="btn btn-secondary btn-sm">Cancelar</a>
-                </form>
-            </div>
-        </div>
-    </div>
+    {% url 'relevamiento_detalle' relevamiento.comedor.id relevamiento.id as relevamiento_cancel_url %}
+    {% include 'components/delete_confirm.html' with object_name=relevamiento cancel_url_full=relevamiento_cancel_url confirm_text='Dar de baja' %}
 {% endblock %}

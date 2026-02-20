@@ -107,6 +107,14 @@
                         </a>
                     </li>
                 {% endif %}
+                {% if request.user.is_superuser %}
+                    <li class="nav-item">
+                        <a href="{% url 'papelera_list' %}"
+                           class="nav-link nav-dot ms-2 {% if 'papelera/' in pagina_actual %}active{% endif %}">
+                            <p>Papelera</p>
+                        </a>
+                    </li>
+                {% endif %}
             </ul>
         </li>
     {% endif %}
@@ -170,7 +178,7 @@
         {% endif %}
     {% endwith %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
             <p>
@@ -317,23 +325,22 @@
                 </li>
             {% endif %}
 
-
-            <!-- CDI -->
-            {% if request.user|has_group:"CDI" %}
-                <li class="nav-item {% if 'cdi' in pagina_actual %}menu-open{% endif %}">
+            <!-- Centro de Infancia -->
+            {% if request.user|has_group:"Centro de Infancia Listar" %}
+                <li class="nav-item {% if 'centrodeinfancia' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
-                       class="nav-link nav-dot ms-2 {% if 'cdi' in pagina_actual %}active{% endif %}">
+                       class="nav-link nav-dot ms-2 {% if 'centrodeinfancia' in pagina_actual %}active{% endif %}">
                         <p>
-                            Centro Desarrollo Infantil
+                            Centro de Infancia
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="{% url 'cdi' %}"
-                               class="nav-link ms-4 {% if 'cdi/listar' in pagina_actual %}active{% endif %}">
+                            <a href="{% url 'centrodeinfancia' %}"
+                               class="nav-link ms-4 {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
                                 <i class="nav-icon bi bi-arrow-return-right"></i>
-                                <p>Ver Centro Desarrollo</p>
+                                <p>Ver Centros de Infancia</p>
                             </a>
                         </li>
                     </ul>

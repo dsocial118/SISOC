@@ -44,6 +44,15 @@
             </ul>
         </li>
     {% endif %}
+    {% if request.user.is_superuser %}
+        <li class="nav-item">
+            <a href="{% url 'papelera_list' %}"
+               class="nav-link {% if 'papelera/' in pagina_actual %}active{% endif %}">
+                <i class="nav-icon bi bi-trash3"></i>
+                <p>Papelera</p>
+            </a>
+        </li>
+    {% endif %}
     <li class="nav-item {% if 'comedores_nuevo/' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <i class="nav-icon fa fa-address-card"></i>
@@ -114,12 +123,12 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"CDI" %}
+            {% if request.user|has_group:"Centro de Infancia Listar" %}
                 <li class="nav-item">
-                    <a href="{% url 'cdi' %}"
-                       class="nav-link {% if 'cdi/listar' in pagina_actual %}active{% endif %}">
+                    <a href="{% url 'centrodeinfancia' %}"
+                       class="nav-link {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
                         <i class="nav-icon bi bi-emoji-smile-fill"></i>
-                        <p>Centro Desarrollo Infantil</p>
+                        <p>Centro de Infancia</p>
                     </a>
                 </li>
             {% endif %}

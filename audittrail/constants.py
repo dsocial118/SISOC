@@ -4,6 +4,7 @@ Constantes compartidas para la integración de vistas de auditoría.
 
 TRACKED_MODELS = [
     ("comedores", "comedor", "Comedor"),
+    ("centrodeinfancia", "centrodeinfancia", "Centro de Infancia"),
     ("relevamientos", "relevamiento", "Relevamiento"),
     ("ciudadanos", "ciudadano", "Ciudadano"),
     ("organizaciones", "organizacion", "Organización"),
