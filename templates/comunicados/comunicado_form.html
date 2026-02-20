@@ -5,179 +5,156 @@
 {% block titulo-pagina %}{{ titulo_pagina }}{% endblock %}
 
 {% block content %}
-    <div class="container mt-4">
+    <link rel="stylesheet" href="{% static 'custom/css/comunicadoForm.css' %}" />
+
+    <div class="comunicado-editor">
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
-            <!-- Datos del Comunicado -->
-            <div class="card mb-3 shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-newspaper"></i> Datos del Comunicado
-                    </h5>
+            <!-- Redacción -->
+            <div class="editor-panel">
+                <div class="panel-label">
+                    <i class="fas fa-pen"></i> Redacción
                 </div>
-                <div class="card-body">
+                <div class="panel-body">
                     <div class="mb-3">
-                        <label for="id_titulo" class="form-label">Título <span class="text-danger">*</span></label>
+                        <label for="id_titulo">Título <span class="text-danger">*</span></label>
                         {{ form.titulo }}
                         {% if form.titulo.errors %}
                             <div class="invalid-feedback d-block">{{ form.titulo.errors.0 }}</div>
                         {% endif %}
                     </div>
-
-                    <div class="mb-3">
-                        <label for="id_cuerpo" class="form-label">Contenido <span class="text-danger">*</span></label>
+                    <div class="mb-0">
+                        <label for="id_cuerpo">Contenido <span class="text-danger">*</span></label>
                         {{ form.cuerpo }}
                         {% if form.cuerpo.errors %}
                             <div class="invalid-feedback d-block">{{ form.cuerpo.errors.0 }}</div>
                         {% endif %}
-                        <small class="form-text text-muted">
-                            Escribe el contenido del comunicado en texto plano.
-                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuración -->
+            <div class="editor-panel">
+                <div class="panel-label">
+                    <i class="fas fa-sliders-h"></i> Configuración
+                </div>
+                <div class="panel-body">
+                    <div class="options-row">
+                        <div class="option-item">
+                            <label for="id_tipo">Tipo de Comunicado</label>
+                            {{ form.tipo }}
+                            {% if form.tipo.errors %}
+                                <div class="invalid-feedback d-block">{{ form.tipo.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text">
+                                Interna: SISOC &middot; Externa: App móvil (PWA)
+                            </small>
+                        </div>
+
+                        <div id="subtipo-options" class="option-item {% if form.instance.tipo != 'externo' and not es_tecnico %}d-none{% endif %}">
+                            <label for="id_subtipo">Subtipo</label>
+                            {{ form.subtipo }}
+                            {% if form.subtipo.errors %}
+                                <div class="invalid-feedback d-block">{{ form.subtipo.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text">
+                                Institucional: broadcast &middot; Comedores: dirigido
+                            </small>
+                        </div>
+
+                        <div class="option-item">
+                            <label for="id_fecha_vencimiento">Vencimiento</label>
+                            {{ form.fecha_vencimiento }}
+                            {% if form.fecha_vencimiento.errors %}
+                                <div class="invalid-feedback d-block">{{ form.fecha_vencimiento.errors.0 }}</div>
+                            {% endif %}
+                            <small class="form-text">
+                                Opcional. Deja de mostrarse en esa fecha.
+                            </small>
+                        </div>
                     </div>
 
-                    <!-- Tipo de Comunicado -->
+                    <!-- Destacado - Solo para comunicados internos -->
+                    <div id="destacado-option" class="mt-3 {% if form.instance.tipo == 'externo' or es_tecnico %}d-none{% endif %}">
+                        <div class="form-check form-switch" style="display: flex; align-items: center;">
+                            {{ form.destacado }}
+                            <label class="form-check-label" for="id_destacado" style="margin-bottom: 0;">
+                                <i class="fas fa-star text-warning"></i> Marcar como Destacado
+                            </label>
+                        </div>
+                        <small class="form-text">Aparece fijado arriba de la lista.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Destinatarios (solo para comunicados a comedores) -->
+            <div id="comedores-options" class="editor-panel {% if form.instance.subtipo != 'comedores' %}d-none{% endif %}">
+                <div class="panel-label">
+                    <i class="fas fa-utensils"></i> Destinatarios
+                </div>
+                <div class="panel-body">
                     <div class="mb-3">
-                        <label for="id_tipo" class="form-label">Tipo de Comunicado <span class="text-danger">*</span></label>
-                        {{ form.tipo }}
-                        {% if form.tipo.errors %}
-                            <div class="invalid-feedback d-block">{{ form.tipo.errors.0 }}</div>
+                        <div class="form-check form-switch" style="display: flex; align-items: center;">
+                            {{ form.para_todos_comedores }}
+                            <label class="form-check-label" for="id_para_todos_comedores" style="margin-bottom: 0;">
+                                Enviar a todos los comedores
+                            </label>
+                        </div>
+                        <small class="form-text">Se enviará a todos los comedores que tiene asignados.</small>
+                    </div>
+
+                    <div id="comedores-selector" class="{% if form.instance.para_todos_comedores %}d-none{% endif %}">
+                        <label>Seleccionar Comedores</label>
+                        <div class="d-none">{{ form.comedores }}</div>
+                        {% if form.comedores.errors %}
+                            <div class="invalid-feedback d-block">{{ form.comedores.errors.0 }}</div>
                         {% endif %}
-                        <small class="form-text text-muted">
-                            <strong>Interna:</strong> Visible en SISOC para usuarios del sistema.
-                            <strong>Externa:</strong> Visible en la app móvil (PWA).
-                        </small>
-                    </div>
-
-                    <!-- Subtipo de Comunicado (solo para externos) -->
-                    <div id="subtipo-options" class="mb-3 {% if form.instance.tipo != 'externo' and not es_tecnico %}d-none{% endif %}">
-                        <label for="id_subtipo" class="form-label">Subtipo de Comunicado <span class="text-danger">*</span></label>
-                        {{ form.subtipo }}
-                        {% if form.subtipo.errors %}
-                            <div class="invalid-feedback d-block">{{ form.subtipo.errors.0 }}</div>
-                        {% endif %}
-                        <small class="form-text text-muted">
-                            <strong>Institucional:</strong> Se envía a todos, disponible en el módulo Institucional de la app.
-                            <strong>A Comedores:</strong> Se envía a comedores específicos, disponible en Notificaciones.
-                        </small>
-                    </div>
-
-                    <!-- Opciones para Comunicados a Comedores -->
-                    <div id="comedores-options" class="{% if form.instance.subtipo != 'comedores' %}d-none{% endif %}">
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <h6><i class="fas fa-utensils"></i> Destinatarios</h6>
-
-                                <div class="mb-3">
-                                    <div class="form-check form-switch" style="display: flex; align-items: center;">
-                                        {{ form.para_todos_comedores }}
-                                        <label class="form-check-label" for="id_para_todos_comedores" style="margin-bottom: 0;">
-                                            Enviar a todos los comedores
-                                        </label>
-                                    </div>
-                                    <small class="form-text text-muted">
-                                        Si activa esta opción, el comunicado se enviará a todos los comedores que tiene asignados.
-                                    </small>
-                                </div>
-
-                                <div id="comedores-selector" class="{% if form.instance.para_todos_comedores %}d-none{% endif %}">
-                                    <label for="comedorSearch" class="form-label">Seleccionar Comedores</label>
-                                    <!-- Select original oculto -->
-                                    <div class="d-none">{{ form.comedores }}</div>
-                                    {% if form.comedores.errors %}
-                                        <div class="invalid-feedback d-block">{{ form.comedores.errors.0 }}</div>
-                                    {% endif %}
-                                    <!-- Comedores seleccionados -->
-                                    <div id="comedoresSeleccionados" class="mb-2"></div>
-                                    <!-- Buscador -->
-                                    <div class="input-group mb-2">
-                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                        <input type="text" id="comedorSearch" class="form-control" placeholder="Filtrar comedores por nombre...">
-                                    </div>
-                                    <!-- Lista de comedores disponibles -->
-                                    <div id="comedoresLista" class="border rounded" style="max-height: 250px; overflow-y: auto;"></div>
-                                    <small class="form-text text-muted">
-                                        Use el buscador para filtrar la lista y haga clic en "Agregar" para seleccionar comedores.
-                                    </small>
-                                </div>
-                            </div>
+                        <div id="comedoresSeleccionados" class="comedores-badges mb-2"></div>
+                        <div class="input-group mb-2 comedores-search">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" id="comedorSearch" class="form-control" placeholder="Filtrar comedores por nombre...">
                         </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="id_fecha_vencimiento" class="form-label">Fecha de Vencimiento (opcional)</label>
-                                {{ form.fecha_vencimiento }}
-                                {% if form.fecha_vencimiento.errors %}
-                                    <div class="invalid-feedback d-block">{{ form.fecha_vencimiento.errors.0 }}</div>
-                                {% endif %}
-                                <small class="form-text text-muted">
-                                    Si se establece, el comunicado dejará de mostrarse después de esta fecha.
-                                </small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <!-- Destacado - Solo para comunicados internos -->
-                            <div id="destacado-option" class="mb-3 {% if form.instance.tipo == 'externo' or es_tecnico %}d-none{% endif %}">
-                                <div class="form-check form-switch mt-4" style="display: flex; align-items: center;">
-                                    {{ form.destacado }}
-                                    <label class="form-check-label" for="id_destacado" style="margin-bottom: 0;">
-                                        <i class="fas fa-star text-warning"></i> Marcar como Destacado
-                                    </label>
-                                </div>
-                                <small class="form-text text-muted">
-                                    Los comunicados destacados aparecen fijados arriba de la lista.
-                                </small>
-                            </div>
-                        </div>
+                        <div id="comedoresLista" class="comedores-lista-container"></div>
+                        <small class="form-text">Haga clic en "Agregar" para seleccionar comedores.</small>
                     </div>
                 </div>
             </div>
 
             <!-- Archivos Adjuntos -->
-            <div class="card mb-3 shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-paperclip"></i> Archivos Adjuntos
-                    </h5>
+            <div class="editor-panel">
+                <div class="panel-label">
+                    <i class="fas fa-paperclip"></i> Archivos Adjuntos
                 </div>
-                <div class="card-body">
-                    <!-- Campo para subir múltiples archivos -->
-                    <div class="mb-3">
-                        <label class="form-label">Subir archivos</label>
-                        <input type="file" name="archivos_adjuntos" id="archivosInput" class="d-none" multiple>
-                        <div class="d-flex align-items-center gap-2">
-                            <button type="button" id="addFilesBtn" class="btn btn-outline-primary">
-                                <i class="fas fa-plus"></i> Agregar archivos
-                            </button>
-                            <div id="selectedFilesInfo" class="d-none">
-                                <span class="badge bg-info"><span id="fileCount">0</span> archivo(s) seleccionado(s)</span>
-                            </div>
+                <div class="panel-body">
+                    <input type="file" name="archivos_adjuntos" id="archivosInput" class="d-none" multiple>
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" id="addFilesBtn" class="btn-add-files">
+                            <i class="fas fa-plus me-1"></i> Agregar archivos
+                        </button>
+                        <div id="selectedFilesInfo" class="d-none">
+                            <span class="badge files-badge"><span id="fileCount">0</span> archivo(s)</span>
                         </div>
-                        <small class="form-text text-muted d-block mt-2">
-                            Puedes agregar múltiples archivos haciendo clic varias veces en el botón.
-                        </small>
                     </div>
+                    <small class="form-text d-block mt-2">
+                        Puedes agregar múltiples archivos haciendo clic varias veces.
+                    </small>
 
-                    <!-- Contenedor para vista previa de archivos -->
                     <div id="filePreviewContainer" class="mt-3"></div>
 
-                    <!-- Management form del formset (siempre necesario) -->
                     {% if adjuntos_formset %}
                         {{ adjuntos_formset.management_form }}
                     {% endif %}
 
-                    <!-- Archivos existentes (solo en edición) -->
                     {% if is_edit and adjuntos_formset.forms %}
-                        <hr>
-                        <h6 class="mb-3">Archivos actuales</h6>
+                        <hr style="border-color: #374151; margin-top: 16px;">
+                        <label class="mb-2"><i class="fas fa-folder-open me-1"></i> Archivos actuales</label>
                         <div id="adjuntos-container">
                             {% for adjunto_form in adjuntos_formset %}
                                 {% if adjunto_form.instance.pk %}
-                                    <div class="adjunto-row mb-2 p-2 border rounded bg-light d-flex justify-content-between align-items-center">
+                                    <div class="adjunto-row mb-2 p-2 d-flex justify-content-between align-items-center">
                                         <div>
-                                            <i class="fas fa-file me-2"></i>
+                                            <i class="fas fa-file me-2" style="color: #f39c12;"></i>
                                             <a href="{{ adjunto_form.instance.archivo.url }}" target="_blank">
                                                 {{ adjunto_form.instance.nombre_original }}
                                             </a>
@@ -187,7 +164,7 @@
                                         </div>
                                         <div class="form-check">
                                             {{ adjunto_form.DELETE }}
-                                            <label class="form-check-label text-danger" for="{{ adjunto_form.DELETE.id_for_label }}">
+                                            <label class="form-check-label" for="{{ adjunto_form.DELETE.id_for_label }}" style="color: #e74c3c !important;">
                                                 Eliminar
                                             </label>
                                         </div>
@@ -199,46 +176,42 @@
                 </div>
             </div>
 
-            <!-- Estado actual (solo en edición) -->
+            <!-- Info del comunicado (solo edición) -->
             {% if is_edit and object %}
-                <div class="card mb-3 shadow-sm">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-info-circle"></i> Información del Comunicado
-                        </h5>
+                <div class="editor-panel">
+                    <div class="panel-label">
+                        <i class="fas fa-info-circle"></i> Información
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
+                    <div class="panel-body">
+                        <div class="comunicado-info">
+                            <div class="info-item">
                                 <strong>Estado:</strong>
                                 {% if object.estado == 'borrador' %}
-                                    <span class="badge bg-secondary">Borrador</span>
+                                    <span class="badge" style="background: rgba(156,163,175,0.15); color: #9ca3af;">Borrador</span>
                                 {% elif object.estado == 'publicado' %}
-                                    <span class="badge bg-success">Publicado</span>
+                                    <span class="badge" style="background: rgba(16,185,129,0.15); color: #10b981;">Publicado</span>
                                 {% elif object.estado == 'archivado' %}
-                                    <span class="badge bg-dark">Archivado</span>
+                                    <span class="badge" style="background: rgba(107,114,128,0.15); color: #6b7280;">Archivado</span>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4">
-                                <strong>Creado:</strong>
-                                {{ object.fecha_creacion|date:"d/m/Y H:i" }}
+                            <div class="info-item">
+                                <strong>Creado:</strong> {{ object.fecha_creacion|date:"d/m/Y H:i" }}
                             </div>
-                            <div class="col-md-4">
-                                <strong>Creador:</strong>
-                                {{ object.usuario_creador.get_full_name|default:object.usuario_creador.username }}
+                            <div class="info-item">
+                                <strong>Por:</strong> {{ object.usuario_creador.get_full_name|default:object.usuario_creador.username }}
                             </div>
                         </div>
                     </div>
                 </div>
             {% endif %}
 
-            <!-- Botones -->
-            <div class="d-flex justify-content-between">
-                <a href="{% url 'comunicados_gestion' %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Cancelar
+            <!-- Acciones -->
+            <div class="editor-actions">
+                <a href="{% url 'comunicados_gestion' %}" class="btn btn-cancel">
+                    <i class="fas fa-arrow-left me-1"></i> Cancelar
                 </a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Guardar Comunicado
+                <button type="submit" class="btn btn-save">
+                    <i class="fas fa-save me-1"></i> Guardar Comunicado
                 </button>
             </div>
         </form>
@@ -246,43 +219,31 @@
 
     <script>
     (function() {
-        // Tipo/Subtipo de comunicado - mostrar/ocultar campos
-        const tipoSelect = document.getElementById("id_tipo");
-        const subtipoOptions = document.getElementById("subtipo-options");
-        const subtipoSelect = document.getElementById("id_subtipo");
-        const comedoresOptions = document.getElementById("comedores-options");
-        const destacadoOption = document.getElementById("destacado-option");
-        const paraTodosCheckbox = document.getElementById("id_para_todos_comedores");
-        const comedoresSelector = document.getElementById("comedores-selector");
+        // --- Tipo/Subtipo - mostrar/ocultar campos ---
+        var tipoSelect = document.getElementById("id_tipo");
+        var subtipoOptions = document.getElementById("subtipo-options");
+        var subtipoSelect = document.getElementById("id_subtipo");
+        var comedoresOptions = document.getElementById("comedores-options");
+        var destacadoOption = document.getElementById("destacado-option");
+        var paraTodosCheckbox = document.getElementById("id_para_todos_comedores");
+        var comedoresSelector = document.getElementById("comedores-selector");
 
         function updateFieldsVisibility() {
             if (!tipoSelect) return;
-            const isExterno = tipoSelect.value === "externo";
+            var isExterno = tipoSelect.value === "externo";
 
-            // Mostrar subtipo solo si es externo
-            if (subtipoOptions) {
-                subtipoOptions.classList.toggle("d-none", !isExterno);
-            }
-            // Limpiar subtipo si cambia a interno
-            if (!isExterno && subtipoSelect) {
-                subtipoSelect.value = "";
-            }
+            if (subtipoOptions) subtipoOptions.classList.toggle("d-none", !isExterno);
+            if (!isExterno && subtipoSelect) subtipoSelect.value = "";
 
-            // Mostrar comedores solo si subtipo es "comedores"
             updateSubtipoVisibility();
 
-            // Destacado solo para internos
-            if (destacadoOption) {
-                destacadoOption.classList.toggle("d-none", isExterno);
-            }
+            if (destacadoOption) destacadoOption.classList.toggle("d-none", isExterno);
         }
 
         function updateSubtipoVisibility() {
             if (!subtipoSelect) return;
-            const isComedores = subtipoSelect.value === "comedores";
-            if (comedoresOptions) {
-                comedoresOptions.classList.toggle("d-none", !isComedores);
-            }
+            var isComedores = subtipoSelect.value === "comedores";
+            if (comedoresOptions) comedoresOptions.classList.toggle("d-none", !isComedores);
         }
 
         function updateComedoresSelector() {
@@ -294,32 +255,25 @@
             tipoSelect.addEventListener("change", updateFieldsVisibility);
             updateFieldsVisibility();
         }
-
-        if (subtipoSelect) {
-            subtipoSelect.addEventListener("change", updateSubtipoVisibility);
-        }
-
+        if (subtipoSelect) subtipoSelect.addEventListener("change", updateSubtipoVisibility);
         if (paraTodosCheckbox) {
             paraTodosCheckbox.addEventListener("change", updateComedoresSelector);
             updateComedoresSelector();
         }
 
-        // Manejo de archivos adjuntos
-        let selectedFiles = [];
-        const addFilesBtn = document.getElementById("addFilesBtn");
-        const archivosInput = document.getElementById("archivosInput");
-        const selectedFilesInfo = document.getElementById("selectedFilesInfo");
-        const fileCount = document.getElementById("fileCount");
-        const filePreviewContainer = document.getElementById("filePreviewContainer");
+        // --- Archivos adjuntos ---
+        var selectedFiles = [];
+        var addFilesBtn = document.getElementById("addFilesBtn");
+        var archivosInput = document.getElementById("archivosInput");
+        var selectedFilesInfo = document.getElementById("selectedFilesInfo");
+        var fileCount = document.getElementById("fileCount");
+        var filePreviewContainer = document.getElementById("filePreviewContainer");
 
         if (addFilesBtn && archivosInput) {
-            addFilesBtn.addEventListener("click", function () {
-                archivosInput.click();
-            });
+            addFilesBtn.addEventListener("click", function() { archivosInput.click(); });
 
-            archivosInput.addEventListener("change", function () {
-                const files = Array.from(this.files);
-                selectedFiles = selectedFiles.concat(files);
+            archivosInput.addEventListener("change", function() {
+                selectedFiles = selectedFiles.concat(Array.from(this.files));
                 updateFileDisplay();
             });
 
@@ -334,101 +288,74 @@
                 if (filePreviewContainer) {
                     filePreviewContainer.innerHTML = "";
                     selectedFiles.forEach(function(file, index) {
-                        const previewDiv = document.createElement("div");
-                        previewDiv.className = "archivo-preview-item d-flex align-items-center justify-content-between p-2 mb-2 border rounded";
-                        previewDiv.setAttribute("data-index", index);
+                        var div = document.createElement("div");
+                        div.className = "archivo-preview-item d-flex align-items-center justify-content-between p-2 mb-2 rounded";
 
-                        let iconClass = "fas fa-file";
-                        if (file.type.startsWith("image/")) {
-                            iconClass = "fas fa-file-image text-primary";
-                        } else if (file.type.includes("pdf")) {
-                            iconClass = "fas fa-file-pdf text-danger";
-                        } else if (file.type.includes("word") || file.name.endsWith(".doc") || file.name.endsWith(".docx")) {
-                            iconClass = "fas fa-file-word text-primary";
-                        } else if (file.type.includes("excel") || file.name.endsWith(".xls") || file.name.endsWith(".xlsx")) {
-                            iconClass = "fas fa-file-excel text-success";
-                        }
+                        var icon = "fas fa-file";
+                        if (file.type.startsWith("image/")) icon = "fas fa-file-image";
+                        else if (file.type.includes("pdf")) icon = "fas fa-file-pdf";
+                        else if (file.type.includes("word") || file.name.endsWith(".doc") || file.name.endsWith(".docx")) icon = "fas fa-file-word";
+                        else if (file.type.includes("excel") || file.name.endsWith(".xls") || file.name.endsWith(".xlsx")) icon = "fas fa-file-excel";
 
-                        const sizeStr = formatFileSize(file.size);
-                        previewDiv.innerHTML =
+                        div.innerHTML =
                             '<div class="d-flex align-items-center">' +
-                                '<i class="' + iconClass + ' me-2"></i>' +
+                                '<i class="' + icon + ' me-2" style="color: #f39c12;"></i>' +
                                 '<div>' +
                                     '<div class="fw-bold small">' + file.name + '</div>' +
-                                    '<div class="text-muted small">' + sizeStr + '</div>' +
+                                    '<div class="small" style="color: #6b7280;">' + formatSize(file.size) + '</div>' +
                                 '</div>' +
                             '</div>' +
-                            '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-file" data-index="' + index + '" title="Eliminar">' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-file" data-index="' + index + '">' +
                                 '<i class="fas fa-times"></i>' +
                             '</button>';
 
-                        filePreviewContainer.appendChild(previewDiv);
+                        filePreviewContainer.appendChild(div);
                     });
 
                     filePreviewContainer.querySelectorAll(".btn-remove-file").forEach(function(btn) {
                         btn.addEventListener("click", function() {
-                            const idx = parseInt(this.getAttribute("data-index"));
-                            selectedFiles.splice(idx, 1);
+                            selectedFiles.splice(parseInt(this.getAttribute("data-index")), 1);
                             updateFileDisplay();
                         });
                     });
                 }
             }
 
-            function formatFileSize(bytes) {
-                if (bytes === 0) return "0 Bytes";
-                const k = 1024;
-                const sizes = ["Bytes", "KB", "MB", "GB"];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+            function formatSize(bytes) {
+                if (bytes === 0) return "0 B";
+                var k = 1024, sizes = ["B", "KB", "MB", "GB"];
+                var i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
             }
 
-            const comunicadoForm = document.querySelector('form[enctype="multipart/form-data"]');
-            if (comunicadoForm) {
-                comunicadoForm.addEventListener("submit", function (e) {
+            var form = document.querySelector('form[enctype="multipart/form-data"]');
+            if (form) {
+                form.addEventListener("submit", function(e) {
                     if (selectedFiles.length > 0) {
                         e.preventDefault();
                         e.stopPropagation();
+                        var fd = new FormData(form);
+                        fd.delete("archivos_adjuntos");
+                        selectedFiles.forEach(function(f) { fd.append("archivos_adjuntos", f); });
 
-                        const formData = new FormData(comunicadoForm);
-                        formData.delete("archivos_adjuntos");
-
-                        selectedFiles.forEach(function(file) {
-                            formData.append("archivos_adjuntos", file);
-                        });
-
-                        fetch(comunicadoForm.action || window.location.href, {
-                            method: "POST",
-                            body: formData
+                        fetch(form.action || window.location.href, { method: "POST", body: fd })
+                        .then(function(r) {
+                            if (r.redirected) window.location.href = r.url;
+                            else if (r.ok) window.location.href = r.url || window.location.href;
+                            else alert("Error al guardar el comunicado");
                         })
-                        .then(function(response) {
-                            if (response.redirected) {
-                                window.location.href = response.url;
-                            } else if (response.ok) {
-                                if (response.url && response.url.includes("/gestion")) {
-                                    window.location.href = response.url;
-                                } else {
-                                    window.location.reload();
-                                }
-                            } else {
-                                alert("Error al guardar el comunicado");
-                            }
-                        })
-                        .catch(function() {
-                            alert("Error al enviar el formulario");
-                        });
-
+                        .catch(function() { alert("Error al enviar el formulario"); });
                         return false;
                     }
                 }, true);
             }
         }
 
-        // Selector de comedores con lista + buscador
-        const comedorSearch = document.getElementById("comedorSearch");
-        const comedoresLista = document.getElementById("comedoresLista");
-        const seleccionadosContainer = document.getElementById("comedoresSeleccionados");
-        const selectOriginal = document.getElementById("id_comedores");
+        // --- Selector de comedores ---
+        var comedorSearch = document.getElementById("comedorSearch");
+        var comedoresLista = document.getElementById("comedoresLista");
+        var seleccionadosContainer = document.getElementById("comedoresSeleccionados");
+        var selectOriginal = document.getElementById("id_comedores");
 
         if (comedorSearch && selectOriginal && comedoresLista) {
             var allOptions = [];
@@ -437,7 +364,6 @@
             });
 
             renderAll();
-
             comedorSearch.addEventListener("input", function() {
                 renderLista(this.value.trim().toLowerCase());
             });
@@ -460,68 +386,63 @@
 
             function renderSeleccionados() {
                 seleccionadosContainer.innerHTML = "";
-                var haySeleccionados = false;
-
+                var hay = false;
                 allOptions.forEach(function(opt) {
                     if (!isSelected(opt.value)) return;
-                    haySeleccionados = true;
+                    hay = true;
                     var badge = document.createElement("span");
-                    badge.className = "badge bg-primary me-1 mb-1 d-inline-flex align-items-center gap-1";
-                    badge.style.fontSize = "0.85em";
+                    badge.className = "badge me-1 mb-1 d-inline-flex align-items-center gap-1";
                     badge.innerHTML = opt.text +
-                        ' <button type="button" class="btn-close btn-close-white" style="font-size: 0.6em;" data-value="' + opt.value + '"></button>';
+                        ' <button type="button" class="btn-close btn-close-white" style="font-size:0.55em;" data-value="' + opt.value + '"></button>';
                     badge.querySelector(".btn-close").addEventListener("click", function() {
                         toggleComedor(this.getAttribute("data-value"), false);
                     });
                     seleccionadosContainer.appendChild(badge);
                 });
-
-                if (!haySeleccionados) {
-                    seleccionadosContainer.innerHTML = '<p class="text-muted small mb-0">No hay comedores seleccionados.</p>';
+                if (!hay) {
+                    seleccionadosContainer.innerHTML = '<p class="small mb-0" style="color:#6b7280;">No hay comedores seleccionados.</p>';
                 }
             }
 
             function renderLista(query) {
                 comedoresLista.innerHTML = "";
                 var filtered = allOptions.filter(function(opt) {
-                    if (!query) return true;
-                    return opt.text.toLowerCase().indexOf(query) !== -1;
+                    return !query || opt.text.toLowerCase().indexOf(query) !== -1;
                 });
 
                 if (filtered.length === 0) {
-                    comedoresLista.innerHTML = '<div class="p-3 text-muted text-center">No se encontraron comedores.</div>';
+                    comedoresLista.innerHTML = '<div style="padding:16px;text-align:center;color:#6b7280;">No se encontraron comedores.</div>';
                     return;
                 }
 
                 filtered.forEach(function(opt) {
-                    var selected = isSelected(opt.value);
+                    var sel = isSelected(opt.value);
                     var row = document.createElement("div");
-                    row.className = "d-flex justify-content-between align-items-center px-3 py-2 border-bottom";
-                    //if (selected) row.classList.add("bg-light");
+                    row.className = "comedor-row";
 
-                    var nameSpan = document.createElement("span");
-                    nameSpan.className = "small";
-                    nameSpan.textContent = opt.text;
+                    var name = document.createElement("span");
+                    name.className = "comedor-nombre";
+                    name.textContent = opt.text;
 
                     var btn = document.createElement("button");
                     btn.type = "button";
                     btn.setAttribute("data-value", opt.value);
 
-                    if (selected) {
+                    if (sel) {
                         btn.className = "btn btn-sm btn-outline-danger";
                         btn.innerHTML = '<i class="fas fa-times"></i> Quitar';
                         btn.addEventListener("click", function() {
                             toggleComedor(this.getAttribute("data-value"), false);
                         });
                     } else {
-                        btn.className = "btn btn-sm btn-outline-primary";
+                        btn.className = "btn btn-sm btn-outline-warning";
                         btn.innerHTML = '<i class="fas fa-plus"></i> Agregar';
                         btn.addEventListener("click", function() {
                             toggleComedor(this.getAttribute("data-value"), true);
                         });
                     }
 
-                    row.appendChild(nameSpan);
+                    row.appendChild(name);
                     row.appendChild(btn);
                     comedoresLista.appendChild(row);
                 });
