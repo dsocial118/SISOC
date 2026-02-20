@@ -2,6 +2,7 @@
 
 import pytest
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from comunicados.forms import ComunicadoForm
 from comunicados.models import SubtipoComunicado, TipoComunicado
@@ -48,6 +49,59 @@ def test_form_valido_si_selecciona_comedor_especifico():
         data=_base_form_data(comedores=[str(comedor.pk)]),
         user=User.objects.create_superuser(
             "admin_form_destino", "form_destino@test.com", "test"
+        ),
+    )
+
+    assert form.is_valid()
+
+
+def test_form_invalido_si_adjunto_tiene_extension_no_permitida():
+    archivo = SimpleUploadedFile(
+        "script.exe",
+        b"contenido",
+        content_type="application/octet-stream",
+    )
+    form = ComunicadoForm(
+        data=_base_form_data(para_todos_comedores="on"),
+        files={"archivos_adjuntos": archivo},
+        user=User.objects.create_superuser(
+            "admin_form_ext", "form_ext@test.com", "test"
+        ),
+    )
+
+    assert not form.is_valid()
+    assert "archivos_adjuntos" in form.errors
+
+
+def test_form_invalido_si_adjunto_supera_tamanio_maximo():
+    archivo = SimpleUploadedFile(
+        "archivo.pdf",
+        b"a" * (10 * 1024 * 1024 + 1),
+        content_type="application/pdf",
+    )
+    form = ComunicadoForm(
+        data=_base_form_data(para_todos_comedores="on"),
+        files={"archivos_adjuntos": archivo},
+        user=User.objects.create_superuser(
+            "admin_form_size", "form_size@test.com", "test"
+        ),
+    )
+
+    assert not form.is_valid()
+    assert "archivos_adjuntos" in form.errors
+
+
+def test_form_valido_si_adjunto_es_pdf_y_tamanio_permitido():
+    archivo = SimpleUploadedFile(
+        "archivo.pdf",
+        b"%PDF-1.4",
+        content_type="application/pdf",
+    )
+    form = ComunicadoForm(
+        data=_base_form_data(para_todos_comedores="on"),
+        files={"archivos_adjuntos": archivo},
+        user=User.objects.create_superuser(
+            "admin_form_pdf", "form_pdf@test.com", "test"
         ),
     )
 

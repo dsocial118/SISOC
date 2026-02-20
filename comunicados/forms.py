@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from .models import Comunicado, ComunicadoAdjunto, TipoComunicado, SubtipoComunicado
 from .permissions import (
     es_tecnico,
@@ -6,6 +7,9 @@ from .permissions import (
     get_comedores_del_usuario,
     can_create_comunicado_interno,
 )
+
+MAX_ADJUNTO_SIZE_BYTES = 10 * 1024 * 1024
+ALLOWED_ADJUNTO_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -153,6 +157,20 @@ class ComunicadoForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+    def clean_archivos_adjuntos(self):
+        archivos = self.cleaned_data.get("archivos_adjuntos", [])
+        for archivo in archivos:
+            extension = f".{archivo.name.rsplit('.', 1)[-1].lower()}" if "." in archivo.name else ""
+            if extension not in ALLOWED_ADJUNTO_EXTENSIONS:
+                raise ValidationError(
+                    f"El archivo '{archivo.name}' tiene una extensión no permitida."
+                )
+            if archivo.size > MAX_ADJUNTO_SIZE_BYTES:
+                raise ValidationError(
+                    f"El archivo '{archivo.name}' supera el tamaño máximo de 10 MB."
+                )
+        return archivos
 
 
 class ComunicadoAdjuntoForm(forms.ModelForm):
