@@ -47,12 +47,14 @@ class Comunicado(models.Model):
         verbose_name="Enviar a todos los comedores",
     )
     comedores = models.ManyToManyField(
-        'comedores.Comedor',
+        "comedores.Comedor",
         blank=True,
-        related_name='comunicados',
+        related_name="comunicados",
         verbose_name="Comedores destinatarios",
     )
-    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de creación"
+    )
     fecha_publicacion = models.DateTimeField(
         null=True, blank=True, verbose_name="Fecha de publicación"
     )
@@ -108,10 +110,7 @@ class Comunicado(models.Model):
     @property
     def es_visible(self):
         """Determina si el comunicado debe mostrarse en la vista principal."""
-        return (
-            self.estado == EstadoComunicado.PUBLICADO
-            and not self.esta_vencido
-        )
+        return self.estado == EstadoComunicado.PUBLICADO and not self.esta_vencido
 
 
 class ComunicadoAdjunto(models.Model):
@@ -130,7 +129,9 @@ class ComunicadoAdjunto(models.Model):
         blank=True,
         verbose_name="Nombre original",
     )
-    fecha_subida = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de subida")
+    fecha_subida = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de subida"
+    )
 
     class Meta:
         verbose_name = "Adjunto"
