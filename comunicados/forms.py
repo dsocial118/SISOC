@@ -134,6 +134,26 @@ class ComunicadoForm(forms.ModelForm):
             elif isinstance(widget, forms.CheckboxInput):
                 widget.attrs["class"] = f"{css} form-check-input".strip()
 
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo = cleaned_data.get("tipo")
+        subtipo = cleaned_data.get("subtipo")
+        para_todos_comedores = cleaned_data.get("para_todos_comedores")
+        comedores = cleaned_data.get("comedores")
+
+        if (
+            tipo == TipoComunicado.EXTERNO
+            and subtipo == SubtipoComunicado.COMEDORES
+            and not para_todos_comedores
+            and (not comedores or len(comedores) == 0)
+        ):
+            self.add_error(
+                "comedores",
+                "Debe seleccionar al menos un comedor o marcar 'Enviar a todos los comedores'.",
+            )
+
+        return cleaned_data
+
 
 class ComunicadoAdjuntoForm(forms.ModelForm):
     class Meta:
