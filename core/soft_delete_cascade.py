@@ -392,7 +392,9 @@ def execute_delete_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
             if _is_soft_delete_model(model):
                 instance = model.all_objects.filter(pk=pk).first()
             else:
-                instance = model._meta.base_manager.filter(pk=pk).first()  # noqa: SLF001
+                instance = model._meta.base_manager.filter(
+                    pk=pk
+                ).first()  # noqa: SLF001
             if instance is None:
                 continue
             _hard_delete_instance(instance)
