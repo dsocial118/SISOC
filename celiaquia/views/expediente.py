@@ -925,7 +925,9 @@ class AsignarTecnicoView(View):
             )
             get_data = getattr(request, "GET", {})
             post_data = getattr(request, "POST", {})
-            preview_enabled = str(get_data.get("preview") or post_data.get("preview") or "")
+            preview_enabled = str(
+                get_data.get("preview") or post_data.get("preview") or ""
+            )
             if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
                 asignacion
             ):
@@ -1139,10 +1141,14 @@ class RevisarLegajoView(View):
             try:
                 get_data = getattr(request, "GET", {})
                 post_data = getattr(request, "POST", {})
-                preview_enabled = str(post_data.get("preview") or get_data.get("preview") or "")
-                if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
-                    leg
-                ):
+                preview_enabled = str(
+                    post_data.get("preview") or get_data.get("preview") or ""
+                )
+                if preview_enabled in {
+                    "1",
+                    "true",
+                    "True",
+                } and is_soft_deletable_instance(leg):
                     return JsonResponse(
                         {
                             "success": True,

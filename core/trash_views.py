@@ -12,7 +12,10 @@ from django.urls import reverse
 from django.views import View
 
 from core.soft_delete_preview import build_restore_preview
-from core.soft_delete_registry import get_soft_delete_model_choices, iter_soft_delete_models
+from core.soft_delete_registry import (
+    get_soft_delete_model_choices,
+    iter_soft_delete_models,
+)
 from core.soft_delete_views import SuperAdminRequiredMixin
 
 

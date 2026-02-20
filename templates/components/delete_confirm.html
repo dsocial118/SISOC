@@ -20,9 +20,7 @@
                     <strong>Total de registros afectados:</strong>
                     {{ cascade_preview.total_afectados }}
                 </div>
-                {% if cascade_preview.total_baja_logica %}
-                    <div>Bajas lógicas: {{ cascade_preview.total_baja_logica }}</div>
-                {% endif %}
+                {% if cascade_preview.total_baja_logica %}<div>Bajas lógicas: {{ cascade_preview.total_baja_logica }}</div>{% endif %}
                 {% if cascade_preview.total_borrado_fisico %}
                     <div>Borrados físicos técnicos: {{ cascade_preview.total_borrado_fisico }}</div>
                 {% endif %}

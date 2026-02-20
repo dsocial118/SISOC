@@ -46,7 +46,11 @@ class SoftDeleteDestroyMixin:
 
     def perform_destroy(self, instance):
         if is_soft_deletable_instance(instance):
-            user = self.request.user if getattr(self.request.user, "is_authenticated", False) else None
+            user = (
+                self.request.user
+                if getattr(self.request.user, "is_authenticated", False)
+                else None
+            )
             instance.delete(user=user, cascade=True)
             return
         super().perform_destroy(instance)

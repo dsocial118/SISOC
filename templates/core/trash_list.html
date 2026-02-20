@@ -12,7 +12,8 @@
                         <label class="form-label">Modelo</label>
                         <select name="model" class="form-select" onchange="this.form.submit()">
                             {% for key, label in model_choices %}
-                                <option value="{{ key }}" {% if key == selected_model_key %}selected{% endif %}>{{ label }}</option>
+                                <option value="{{ key }}"
+                                        {% if key == selected_model_key %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
                         </select>
                     </div>

@@ -1,6 +1,10 @@
 """UI-oriented preview helpers for soft-delete and restore cascades."""
 
-from core.soft_delete_cascade import build_delete_plan, build_restore_plan, summarize_plan
+from core.soft_delete_cascade import (
+    build_delete_plan,
+    build_restore_plan,
+    summarize_plan,
+)
 
 
 def build_delete_preview(instance, *, sample_limit=5):
@@ -17,4 +21,3 @@ def build_restore_preview(instance, *, sample_limit=5):
     data = summarize_plan(plan, sample_limit=sample_limit)
     data["operacion"] = "restore"
     return data
-

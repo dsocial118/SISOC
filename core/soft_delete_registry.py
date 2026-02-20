@@ -53,4 +53,3 @@ def get_soft_delete_model_choices():
         label = f"{model._meta.verbose_name_plural.title()} ({model._meta.app_label})"
         choices.append((key, label))
     return sorted(choices, key=lambda item: item[1].lower())
-

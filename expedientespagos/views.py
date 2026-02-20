@@ -1,6 +1,5 @@
-from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseRedirect, Http404
+from django.http import Http404
 from django.views.generic import (
     ListView,
     DetailView,
@@ -206,7 +205,9 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
             return self.form_invalid(form)
 
 
-class ExpedientesPagosDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class ExpedientesPagosDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
     model = ExpedientePago
     template_name = "expedientespagos_confirm_delete.html"
     success_message = "Expediente dado de baja correctamente."

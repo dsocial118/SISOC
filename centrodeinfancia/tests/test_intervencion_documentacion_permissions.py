@@ -52,7 +52,9 @@ def test_subir_documentacion_requires_group():
 
 
 def test_subir_documentacion_requires_post_even_with_group():
-    request = RequestFactory().get("/centrodeinfancia/intervencion/1/documentacion/subir/")
+    request = RequestFactory().get(
+        "/centrodeinfancia/intervencion/1/documentacion/subir/"
+    )
     request.user = _UserStub(in_group=True)
 
     response = _callback("centrodeinfancia_subir_archivo_intervencion")(

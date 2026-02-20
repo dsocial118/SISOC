@@ -321,7 +321,6 @@ class CentroDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
         return super().dispatch(request, *args, **kwargs)
 
 
-
 class InformeCabalArchivoPorCentroDetailView(LoginRequiredMixin, DetailView):
     model = CabalArchivo
     template_name = "informecabal/archivo_por_centro.html"
