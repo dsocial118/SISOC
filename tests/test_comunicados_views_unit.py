@@ -6,10 +6,17 @@ from unittest.mock import patch
 import pytest
 from django.contrib.auth.models import Group, User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
-from comunicados.models import Comunicado, EstadoComunicado, TipoComunicado
+from comunicados.models import (
+    Comunicado,
+    ComunicadoAdjunto,
+    EstadoComunicado,
+    TipoComunicado,
+)
 from core.constants import UserGroups
 
 
@@ -154,3 +161,65 @@ def test_update_rollbackea_todo_si_falla_guardado_de_adjunto(client):
 
     comunicado.refresh_from_db()
     assert comunicado.titulo != "Titulo actualizado"
+
+
+def test_listado_publico_expone_adjuntos_count(client):
+    creador = _create_user("creador_adjuntos_count")
+    viewer = _create_user("viewer_adjuntos_count")
+    comunicado = _create_comunicado(
+        usuario_creador=creador,
+        estado=EstadoComunicado.PUBLICADO,
+        fecha_vencimiento=timezone.now() + timedelta(days=1),
+    )
+    for idx in range(2):
+        ComunicadoAdjunto.objects.create(
+            comunicado=comunicado,
+            archivo=SimpleUploadedFile(
+                f"adjunto_{idx}.pdf",
+                b"%PDF-1.4 test",
+                content_type="application/pdf",
+            ),
+            nombre_original=f"adjunto_{idx}.pdf",
+        )
+    client.force_login(viewer)
+
+    response = client.get(reverse("comunicados"))
+
+    assert response.status_code == 200
+    comunicado_ctx = next(
+        item for item in response.context["comunicados"] if item.pk == comunicado.pk
+    )
+    assert comunicado_ctx.adjuntos_count == 2
+    assert b"2 adjunto(s)" in response.content
+
+
+def test_listado_publico_no_hace_consultas_n_mas_1_para_adjuntos(client):
+    creador = _create_user("creador_nmas1")
+    viewer = _create_user("viewer_nmas1")
+    for idx in range(5):
+        comunicado = _create_comunicado(
+            usuario_creador=creador,
+            estado=EstadoComunicado.PUBLICADO,
+            fecha_vencimiento=timezone.now() + timedelta(days=1),
+        )
+        ComunicadoAdjunto.objects.create(
+            comunicado=comunicado,
+            archivo=SimpleUploadedFile(
+                f"adjunto_{idx}.pdf",
+                b"%PDF-1.4 test",
+                content_type="application/pdf",
+            ),
+            nombre_original=f"adjunto_{idx}.pdf",
+        )
+    client.force_login(viewer)
+
+    with CaptureQueriesContext(connection) as ctx:
+        response = client.get(reverse("comunicados"))
+
+    assert response.status_code == 200
+    adjuntos_queries = [
+        query["sql"]
+        for query in ctx.captured_queries
+        if "comunicados_comunicadoadjunto" in query["sql"].lower()
+    ]
+    assert len(adjuntos_queries) <= 2

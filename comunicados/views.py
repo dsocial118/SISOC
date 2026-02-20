@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
@@ -52,8 +52,12 @@ class ComunicadoListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         estado = self.request.GET.get("estado", "publicado")
 
-        queryset = Comunicado.objects.select_related("usuario_creador").filter(
-            tipo=TipoComunicado.INTERNO  # Solo comunicados internos en la grilla pública
+        queryset = (
+            Comunicado.objects.select_related("usuario_creador")
+            .annotate(adjuntos_count=Count("adjuntos", distinct=True))
+            .filter(
+                tipo=TipoComunicado.INTERNO  # Solo comunicados internos en la grilla pública
+            )
         )
 
         if estado == "archivado":
