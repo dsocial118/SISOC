@@ -1,6 +1,6 @@
 {% load custom_filters %}
 <!-- Componente Delete Confirm -->
-<!-- Uso: include 'components/delete_confirm.html' with object_name=object title='Mi Título' warning_items=lista warning_message='Mensaje' cancel_url=url confirm_text='Eliminar' cancel_text='Cancelar' -->
+<!-- Uso: include 'components/delete_confirm.html' with object_name=object title='Mi Título' warning_items=lista warning_message='Mensaje' cancel_url=url confirm_text='Dar de baja' cancel_text='Cancelar' -->
 <div class="error-page mt-5 px-3">
     <div class="error-content">
         <h3>
@@ -10,13 +10,61 @@
             {% if message %}
                 {{ message }}
             {% else %}
-                ¿Estás seguro que deseas eliminar de manera permanente el registro
+                ¿Estás seguro que deseas realizar una baja lógica en cascada del registro
             {% endif %}
             <span class="font-weight-bold">{{ object_name|upper }}</span>?
         </p>
+        {% if cascade_preview %}
+            <div class="alert alert-info">
+                <div>
+                    <strong>Total de registros afectados:</strong>
+                    {{ cascade_preview.total_afectados }}
+                </div>
+                {% if cascade_preview.total_baja_logica %}
+                    <div>Bajas lógicas: {{ cascade_preview.total_baja_logica }}</div>
+                {% endif %}
+                {% if cascade_preview.total_borrado_fisico %}
+                    <div>Borrados físicos técnicos: {{ cascade_preview.total_borrado_fisico }}</div>
+                {% endif %}
+            </div>
+            <div class="table-responsive mb-3">
+                <table class="table table-sm table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Modelo</th>
+                            <th>Cantidad</th>
+                            <th>Acción</th>
+                            <th>Ejemplos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cascade_preview.desglose_por_modelo %}
+                            <tr>
+                                <td>{{ item.modelo }}</td>
+                                <td>{{ item.cantidad }}</td>
+                                <td>
+                                    {% if item.modo == "baja_logica" %}
+                                        Baja lógica
+                                    {% else %}
+                                        Borrado físico técnico
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.ejemplos %}
+                                        {{ item.ejemplos|join:", " }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
         {% if warning_items %}
             <p>
-                {{ warning_message|default:"Si elimina este registro se borrarán también, de manera permanente, registros relacionados en los siguientes módulos:" }}
+                {{ warning_message|default:"Si da de baja este registro se afectarán también registros relacionados en los siguientes módulos:" }}
             </p>
             <ul class="mb-4">
                 {% for item in warning_items %}<li>{{ item }}</li>{% endfor %}
@@ -25,7 +73,7 @@
         <div class="text-left">
             <form method="post" action="{{ action|default:'' }}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-sm">{{ confirm_text|default:"Eliminar" }}</button>
+                <button type="submit" class="btn btn-danger btn-sm">{{ confirm_text|default:"Dar de baja" }}</button>
                 {% if cancel_url_with_id %}
                     <a href="{% url cancel_url object.id %}"
                        class="btn btn-secondary btn-sm">{{ cancel_text|default:"Cancelar" }}</a>

@@ -19,22 +19,5 @@
 {% endblock %}
 ;
 {% block content %}
-    <div class="error-page mt-5 px-3">
-        <div class="error-content">
-            <h3>
-                <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
-            </h3>
-            <p>
-                ¿Estás seguro que deseas eliminar de manera permanente el observacion: <span class="font-weight-bold"><a href="{% url 'observacion_detalle' observacion.id %}">{{ observacion.id }} - {{ observacion.fecha_visita }}</a></span>?
-            </p>
-            <div class="text-left">
-                <form method="post">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                    <a href="{% url 'observacion_detalle' observacion.id %}"
-                       class="btn btn-secondary btn-sm">Cancelar</a>
-                </form>
-            </div>
-        </div>
-    </div>
+    {% include 'components/delete_confirm.html' with object_name=observacion cancel_url='observacion_detalle' cancel_url_with_id=True confirm_text='Dar de baja' %}
 {% endblock %}

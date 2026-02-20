@@ -1,0 +1,103 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Papelera{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4 class="mb-3">Papelera Global</h4>
+                <form method="get" class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label">Modelo</label>
+                        <select name="model" class="form-select" onchange="this.form.submit()">
+                            {% for key, label in model_choices %}
+                                <option value="{{ key }}" {% if key == selected_model_key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Búsqueda</label>
+                        <input type="text"
+                               name="q"
+                               value="{{ search_query }}"
+                               class="form-control"
+                               placeholder="ID o texto" />
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" type="submit">Buscar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>{{ selected_model_label }}</span>
+                <span class="badge bg-secondary">Eliminados: {{ page_obj.paginator.count }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Registro</th>
+                                <th>Eliminado en</th>
+                                <th>Eliminado por</th>
+                                <th class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                                <tr>
+                                    <td>{{ row.obj.pk }}</td>
+                                    <td>{{ row.obj }}</td>
+                                    <td>{{ row.obj.deleted_at|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if row.obj.deleted_by %}
+                                            {{ row.obj.deleted_by.get_full_name|default:row.obj.deleted_by.username }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'papelera_preview_restore' row.app_label row.model_name row.obj.pk %}"
+                                           class="btn btn-sm btn-outline-success">Restaurar</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No hay registros eliminados para este modelo.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% if page_obj.paginator.num_pages > 1 %}
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination mb-0 justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?model={{ selected_model_key }}&q={{ search_query }}&page={{ page_obj.previous_page_number }}">Anterior</a>
+                                </li>
+                            {% endif %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?model={{ selected_model_key }}&q={{ search_query }}&page={{ page_obj.next_page_number }}">Siguiente</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

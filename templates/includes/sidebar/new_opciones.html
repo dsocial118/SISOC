@@ -44,6 +44,15 @@
             </ul>
         </li>
     {% endif %}
+    {% if request.user.is_superuser %}
+        <li class="nav-item">
+            <a href="{% url 'papelera_list' %}"
+               class="nav-link {% if 'papelera/' in pagina_actual %}active{% endif %}">
+                <i class="nav-icon bi bi-trash3"></i>
+                <p>Papelera</p>
+            </a>
+        </li>
+    {% endif %}
     <li class="nav-item {% if 'comedores_nuevo/' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <i class="nav-icon fa fa-address-card"></i>
