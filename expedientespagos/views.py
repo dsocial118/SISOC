@@ -40,7 +40,7 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
         headers = [
             {"title": "Mes de Pago"},
             {"title": "Año"},
-            {"title": "Número de Expediente"},
+            {"title": "Expediente de Pago"},
             {"title": "Expediente del Convenio"},
             {"title": "Total"},
             {"title": "Fecha de creación"},
