@@ -19,7 +19,7 @@
 
                         <div class="alert alert-secondary">
                             <strong>{{ object.titulo }}</strong>
-                            <br>
+                            <br />
                             <small class="text-muted">
                                 Creado el {{ object.fecha_creacion|date:"d/m/Y H:i" }}
                                 por {{ object.usuario_creador.get_full_name|default:object.usuario_creador.username }}
@@ -41,7 +41,8 @@
                         <form method="post">
                             {% csrf_token %}
                             <div class="d-flex justify-content-between">
-                                <a href="{% url 'comunicados_gestion' %}" class="btn btn-outline-secondary">
+                                <a href="{% url 'comunicados_gestion' %}"
+                                   class="btn btn-outline-secondary">
                                     <i class="fas fa-arrow-left"></i> Cancelar
                                 </a>
                                 <button type="submit" class="btn btn-danger">
