@@ -369,6 +369,29 @@ def fetch_changelog_content():
         return None
 
 
+def parse_changelog_versions(content):
+    """
+    Divide el contenido de CHANGELOG.md en bloques individuales por versión.
+    Retorna una lista de dicts con claves 'version' y 'html'.
+    """
+    blocks = re.split(r"(?=^## Despliegue:)", content, flags=re.MULTILINE)
+    versions = []
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
+        match = re.match(r"## Despliegue:\s*(\d{4}\.\d{2}\.\d{2})", block)
+        if match:
+            version_date = match.group(1)
+            # Omitir la línea de cabecera "## Despliegue: ..." del contenido
+            lines = block.split("\n")
+            block_content = "\n".join(lines[1:]).strip()
+            md_parser = markdown.Markdown(extensions=["extra", "sane_lists"])
+            block_html = md_parser.convert(block_content)
+            versions.append({"version": version_date, "html": block_html})
+    return versions
+
+
 @login_required
 def changelog_view(request):
     """
@@ -382,32 +405,30 @@ def changelog_view(request):
     cached_data = cache.get(cache_key)
 
     if cached_data:
-        changelog_html = cached_data["html"]
+        versions = cached_data["versions"]
         current_version = cached_data["version"]
     else:
         # Obtener contenido del changelog
         changelog_content = fetch_changelog_content()
 
         if changelog_content:
-            # Convertir markdown a HTML
-            md = markdown.Markdown(extensions=["extra", "sane_lists"])
-            changelog_html = md.convert(changelog_content)
+            versions = parse_changelog_versions(changelog_content)
             current_version = get_current_version()
 
             # Guardar en cache
             cache.set(
                 cache_key,
-                {"html": changelog_html, "version": current_version},
+                {"versions": versions, "version": current_version},
                 cache_timeout,
             )
         else:
-            changelog_html = None
+            versions = None
             current_version = get_current_version()
 
     context = {
-        "changelog_html": changelog_html,
+        "versions": versions,
         "current_version": current_version,
-        "error": changelog_html is None,
+        "error": versions is None,
     }
 
     return render(request, "changelog.html", context)
