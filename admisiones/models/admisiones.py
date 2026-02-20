@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
+from core.soft_delete import SoftDeleteModelMixin
 
 
 class EstadoAdmision(models.Model):
@@ -282,7 +283,7 @@ class Documentacion(models.Model):
         return str(self.nombre) if self.nombre else "Sin nombre"
 
 
-class ArchivoAdmision(models.Model):
+class ArchivoAdmision(SoftDeleteModelMixin, models.Model):
     admision = models.ForeignKey(Admision, on_delete=models.CASCADE)
     documentacion = models.ForeignKey(
         Documentacion, on_delete=models.CASCADE, null=True, blank=True
@@ -336,7 +337,7 @@ class ArchivoAdmision(models.Model):
             raise ValidationError(
                 "No se puede eliminar un registro marcado como 'Rectificar'."
             )
-        super().delete(*args, **kwargs)
+        return super().delete(*args, **kwargs)
 
     @property
     def es_personalizado(self):

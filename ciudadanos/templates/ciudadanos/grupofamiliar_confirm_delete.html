@@ -1,15 +1,5 @@
 {% extends "includes/main.html" %}
 
 {% block content %}
-    <h1>Eliminar relación familiar</h1>
-    <p>
-        ¿Confirmás que querés eliminar el vínculo con <strong>{{ object.ciudadano_2 }}</strong>?
-    </p>
-    <form method="post">
-        {% csrf_token %}
-        {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}" />{% endif %}
-        <button type="submit" class="btn btn-danger">Eliminar</button>
-        <a href="{{ request.GET.next|default:object.ciudadano_1.get_absolute_url }}"
-           class="btn btn-outline-secondary">Cancelar</a>
-    </form>
+    {% include 'components/delete_confirm.html' with object_name=object cancel_url_full=request.GET.next|default:object.ciudadano_1.get_absolute_url confirm_text='Dar de baja' %}
 {% endblock %}

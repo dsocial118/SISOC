@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
+from core.soft_delete import SoftDeleteManager, SoftDeleteModelMixin
 
 
-class DuplaManager(models.Manager):
+class DuplaManager(SoftDeleteManager):
     """Manager personalizado para el modelo Dupla."""
 
     def activas(self):
@@ -10,7 +11,7 @@ class DuplaManager(models.Manager):
         return self.filter(estado="Activo").order_by("nombre")
 
 
-class Dupla(models.Model):
+class Dupla(SoftDeleteModelMixin, models.Model):
     """Relación entre técnicos y abogados que trabajan como dupla.
 
     Coordinador:

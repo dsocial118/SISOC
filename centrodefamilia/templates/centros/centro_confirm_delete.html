@@ -1,8 +1,5 @@
 {% extends "includes/main.html" %}
 {% block title %}Confirmar Eliminación{% endblock %}
-{% block breadcrumb %}
-    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
-{% endblock %}
 {% block content %}
-    {% include 'components/delete_confirm.html' with object_name=object_title message=delete_message cancel_url=cancel_url %}
+    {% include 'components/delete_confirm.html' with object_name=object.nombre cancel_url='centro_detail' cancel_url_with_id=True confirm_text='Dar de baja' %}
 {% endblock %}

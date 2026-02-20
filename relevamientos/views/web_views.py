@@ -29,6 +29,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 from comedores.models import Comedor
 from relevamientos.form import RelevamientoForm
@@ -354,10 +355,15 @@ class RelevamientoUpdateView(LoginRequiredMixin, UpdateView):
                 )
 
 
-class RelevamientoDeleteView(LoginRequiredMixin, DeleteView):
+class RelevamientoDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
     model = Relevamiento
     template_name = "relevamiento_confirm_delete.html"
     context_object_name = "relevamiento"
+    success_message = "Relevamiento dado de baja correctamente."
 
     def get_success_url(self):
         comedor = self.object.comedor

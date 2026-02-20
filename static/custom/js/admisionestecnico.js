@@ -161,6 +161,35 @@ let admisionIdEliminar;
 let documentacionIdEliminar;
 let archivoIdEliminar;
 
+function construirUrlEliminar(admisionId, identifier, includePreview = false) {
+    let url = `/admision/${admisionId}/documentacion/${identifier}/eliminar/`;
+    const params = new URLSearchParams();
+    if (archivoIdEliminar !== null) {
+        params.append("archivo_id", archivoIdEliminar);
+    }
+    if (includePreview) {
+        params.append("preview", "1");
+    }
+    if ([...params].length) {
+        url += `?${params.toString()}`;
+    }
+    return url;
+}
+
+function renderizarPreview(preview) {
+    if (!preview || !Array.isArray(preview.desglose_por_modelo)) {
+        return "¿Estás seguro de que deseas dar de baja este archivo?";
+    }
+    const lineas = preview.desglose_por_modelo
+        .map((item) => `- ${item.modelo}: ${item.cantidad}`)
+        .join("<br>");
+    return `
+        <p>Se realizará una baja lógica en cascada.</p>
+        <p><strong>Total de registros afectados:</strong> ${preview.total_afectados}</p>
+        <p class="mb-0">${lineas || "-"}</p>
+    `;
+}
+
 function confirmarEliminar(admisionId, documentacionId, archivoId) {
     admisionIdEliminar = admisionId;
     documentacionIdEliminar = documentacionId !== undefined && documentacionId !== null
@@ -169,7 +198,40 @@ function confirmarEliminar(admisionId, documentacionId, archivoId) {
     archivoIdEliminar = archivoId !== undefined && archivoId !== null
         ? archivoId
         : null;
-    $("#modalConfirmarEliminar").modal("show");
+    const identifier = documentacionIdEliminar !== null ? documentacionIdEliminar : archivoIdEliminar;
+    const modalBody = document.getElementById("modalConfirmarEliminarBody");
+    if (!identifier) {
+        if (modalBody) {
+            modalBody.textContent = "No se pudo preparar la baja del archivo.";
+        }
+        $("#modalConfirmarEliminar").modal("show");
+        return;
+    }
+
+    if (modalBody) {
+        modalBody.innerHTML = "Cargando preview de impacto...";
+    }
+
+    fetch(construirUrlEliminar(admisionIdEliminar, identifier, true), {
+        method: "DELETE",
+        headers: { "X-CSRFToken": CSRF_TOKEN }
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (modalBody) {
+                modalBody.innerHTML = data.success
+                    ? renderizarPreview(data.preview)
+                    : "No se pudo obtener el preview de impacto.";
+            }
+        })
+        .catch(() => {
+            if (modalBody) {
+                modalBody.textContent = "No se pudo obtener el preview de impacto.";
+            }
+        })
+        .finally(() => {
+            $("#modalConfirmarEliminar").modal("show");
+        });
 }
 
 const botonConfirmarEliminar = document.getElementById("btnConfirmarEliminar");
@@ -191,14 +253,7 @@ function eliminarArchivo(admisionId) {
         return;
     }
 
-    let url = `/admision/${admisionId}/documentacion/${identifier}/eliminar/`;
-    const params = new URLSearchParams();
-    if (archivoIdEliminar !== null) {
-        params.append("archivo_id", archivoIdEliminar);
-    }
-    if ([...params].length) {
-        url += `?${params.toString()}`;
-    }
+    const url = construirUrlEliminar(admisionId, identifier, false);
 
     const removeObservationRows = (...ids) => {
         ids.filter(Boolean).forEach((id) => {
