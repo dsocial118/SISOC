@@ -15,8 +15,10 @@ from comunicados.models import (
     Comunicado,
     ComunicadoAdjunto,
     EstadoComunicado,
+    SubtipoComunicado,
     TipoComunicado,
 )
+from comedores.models import Comedor
 from core.constants import UserGroups
 
 
@@ -261,3 +263,80 @@ def test_gestion_muestra_boton_editar_si_usuario_tiene_permiso(client):
     assert response.status_code == 200
     edit_url = reverse("comunicados_editar", kwargs={"pk": comunicado.pk})
     assert edit_url.encode() in response.content
+
+
+def test_create_guarda_adjuntos_y_destinatarios(client):
+    admin = User.objects.create_superuser("admin_create_ok", "create_ok@test.com", "test")
+    comedor = Comedor.objects.create(nombre="Comedor create ok")
+    client.force_login(admin)
+    archivo = SimpleUploadedFile(
+        "adjunto_create.pdf",
+        b"%PDF-1.4 create",
+        content_type="application/pdf",
+    )
+
+    response = client.post(
+        reverse("comunicados_crear"),
+        data=_comunicado_form_data(
+            titulo="Create con related",
+            tipo=TipoComunicado.EXTERNO,
+            subtipo=SubtipoComunicado.COMEDORES,
+            comedores=[str(comedor.pk)],
+            archivos_adjuntos=archivo,
+        ),
+    )
+
+    assert response.status_code == 302
+    comunicado = Comunicado.objects.get(titulo="Create con related")
+    assert comunicado.comedores.filter(pk=comedor.pk).exists()
+    assert comunicado.adjuntos.count() == 1
+
+
+def test_update_guarda_adjuntos_y_destinatarios(client):
+    admin = User.objects.create_superuser("admin_update_ok", "update_ok@test.com", "test")
+    comedor_a = Comedor.objects.create(nombre="Comedor A")
+    comedor_b = Comedor.objects.create(nombre="Comedor B")
+    comunicado = _create_comunicado(
+        usuario_creador=admin,
+        estado=EstadoComunicado.BORRADOR,
+        tipo=TipoComunicado.EXTERNO,
+    )
+    comunicado.subtipo = SubtipoComunicado.COMEDORES
+    comunicado.save(update_fields=["subtipo"])
+    comunicado.comedores.add(comedor_a)
+    client.force_login(admin)
+    archivo = SimpleUploadedFile(
+        "adjunto_update.pdf",
+        b"%PDF-1.4 update",
+        content_type="application/pdf",
+    )
+
+    response = client.post(
+        reverse("comunicados_editar", kwargs={"pk": comunicado.pk}),
+        data=_comunicado_form_data(
+            titulo="Update con related",
+            tipo=TipoComunicado.EXTERNO,
+            subtipo=SubtipoComunicado.COMEDORES,
+            comedores=[str(comedor_b.pk)],
+            archivos_adjuntos=archivo,
+        ),
+    )
+
+    assert response.status_code == 302
+    comunicado.refresh_from_db()
+    assert comunicado.titulo == "Update con related"
+    assert list(comunicado.comedores.values_list("pk", flat=True)) == [comedor_b.pk]
+    assert comunicado.adjuntos.count() == 1
+
+
+def test_create_invalido_renderiza_formulario_con_errores(client):
+    admin = User.objects.create_superuser("admin_invalid", "invalid@test.com", "test")
+    client.force_login(admin)
+
+    response = client.post(
+        reverse("comunicados_crear"),
+        data=_comunicado_form_data(titulo=""),
+    )
+
+    assert response.status_code == 200
+    assert "titulo" in response.context["form"].errors
