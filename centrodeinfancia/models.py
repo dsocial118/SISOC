@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
+from core.soft_delete import SoftDeleteModelMixin
 from intervenciones.models.intervenciones import (
     SubIntervencion,
     TipoContacto,
@@ -11,7 +12,7 @@ from intervenciones.models.intervenciones import (
 from organizaciones.models import Organizacion
 
 
-class CentroDeInfancia(models.Model):
+class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
     nombre = models.CharField(max_length=255)
     organizacion = models.ForeignKey(
         Organizacion,
@@ -30,7 +31,7 @@ class CentroDeInfancia(models.Model):
         return str(self.nombre)
 
 
-class NominaCentroInfancia(models.Model):
+class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     ESTADO_PENDIENTE = "pendiente"
     ESTADO_ACTIVO = "activo"
     ESTADO_BAJA = "baja"
@@ -68,7 +69,7 @@ class NominaCentroInfancia(models.Model):
         return f"{self.ciudadano} en {self.centro} ({self.get_estado_display()})"
 
 
-class IntervencionCentroInfancia(models.Model):
+class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
     centro = models.ForeignKey(
         CentroDeInfancia,
         on_delete=models.CASCADE,
