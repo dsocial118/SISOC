@@ -15,21 +15,6 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <div class="error-page mt-5 px-3"></div>
-    <div class="error-content">
-        <h3>
-            <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
-        </h3>
-        <p>¿Estás seguro que deseas eliminar de manera permanente la rendición?</p>
-        <div class="text-left">
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                <a href="{% url 'expedientespagos_detail' object.id %}">
-                    <button type="button" class="btn btn-secondary btn-sm">Cancelar</button>
-                </a>
-            </form>
-        </div>
-    </div>
-</div>
+    {% url 'rendicioncuentasmensual_detail' object.id as rendicion_cancel_url %}
+    {% include 'components/delete_confirm.html' with object_name=object cancel_url_full=rendicion_cancel_url confirm_text='Dar de baja' %}
 {% endblock content %}

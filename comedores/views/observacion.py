@@ -12,6 +12,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import Comedor, Observacion
 from core.security import safe_redirect
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 
 class ObservacionCreateView(LoginRequiredMixin, CreateView):
@@ -96,10 +97,11 @@ class ObservacionUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-class ObservacionDeleteView(LoginRequiredMixin, DeleteView):
+class ObservacionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = Observacion
     template_name = "observacion/observacion_confirm_delete.html"
     context_object_name = "observacion"
+    success_message = "Observación dada de baja correctamente."
 
     def get_success_url(self):
         comedor = self.object.comedor

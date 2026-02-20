@@ -7,6 +7,7 @@ from django.utils import timezone
 from core.models import Municipio, Provincia
 from core.models import Localidad
 from core.fields import UnicodeEmailField
+from core.soft_delete import SoftDeleteModelMixin
 from organizaciones.models import Organizacion
 from ciudadanos.models import Ciudadano
 from duplas.models import Dupla
@@ -201,7 +202,7 @@ class EstadoHistorial(models.Model):
         verbose_name_plural = "Historiales de Estado de Comedor"
 
 
-class Comedor(models.Model):
+class Comedor(SoftDeleteModelMixin, models.Model):
     """
     Representa una Comedor/Merendero.
 
@@ -380,7 +381,7 @@ class Comedor(models.Model):
             return self.ultimo_estado.estado_general.estado_actividad.estado
         return self.ESTADO_GENERAL_DEFAULT
 
-    def delete(self, using=None, keep_parents=False):
+    def hard_delete(self, using=None, keep_parents=False):
         """
         Elimina el comedor junto con su historial de estados evitando errores de llaves protegidas.
         """
@@ -389,12 +390,12 @@ class Comedor(models.Model):
             # pylint: disable=access-member-before-definition
             ultimo_estado_id = getattr(self, "ultimo_estado_id", None)
             if ultimo_estado_id:
-                type(self).objects.using(db_alias).filter(pk=self.pk).update(
+                type(self).all_objects.using(db_alias).filter(pk=self.pk).update(
                     ultimo_estado=None
                 )
                 self.ultimo_estado_id = None
             EstadoHistorial.objects.using(db_alias).filter(comedor_id=self.pk).delete()
-            return super().delete(using=db_alias, keep_parents=keep_parents)
+            return super().hard_delete(using=db_alias, keep_parents=keep_parents)
 
     class Meta:
         indexes = [
@@ -449,7 +450,7 @@ class AuditComedorPrograma(models.Model):
         return f"{self.comedor.nombre}: {from_programa} -> {to_programa}"
 
 
-class Nomina(models.Model):
+class Nomina(SoftDeleteModelMixin, models.Model):
     ESTADO_PENDIENTE = "pendiente"
     ESTADO_ACTIVO = "activo"
     ESTADO_BAJA = "baja"
@@ -498,7 +499,7 @@ class ImagenComedor(models.Model):
         return f"Imagen de {self.comedor.nombre}"
 
 
-class Observacion(models.Model):
+class Observacion(SoftDeleteModelMixin, models.Model):
     """
     Modelo que representa una observación realizada en un Comedor/Merendero.
     """
