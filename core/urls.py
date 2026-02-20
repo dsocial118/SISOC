@@ -16,6 +16,11 @@ from core.views import (
     MontoPrestacionProgramaDetailView,
 )
 from core.decorators import group_required
+from .trash_views import (
+    TrashListView,
+    TrashRestorePreviewView,
+    TrashRestoreView,
+)
 
 urlpatterns = [
     path("inicio/", inicio_view, name="inicio"),
@@ -74,5 +79,16 @@ urlpatterns = [
         "montoprestacion/<int:pk>/detalle",
         group_required(["Prestacion"])(MontoPrestacionProgramaDetailView.as_view()),
         name="montoprestacion_detalle",
+    ),
+    path("papelera/", TrashListView.as_view(), name="papelera_list"),
+    path(
+        "papelera/preview-restore/<str:app_label>/<str:model_name>/<int:pk>/",
+        TrashRestorePreviewView.as_view(),
+        name="papelera_preview_restore",
+    ),
+    path(
+        "papelera/restore/<str:app_label>/<str:model_name>/<int:pk>/",
+        TrashRestoreView.as_view(),
+        name="papelera_restore",
     ),
 ]

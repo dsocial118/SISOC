@@ -19,6 +19,7 @@ from rendicioncuentasfinal.models import (
     TipoDocumentoRendicionFinal,
 )
 from config.middlewares.threadlocals import get_current_user
+from core.soft_delete_signals import post_soft_delete
 
 
 @receiver(post_save, sender=Comedor)
@@ -63,7 +64,8 @@ def update_comedor_in_gestionar(sender, instance, **kwargs):
 
 
 @receiver(pre_delete, sender=Comedor)
-def remove_comedor_to_gestionar(sender, instance, using, **kwargs):
+@receiver(post_soft_delete, sender=Comedor)
+def remove_comedor_to_gestionar(sender, instance, **kwargs):
     AsyncRemoveComedorToGestionar(instance.id).start()
 
 

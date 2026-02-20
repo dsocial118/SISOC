@@ -1,0 +1,76 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Detalle Centro de Infancia{% endblock %}
+{% block titulo-pagina %}{{ centro.nombre }}{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="d-flex gap-2 mb-3">
+            <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Volver</a>
+            <a href="{% url 'centrodeinfancia_editar' centro.id %}"
+               class="btn btn-warning">Editar</a>
+            <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
+               class="btn btn-outline-primary">Ver Nómina</a>
+            <a href="{% url 'centrodeinfancia_intervencion_crear' centro.id %}"
+               class="btn btn-outline-success">Nueva Intervención</a>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5>Datos del Centro</h5>
+                <p>
+                    <strong>Nombre:</strong> {{ centro.nombre }}
+                </p>
+                <p>
+                    <strong>Organización:</strong> {{ centro.organizacion|default:"-" }}
+                </p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5>Nómina ({{ nomina_total }})</h5>
+                        <ul class="list-group list-group-flush">
+                            {% for item in nomina_page_obj %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>{{ item.ciudadano }}</span>
+                                    <span class="badge bg-secondary">{{ item.get_estado_display }}</span>
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item text-muted">Sin registros de nómina.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5>Intervenciones ({{ intervenciones_total }})</h5>
+                        <ul class="list-group list-group-flush">
+                            {% for item in intervenciones_page_obj %}
+                                <li class="list-group-item">
+                                    <div>
+                                        <strong>{{ item.fecha|date:"d/m/Y" }}</strong>
+                                    </div>
+                                    <div>{{ item.tipo_intervencion|default:"-" }} / {{ item.subintervencion|default:"-" }}</div>
+                                    <div class="mt-2 d-flex gap-1">
+                                        <a href="{% url 'centrodeinfancia_intervencion_editar' centro.id item.id %}"
+                                           class="btn btn-sm btn-warning">Editar</a>
+                                        <a href="{% url 'centrodeinfancia_intervencion_borrar' centro.id item.id %}"
+                                           class="btn btn-sm btn-danger">Eliminar</a>
+                                    </div>
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item text-muted">Sin intervenciones.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
