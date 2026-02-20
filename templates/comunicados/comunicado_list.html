@@ -64,23 +64,25 @@
                             </span>
                         </div>
                     {% endif %}
-                    <h5 class="card-title" style="margin-bottom: 6px;">
-                        <a href="{% url 'comunicados_ver' comunicado.pk %}" class="text-decoration-none">
-                            {{ comunicado.titulo }}
-                        </a>
-                    </h5>
-                    <p class="card-text small mb-2" style="color: #9ca3af;">
-                        <i class="fas fa-calendar"></i> {{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}
-                        <span class="ms-3">
-                            <i class="fas fa-user"></i> {{ comunicado.usuario_creador.get_full_name|default:comunicado.usuario_creador.username }}
-                        </span>
-                        {% if comunicado.adjuntos.exists %}
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                        <h5 class="card-title mb-0">
+                            <a href="{% url 'comunicados_ver' comunicado.pk %}" class="text-decoration-none">
+                                {{ comunicado.titulo }}
+                            </a>
+                        </h5>
+                        <p class="card-text small mb-0" style="color: #9ca3af; white-space: nowrap;">
+                            <i class="fas fa-calendar"></i> {{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}
                             <span class="ms-3">
-                                <i class="fas fa-paperclip"></i> {{ comunicado.adjuntos.count }} adjunto(s)
+                                <i class="fas fa-user"></i> {{ comunicado.usuario_creador.get_full_name|default:comunicado.usuario_creador.username }}
                             </span>
-                        {% endif %}
-                    </p>
-                    <p class="card-text" style="color: #d1d5db;">
+                            {% if comunicado.adjuntos.exists %}
+                                <span class="ms-3">
+                                    <i class="fas fa-paperclip"></i> {{ comunicado.adjuntos.count }} adjunto(s)
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <p class="card-text mb-3" style="color: #d1d5db;">
                         {{ comunicado.cuerpo|truncatewords:50 }}
                     </p>
                     <a href="{% url 'comunicados_ver' comunicado.pk %}" class="btn btn-sm btn-outline-primary">
