@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from core.soft_delete import SoftDeleteModelMixin
 
 
 def validar_rango_anio_fecha(value):
@@ -85,7 +86,7 @@ class TipoContacto(models.Model):
         ordering = ["id"]
 
 
-class Intervencion(models.Model):
+class Intervencion(SoftDeleteModelMixin, models.Model):
     """
     Registro de intervenciones realizadas a comedores.
     """

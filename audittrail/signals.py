@@ -9,6 +9,11 @@ from django.dispatch import receiver
 
 from auditlog.models import LogEntry
 from admisiones.models.admisiones import Admision
+from centrodeinfancia.models import (
+    CentroDeInfancia,
+    IntervencionCentroInfancia,
+    NominaCentroInfancia,
+)
 from comedores.models import Comedor, ImagenComedor, Referente
 from config.middlewares.threadlocals import get_current_user
 from intervenciones.models.intervenciones import Intervencion
@@ -38,6 +43,30 @@ def _log_comedor_event(comedor: Comedor, changes: dict, action: int):
     def _create_log():
         LogEntry.objects.log_create(
             comedor,
+            action=action,
+            changes=changes,
+            actor=actor,
+        )
+
+    transaction.on_commit(_create_log)
+
+
+def _log_centro_infancia_event(
+    centro: CentroDeInfancia,
+    changes: dict,
+    action: int,
+):
+    """
+    Genera una entrada de auditoría para un centro de infancia con los cambios provistos.
+    """
+    if not centro or not changes:
+        return
+
+    actor = _get_actor()
+
+    def _create_log():
+        LogEntry.objects.log_create(
+            centro,
             action=action,
             changes=changes,
             actor=actor,
@@ -101,6 +130,55 @@ def log_intervencion_creation(sender, instance: Intervencion, created: bool, **k
 
     _log_comedor_event(
         instance.comedor,
+        {"Intervención": [None, description]},
+        LogEntry.Action.CREATE,
+    )
+
+
+@receiver(post_save, sender=NominaCentroInfancia)
+def log_nomina_centro_infancia_creation(
+    sender,
+    instance: NominaCentroInfancia,
+    created: bool,
+    **kwargs,
+):
+    """
+    Registra altas de nómina vinculadas a un centro de infancia.
+    """
+    if not created or not instance.centro:
+        return
+
+    description = f"Nómina #{instance.pk}"
+    if instance.ciudadano_id:
+        description = f"{description} - {instance.ciudadano}"
+
+    _log_centro_infancia_event(
+        instance.centro,
+        {"Nómina": [None, description]},
+        LogEntry.Action.CREATE,
+    )
+
+
+@receiver(post_save, sender=IntervencionCentroInfancia)
+def log_intervencion_centro_infancia_creation(
+    sender,
+    instance: IntervencionCentroInfancia,
+    created: bool,
+    **kwargs,
+):
+    """
+    Registra altas de intervenciones vinculadas a un centro de infancia.
+    """
+    if not created or not instance.centro:
+        return
+
+    tipo = getattr(instance, "tipo_intervencion", None)
+    description = f"Intervención #{instance.pk}"
+    if tipo:
+        description = f"{description} - {tipo}"
+
+    _log_centro_infancia_event(
+        instance.centro,
         {"Intervención": [None, description]},
         LogEntry.Action.CREATE,
     )

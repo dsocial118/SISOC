@@ -68,7 +68,7 @@ INSTALLED_APPS = [
     "dashboard",
     "comedores",
     "organizaciones",
-    "cdi",
+    "centrodeinfancia",
     "ciudadanos",
     "duplas",
     "admisiones",
@@ -156,6 +156,13 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # DB
+DB_CONN_MAX_AGE = int(
+    os.getenv("DB_CONN_MAX_AGE", "60" if ENVIRONMENT == "prd" else "0")
+)
+DB_CONN_HEALTH_CHECKS = os.getenv(
+    "DB_CONN_HEALTH_CHECKS", "true" if ENVIRONMENT == "prd" else "false"
+).strip().lower() in ("1", "true", "yes", "on")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
@@ -168,7 +175,8 @@ DATABASES = {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
             "charset": "utf8mb4",
         },
-        "CONN_MAX_AGE": 0,
+        "CONN_MAX_AGE": DB_CONN_MAX_AGE,
+        "CONN_HEALTH_CHECKS": DB_CONN_HEALTH_CHECKS,
     }
 }
 

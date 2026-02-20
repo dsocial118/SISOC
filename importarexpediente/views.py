@@ -733,9 +733,9 @@ class BorrarDatosImportadosView(LoginRequiredMixin, FormView):
             # Primero borrar los registros hijos para respetar las FK (DO_NOTHING)
             reg_deleted, _ = registros_qs.delete()
             # Luego borrar los expedientes creados por el lote
-            exp_deleted, _ = ExpedientePago.objects.filter(
+            exp_deleted, _ = ExpedientePago.all_objects.filter(
                 id__in=expediente_ids
-            ).delete()
+            ).hard_delete()
 
         # Resetear el estado de importación del lote
         try:

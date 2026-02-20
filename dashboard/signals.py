@@ -12,6 +12,7 @@ from dashboard.utils import (
     calcular_presupuesto_merienda,
     calcular_presupuesto_comida,
 )
+from core.soft_delete_signals import post_soft_delete, post_restore
 
 from .utils import table_exists
 
@@ -71,6 +72,16 @@ def register_signals():
 
         @receiver(post_delete, sender=Relevamiento)
         def trigger_update_delete_relevamiento(sender, instance, **kwargs):
+            return update_dashboard_comedores(sender, instance, **kwargs)
+
+        @receiver(post_soft_delete, sender=Comedor)
+        @receiver(post_restore, sender=Comedor)
+        def trigger_update_soft_delete_comedor(sender, instance, **kwargs):
+            return update_dashboard_comedores(sender, instance, **kwargs)
+
+        @receiver(post_soft_delete, sender=Relevamiento)
+        @receiver(post_restore, sender=Relevamiento)
+        def trigger_update_soft_delete_relevamiento(sender, instance, **kwargs):
             return update_dashboard_comedores(sender, instance, **kwargs)
 
         @receiver(post_delete, sender=Prestacion)
