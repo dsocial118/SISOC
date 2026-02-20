@@ -42,6 +42,33 @@
             <p>Novedades del sistema</p>
         </a>
     </li>
+    <!-- COMUNICADOS -->
+    <li class="nav-item nav-main-item {% if 'comunicados' in pagina_actual %}menu-open{% endif %}">
+        <a href="#"
+           class="nav-link {% if 'comunicados' in pagina_actual %}active{% endif %}">
+            <i class="nav-icon bi bi-newspaper"></i>
+            <p>
+                Comunicados
+                <i class="nav-arrow bi bi-chevron-right"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview">
+            <li class="nav-item">
+                <a href="{% url 'comunicados' %}"
+                   class="nav-link nav-dot ms-2 {% if 'comunicados/' == pagina_actual %}active{% endif %}">
+                    <p>Ver Comunicados</p>
+                </a>
+            </li>
+            {% if request.user|has_group:"Comunicado Crear" or request.user|has_group:"Comunicado Editar" or request.user|has_group:"Comunicado Publicar" or request.user|has_group:"Comunicado Archivar" or request.user|has_group:"Administrador" %}
+                <li class="nav-item">
+                    <a href="{% url 'comunicados_gestion' %}"
+                       class="nav-link nav-dot ms-2 {% if 'comunicados/gestion' in pagina_actual %}active{% endif %}">
+                        <p>Crear comunicado</p>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </li>
 
     {% if request.user|has_group:"Administrador" %}
         <li class="nav-item nav-main-item">

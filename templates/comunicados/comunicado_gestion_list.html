@@ -1,0 +1,212 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Gestión de Comunicados{% endblock %}
+{% block titulo-pagina %}Gestión de Comunicados{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    <div class="container mt-4">
+        <!-- Barra de búsqueda, filtros y acciones -->
+        <div class="card mb-4">
+            <div class="card-body" style="padding: 20px;">
+                <!-- Búsqueda + Botón nuevo -->
+                <div class="d-flex gap-3 align-items-center mb-3 flex-wrap">
+                    <form method="get" class="input-group" style="flex: 1; min-width: 250px;">
+                        <input type="text"
+                               name="titulo"
+                               class="form-control"
+                               placeholder="Buscar por título..."
+                               value="{{ filtro_titulo }}" />
+                        {% if filtro_estado %}<input type="hidden" name="estado" value="{{ filtro_estado }}" />{% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        {% if filtro_titulo %}
+                            <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}"
+                               class="btn btn-outline-danger"
+                               title="Limpiar búsqueda">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        {% endif %}
+                    </form>
+                    {% if can_create %}
+                        <a href="{% url 'comunicados_crear' %}"
+                           class="btn btn-success"
+                           style="white-space: nowrap">
+                            <i class="fas fa-plus me-1"></i> Nuevo Comunicado
+                        </a>
+                    {% endif %}
+                </div>
+
+                <!-- Filtros de estado -->
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="?{% if filtro_titulo %}titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if not filtro_estado %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-list me-1"></i> Todos
+                    </a>
+                    <a href="?estado=borrador{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if filtro_estado == 'borrador' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-pencil-alt me-1"></i> Borrador
+                    </a>
+                    <a href="?estado=publicado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if filtro_estado == 'publicado' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-check-circle me-1"></i> Publicado
+                    </a>
+                    <a href="?estado=archivado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if filtro_estado == 'archivado' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-archive me-1"></i> Archivado
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de comunicados -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Comunicados</h5>
+                <a href="{% url 'comunicados' %}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-eye"></i> Ver Vista Pública
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%">ID</th>
+                                <th style="width: 5%">Destacado</th>
+                                <th>Título</th>
+                                <th style="width: 8%">Tipo</th>
+                                <th style="width: 8%">Estado</th>
+                                <th style="width: 10%">Creación</th>
+                                <th style="width: 10%">Publicación</th>
+                                <th style="width: 12%">Creador</th>
+                                <th style="width: 15%">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comunicado in comunicados %}
+                                <tr>
+                                    <td>{{ comunicado.pk }}</td>
+                                    <td class="text-center">
+                                        {% if comunicado.destacado %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-muted"></i>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'comunicados_ver' comunicado.pk %}">{{ comunicado.titulo|truncatewords:8 }}</a>
+                                    </td>
+                                    <td>
+                                        {% if comunicado.tipo == 'interno' %}
+                                            <span class="badge bg-info">Interno</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">Externo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if comunicado.estado == 'borrador' %}
+                                            <span class="badge bg-secondary">Borrador</span>
+                                        {% elif comunicado.estado == 'publicado' %}
+                                            <span class="badge bg-success">Publicado</span>
+                                        {% elif comunicado.estado == 'archivado' %}
+                                            <span class="badge bg-dark">Archivado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ comunicado.fecha_creacion|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if comunicado.fecha_publicacion %}
+                                            {{ comunicado.fecha_publicacion|date:"d/m/Y" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ comunicado.usuario_creador.get_full_name|default:comunicado.usuario_creador.username }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'comunicados_ver' comunicado.pk %}"
+                                               class="btn btn-outline-primary"
+                                               title="Ver">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+
+                                            {% if comunicado.estado == 'borrador' %}
+                                                <a href="{% url 'comunicados_editar' comunicado.pk %}"
+                                                   class="btn btn-outline-secondary"
+                                                   title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+
+                                                {% if can_publish %}
+                                                    <form method="post"
+                                                          action="{% url 'comunicados_publicar' comunicado.pk %}"
+                                                          class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit"
+                                                                class="btn btn-outline-success"
+                                                                title="Publicar"
+                                                                onclick="return confirm('¿Publicar este comunicado?')">
+                                                            <i class="fas fa-paper-plane"></i>
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
+                                            {% endif %}
+
+                                            {% if comunicado.estado == 'publicado' and can_archive %}
+                                                <form method="post"
+                                                      action="{% url 'comunicados_archivar' comunicado.pk %}"
+                                                      class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit"
+                                                            class="btn btn-outline-dark"
+                                                            title="Archivar"
+                                                            onclick="return confirm('¿Archivar este comunicado?')">
+                                                        <i class="fas fa-archive"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+
+                                            {% if comunicado.estado == 'publicado' and comunicado.tipo != 'externo' and can_toggle_destacado %}
+                                                <form method="post"
+                                                      action="{% url 'comunicados_toggle_destacado' comunicado.pk %}"
+                                                      class="d-inline">
+                                                    {% csrf_token %}
+                                                    {% if comunicado.destacado %}
+                                                        <button type="submit" class="btn btn-warning" title="Quitar destacado">
+                                                            <i class="fas fa-star"></i>
+                                                        </button>
+                                                    {% else %}
+                                                        <button type="submit"
+                                                                class="btn btn-outline-warning"
+                                                                title="Marcar como destacado">
+                                                            <i class="far fa-star"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="9" class="text-center py-4">
+                                        <i class="fas fa-newspaper fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted mb-0">No hay comunicados.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if is_paginated %}
+                    {% include 'components/pagination.html' %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

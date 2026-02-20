@@ -1,0 +1,114 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Comunicados{% endblock %}
+{% block titulo-pagina %}Comunicados{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    <div class="container mt-4">
+        <!-- Barra de búsqueda, filtros y acciones -->
+        <div class="card mb-4">
+            <div class="card-body" style="padding: 20px;">
+                <!-- Búsqueda + Gestionar -->
+                <div class="d-flex gap-3 align-items-center mb-3 flex-wrap">
+                    <form method="get" class="input-group" style="flex: 1; min-width: 250px;">
+                        <input type="text"
+                               name="titulo"
+                               class="form-control"
+                               placeholder="Buscar por título..."
+                               value="{{ filtro_titulo }}" />
+                        {% if filtro_estado %}<input type="hidden" name="estado" value="{{ filtro_estado }}" />{% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        {% if filtro_titulo %}
+                            <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}"
+                               class="btn btn-outline-danger"
+                               title="Limpiar búsqueda">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        {% endif %}
+                    </form>
+                    {% if can_manage %}
+                        <a href="{% url 'comunicados_gestion' %}"
+                           class="btn btn-outline-secondary"
+                           style="white-space: nowrap">
+                            <i class="fas fa-cog me-1"></i> Gestionar
+                        </a>
+                    {% endif %}
+                </div>
+
+                <!-- Filtros -->
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="?estado=publicado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if filtro_estado == 'publicado' or not filtro_estado %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-check-circle me-1"></i> Publicados
+                    </a>
+                    <a href="?estado=archivado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if filtro_estado == 'archivado' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-archive me-1"></i> Archivados
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de comunicados -->
+        {% for comunicado in comunicados %}
+            <div class="card mb-3"
+                 style="{% if comunicado.destacado %}border-left: 4px solid #e7ba61;
+                        {% endif %}">
+                <div class="card-body">
+                    {% if comunicado.destacado %}
+                        <div class="mb-2">
+                            <span style="color: #e7ba61;
+                                         font-size: 12px;
+                                         font-weight: 600;
+                                         text-transform: uppercase;
+                                         letter-spacing: 0.5px">
+                                <i class="fas fa-star me-1"></i> Destacado
+                            </span>
+                        </div>
+                    {% endif %}
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                        <h5 class="card-title mb-0">
+                            <a href="{% url 'comunicados_ver' comunicado.pk %}"
+                               class="text-decoration-none">{{ comunicado.titulo }}</a>
+                        </h5>
+                        <p class="card-text small mb-0"
+                           style="color: #9ca3af;
+                                  white-space: nowrap">
+                            <i class="fas fa-calendar"></i> {{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}
+                            <span class="ms-3">
+                                <i class="fas fa-user"></i> {{ comunicado.usuario_creador.get_full_name|default:comunicado.usuario_creador.username }}
+                            </span>
+                            {% if comunicado.adjuntos.exists %}
+                                <span class="ms-3">
+                                    <i class="fas fa-paperclip"></i> {{ comunicado.adjuntos.count }} adjunto(s)
+                                </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <p class="card-text mb-3" style="color: #d1d5db;">{{ comunicado.cuerpo|truncatewords:50 }}</p>
+                    <a href="{% url 'comunicados_ver' comunicado.pk %}"
+                       class="btn btn-sm btn-outline-primary">
+                        Leer más <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-newspaper fa-3x mb-3" style="color: #6b7280;"></i>
+                    <p class="mb-0" style="color: #9ca3af;">No hay comunicados publicados.</p>
+                </div>
+            </div>
+        {% endfor %}
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+            {% include 'components/pagination.html' %}
+        {% endif %}
+    </div>
+{% endblock %}

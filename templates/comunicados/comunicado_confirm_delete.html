@@ -1,0 +1,58 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Eliminar Comunicado{% endblock %}
+{% block titulo-pagina %}Eliminar Comunicado{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="lead">¿Estás seguro de que deseas eliminar el siguiente comunicado?</p>
+
+                        <div class="alert alert-secondary">
+                            <strong>{{ object.titulo }}</strong>
+                            <br />
+                            <small class="text-muted">
+                                Creado el {{ object.fecha_creacion|date:"d/m/Y H:i" }}
+                                por {{ object.usuario_creador.get_full_name|default:object.usuario_creador.username }}
+                            </small>
+                        </div>
+
+                        {% if object.adjuntos.exists %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-paperclip"></i>
+                                Este comunicado tiene <strong>{{ object.adjuntos.count }}</strong> archivo(s) adjunto(s) que también serán eliminados.
+                            </div>
+                        {% endif %}
+
+                        <p class="text-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <strong>Esta acción no se puede deshacer.</strong>
+                        </p>
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'comunicados_gestion' %}"
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> Sí, Eliminar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
