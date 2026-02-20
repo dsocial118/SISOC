@@ -18,18 +18,18 @@
                 </div>
                 <div class="panel-body">
                     <div class="mb-3">
-                        <label for="id_titulo">Título <span class="text-danger">*</span></label>
+                        <label for="id_titulo">
+                            Título <span class="text-danger">*</span>
+                        </label>
                         {{ form.titulo }}
-                        {% if form.titulo.errors %}
-                            <div class="invalid-feedback d-block">{{ form.titulo.errors.0 }}</div>
-                        {% endif %}
+                        {% if form.titulo.errors %}<div class="invalid-feedback d-block">{{ form.titulo.errors.0 }}</div>{% endif %}
                     </div>
                     <div class="mb-0">
-                        <label for="id_cuerpo">Contenido <span class="text-danger">*</span></label>
+                        <label for="id_cuerpo">
+                            Contenido <span class="text-danger">*</span>
+                        </label>
                         {{ form.cuerpo }}
-                        {% if form.cuerpo.errors %}
-                            <div class="invalid-feedback d-block">{{ form.cuerpo.errors.0 }}</div>
-                        {% endif %}
+                        {% if form.cuerpo.errors %}<div class="invalid-feedback d-block">{{ form.cuerpo.errors.0 }}</div>{% endif %}
                     </div>
                 </div>
             </div>
@@ -44,23 +44,16 @@
                         <div class="option-item">
                             <label for="id_tipo">Tipo de Comunicado</label>
                             {{ form.tipo }}
-                            {% if form.tipo.errors %}
-                                <div class="invalid-feedback d-block">{{ form.tipo.errors.0 }}</div>
-                            {% endif %}
-                            <small class="form-text">
-                                Interna: SISOC &middot; Externa: App móvil (PWA)
-                            </small>
+                            {% if form.tipo.errors %}<div class="invalid-feedback d-block">{{ form.tipo.errors.0 }}</div>{% endif %}
+                            <small class="form-text">Interna: SISOC &middot; Externa: App móvil (PWA)</small>
                         </div>
 
-                        <div id="subtipo-options" class="option-item {% if form.instance.tipo != 'externo' and not es_tecnico %}d-none{% endif %}">
+                        <div id="subtipo-options"
+                             class="option-item {% if form.instance.tipo != 'externo' and not es_tecnico %}d-none{% endif %}">
                             <label for="id_subtipo">Subtipo</label>
                             {{ form.subtipo }}
-                            {% if form.subtipo.errors %}
-                                <div class="invalid-feedback d-block">{{ form.subtipo.errors.0 }}</div>
-                            {% endif %}
-                            <small class="form-text">
-                                Institucional: broadcast &middot; Comedores: dirigido
-                            </small>
+                            {% if form.subtipo.errors %}<div class="invalid-feedback d-block">{{ form.subtipo.errors.0 }}</div>{% endif %}
+                            <small class="form-text">Institucional: broadcast &middot; Comedores: dirigido</small>
                         </div>
 
                         <div class="option-item">
@@ -69,15 +62,16 @@
                             {% if form.fecha_vencimiento.errors %}
                                 <div class="invalid-feedback d-block">{{ form.fecha_vencimiento.errors.0 }}</div>
                             {% endif %}
-                            <small class="form-text">
-                                Opcional. Deja de mostrarse en esa fecha.
-                            </small>
+                            <small class="form-text">Opcional. Deja de mostrarse en esa fecha.</small>
                         </div>
                     </div>
 
                     <!-- Destacado - Solo para comunicados internos -->
-                    <div id="destacado-option" class="mt-3 {% if form.instance.tipo == 'externo' or es_tecnico %}d-none{% endif %}">
-                        <div class="form-check form-switch" style="display: flex; align-items: center;">
+                    <div id="destacado-option"
+                         class="mt-3 {% if form.instance.tipo == 'externo' or es_tecnico %}d-none{% endif %}">
+                        <div class="form-check form-switch"
+                             style="display: flex;
+                                    align-items: center">
                             {{ form.destacado }}
                             <label class="form-check-label" for="id_destacado" style="margin-bottom: 0;">
                                 <i class="fas fa-star text-warning"></i> Marcar como Destacado
@@ -89,31 +83,36 @@
             </div>
 
             <!-- Destinatarios (solo para comunicados a comedores) -->
-            <div id="comedores-options" class="editor-panel {% if form.instance.subtipo != 'comedores' %}d-none{% endif %}">
+            <div id="comedores-options"
+                 class="editor-panel {% if form.instance.subtipo != 'comedores' %}d-none{% endif %}">
                 <div class="panel-label">
                     <i class="fas fa-utensils"></i> Destinatarios
                 </div>
                 <div class="panel-body">
                     <div class="mb-3">
-                        <div class="form-check form-switch" style="display: flex; align-items: center;">
+                        <div class="form-check form-switch"
+                             style="display: flex;
+                                    align-items: center">
                             {{ form.para_todos_comedores }}
-                            <label class="form-check-label" for="id_para_todos_comedores" style="margin-bottom: 0;">
-                                Enviar a todos los comedores
-                            </label>
+                            <label class="form-check-label"
+                                   for="id_para_todos_comedores"
+                                   style="margin-bottom: 0">Enviar a todos los comedores</label>
                         </div>
                         <small class="form-text">Se enviará a todos los comedores que tiene asignados.</small>
                     </div>
 
-                    <div id="comedores-selector" class="{% if form.instance.para_todos_comedores %}d-none{% endif %}">
+                    <div id="comedores-selector"
+                         class="{% if form.instance.para_todos_comedores %}d-none{% endif %}">
                         <label>Seleccionar Comedores</label>
                         <div class="d-none">{{ form.comedores }}</div>
-                        {% if form.comedores.errors %}
-                            <div class="invalid-feedback d-block">{{ form.comedores.errors.0 }}</div>
-                        {% endif %}
+                        {% if form.comedores.errors %}<div class="invalid-feedback d-block">{{ form.comedores.errors.0 }}</div>{% endif %}
                         <div id="comedoresSeleccionados" class="comedores-badges mb-2"></div>
                         <div class="input-group mb-2 comedores-search">
                             <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            <input type="text" id="comedorSearch" class="form-control" placeholder="Filtrar comedores por nombre...">
+                            <input type="text"
+                                   id="comedorSearch"
+                                   class="form-control"
+                                   placeholder="Filtrar comedores por nombre..." />
                         </div>
                         <div id="comedoresLista" class="comedores-lista-container"></div>
                         <small class="form-text">Haga clic en "Agregar" para seleccionar comedores.</small>
@@ -127,7 +126,11 @@
                     <i class="fas fa-paperclip"></i> Archivos Adjuntos
                 </div>
                 <div class="panel-body">
-                    <input type="file" name="archivos_adjuntos" id="archivosInput" class="d-none" multiple>
+                    <input type="file"
+                           name="archivos_adjuntos"
+                           id="archivosInput"
+                           class="d-none"
+                           multiple />
                     <div class="d-flex align-items-center gap-3">
                         <button type="button" id="addFilesBtn" class="btn-add-files">
                             <i class="fas fa-plus me-1"></i> Agregar archivos
@@ -136,37 +139,31 @@
                             <span class="badge files-badge"><span id="fileCount">0</span> archivo(s)</span>
                         </div>
                     </div>
-                    <small class="form-text d-block mt-2">
-                        Puedes agregar múltiples archivos haciendo clic varias veces.
-                    </small>
+                    <small class="form-text d-block mt-2">Puedes agregar múltiples archivos haciendo clic varias veces.</small>
 
                     <div id="filePreviewContainer" class="mt-3"></div>
 
-                    {% if adjuntos_formset %}
-                        {{ adjuntos_formset.management_form }}
-                    {% endif %}
+                    {% if adjuntos_formset %}{{ adjuntos_formset.management_form }}{% endif %}
 
                     {% if is_edit and adjuntos_formset.forms %}
-                        <hr style="border-color: #374151; margin-top: 16px;">
-                        <label class="mb-2"><i class="fas fa-folder-open me-1"></i> Archivos actuales</label>
+                        <hr style="border-color: #374151; margin-top: 16px;" />
+                        <label class="mb-2">
+                            <i class="fas fa-folder-open me-1"></i> Archivos actuales
+                        </label>
                         <div id="adjuntos-container">
                             {% for adjunto_form in adjuntos_formset %}
                                 {% if adjunto_form.instance.pk %}
                                     <div class="adjunto-row mb-2 p-2 d-flex justify-content-between align-items-center">
                                         <div>
                                             <i class="fas fa-file me-2" style="color: #f39c12;"></i>
-                                            <a href="{{ adjunto_form.instance.archivo.url }}" target="_blank">
-                                                {{ adjunto_form.instance.nombre_original }}
-                                            </a>
-                                            {% for hidden in adjunto_form.hidden_fields %}
-                                                {{ hidden }}
-                                            {% endfor %}
+                                            <a href="{{ adjunto_form.instance.archivo.url }}" target="_blank">{{ adjunto_form.instance.nombre_original }}</a>
+                                            {% for hidden in adjunto_form.hidden_fields %}{{ hidden }}{% endfor %}
                                         </div>
                                         <div class="form-check">
                                             {{ adjunto_form.DELETE }}
-                                            <label class="form-check-label" for="{{ adjunto_form.DELETE.id_for_label }}" style="color: #e74c3c !important;">
-                                                Eliminar
-                                            </label>
+                                            <label class="form-check-label"
+                                                   for="{{ adjunto_form.DELETE.id_for_label }}"
+                                                   style="color: #e74c3c !important">Eliminar</label>
                                         </div>
                                     </div>
                                 {% endif %}
@@ -187,11 +184,17 @@
                             <div class="info-item">
                                 <strong>Estado:</strong>
                                 {% if object.estado == 'borrador' %}
-                                    <span class="badge" style="background: rgba(156,163,175,0.15); color: #9ca3af;">Borrador</span>
+                                    <span class="badge"
+                                          style="background: rgba(156,163,175,0.15);
+                                                 color: #9ca3af">Borrador</span>
                                 {% elif object.estado == 'publicado' %}
-                                    <span class="badge" style="background: rgba(16,185,129,0.15); color: #10b981;">Publicado</span>
+                                    <span class="badge"
+                                          style="background: rgba(16,185,129,0.15);
+                                                 color: #10b981">Publicado</span>
                                 {% elif object.estado == 'archivado' %}
-                                    <span class="badge" style="background: rgba(107,114,128,0.15); color: #6b7280;">Archivado</span>
+                                    <span class="badge"
+                                          style="background: rgba(107,114,128,0.15);
+                                                 color: #6b7280">Archivado</span>
                                 {% endif %}
                             </div>
                             <div class="info-item">

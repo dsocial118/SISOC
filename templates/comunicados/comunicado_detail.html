@@ -9,7 +9,8 @@
         <!-- Navegación -->
         <div class="mb-4">
             {% if can_manage %}
-                <a href="{% url 'comunicados_gestion' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'comunicados_gestion' %}"
+                   class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i> Volver al Gestor
                 </a>
             {% else %}
@@ -59,26 +60,26 @@
                         <span class="ms-3">
                             <i class="fas fa-clock"></i>
                             Vence: {{ comunicado.fecha_vencimiento|date:"d/m/Y H:i" }}
-                            {% if comunicado.esta_vencido %}
-                                <span class="badge bg-danger">Vencido</span>
-                            {% endif %}
+                            {% if comunicado.esta_vencido %}<span class="badge bg-danger">Vencido</span>{% endif %}
                         </span>
                     {% endif %}
                 </div>
 
                 <!-- Contenido -->
-                <div class="comunicado-contenido mb-4">
-                    {{ comunicado.cuerpo|linebreaks }}
-                </div>
+                <div class="comunicado-contenido mb-4">{{ comunicado.cuerpo|linebreaks }}</div>
 
                 <!-- Adjuntos -->
                 {% if comunicado.adjuntos.exists %}
-                    <hr>
-                    <h6><i class="fas fa-paperclip"></i> Archivos Adjuntos</h6>
+                    <hr />
+                    <h6>
+                        <i class="fas fa-paperclip"></i> Archivos Adjuntos
+                    </h6>
                     <ul class="list-unstyled">
                         {% for adjunto in comunicado.adjuntos.all %}
                             <li class="mb-2">
-                                <a href="{{ adjunto.archivo.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <a href="{{ adjunto.archivo.url }}"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-download"></i>
                                     {{ adjunto.nombre_original }}
                                 </a>
@@ -102,31 +103,41 @@
                         </div>
                         <div class="btn-group">
                             {% if can_edit and comunicado.estado == 'borrador' %}
-                                <a href="{% url 'comunicados_editar' comunicado.pk %}" class="btn btn-outline-secondary">
+                                <a href="{% url 'comunicados_editar' comunicado.pk %}"
+                                   class="btn btn-outline-secondary">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
                             {% endif %}
 
                             {% if can_publish and comunicado.estado == 'borrador' %}
-                                <form method="post" action="{% url 'comunicados_publicar' comunicado.pk %}" class="d-inline">
+                                <form method="post"
+                                      action="{% url 'comunicados_publicar' comunicado.pk %}"
+                                      class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-outline-success" onclick="return confirm('¿Publicar este comunicado?')">
+                                    <button type="submit"
+                                            class="btn btn-outline-success"
+                                            onclick="return confirm('¿Publicar este comunicado?')">
                                         <i class="fas fa-paper-plane"></i> Publicar
                                     </button>
                                 </form>
                             {% endif %}
 
                             {% if can_archive and comunicado.estado == 'publicado' %}
-                                <form method="post" action="{% url 'comunicados_archivar' comunicado.pk %}" class="d-inline">
+                                <form method="post"
+                                      action="{% url 'comunicados_archivar' comunicado.pk %}"
+                                      class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-outline-dark" onclick="return confirm('¿Archivar este comunicado?')">
+                                    <button type="submit"
+                                            class="btn btn-outline-dark"
+                                            onclick="return confirm('¿Archivar este comunicado?')">
                                         <i class="fas fa-archive"></i> Archivar
                                     </button>
                                 </form>
                             {% endif %}
 
                             {% if can_delete and comunicado.estado == 'borrador' %}
-                                <a href="{% url 'comunicados_eliminar' comunicado.pk %}" class="btn btn-outline-danger">
+                                <a href="{% url 'comunicados_eliminar' comunicado.pk %}"
+                                   class="btn btn-outline-danger">
                                     <i class="fas fa-trash"></i> Eliminar
                                 </a>
                             {% endif %}
