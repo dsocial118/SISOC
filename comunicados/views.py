@@ -169,7 +169,46 @@ class ComunicadoDetailView(LoginRequiredMixin, DetailView):
         return ctx
 
 
-class ComunicadoCreateView(LoginRequiredMixin, CreateView):
+class ComunicadoPersistMixin:
+    """Comportamiento compartido para guardar comunicados y sus relaciones."""
+
+    def _save_uploaded_files(self):
+        for archivo in self.request.FILES.getlist("archivos_adjuntos"):
+            ComunicadoAdjunto.objects.create(
+                comunicado=self.object,
+                archivo=archivo,
+                nombre_original=archivo.name,
+            )
+
+    def _handle_comedores(self, form):
+        """Maneja la asignación de comedores según tipo y subtipo."""
+        if self.object.tipo == TipoComunicado.EXTERNO:
+            if self.object.subtipo == SubtipoComunicado.INSTITUCIONAL:
+                # Institucional: broadcast, no necesita comedores
+                self.object.comedores.clear()
+                self.object.para_todos_comedores = False
+                self.object.save()
+            elif form.cleaned_data.get("para_todos_comedores"):
+                comedores = get_comedores_del_usuario(self.request.user)
+                self.object.comedores.set(comedores)
+            return
+
+        # Interno: limpiar campos externos
+        self.object.comedores.clear()
+        self.object.para_todos_comedores = False
+        self.object.subtipo = ""
+        self.object.save()
+
+    def _save_comunicado_with_related(self, form, adjuntos_formset):
+        with transaction.atomic():
+            self.object = form.save()
+            adjuntos_formset.instance = self.object
+            adjuntos_formset.save()
+            self._handle_comedores(form)
+            self._save_uploaded_files()
+
+
+class ComunicadoCreateView(ComunicadoPersistMixin, LoginRequiredMixin, CreateView):
     """Vista para crear un comunicado."""
 
     model = Comunicado
@@ -208,49 +247,14 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
         form.instance.usuario_creador = self.request.user
         form.instance.estado = EstadoComunicado.BORRADOR
 
-        if adjuntos_formset.is_valid():
-            with transaction.atomic():
-                self.object = form.save()
-                adjuntos_formset.instance = self.object
-                adjuntos_formset.save()
-
-                # Manejar relación con comedores para comunicados externos
-                self._handle_comedores(form)
-
-                # Manejar archivos múltiples del campo archivos_adjuntos
-                archivos = self.request.FILES.getlist("archivos_adjuntos")
-                for archivo in archivos:
-                    ComunicadoAdjunto.objects.create(
-                        comunicado=self.object,
-                        archivo=archivo,
-                        nombre_original=archivo.name,
-                    )
-
-            messages.success(self.request, "Comunicado creado correctamente.")
-            return redirect(self.success_url)
-        else:
+        if not adjuntos_formset.is_valid():
             return self.render_to_response(ctx)
-
-    def _handle_comedores(self, form):
-        """Maneja la asignación de comedores según tipo y subtipo."""
-        if self.object.tipo == TipoComunicado.EXTERNO:
-            if self.object.subtipo == SubtipoComunicado.INSTITUCIONAL:
-                # Institucional: broadcast, no necesita comedores
-                self.object.comedores.clear()
-                self.object.para_todos_comedores = False
-                self.object.save()
-            elif form.cleaned_data.get("para_todos_comedores"):
-                comedores = get_comedores_del_usuario(self.request.user)
-                self.object.comedores.set(comedores)
-        else:
-            # Interno: limpiar campos externos
-            self.object.comedores.clear()
-            self.object.para_todos_comedores = False
-            self.object.subtipo = ""
-            self.object.save()
+        self._save_comunicado_with_related(form, adjuntos_formset)
+        messages.success(self.request, "Comunicado creado correctamente.")
+        return redirect(self.success_url)
 
 
-class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
+class ComunicadoUpdateView(ComunicadoPersistMixin, LoginRequiredMixin, UpdateView):
     """Vista para editar un comunicado."""
 
     model = Comunicado
@@ -289,45 +293,11 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
 
         form.instance.usuario_ultima_modificacion = self.request.user
 
-        if adjuntos_formset.is_valid():
-            with transaction.atomic():
-                self.object = form.save()
-                adjuntos_formset.save()
-
-                # Manejar relación con comedores para comunicados externos
-                self._handle_comedores(form)
-
-                # Manejar archivos múltiples del campo archivos_adjuntos
-                archivos = self.request.FILES.getlist("archivos_adjuntos")
-                for archivo in archivos:
-                    ComunicadoAdjunto.objects.create(
-                        comunicado=self.object,
-                        archivo=archivo,
-                        nombre_original=archivo.name,
-                    )
-
-            messages.success(self.request, "Comunicado actualizado correctamente.")
-            return redirect(self.success_url)
-        else:
+        if not adjuntos_formset.is_valid():
             return self.render_to_response(ctx)
-
-    def _handle_comedores(self, form):
-        """Maneja la asignación de comedores según tipo y subtipo."""
-        if self.object.tipo == TipoComunicado.EXTERNO:
-            if self.object.subtipo == SubtipoComunicado.INSTITUCIONAL:
-                # Institucional: broadcast, no necesita comedores
-                self.object.comedores.clear()
-                self.object.para_todos_comedores = False
-                self.object.save()
-            elif form.cleaned_data.get("para_todos_comedores"):
-                comedores = get_comedores_del_usuario(self.request.user)
-                self.object.comedores.set(comedores)
-        else:
-            # Interno: limpiar campos externos
-            self.object.comedores.clear()
-            self.object.para_todos_comedores = False
-            self.object.subtipo = ""
-            self.object.save()
+        self._save_comunicado_with_related(form, adjuntos_formset)
+        messages.success(self.request, "Comunicado actualizado correctamente.")
+        return redirect(self.success_url)
 
 
 class ComunicadoDeleteView(LoginRequiredMixin, DeleteView):
