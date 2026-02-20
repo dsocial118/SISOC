@@ -13,6 +13,7 @@ from comedores.forms.comedor_form import (
 )
 from comedores.models import Nomina
 from comedores.services.comedor_service import ComedorService
+from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 
 @login_required
@@ -213,14 +214,11 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             return self.render_to_response(context)
 
 
-class NominaDeleteView(LoginRequiredMixin, DeleteView):
+class NominaDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = Nomina
     template_name = "comedor/nomina_confirm_delete.html"
     pk_url_kwarg = "pk2"
+    success_message = "Registro de nómina dado de baja correctamente."
 
     def get_success_url(self):
         return reverse_lazy("nomina_ver", kwargs={"pk": self.kwargs["pk"]})
-
-    def delete(self, request, *args, **kwargs):
-        messages.success(request, "Registro de nómina eliminado correctamente.")
-        return super().delete(request, *args, **kwargs)

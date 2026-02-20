@@ -10,6 +10,11 @@ from .views import (
     load_municipios,
     load_organizaciones,
 )
+from .trash_views import (
+    TrashListView,
+    TrashRestorePreviewView,
+    TrashRestoreView,
+)
 
 urlpatterns = [
     path("inicio/", inicio_view, name="inicio"),
@@ -43,5 +48,16 @@ urlpatterns = [
         "ajax/columnas-preferencias/",
         columnas_preferencias,
         name="column_preferences",
+    ),
+    path("papelera/", TrashListView.as_view(), name="papelera_list"),
+    path(
+        "papelera/preview-restore/<str:app_label>/<str:model_name>/<int:pk>/",
+        TrashRestorePreviewView.as_view(),
+        name="papelera_preview_restore",
+    ),
+    path(
+        "papelera/restore/<str:app_label>/<str:model_name>/<int:pk>/",
+        TrashRestoreView.as_view(),
+        name="papelera_restore",
     ),
 ]

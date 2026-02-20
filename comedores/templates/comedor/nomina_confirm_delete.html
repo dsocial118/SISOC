@@ -15,20 +15,6 @@
 ;
 {% load crispy_forms_tags %}
 {% block content %}
-    <div class="error-page mt-5 px-3"></div>
-    <div class="error-content">
-        <h3>
-            <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
-        </h3>
-        <p>¿Estás seguro que deseas eliminar de manera permanente persona de la nomina?</p>
-        <div class="text-left">
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                <a href="{% url 'nomina_ver' object.id %}">
-                    <button type="button" class="btn btn-secondary btn-sm">Cancelar</button>
-                </a>
-            </form>
-        </div>
-    </div>
+    {% url 'nomina_ver' view.kwargs.pk as nomina_cancel_url %}
+    {% include 'components/delete_confirm.html' with object_name=object cancel_url_full=nomina_cancel_url confirm_text='Dar de baja' %}
 {% endblock content %}

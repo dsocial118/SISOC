@@ -1,8 +1,9 @@
 from django.db import models
 from comedores.models import Comedor
+from core.soft_delete import SoftDeleteModelMixin
 
 
-class DocumentacionAdjunta(models.Model):
+class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
     nombre = models.CharField(max_length=255, verbose_name="Nombre del Documento")
     archivo = models.FileField(
         upload_to="rendicioncuentasmensualdocumentos_adjuntos/", verbose_name="Archivo"
@@ -15,7 +16,7 @@ class DocumentacionAdjunta(models.Model):
     )
     rendicion_cuenta_mensual = models.ForeignKey(
         "RendicionCuentaMensual",
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         related_name="arvhios_adjuntos",  # FIXME: Arreglar typo
         verbose_name="Rendición de Cuenta Mensual",
         null=True,
@@ -27,7 +28,7 @@ class DocumentacionAdjunta(models.Model):
         verbose_name_plural = "Documentos Adjuntos"
 
 
-class RendicionCuentaMensual(models.Model):
+class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
     MESES = [
         (1, "Enero"),
         (2, "Febrero"),
