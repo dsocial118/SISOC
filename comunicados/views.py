@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
+from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import (
@@ -48,8 +49,6 @@ class ComunicadoListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        from django.utils import timezone
-
         estado = self.request.GET.get("estado", "publicado")
 
         queryset = Comunicado.objects.select_related("usuario_creador").filter(
@@ -142,6 +141,17 @@ class ComunicadoDetailView(LoginRequiredMixin, DetailView):
     model = Comunicado
     template_name = "comunicados/comunicado_detail.html"
     context_object_name = "comunicado"
+
+    def get_queryset(self):
+        queryset = Comunicado.objects.select_related("usuario_creador").prefetch_related(
+            "adjuntos"
+        )
+        if can_manage_comunicados(self.request.user):
+            return queryset
+        return queryset.filter(
+            tipo=TipoComunicado.INTERNO,
+            estado=EstadoComunicado.PUBLICADO,
+        ).filter(Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now()))
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
