@@ -72,6 +72,12 @@
                         <p>Equipos Técnicos</p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{% url 'montoprestacion_listar' %}"
+                       class="nav-link nav-dot ms-2 {% if 'montoprestacion' in pagina_actual %}active{% endif %}">
+                        <p>Monto de Prestaciones</p>
+                    </a>
+                </li>
                 {% if perms.auditlog.view_logentry %}
                     <li class="nav-item">
                         <a href="{% url 'audittrail:log_list' %}"

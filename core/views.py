@@ -1,26 +1,42 @@
 # Crea tus vistas aqui.
+
+# Standard library
 import json
 import re
 import logging
 from pathlib import Path
 
+# Third-party
 import markdown
 import requests
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.db import IntegrityError
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
+# First-party (local)
 from core.models import (
     FiltroFavorito,
     Localidad,
     Municipio,
     PreferenciaColumnas,
+    MontoPrestacionPrograma,
 )
+from core.forms import MontoPrestacionProgramaForm
 from core.services.favorite_filters import (
     TTL_CACHE_FILTROS_FAVORITOS,
     clave_cache_filtros_favoritos,
@@ -29,6 +45,7 @@ from core.services.favorite_filters import (
     obtener_items_obsoletos,
 )
 from organizaciones.models import Organizacion
+from historial.services.historial_service import HistorialService
 
 logger = logging.getLogger(__name__)
 
@@ -415,3 +432,99 @@ def changelog_view(request):
 
 def error_500_view(request):
     return render(request, "500.html")
+
+
+class MontoPrestacionProgramaListView(LoginRequiredMixin, ListView):
+    model = MontoPrestacionPrograma
+    template_name = "monto_prestacion_list.html"
+    context_object_name = "prestaciones"
+    paginate_by = 10
+
+
+class MontoPrestacionProgramaCreateView(LoginRequiredMixin, CreateView):
+    model = MontoPrestacionPrograma
+    form_class = MontoPrestacionProgramaForm
+    template_name = "monto_prestacion_form.html"
+    success_url = reverse_lazy("montoprestacion_listar")
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        if not getattr(obj, "usuario_creador", None):
+            obj.usuario_creador = self.request.user
+        obj.save()
+        self.object = obj
+        messages.success(self.request, "Monto de Prestación creada correctamente.")
+        HistorialService.registrar_historial(
+            accion="Creación de Monto de Prestación",
+            instancia=obj,
+            diferencias=form.cleaned_data,
+        )
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = [
+            {"name": "Monto de Prestaciones", "url": reverse("montoprestacion_listar")},
+            {"name": "Crear Monto de Prestación"},
+        ]
+        context["back_button"] = reverse("montoprestacion_listar")
+        context["action_buttons"] = []
+        context["hidden_fields_send"] = []
+        context["guardar_otro_send"] = False
+        return context
+
+
+class MontoPrestacionProgramaUpdateView(LoginRequiredMixin, UpdateView):
+    model = MontoPrestacionPrograma
+    form_class = MontoPrestacionProgramaForm
+    template_name = "monto_prestacion_form.html"
+    success_url = reverse_lazy("montoprestacion_listar")
+
+    def form_valid(self, form):
+        obj = form.save()
+        messages.success(self.request, "Monto de Prestación actualizado correctamente.")
+        HistorialService.registrar_historial(
+            accion="Edición de Monto de Prestación",
+            instancia=obj,
+            diferencias=form.cleaned_data,
+        )
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class MontoPrestacionProgramaDeleteView(LoginRequiredMixin, DeleteView):
+    model = MontoPrestacionPrograma
+    template_name = "monto_prestacion_confirm_delete.html"
+    success_url = reverse_lazy("montoprestacion_listar")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = getattr(self, "object", None) or self.get_object()
+        context["breadcrumb_items"] = [
+            {"name": "Monto de Prestaciones", "url": reverse("montoprestacion_listar")},
+            {"name": "Eliminar Monto de Prestación"},
+        ]
+        context["object_title"] = str(obj)
+        context["delete_message"] = (
+            "¿Desea eliminar este monto de prestación? Esta acción no se puede deshacer."
+        )
+        context["cancel_url"] = reverse("montoprestacion_listar")
+        return context
+
+    def form_valid(self, form):
+        obj = self.get_object()
+        messages.success(self.request, "Monto de Prestación eliminado correctamente.")
+        try:
+            HistorialService.registrar_historial(
+                accion="Eliminación de Prestación",
+                instancia=obj,
+                diferencias={"programa": getattr(obj, "programa", None)},
+            )
+        except Exception:
+            pass
+        return super().form_valid(form)
+
+
+class MontoPrestacionProgramaDetailView(LoginRequiredMixin, DetailView):
+    model = MontoPrestacionPrograma
+    template_name = "monto_prestacion_detail.html"
+    context_object_name = "prestacion"

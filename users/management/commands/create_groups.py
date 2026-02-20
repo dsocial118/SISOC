@@ -11,6 +11,8 @@ class Command(BaseCommand):
             "Comedores",
             "Exportar a csv",
             "Organizaciones",
+            "Gestor prestaciones",
+            "CDI",
             "Centro de Infancia Listar",
             "Centro de Infancia Crear",
             "Centro de Infancia Ver",
