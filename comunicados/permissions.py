@@ -138,6 +138,7 @@ def require_toggle_destacado_permission(user):
 # PERMISOS V2 - Comunicados Internos y Externos (Comedores)
 # =============================================================================
 
+
 def es_tecnico(user) -> bool:
     """Verifica si el usuario es técnico (usa servicio existente)."""
     if not user.is_authenticated:
@@ -151,8 +152,9 @@ def get_comedores_del_tecnico(user):
     Relación: User → Dupla (M2M) → Comedor (FK)
     """
     from comedores.models import Comedor
+
     # Obtener las duplas activas del técnico
-    duplas = user.dupla_tecnico.filter(estado='Activo')
+    duplas = user.dupla_tecnico.filter(estado="Activo")
     # Obtener comedores de esas duplas
     return Comedor.objects.filter(dupla__in=duplas)
 
@@ -160,6 +162,7 @@ def get_comedores_del_tecnico(user):
 def get_comedores_del_usuario(user):
     """Retorna los comedores que puede ver/enviar el usuario."""
     from comedores.models import Comedor
+
     if is_admin(user) or _in_group(user, UserGroups.COMUNICADO_INTERNO_CREAR):
         # Admin y usuarios con permisos internos ven todos los comedores
         return Comedor.objects.all()
@@ -203,33 +206,41 @@ def can_create_comunicado_comedores(user) -> bool:
     """Admin, usuarios con permiso comedores, o técnicos pueden crear externos."""
     if not user.is_authenticated:
         return False
-    return (is_admin(user) or
-            _in_group(user, UserGroups.COMUNICADO_COMEDORES_CREAR) or
-            es_tecnico(user))
+    return (
+        is_admin(user)
+        or _in_group(user, UserGroups.COMUNICADO_COMEDORES_CREAR)
+        or es_tecnico(user)
+    )
 
 
 def can_edit_comunicado_comedores(user) -> bool:
     """Verifica si puede editar comunicados a comedores."""
     if not user.is_authenticated:
         return False
-    return (is_admin(user) or
-            _in_group(user, UserGroups.COMUNICADO_COMEDORES_EDITAR) or
-            es_tecnico(user))
+    return (
+        is_admin(user)
+        or _in_group(user, UserGroups.COMUNICADO_COMEDORES_EDITAR)
+        or es_tecnico(user)
+    )
 
 
 def can_publish_comunicado_comedores(user) -> bool:
     """Verifica si puede publicar comunicados a comedores."""
     if not user.is_authenticated:
         return False
-    return (is_admin(user) or
-            _in_group(user, UserGroups.COMUNICADO_COMEDORES_PUBLICAR) or
-            es_tecnico(user))
+    return (
+        is_admin(user)
+        or _in_group(user, UserGroups.COMUNICADO_COMEDORES_PUBLICAR)
+        or es_tecnico(user)
+    )
 
 
 def can_archive_comunicado_comedores(user) -> bool:
     """Verifica si puede archivar comunicados a comedores."""
     if not user.is_authenticated:
         return False
-    return (is_admin(user) or
-            _in_group(user, UserGroups.COMUNICADO_COMEDORES_ARCHIVAR) or
-            es_tecnico(user))
+    return (
+        is_admin(user)
+        or _in_group(user, UserGroups.COMUNICADO_COMEDORES_ARCHIVAR)
+        or es_tecnico(user)
+    )

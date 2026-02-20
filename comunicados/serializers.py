@@ -1,6 +1,7 @@
 """
 Serializers para la API REST de Comunicados.
 """
+
 from rest_framework import serializers
 from .models import Comunicado, ComunicadoAdjunto
 
@@ -10,7 +11,7 @@ class ComunicadoAdjuntoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ComunicadoAdjunto
-        fields = ['id', 'archivo', 'nombre_original']
+        fields = ["id", "archivo", "nombre_original"]
 
 
 class ComunicadoSerializer(serializers.ModelSerializer):
@@ -21,12 +22,12 @@ class ComunicadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comunicado
         fields = [
-            'id',
-            'titulo',
-            'cuerpo',
-            'estado',
-            'subtipo',
-            'fecha_publicacion',
-            'fecha_vencimiento',
-            'adjuntos',
+            "id",
+            "titulo",
+            "cuerpo",
+            "estado",
+            "subtipo",
+            "fecha_publicacion",
+            "fecha_vencimiento",
+            "adjuntos",
         ]

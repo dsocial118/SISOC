@@ -1,6 +1,7 @@
 """
 ViewSets para la API REST de Comunicados (PWA).
 """
+
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import viewsets
@@ -23,14 +24,19 @@ class ComunicadoInstitucionalViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [HasAPIKey | IsAuthenticated]
 
     def get_queryset(self):
-        return Comunicado.objects.filter(
-            tipo=TipoComunicado.EXTERNO,
-            subtipo=SubtipoComunicado.INSTITUCIONAL,
-            estado=EstadoComunicado.PUBLICADO,
-        ).filter(
-            Q(fecha_vencimiento__isnull=True) |
-            Q(fecha_vencimiento__gt=timezone.now())
-        ).prefetch_related('adjuntos').order_by('-fecha_publicacion')
+        return (
+            Comunicado.objects.filter(
+                tipo=TipoComunicado.EXTERNO,
+                subtipo=SubtipoComunicado.INSTITUCIONAL,
+                estado=EstadoComunicado.PUBLICADO,
+            )
+            .filter(
+                Q(fecha_vencimiento__isnull=True)
+                | Q(fecha_vencimiento__gt=timezone.now())
+            )
+            .prefetch_related("adjuntos")
+            .order_by("-fecha_publicacion")
+        )
 
 
 class ComunicadoComedorViewSet(viewsets.ReadOnlyModelViewSet):
@@ -45,13 +51,19 @@ class ComunicadoComedorViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [HasAPIKey | IsAuthenticated]
 
     def get_queryset(self):
-        comedor_id = self.kwargs.get('comedor_id')
-        return Comunicado.objects.filter(
-            tipo=TipoComunicado.EXTERNO,
-            subtipo=SubtipoComunicado.COMEDORES,
-            estado=EstadoComunicado.PUBLICADO,
-            comedores__id=comedor_id
-        ).filter(
-            Q(fecha_vencimiento__isnull=True) |
-            Q(fecha_vencimiento__gt=timezone.now())
-        ).prefetch_related('adjuntos').distinct().order_by('-fecha_publicacion')
+        comedor_id = self.kwargs.get("comedor_id")
+        return (
+            Comunicado.objects.filter(
+                tipo=TipoComunicado.EXTERNO,
+                subtipo=SubtipoComunicado.COMEDORES,
+                estado=EstadoComunicado.PUBLICADO,
+                comedores__id=comedor_id,
+            )
+            .filter(
+                Q(fecha_vencimiento__isnull=True)
+                | Q(fecha_vencimiento__gt=timezone.now())
+            )
+            .prefetch_related("adjuntos")
+            .distinct()
+            .order_by("-fecha_publicacion")
+        )

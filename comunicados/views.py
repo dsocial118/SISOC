@@ -14,7 +14,13 @@ from django.views.generic import (
 )
 
 from .forms import ComunicadoForm, ComunicadoAdjuntoFormSet
-from .models import Comunicado, ComunicadoAdjunto, EstadoComunicado, TipoComunicado, SubtipoComunicado
+from .models import (
+    Comunicado,
+    ComunicadoAdjunto,
+    EstadoComunicado,
+    TipoComunicado,
+    SubtipoComunicado,
+)
 from .permissions import (
     can_create_comunicado,
     can_edit_comunicado,
@@ -46,9 +52,7 @@ class ComunicadoListView(LoginRequiredMixin, ListView):
 
         estado = self.request.GET.get("estado", "publicado")
 
-        queryset = Comunicado.objects.select_related(
-            "usuario_creador"
-        ).filter(
+        queryset = Comunicado.objects.select_related("usuario_creador").filter(
             tipo=TipoComunicado.INTERNO  # Solo comunicados internos en la grilla pública
         )
 
@@ -58,7 +62,8 @@ class ComunicadoListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(estado=EstadoComunicado.PUBLICADO)
             # Excluir vencidos solo para publicados
             queryset = queryset.filter(
-                Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now())
+                Q(fecha_vencimiento__isnull=True)
+                | Q(fecha_vencimiento__gt=timezone.now())
             )
 
         # Filtros
@@ -97,8 +102,7 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
         if es_tecnico(user) and not is_admin(user):
             comedores_usuario = get_comedores_del_usuario(user)
             queryset = queryset.filter(
-                tipo=TipoComunicado.EXTERNO,
-                comedores__in=comedores_usuario
+                tipo=TipoComunicado.EXTERNO, comedores__in=comedores_usuario
             ).distinct()
 
         # Filtros
@@ -126,9 +130,10 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
         ctx["filtro_tipo"] = self.request.GET.get("tipo", "")
         ctx["estados"] = EstadoComunicado.choices
         ctx["tipos"] = TipoComunicado.choices
-        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(self.request.user)
+        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(
+            self.request.user
+        )
         return ctx
-
 
 
 class ComunicadoDetailView(LoginRequiredMixin, DetailView):
@@ -162,7 +167,7 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
+        kwargs["user"] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -175,7 +180,9 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
             ctx["adjuntos_formset"] = ComunicadoAdjuntoFormSet()
         ctx["titulo_pagina"] = "Crear Comunicado"
         ctx["is_edit"] = False
-        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(self.request.user)
+        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(
+            self.request.user
+        )
         return ctx
 
     def form_valid(self, form):
@@ -215,7 +222,7 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
                 self.object.comedores.clear()
                 self.object.para_todos_comedores = False
                 self.object.save()
-            elif form.cleaned_data.get('para_todos_comedores'):
+            elif form.cleaned_data.get("para_todos_comedores"):
                 comedores = get_comedores_del_usuario(self.request.user)
                 self.object.comedores.set(comedores)
         else:
@@ -241,7 +248,7 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
+        kwargs["user"] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -254,7 +261,9 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
             ctx["adjuntos_formset"] = ComunicadoAdjuntoFormSet(instance=self.object)
         ctx["titulo_pagina"] = "Editar Comunicado"
         ctx["is_edit"] = True
-        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(self.request.user)
+        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(
+            self.request.user
+        )
         return ctx
 
     def form_valid(self, form):
@@ -292,7 +301,7 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
                 self.object.comedores.clear()
                 self.object.para_todos_comedores = False
                 self.object.save()
-            elif form.cleaned_data.get('para_todos_comedores'):
+            elif form.cleaned_data.get("para_todos_comedores"):
                 comedores = get_comedores_del_usuario(self.request.user)
                 self.object.comedores.set(comedores)
         else:
@@ -363,7 +372,10 @@ class ComunicadoToggleDestacadoView(LoginRequiredMixin, View):
         comunicado = get_object_or_404(Comunicado, pk=pk)
 
         if comunicado.estado != EstadoComunicado.PUBLICADO:
-            messages.error(request, "Solo se puede modificar el destacado de comunicados publicados.")
+            messages.error(
+                request,
+                "Solo se puede modificar el destacado de comunicados publicados.",
+            )
         else:
             comunicado.destacado = not comunicado.destacado
             comunicado.usuario_ultima_modificacion = request.user
