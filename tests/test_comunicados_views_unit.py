@@ -1,9 +1,11 @@
 """Tests de vistas para el módulo de comunicados."""
 
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import Group, User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 
@@ -38,6 +40,22 @@ def _create_comunicado(
         fecha_vencimiento=fecha_vencimiento,
         usuario_creador=usuario_creador,
     )
+
+
+def _comunicado_form_data(**overrides):
+    data = {
+        "titulo": "Comunicado de prueba",
+        "cuerpo": "Contenido",
+        "tipo": TipoComunicado.INTERNO,
+        "subtipo": "",
+        "fecha_vencimiento": "",
+        "adjuntos-TOTAL_FORMS": "0",
+        "adjuntos-INITIAL_FORMS": "0",
+        "adjuntos-MIN_NUM_FORMS": "0",
+        "adjuntos-MAX_NUM_FORMS": "1000",
+    }
+    data.update(overrides)
+    return data
 
 
 def test_detail_permite_no_gestion_para_publicado_interno(client):
@@ -80,3 +98,59 @@ def test_detail_permite_gestion_para_borrador(client):
     response = client.get(reverse("comunicados_ver", kwargs={"pk": comunicado.pk}))
 
     assert response.status_code == 200
+
+
+def test_create_rollbackea_todo_si_falla_guardado_de_adjunto(client):
+    admin = User.objects.create_superuser("admin_create", "admin_create@test.com", "test")
+    client.force_login(admin)
+    archivo = SimpleUploadedFile(
+        "adjunto.pdf",
+        b"%PDF-1.4 fake",
+        content_type="application/pdf",
+    )
+
+    with patch(
+        "comunicados.views.ComunicadoAdjunto.objects.create",
+        side_effect=RuntimeError("fallo adjunto"),
+    ):
+        with pytest.raises(RuntimeError, match="fallo adjunto"):
+            client.post(
+                reverse("comunicados_crear"),
+                data=_comunicado_form_data(
+                    titulo="Atomic create",
+                    archivos_adjuntos=archivo,
+                ),
+            )
+
+    assert not Comunicado.objects.filter(titulo="Atomic create").exists()
+
+
+def test_update_rollbackea_todo_si_falla_guardado_de_adjunto(client):
+    admin = User.objects.create_superuser("admin_update", "admin_update@test.com", "test")
+    client.force_login(admin)
+    comunicado = _create_comunicado(
+        usuario_creador=admin,
+        estado=EstadoComunicado.BORRADOR,
+    )
+    archivo = SimpleUploadedFile(
+        "adjunto.pdf",
+        b"%PDF-1.4 fake",
+        content_type="application/pdf",
+    )
+
+    with patch(
+        "comunicados.views.ComunicadoAdjunto.objects.create",
+        side_effect=RuntimeError("fallo adjunto"),
+    ):
+        with pytest.raises(RuntimeError, match="fallo adjunto"):
+            client.post(
+                reverse("comunicados_editar", kwargs={"pk": comunicado.pk}),
+                data=_comunicado_form_data(
+                    titulo="Titulo actualizado",
+                    cuerpo="Contenido editado",
+                    archivos_adjuntos=archivo,
+                ),
+            )
+
+    comunicado.refresh_from_db()
+    assert comunicado.titulo != "Titulo actualizado"
