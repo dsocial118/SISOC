@@ -8,52 +8,55 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
     <div class="container mt-4">
-        <!-- Barra de búsqueda y acciones -->
+        <!-- Barra de búsqueda, filtros y acciones -->
         <div class="card mb-4">
-            <div class="card-body">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-6">
-                        <form method="get" class="input-group">
-                            <input type="text"
-                                   name="titulo"
-                                   class="form-control"
-                                   placeholder="Buscar por título..."
-                                   value="{{ filtro_titulo }}">
-                            {% if filtro_estado %}
-                                <input type="hidden" name="estado" value="{{ filtro_estado }}">
-                            {% endif %}
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </form>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        {% if can_create %}
-                            <a href="{% url 'comunicados_crear' %}" class="btn btn-success">
-                                <i class="fas fa-plus"></i> Nuevo Comunicado
+            <div class="card-body" style="padding: 20px;">
+                <!-- Búsqueda + Botón nuevo -->
+                <div class="d-flex gap-3 align-items-center mb-3 flex-wrap">
+                    <form method="get" class="input-group" style="flex: 1; min-width: 250px;">
+                        <input type="text"
+                               name="titulo"
+                               class="form-control"
+                               placeholder="Buscar por título..."
+                               value="{{ filtro_titulo }}">
+                        {% if filtro_estado %}
+                            <input type="hidden" name="estado" value="{{ filtro_estado }}">
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        {% if filtro_titulo %}
+                            <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}"
+                               class="btn btn-outline-danger" title="Limpiar búsqueda">
+                                <i class="fas fa-times"></i>
                             </a>
                         {% endif %}
-                    </div>
+                    </form>
+                    {% if can_create %}
+                        <a href="{% url 'comunicados_crear' %}" class="btn btn-success" style="white-space: nowrap;">
+                            <i class="fas fa-plus me-1"></i> Nuevo Comunicado
+                        </a>
+                    {% endif %}
                 </div>
-                <div class="mt-3">
-                    <div class="btn-group" role="group">
-                        <a href="?{% if filtro_titulo %}titulo={{ filtro_titulo }}{% endif %}"
-                           class="btn btn-sm {% if not filtro_estado %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                            Todos
-                        </a>
-                        <a href="?estado=borrador{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
-                           class="btn btn-sm {% if filtro_estado == 'borrador' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
-                            Borrador
-                        </a>
-                        <a href="?estado=publicado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
-                           class="btn btn-sm {% if filtro_estado == 'publicado' %}btn-success{% else %}btn-outline-success{% endif %}">
-                            Publicado
-                        </a>
-                        <a href="?estado=archivado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
-                           class="btn btn-sm {% if filtro_estado == 'archivado' %}btn-dark{% else %}btn-outline-dark{% endif %}">
-                            Archivado
-                        </a>
-                    </div>
+
+                <!-- Filtros de estado -->
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="?{% if filtro_titulo %}titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if not filtro_estado %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-list me-1"></i> Todos
+                    </a>
+                    <a href="?estado=borrador{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if filtro_estado == 'borrador' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-pencil-alt me-1"></i> Borrador
+                    </a>
+                    <a href="?estado=publicado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if filtro_estado == 'publicado' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-check-circle me-1"></i> Publicado
+                    </a>
+                    <a href="?estado=archivado{% if filtro_titulo %}&titulo={{ filtro_titulo }}{% endif %}"
+                       class="btn {% if filtro_estado == 'archivado' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-archive me-1"></i> Archivado
+                    </a>
                 </div>
             </div>
         </div>
