@@ -134,7 +134,7 @@
                                                 <i class="fas fa-eye"></i>
                                             </a>
 
-                                            {% if comunicado.estado == 'borrador' %}
+                                            {% if comunicado.estado == 'borrador' and can_edit %}
                                                 <a href="{% url 'comunicados_editar' comunicado.pk %}"
                                                    class="btn btn-outline-secondary"
                                                    title="Editar">

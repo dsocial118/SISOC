@@ -126,6 +126,7 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["can_create"] = can_create_comunicado(self.request.user)
+        ctx["can_edit"] = can_edit_comunicado(self.request.user)
         ctx["can_publish"] = can_publish_comunicado(self.request.user)
         ctx["can_archive"] = can_archive_comunicado(self.request.user)
         ctx["can_toggle_destacado"] = can_toggle_destacado(self.request.user)

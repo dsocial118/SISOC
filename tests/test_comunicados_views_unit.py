@@ -223,3 +223,41 @@ def test_listado_publico_no_hace_consultas_n_mas_1_para_adjuntos(client):
         if "comunicados_comunicadoadjunto" in query["sql"].lower()
     ]
     assert len(adjuntos_queries) <= 2
+
+
+def test_gestion_oculta_boton_editar_si_usuario_no_puede_editar(client):
+    creador = _create_user("creador_no_edit")
+    usuario_gestion = _create_user(
+        "gestion_sin_editar",
+        groups=[UserGroups.COMUNICADO_PUBLICAR],
+    )
+    comunicado = _create_comunicado(
+        usuario_creador=creador,
+        estado=EstadoComunicado.BORRADOR,
+    )
+    client.force_login(usuario_gestion)
+
+    response = client.get(reverse("comunicados_gestion"))
+
+    assert response.status_code == 200
+    edit_url = reverse("comunicados_editar", kwargs={"pk": comunicado.pk})
+    assert edit_url.encode() not in response.content
+
+
+def test_gestion_muestra_boton_editar_si_usuario_tiene_permiso(client):
+    creador = _create_user("creador_con_edit")
+    usuario_gestion = _create_user(
+        "gestion_con_editar",
+        groups=[UserGroups.COMUNICADO_EDITAR],
+    )
+    comunicado = _create_comunicado(
+        usuario_creador=creador,
+        estado=EstadoComunicado.BORRADOR,
+    )
+    client.force_login(usuario_gestion)
+
+    response = client.get(reverse("comunicados_gestion"))
+
+    assert response.status_code == 200
+    edit_url = reverse("comunicados_editar", kwargs={"pk": comunicado.pk})
+    assert edit_url.encode() in response.content
