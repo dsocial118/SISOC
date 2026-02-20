@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect
@@ -203,21 +204,22 @@ class ComunicadoCreateView(LoginRequiredMixin, CreateView):
         form.instance.estado = EstadoComunicado.BORRADOR
 
         if adjuntos_formset.is_valid():
-            self.object = form.save()
-            adjuntos_formset.instance = self.object
-            adjuntos_formset.save()
+            with transaction.atomic():
+                self.object = form.save()
+                adjuntos_formset.instance = self.object
+                adjuntos_formset.save()
 
-            # Manejar relación con comedores para comunicados externos
-            self._handle_comedores(form)
+                # Manejar relación con comedores para comunicados externos
+                self._handle_comedores(form)
 
-            # Manejar archivos múltiples del campo archivos_adjuntos
-            archivos = self.request.FILES.getlist("archivos_adjuntos")
-            for archivo in archivos:
-                ComunicadoAdjunto.objects.create(
-                    comunicado=self.object,
-                    archivo=archivo,
-                    nombre_original=archivo.name,
-                )
+                # Manejar archivos múltiples del campo archivos_adjuntos
+                archivos = self.request.FILES.getlist("archivos_adjuntos")
+                for archivo in archivos:
+                    ComunicadoAdjunto.objects.create(
+                        comunicado=self.object,
+                        archivo=archivo,
+                        nombre_original=archivo.name,
+                    )
 
             messages.success(self.request, "Comunicado creado correctamente.")
             return redirect(self.success_url)
@@ -283,20 +285,21 @@ class ComunicadoUpdateView(LoginRequiredMixin, UpdateView):
         form.instance.usuario_ultima_modificacion = self.request.user
 
         if adjuntos_formset.is_valid():
-            self.object = form.save()
-            adjuntos_formset.save()
+            with transaction.atomic():
+                self.object = form.save()
+                adjuntos_formset.save()
 
-            # Manejar relación con comedores para comunicados externos
-            self._handle_comedores(form)
+                # Manejar relación con comedores para comunicados externos
+                self._handle_comedores(form)
 
-            # Manejar archivos múltiples del campo archivos_adjuntos
-            archivos = self.request.FILES.getlist("archivos_adjuntos")
-            for archivo in archivos:
-                ComunicadoAdjunto.objects.create(
-                    comunicado=self.object,
-                    archivo=archivo,
-                    nombre_original=archivo.name,
-                )
+                # Manejar archivos múltiples del campo archivos_adjuntos
+                archivos = self.request.FILES.getlist("archivos_adjuntos")
+                for archivo in archivos:
+                    ComunicadoAdjunto.objects.create(
+                        comunicado=self.object,
+                        archivo=archivo,
+                        nombre_original=archivo.name,
+                    )
 
             messages.success(self.request, "Comunicado actualizado correctamente.")
             return redirect(self.success_url)
