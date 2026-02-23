@@ -161,7 +161,11 @@ class ComunicadoForm(forms.ModelForm):
     def clean_archivos_adjuntos(self):
         archivos = self.cleaned_data.get("archivos_adjuntos", [])
         for archivo in archivos:
-            extension = f".{archivo.name.rsplit('.', 1)[-1].lower()}" if "." in archivo.name else ""
+            extension = (
+                f".{archivo.name.rsplit('.', 1)[-1].lower()}"
+                if "." in archivo.name
+                else ""
+            )
             if extension not in ALLOWED_ADJUNTO_EXTENSIONS:
                 raise ValidationError(
                     f"El archivo '{archivo.name}' tiene una extensión no permitida."

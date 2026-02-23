@@ -23,6 +23,7 @@ pytestmark = pytest.mark.django_db
 # Helpers
 # =============================================================================
 
+
 def _create_user(username: str, groups: list[str] | None = None) -> User:
     user = User.objects.create_user(username=username, password="testpass123")
     for group_name in groups or []:
@@ -46,7 +47,9 @@ def _create_comunicado(
         estado=estado,
         tipo=tipo,
         destacado=destacado,
-        fecha_publicacion=timezone.now() if estado == EstadoComunicado.PUBLICADO else None,
+        fecha_publicacion=(
+            timezone.now() if estado == EstadoComunicado.PUBLICADO else None
+        ),
         fecha_vencimiento=fecha_vencimiento,
         usuario_creador=usuario_creador,
     )
@@ -56,12 +59,17 @@ def _create_comunicado(
 # Publicar
 # =============================================================================
 
+
 def test_publicar_borrador_cambia_estado_a_publicado(client):
     admin = User.objects.create_superuser("admin_pub", "pub@test.com", "test")
-    comunicado = _create_comunicado(usuario_creador=admin, estado=EstadoComunicado.BORRADOR)
+    comunicado = _create_comunicado(
+        usuario_creador=admin, estado=EstadoComunicado.BORRADOR
+    )
     client.force_login(admin)
 
-    response = client.post(reverse("comunicados_publicar", kwargs={"pk": comunicado.pk}))
+    response = client.post(
+        reverse("comunicados_publicar", kwargs={"pk": comunicado.pk})
+    )
 
     assert response.status_code == 302
     comunicado.refresh_from_db()
@@ -71,11 +79,17 @@ def test_publicar_borrador_cambia_estado_a_publicado(client):
 
 def test_publicar_sin_permiso_devuelve_403(client):
     creador = _create_user("creador_pub_403")
-    usuario_sin_permiso = _create_user("sin_permiso_pub", groups=[UserGroups.COMUNICADO_CREAR])
-    comunicado = _create_comunicado(usuario_creador=creador, estado=EstadoComunicado.BORRADOR)
+    usuario_sin_permiso = _create_user(
+        "sin_permiso_pub", groups=[UserGroups.COMUNICADO_CREAR]
+    )
+    comunicado = _create_comunicado(
+        usuario_creador=creador, estado=EstadoComunicado.BORRADOR
+    )
     client.force_login(usuario_sin_permiso)
 
-    response = client.post(reverse("comunicados_publicar", kwargs={"pk": comunicado.pk}))
+    response = client.post(
+        reverse("comunicados_publicar", kwargs={"pk": comunicado.pk})
+    )
 
     assert response.status_code == 403
     comunicado.refresh_from_db()
@@ -84,7 +98,9 @@ def test_publicar_sin_permiso_devuelve_403(client):
 
 def test_publicar_ya_publicado_no_cambia_estado(client):
     admin = User.objects.create_superuser("admin_pub_dup", "pub_dup@test.com", "test")
-    comunicado = _create_comunicado(usuario_creador=admin, estado=EstadoComunicado.PUBLICADO)
+    comunicado = _create_comunicado(
+        usuario_creador=admin, estado=EstadoComunicado.PUBLICADO
+    )
     fecha_original = comunicado.fecha_publicacion
     client.force_login(admin)
 
@@ -97,7 +113,9 @@ def test_publicar_ya_publicado_no_cambia_estado(client):
 
 def test_publicar_archivado_no_cambia_estado(client):
     admin = User.objects.create_superuser("admin_pub_arch", "pub_arch@test.com", "test")
-    comunicado = _create_comunicado(usuario_creador=admin, estado=EstadoComunicado.ARCHIVADO)
+    comunicado = _create_comunicado(
+        usuario_creador=admin, estado=EstadoComunicado.ARCHIVADO
+    )
     client.force_login(admin)
 
     client.post(reverse("comunicados_publicar", kwargs={"pk": comunicado.pk}))
@@ -110,12 +128,17 @@ def test_publicar_archivado_no_cambia_estado(client):
 # Archivar
 # =============================================================================
 
+
 def test_archivar_publicado_cambia_estado_a_archivado(client):
     admin = User.objects.create_superuser("admin_arch", "arch@test.com", "test")
-    comunicado = _create_comunicado(usuario_creador=admin, estado=EstadoComunicado.PUBLICADO)
+    comunicado = _create_comunicado(
+        usuario_creador=admin, estado=EstadoComunicado.PUBLICADO
+    )
     client.force_login(admin)
 
-    response = client.post(reverse("comunicados_archivar", kwargs={"pk": comunicado.pk}))
+    response = client.post(
+        reverse("comunicados_archivar", kwargs={"pk": comunicado.pk})
+    )
 
     assert response.status_code == 302
     comunicado.refresh_from_db()
@@ -123,8 +146,12 @@ def test_archivar_publicado_cambia_estado_a_archivado(client):
 
 
 def test_archivar_borrador_cambia_estado_a_archivado(client):
-    admin = User.objects.create_superuser("admin_arch_borr", "arch_borr@test.com", "test")
-    comunicado = _create_comunicado(usuario_creador=admin, estado=EstadoComunicado.BORRADOR)
+    admin = User.objects.create_superuser(
+        "admin_arch_borr", "arch_borr@test.com", "test"
+    )
+    comunicado = _create_comunicado(
+        usuario_creador=admin, estado=EstadoComunicado.BORRADOR
+    )
     client.force_login(admin)
 
     client.post(reverse("comunicados_archivar", kwargs={"pk": comunicado.pk}))
@@ -135,11 +162,17 @@ def test_archivar_borrador_cambia_estado_a_archivado(client):
 
 def test_archivar_sin_permiso_devuelve_403(client):
     creador = _create_user("creador_arch_403")
-    usuario_sin_permiso = _create_user("sin_permiso_arch", groups=[UserGroups.COMUNICADO_CREAR])
-    comunicado = _create_comunicado(usuario_creador=creador, estado=EstadoComunicado.PUBLICADO)
+    usuario_sin_permiso = _create_user(
+        "sin_permiso_arch", groups=[UserGroups.COMUNICADO_CREAR]
+    )
+    comunicado = _create_comunicado(
+        usuario_creador=creador, estado=EstadoComunicado.PUBLICADO
+    )
     client.force_login(usuario_sin_permiso)
 
-    response = client.post(reverse("comunicados_archivar", kwargs={"pk": comunicado.pk}))
+    response = client.post(
+        reverse("comunicados_archivar", kwargs={"pk": comunicado.pk})
+    )
 
     assert response.status_code == 403
     comunicado.refresh_from_db()
@@ -148,7 +181,9 @@ def test_archivar_sin_permiso_devuelve_403(client):
 
 def test_archivar_ya_archivado_no_cambia_estado(client):
     admin = User.objects.create_superuser("admin_arch_dup", "arch_dup@test.com", "test")
-    comunicado = _create_comunicado(usuario_creador=admin, estado=EstadoComunicado.ARCHIVADO)
+    comunicado = _create_comunicado(
+        usuario_creador=admin, estado=EstadoComunicado.ARCHIVADO
+    )
     client.force_login(admin)
 
     client.post(reverse("comunicados_archivar", kwargs={"pk": comunicado.pk}))
@@ -160,6 +195,7 @@ def test_archivar_ya_archivado_no_cambia_estado(client):
 # =============================================================================
 # Toggle Destacado
 # =============================================================================
+
 
 def test_toggle_destacado_activa_si_no_estaba_destacado(client):
     admin = User.objects.create_superuser("admin_tog_on", "tog_on@test.com", "test")
@@ -192,7 +228,9 @@ def test_toggle_destacado_desactiva_si_ya_estaba_destacado(client):
 
 def test_toggle_destacado_sin_permiso_devuelve_403(client):
     creador = _create_user("creador_tog_403")
-    usuario_sin_permiso = _create_user("sin_permiso_tog", groups=[UserGroups.COMUNICADO_CREAR])
+    usuario_sin_permiso = _create_user(
+        "sin_permiso_tog", groups=[UserGroups.COMUNICADO_CREAR]
+    )
     comunicado = _create_comunicado(
         usuario_creador=creador, estado=EstadoComunicado.PUBLICADO, destacado=False
     )
@@ -224,9 +262,12 @@ def test_toggle_destacado_no_aplica_a_borrador(client):
 # Eliminar
 # =============================================================================
 
+
 def test_eliminar_borrador_como_admin_elimina_correctamente(client):
     admin = User.objects.create_superuser("admin_del", "del@test.com", "test")
-    comunicado = _create_comunicado(usuario_creador=admin, estado=EstadoComunicado.BORRADOR)
+    comunicado = _create_comunicado(
+        usuario_creador=admin, estado=EstadoComunicado.BORRADOR
+    )
     pk = comunicado.pk
     client.force_login(admin)
 
@@ -236,13 +277,19 @@ def test_eliminar_borrador_como_admin_elimina_correctamente(client):
     assert not Comunicado.objects.filter(pk=pk).exists()
 
 
-@pytest.mark.parametrize("estado", [EstadoComunicado.PUBLICADO, EstadoComunicado.ARCHIVADO])
+@pytest.mark.parametrize(
+    "estado", [EstadoComunicado.PUBLICADO, EstadoComunicado.ARCHIVADO]
+)
 def test_eliminar_no_borrador_como_admin_devuelve_403(client, estado):
-    admin = User.objects.create_superuser(f"admin_del_{estado}", f"del_{estado}@test.com", "test")
+    admin = User.objects.create_superuser(
+        f"admin_del_{estado}", f"del_{estado}@test.com", "test"
+    )
     comunicado = _create_comunicado(usuario_creador=admin, estado=estado)
     client.force_login(admin)
 
-    response = client.post(reverse("comunicados_eliminar", kwargs={"pk": comunicado.pk}))
+    response = client.post(
+        reverse("comunicados_eliminar", kwargs={"pk": comunicado.pk})
+    )
 
     assert response.status_code == 403
     assert Comunicado.objects.filter(pk=comunicado.pk).exists()
@@ -254,10 +301,14 @@ def test_eliminar_borrador_sin_ser_admin_devuelve_403(client):
         "no_admin_del",
         groups=[UserGroups.COMUNICADO_CREAR, UserGroups.COMUNICADO_EDITAR],
     )
-    comunicado = _create_comunicado(usuario_creador=creador, estado=EstadoComunicado.BORRADOR)
+    comunicado = _create_comunicado(
+        usuario_creador=creador, estado=EstadoComunicado.BORRADOR
+    )
     client.force_login(usuario_no_admin)
 
-    response = client.post(reverse("comunicados_eliminar", kwargs={"pk": comunicado.pk}))
+    response = client.post(
+        reverse("comunicados_eliminar", kwargs={"pk": comunicado.pk})
+    )
 
     assert response.status_code == 403
     assert Comunicado.objects.filter(pk=comunicado.pk).exists()
@@ -266,6 +317,7 @@ def test_eliminar_borrador_sin_ser_admin_devuelve_403(client):
 # =============================================================================
 # Filtros - Listado Público
 # =============================================================================
+
 
 def test_listado_publico_no_muestra_vencidos(client):
     creador = _create_user("creador_venc")
@@ -389,6 +441,7 @@ def test_listado_publico_destacados_aparecen_primero(client):
 # Filtros - Gestión
 # =============================================================================
 
+
 def test_gestion_sin_permisos_devuelve_403(client):
     usuario_sin_permisos = _create_user("sin_permisos_gestion")
     client.force_login(usuario_sin_permisos)
@@ -415,10 +468,14 @@ def test_gestion_filtra_por_titulo(client):
 def test_gestion_filtra_por_estado(client):
     admin = User.objects.create_superuser("admin_gest_est", "gest_est@test.com", "test")
     borrador = _create_comunicado(
-        usuario_creador=admin, estado=EstadoComunicado.BORRADOR, titulo="Borrador filtro"
+        usuario_creador=admin,
+        estado=EstadoComunicado.BORRADOR,
+        titulo="Borrador filtro",
     )
     publicado = _create_comunicado(
-        usuario_creador=admin, estado=EstadoComunicado.PUBLICADO, titulo="Publicado filtro"
+        usuario_creador=admin,
+        estado=EstadoComunicado.PUBLICADO,
+        titulo="Publicado filtro",
     )
     client.force_login(admin)
 
@@ -432,7 +489,9 @@ def test_gestion_filtra_por_estado(client):
 
 
 def test_gestion_filtra_por_tipo(client):
-    admin = User.objects.create_superuser("admin_gest_tipo", "gest_tipo@test.com", "test")
+    admin = User.objects.create_superuser(
+        "admin_gest_tipo", "gest_tipo@test.com", "test"
+    )
     interno = _create_comunicado(
         usuario_creador=admin, tipo=TipoComunicado.INTERNO, titulo="Interno filtro"
     )
@@ -495,7 +554,9 @@ def test_gestion_comunicado_sin_vencer_con_vencimiento_nulo_aparece(client):
 
 
 def test_gestion_no_muestra_toggle_destacado_para_borrador(client):
-    admin = User.objects.create_superuser("admin_tog_borr2", "tog_borr2@test.com", "test")
+    admin = User.objects.create_superuser(
+        "admin_tog_borr2", "tog_borr2@test.com", "test"
+    )
     borrador = _create_comunicado(
         usuario_creador=admin,
         estado=EstadoComunicado.BORRADOR,
