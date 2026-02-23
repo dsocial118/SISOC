@@ -83,7 +83,11 @@ INSTALLED_APPS = [
     "celiaquia",
     "audittrail",
     "importarexpediente",
+<<<<<<< ABM_COMUNICADOS
+    "comunicados",
+=======
     "centrodeinfancia",
+>>>>>>> development
 ]
 
 # Middleware (orden CORS correcto)

@@ -1,0 +1,150 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}{{ comunicado.titulo }}{% endblock %}
+{% block titulo-pagina %}Comunicado{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <!-- Navegación -->
+        <div class="mb-4">
+            {% if can_manage %}
+                <a href="{% url 'comunicados_gestion' %}"
+                   class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver al Gestor
+                </a>
+            {% else %}
+                <a href="{% url 'comunicados' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Comunicados
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Comunicado -->
+        <div class="card {% if comunicado.destacado %}border-warning{% endif %}">
+            {% if comunicado.destacado %}
+                <div class="card-header bg-warning text-dark">
+                    <i class="fas fa-star"></i> Comunicado Destacado
+                </div>
+            {% endif %}
+
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">{{ comunicado.titulo }}</h4>
+                </div>
+                <div>
+                    {% if comunicado.estado == 'borrador' %}
+                        <span class="badge bg-secondary">Borrador</span>
+                    {% elif comunicado.estado == 'publicado' %}
+                        <span class="badge bg-success">Publicado</span>
+                    {% elif comunicado.estado == 'archivado' %}
+                        <span class="badge bg-dark">Archivado</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Metadatos -->
+                <div class="text-muted small mb-4">
+                    <span>
+                        <i class="fas fa-user"></i>
+                        {{ comunicado.usuario_creador.get_full_name|default:comunicado.usuario_creador.username }}
+                    </span>
+                    {% if comunicado.fecha_publicacion %}
+                        <span class="ms-3">
+                            <i class="fas fa-calendar"></i>
+                            Publicado: {{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}
+                        </span>
+                    {% endif %}
+                    {% if comunicado.fecha_vencimiento %}
+                        <span class="ms-3">
+                            <i class="fas fa-clock"></i>
+                            Vence: {{ comunicado.fecha_vencimiento|date:"d/m/Y H:i" }}
+                            {% if comunicado.esta_vencido %}<span class="badge bg-danger">Vencido</span>{% endif %}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <!-- Contenido -->
+                <div class="comunicado-contenido mb-4">{{ comunicado.cuerpo|linebreaks }}</div>
+
+                <!-- Adjuntos -->
+                {% if comunicado.adjuntos.exists %}
+                    <hr />
+                    <h6>
+                        <i class="fas fa-paperclip"></i> Archivos Adjuntos
+                    </h6>
+                    <ul class="list-unstyled">
+                        {% for adjunto in comunicado.adjuntos.all %}
+                            <li class="mb-2">
+                                <a href="{{ adjunto.archivo.url }}"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download"></i>
+                                    {{ adjunto.nombre_original }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <!-- Acciones (solo para usuarios con permisos) -->
+            {% if can_edit or can_publish or can_archive or can_delete %}
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">
+                                Creado: {{ comunicado.fecha_creacion|date:"d/m/Y H:i" }}
+                                {% if comunicado.usuario_ultima_modificacion %}
+                                    | Modificado por: {{ comunicado.usuario_ultima_modificacion.get_full_name|default:comunicado.usuario_ultima_modificacion.username }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="btn-group">
+                            {% if can_edit and comunicado.estado == 'borrador' %}
+                                <a href="{% url 'comunicados_editar' comunicado.pk %}"
+                                   class="btn btn-outline-secondary">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                            {% endif %}
+
+                            {% if can_publish and comunicado.estado == 'borrador' %}
+                                <form method="post"
+                                      action="{% url 'comunicados_publicar' comunicado.pk %}"
+                                      class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-outline-success"
+                                            onclick="return confirm('¿Publicar este comunicado?')">
+                                        <i class="fas fa-paper-plane"></i> Publicar
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            {% if can_archive and comunicado.estado == 'publicado' %}
+                                <form method="post"
+                                      action="{% url 'comunicados_archivar' comunicado.pk %}"
+                                      class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-outline-dark"
+                                            onclick="return confirm('¿Archivar este comunicado?')">
+                                        <i class="fas fa-archive"></i> Archivar
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            {% if can_delete and comunicado.estado == 'borrador' %}
+                                <a href="{% url 'comunicados_eliminar' comunicado.pk %}"
+                                   class="btn btn-outline-danger">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
