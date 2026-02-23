@@ -10,7 +10,9 @@ from core.constants import UserGroups
 
 pytestmark = pytest.mark.django_db
 
-migration_0002 = importlib.import_module("comunicados.migrations.0002_crear_grupos_permisos")
+migration_0002 = importlib.import_module(
+    "comunicados.migrations.0002_crear_grupos_permisos"
+)
 migration_0004 = importlib.import_module("comunicados.migrations.0004_create_v2_groups")
 
 
@@ -27,7 +29,9 @@ def test_comunicados_group_migrations_are_noop():
 
     migration_0002.crear_grupos(apps, None)
     migration_0004.create_groups(apps, None)
-    assert not Group.objects.filter(name__in=UserGroups.COMUNICADOS_TODOS_PERMISOS).exists()
+    assert not Group.objects.filter(
+        name__in=UserGroups.COMUNICADOS_TODOS_PERMISOS
+    ).exists()
 
     Group.objects.create(name=UserGroups.COMUNICADO_CREAR)
     Group.objects.create(name=UserGroups.COMUNICADO_INTERNO_CREAR)

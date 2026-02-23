@@ -27,7 +27,9 @@ def _base_form_data(**overrides):
 def test_form_invalido_si_es_externo_comedores_sin_destinatarios():
     form = ComunicadoForm(
         data=_base_form_data(),
-        user=User.objects.create_superuser("admin_form_invalid", "form@test.com", "test"),
+        user=User.objects.create_superuser(
+            "admin_form_invalid", "form@test.com", "test"
+        ),
     )
 
     assert not form.is_valid()
@@ -37,7 +39,9 @@ def test_form_invalido_si_es_externo_comedores_sin_destinatarios():
 def test_form_valido_si_es_para_todos_los_comedores():
     form = ComunicadoForm(
         data=_base_form_data(para_todos_comedores="on"),
-        user=User.objects.create_superuser("admin_form_todos", "form_todos@test.com", "test"),
+        user=User.objects.create_superuser(
+            "admin_form_todos", "form_todos@test.com", "test"
+        ),
     )
 
     assert form.is_valid()

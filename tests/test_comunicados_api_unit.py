@@ -22,24 +22,41 @@ pytestmark = pytest.mark.django_db
 # Helpers
 # =============================================================================
 
+
 def _create_admin(username: str = "admin_api") -> User:
     return User.objects.create_superuser(username, f"{username}@test.com", "test")
 
 
-def _comunicado_base(usuario_creador: User, subtipo: str, titulo: str | None = None, estado: str = EstadoComunicado.PUBLICADO, fecha_vencimiento=None) -> Comunicado:
+def _comunicado_base(
+    usuario_creador: User,
+    subtipo: str,
+    titulo: str | None = None,
+    estado: str = EstadoComunicado.PUBLICADO,
+    fecha_vencimiento=None,
+) -> Comunicado:
     return Comunicado.objects.create(
         titulo=titulo or f"API {subtipo} {estado}",
         cuerpo="Contenido API",
         estado=estado,
         tipo=TipoComunicado.EXTERNO,
         subtipo=subtipo,
-        fecha_publicacion=timezone.now() if estado == EstadoComunicado.PUBLICADO else None,
+        fecha_publicacion=(
+            timezone.now() if estado == EstadoComunicado.PUBLICADO else None
+        ),
         fecha_vencimiento=fecha_vencimiento,
         usuario_creador=usuario_creador,
     )
 
 
-def _create_comunicado(*, usuario_creador: User, subtipo: str, titulo: str | None = None, estado: str = EstadoComunicado.PUBLICADO, fecha_vencimiento=None, comedores=None) -> Comunicado:
+def _create_comunicado(
+    *,
+    usuario_creador: User,
+    subtipo: str,
+    titulo: str | None = None,
+    estado: str = EstadoComunicado.PUBLICADO,
+    fecha_vencimiento=None,
+    comedores=None,
+) -> Comunicado:
     c = _comunicado_base(usuario_creador, subtipo, titulo, estado, fecha_vencimiento)
     if comedores:
         c.comedores.set(comedores)
@@ -49,6 +66,7 @@ def _create_comunicado(*, usuario_creador: User, subtipo: str, titulo: str | Non
 # =============================================================================
 # API Institucional - GET /api/comunicados/institucional/
 # =============================================================================
+
 
 def test_api_institucional_devuelve_lista_con_api_key(api_client):
     admin = _create_admin("admin_inst_list")
@@ -189,14 +207,18 @@ def test_api_institucional_incluye_adjuntos_en_respuesta(api_client):
     )
     ComunicadoAdjunto.objects.create(
         comunicado=comunicado,
-        archivo=SimpleUploadedFile("doc.pdf", b"%PDF-1.4", content_type="application/pdf"),
+        archivo=SimpleUploadedFile(
+            "doc.pdf", b"%PDF-1.4", content_type="application/pdf"
+        ),
         nombre_original="doc.pdf",
     )
 
     response = api_client.get("/api/comunicados/institucional/")
 
     resultado = next(
-        item for item in response.data["results"] if item["titulo"] == "Inst con adjunto"
+        item
+        for item in response.data["results"]
+        if item["titulo"] == "Inst con adjunto"
     )
     assert len(resultado["adjuntos"]) == 1
     assert resultado["adjuntos"][0]["nombre_original"] == "doc.pdf"
@@ -213,13 +235,22 @@ def test_api_institucional_campos_esperados_en_respuesta(api_client):
     response = api_client.get("/api/comunicados/institucional/")
 
     resultado = response.data["results"][0]
-    for campo in ["id", "titulo", "cuerpo", "estado", "subtipo", "fecha_publicacion", "adjuntos"]:
+    for campo in [
+        "id",
+        "titulo",
+        "cuerpo",
+        "estado",
+        "subtipo",
+        "fecha_publicacion",
+        "adjuntos",
+    ]:
         assert campo in resultado
 
 
 # =============================================================================
 # API Comedor - GET /api/comunicados/comedor/{comedor_id}/
 # =============================================================================
+
 
 def test_api_comedor_devuelve_comunicados_del_comedor(api_client):
     admin = _create_admin("admin_com_list")
