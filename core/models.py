@@ -1,5 +1,7 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
@@ -7,8 +9,11 @@ User = get_user_model()
 
 
 class MontoPrestacionPrograma(models.Model):
-    programa = models.CharField(
-        max_length=255, verbose_name="Programa", blank=True, null=True
+    programa = models.ForeignKey(
+        "Programa",
+        on_delete=models.PROTECT,
+        related_name="montos_prestacion",
+        verbose_name="Programa",
     )
     desayuno_valor = models.DecimalField(
         max_digits=10,
@@ -46,6 +51,19 @@ class MontoPrestacionPrograma(models.Model):
     )
     usuario_creador = models.ForeignKey(User, on_delete=models.DO_NOTHING)
 
+    def clean(self):
+        super().clean()
+        if not any(
+            getattr(self, campo) is not None
+            for campo in (
+                "desayuno_valor",
+                "almuerzo_valor",
+                "merienda_valor",
+                "cena_valor",
+            )
+        ):
+            raise ValidationError("Debe informar al menos un monto.")
+
     def __str__(self):
         return str(self.programa)
 
@@ -53,6 +71,17 @@ class MontoPrestacionPrograma(models.Model):
         ordering = ["id"]
         verbose_name = "Prestación"
         verbose_name_plural = "Prestaciones"
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    Q(desayuno_valor__isnull=False)
+                    | Q(almuerzo_valor__isnull=False)
+                    | Q(merienda_valor__isnull=False)
+                    | Q(cena_valor__isnull=False)
+                ),
+                name="monto_prestacion_al_menos_un_valor",
+            )
+        ]
 
 
 class Nacionalidad(models.Model):

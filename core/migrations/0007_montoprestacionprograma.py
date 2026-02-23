@@ -27,8 +27,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "programa",
-                    models.CharField(
-                        blank=True, max_length=255, null=True, verbose_name="Programa"
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="montos_prestacion",
+                        to="core.programa",
+                        verbose_name="Programa",
                     ),
                 ),
                 (
@@ -96,5 +99,17 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "Prestaciones",
                 "ordering": ["id"],
             },
+        ),
+        migrations.AddConstraint(
+            model_name="montoprestacionprograma",
+            constraint=models.CheckConstraint(
+                check=(
+                    models.Q(desayuno_valor__isnull=False)
+                    | models.Q(almuerzo_valor__isnull=False)
+                    | models.Q(merienda_valor__isnull=False)
+                    | models.Q(cena_valor__isnull=False)
+                ),
+                name="monto_prestacion_al_menos_un_valor",
+            ),
         ),
     ]

@@ -26,7 +26,7 @@ class TestHistorialService:
 
         programa = Programa.objects.create(nombre="Programa Test")
         prestacion = MontoPrestacionPrograma.objects.create(
-            programa="Programa A",
+            programa=programa,
             desayuno_valor=Decimal("10.50"),
             almuerzo_valor=Decimal("20.75"),
             merienda_valor=Decimal("5.25"),
