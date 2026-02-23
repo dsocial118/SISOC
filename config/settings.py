@@ -69,7 +69,6 @@ INSTALLED_APPS = [
     "dashboard",
     "comedores",
     "organizaciones",
-    "centrodeinfancia",
     "ciudadanos",
     "duplas",
     "admisiones",
