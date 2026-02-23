@@ -149,15 +149,17 @@ class ComunicadoDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "comunicado"
 
     def get_queryset(self):
-        queryset = Comunicado.objects.select_related("usuario_creador").prefetch_related(
-            "adjuntos"
-        )
+        queryset = Comunicado.objects.select_related(
+            "usuario_creador"
+        ).prefetch_related("adjuntos")
         if can_manage_comunicados(self.request.user):
             return queryset
         return queryset.filter(
             tipo=TipoComunicado.INTERNO,
             estado=EstadoComunicado.PUBLICADO,
-        ).filter(Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now()))
+        ).filter(
+            Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now())
+        )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

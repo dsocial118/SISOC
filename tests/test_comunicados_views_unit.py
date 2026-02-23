@@ -45,7 +45,9 @@ def _create_comunicado(
         cuerpo="Contenido de prueba",
         estado=estado,
         tipo=tipo,
-        fecha_publicacion=timezone.now() if estado == EstadoComunicado.PUBLICADO else None,
+        fecha_publicacion=(
+            timezone.now() if estado == EstadoComunicado.PUBLICADO else None
+        ),
         fecha_vencimiento=fecha_vencimiento,
         usuario_creador=usuario_creador,
     )
@@ -83,7 +85,9 @@ def test_detail_permite_no_gestion_para_publicado_interno(client):
     assert comunicado.titulo.encode() in response.content
 
 
-@pytest.mark.parametrize("estado", [EstadoComunicado.BORRADOR, EstadoComunicado.ARCHIVADO])
+@pytest.mark.parametrize(
+    "estado", [EstadoComunicado.BORRADOR, EstadoComunicado.ARCHIVADO]
+)
 def test_detail_bloquea_no_gestion_para_no_publicados(client, estado):
     creador = _create_user(f"creador_{estado}")
     viewer = _create_user(f"viewer_{estado}")
@@ -110,7 +114,9 @@ def test_detail_permite_gestion_para_borrador(client):
 
 
 def test_create_rollbackea_todo_si_falla_guardado_de_adjunto(client):
-    admin = User.objects.create_superuser("admin_create", "admin_create@test.com", "test")
+    admin = User.objects.create_superuser(
+        "admin_create", "admin_create@test.com", "test"
+    )
     client.force_login(admin)
     archivo = SimpleUploadedFile(
         "adjunto.pdf",
@@ -135,7 +141,9 @@ def test_create_rollbackea_todo_si_falla_guardado_de_adjunto(client):
 
 
 def test_update_rollbackea_todo_si_falla_guardado_de_adjunto(client):
-    admin = User.objects.create_superuser("admin_update", "admin_update@test.com", "test")
+    admin = User.objects.create_superuser(
+        "admin_update", "admin_update@test.com", "test"
+    )
     client.force_login(admin)
     comunicado = _create_comunicado(
         usuario_creador=admin,
@@ -266,7 +274,9 @@ def test_gestion_muestra_boton_editar_si_usuario_tiene_permiso(client):
 
 
 def test_create_guarda_adjuntos_y_destinatarios(client):
-    admin = User.objects.create_superuser("admin_create_ok", "create_ok@test.com", "test")
+    admin = User.objects.create_superuser(
+        "admin_create_ok", "create_ok@test.com", "test"
+    )
     comedor = Comedor.objects.create(nombre="Comedor create ok")
     client.force_login(admin)
     archivo = SimpleUploadedFile(
@@ -293,7 +303,9 @@ def test_create_guarda_adjuntos_y_destinatarios(client):
 
 
 def test_update_guarda_adjuntos_y_destinatarios(client):
-    admin = User.objects.create_superuser("admin_update_ok", "update_ok@test.com", "test")
+    admin = User.objects.create_superuser(
+        "admin_update_ok", "update_ok@test.com", "test"
+    )
     comedor_a = Comedor.objects.create(nombre="Comedor A")
     comedor_b = Comedor.objects.create(nombre="Comedor B")
     comunicado = _create_comunicado(

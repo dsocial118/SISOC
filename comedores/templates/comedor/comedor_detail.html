@@ -8,12 +8,14 @@
             {{ comedor.provincia.nombre }}
         {% else %}
             Sin información
-        {% endif %},
+        {% endif %}
+        ,
         {% if comedor.municipio %}
             {{ comedor.municipio.nombre }}
         {% else %}
             Sin información
-        {% endif %},
+        {% endif %}
+        ,
         {% if comedor.localidad %}
             {{ comedor.localidad.nombre }}
         {% else %}
