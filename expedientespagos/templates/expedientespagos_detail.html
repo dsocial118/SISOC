@@ -22,10 +22,10 @@
             </div>
             <div class="card-body">
                 <p>
-                    <strong>Número de Expediente:</strong> {{ expediente.expediente_pago }}
+                    <strong>Expediente de Pago:</strong> {{ expediente.expediente_pago|default:"-" }}
                 </p>
                 <p>
-                    <strong>Expediente del Convenio:</strong> {{ expediente.expediente_convenio }}
+                    <strong>Expediente del Convenio:</strong> {{ expediente.expediente_convenio|default:"-" }}
                 </p>
                 <p>
                     <strong>Total:</strong> ${{ expediente.total|floatformat:2 }}
@@ -40,19 +40,19 @@
                     <strong>Organización:</strong> {{ expediente.organizacion_creacion|default:"-" }}
                 </p>
                 <p>
-                    <strong>Anexo:</strong> {{ expediente.anexo }}
+                    <strong>Anexo:</strong> {{ expediente.anexo|default:"-" }}
                 </p>
                 <p>
-                    <strong>Número de Orden de Pago:</strong> {{ expediente.numero_orden_pago }}
+                    <strong>Número de Orden de Pago:</strong> {{ expediente.numero_orden_pago|default:"-" }}
                 </p>
                 <p>
-                    <strong>Fecha de Pago al Banco:</strong> {{ expediente.fecha_pago_al_banco|date:"d/m/Y" }}
+                    <strong>Fecha de Pago al Banco:</strong> {{ expediente.fecha_pago_al_banco|date:"d/m/Y"|default:"-" }}
                 </p>
                 <p>
-                    <strong>Fecha de Acreditación:</strong> {{ expediente.fecha_acreditacion|date:"d/m/Y" }}
+                    <strong>Fecha de Acreditación:</strong> {{ expediente.fecha_acreditacion|date:"d/m/Y"|default:"-" }}
                 </p>
                 <p>
-                    <strong>Observaciones:</strong> {{ expediente.observaciones }}
+                    <strong>Observaciones:</strong> {{ expediente.observaciones|default:"-" }}
                 </p>
                 <hr />
                 <p>
