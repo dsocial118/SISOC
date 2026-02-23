@@ -1,4 +1,7 @@
 import logging
+import json
+from datetime import date, datetime, time
+from decimal import Decimal
 from django.contrib.contenttypes.models import ContentType
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from config.middlewares.threadlocals import get_current_user
@@ -9,6 +12,47 @@ logger = logging.getLogger("django")
 
 
 class HistorialService:
+    @staticmethod
+    def _json_safe(value):
+        """Convert arbitrary Python values to JSON-serializable equivalents.
+
+        - Decimal -> str (to avoid precision loss)
+        - date/datetime/time -> ISO string
+        - dict/list/tuple/set -> recursively processed
+        - QuerySet/manager `.all()` -> list of stringified items
+        - Django model instances and other non-serializables -> str(value)
+        """
+
+        # Primitive cases first
+        if isinstance(value, Decimal):
+            return str(value)
+        if isinstance(value, (datetime, date, time)):
+            try:
+                return value.isoformat()
+            except Exception:
+                return str(value)
+
+        # Collections
+        if isinstance(value, dict):
+            return {str(k): HistorialService._json_safe(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple, set)):
+            return [HistorialService._json_safe(v) for v in value]
+
+        # Relations like QuerySet
+        try:
+            if hasattr(value, "all") and callable(getattr(value, "all")):
+                return [HistorialService._json_safe(v) for v in value.all()]
+        except Exception:
+            pass
+
+        # If already JSON serializable, return as-is
+        try:
+            json.dumps(value)
+            return value
+        except TypeError:
+            # Fallback: stringify
+            return str(value)
+
     @staticmethod
     def registrar_historial(
         accion: str,
@@ -32,12 +76,19 @@ class HistorialService:
             usuario = get_current_user()
             content_type = ContentType.objects.get_for_model(instancia)
             object_id = str(instancia.pk)
+            # Ensure `diferencias` is JSON-serializable
+            diferencias_safe = (
+                HistorialService._json_safe(diferencias)
+                if diferencias is not None
+                else None
+            )
+
             return Historial.objects.create(
                 usuario=usuario,
                 accion=accion,
                 content_type=content_type,
                 object_id=object_id,
-                diferencias=diferencias,
+                diferencias=diferencias_safe,
             )
         except Exception:
             logger.exception(

@@ -11,7 +11,9 @@ from core.constants import UserGroups
 
 pytestmark = pytest.mark.django_db
 
-migration_module = importlib.import_module("users.migrations.0012_cleanup_unused_groups")
+migration_module = importlib.import_module(
+    "users.migrations.0012_cleanup_unused_groups"
+)
 UNUSED_GROUPS = set(migration_module.UNUSED_GROUPS)
 
 

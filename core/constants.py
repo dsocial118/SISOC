@@ -90,6 +90,7 @@ class UserGroups:
         "Comedores",
         "Exportar a csv",
         "Organizaciones",
+        "Gestor prestaciones",
         "Ciudadanos",
         "Usuario Crear",
         "Usuario Eliminar",
