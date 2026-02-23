@@ -2,6 +2,7 @@
 import os
 import sys
 import logging
+import tempfile
 from pathlib import Path
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
@@ -68,6 +69,7 @@ INSTALLED_APPS = [
     "dashboard",
     "comedores",
     "organizaciones",
+    "centrodeinfancia",
     "ciudadanos",
     "duplas",
     "admisiones",
@@ -82,7 +84,7 @@ INSTALLED_APPS = [
     "celiaquia",
     "audittrail",
     "importarexpediente",
-    "cdi"
+    "comunicados",
 ]
 
 # Middleware (orden CORS correcto)
@@ -158,12 +160,9 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 DB_CONN_MAX_AGE = int(
     os.getenv("DB_CONN_MAX_AGE", "60" if ENVIRONMENT == "prd" else "0")
 )
-DB_CONN_HEALTH_CHECKS = (
-    os.getenv("DB_CONN_HEALTH_CHECKS", "true" if ENVIRONMENT == "prd" else "false")
-    .strip()
-    .lower()
-    in ("1", "true", "yes", "on")
-)
+DB_CONN_HEALTH_CHECKS = os.getenv(
+    "DB_CONN_HEALTH_CHECKS", "true" if ENVIRONMENT == "prd" else "false"
+).strip().lower() in ("1", "true", "yes", "on")
 
 DATABASES = {
     "default": {
@@ -281,7 +280,22 @@ INTERNAL_IPS = ["127.0.0.1", "::1"]
 
 # Logging (asegurar directorio)
 LOG_DIR = Path(os.getenv("LOG_DIR", str(BASE_DIR / "logs")))
-os.makedirs(LOG_DIR, exist_ok=True)
+try:
+    os.makedirs(LOG_DIR, exist_ok=True)
+except OSError as exc:
+    fallback_log_dir = Path(
+        os.getenv(
+            "LOG_FALLBACK_DIR",
+            str(Path(tempfile.gettempdir()) / "sisoc-logs"),
+        )
+    )
+    os.makedirs(fallback_log_dir, exist_ok=True)
+    print(
+        "[logging] No se pudo crear LOG_DIR="
+        f"'{LOG_DIR}' ({exc}). Usando fallback '{fallback_log_dir}'.",
+        file=sys.stderr,
+    )
+    LOG_DIR = fallback_log_dir
 
 LOGGING = {
     "version": 1,
