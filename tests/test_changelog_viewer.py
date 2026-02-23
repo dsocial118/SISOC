@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from django.urls import reverse
 from django.core.cache import cache
-from core.views import get_current_version, fetch_changelog_content
+from core.views import get_current_version, fetch_changelog_content, parse_changelog_versions
 
 pytestmark = [pytest.mark.django_db]
 
@@ -32,7 +32,7 @@ def test_changelog_view_authenticated_success(auth_client):
     url = reverse("changelog")
     response = auth_client.get(url)
     assert response.status_code == 200
-    assert "changelog_html" in response.context
+    assert "versions" in response.context
     assert "current_version" in response.context
 
 
@@ -45,6 +45,23 @@ def test_get_current_version():
     # If CHANGELOG.md exists and is properly formatted, should match pattern
     if version != "Desconocida":
         assert len(version.split(".")) == 3
+
+
+def test_parse_changelog_versions():
+    """Test that parse_changelog_versions splits content into per-version blocks."""
+    sample = (
+        "## Despliegue: 2026.02.03\n### Added\n- Feature A\n\n"
+        "## Despliegue: 2026.01.23\n### Fixed\n- Bug B\n"
+    )
+    versions = parse_changelog_versions(sample)
+    assert len(versions) == 2
+    assert versions[0]["version"] == "2026.02.03"
+    assert versions[1]["version"] == "2026.01.23"
+    # The "## Despliegue:" header should not appear in the rendered HTML
+    assert "Despliegue" not in versions[0]["html"]
+    # Content items should be present
+    assert "Feature A" in versions[0]["html"]
+    assert "Bug B" in versions[1]["html"]
 
 
 def test_fetch_changelog_content_success():
@@ -84,7 +101,7 @@ def test_changelog_view_error_handling(auth_client):
         response = auth_client.get(url)
         assert response.status_code == 200
         assert response.context["error"] is True
-        assert response.context["changelog_html"] is None
+        assert response.context["versions"] is None
 
 
 def test_fetch_changelog_github_fallback():
