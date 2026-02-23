@@ -22,6 +22,9 @@ from .trash_views import (
     TrashRestoreView,
 )
 
+GRUPOS_MONTO_PRESTACION = ["Gestor prestaciones", "Prestacion"]
+
+
 urlpatterns = [
     path("inicio/", inicio_view, name="inicio"),
     path("novedades/", changelog_view, name="changelog"),
@@ -57,27 +60,37 @@ urlpatterns = [
     ),
     path(
         "montoprestacion/listar",
-        group_required(["Prestacion"])(MontoPrestacionProgramaListView.as_view()),
+        group_required(GRUPOS_MONTO_PRESTACION)(
+            MontoPrestacionProgramaListView.as_view()
+        ),
         name="montoprestacion_listar",
     ),
     path(
         "montoprestacion/crear",
-        group_required(["Prestacion"])(MontoPrestacionProgramaCreateView.as_view()),
+        group_required(GRUPOS_MONTO_PRESTACION)(
+            MontoPrestacionProgramaCreateView.as_view()
+        ),
         name="montoprestacion_crear",
     ),
     path(
         "montoprestacion/<int:pk>/editar",
-        group_required(["Prestacion"])(MontoPrestacionProgramaUpdateView.as_view()),
+        group_required(GRUPOS_MONTO_PRESTACION)(
+            MontoPrestacionProgramaUpdateView.as_view()
+        ),
         name="montoprestacion_editar",
     ),
     path(
         "montoprestacion/<int:pk>/eliminar",
-        group_required(["Prestacion"])(MontoPrestacionProgramaDeleteView.as_view()),
+        group_required(GRUPOS_MONTO_PRESTACION)(
+            MontoPrestacionProgramaDeleteView.as_view()
+        ),
         name="montoprestacion_eliminar",
     ),
     path(
         "montoprestacion/<int:pk>/detalle",
-        group_required(["Prestacion"])(MontoPrestacionProgramaDetailView.as_view()),
+        group_required(GRUPOS_MONTO_PRESTACION)(
+            MontoPrestacionProgramaDetailView.as_view()
+        ),
         name="montoprestacion_detalle",
     ),
     path("papelera/", TrashListView.as_view(), name="papelera_list"),
