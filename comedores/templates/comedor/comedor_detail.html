@@ -3,8 +3,36 @@
 {% block title %}Comedor: {{ comedor.nombre }}{% endblock %}
 {% block titulo-pagina %}
     {{ comedor.nombre }}
-    <span class="ms-2 h5">| {{ comedor.provincia.nombre | default_if_none:"Sin información" }}, {{ comedor.municipio.nombre | default_if_none:"Sin información" }}, {{ comedor.localidad.nombre | default_if_none:"Sin información" }}</span>
-    <span class="ms-2 h5">- {{ comedor.programa.nombre }} - {{ comedor_categoria.categoria.nombre }}</span>
+    <span class="ms-2 h5">|
+        {% if comedor.provincia %}
+            {{ comedor.provincia.nombre }}
+        {% else %}
+            Sin información
+        {% endif %},
+        {% if comedor.municipio %}
+            {{ comedor.municipio.nombre }}
+        {% else %}
+            Sin información
+        {% endif %},
+        {% if comedor.localidad %}
+            {{ comedor.localidad.nombre }}
+        {% else %}
+            Sin información
+        {% endif %}
+    </span>
+    <span class="ms-2 h5">-
+        {% if comedor.programa %}
+            {{ comedor.programa.nombre }}
+        {% else %}
+            Sin programa
+        {% endif %}
+        -
+        {% if comedor_categoria and comedor_categoria.categoria %}
+            {{ comedor_categoria.categoria.nombre }}
+        {% else %}
+            Sin categoría
+        {% endif %}
+    </span>
     {% if comedor.estado_validacion == "Validado" %}
         <span class="badge bg-success badge-sm ms-2">Validado</span>
     {% elif comedor.estado_validacion == "No Validado" %}
@@ -355,14 +383,24 @@
                                         <div class="nav-item d-flex col-6">
                                             <div class="comment-text comment-text d-flex flex-column">
                                                 Estado general
-                                                <span class="username">{{ comedor.get_estado_general_display }}</span>
+                                                <span class="username">
+                                                    {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_actividad %}
+                                                        {{ comedor.ultimo_estado.estado_general.estado_actividad.estado }}
+                                                    {% else %}
+                                                        Sin información
+                                                    {% endif %}
+                                                </span>
                                             </div>
                                         </div>
                                         <div class="nav-item d-flex col-6">
                                             <div class="comment-text d-flex flex-column">
                                                 Subestado
                                                 <span class="username">
-                                                    {{ comedor.ultimo_estado.estado_general.estado_proceso.estado|default_if_none:"Sin información" }}
+                                                    {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_proceso %}
+                                                        {{ comedor.ultimo_estado.estado_general.estado_proceso.estado }}
+                                                    {% else %}
+                                                        Sin información
+                                                    {% endif %}
                                                 </span>
                                             </div>
                                         </div>
@@ -370,7 +408,11 @@
                                             <div class="comment-text d-flex flex-column">
                                                 Motivo
                                                 <span class="username">
-                                                    {{ comedor.ultimo_estado.estado_general.estado_detalle.estado|default_if_none:"Sin información" }}
+                                                    {% if comedor.ultimo_estado and comedor.ultimo_estado.estado_general and comedor.ultimo_estado.estado_general.estado_detalle %}
+                                                        {{ comedor.ultimo_estado.estado_general.estado_detalle.estado }}
+                                                    {% else %}
+                                                        Sin información
+                                                    {% endif %}
                                                 </span>
                                             </div>
                                         </div>
@@ -787,34 +829,50 @@
                         {% if imagenes %}
                             <div class="galeria-imagenes">
                                 {% for imagen in imagenes %}
-                                    <div class="imagen-item" data-index="{{ forloop.counter0 }}">
-                                        <div class="imagen-container" data-image-url="{{ imagen.imagen.url }}">
-                                            <div class="placeholder-imagen">
-                                                <i class="fas fa-image"></i>
-                                                <div class="loader">
-                                                    <div class="spinner-border spinner-border-sm" role="status">
-                                                        <span class="sr-only">Cargando...</span>
+                                    {% if imagen.imagen %}
+                                        <div class="imagen-item" data-index="{{ forloop.counter0 }}">
+                                            <div class="imagen-container" data-image-url="{{ imagen.imagen.url }}">
+                                                <div class="placeholder-imagen">
+                                                    <i class="fas fa-image"></i>
+                                                    <div class="loader">
+                                                        <div class="spinner-border spinner-border-sm" role="status">
+                                                            <span class="sr-only">Cargando...</span>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                                <div class="imagen-overlay">
+                                                    <button type="button"
+                                                            class="btn-expandir"
+                                                            onclick="abrirModal({{ forloop.counter0 }})">
+                                                        <i class="fas fa-expand-alt"></i>
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div class="imagen-overlay">
-                                                <button type="button"
-                                                        class="btn-expandir"
-                                                        onclick="abrirModal({{ forloop.counter0 }})">
-                                                    <i class="fas fa-expand-alt"></i>
-                                                </button>
+                                            <div class="imagen-info">
+                                                <div class="imagen-nombre">
+                                                    {% if imagen.imagen.name and "comedor/" in imagen.imagen.name %}
+                                                        {{ imagen.imagen.name|slice:"8:" }}
+                                                    {% else %}
+                                                        {{ imagen.imagen.name }}
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="imagen-info">
-                                            <div class="imagen-nombre">
-                                                {% if "comedor/" in imagen.imagen.name %}
-                                                    {{ imagen.imagen.name|slice:"8:" }}
-                                                {% else %}
-                                                    {{ imagen.imagen.name }}
-                                                {% endif %}
+                                    {% else %}
+                                        <div class="imagen-item" data-index="{{ forloop.counter0 }}">
+                                            <div class="imagen-container">
+                                                <div class="placeholder-imagen">
+                                                    <i class="fas fa-image"></i>
+                                                </div>
+                                                <div class="imagen-overlay">
+                                                    <span class="text-muted small">Imagen sin archivo</span>
+                                                </div>
+                                            </div>
+                                            <div class="imagen-info">
+                                                <div class="imagen-nombre">Sin archivo</div>
                                             </div>
                                         </div>
-                                    </div>
+                                    {% endif %}
                                 {% endfor %}
                             </div>
                         {% else %}
