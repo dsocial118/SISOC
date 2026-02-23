@@ -49,6 +49,14 @@ from historial.services.historial_service import HistorialService
 
 logger = logging.getLogger(__name__)
 
+CHANGELOG_HEADER_PATTERN = re.compile(
+    (
+        r"^(?:##\s*Despliegue:\s*(?P<deploy>\d{4}\.\d{2}\.\d{2})"
+        r"|#\s*(?:Versión|Vresión)\s+SISOC\s+(?P<release>\d{2}\.\d{2}\.\d{4}))\s*$"
+    ),
+    flags=re.MULTILINE,
+)
+
 
 @login_required
 @require_GET
@@ -329,6 +337,14 @@ def inicio_view(request):
     return render(request, "inicio.html")
 
 
+def _extract_first_changelog_version(content):
+    """Extrae la primera versión del changelog para formatos nuevos y legacy."""
+    match = CHANGELOG_HEADER_PATTERN.search(content)
+    if not match:
+        return None
+    return match.group("deploy") or match.group("release")
+
+
 def get_current_version():
     """
     Extrae la versión actual del sistema desde CHANGELOG.md.
@@ -341,10 +357,9 @@ def get_current_version():
     try:
         with open(changelog_path, "r", encoding="utf-8") as file:
             content = file.read()
-            # Buscar el primer "Despliegue: YYYY.MM.DD"
-            match = re.search(r"##\s*Despliegue:\s*(\d{4}\.\d{2}\.\d{2})", content)
-            if match:
-                return match.group(1)
+            version = _extract_first_changelog_version(content)
+            if version:
+                return version
     except (FileNotFoundError, IOError) as e:
         logger.warning(f"No se pudo leer CHANGELOG.md local para versión: {e}")
 
@@ -353,9 +368,9 @@ def get_current_version():
         response = requests.get(settings.CHANGELOG_GITHUB_URL, timeout=10)
         response.raise_for_status()
         content = response.text
-        match = re.search(r"##\s*Despliegue:\s*(\d{4}\.\d{2}\.\d{2})", content)
-        if match:
-            return match.group(1)
+        version = _extract_first_changelog_version(content)
+        if version:
+            return version
     except requests.RequestException as e:
         logger.error(f"Error al obtener versión desde GitHub: {e}")
 
@@ -391,21 +406,18 @@ def parse_changelog_versions(content):
     Divide el contenido de CHANGELOG.md en bloques individuales por versión.
     Retorna una lista de dicts con claves 'version' y 'html'.
     """
-    blocks = re.split(r"(?=^## Despliegue:)", content, flags=re.MULTILINE)
     versions = []
-    for block in blocks:
-        block = block.strip()
-        if not block:
-            continue
-        match = re.match(r"## Despliegue:\s*(\d{4}\.\d{2}\.\d{2})", block)
-        if match:
-            version_date = match.group(1)
-            # Omitir la línea de cabecera "## Despliegue: ..." del contenido
-            lines = block.split("\n")
-            block_content = "\n".join(lines[1:]).strip()
-            md_parser = markdown.Markdown(extensions=["extra", "sane_lists"])
-            block_html = md_parser.convert(block_content)
-            versions.append({"version": version_date, "html": block_html})
+    matches = list(CHANGELOG_HEADER_PATTERN.finditer(content))
+    for index, match in enumerate(matches):
+        version_date = match.group("deploy") or match.group("release")
+        block_start = match.end()
+        block_end = (
+            matches[index + 1].start() if index + 1 < len(matches) else len(content)
+        )
+        block_content = content[block_start:block_end].strip()
+        md_parser = markdown.Markdown(extensions=["extra", "sane_lists"])
+        block_html = md_parser.convert(block_content)
+        versions.append({"version": version_date, "html": block_html})
     return versions
 
 
@@ -421,7 +433,7 @@ def changelog_view(request):
     # Intentar obtener desde cache
     cached_data = cache.get(cache_key)
 
-    if cached_data:
+    if cached_data and cached_data.get("versions"):
         versions = cached_data["versions"]
         current_version = cached_data["version"]
     else:
@@ -432,12 +444,17 @@ def changelog_view(request):
             versions = parse_changelog_versions(changelog_content)
             current_version = get_current_version()
 
-            # Guardar en cache
-            cache.set(
-                cache_key,
-                {"versions": versions, "version": current_version},
-                cache_timeout,
-            )
+            # Evitar cachear respuestas parseadas vacías para no dejar la página en blanco.
+            if versions:
+                cache.set(
+                    cache_key,
+                    {"versions": versions, "version": current_version},
+                    cache_timeout,
+                )
+            else:
+                logger.warning(
+                    "Se leyó CHANGELOG.md pero no se detectaron bloques de versión."
+                )
         else:
             versions = None
             current_version = get_current_version()
@@ -445,7 +462,7 @@ def changelog_view(request):
     context = {
         "versions": versions,
         "current_version": current_version,
-        "error": versions is None,
+        "error": not versions,
     }
 
     return render(request, "changelog.html", context)
