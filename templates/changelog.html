@@ -1,91 +1,5 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block head %}
-    <style>
-        .changelog-container {
-            background-color: #1e1e1e;
-            color: #e0e0e0;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        
-        .version-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 0.5rem 1.5rem;
-            border-radius: 25px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
-        }
-        
-        .current-version-highlight {
-            background-color: #2d2d2d;
-            border-left: 4px solid #667eea;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            border-radius: 4px;
-        }
-        
-        .changelog-content h2 {
-            color: #667eea;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 0.5rem;
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-        }
-        
-        .changelog-content h3 {
-            color: #a8b2d1;
-            margin-top: 1.5rem;
-            margin-bottom: 0.75rem;
-        }
-        
-        .changelog-content ul {
-            list-style-type: none;
-            padding-left: 1.5rem;
-        }
-        
-        .changelog-content ul li {
-            position: relative;
-            margin-bottom: 0.75rem;
-            line-height: 1.6;
-        }
-        
-        .changelog-content ul li:before {
-            content: "▸";
-            color: #667eea;
-            font-weight: bold;
-            position: absolute;
-            left: -1.5rem;
-        }
-        
-        .changelog-content code {
-            background-color: #2d2d2d;
-            color: #ffd700;
-            padding: 0.2rem 0.4rem;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .error-message {
-            background-color: #3d2020;
-            border-left: 4px solid #d32f2f;
-            color: #ffcdd2;
-            padding: 1.5rem;
-            border-radius: 4px;
-            margin-top: 1rem;
-        }
-        
-        .error-message i {
-            color: #d32f2f;
-            font-size: 1.5rem;
-            margin-right: 0.5rem;
-        }
-    </style>
-{% endblock %}
 {% block titulo-pagina %}Novedades del Sistema{% endblock %}
 {% block breadcrumb %}
     <li class="breadcrumb-item">
@@ -96,27 +10,43 @@
 {% block content %}
     <div class="row">
         <div class="col-12">
-            <div class="changelog-container">
-                {% if not error %}
-                    <div class="current-version-highlight">
-                        <h4 style="color: #a8b2d1; margin-bottom: 0.5rem;">
-                            <i class="bi bi-info-circle-fill" style="color: #667eea;"></i>
-                            Ultima actualización de SISOC
-                        </h4>
-                        <div class="version-badge">{{ current_version }}</div>
+            {% if not error %}
+                <div class="mb-3">
+                    <span class="badge bg-primary fs-6">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        Última actualización: {{ current_version }}
+                    </span>
+                </div>
+                {% for entry in versions %}
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-tag-fill me-2"></i>
+                                Versión SISOC {{ entry.version }}
+                            </h5>
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#version-{{ forloop.counter }}"
+                                    aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
+                                Ver detalle
+                            </button>
+                        </div>
+                        <div id="version-{{ forloop.counter }}"
+                             class="collapse {% if forloop.first %}show{% endif %}">
+                            <div class="card-body">{{ entry.html|safe }}</div>
+                        </div>
                     </div>
-
-                    <div class="changelog-content">{{ changelog_html|safe }}</div>
-                {% else %}
-                    <div class="error-message">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <strong>No fue posible obtener las novedades del sistema en este momento.</strong>
-                        <p style="margin-top: 0.5rem; margin-bottom: 0;">
-                            Por favor, intente más tarde o contacte al administrador del sistema.
-                        </p>
-                    </div>
-                {% endif %}
-            </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>No fue posible obtener las novedades del sistema en este momento.</strong>
+                    <p class="mb-0 mt-2">
+                        Por favor, intente más tarde o contacte al administrador del sistema.
+                    </p>
+                </div>
+            {% endif %}
         </div>
     </div>
 {% endblock %}
