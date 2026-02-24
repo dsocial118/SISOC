@@ -1,242 +1,79 @@
-# GitHub Copilot Instructions
+# Instrucciones para GitHub Copilot (SISOC)
 
-This file provides context and guidelines for GitHub Copilot when working with this repository.
+Estas instrucciones están alineadas con `AGENTS.md` y la documentación en `docs/ia/`.
 
-## Project Overview
+## Fuente de verdad (obligatorio)
 
-SISOC (Sistema de Información Social) is a Django-based management system for social services, deployed using Docker and MySQL. The application manages multiple functional modules including dining halls (comedores), surveys (relevamientos), users, and various social programs.
+Copilot debe priorizar, en este orden:
 
-## Technology Stack
+1. `AGENTS.md` (reglas principales)
+2. `docs/ia/CONTEXT_HYGIENE.md`
+3. `docs/ia/STYLE_GUIDE.md`
+4. `docs/ia/ARCHITECTURE.md`
+5. `docs/ia/TESTING.md`
+6. `docs/ia/SECURITY_AI.md` / `docs/ia/ERRORS_LOGGING.md` si aplica
 
-- **Backend**: Django (Python 3.11+)
-- **Database**: MySQL
-- **Containerization**: Docker + Docker Compose
-- **Frontend**: HTML, CSS, JavaScript, Bootstrap
-- **Testing**: pytest with pytest-xdist for parallel execution
+Si `AGENTS.md` no fue cargado automáticamente por el entorno, usar estas instrucciones como fallback mínimo y evitar cambios grandes de arquitectura/refactor hasta tener contexto.
 
-## Development Setup
+## Resumen del stack real
 
-### Initial Setup
-```bash
-# Clone the repository
-git clone https://github.com/dsocial118/BACKOFFICE.git
-cd BACKOFFICE
+- Backend: `Python 3.11`, `Django 4.2`, `Django REST Framework`
+- DB: `MySQL` (tests pueden usar `SQLite` en memoria)
+- Frontend: templates Django + HTML/CSS/JS + Bootstrap
+- Infra local/CI: Docker Compose + GitHub Actions
+- Asincronía: **no se usa Celery** actualmente
 
-# Copy environment configuration
-cp .env.example .env
-# Edit .env file with your configuration
+## Patrones críticos del repo (no asumir otra cosa)
 
-# Start services with Docker Compose
-docker-compose up
-```
+- La lógica de negocio va preferentemente en `services/`.
+- Coexisten vistas Django (web) y DRF (`api_views.py` / viewsets); validar patrón por app.
+- Hay logging custom en `config/settings.py` y `core/utils.py` (handlers/formatters propios).
+- No imponer `ruff`, `mypy`, `eslint`, `prettier` como checks obligatorios (no hay config formal activa para esos checks).
 
-The application will be available at http://localhost:8000
+## Reglas mínimas no negociables (fallback)
 
-### Database Setup
-- Optionally place a MySQL dump at `./docker/mysql/local-dump.sql` before starting services
-- To reset database:
-  ```bash
-  docker-compose down
-  docker volume rm sisoc_mysql_data
-  # Place new dump if needed
-  docker-compose up
-  ```
+- No inventar APIs, modelos, campos, serializers, endpoints ni permisos.
+- Hacer cambios mínimos (`small diffs`) y revisables.
+- No mezclar feature + refactor + formateo masivo.
+- Mantener compatibilidad hacia atrás por defecto.
+- No tocar configs de tooling/CI/settings sin pedido explícito.
+- Agregar tests mínimos en features nuevas y regresión en bugfixes cuando sea viable.
+- No loggear secretos, tokens ni PII.
+- Respetar permisos/autenticación existentes.
+- Podés proponer mejoras cercanas, pero no implementarlas fuera de alcance sin aprobación.
 
-## Project Structure
+## Higiene de contexto (muy importante)
 
-- **`config/`** - Django global configuration and settings
-- **`docker/`** - Docker container configuration files
-- **Application modules** - Each directory represents a functional module:
-  - `comedores/` - Dining halls management
-  - `relevamientos/` - Surveys and assessments
-  - `users/` - User management and authentication
-  - `admisiones/` - Admissions
-  - `acompanamientos/` - Accompaniments
-  - `celiaquia/` - Celiac disease management
-  - `centrodefamilia/` - Family center
-  - `cdi/` - Child development
-  - `intervenciones/` - Interventions
-  - And others...
-- **`templates/`** - Global HTML templates
-  - `templates/components/` - Reusable HTML components
-  - Each app also has its own `templates/` subdirectory
-- **`static/`** - Static files (CSS, JS, images)
-- **`tests/`** - Automated tests
-- **`core/`** - Core utilities and shared functionality
+- Cargar primero el mínimo contexto suficiente y expandir solo si hace falta.
+- Empezar por el archivo objetivo + tests del módulo + guías `docs/ia/*` relevantes.
+- Evitar explorar apps no relacionadas o hacer limpieza oportunista.
+- Si el repo está con cambios locales del usuario, no revertirlos ni asumir que son errores.
 
-## Code Style and Conventions
+Ver: `docs/ia/CONTEXT_HYGIENE.md`.
 
-### Naming Conventions
-- **Python**: `snake_case` for variables, functions, methods
-- **JavaScript**: `camelCase` for variables and functions
-- **CSS**: `kebab-case` for class names
-
-### Django Architecture Guidelines
-- **Models**: 
-  - Include descriptive docstrings
-  - Use `verbose_name` to avoid redundancy
-  - Keep models focused on data representation
-- **Views**: 
-  - Prefer Class-Based Views (CBVs)
-  - Keep views thin - no business logic in views
-  - Business logic belongs in `services/` modules
-- **Templates**: 
-  - Avoid database queries in templates
-  - Keep templates simple and focused on presentation
-  - Use template components from `templates/components/`
-- **Services**: 
-  - Organize services by model in `services/` directory
-  - Put all business logic in service modules
-
-### Code Quality Tools
-
-Run these commands before creating a Pull Request:
+## Comandos frecuentes (alineados al repo)
 
 ```bash
-# Python linting (manual fixes required)
-pylint **/*.py --rcfile=.pylintrc
-
-# Python formatting (automatic)
-black .
-
-# Django template formatting (semi-automatic)
-djlint . --configuration=.djlintrc --reformat
-```
-
-## Testing
-
-### Running Tests
-```bash
-# Run all tests in parallel
+docker compose up
 docker compose exec django pytest -n auto
-
-# Run specific test file
-docker compose exec django pytest path/to/test_file.py
-
-# Run with verbose output
-docker compose exec django pytest -v
+docker compose exec django pytest -m smoke
+black .
+djlint . --configuration=.djlintrc --reformat
+pylint **/*.py --rcfile=.pylintrc
 ```
 
-### Writing Tests
-- Write tests for all business logic changes
-- Place tests in `tests/` directory or app-specific test files
-- Maintain test coverage for critical functionality
-- Follow existing test patterns in the repository
+## Calidad esperada de cambios
 
-## Git Workflow and Commit Conventions
+- Código profesional, simple y mantenible.
+- Priorizar claridad sobre soluciones complejas.
+- Reutilizar patrones existentes del módulo.
+- Si falta información, explicitar supuestos.
+- Si cambia comportamiento observable, actualizar docs relevantes.
 
-### Branching Strategy
-- Base branch: `development`
-- Create feature branches from `development`
-- Merge back to `development` via Pull Request
+## Entrega recomendada (cuando Copilot genere cambios asistidos)
 
-### Commit Message Format
-Use conventional commit format:
-```
-feat: add new functionality to comedores module
-fix: correct bug in relevamientos validation
-refactor: clean up services in users module
-docs: update API documentation
-test: add tests for new feature
-```
-
-### Pull Request Process
-1. Create branch from `development`
-2. Make changes and commit using conventional format
-3. Run linters and tests
-4. Create Pull Request to `development`
-5. Ensure at least one code review before merging
-
-## API Documentation
-
-- **Postman Documentation**: [API SISOC Documentation](https://documenter.getpostman.com/view/14921866/2sAXxMfDXf)
-- For detailed API specifications, authentication methods, and endpoint documentation, refer to the Postman collection
-- For questions or clarifications, contact the tech lead or project owner
-- **Authentication**: See `.env.example` for API configuration and authentication setup
-
-Example API request (authentication method varies by endpoint - see Postman docs):
-```bash
-curl -X GET http://localhost:8000/api/comedores/ \
-  -H "Authorization: Bearer <API_KEY>"
-```
-
-## Important Guidelines for Code Changes
-
-1. **Never invent**: Don't create APIs, models, endpoints, settings, or dependencies without explicit requirements. If information is missing, leave explicit TODO comments or document assumptions clearly.
-
-2. **Preserve default behavior**: If changing logic or contracts, list breaking changes and update all callers.
-
-3. **Minimal changes first**: Prefer incremental patches. For large refactors, propose first unless absolutely necessary.
-
-4. **Code must compile and pass tests**: Ensure lint + type checking + tests pass, or explicitly document what's pending.
-
-5. **Security by default**: 
-   - Validate all inputs
-   - Implement proper authorization/authentication
-   - Never expose sensitive data
-   - Prevent injection attacks (SQL, OS, HTML)
-
-6. **Performance awareness**:
-   - Avoid N+1 queries
-   - Don't run I/O operations in loops
-   - Paginate large lists
-   - Don't load entire datasets unnecessarily
-
-7. **Observability**:
-   - Useful logs (without PII)
-   - Consistent error handling
-   - Actionable error messages
-   - Add metrics where applicable
-
-8. **Useful comments, not redundant**: Create documentation or add docstrings based on complexity.
-
-9. **Repository consistency**: Follow existing conventions (naming, structure, style). Don't introduce new patterns without reason.
-
-10. **Readable over clever**: Explicit code, clear names, small functions, comments only where they add value.
-
-11. **Handle edge cases**: Consider null/None, empty values, permissions, concurrency, timezones, locales, and backward compatibility.
-
-12. **Tests when logic changes**: Minimum 1 test per critical case. For pure refactors, ensure behavioral parity.
-
-## Deployment
-
-### Release Cycle (Bi-weekly)
-- **Week 0 (Thursday)**: Open `development` branch
-- **Week 2 (Monday, freeze)**: Freeze `development`, create tag `YY.MM.DD-rc1`
-- **Week 2 (Wednesday night)**: Deploy to production if QA approves latest `rcX`
-
-### Deployment Checklist
-- [ ] `development` branch frozen (no new features)
-- [ ] Valid database backup
-- [ ] Final tag created on `development`
-- [ ] Tested with production-like database
-- [ ] Tag tested in QA environment
-- [ ] QA approval obtained
-- [ ] Clean merge to `main`
-- [ ] CHANGELOG.md updated
-- [ ] Migrations are reversible/controlled
-- [ ] Team notified
-- [ ] Last stable tag saved for rollback
-- [ ] Stable migrations squashed
-
-## Additional Resources
-
-- **README.md**: Comprehensive project documentation
-- **CHANGELOG.md**: Version history and changes
-- **AGENTS.md**: AI assistant recommendations (Spanish)
-- **.codex/rules.md**: Detailed coding rules and guidelines
-- **docs/indice.md**: Documentation index
-
-## Environment Variables
-
-See `.env.example` for required environment variables. Key variables are documented in the README.md file.
-
-## VSCode Debugging
-
-1. Start services: `docker-compose up`
-2. Select `Django in Docker` configuration in VS Code debug panel
-3. Set breakpoints and start debugging
-
-## Contact and Support
-
-For technical questions or clarifications, refer to the project documentation or contact the technical lead.
+- Qué cambió
+- Archivos tocados
+- Validación ejecutada (si se corrió)
+- Supuestos
+- Mejoras cercanas detectadas (opcional)

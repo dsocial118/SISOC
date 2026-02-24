@@ -21,10 +21,11 @@ Si no puede leer `AGENTS.md`, debe:
 ## Orden de lectura recomendado
 
 1. `AGENTS.md`
-2. `docs/ia/STYLE_GUIDE.md`
-3. `docs/ia/ARCHITECTURE.md`
-4. `docs/ia/TESTING.md`
-5. `docs/ia/SECURITY_AI.md` / `docs/ia/ERRORS_LOGGING.md` si el cambio toca auth, datos o logs
+2. `docs/ia/CONTEXT_HYGIENE.md`
+3. `docs/ia/STYLE_GUIDE.md`
+4. `docs/ia/ARCHITECTURE.md`
+5. `docs/ia/TESTING.md`
+6. `docs/ia/SECURITY_AI.md` / `docs/ia/ERRORS_LOGGING.md` si el cambio toca auth, datos o logs
 
 ## Fallback mínimo (si `AGENTS.md` no está disponible)
 
@@ -50,6 +51,8 @@ Si falta información clave, explicitar supuestos concretos y limitar el alcance
 - Buscar patrones existentes en la app antes de crear uno nuevo.
 - Si falta información, explicitar supuestos concretos.
 - No asumir infraestructura async tipo Celery; validar patrón real del repo primero.
+- Aplicar higiene de contexto: empezar con el mínimo set de archivos y expandir según evidencia (`docs/ia/CONTEXT_HYGIENE.md`).
+- Podés usar `bash scripts/ai/preflight.sh <tipo> [path]` como preflight local opcional.
 
 ## 2) Mantener cambios pequeños y revisables
 
@@ -81,6 +84,7 @@ Claude puede señalar mejoras cercanas al código tocado (tests faltantes, valid
 
 - Revisé `AGENTS.md` y docs de `docs/ia/` relevantes.
 - Si no pude leer `AGENTS.md`, lo declaré y apliqué fallback mínimo.
+- Mantuve higiene de contexto (sin explorar/cambiar archivos fuera de alcance).
 - No inventé contratos ni estructuras inexistentes.
 - Mantuve compatibilidad hacia atrás por defecto.
 - Agregué tests mínimos o expliqué la limitación.
