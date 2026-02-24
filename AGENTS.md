@@ -21,6 +21,7 @@ No reemplaza documentación funcional o técnica profunda. Para detalle, usar `d
 - Frontend: templates Django + HTML/CSS/JS + Bootstrap.
 - API schema/docs: `drf-spectacular`.
 - Infra local/CI: `Docker Compose`, GitHub Actions.
+- Asincronía actual: **no se usa Celery**. Hay jobs/tareas vía comandos, hilos y procesos del propio stack Django cuando aplica.
 
 ## Tooling real detectado (obligatorio respetar)
 
@@ -31,6 +32,13 @@ No reemplaza documentación funcional o técnica profunda. Para detalle, usar `d
 - CI: `.github/workflows/lint.yml` y `.github/workflows/tests.yml`.
 
 No imponer como obligatorio si no fue pedido: `ruff`, `mypy`, `eslint`, `prettier` (no hay configuración formal activa para estos checks en el repo).
+
+## Patrones críticos del repo (leer antes de proponer cambios)
+
+- La lógica de negocio va preferentemente en `services/` (no en views/templates).
+- Coexisten vistas Django (web) y DRF (`api_views.py` / viewsets). Verificar el patrón real de cada app antes de implementar.
+- El proyecto ya tiene logging custom configurado en `config/settings.py` y utilidades en `core/utils.py` (no inventar un esquema paralelo).
+- No asumir Celery/colas/workers: actualmente no se usa Celery.
 
 ## Comandos principales (copy-paste)
 
@@ -63,6 +71,7 @@ pylint **/*.py --rcfile=.pylintrc
 - No inventar APIs, funciones, clases, modelos, campos, serializers, endpoints ni permisos.
 - Buscar referencias reales en el repo antes de proponer o escribir código.
 - Reutilizar patrones existentes del módulo/app que se toca.
+- No asumir Celery/colas workers si no está explícitamente pedido (actualmente no se usa Celery en el repo).
 
 ## 2) Cambios mínimos y revisables
 
@@ -181,6 +190,7 @@ Antes de cerrar una tarea, la IA debe verificar (o declarar por qué no pudo):
 - `docs/ia/CONTRIBUTING_AI.md` - proceso de pedidos, PRs, commits, checks.
 - `docs/ia/STYLE_GUIDE.md` - estilo de código y convenciones.
 - `docs/ia/ARCHITECTURE.md` - organización del sistema y boundaries.
+- `docs/ia/CONTEXT_HYGIENE.md` - higiene de contexto para asistentes locales (qué leer primero y qué evitar cargar).
 - `docs/ia/TESTING.md` - estrategia de tests.
 - `docs/ia/SECURITY_AI.md` - seguridad para cambios asistidos por IA.
 - `docs/ia/ERRORS_LOGGING.md` - manejo de errores, excepciones y logs.

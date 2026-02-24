@@ -32,6 +32,7 @@ pylint **/*.py --rcfile=.pylintrc
 
 ## Guías detalladas
 
+- `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/CONTRIBUTING_AI.md`
 - `docs/ia/STYLE_GUIDE.md`
 - `docs/ia/ARCHITECTURE.md`

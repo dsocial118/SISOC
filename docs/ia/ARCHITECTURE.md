@@ -15,6 +15,8 @@ Fuentes complementarias:
 - Lógica de negocio distribuida en `services/` y utilidades por app.
 - Persistencia con ORM Django sobre MySQL.
 - Cache local (`LocMemCache`) configurada en settings.
+- Logging custom configurado en `config/settings.py` con utilidades en `core/utils.py`.
+- No se usa Celery actualmente (no asumir workers/colas salvo pedido explícito).
 - Integraciones externas (p. ej. RENAPER/GESTIONAR) en servicios/tasks, no en templates.
 
 ## Capas y boundaries (regla de ubicación)
