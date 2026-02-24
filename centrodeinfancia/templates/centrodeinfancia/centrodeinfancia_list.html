@@ -1,43 +1,52 @@
 {% extends "includes/main.html" %}
+{% load static %}
 
 {% block title %}Centros de Infancia{% endblock %}
-{% block titulo-pagina %}Centros de Infancia{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
 
 {% block content %}
-    <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <form method="get" class="d-flex" style="max-width: 420px; width: 100%;">
-                <input type="text"
-                       name="busqueda"
-                       value="{{ query }}"
-                       class="form-control me-2"
-                       placeholder="Buscar por nombre u organización" />
-                <button class="btn btn-outline-primary" type="submit">Buscar</button>
-            </form>
-            <div>
-                <a href="{% url 'centrodeinfancia_exportar' %}?busqueda={{ query }}"
-                   class="btn btn-outline-secondary">Exportar CSV</a>
-                <a href="{% url 'centrodeinfancia_crear' %}" class="btn btn-primary">Nuevo Centro</a>
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    <div class="comedor-list-container">
+        {% url 'centrodeinfancia_exportar' as export_url %}
+        {% include 'components/search_bar.html' with titulo="Buscar Centro de Infancia" placeholder="Buscar por nombre u organización" help_text="Ingresar nombre u organización." reset_url='centrodeinfancia' add_url='centrodeinfancia_crear' add_text='Nuevo Centro' export_url=export_url query=query %}
+
+        <div class="row mt-5 max-width-100">
+            <div class="col-12">
+                <div class="card comedor-table-card">
+                    <div class="card-body">
+                        <div class="table-responsive-lg">
+                            <table class="table table-comedor-moderno">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-column="nombre">
+                                            Nombre
+                                            <i class="fas fa-sort sort-icon"></i>
+                                        </th>
+                                        <th class="sortable" data-column="organizacion">
+                                            Organización
+                                            <i class="fas fa-sort sort-icon"></i>
+                                        </th>
+                                        <th class="notexport">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% include "centrodeinfancia/partials/rows.html" with centros=centros %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Organización</th>
-                            <th class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% include "centrodeinfancia/partials/rows.html" with centros=centros %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        {% include "components/pagination.html" with page_obj=page_obj is_paginated=is_paginated %}
+        {% include "components/pagination.html" with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
     </div>
+{% endblock %}
+
+{% block customJS %}
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/export_helper.js' %}"></script>
 {% endblock %}
