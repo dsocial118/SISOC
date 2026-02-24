@@ -21,10 +21,11 @@ Si no puede acceder a `AGENTS.md`, debe:
 ## Orden de lectura recomendado
 
 1. `AGENTS.md`
-2. `docs/ia/STYLE_GUIDE.md`
-3. `docs/ia/ARCHITECTURE.md`
-4. `docs/ia/TESTING.md`
-5. Archivos concretos del módulo a modificar
+2. `docs/ia/CONTEXT_HYGIENE.md`
+3. `docs/ia/STYLE_GUIDE.md`
+4. `docs/ia/ARCHITECTURE.md`
+5. `docs/ia/TESTING.md`
+6. Archivos concretos del módulo a modificar
 
 ## Fallback mínimo (si `AGENTS.md` no está disponible)
 
@@ -49,6 +50,8 @@ Si falta contexto crítico, frenar expansión de alcance y pedir/explicitar supu
 - Revisar tests existentes del módulo para copiar patrón.
 - Confirmar permisos, serializers, forms y services reales.
 - Evitar suposiciones sobre modelos/campos sin verificar.
+- Aplicar higiene de contexto: cargar primero archivos mínimos relevantes y expandir solo si hace falta (ver `docs/ia/CONTEXT_HYGIENE.md`).
+- Podés usar `bash scripts/ai/preflight.sh <tipo> [path]` como preflight local opcional.
 
 ## 2) Decidir diff mínimo
 
@@ -104,6 +107,7 @@ Formato sugerido:
 
 - Leí `AGENTS.md` y guías relevantes de `docs/ia/`.
 - Si no pude leer `AGENTS.md`, lo declaré y apliqué fallback mínimo.
+- Respeté higiene de contexto (sin abrir/cambiar archivos innecesarios).
 - No inventé APIs/campos/modelos.
 - Mantuve diff chico y enfocado.
 - No toqué configs de tooling/CI sin pedido.

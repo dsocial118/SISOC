@@ -1,0 +1,70 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AI: Preflight (general)",
+      "type": "shell",
+      "command": "bash scripts/ai/preflight.sh general",
+      "problemMatcher": []
+    },
+    {
+      "label": "AI: Preflight (bugfix-view)",
+      "type": "shell",
+      "command": "bash scripts/ai/preflight.sh bugfix-view ${relativeFile}",
+      "problemMatcher": []
+    },
+    {
+      "label": "AI: Preflight (feature-api)",
+      "type": "shell",
+      "command": "bash scripts/ai/preflight.sh feature-api ${relativeFile}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: pytest current file (docker)",
+      "type": "shell",
+      "command": "docker compose exec -T django pytest -n auto ${relativeFile}",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: smoke (docker)",
+      "type": "shell",
+      "command": "docker compose exec -T django pytest -m smoke",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint: black --check (docker)",
+      "type": "shell",
+      "command": "docker compose exec -T django black --check . --config pyproject.toml",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint: djlint --check (docker)",
+      "type": "shell",
+      "command": "docker compose exec -T django djlint . --check --configuration=.djlintrc",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint: pylint current file (docker)",
+      "type": "shell",
+      "command": "docker compose exec -T django pylint ${relativeFile} --rcfile=.pylintrc",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format: black current file (docker)",
+      "type": "shell",
+      "command": "docker compose exec -T django black ${relativeFile}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format: djlint current file (docker)",
+      "type": "shell",
+      "command": "docker compose exec -T django djlint ${relativeFile} --configuration=.djlintrc --reformat",
+      "problemMatcher": []
+    }
+  ]
+}
