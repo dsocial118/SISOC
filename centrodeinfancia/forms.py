@@ -85,7 +85,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
 
         provincia_usuario = self._obtener_provincia_usuario(self.current_user)
         if not provincia_usuario:
-            self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
+                "nombre"
+            )
             self.fields["provincia"].disabled = False
             return
 
@@ -182,16 +184,16 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
                 css_class = "form-select"
 
             existing = self.fields[field_name].widget.attrs.get("class", "")
-            self.fields[field_name].widget.attrs["class"] = (
-                f"{existing} {css_class}".strip()
-            )
+            self.fields[field_name].widget.attrs[
+                "class"
+            ] = f"{existing} {css_class}".strip()
 
         checkbox_existing = self.fields["tiene_documentacion"].widget.attrs.get(
             "class", ""
         )
-        self.fields["tiene_documentacion"].widget.attrs["class"] = (
-            f"{checkbox_existing} form-check-input".strip()
-        )
+        self.fields["tiene_documentacion"].widget.attrs[
+            "class"
+        ] = f"{checkbox_existing} form-check-input".strip()
 
     class Meta:
         model = IntervencionCentroInfancia
