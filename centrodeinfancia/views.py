@@ -427,8 +427,12 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         context["ciudadanos"] = ciudadanos
         context["no_resultados"] = bool(query) and not ciudadanos
         context["estados"] = NominaCentroInfancia.ESTADO_CHOICES
-        context["form_ciudadano"] = kwargs.get("form_ciudadano") or CiudadanoFormParaNomina()
-        context["form_nomina_extra"] = kwargs.get("form_nomina_extra") or NominaExtraForm()
+        context["form_ciudadano"] = (
+            kwargs.get("form_ciudadano") or CiudadanoFormParaNomina()
+        )
+        context["form_nomina_extra"] = (
+            kwargs.get("form_nomina_extra") or NominaExtraForm()
+        )
         return context
 
     def post(self, request, *args, **kwargs):
@@ -438,7 +442,9 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         if ciudadano_id:
             form_nomina_extra = NominaExtraForm(request.POST)
             if not form_nomina_extra.is_valid():
-                messages.error(request, "Datos inválidos para agregar ciudadano a la nómina.")
+                messages.error(
+                    request, "Datos inválidos para agregar ciudadano a la nómina."
+                )
                 context = self.get_context_data()
                 return self.render_to_response(context)
 
