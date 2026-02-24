@@ -1,21 +1,193 @@
 {% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
 
 {% block title %}Centro de Infancia{% endblock %}
 {% block titulo-pagina %}Centro de Infancia{% endblock %}
 
 {% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
     <div class="container-fluid">
-        <div class="card">
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary" type="submit">Guardar</button>
-                        <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Volver</a>
-                    </div>
-                </form>
+        <div class="d-flex justify-content-between mb-3">
+            <div>
+                {% if form.instance.pk %}
+                    <a href="{% url 'centrodeinfancia_detalle' form.instance.pk %}"
+                       class="btn btn-secondary">Volver</a>
+                {% else %}
+                    <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Volver</a>
+                {% endif %}
+            </div>
+            <div>
+                <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
             </div>
         </div>
+
+        <form method="post" class="w-100">
+            {% csrf_token %}
+
+            <div class="section-card mb-3">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <div class="section-icon">
+                            <i class="fas fa-child"></i>
+                        </div>
+                        <div class="section-title-group">
+                            <h3 class="section-title">Información Básica</h3>
+                            <p class="section-subtitle">Datos principales del centro de infancia</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body show">
+                    <div class="form-group row">
+                        <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.organizacion|as_crispy_field }}</div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-6">{{ form.telefono|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.fecha_inicio|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card mb-3">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <div class="section-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="section-title-group">
+                            <h3 class="section-title">Ubicación</h3>
+                            <p class="section-subtitle">Provincia, municipio, localidad y calle</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body show">
+                    <div class="form-group row">
+                        <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                        <div class="col-md-4">
+                            <div id="municipio-loader" class="skeleton-loader d-none"></div>
+                            <div id="municipio-field">{{ form.municipio|as_crispy_field }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="localidad-loader" class="skeleton-loader d-none"></div>
+                            <div id="localidad-field">{{ form.localidad|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-12">{{ form.calle|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card mb-3">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <div class="section-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="section-title-group">
+                            <h3 class="section-title">Referente</h3>
+                            <p class="section-subtitle">Datos de contacto de la persona referente</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body show">
+                    <div class="form-group row">
+                        <div class="col-md-4">{{ form.nombre_referente|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.email_referente|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.telefono_referente|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+                {% if form.instance.pk %}
+                    <a href="{% url 'centrodeinfancia_detalle' form.instance.pk %}"
+                       class="btn btn-secondary">Cancelar</a>
+                {% else %}
+                    <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Cancelar</a>
+                {% endif %}
+            </div>
+        </form>
     </div>
+{% endblock %}
+
+{% block customJS %}
+    <script>
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+
+    <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async function() {
+            if (typeof initializeSelect2 === "function") {
+                initializeSelect2("id_organizacion", {
+                    placeholder: "Seleccione una organización",
+                    allowClear: true,
+                });
+                initializeSelect2("id_provincia", {
+                    placeholder: "Seleccione una provincia",
+                    allowClear: true,
+                });
+                initializeSelect2("id_municipio", {
+                    placeholder: "Seleccione un municipio",
+                    allowClear: true,
+                });
+                initializeSelect2("id_localidad", {
+                    placeholder: "Seleccione una localidad",
+                    allowClear: true,
+                });
+            }
+
+            if (typeof window.setupUbicacionSelects === "function") {
+                await window.setupUbicacionSelects({
+                    ajaxMunicipiosUrl: ajaxLoadMunicipiosUrl,
+                    ajaxLocalidadesUrl: ajaxLoadLocalidadesUrl,
+                    selectors: {
+                        provincia: "#id_provincia",
+                        municipio: "#id_municipio",
+                        localidad: "#id_localidad",
+                    },
+                    ui: {
+                        municipio: {
+                            loader: "#municipio-loader",
+                            wrapper: "#municipio-field",
+                            dropdownParent: "#municipio-field",
+                        },
+                        localidad: {
+                            loader: "#localidad-loader",
+                            wrapper: "#localidad-field",
+                            dropdownParent: "#localidad-field",
+                        },
+                    },
+                    autoPrefetch: true,
+                });
+            } else if (typeof window.initUbicacionSelects === "function") {
+                await window.initUbicacionSelects({
+                    ajaxMunicipiosUrl: ajaxLoadMunicipiosUrl,
+                    ajaxLocalidadesUrl: ajaxLoadLocalidadesUrl,
+                    selectors: {
+                        provincia: "#id_provincia",
+                        municipio: "#id_municipio",
+                        localidad: "#id_localidad",
+                    },
+                    ui: {
+                        municipio: {
+                            loader: "#municipio-loader",
+                            wrapper: "#municipio-field",
+                            dropdownParent: "#municipio-field",
+                        },
+                        localidad: {
+                            loader: "#localidad-loader",
+                            wrapper: "#localidad-field",
+                            dropdownParent: "#localidad-field",
+                        },
+                    },
+                    autoPrefetch: true,
+                });
+            }
+        });
+    </script>
 {% endblock %}

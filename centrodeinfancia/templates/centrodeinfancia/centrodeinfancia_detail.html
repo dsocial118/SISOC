@@ -1,76 +1,615 @@
 {% extends "includes/main.html" %}
+{% load static %}
 
-{% block title %}Detalle Centro de Infancia{% endblock %}
-{% block titulo-pagina %}{{ centro.nombre }}{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
+{% endblock %}
+
+{% block title %}Centro de Infancia: {{ centro.nombre }}{% endblock %}
+
+{% block app-header %}
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-lg-auto d-flex justify-content-start">
+            <a href="{% url 'centrodeinfancia' %}" class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</a>
+        </div>
+        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
+            <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
+               class="btn btn-md btn-outline-light">
+                <i class="bi bi-people me-1"></i>Ver Nómina
+            </a>
+            <a href="{% url 'centrodeinfancia_intervencion_crear' centro.id %}"
+               class="btn btn-md btn-outline-light">
+                <i class="bi bi-clipboard-plus me-1"></i>Nueva Intervención
+            </a>
+            {% if perms.auditlog.view_logentry %}
+                <a href="{% url 'audittrail:log_instance' 'centrodeinfancia' 'centrodeinfancia' centro.pk %}"
+                   class="btn btn-md btn-outline-light"><i class="bi bi-journal-text me-1"></i>Historial</a>
+            {% endif %}
+            <div class="btn-group">
+                <button class="btn btn-md dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <i class="bi bi-list"></i>Acciones
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'centrodeinfancia_editar' centro.id %}">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-danger"
+                           href="{% url 'centrodeinfancia_eliminar' centro.id %}">
+                            <i class="bi bi-trash me-1"></i>Eliminar
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+{% endblock %}
 
 {% block content %}
     <div class="container-fluid">
-        <div class="d-flex gap-2 mb-3">
-            <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Volver</a>
-            <a href="{% url 'centrodeinfancia_editar' centro.id %}"
-               class="btn btn-warning">Editar</a>
-            <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
-               class="btn btn-outline-primary">Ver Nómina</a>
-            <a href="{% url 'centrodeinfancia_intervencion_crear' centro.id %}"
-               class="btn btn-outline-success">Nueva Intervención</a>
-        </div>
-
         <div class="card mb-3">
             <div class="card-body">
-                <h5>Datos del Centro</h5>
-                <p>
-                    <strong>Nombre:</strong> {{ centro.nombre }}
-                </p>
-                <p>
-                    <strong>Organización:</strong> {{ centro.organizacion|default:"-" }}
-                </p>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5>Nómina ({{ nomina_total }})</h5>
-                        <ul class="list-group list-group-flush">
-                            {% for item in nomina_page_obj %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>{{ item.ciudadano }}</span>
-                                    <span class="badge bg-secondary">{{ item.get_estado_display }}</span>
-                                </li>
-                            {% empty %}
-                                <li class="list-group-item text-muted">Sin registros de nómina.</li>
-                            {% endfor %}
+                <div class="row gy-3 align-items-center">
+                    <div class="col-12 col-lg-9 d-flex align-items-center flex-wrap">
+                        <ul class="list-inline mb-0 align-middle">
+                            <li class="list-inline-item">
+                                <h2 class="mb-0 mx-1 fw-bold">
+                                    {{ centro.nombre }} <span class="fw-light">|</span>
+                                </h2>
+                            </li>
+                            <li class="list-inline-item">
+                                <button class="btn btn-sm btn-primary mb-2">
+                                    Centro de Infancia
+                                </button>
+                            </li>
+                            <li class="list-inline-item">
+                                <button class="btn btn-sm btn-success mb-2">
+                                    Activo
+                                </button>
+                            </li>
                         </ul>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5>Intervenciones ({{ intervenciones_total }})</h5>
-                        <ul class="list-group list-group-flush">
-                            {% for item in intervenciones_page_obj %}
-                                <li class="list-group-item">
-                                    <div>
-                                        <strong>{{ item.fecha|date:"d/m/Y" }}</strong>
-                                    </div>
-                                    <div>{{ item.tipo_intervencion|default:"-" }} / {{ item.subintervencion|default:"-" }}</div>
-                                    <div class="mt-2 d-flex gap-1">
-                                        <a href="{% url 'centrodeinfancia_intervencion_editar' centro.id item.id %}"
-                                           class="btn btn-sm btn-warning">Editar</a>
-                                        <a href="{% url 'centrodeinfancia_intervencion_borrar' centro.id item.id %}"
-                                           class="btn btn-sm btn-danger">Eliminar</a>
-                                    </div>
-                                </li>
-                            {% empty %}
-                                <li class="list-group-item text-muted">Sin intervenciones.</li>
-                            {% endfor %}
-                        </ul>
+        <div class="accordion-shell is-loading">
+            <div class="accordion-loader" aria-live="polite" aria-busy="true">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Cargando...</span>
                     </div>
+                    <span class="fw-semibold">Cargando información...</span>
+                </div>
+            </div>
+            <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
+                <div class="accordion-panel open">
+                    <div class="accordion-header h5 accordion-header--ubicacion">Ubicación</div>
+                    <div class="accordion-content">
+                        <div class="row">
+                            <div class="col-12 col-lg-5">
+                                {% if centro.calle and centro.localidad and centro.municipio and centro.provincia %}
+                                    <div class="w-100 comedor-map-wrapper">
+                                        <iframe width="100%"
+                                                height="365px"
+                                                frameborder="0"
+                                                class="comedor-map-iframe"
+                                                src="https://maps.google.com/maps?q={{ centro.calle|urlencode }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                                allowfullscreen>
+                                        </iframe>
+                                    </div>
+                                {% else %}
+                                    <div class="w-100 comedor-map-wrapper comedor-map-placeholder d-flex align-items-center justify-content-center">
+                                        <div class="d-flex align-items-center px-3 py-2">
+                                            <div class="d-flex align-items-center justify-content-center text-secondary rounded-circle mx-2 me-3 comedor-icon-60">
+                                                <i class="bi bi-geo fs-1"></i>
+                                            </div>
+                                            <p class="mb-0 fw-bold text-body">No hay datos suficientes para cargar el mapa.</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-12 col-lg-7 overflow-auto mt-3 mt-lg-0 comedor-scroll-370">
+                                <p class="mb-2">
+                                    <i class="bi bi-diagram-3 me-2"></i><strong>Organización:</strong> {{ centro.organizacion|default:"-" }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-map me-2"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-pin-map me-2"></i><strong>Municipio:</strong> {{ centro.municipio|default:"-" }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-geo-alt me-2"></i><strong>Localidad:</strong> {{ centro.localidad|default:"-" }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-signpost me-2"></i><strong>Calle:</strong> {{ centro.calle|default:"-" }}
+                                </p>
+                                <p class="mb-0">
+                                    <i class="bi bi-telephone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono|default:"-" }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-panel">
+                    <div class="accordion-header h5 accordion-header--responsables">Referente</div>
+                    <div class="accordion-content">
+                        <p class="mb-2">
+                            <i class="bi bi-person me-2"></i><strong>Nombre:</strong> {{ centro.nombre_referente|default:"-" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-envelope me-2"></i><strong>Email:</strong> {{ centro.email_referente|default:"-" }}
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-phone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono_referente|default:"-" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12 col-lg-3 order-lg-2">
+                <div class="card bg-card mb-3">
+                    <div class="card-header py-1 d-flex align-items-center justify-content-between">
+                        <h4 class="fw-bold my-1">Nómina</h4>
+                        <a href="{% url 'centrodeinfancia_nomina_ver' pk=centro.id %}"
+                           class="text-white fs-5 ms-auto"
+                           title="Ver nómina"
+                           aria-label="Ver nómina">
+                            <i class="bi bi-box-arrow-up-right"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="col-12">
+                            <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
+                                <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                    <i class="bi bi-person-standing fs-1"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_hombres|default:0 }}</div>
+                                    <p class="mb-0 text-white fw-bold">Hombres</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex align-items-center bg-rosa px-3 py-2 rounded-3 mb-2">
+                                <div class="d-flex align-items-center justify-content-center bg-rosa-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                    <i class="bi bi-person-standing-dress fs-1"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_mujeres|default:0 }}</div>
+                                    <p class="mb-0 text-white fw-bold">Mujeres</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex align-items-center bg-verde px-3 py-2 rounded-3 mb-2">
+                                <div class="d-flex align-items-center justify-content-center bg-verde-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
+                                    <i class="bi bi-person-arms-up fs-1"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold fs-2 mb-0 py-0 text-white">{{ nomina_menores|default:0 }}</div>
+                                    <p class="mb-0 text-white fw-bold">Menores de edad</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-9 order-lg-1">
+                <div class="tabs-comedor-wrap mt-2 mb-3">
+                    <ul class="nav nav-tabs tabs-comedor ms-2 mb-0"
+                        id="intervencionesObservacionesTabs"
+                        role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fs-6"
+                                    id="intervenciones-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#intervenciones-pane"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="intervenciones-pane"
+                                    aria-selected="true">Intervenciones</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fs-6"
+                                    id="observaciones-tab"
+                                    data-bs-toggle="tab"
+                                    data-bs-target="#observaciones-pane"
+                                    type="button"
+                                    role="tab"
+                                    aria-controls="observaciones-pane"
+                                    aria-selected="false">Observaciones</button>
+                        </li>
+                    </ul>
+                    <div class="card bg-card">
+                        <div class="card-body pt-0">
+                            <div class="tab-content" id="intervencionesObservacionesContent">
+                                <div class="tab-pane fade show active"
+                                     id="intervenciones-pane"
+                                     role="tabpanel"
+                                     aria-labelledby="intervenciones-tab">
+                                    <div class="d-flex mb-2">
+                                        <button type="button"
+                                                class="btn btn-sm btn-primary ms-auto"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalIntervencion">Agregar intervención</button>
+                                    </div>
+                                    {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
+                                </div>
+                                <div class="tab-pane fade"
+                                     id="observaciones-pane"
+                                     role="tabpanel"
+                                     aria-labelledby="observaciones-tab">
+                                    <div class="d-flex mb-2">
+                                        <button type="button"
+                                                class="btn btn-sm btn-primary ms-auto"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalObservacion">Agregar observación</button>
+                                    </div>
+                                    {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade"
+             id="modalIntervencion"
+             tabindex="-1"
+             aria-labelledby="modalIntervencionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST"
+                          action="{% url 'centrodeinfancia_intervencion_crear' centro.id %}"
+                          enctype="multipart/form-data"
+                          id="intervencionModalForm">
+                        {% csrf_token %}
+                        <input type="hidden"
+                               name="next"
+                               value="{% url 'centrodeinfancia_detalle' pk=centro.id %}" />
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalIntervencionLabel">Nueva intervención</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
+                                    {{ intervencion_form.fecha }}
+                                    <div id="fecha-error-intervencion" class="invalid-feedback d-none"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
+                                           class="form-label">{{ intervencion_form.tipo_intervencion.label }}</label>
+                                    {{ intervencion_form.tipo_intervencion }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ intervencion_form.subintervencion.id_for_label }}"
+                                           class="form-label">{{ intervencion_form.subintervencion.label }}</label>
+                                    {{ intervencion_form.subintervencion }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ intervencion_form.destinatario.id_for_label }}"
+                                           class="form-label">{{ intervencion_form.destinatario.label }}</label>
+                                    {{ intervencion_form.destinatario }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
+                                           class="form-label">{{ intervencion_form.forma_contacto.label }}</label>
+                                    {{ intervencion_form.forma_contacto }}
+                                </div>
+                                <div class="col-12">
+                                    <label for="{{ intervencion_form.observaciones.id_for_label }}"
+                                           class="form-label">{{ intervencion_form.observaciones.label }}</label>
+                                    {{ intervencion_form.observaciones }}
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        {{ intervencion_form.tiene_documentacion }}
+                                        <label class="form-check-label"
+                                               for="{{ intervencion_form.tiene_documentacion.id_for_label }}">
+                                            {{ intervencion_form.tiene_documentacion.label }}
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-12 d-none" id="documentacion-field-modal">
+                                    <label for="{{ intervencion_form.documentacion.id_for_label }}"
+                                           class="form-label">{{ intervencion_form.documentacion.label }}</label>
+                                    {{ intervencion_form.documentacion }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar intervención</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade"
+             id="modalObservacion"
+             tabindex="-1"
+             aria-labelledby="modalObservacionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="POST"
+                          action="{% url 'centrodeinfancia_observacion_crear' centro.id %}"
+                          id="observacionModalForm">
+                        {% csrf_token %}
+                        <input type="hidden"
+                               name="next"
+                               value="{% url 'centrodeinfancia_detalle' pk=centro.id %}" />
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalObservacionLabel">Nueva observación</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="{{ observacion_form.observacion.id_for_label }}"
+                                       class="form-label">{{ observacion_form.observacion.label }}</label>
+                                {{ observacion_form.observacion }}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar observación</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block customJS %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const shell = document.querySelector(".accordion-shell");
+            const accordion = document.querySelector(".accordion-horizontal");
+            const panels = Array.from(document.querySelectorAll(".accordion-panel"));
+            const closedWidth = 60;
+
+            if (!accordion || panels.length === 0) {
+                if (shell) {
+                    shell.classList.remove("is-loading");
+                }
+                return;
+            }
+
+            function isMobile() {
+                return window.innerWidth <= 768;
+            }
+
+            function getOpenPanel() {
+                return panels.find(function(panel) {
+                    return panel.classList.contains("open");
+                }) || null;
+            }
+
+            function setOpenPanel(panelToOpen) {
+                panels.forEach(function(panel) {
+                    panel.classList.toggle("open", panel === panelToOpen);
+                });
+            }
+
+            function ensureSingleOpenPanel() {
+                const openedPanels = panels.filter(function(panel) {
+                    return panel.classList.contains("open");
+                });
+
+                if (openedPanels.length === 0) {
+                    setOpenPanel(panels[0]);
+                    return;
+                }
+
+                if (openedPanels.length > 1) {
+                    setOpenPanel(openedPanels[0]);
+                }
+            }
+
+            function ajustarLayout() {
+                ensureSingleOpenPanel();
+
+                if (isMobile()) {
+                    accordion.style.height = "auto";
+                    panels.forEach(function(panel) {
+                        panel.style.width = "100%";
+                        panel.style.height = "auto";
+                    });
+                    return;
+                }
+
+                const openPanel = getOpenPanel() || panels[0];
+                const openWidth = `calc(100% - ${(panels.length - 1) * closedWidth}px)`;
+
+                panels.forEach(function(panel) {
+                    panel.style.width = panel === openPanel ? openWidth : `${closedWidth}px`;
+                    panel.style.height = "100%";
+                });
+
+                accordion.style.height = "400px";
+            }
+
+            panels.forEach(function(panel) {
+                const header = panel.querySelector(".accordion-header");
+                if (!header) {
+                    return;
+                }
+
+                header.addEventListener("click", function(event) {
+                    if (event.target.closest("a")) {
+                        return;
+                    }
+                    setOpenPanel(panel);
+                    ajustarLayout();
+                });
+            });
+
+            window.addEventListener("resize", ajustarLayout);
+            window.addEventListener("load", function() {
+                ajustarLayout();
+                if (shell) {
+                    shell.classList.remove("is-loading");
+                }
+            });
+
+            ajustarLayout();
+            setTimeout(function() {
+                if (shell) {
+                    shell.classList.remove("is-loading");
+                }
+            }, 250);
+
+            const tieneDocumentacionCheckbox = document.getElementById("id_tiene_documentacion");
+            const documentacionField = document.getElementById("documentacion-field-modal");
+            const tipoIntervencionSelect = document.getElementById("id_tipo_intervencion");
+            const subIntervencionSelect = document.getElementById("id_subintervencion");
+            const ajaxLoadSubestadosUrl = "{% url 'ajax_load_subestadosintervenciones' %}";
+
+            function toggleDocumentacionField() {
+                if (!tieneDocumentacionCheckbox || !documentacionField) {
+                    return;
+                }
+                documentacionField.classList.toggle(
+                    "d-none",
+                    !tieneDocumentacionCheckbox.checked,
+                );
+            }
+
+            if (tieneDocumentacionCheckbox) {
+                tieneDocumentacionCheckbox.addEventListener("change", toggleDocumentacionField);
+                toggleDocumentacionField();
+            }
+
+            function cargarSubintervenciones(tipoIntervencionId) {
+                if (!subIntervencionSelect) {
+                    return;
+                }
+
+                subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
+
+                if (!tipoIntervencionId) {
+                    return;
+                }
+
+                fetch(`${ajaxLoadSubestadosUrl}?id=${encodeURIComponent(tipoIntervencionId)}`)
+                    .then(function(response) {
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        data.forEach(function(subIntervencion) {
+                            const option = document.createElement("option");
+                            option.value = subIntervencion.id;
+                            option.textContent = subIntervencion.text;
+                            subIntervencionSelect.appendChild(option);
+                        });
+                    })
+                    .catch(function() {
+                    });
+            }
+
+            function resetSubintervenciones() {
+                if (!subIntervencionSelect) {
+                    return;
+                }
+                subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
+                subIntervencionSelect.value = "";
+            }
+
+            if (tipoIntervencionSelect) {
+                tipoIntervencionSelect.addEventListener("change", function() {
+                    cargarSubintervenciones(this.value);
+                });
+            }
+
+            const modalIntervencion = document.getElementById("modalIntervencion");
+            if (modalIntervencion) {
+                modalIntervencion.addEventListener("show.bs.modal", function() {
+                    if (tipoIntervencionSelect) {
+                        tipoIntervencionSelect.value = "";
+                    }
+                    resetSubintervenciones();
+                });
+            }
+
+            const fechaInput = document.getElementById("id_fecha");
+            const fechaError = document.getElementById("fecha-error-intervencion");
+
+            function validarFecha() {
+                if (!fechaInput) {
+                    return true;
+                }
+                if (!fechaInput.value) {
+                    return true;
+                }
+
+                const fechaSeleccionada = new Date(fechaInput.value);
+                const anio = fechaSeleccionada.getFullYear();
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                fechaSeleccionada.setHours(0, 0, 0, 0);
+
+                if (anio < 2000 || anio > 2100) {
+                    fechaInput.classList.add("is-invalid");
+                    if (fechaError) {
+                        fechaError.textContent = "El año de la fecha debe estar entre 2000 y 2100.";
+                        fechaError.classList.remove("d-none");
+                    }
+                    return false;
+                }
+
+                if (fechaSeleccionada > hoy) {
+                    fechaInput.classList.add("is-invalid");
+                    if (fechaError) {
+                        fechaError.textContent = "La fecha no puede ser futura.";
+                        fechaError.classList.remove("d-none");
+                    }
+                    return false;
+                }
+
+                fechaInput.classList.remove("is-invalid");
+                if (fechaError) {
+                    fechaError.classList.add("d-none");
+                }
+                return true;
+            }
+
+            if (fechaInput) {
+                fechaInput.addEventListener("change", validarFecha);
+                fechaInput.addEventListener("blur", validarFecha);
+            }
+
+            const intervencionModalForm = document.getElementById("intervencionModalForm");
+            if (intervencionModalForm) {
+                intervencionModalForm.addEventListener("submit", function(event) {
+                    if (!validarFecha()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                });
+            }
+        });
+    </script>
 {% endblock %}

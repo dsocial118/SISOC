@@ -296,6 +296,7 @@ body.sidebar-collapse .sidebar-user-name {
     border-radius: 16px;
     box-shadow: 0 8px 24px rgba(0,0,0,.25);
     background: var(--clr-bg-secondary);
+    align-items: stretch;
 }
 
 .accordion-horizontal.is-measuring {
@@ -317,15 +318,16 @@ body.sidebar-collapse .sidebar-user-name {
     display: flex;
     flex-direction: row;
     width: 60px;
-    height: 120%;
+  height: 100%;
     cursor: pointer;
-    overflow: visible;
+  overflow: hidden;
     transition: width 0.3s ease;
     flex-shrink: 0;
 }
 
 .accordion-panel.open {
-    width: auto;
+  width: auto;
+  flex: 1 1 auto;
 }
 
 .accordion-header {

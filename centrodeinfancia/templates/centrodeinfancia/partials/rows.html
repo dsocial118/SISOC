@@ -1,20 +1,39 @@
 {% for item in centros %}
     <tr>
-        <td>
+        <td data-nombre="{{ item.nombre }}">
             <a href="{% url 'centrodeinfancia_detalle' item.id %}">{{ item.nombre }}</a>
         </td>
-        <td>{{ item.organizacion|default:"-" }}</td>
-        <td class="text-end">
-            <a href="{% url 'centrodeinfancia_detalle' item.id %}"
-               class="btn btn-sm btn-primary">Ver</a>
-            <a href="{% url 'centrodeinfancia_editar' item.id %}"
-               class="btn btn-sm btn-warning">Editar</a>
-            <a href="{% url 'centrodeinfancia_eliminar' item.id %}"
-               class="btn btn-sm btn-danger">Eliminar</a>
+        <td data-organizacion="{{ item.organizacion|default:'' }}">{{ item.organizacion|default:"-" }}</td>
+        <td>
+            <div class="comedor-actions">
+                <a href="{% url 'centrodeinfancia_detalle' item.id %}"
+                   class="btn btn-ver"
+                   title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                    Ver
+                </a>
+                <a href="{% url 'centrodeinfancia_editar' item.id %}"
+                   class="btn btn-editar"
+                   title="Editar centro">
+                    <i class="fas fa-edit"></i>
+                    Editar
+                </a>
+                <a href="{% url 'centrodeinfancia_eliminar' item.id %}"
+                   class="btn btn-eliminar"
+                   title="Eliminar centro">
+                    <i class="fas fa-trash-alt"></i>
+                    Eliminar
+                </a>
+            </div>
         </td>
     </tr>
 {% empty %}
     <tr>
-        <td colspan="3" class="text-center text-muted">No hay resultados.</td>
+        <td colspan="3">
+            <div class="no-comedores-message">
+                <h3>No se encontraron centros de infancia</h3>
+                <p>No hay centros que coincidan con los criterios de búsqueda.</p>
+            </div>
+        </td>
     </tr>
 {% endfor %}
