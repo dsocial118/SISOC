@@ -13,6 +13,10 @@ from centrodeinfancia.views import (
     NominaCentroInfanciaCreateView,
     NominaCentroInfanciaDeleteView,
     NominaCentroInfanciaDetailView,
+    ObservacionCentroInfanciaCreateView,
+    ObservacionCentroInfanciaDeleteView,
+    ObservacionCentroInfanciaDetailView,
+    ObservacionCentroInfanciaUpdateView,
     centrodeinfancia_ajax,
     eliminar_archivo_intervencion_centrodeinfancia,
     nomina_centrodeinfancia_editar_ajax,
@@ -131,5 +135,33 @@ urlpatterns = [
             eliminar_archivo_intervencion_centrodeinfancia
         ),
         name="centrodeinfancia_eliminar_archivo_intervencion",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/observacion/crear/",
+        group_required(["Centro de Infancia Intervencion Crear"])(
+            ObservacionCentroInfanciaCreateView.as_view()
+        ),
+        name="centrodeinfancia_observacion_crear",
+    ),
+    path(
+        "centrodeinfancia/observacion/<int:pk>/",
+        group_required(["Centro de Infancia Ver"])(
+            ObservacionCentroInfanciaDetailView.as_view()
+        ),
+        name="centrodeinfancia_observacion_detalle",
+    ),
+    path(
+        "centrodeinfancia/observacion/<int:pk>/editar/",
+        group_required(["Centro de Infancia Intervencion Editar"])(
+            ObservacionCentroInfanciaUpdateView.as_view()
+        ),
+        name="centrodeinfancia_observacion_editar",
+    ),
+    path(
+        "centrodeinfancia/observacion/<int:pk>/eliminar/",
+        group_required(["Centro de Infancia Intervencion Borrar"])(
+            ObservacionCentroInfanciaDeleteView.as_view()
+        ),
+        name="centrodeinfancia_observacion_eliminar",
     ),
 ]
