@@ -21,6 +21,7 @@ No reemplaza documentación funcional o técnica profunda. Para detalle, usar `d
 - Frontend: templates Django + HTML/CSS/JS + Bootstrap.
 - API schema/docs: `drf-spectacular`.
 - Infra local/CI: `Docker Compose`, GitHub Actions.
+- Asincronía actual: **no se usa Celery**. Hay jobs/tareas vía comandos, hilos y procesos del propio stack Django cuando aplica.
 
 ## Tooling real detectado (obligatorio respetar)
 
@@ -63,6 +64,7 @@ pylint **/*.py --rcfile=.pylintrc
 - No inventar APIs, funciones, clases, modelos, campos, serializers, endpoints ni permisos.
 - Buscar referencias reales en el repo antes de proponer o escribir código.
 - Reutilizar patrones existentes del módulo/app que se toca.
+- No asumir Celery/colas workers si no está explícitamente pedido (actualmente no se usa Celery en el repo).
 
 ## 2) Cambios mínimos y revisables
 
