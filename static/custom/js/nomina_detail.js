@@ -34,9 +34,21 @@ document.addEventListener("DOMContentLoaded", function() {
     toggleDetailedStats();
   }
 
-  const modal = new bootstrap.Modal(document.getElementById('editarNominaModal'));
+  const modalEl = document.getElementById("editarNominaModal");
+  const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
   const modalBody = document.querySelector("#editarNominaModal .modal-body");
   const modalForm = document.getElementById("editarNominaForm");
+
+  function renderModalError(message) {
+    if (!modalBody) {
+      return;
+    }
+    modalBody.innerHTML = "";
+    const div = document.createElement("div");
+    div.classList.add("alert", "alert-danger", "mb-0");
+    div.textContent = message || "Ocurrió un error al cargar el formulario.";
+    modalBody.appendChild(div);
+  }
 
   // Funcionalidad de búsqueda
   const searchInput = document.getElementById("nominaSearch");
@@ -60,19 +72,43 @@ document.addEventListener("DOMContentLoaded", function() {
     btn.addEventListener("click", function(e) {
       e.preventDefault();
       const id = this.dataset.id;
+      const editUrl = this.dataset.editUrl || `/comedores/editar-nomina/${id}/`;
 
-      fetch(`/comedores/editar-nomina/${id}/`)
-        .then(response => response.text())
+      fetch(editUrl)
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error("No se pudo cargar el formulario de edición.");
+          }
+          return response.text();
+        })
         .then(html => {
+          if (!modalBody || !modalForm || !modal) {
+            return;
+          }
           modalBody.innerHTML = html;
-          modalForm.action = `/comedores/editar-nomina/${id}/`;
+          modalForm.action = editUrl;
           modal.show();
+        })
+        .catch(function(error) {
+          if (modalBody && modal) {
+            renderModalError(error.message);
+            modal.show();
+          }
         });
     });
   });
 
+  if (!modalForm) {
+    return;
+  }
+
   modalForm.addEventListener("submit", function(e) {
     e.preventDefault();
+
+    if (!modalForm.action) {
+      renderModalError("No se encontró la URL de edición.");
+      return;
+    }
 
     const formData = new FormData(modalForm);
     fetch(modalForm.action, {
@@ -83,12 +119,22 @@ document.addEventListener("DOMContentLoaded", function() {
       },
       body: formData
     })
-    .then(response => response.json())
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error("No se pudieron guardar los cambios.");
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.success) {
-        modal.hide();
+        if (modal) {
+          modal.hide();
+        }
         location.reload();
       } else {
+        if (!modalBody) {
+          return;
+        }
         modalBody.innerHTML = "";
         for (const field in data.errors) {
           const div = document.createElement("div");
@@ -97,6 +143,9 @@ document.addEventListener("DOMContentLoaded", function() {
           modalBody.appendChild(div);
         }
       }
+    })
+    .catch(function(error) {
+      renderModalError(error.message || "Ocurrió un error al guardar.");
     });
   });
 });

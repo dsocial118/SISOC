@@ -2,27 +2,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.views.generic import View
 
+from centrodeinfancia.access import aplicar_filtro_provincia_usuario
 from centrodeinfancia.models import CentroDeInfancia
 from core.mixins import CSVExportMixin
 from core.services.column_preferences import build_columns_context_from_fields
-
-
-def _get_provincia_usuario(user):
-    if not user or not user.is_authenticated:
-        return None
-
-    try:
-        return user.profile.provincia
-    except Exception:
-        return None
-
-
-def _aplicar_filtro_provincia_usuario(queryset, user):
-    provincia_usuario = _get_provincia_usuario(user)
-    if provincia_usuario:
-        return queryset.filter(provincia=provincia_usuario)
-    return queryset
-
 
 class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_centrodeinfancia.csv"
@@ -76,7 +59,7 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
         queryset = CentroDeInfancia.objects.select_related(
             "organizacion", "provincia", "municipio", "localidad"
         )
-        queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
+        queryset = aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__nombre__icontains=query)

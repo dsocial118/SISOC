@@ -334,16 +334,26 @@ body.sidebar-collapse .sidebar-user-name {
     writing-mode: vertical-lr;
     transform: rotate(180deg);
     text-orientation: mixed;
+    appearance: none;
+    background: transparent;
+    border: 0;
     color: white;
     font-weight: 600;
+    font: inherit;
     padding: 0.5rem 0.75rem;
     display: flex;
     align-items: center;
     justify-content: center;
     user-select: none;
+    cursor: pointer;
     min-width: 60px;
     box-sizing: border-box;
     border-left: 1px solid rgba(255,255,255,.25);
+}
+
+.accordion-header:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -2px;
 }
 
 .accordion-content {
@@ -555,6 +565,11 @@ body.sidebar-collapse .sidebar-user-name {
 
 .accordion-header--responsables {
   background-color: #6a1b99;
+  color: #ffffff;
+}
+
+.accordion-header--nomina {
+  background-color: #1565c0;
   color: #ffffff;
 }
 
