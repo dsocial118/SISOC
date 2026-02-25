@@ -30,9 +30,9 @@
         "model": "acompanamientos.hitosintervenciones",
         "pk": 4,
         "fields": {
-            "intervencion": "Asistencia a capacitación",
+            "intervencion": "Asistencia a Capacitación Sincrónica",
             "subintervencion": "",
-            "hito": "Capacitación realizada"
+            "hito": "Capacitación Sincrónica Realizada"
         }
     },
     {
