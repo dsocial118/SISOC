@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
+from core.models import Localidad, Municipio, Provincia
 from core.soft_delete import SoftDeleteModelMixin
 from intervenciones.models.intervenciones import (
     SubIntervencion,
@@ -20,6 +21,30 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
         blank=True,
     )
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    municipio = models.ForeignKey(
+        Municipio,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    localidad = models.ForeignKey(
+        Localidad,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    calle = models.CharField(max_length=255, blank=True, null=True)
+    telefono = models.CharField(max_length=50, blank=True, null=True)
+    nombre_referente = models.CharField(max_length=255, blank=True, null=True)
+    email_referente = models.EmailField(blank=True, null=True)
+    telefono_referente = models.CharField(max_length=50, blank=True, null=True)
+    fecha_inicio = models.DateField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -113,3 +138,26 @@ class IntervencionCentroInfancia(SoftDeleteModelMixin, models.Model):
     def __str__(self):
         fecha = self.fecha.strftime("%Y-%m-%d") if self.fecha else "sin fecha"
         return f"Intervención en {self.centro} - {fecha}"
+
+
+class ObservacionCentroInfancia(SoftDeleteModelMixin, models.Model):
+    observador = models.CharField(max_length=255, blank=True)
+    centro = models.ForeignKey(
+        to=CentroDeInfancia,
+        on_delete=models.CASCADE,
+        related_name="observaciones",
+    )
+    fecha_visita = models.DateTimeField(default=timezone.now, blank=True)
+    observacion = models.TextField()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["centro"]),
+        ]
+        verbose_name = "Observación Centro de Infancia"
+        verbose_name_plural = "Observaciones Centro de Infancia"
+
+    def __str__(self):
+        centro = self.centro.nombre if self.centro else "Centro sin nombre"
+        fecha = self.fecha_visita.date() if self.fecha_visita else "sin fecha"
+        return f"Observación {fecha} - {centro}"
