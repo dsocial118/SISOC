@@ -10,17 +10,20 @@
 {% block app-header %}
     <div class="row g-2 align-items-center">
         <div class="col-12 col-lg-auto d-flex justify-content-start">
-            <a href="{% url 'centrodeinfancia' %}" class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</a>
+            <a href="{% url 'centrodeinfancia' %}"
+               class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</a>
         </div>
         <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
             <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
                class="btn btn-md btn-outline-light">
                 <i class="bi bi-people me-1"></i>Ver Nómina
             </a>
-            <a href="{% url 'centrodeinfancia_intervencion_crear' centro.id %}"
-               class="btn btn-md btn-outline-light">
+            <button type="button"
+                    class="btn btn-md btn-outline-light"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalIntervencion">
                 <i class="bi bi-clipboard-plus me-1"></i>Nueva Intervención
-            </a>
+            </button>
             {% if perms.auditlog.view_logentry %}
                 <a href="{% url 'audittrail:log_instance' 'centrodeinfancia' 'centrodeinfancia' centro.pk %}"
                    class="btn btn-md btn-outline-light"><i class="bi bi-journal-text me-1"></i>Historial</a>
@@ -34,7 +37,8 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                        <a class="dropdown-item" href="{% url 'centrodeinfancia_editar' centro.id %}">
+                        <a class="dropdown-item"
+                           href="{% url 'centrodeinfancia_editar' centro.id %}">
                             <i class="bi bi-pencil me-1"></i>Editar
                         </a>
                     </li>
@@ -63,14 +67,10 @@
                                 </h2>
                             </li>
                             <li class="list-inline-item">
-                                <button class="btn btn-sm btn-primary mb-2">
-                                    Centro de Infancia
-                                </button>
+                                <button class="btn btn-sm btn-primary mb-2">Centro de Infancia</button>
                             </li>
                             <li class="list-inline-item">
-                                <button class="btn btn-sm btn-success mb-2">
-                                    Activo
-                                </button>
+                                <button class="btn btn-sm btn-success mb-2">Activo</button>
                             </li>
                         </ul>
                     </div>
