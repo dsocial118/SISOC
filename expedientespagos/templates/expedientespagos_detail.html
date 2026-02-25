@@ -1,97 +1,157 @@
-{% extends "includes/main.html" %};
+{% extends "includes/main.html" %}
 {% load static %}
-;
-{% block title %}Epedientes de pagos{% endblock %}
-;
+
+{% block title %}Expediente de Pago{% endblock %}
+
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
-        <div class="breadcrumb-item active">
+        <li class="breadcrumb-item">
             <a href="{% url 'expedientespagos_list' expediente.comedor_id %}">Expedientes de pagos</a>
-        </div>
+        </li>
+        <li class="breadcrumb-item active">Detalle</li>
     </ol>
 {% endblock %}
-;
-{% load crispy_forms_tags %}
-;
-{% block content %}
-    <div class="container mt-4">
-        <h1>Detalle del Expediente de Pago</h1>
-        <div class="card">
-            <div class="card-header">
-                <h3>Información del Expediente</h3>
-            </div>
-            <div class="card-body">
-                <p>
-                    <strong>Expediente de Pago:</strong> {{ expediente.expediente_pago|default:"-" }}
-                </p>
-                <p>
-                    <strong>Expediente del Convenio:</strong> {{ expediente.expediente_convenio|default:"-" }}
-                </p>
-                <p>
-                    <strong>Total:</strong> ${{ expediente.total|floatformat:2 }}
-                </p>
-                <p>
-                    <strong>Mes de Pago:</strong> {{ expediente.mes_pago|default:"-" }}
-                </p>
-                <p>
-                    <strong>Año:</strong> {{ expediente.ano|default:"-" }}
-                </p>
-                <p>
-                    <strong>Organización:</strong> {{ expediente.organizacion_creacion|default:"-" }}
-                </p>
-                <p>
-                    <strong>Anexo:</strong> {{ expediente.anexo|default:"-" }}
-                </p>
-                <p>
-                    <strong>Número de Orden de Pago:</strong> {{ expediente.numero_orden_pago|default:"-" }}
-                </p>
-                <p>
-                    <strong>Fecha de Pago al Banco:</strong> {{ expediente.fecha_pago_al_banco|date:"d/m/Y"|default:"-" }}
-                </p>
-                <p>
-                    <strong>Fecha de Acreditación:</strong> {{ expediente.fecha_acreditacion|date:"d/m/Y"|default:"-" }}
-                </p>
-                <p>
-                    <strong>Observaciones:</strong> {{ expediente.observaciones|default:"-" }}
-                </p>
-                <hr />
-                <p>
-                    <strong>Prestaciones mensuales desayuno:</strong> {{ expediente.prestaciones_mensuales_desayuno|default:"-" }}
-                </p>
-                <p>
-                    <strong>Prestaciones mensuales almuerzo:</strong> {{ expediente.prestaciones_mensuales_almuerzo|default:"-" }}
-                </p>
-                <p>
-                    <strong>Prestaciones mensuales merienda:</strong> {{ expediente.prestaciones_mensuales_merienda|default:"-" }}
-                </p>
-                <p>
-                    <strong>Prestaciones mensuales cena:</strong> {{ expediente.prestaciones_mensuales_cena|default:"-" }}
-                </p>
-                <p>
-                    <strong>Monto mensual desayuno:</strong> ${{ expediente.monto_mensual_desayuno|floatformat:2 }}
-                </p>
-                <p>
-                    <strong>Monto mensual almuerzo:</strong> ${{ expediente.monto_mensual_almuerzo|floatformat:2 }}
-                </p>
-                <p>
-                    <strong>Monto mensual merienda:</strong> ${{ expediente.monto_mensual_merienda|floatformat:2 }}
-                </p>
-                <p>
-                    <strong>Monto mensual cena:</strong> ${{ expediente.monto_mensual_cena|floatformat:2 }}
-                </p>
-                <p>
-                    <strong>Fecha de Creación:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}
-                </p>
+
+{% block app-header %}
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-lg-auto d-flex justify-content-start">
+            <a href="{% url 'expedientespagos_list' expediente.comedor_id %}"
+               class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</a>
+        </div>
+        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center">
+            <div class="btn-group">
+                <button class="btn btn-md dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <i class="bi bi-list me-1"></i>Acciones
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'expedientespagos_update' expediente.id %}">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{% url 'expedientespagos_delete' expediente.id %}">
+                            <i class="bi bi-trash me-1"></i>Eliminar
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
-    <div class="mt-3">
-        <a href="{% url 'expedientespagos_list' expediente.comedor_id %}"
-           class="btn btn-secondary">Volver al Listado</a>
-        <a href="{% url 'expedientespagos_update' expediente.id %}"
-           class="btn btn-primary">Editar</a>
-        <a href="{% url 'expedientespagos_delete' expediente.id %}"
-           class="btn btn-danger">Eliminar</a>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title">Información del Expediente</h3>
+            </div>
+            <div class="card-body">
+                <div class="row gy-3">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Expediente de Pago</small>
+                        <span class="fw-semibold">{{ expediente.expediente_pago|default:"-" }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Expediente del Convenio</small>
+                        <span class="fw-semibold">{{ expediente.expediente_convenio|default:"-" }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Total</small>
+                        <span class="fw-semibold">${{ expediente.total|floatformat:2 }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Mes de Pago</small>
+                        <span class="fw-semibold">{{ expediente.mes_pago|default:"-" }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Año</small>
+                        <span class="fw-semibold">{{ expediente.ano|default:"-" }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Organización</small>
+                        <span class="fw-semibold">{{ expediente.organizacion_creacion|default:"-" }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Anexo</small>
+                        <span class="fw-semibold">{{ expediente.anexo|default:"-" }}</span>
+                    </div>
+                    <div class="col-12"><hr class="my-0"></div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Número de Orden de Pago</small>
+                        <span class="fw-semibold">{{ expediente.numero_orden_pago|default:"-" }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Fecha de Creación</small>
+                        <span class="fw-semibold">{{ expediente.fecha_creacion|date:"d/m/Y" }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Fecha de Pago al Banco</small>
+                        <span class="fw-semibold">{{ expediente.fecha_pago_al_banco|date:"d/m/Y"|default:"-" }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Fecha de Acreditación</small>
+                        <span class="fw-semibold">{{ expediente.fecha_acreditacion|date:"d/m/Y"|default:"-" }}</span>
+                    </div>
+                    {% if expediente.observaciones %}
+                        <div class="col-12">
+                            <small class="text-muted d-block">Observaciones</small>
+                            <span class="fw-semibold">{{ expediente.observaciones }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title">Prestaciones Mensuales</h3>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-bordered table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">Tipo</th>
+                            <th scope="col" class="text-end" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">Prestaciones</th>
+                            <th scope="col" class="text-end" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">Monto Mensual</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Desayuno</td>
+                            <td class="text-end">{{ expediente.prestaciones_mensuales_desayuno|default:"-" }}</td>
+                            <td class="text-end">${{ expediente.monto_mensual_desayuno|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Almuerzo</td>
+                            <td class="text-end">{{ expediente.prestaciones_mensuales_almuerzo|default:"-" }}</td>
+                            <td class="text-end">${{ expediente.monto_mensual_almuerzo|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Merienda</td>
+                            <td class="text-end">{{ expediente.prestaciones_mensuales_merienda|default:"-" }}</td>
+                            <td class="text-end">${{ expediente.monto_mensual_merienda|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Cena</td>
+                            <td class="text-end">{{ expediente.prestaciones_mensuales_cena|default:"-" }}</td>
+                            <td class="text-end">${{ expediente.monto_mensual_cena|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th scope="row" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">Total</th>
+                            <th scope="col" class="text-end" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">—</th>
+                            <th scope="col" class="text-end" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">${{ expediente.total|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
     </div>
-</div>
 {% endblock %}

@@ -1,6 +1,11 @@
 {% extends "includes/main.html" %}
 {% load static %}
-{% block title %}Organizaciones{% endblock %}
+{% block title %}Importar Expedientes{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+{% endblock %}
+
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -9,20 +14,23 @@
         <li class="breadcrumb-item active">Listar</li>
     </ol>
 {% endblock %}
+
+{% block app-header %}
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center">
+            <a href="{% url 'upload' %}"
+               class="btn btn-md btn-primary"
+               title="Importar Nuevo Archivo">
+                <i class="fas fa-upload me-1"></i>Importar Nuevo Archivo
+            </a>
+        </div>
+    </div>
+{% endblock %}
+
 {% block content %}
-    <!-- Estilos modernos reutilizables para listados -->
-    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'importarexpedientes_ajax' as ajax_url %}
     {% include 'components/search_bar.html' with titulo='Buscar Expedientes de Pago' placeholder='Buscar por Usuario' help_text='Ingresar Usuario.' reset_url='importarexpedientes_list' ajax_search_mode=True ajax_url=ajax_url target_tbody_id='importarexpedientes-tbody' query=query %}
-    <div class="action-buttons">
-        <a href="{% url 'upload' %}"
-           class="btn btn-primary"
-           title="Importar Nuevo Archivo">
-            <i class="fas fa-upload"></i>
-            Importar Nuevo Archivo
-        </a>
-    </div>
-    <div class="row mt-5 max-width-100">
+    <div class="row mt-4 max-width-100">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
@@ -72,7 +80,7 @@
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=query prev_text='Volver' next_text='Continuar' %}
     </div>
 {% endblock %}
+
 {% block customJS %}
-    <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>
 {% endblock %}
