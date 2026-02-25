@@ -26,9 +26,9 @@ def test_intervencion_form_comedores_filtra_tipos_por_programa_y_globales():
     assert tipo_comedores.id in queryset_ids
     assert all(
         programa != "cdi"
-        for programa in TipoIntervencion.objects.filter(id__in=queryset_ids).values_list(
-            "programa", flat=True
-        )
+        for programa in TipoIntervencion.objects.filter(
+            id__in=queryset_ids
+        ).values_list("programa", flat=True)
         if programa
     )
 
@@ -54,7 +54,7 @@ def test_intervencion_form_centro_infancia_filtra_tipos_por_programa_y_globales(
     assert tipo_cdi.id in queryset_ids
     assert "comedores" not in set(
         (programa or "").lower()
-        for programa in TipoIntervencion.objects.filter(id__in=queryset_ids).values_list(
-            "programa", flat=True
-        )
+        for programa in TipoIntervencion.objects.filter(
+            id__in=queryset_ids
+        ).values_list("programa", flat=True)
     )
