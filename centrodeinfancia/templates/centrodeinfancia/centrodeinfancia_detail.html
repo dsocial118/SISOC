@@ -89,7 +89,7 @@
             </div>
             <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
                 <div class="accordion-panel open">
-                    <div class="accordion-header h5 accordion-header--ubicacion">Ubicación</div>
+                    <button type="button" class="accordion-header h5 accordion-header--ubicacion">Ubicación</button>
                     <div class="accordion-content">
                         <div class="row">
                             <div class="col-12 col-lg-5">
@@ -139,7 +139,7 @@
                 </div>
 
                 <div class="accordion-panel">
-                    <div class="accordion-header h5 accordion-header--responsables">Referente</div>
+                    <button type="button" class="accordion-header h5 accordion-header--responsables">Referente</button>
                     <div class="accordion-content">
                         <p class="mb-2">
                             <i class="bi bi-person me-2"></i><strong>Nombre:</strong> {{ centro.nombre_referente|default:"-" }}
@@ -152,22 +152,16 @@
                         </p>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="row mt-4">
-            <div class="col-12 col-lg-3 order-lg-2">
-                <div class="card bg-card mb-3">
-                    <div class="card-header py-1 d-flex align-items-center justify-content-between">
-                        <h4 class="fw-bold my-1">Nómina</h4>
-                        <a href="{% url 'centrodeinfancia_nomina_ver' pk=centro.id %}"
-                           class="text-white fs-5 ms-auto"
-                           title="Ver nómina"
-                           aria-label="Ver nómina">
-                            <i class="bi bi-box-arrow-up-right"></i>
-                        </a>
-                    </div>
-                    <div class="card-body">
+                <div class="accordion-panel">
+                    <button type="button" class="accordion-header h5 accordion-header--nomina">Nómina</button>
+                    <div class="accordion-content">
+                        <div class="d-flex justify-content-end mb-3">
+                            <a href="{% url 'centrodeinfancia_nomina_ver' pk=centro.id %}"
+                               class="btn btn-sm btn-primary">
+                                <i class="bi bi-people me-1"></i>Ver detalle de nómina
+                            </a>
+                        </div>
                         <div class="col-12">
                             <div class="d-flex align-items-center bg-celeste px-3 py-2 rounded-3 mb-2">
                                 <div class="d-flex align-items-center justify-content-center bg-celeste-75 text-white rounded-circle mx-2 me-3 comedor-icon-60">
@@ -204,60 +198,60 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="col-12 col-lg-9 order-lg-1">
-                <div class="tabs-comedor-wrap mt-2 mb-3">
-                    <ul class="nav nav-tabs tabs-comedor ms-2 mb-0"
-                        id="intervencionesObservacionesTabs"
-                        role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active fs-6"
-                                    id="intervenciones-tab"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#intervenciones-pane"
-                                    type="button"
-                                    role="tab"
-                                    aria-controls="intervenciones-pane"
-                                    aria-selected="true">Intervenciones</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link fs-6"
-                                    id="observaciones-tab"
-                                    data-bs-toggle="tab"
-                                    data-bs-target="#observaciones-pane"
-                                    type="button"
-                                    role="tab"
-                                    aria-controls="observaciones-pane"
-                                    aria-selected="false">Observaciones</button>
-                        </li>
-                    </ul>
-                    <div class="card bg-card">
-                        <div class="card-body pt-0">
-                            <div class="tab-content" id="intervencionesObservacionesContent">
-                                <div class="tab-pane fade show active"
-                                     id="intervenciones-pane"
-                                     role="tabpanel"
-                                     aria-labelledby="intervenciones-tab">
-                                    <div class="d-flex mb-2">
-                                        <button type="button"
-                                                class="btn btn-sm btn-primary ms-auto"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalIntervencion">Agregar intervención</button>
-                                    </div>
-                                    {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
+        <div class="mt-5">
+            <div class="tabs-comedor-wrap mt-0 mb-3">
+                <ul class="nav nav-tabs tabs-comedor ms-2 mb-0"
+                    id="intervencionesObservacionesTabs"
+                    role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fs-6"
+                                id="intervenciones-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#intervenciones-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="intervenciones-pane"
+                                aria-selected="true">Intervenciones</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fs-6"
+                                id="observaciones-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#observaciones-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="observaciones-pane"
+                                aria-selected="false">Observaciones</button>
+                    </li>
+                </ul>
+                <div class="card bg-card">
+                    <div class="card-body pt-0">
+                        <div class="tab-content" id="intervencionesObservacionesContent">
+                            <div class="tab-pane fade show active"
+                                 id="intervenciones-pane"
+                                 role="tabpanel"
+                                 aria-labelledby="intervenciones-tab">
+                                <div class="d-flex mb-2">
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary ms-auto"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalIntervencion">Agregar intervención</button>
                                 </div>
-                                <div class="tab-pane fade"
-                                     id="observaciones-pane"
-                                     role="tabpanel"
-                                     aria-labelledby="observaciones-tab">
-                                    <div class="d-flex mb-2">
-                                        <button type="button"
-                                                class="btn btn-sm btn-primary ms-auto"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#modalObservacion">Agregar observación</button>
-                                    </div>
-                                    {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
+                                {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
+                            </div>
+                            <div class="tab-pane fade"
+                                 id="observaciones-pane"
+                                 role="tabpanel"
+                                 aria-labelledby="observaciones-tab">
+                                <div class="d-flex mb-2">
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary ms-auto"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalObservacion">Agregar observación</button>
                                 </div>
+                                {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
                             </div>
                         </div>
                     </div>
@@ -411,6 +405,28 @@
             function setOpenPanel(panelToOpen) {
                 panels.forEach(function(panel) {
                     panel.classList.toggle("open", panel === panelToOpen);
+                    const header = panel.querySelector(".accordion-header");
+                    if (header) {
+                        header.setAttribute("aria-expanded", panel === panelToOpen ? "true" : "false");
+                    }
+                });
+            }
+
+            function configurarA11yAccordion() {
+                panels.forEach(function(panel, index) {
+                    const header = panel.querySelector(".accordion-header");
+                    const content = panel.querySelector(".accordion-content");
+                    if (!header || !content) {
+                        return;
+                    }
+                    const contentId = content.id || `cdi-accordion-panel-${index + 1}`;
+                    content.id = contentId;
+                    content.setAttribute("role", "region");
+                    header.setAttribute("aria-controls", contentId);
+                    header.setAttribute(
+                        "aria-expanded",
+                        panel.classList.contains("open") ? "true" : "false",
+                    );
                 });
             }
 
@@ -451,6 +467,8 @@
 
                 accordion.style.height = "400px";
             }
+
+            configurarA11yAccordion();
 
             panels.forEach(function(panel) {
                 const header = panel.querySelector(".accordion-header");

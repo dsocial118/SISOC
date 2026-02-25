@@ -519,18 +519,30 @@
             localidad: document.querySelector(baseConfig.selectors.localidad),
         };
 
+        const safeQuerySelector = (selector) => {
+            if (!selector || typeof selector !== "string") {
+                return null;
+            }
+            try {
+                return document.querySelector(selector);
+            } catch (error) {
+                console.warn("[UbicacionSelects] Selector inválido:", selector, error);
+                return null;
+            }
+        };
+
         const uiElements = {
             provincia: {
-                wrapper: document.querySelector(baseConfig.ui.provincia.wrapper),
-                loader: document.querySelector(baseConfig.ui.provincia.loader),
+                wrapper: safeQuerySelector(baseConfig.ui.provincia.wrapper),
+                loader: safeQuerySelector(baseConfig.ui.provincia.loader),
             },
             municipio: {
-                wrapper: document.querySelector(baseConfig.ui.municipio.wrapper),
-                loader: document.querySelector(baseConfig.ui.municipio.loader),
+                wrapper: safeQuerySelector(baseConfig.ui.municipio.wrapper),
+                loader: safeQuerySelector(baseConfig.ui.municipio.loader),
             },
             localidad: {
-                wrapper: document.querySelector(baseConfig.ui.localidad.wrapper),
-                loader: document.querySelector(baseConfig.ui.localidad.loader),
+                wrapper: safeQuerySelector(baseConfig.ui.localidad.wrapper),
+                loader: safeQuerySelector(baseConfig.ui.localidad.loader),
             },
         };
 
