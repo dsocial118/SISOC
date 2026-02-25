@@ -568,9 +568,13 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
             if registro.estado == NominaCentroInfancia.ESTADO_PENDIENTE:
                 resumen["espera"] += 1
 
-            sexo = str(
-                getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "") or ""
-            ).strip().lower()
+            sexo = (
+                str(
+                    getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "") or ""
+                )
+                .strip()
+                .lower()
+            )
             if "mascul" in sexo or sexo == "m":
                 resumen["nomina_m"] += 1
             elif "femen" in sexo or sexo == "f":
@@ -639,9 +643,7 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         context["nominaX"] = stats["nomina_x"]
         context["espera"] = stats["espera"]
         context["cantidad_nomina"] = stats["total"]
-        context["menores"] = (
-            stats["rangos"]["ninos"] + stats["rangos"]["adolescentes"]
-        )
+        context["menores"] = stats["rangos"]["ninos"] + stats["rangos"]["adolescentes"]
         context["nomina_rangos"] = stats["rangos"]
         context["ejecucion_inicio"] = centro.fecha_inicio
         context["ejecucion_fin"] = None
@@ -854,7 +856,10 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             except Exception:  # noqa: BLE001
                 logger.exception(
                     "Error al crear ciudadano y agregarlo a la nómina de CDI",
-                    extra={"centro_id": centro.id, "user_id": getattr(request.user, "id", None)},
+                    extra={
+                        "centro_id": centro.id,
+                        "user_id": getattr(request.user, "id", None),
+                    },
                 )
                 messages.error(
                     request,
