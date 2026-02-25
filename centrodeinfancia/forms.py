@@ -2,6 +2,8 @@ from django import forms
 
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
+from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
+from intervenciones.models.intervenciones import TipoIntervencion
 from organizaciones.models import Organizacion
 from centrodeinfancia.models import (
     CentroDeInfancia,
@@ -9,7 +11,6 @@ from centrodeinfancia.models import (
     NominaCentroInfancia,
     ObservacionCentroInfancia,
 )
-
 
 class CentroDeInfanciaForm(forms.ModelForm):
 
@@ -170,6 +171,11 @@ class NominaCentroInfanciaCreateForm(forms.ModelForm):
 class IntervencionCentroInfanciaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        selected_tipo_id = getattr(self.instance, "tipo_intervencion_id", None)
+        self.fields["tipo_intervencion"].queryset = TipoIntervencion.para_programas(
+            *PROGRAMA_ALIASES_CENTRO_INFANCIA,
+            include_ids=[selected_tipo_id] if selected_tipo_id else None,
+        )
 
         for field_name in [
             "tipo_intervencion",
@@ -217,6 +223,30 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
             "fecha": forms.DateInput(attrs={"type": "date"}),
             "observaciones": forms.Textarea(attrs={"rows": 4}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo_intervencion = cleaned_data.get("tipo_intervencion")
+        subintervencion = cleaned_data.get("subintervencion")
+
+        if not tipo_intervencion:
+            return cleaned_data
+
+        if subintervencion and subintervencion.tipo_intervencion_id != tipo_intervencion.id:
+            self.add_error(
+                "subintervencion",
+                "La subintervención seleccionada no corresponde al tipo de intervención.",
+            )
+            return cleaned_data
+
+        subintervenciones_disponibles = tipo_intervencion.subintervenciones.all()
+        if subintervenciones_disponibles.exists():
+            if not subintervencion:
+                self.add_error("subintervencion", "Debe seleccionar una subintervención.")
+        else:
+            cleaned_data["subintervencion"] = None
+
+        return cleaned_data
 
 
 class ObservacionCentroInfanciaForm(forms.ModelForm):
