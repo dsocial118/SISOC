@@ -112,8 +112,8 @@ class AcompanamientoService:
         Returns:
             None
         """
-        TIPO_FCH = "Asistencia a Capacitación Formando Capital Humano"
-        SUBTIPOS_FCH = {
+        tipo_fch = "Asistencia a Capacitación Formando Capital Humano"
+        subtipos_fch = {
             "Creación de Usuario en Plataforma Alimentar Comunidad",
             "Uso de Plataforma Alimentar Comunidad: Cómo consultar saldo y subir comprobantes",
             "Retiro y Uso de la Tarjeta Alimentar Comunidad",
@@ -127,13 +127,13 @@ class AcompanamientoService:
             subtipos_registrados = set(
                 Intervencion.objects.filter(
                     comedor=comedor,
-                    tipo_intervencion__nombre=TIPO_FCH,
-                    subintervencion__nombre__in=SUBTIPOS_FCH,
+                    tipo_intervencion__nombre=tipo_fch,
+                    subintervencion__nombre__in=subtipos_fch,
                 )
                 .values_list("subintervencion__nombre", flat=True)
                 .distinct()
             )
-            if subtipos_registrados >= SUBTIPOS_FCH:
+            if subtipos_registrados >= subtipos_fch:
                 hitos_objeto.capacitacion_fch_realizada = True
                 hitos_objeto.save()
         except Exception:
