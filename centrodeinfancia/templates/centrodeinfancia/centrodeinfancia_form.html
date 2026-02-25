@@ -114,6 +114,11 @@
 {% endblock %}
 
 {% block customJS %}
+    <script id="provincias-json" type="application/json">[
+        {% for provincia in form.fields.provincia.queryset %}
+            {"id": {{ provincia.id }}, "nombre": "{{ provincia.nombre|escapejs }}"}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]</script>
     <script>
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
@@ -202,6 +207,21 @@
             ensurePlaceholder(provinciaSelect, "Seleccione una provincia");
             ensurePlaceholder(municipioSelect, "Seleccione un municipio");
             ensurePlaceholder(localidadSelect, "Seleccione una localidad");
+
+            const provinciasJsonEl = document.getElementById("provincias-json");
+            if (provinciaSelect && provinciasJsonEl && provinciaSelect.options.length <= 1) {
+                try {
+                    const provinciasData = JSON.parse(provinciasJsonEl.textContent || "[]");
+                    replaceOptions(
+                        provinciaSelect,
+                        provinciasData,
+                        provinciaSelect.value,
+                        "Seleccione una provincia",
+                    );
+                } catch (error) {
+                    console.error("No se pudieron cargar provincias desde fallback JSON", error);
+                }
+            }
 
             if (typeof initializeSelect2 === "function") {
                 initializeSelect2("id_organizacion", {
