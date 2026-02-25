@@ -1,6 +1,11 @@
 """Modelos auxiliares de auditoría propios de SISOC."""
 
+from django.conf import settings
 from django.db import models
+
+AUDITLOG_LOGENTRY_MODEL = getattr(
+    settings, "AUDITLOG_LOGENTRY_MODEL", "auditlog.LogEntry"
+)
 
 
 class AuditEntryMeta(models.Model):
@@ -13,7 +18,7 @@ class AuditEntryMeta(models.Model):
     """
 
     log_entry = models.OneToOneField(
-        "auditlog.LogEntry",
+        AUDITLOG_LOGENTRY_MODEL,
         on_delete=models.CASCADE,
         related_name="audittrail_meta",
     )
@@ -29,9 +34,7 @@ class AuditEntryMeta(models.Model):
     class Meta:
         verbose_name = "Metadata de auditoría"
         verbose_name_plural = "Metadatas de auditoría"
-        permissions = (
-            ("export_auditlog", "Puede exportar resultados de auditoría"),
-        )
+        permissions = (("export_auditlog", "Puede exportar resultados de auditoría"),)
 
     def __str__(self):
         return f"AuditEntryMeta(log_entry_id={self.log_entry_id})"

@@ -267,7 +267,9 @@ def test_ensure_audit_entry_meta_persists_and_tolerates_missing_table(mocker):
         "audittrail.signals._build_audit_entry_meta_defaults",
         return_value=defaults,
     )
-    update_or_create = mocker.patch("audittrail.signals.AuditEntryMeta.objects.update_or_create")
+    update_or_create = mocker.patch(
+        "audittrail.signals.AuditEntryMeta.objects.update_or_create"
+    )
 
     entry = SimpleNamespace(pk=123)
     module.ensure_audit_entry_meta(None, entry, created=True)

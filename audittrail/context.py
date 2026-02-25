@@ -58,7 +58,9 @@ def audit_context(*, actor=None, source=None, batch_key=None, extra=None):
         if batch_key is not None:
             updates["batch_key"] = str(batch_key)
         if extra is not None:
-            updates["extra"] = dict(extra) if isinstance(extra, dict) else {"value": str(extra)}
+            updates["extra"] = (
+                dict(extra) if isinstance(extra, dict) else {"value": str(extra)}
+            )
         set_audit_context(**updates)
         yield get_audit_context()
     finally:

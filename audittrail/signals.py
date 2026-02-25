@@ -168,7 +168,9 @@ def _build_audit_entry_meta_defaults(entry):
     Construye metadata persistida Fase 2 a partir de LogEntry + contexto thread-local.
     """
     context_data = get_audit_context()
-    additional_data = _normalize_additional_data(getattr(entry, "additional_data", None))
+    additional_data = _normalize_additional_data(
+        getattr(entry, "additional_data", None)
+    )
     actor = getattr(entry, "actor", None) or _get_context_actor()
     actor_snapshot = _actor_snapshot_data(actor)
     batch_key = _extract_meta_batch_key(entry, context_data, additional_data)

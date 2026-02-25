@@ -150,5 +150,7 @@
 {% block customJS %}
     <script src="{% static 'custom/js/listSort.js' %}"></script>
     <script src="{% static 'custom/js/export_helper.js' %}"></script>
-    {% if column_config %}<script src="{% static 'custom/js/column_config.js' %}"></script>{% endif %}
+    {% if column_config %}
+        <script src="{% static 'custom/js/column_config.js' %}"></script>
+    {% endif %}
 {% endblock %}

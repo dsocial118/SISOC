@@ -105,6 +105,8 @@ def remove_mysql_auditlog_indexes(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    atomic = False
+
     dependencies = [
         ("audittrail", "0001_initial"),
     ]
