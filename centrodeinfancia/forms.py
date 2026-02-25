@@ -36,7 +36,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         self.lock_provincia_from_user = kwargs.pop("lock_provincia_from_user", False)
         super().__init__(*args, **kwargs)
         self._popular_campos_ubicacion()
-        self._aplicar_provincia_usuario_en_alta()
+        self._aplicar_provincia_usuario()
 
     def _popular_campos_ubicacion(self):
         def parse_pk(value):
@@ -56,6 +56,9 @@ class CentroDeInfanciaForm(forms.ModelForm):
             "nombre"
         )
         self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+
+        if not provincia and not self.data:
+            provincia = self._obtener_provincia_usuario(self.current_user)
 
         if provincia:
             self.fields["provincia"].initial = provincia
@@ -79,10 +82,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         if localidad:
             self.fields["localidad"].initial = localidad
 
-    def _aplicar_provincia_usuario_en_alta(self):
-        if not self.lock_provincia_from_user or self.instance.pk:
-            return
-
+    def _aplicar_provincia_usuario(self):
         provincia_usuario = self._obtener_provincia_usuario(self.current_user)
         if not provincia_usuario:
             self.fields["provincia"].queryset = Provincia.objects.all().order_by(
@@ -91,14 +91,20 @@ class CentroDeInfanciaForm(forms.ModelForm):
             self.fields["provincia"].disabled = False
             return
 
-        self.fields["provincia"].queryset = Provincia.objects.filter(
-            pk=provincia_usuario.pk
-        )
-        self.fields["provincia"].initial = provincia_usuario
-        self.fields["provincia"].disabled = True
-        self.fields["municipio"].queryset = Municipio.objects.filter(
-            provincia=provincia_usuario
-        ).order_by("nombre")
+        if self.lock_provincia_from_user and not self.instance.pk:
+            self.fields["provincia"].queryset = Provincia.objects.filter(
+                pk=provincia_usuario.pk
+            )
+            self.fields["provincia"].initial = provincia_usuario
+            self.fields["provincia"].disabled = True
+            self.fields["municipio"].queryset = Municipio.objects.filter(
+                provincia=provincia_usuario
+            ).order_by("nombre")
+            return
+
+        self.fields["provincia"].disabled = False
+        if not self.fields["provincia"].initial:
+            self.fields["provincia"].initial = provincia_usuario
 
     def clean_provincia(self):
         if self.fields["provincia"].disabled and self.current_user:

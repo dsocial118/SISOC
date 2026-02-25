@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -23,8 +25,10 @@ from django.views.generic import (
 from auditlog.models import LogEntry
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
+from comedores.services.comedor_service import ComedorService
 from core.decorators import group_required
 from core.security import safe_redirect
+from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 from centrodeinfancia.forms import (
@@ -42,6 +46,46 @@ from centrodeinfancia.models import (
 )
 
 
+CDI_LIST_HEADERS = [
+    {"title": "Nombre"},
+    {"title": "Organización"},
+    {"title": "Provincia"},
+    {"title": "Municipio"},
+    {"title": "Localidad"},
+    {"title": "Calle"},
+    {"title": "Teléfono"},
+    {"title": "Referente"},
+]
+
+CDI_LIST_FIELDS = [
+    {"name": "nombre"},
+    {"name": "organizacion"},
+    {"name": "provincia"},
+    {"name": "municipio"},
+    {"name": "localidad"},
+    {"name": "calle"},
+    {"name": "telefono"},
+    {"name": "referente"},
+]
+
+
+def _get_provincia_usuario(user):
+    if not user or not user.is_authenticated:
+        return None
+
+    try:
+        return user.profile.provincia
+    except Exception:
+        return None
+
+
+def _aplicar_filtro_provincia_usuario(queryset, user):
+    provincia_usuario = _get_provincia_usuario(user)
+    if provincia_usuario:
+        return queryset.filter(provincia=provincia_usuario)
+    return queryset
+
+
 class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
     model = CentroDeInfancia
     template_name = "centrodeinfancia/centrodeinfancia_list.html"
@@ -50,22 +94,35 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
-        queryset = CentroDeInfancia.objects.select_related("organizacion").order_by(
-            "nombre"
+        queryset = CentroDeInfancia.objects.select_related(
+            "organizacion", "provincia", "municipio", "localidad"
         )
+        queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__nombre__icontains=query)
             )
-        return queryset
+        return queryset.order_by("nombre")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        columns_context = build_columns_context_from_fields(
+            self.request,
+            "centrodeinfancia_list",
+            CDI_LIST_HEADERS,
+            CDI_LIST_FIELDS,
+            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            required_keys=["nombre"],
+        )
         context["breadcrumb_items"] = [
             {"text": "Centro de Infancia", "url": reverse("centrodeinfancia")},
             {"text": "Listar", "active": True},
         ]
         context["query"] = self.request.GET.get("busqueda", "")
+        context["active_columns"] = columns_context.get("column_active_keys") or [
+            field["name"] for field in CDI_LIST_FIELDS
+        ]
+        context.update(columns_context)
         return context
 
 
@@ -94,7 +151,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             "organizacion", "provincia", "municipio", "localidad"
         )
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+        self, **kwargs
+    ):
         context = super().get_context_data(**kwargs)
         nomina_qs = self.object.nominas.select_related("ciudadano").order_by("-fecha")
         intervenciones_qs = self.object.intervenciones.select_related(
@@ -363,19 +422,36 @@ def centrodeinfancia_ajax(request):
     def _centrodeinfancia_ajax(req):
         query = req.GET.get("busqueda", "")
         page = req.GET.get("page", 1)
-        queryset = CentroDeInfancia.objects.select_related("organizacion").order_by(
-            "nombre"
+        columns_context = build_columns_context_from_fields(
+            req,
+            "centrodeinfancia_list",
+            CDI_LIST_HEADERS,
+            CDI_LIST_FIELDS,
+            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            required_keys=["nombre"],
         )
+        active_columns = columns_context.get("column_active_keys") or [
+            field["name"] for field in CDI_LIST_FIELDS
+        ]
+
+        queryset = CentroDeInfancia.objects.select_related(
+            "organizacion", "provincia", "municipio", "localidad"
+        )
+        queryset = _aplicar_filtro_provincia_usuario(queryset, req.user)
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__nombre__icontains=query)
             )
+        queryset = queryset.order_by("nombre")
 
         paginator = Paginator(queryset, 10)
         page_obj = paginator.get_page(page)
         html = render_to_string(
             "centrodeinfancia/partials/rows.html",
-            {"centros": page_obj},
+            {
+                "centros": page_obj,
+                "active_columns": active_columns,
+            },
             request=req,
         )
         return JsonResponse(
@@ -419,23 +495,96 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context["object"] = get_object_or_404(CentroDeInfancia, pk=self.kwargs["pk"])
         query = (self.request.GET.get("query") or "").strip()
+        form_ciudadano = kwargs.get("form_ciudadano")
         ciudadanos = []
+        renaper_data = None
+
         if query and len(query) >= 4:
             ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
+            if (
+                not ciudadanos
+                and query.isdigit()
+                and len(query) >= 7
+                and not form_ciudadano
+            ):
+                renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(
+                    query
+                )
+                if renaper_result.get("success"):
+                    renaper_data = self._prepare_renaper_initial_data(renaper_result)
+                    mensaje = renaper_result.get("message")
+                    if mensaje:
+                        messages.info(self.request, mensaje)
+                elif renaper_result.get("message"):
+                    messages.warning(self.request, renaper_result["message"])
+
+        if not form_ciudadano:
+            if renaper_data:
+                form_ciudadano = CiudadanoFormParaNomina(initial=renaper_data)
+            else:
+                form_ciudadano = CiudadanoFormParaNomina()
+
+        renaper_precarga = bool(renaper_data) or (
+            self.request.POST.get("origen_dato") == "renaper"
+        )
 
         context["query"] = query
         context["ciudadanos"] = ciudadanos
         context["no_resultados"] = bool(query) and not ciudadanos
         context["estados"] = NominaCentroInfancia.ESTADO_CHOICES
-        context["form_ciudadano"] = (
-            kwargs.get("form_ciudadano") or CiudadanoFormParaNomina()
-        )
+        context["form_ciudadano"] = form_ciudadano
         context["form_nomina_extra"] = (
             kwargs.get("form_nomina_extra") or NominaExtraForm()
         )
+        context["renaper_precarga"] = renaper_precarga
         return context
 
-    def post(self, request, *args, **kwargs):
+    @staticmethod
+    def _parse_fecha_renaper(fecha_raw):
+        if not fecha_raw:
+            return None
+        if isinstance(fecha_raw, date):
+            return fecha_raw
+        if isinstance(fecha_raw, datetime):
+            return fecha_raw.date()
+
+        value = str(fecha_raw).strip()
+        formatos = ("%Y-%m-%d", "%d/%m/%Y", "%Y%m%d")
+        for fmt in formatos:
+            try:
+                return datetime.strptime(value, fmt).date()
+            except ValueError:
+                continue
+
+        try:
+            value_iso = value.replace("Z", "")
+            return datetime.fromisoformat(value_iso).date()
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _prepare_renaper_initial_data(renaper_result):
+        renaper_data = dict(renaper_result.get("data") or {})
+        if not renaper_data:
+            return renaper_data
+
+        fecha_raw = renaper_data.get("fecha_nacimiento")
+        if not fecha_raw:
+            datos_api = renaper_result.get("datos_api") or {}
+            fecha_raw = datos_api.get("fechaNacimiento")
+
+        if fecha_raw:
+            parsed_fecha = NominaCentroInfanciaCreateView._parse_fecha_renaper(
+                fecha_raw
+            )
+            if parsed_fecha:
+                renaper_data["fecha_nacimiento"] = parsed_fecha.isoformat()
+
+        return renaper_data
+
+    def post(  # pylint: disable=too-many-return-statements
+        self, request, *args, **kwargs
+    ):
         self.object = None
         ciudadano_id = request.POST.get("ciudadano_id")
 
@@ -490,6 +639,8 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             try:
                 with transaction.atomic():
                     ciudadano = form_ciudadano.save(commit=False)
+                    if request.POST.get("origen_dato") == "renaper":
+                        ciudadano.origen_dato = "renaper"
                     ciudadano.creado_por = request.user
                     ciudadano.modificado_por = request.user
                     ciudadano.save()
