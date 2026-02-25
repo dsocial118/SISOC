@@ -110,6 +110,10 @@ def _safe_changes_field_lookup():
     return None
 
 
+def _logentry_has_field(field_name: str) -> bool:
+    return any(field.name == field_name for field in LogEntry._meta.get_fields())
+
+
 def _build_field_name_variants(field_name: str):
     """
     Variantes para filtrar por nombre de campo dentro del payload de changes.
@@ -117,6 +121,11 @@ def _build_field_name_variants(field_name: str):
     normalized = " ".join((field_name or "").strip().split())
     if not normalized:
         return []
+    if not _FIELD_NAME_SAFE_RE.match(normalized):
+        normalized = re.sub(r"[^\w.\- ]+", " ", normalized, flags=re.UNICODE).strip()
+        normalized = " ".join(normalized.split())
+        if not normalized:
+            return []
     variants = [normalized]
     snake = normalized.replace(" ", "_")
     if snake != normalized:
@@ -167,9 +176,13 @@ def apply_origin_filter(qs, origin: str | None):
         return qs
 
     if origin == "web":
+        legacy_web_fallback = Q(audittrail_meta__isnull=True) & Q(actor__isnull=False)
+        if _logentry_has_field("cid"):
+            legacy_web_fallback |= Q(audittrail_meta__isnull=True) & Q(cid__isnull=False)
         return qs.filter(
             Q(audittrail_meta__source="http")
             | Q(audittrail_meta__source__startswith="http:")
+            | legacy_web_fallback
         )
 
     if origin == "command":
@@ -180,6 +193,7 @@ def apply_origin_filter(qs, origin: str | None):
             Q(audittrail_meta__source="system")
             | Q(audittrail_meta__source__startswith="thread:")
             | Q(audittrail_meta__source__startswith="job:")
+            | (Q(audittrail_meta__isnull=True) & Q(actor__isnull=True))
         )
 
     return qs
