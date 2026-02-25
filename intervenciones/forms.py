@@ -1,9 +1,19 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from intervenciones.models.intervenciones import Intervencion
+
+from intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
+from intervenciones.models.intervenciones import Intervencion, TipoIntervencion
 
 
 class IntervencionForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        selected_tipo_id = getattr(self.instance, "tipo_intervencion_id", None)
+        self.fields["tipo_intervencion"].queryset = TipoIntervencion.para_programas(
+            *PROGRAMA_ALIASES_COMEDORES,
+            include_ids=[selected_tipo_id] if selected_tipo_id else None,
+        )
+
     class Meta:
         model = Intervencion
         fields = [

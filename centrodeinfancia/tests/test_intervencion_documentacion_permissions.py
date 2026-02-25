@@ -75,7 +75,7 @@ def test_subir_documentacion_post_without_file_returns_json_error(mocker):
         request, intervencion_id=1
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 400
     assert json.loads(response.content) == {
         "success": False,
         "message": "No se proporcionó un archivo.",

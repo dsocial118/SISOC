@@ -114,12 +114,6 @@
 {% endblock %}
 
 {% block customJS %}
-    <script id="provincias-json" type="application/json">[
-        {% for provincia in form.fields.provincia.queryset %}
-            {"id": {{ provincia.id }}, "nombre": "{{ provincia.nombre|escapejs }}"}{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ]
-    </script>
     <script>
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
@@ -139,6 +133,7 @@
                 if (!selectEl) {
                     return;
                 }
+                const currentValue = selectEl.value;
                 const hasEmpty = Array.from(selectEl.options).some(function(opt) {
                     return opt.value === "";
                 });
@@ -147,6 +142,9 @@
                     option.value = "";
                     option.textContent = label;
                     selectEl.insertBefore(option, selectEl.firstChild);
+                    if (currentValue) {
+                        selectEl.value = String(currentValue);
+                    }
                 }
             }
 
@@ -205,89 +203,13 @@
                 replaceOptions(localidadSelect, data, selectedLocalidad, "Seleccione una localidad");
             }
 
-            ensurePlaceholder(provinciaSelect, "Seleccione una provincia");
             ensurePlaceholder(municipioSelect, "Seleccione un municipio");
             ensurePlaceholder(localidadSelect, "Seleccione una localidad");
-
-            const provinciasJsonEl = document.getElementById("provincias-json");
-            if (provinciaSelect && provinciasJsonEl && provinciaSelect.options.length <= 1) {
-                try {
-                    const provinciasData = JSON.parse(provinciasJsonEl.textContent || "[]");
-                    replaceOptions(
-                        provinciaSelect,
-                        provinciasData,
-                        provinciaSelect.value,
-                        "Seleccione una provincia",
-                    );
-                } catch (error) {
-                    console.error("No se pudieron cargar provincias desde fallback JSON", error);
-                }
-            }
 
             if (typeof initializeSelect2 === "function") {
                 initializeSelect2("id_organizacion", {
                     placeholder: "Seleccione una organización",
                     allowClear: true,
-                });
-                initializeSelect2("id_provincia", {
-                    placeholder: "Seleccione una provincia",
-                    allowClear: true,
-                });
-                initializeSelect2("id_municipio", {
-                    placeholder: "Seleccione un municipio",
-                    allowClear: true,
-                });
-                initializeSelect2("id_localidad", {
-                    placeholder: "Seleccione una localidad",
-                    allowClear: true,
-                });
-            }
-
-            if (typeof window.setupUbicacionSelects === "function") {
-                await window.setupUbicacionSelects({
-                    ajaxMunicipiosUrl: ajaxLoadMunicipiosUrl,
-                    ajaxLocalidadesUrl: ajaxLoadLocalidadesUrl,
-                    selectors: {
-                        provincia: "#id_provincia",
-                        municipio: "#id_municipio",
-                        localidad: "#id_localidad",
-                    },
-                    ui: {
-                        municipio: {
-                            loader: "#municipio-loader",
-                            wrapper: "#municipio-field",
-                            dropdownParent: "#municipio-field",
-                        },
-                        localidad: {
-                            loader: "#localidad-loader",
-                            wrapper: "#localidad-field",
-                            dropdownParent: "#localidad-field",
-                        },
-                    },
-                    autoPrefetch: true,
-                });
-            } else if (typeof window.initUbicacionSelects === "function") {
-                await window.initUbicacionSelects({
-                    ajaxMunicipiosUrl: ajaxLoadMunicipiosUrl,
-                    ajaxLocalidadesUrl: ajaxLoadLocalidadesUrl,
-                    selectors: {
-                        provincia: "#id_provincia",
-                        municipio: "#id_municipio",
-                        localidad: "#id_localidad",
-                    },
-                    ui: {
-                        municipio: {
-                            loader: "#municipio-loader",
-                            wrapper: "#municipio-field",
-                            dropdownParent: "#municipio-field",
-                        },
-                        localidad: {
-                            loader: "#localidad-loader",
-                            wrapper: "#localidad-field",
-                            dropdownParent: "#localidad-field",
-                        },
-                    },
-                    autoPrefetch: true,
                 });
             }
 
