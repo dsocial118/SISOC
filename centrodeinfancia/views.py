@@ -27,6 +27,7 @@ from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraFor
 from comedores.services.comedor_service import ComedorService
 from core.decorators import group_required
 from core.security import safe_redirect
+from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
 from centrodeinfancia.forms import (
@@ -44,6 +45,46 @@ from centrodeinfancia.models import (
 )
 
 
+CDI_LIST_HEADERS = [
+    {"title": "Nombre"},
+    {"title": "Organización"},
+    {"title": "Provincia"},
+    {"title": "Municipio"},
+    {"title": "Localidad"},
+    {"title": "Calle"},
+    {"title": "Teléfono"},
+    {"title": "Referente"},
+]
+
+CDI_LIST_FIELDS = [
+    {"name": "nombre"},
+    {"name": "organizacion"},
+    {"name": "provincia"},
+    {"name": "municipio"},
+    {"name": "localidad"},
+    {"name": "calle"},
+    {"name": "telefono"},
+    {"name": "referente"},
+]
+
+
+def _get_provincia_usuario(user):
+    if not user or not user.is_authenticated:
+        return None
+
+    try:
+        return user.profile.provincia
+    except Exception:
+        return None
+
+
+def _aplicar_filtro_provincia_usuario(queryset, user):
+    provincia_usuario = _get_provincia_usuario(user)
+    if provincia_usuario:
+        return queryset.filter(provincia=provincia_usuario)
+    return queryset
+
+
 class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
     model = CentroDeInfancia
     template_name = "centrodeinfancia/centrodeinfancia_list.html"
@@ -52,22 +93,35 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         query = self.request.GET.get("busqueda")
-        queryset = CentroDeInfancia.objects.select_related("organizacion").order_by(
-            "nombre"
+        queryset = CentroDeInfancia.objects.select_related(
+            "organizacion", "provincia", "municipio", "localidad"
         )
+        queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__nombre__icontains=query)
             )
-        return queryset
+        return queryset.order_by("nombre")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        columns_context = build_columns_context_from_fields(
+            self.request,
+            "centrodeinfancia_list",
+            CDI_LIST_HEADERS,
+            CDI_LIST_FIELDS,
+            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            required_keys=["nombre"],
+        )
         context["breadcrumb_items"] = [
             {"text": "Centro de Infancia", "url": reverse("centrodeinfancia")},
             {"text": "Listar", "active": True},
         ]
         context["query"] = self.request.GET.get("busqueda", "")
+        context["active_columns"] = columns_context.get("column_active_keys") or [
+            field["name"] for field in CDI_LIST_FIELDS
+        ]
+        context.update(columns_context)
         return context
 
 
@@ -365,19 +419,36 @@ def centrodeinfancia_ajax(request):
     def _centrodeinfancia_ajax(req):
         query = req.GET.get("busqueda", "")
         page = req.GET.get("page", 1)
-        queryset = CentroDeInfancia.objects.select_related("organizacion").order_by(
-            "nombre"
+        columns_context = build_columns_context_from_fields(
+            req,
+            "centrodeinfancia_list",
+            CDI_LIST_HEADERS,
+            CDI_LIST_FIELDS,
+            default_keys=["nombre", "organizacion", "provincia", "municipio"],
+            required_keys=["nombre"],
         )
+        active_columns = columns_context.get("column_active_keys") or [
+            field["name"] for field in CDI_LIST_FIELDS
+        ]
+
+        queryset = CentroDeInfancia.objects.select_related(
+            "organizacion", "provincia", "municipio", "localidad"
+        )
+        queryset = _aplicar_filtro_provincia_usuario(queryset, req.user)
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__nombre__icontains=query)
             )
+        queryset = queryset.order_by("nombre")
 
         paginator = Paginator(queryset, 10)
         page_obj = paginator.get_page(page)
         html = render_to_string(
             "centrodeinfancia/partials/rows.html",
-            {"centros": page_obj},
+            {
+                "centros": page_obj,
+                "active_columns": active_columns,
+            },
             request=req,
         )
         return JsonResponse(

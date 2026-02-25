@@ -1,9 +1,26 @@
 {% for item in centros %}
     <tr>
-        <td data-nombre="{{ item.nombre }}">
-            <a href="{% url 'centrodeinfancia_detalle' item.id %}">{{ item.nombre }}</a>
-        </td>
-        <td data-organizacion="{{ item.organizacion|default:'' }}">{{ item.organizacion|default:"-" }}</td>
+        {% for column_key in active_columns %}
+            {% if column_key == "nombre" %}
+                <td data-nombre="{{ item.nombre }}">
+                    <a href="{% url 'centrodeinfancia_detalle' item.id %}">{{ item.nombre }}</a>
+                </td>
+            {% elif column_key == "organizacion" %}
+                <td data-organizacion="{{ item.organizacion|default:'' }}">{{ item.organizacion|default:"-" }}</td>
+            {% elif column_key == "provincia" %}
+                <td data-provincia="{{ item.provincia|default:'' }}">{{ item.provincia|default:"-" }}</td>
+            {% elif column_key == "municipio" %}
+                <td data-municipio="{{ item.municipio|default:'' }}">{{ item.municipio|default:"-" }}</td>
+            {% elif column_key == "localidad" %}
+                <td data-localidad="{{ item.localidad|default:'' }}">{{ item.localidad|default:"-" }}</td>
+            {% elif column_key == "calle" %}
+                <td data-calle="{{ item.calle|default:'' }}">{{ item.calle|default:"-" }}</td>
+            {% elif column_key == "telefono" %}
+                <td data-telefono="{{ item.telefono|default:'' }}">{{ item.telefono|default:"-" }}</td>
+            {% elif column_key == "referente" %}
+                <td data-referente="{{ item.nombre_referente|default:'' }}">{{ item.nombre_referente|default:"-" }}</td>
+            {% endif %}
+        {% endfor %}
         <td>
             <div class="comedor-actions">
                 <a href="{% url 'centrodeinfancia_detalle' item.id %}"
@@ -29,7 +46,7 @@
     </tr>
 {% empty %}
     <tr>
-        <td colspan="3">
+        <td colspan="{{ active_columns|length|add:1 }}">
             <div class="no-comedores-message">
                 <h3>No se encontraron centros de infancia</h3>
                 <p>No hay centros que coincidan con los criterios de búsqueda.</p>
