@@ -11,6 +11,11 @@ confiabilidad de la trazabilidad y la lectura de acciones masivas.
 - `batch_key` persistido para agrupación más confiable de acciones masivas.
 - Context manager `audittrail.context.audit_context(...)` para scripts/procesos.
 - UI de auditoría que prioriza snapshots persistidos y muestra `Origen`.
+- Nuevos filtros de usabilidad en panel: `campo`, `origen`, `batch_key`.
+- Exportación de resultados filtrados en `CSV/JSON` (con permiso específico + logging).
+- Guardas de performance: límites de rango en búsquedas de texto/campo y exportaciones.
+- Estrategia de búsqueda optimizada en MySQL 8.0: FULLTEXT sobre `auditlog_logentry.changes_text` (fallback a `icontains`).
+- Índices adicionales sobre `auditlog_logentry` para consultas frecuentes (`actor`, `acción`, `content_type+object_pk+timestamp`).
 
 ## Deploy (Fase 2)
 
@@ -26,10 +31,16 @@ confiabilidad de la trazabilidad y la lectura de acciones masivas.
    - `python manage.py migrate`
 2. Validar que existe la tabla:
    - `audittrail_auditentrymeta`
-3. Smoke del panel:
+3. Validar índices en MySQL (opcional recomendado):
+   - `SHOW INDEX FROM auditlog_logentry;`
+   - verificar `atl_le_ct_objpk_ts_id_idx`, `atl_le_actor_ts_id_idx`,
+     `atl_le_action_ts_id_idx` y `atl_le_changes_text_ftx` (si existe `changes_text`)
+4. Smoke del panel:
    - `/auditoria/`
    - `/auditoria/evento/<id>/` (ver campo `Origen`)
-4. Validar una acción nueva (web o comando) y confirmar que se crea metadata Fase 2.
+   - probar filtros nuevos (`campo`, `origen`, `batch_key`)
+   - exportar `CSV` y `JSON` con usuario que tenga permiso de exportación
+5. Validar una acción nueva (web o comando) y confirmar que se crea metadata Fase 2.
 
 ## Rollback (Fase 2)
 
@@ -64,6 +75,7 @@ with audit_context(
 - Eventos históricos previos a Fase 2 pueden no tener `AuditEntryMeta` (fallback a comportamiento Fase 1).
 - Si un proceso no usa `audit_context(...)` y no hay `cid`, la agrupación puede seguir dependiendo de heurística/fallback.
 - Sin backfill, la mejora de snapshots aplica principalmente a eventos nuevos.
+- La exportación exige permiso `audittrail.export_auditlog` y aplica límites de rango/cantidad para evitar consultas pesadas.
 
 ## Validación recomendada
 
@@ -71,3 +83,5 @@ with audit_context(
 - Ejecutar un comando con `audit_context(...)` y confirmar `Origen = Comando (...)`.
 - Verificar agrupación de lote por `batch_key` con múltiples eventos.
 - Verificar actor snapshot si luego cambia nombre/username del usuario.
+- Buscar por `Texto en cambios` y `Campo` dentro de un rango corto y verificar tiempos de respuesta.
+- Probar exportación `CSV/JSON` con filtros y confirmar logging del evento de export.
