@@ -56,7 +56,7 @@ class Migration(migrations.Migration):
     dependencies = [
         (
             "intervenciones",
-            "0003_alter_intervencion_managers_intervencion_deleted_at_and_more",
+            "0004_tipointervencion_programa",
         ),
     ]
 
