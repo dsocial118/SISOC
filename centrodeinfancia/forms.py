@@ -1,6 +1,7 @@
 from django import forms
 
 from ciudadanos.models import Ciudadano
+from users.models import Profile
 from core.models import Localidad, Municipio, Provincia
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 from intervenciones.models.intervenciones import TipoIntervencion
@@ -20,8 +21,8 @@ class CentroDeInfanciaForm(forms.ModelForm):
         if not user:
             return None
         try:
-            profile = user.profile
-        except Exception:
+            profile = Profile.objects.get(user=user)
+        except Profile.DoesNotExist:
             return None
 
         provincia_usuario = getattr(profile, "provincia", None)
