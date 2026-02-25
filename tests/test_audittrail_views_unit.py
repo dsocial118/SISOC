@@ -116,6 +116,7 @@ def test_base_apply_filters_and_context_data(mocker):
     mocker.patch.object(view, "resolve_entry_changes", return_value={"x": 1})
     view.request = SimpleNamespace(
         GET=QueryDict("page=3&actor=ana"),
+        path="/auditoria/",
         get_full_path=lambda: "/auditoria/?page=3&actor=ana",
     )
     view.filter_form = form

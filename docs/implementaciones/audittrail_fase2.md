@@ -13,6 +13,7 @@ confiabilidad de la trazabilidad y la lectura de acciones masivas.
 - UI de auditoría que prioriza snapshots persistidos y muestra `Origen`.
 - Nuevos filtros de usabilidad en panel: `campo`, `origen`, `batch_key`.
 - Exportación de resultados filtrados en `CSV/JSON` (con permiso específico + logging).
+  - Permiso requerido: `audittrail.export_auditlog` (además del acceso al panel).
 - Guardas de performance: límites de rango en búsquedas de texto/campo y exportaciones.
 - Estrategia de búsqueda optimizada en MySQL 8.0: FULLTEXT sobre `auditlog_logentry.changes_text` (fallback a `icontains`).
 - Índices adicionales sobre `auditlog_logentry` para consultas frecuentes (`actor`, `acción`, `content_type+object_pk+timestamp`).

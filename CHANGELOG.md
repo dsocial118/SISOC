@@ -7,6 +7,7 @@
 - Agrupación de eventos en lotes heurísticos para lectura de operaciones masivas sin revisar entrada por entrada.
 - Deletes custom en auditoría para casos específicos (ej. relaciones/adjuntos) con mensajes más útiles que el diff crudo.
 - Audittrail Fase 2: metadata persistida por evento (`AuditEntryMeta`) con snapshot de actor, origen (`source`) y `batch_key` para mejorar trazabilidad y agrupación más confiable.
+- Nuevos filtros de auditoría por campo, origen y `batch_key`, más exportación `CSV/JSON` con permiso específico de exportación.
 
 ## Actualizaciones
 
@@ -14,6 +15,7 @@
 - Alineación del uso de `auth_user` en consultas/presentación de auditoría para compatibilidad con registros históricos y usuarios existentes.
 - Documentación operativa de Fase 1 (deploy, rollback, riesgos y métricas) agregada en `docs/implementaciones/audittrail_mvp_fase1.md`.
 - Query service de auditoría extendido para consumir metadata Fase 2 y priorizar snapshots persistidos al renderizar el panel.
+- Optimización de búsqueda en auditoría para MySQL 8.0 (FULLTEXT sobre `changes_text` cuando está disponible) e índices adicionales sobre `auditlog_logentry`.
 
 ## Cambios con impacto operativo (breaking / atención)
 

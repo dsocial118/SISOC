@@ -30,7 +30,7 @@ BULK_METADATA_KEYS = (
     "cid",
 )
 
-_FIELD_NAME_SAFE_RE = re.compile(r"^[\w.\- ]+$", re.IGNORECASE)
+_FIELD_NAME_SAFE_RE = re.compile(r"^[\w.\-: ]+$", re.IGNORECASE)
 
 
 def get_base_queryset():
@@ -122,7 +122,7 @@ def _build_field_name_variants(field_name: str):
     if not normalized:
         return []
     if not _FIELD_NAME_SAFE_RE.match(normalized):
-        normalized = re.sub(r"[^\w.\- ]+", " ", normalized, flags=re.UNICODE).strip()
+        normalized = re.sub(r"[^\w.\-: ]+", " ", normalized, flags=re.UNICODE).strip()
         normalized = " ".join(normalized.split())
         if not normalized:
             return []
