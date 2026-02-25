@@ -21,8 +21,10 @@ from django.views.generic import (
     UpdateView,
 )
 from auditlog.models import LogEntry
+from datetime import date, datetime
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
+from comedores.services.comedor_service import ComedorService
 from core.decorators import group_required
 from core.security import safe_redirect
 from core.soft_delete_views import SoftDeleteDeleteViewMixin
@@ -419,21 +421,92 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context["object"] = get_object_or_404(CentroDeInfancia, pk=self.kwargs["pk"])
         query = (self.request.GET.get("query") or "").strip()
+        form_ciudadano = kwargs.get("form_ciudadano")
         ciudadanos = []
+        renaper_data = None
+
         if query and len(query) >= 4:
             ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
+            if (
+                not ciudadanos
+                and query.isdigit()
+                and len(query) >= 7
+                and not form_ciudadano
+            ):
+                renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(
+                    query
+                )
+                if renaper_result.get("success"):
+                    renaper_data = self._prepare_renaper_initial_data(renaper_result)
+                    mensaje = renaper_result.get("message")
+                    if mensaje:
+                        messages.info(self.request, mensaje)
+                elif renaper_result.get("message"):
+                    messages.warning(self.request, renaper_result["message"])
+
+        if not form_ciudadano:
+            if renaper_data:
+                form_ciudadano = CiudadanoFormParaNomina(initial=renaper_data)
+            else:
+                form_ciudadano = CiudadanoFormParaNomina()
+
+        renaper_precarga = bool(renaper_data) or (
+            self.request.POST.get("origen_dato") == "renaper"
+        )
 
         context["query"] = query
         context["ciudadanos"] = ciudadanos
         context["no_resultados"] = bool(query) and not ciudadanos
         context["estados"] = NominaCentroInfancia.ESTADO_CHOICES
-        context["form_ciudadano"] = (
-            kwargs.get("form_ciudadano") or CiudadanoFormParaNomina()
-        )
+        context["form_ciudadano"] = form_ciudadano
         context["form_nomina_extra"] = (
             kwargs.get("form_nomina_extra") or NominaExtraForm()
         )
+        context["renaper_precarga"] = renaper_precarga
         return context
+
+    @staticmethod
+    def _parse_fecha_renaper(fecha_raw):
+        if not fecha_raw:
+            return None
+        if isinstance(fecha_raw, date):
+            return fecha_raw
+        if isinstance(fecha_raw, datetime):
+            return fecha_raw.date()
+
+        value = str(fecha_raw).strip()
+        formatos = ("%Y-%m-%d", "%d/%m/%Y", "%Y%m%d")
+        for fmt in formatos:
+            try:
+                return datetime.strptime(value, fmt).date()
+            except ValueError:
+                continue
+
+        try:
+            value_iso = value.replace("Z", "")
+            return datetime.fromisoformat(value_iso).date()
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _prepare_renaper_initial_data(renaper_result):
+        renaper_data = dict(renaper_result.get("data") or {})
+        if not renaper_data:
+            return renaper_data
+
+        fecha_raw = renaper_data.get("fecha_nacimiento")
+        if not fecha_raw:
+            datos_api = renaper_result.get("datos_api") or {}
+            fecha_raw = datos_api.get("fechaNacimiento")
+
+        if fecha_raw:
+            parsed_fecha = NominaCentroInfanciaCreateView._parse_fecha_renaper(
+                fecha_raw
+            )
+            if parsed_fecha:
+                renaper_data["fecha_nacimiento"] = parsed_fecha.isoformat()
+
+        return renaper_data
 
     def post(self, request, *args, **kwargs):
         self.object = None
@@ -490,6 +563,8 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             try:
                 with transaction.atomic():
                     ciudadano = form_ciudadano.save(commit=False)
+                    if request.POST.get("origen_dato") == "renaper":
+                        ciudadano.origen_dato = "renaper"
                     ciudadano.creado_por = request.user
                     ciudadano.modificado_por = request.user
                     ciudadano.save()
