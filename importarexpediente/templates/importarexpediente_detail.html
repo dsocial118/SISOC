@@ -50,35 +50,17 @@
 {% endblock %}
 
 {% block content %}
-    <div class="row mb-4">
-        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-            <div class="info-card bg-card">
-                <div class="row">
-                    <div class="col-3">
-                        <i class="fa fa-clipboard fa-2x"></i>
-                    </div>
-                    <div class="col-9 text-start">
-                        <p>{{ exito_count }}</p>
-                    </div>
-                </div>
-                <div class="row info-card-label">
-                    <h5 class="mt-2">Registros Válidos</h5>
-                </div>
+    <div class="d-flex flex-wrap gap-3 mb-4">
+        <div class="card mb-0" style="border-left: 4px solid #198754;">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Registros Válidos</small>
+                <span class="fw-semibold fs-4 text-success">{{ exito_count }}</span>
             </div>
         </div>
-        <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6">
-            <div class="info-card bg-card">
-                <div class="row">
-                    <div class="col-3">
-                        <i class="fa fa-clipboard fa-2x"></i>
-                    </div>
-                    <div class="col-9 text-start">
-                        <p>{{ error_count }}</p>
-                    </div>
-                </div>
-                <div class="row info-card-label">
-                    <h5 class="mt-2">Registros con Errores</h5>
-                </div>
+        <div class="card mb-0" style="border-left: 4px solid #dc3545;">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Registros con Errores</small>
+                <span class="fw-semibold fs-4 text-danger">{{ error_count }}</span>
             </div>
         </div>
     </div>
