@@ -70,22 +70,29 @@
                         <div class="col-md-6 align-self-end">
                             <button type="submit" class="btn btn-primary" aria-label="Aplicar filtros de auditoría">Aplicar</button>
                             <a href="." class="btn btn-outline-secondary ms-2">Limpiar</a>
-                            <button type="submit"
-                                    name="export"
-                                    value="csv"
-                                    class="btn btn-outline-success ms-2">
-                                Exportar CSV
-                            </button>
-                            <button type="submit"
-                                    name="export"
-                                    value="json"
-                                    class="btn btn-outline-success ms-2">
-                                Exportar JSON
-                            </button>
+                            {% if perms.audittrail.export_auditlog %}
+                                <button type="submit"
+                                        name="export"
+                                        value="csv"
+                                        class="btn btn-outline-success ms-2">
+                                    Exportar CSV
+                                </button>
+                                <button type="submit"
+                                        name="export"
+                                        value="json"
+                                        class="btn btn-outline-success ms-2">
+                                    Exportar JSON
+                                </button>
+                            {% endif %}
                         </div>
                     </form>
-                    {% if filter_form.non_field_errors %}
+                    {% if filter_form.errors %}
                         <div class="alert alert-warning mt-3 mb-0">
+                            {% for field in filter_form %}
+                                {% for error in field.errors %}
+                                    <div>{{ field.label }}: {{ error }}</div>
+                                {% endfor %}
+                            {% endfor %}
                             {% for error in filter_form.non_field_errors %}
                                 <div>{{ error }}</div>
                             {% endfor %}
