@@ -50,9 +50,19 @@ class AcompanamientoService:
                 AcompanamientoService._actualizar_hitos(
                     hitos_existente, hitos_a_actualizar
                 )
+                hito_objeto = hitos_existente
             else:
                 nuevo_hito = Hitos.objects.create(comedor=intervenciones.comedor)
                 AcompanamientoService._actualizar_hitos(nuevo_hito, hitos_a_actualizar)
+                hito_objeto = nuevo_hito
+
+            if (
+                intervenciones.tipo_intervencion.nombre
+                == "Asistencia a Capacitación Formando Capital Humano"
+            ):
+                AcompanamientoService._verificar_hito_capacitacion_fch(
+                    hito_objeto, intervenciones.comedor
+                )
         except Exception:
             logger.exception(
                 "Error en AcomanamientoService.crear_hitos",
@@ -84,6 +94,52 @@ class AcompanamientoService:
                     "hitos_objeto": hitos_objeto,
                     "hitos_a_actualizar": hitos_a_actualizar,
                 },
+            )
+            raise
+
+    @staticmethod
+    def _verificar_hito_capacitacion_fch(hitos_objeto, comedor):
+        """Marca el hito FCH como completado cuando todos los subtipos están registrados.
+
+        El hito 'Capacitación Formando Capital Humano Realizada' se completa únicamente
+        cuando se han registrado los 8 subtipos de intervención correspondientes al tipo
+        'Asistencia a Capacitación Formando Capital Humano' para el comedor dado.
+
+        Args:
+            hitos_objeto (Hitos): Instancia a modificar.
+            comedor: Comedor al cual pertenecen las intervenciones.
+
+        Returns:
+            None
+        """
+        TIPO_FCH = "Asistencia a Capacitación Formando Capital Humano"
+        SUBTIPOS_FCH = {
+            "Creación de Usuario en Plataforma Alimentar Comunidad",
+            "Uso de Plataforma Alimentar Comunidad: Cómo consultar saldo y subir comprobantes",
+            "Retiro y Uso de la Tarjeta Alimentar Comunidad",
+            "Criterios Nutricionales - Alimentar Comunidad",
+            "Rendición de Cuentas Resolución 650/25 - Alimentar Comunidad",
+            "Gastos Accesorios 6% - Resolución 650/25 - Alimentar Comunidad",
+            "Pautas de Higiene - Alimentar Comunidad",
+            "Seguridad en la Cocina - Alimentar Comunidad",
+        }
+        try:
+            subtipos_registrados = set(
+                Intervencion.objects.filter(
+                    comedor=comedor,
+                    tipo_intervencion__nombre=TIPO_FCH,
+                    subintervencion__nombre__in=SUBTIPOS_FCH,
+                )
+                .values_list("subintervencion__nombre", flat=True)
+                .distinct()
+            )
+            if subtipos_registrados >= SUBTIPOS_FCH:
+                hitos_objeto.capacitacion_fch_realizada = True
+                hitos_objeto.save()
+        except Exception:
+            logger.exception(
+                "Error en AcompanamientoService._verificar_hito_capacitacion_fch",
+                extra={"comedor": comedor},
             )
             raise
 
