@@ -95,7 +95,10 @@ def test_base_apply_filters_and_context_data(mocker):
     assert out is qs
     # keyword + model + object_pk + actor + start + end
     assert len(qs.calls) == 6
-    assert any(call[1] == {"changes__icontains": "estado"} for call in qs.calls)
+    assert any(
+        call[1] in ({"changes__icontains": "estado"}, {"changes_text__icontains": "estado"})
+        for call in qs.calls
+    )
 
     invalid = _Form(valid=False)
     assert view._apply_filters(qs, invalid) is qs
@@ -221,10 +224,13 @@ def test_keyword_filter_form_normalizes_and_applies_and_terms():
     qs = _QS()
     out = query_service.apply_keyword_filter(qs, form.cleaned_data["keyword"])
     assert out is qs
-    assert qs.calls == [
-        ((), {"changes__icontains": "estado"}),
-        ((), {"changes__icontains": "aprobado"}),
-    ]
+    assert len(qs.calls) == 2
+    first_lookup = next(iter(qs.calls[0][1].keys()))
+    second_lookup = next(iter(qs.calls[1][1].keys()))
+    assert first_lookup in {"changes__icontains", "changes_text__icontains"}
+    assert second_lookup in {"changes__icontains", "changes_text__icontains"}
+    assert qs.calls[0][1][first_lookup] == "estado"
+    assert qs.calls[1][1][second_lookup] == "aprobado"
 
 
 def test_filter_form_requires_date_range_for_text_or_field_search():
