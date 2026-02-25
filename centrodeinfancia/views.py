@@ -1,3 +1,5 @@
+import logging
+import os
 from datetime import date, datetime
 
 from django.contrib import messages
@@ -31,6 +33,10 @@ from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete_views import SoftDeleteDeleteViewMixin
 
+from centrodeinfancia.access import (
+    aplicar_filtro_provincia_usuario as _aplicar_filtro_provincia_usuario,
+    get_object_scoped_por_provincia_or_404,
+)
 from centrodeinfancia.forms import (
     CentroDeInfanciaForm,
     IntervencionCentroInfanciaForm,
@@ -68,22 +74,66 @@ CDI_LIST_FIELDS = [
     {"name": "referente"},
 ]
 
+logger = logging.getLogger(__name__)
 
-def _get_provincia_usuario(user):
-    if not user or not user.is_authenticated:
-        return None
-
-    try:
-        return user.profile.provincia
-    except Exception:
-        return None
+DOCUMENTACION_INTERVENCION_MAX_SIZE_BYTES = 5 * 1024 * 1024
+DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 
-def _aplicar_filtro_provincia_usuario(queryset, user):
-    provincia_usuario = _get_provincia_usuario(user)
-    if provincia_usuario:
-        return queryset.filter(provincia=provincia_usuario)
-    return queryset
+def _centros_cdi_queryset_detalle():
+    return CentroDeInfancia.objects.select_related(
+        "organizacion", "provincia", "municipio", "localidad"
+    )
+
+
+def _centros_cdi_queryset_scoped(user):
+    return _aplicar_filtro_provincia_usuario(_centros_cdi_queryset_detalle(), user)
+
+
+def _get_centro_cdi_scoped_or_404(user, **kwargs):
+    return get_object_scoped_por_provincia_or_404(
+        _centros_cdi_queryset_detalle(),
+        user,
+        provincia_lookup="provincia",
+        **kwargs,
+    )
+
+
+def _aplicar_scope_provincia_centro_relacion(queryset, user):
+    return _aplicar_filtro_provincia_usuario(
+        queryset,
+        user,
+        provincia_lookup="centro__provincia",
+    )
+
+
+def _intervenciones_cdi_queryset_scoped(user):
+    queryset = IntervencionCentroInfancia.objects.select_related("centro")
+    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _nomina_cdi_queryset_scoped(user):
+    queryset = NominaCentroInfancia.objects.select_related("centro")
+    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _observaciones_cdi_queryset_scoped(user):
+    queryset = ObservacionCentroInfancia.objects.select_related("centro")
+    return _aplicar_scope_provincia_centro_relacion(queryset, user)
+
+
+def _validar_archivo_documentacion_intervencion(file_obj):
+    if not file_obj:
+        return "No se proporcionó un archivo."
+
+    extension = os.path.splitext(getattr(file_obj, "name", "") or "")[1].lower()
+    if extension not in DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS:
+        return "Formato de archivo no permitido. Use PDF, JPG o PNG."
+
+    if (getattr(file_obj, "size", 0) or 0) > DOCUMENTACION_INTERVENCION_MAX_SIZE_BYTES:
+        return "El archivo supera el tamaño máximo permitido (5 MB)."
+
+    return None
 
 
 class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
@@ -147,15 +197,15 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "centro"
 
     def get_queryset(self):
-        return CentroDeInfancia.objects.select_related(
-            "organizacion", "provincia", "municipio", "localidad"
-        )
+        return _centros_cdi_queryset_scoped(self.request.user)
 
     def get_context_data(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self, **kwargs
     ):
         context = super().get_context_data(**kwargs)
-        nomina_qs = self.object.nominas.select_related("ciudadano").order_by("-fecha")
+        nomina_qs = self.object.nominas.select_related(
+            "ciudadano", "ciudadano__sexo"
+        ).order_by("-fecha")
         intervenciones_qs = self.object.intervenciones.select_related(
             "tipo_intervencion", "subintervencion", "destinatario"
         ).order_by("-fecha")
@@ -403,6 +453,9 @@ class CentroDeInfanciaUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.object.pk})
 
+    def get_queryset(self):
+        return _centros_cdi_queryset_scoped(self.request.user)
+
 
 class CentroDeInfanciaDeleteView(
     SoftDeleteDeleteViewMixin,
@@ -414,6 +467,9 @@ class CentroDeInfanciaDeleteView(
     context_object_name = "centro"
     success_url = reverse_lazy("centrodeinfancia")
     success_message = "Centro de infancia dado de baja correctamente."
+
+    def get_queryset(self):
+        return _centros_cdi_queryset_scoped(self.request.user)
 
 
 @login_required
@@ -470,16 +526,126 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
     model = NominaCentroInfancia
     template_name = "centrodeinfancia/nomina_detail.html"
     context_object_name = "nomina"
-    paginate_by = 20
+    paginate_by = 100
+
+    def _get_centro(self):
+        if not hasattr(self, "_centro_cache"):
+            self._centro_cache = _get_centro_cdi_scoped_or_404(
+                self.request.user,
+                pk=self.kwargs["pk"],
+            )
+        return self._centro_cache
 
     def get_queryset(self):
-        return NominaCentroInfancia.objects.select_related("ciudadano").filter(
-            centro_id=self.kwargs["pk"]
+        centro = self._get_centro()
+        return (
+            NominaCentroInfancia.objects.select_related("ciudadano", "ciudadano__sexo")
+            .filter(centro=centro)
+            .order_by("-fecha")
         )
+
+    @staticmethod
+    def _build_nomina_stats(registros):
+        today = timezone.now().date()
+        resumen = {
+            "nomina_m": 0,
+            "nomina_f": 0,
+            "nomina_x": 0,
+            "espera": 0,
+            "total": 0,
+            "rangos": {
+                "ninos": 0,
+                "adolescentes": 0,
+                "adultos": 0,
+                "adultos_mayores": 0,
+                "adulto_mayor_avanzado": 0,
+                "total_activos": 0,
+            },
+        }
+
+        for registro in registros:
+            resumen["total"] += 1
+            if registro.estado == NominaCentroInfancia.ESTADO_PENDIENTE:
+                resumen["espera"] += 1
+
+            sexo = str(
+                getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "") or ""
+            ).strip().lower()
+            if "mascul" in sexo or sexo == "m":
+                resumen["nomina_m"] += 1
+            elif "femen" in sexo or sexo == "f":
+                resumen["nomina_f"] += 1
+            elif sexo == "x" or "no bin" in sexo:
+                resumen["nomina_x"] += 1
+
+            fecha_nacimiento = getattr(registro.ciudadano, "fecha_nacimiento", None)
+            if (
+                registro.estado != NominaCentroInfancia.ESTADO_ACTIVO
+                or not fecha_nacimiento
+            ):
+                continue
+
+            edad = (
+                today.year
+                - fecha_nacimiento.year
+                - (
+                    (today.month, today.day)
+                    < (fecha_nacimiento.month, fecha_nacimiento.day)
+                )
+            )
+            resumen["rangos"]["total_activos"] += 1
+
+            if edad <= 13:
+                resumen["rangos"]["ninos"] += 1
+            elif edad <= 17:
+                resumen["rangos"]["adolescentes"] += 1
+            elif edad <= 49:
+                resumen["rangos"]["adultos"] += 1
+            elif edad <= 65:
+                resumen["rangos"]["adultos_mayores"] += 1
+            else:
+                resumen["rangos"]["adulto_mayor_avanzado"] += 1
+
+        total_activos = resumen["rangos"]["total_activos"] or 0
+
+        def _pct(value):
+            if not total_activos:
+                return 0
+            return int(round((value or 0) * 100 / total_activos))
+
+        resumen["rangos"].update(
+            {
+                "pct_ninos": _pct(resumen["rangos"]["ninos"]),
+                "pct_adolescentes": _pct(resumen["rangos"]["adolescentes"]),
+                "pct_adultos": _pct(resumen["rangos"]["adultos"]),
+                "pct_adultos_mayores": _pct(resumen["rangos"]["adultos_mayores"]),
+                "pct_adulto_mayor_avanzado": _pct(
+                    resumen["rangos"]["adulto_mayor_avanzado"]
+                ),
+            }
+        )
+        return resumen
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["object"] = get_object_or_404(CentroDeInfancia, pk=self.kwargs["pk"])
+        centro = self._get_centro()
+        stats = self._build_nomina_stats(self.object_list)
+        page_obj = context.get("page_obj")
+
+        context["object"] = centro
+        context["nomina"] = page_obj
+        context["nominaM"] = stats["nomina_m"]
+        context["nominaF"] = stats["nomina_f"]
+        context["nominaX"] = stats["nomina_x"]
+        context["espera"] = stats["espera"]
+        context["cantidad_nomina"] = stats["total"]
+        context["menores"] = (
+            stats["rangos"]["ninos"] + stats["rangos"]["adolescentes"]
+        )
+        context["nomina_rangos"] = stats["rangos"]
+        context["ejecucion_inicio"] = centro.fecha_inicio
+        context["ejecucion_fin"] = None
+        context["plazo_ejecucion"] = "-"
         return context
 
 
@@ -488,12 +654,39 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     form_class = NominaCentroInfanciaCreateForm
     template_name = "centrodeinfancia/nomina_form.html"
 
+    def _get_centro(self):
+        if not hasattr(self, "_centro_cache"):
+            self._centro_cache = _get_centro_cdi_scoped_or_404(
+                self.request.user,
+                pk=self.kwargs["pk"],
+            )
+        return self._centro_cache
+
+    @staticmethod
+    def _crear_nomina_con_bloqueo(centro, ciudadano, estado, observaciones):
+        CentroDeInfancia.objects.select_for_update().filter(pk=centro.pk).exists()
+        existente = NominaCentroInfancia.objects.filter(
+            centro=centro,
+            ciudadano=ciudadano,
+            deleted_at__isnull=True,
+        ).exists()
+        if existente:
+            return False
+
+        NominaCentroInfancia.objects.create(
+            centro=centro,
+            ciudadano=ciudadano,
+            estado=estado,
+            observaciones=observaciones,
+        )
+        return True
+
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["object"] = get_object_or_404(CentroDeInfancia, pk=self.kwargs["pk"])
+        context["object"] = self._get_centro()
         query = (self.request.GET.get("query") or "").strip()
         form_ciudadano = kwargs.get("form_ciudadano")
         ciudadanos = []
@@ -606,25 +799,32 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                 context = self.get_context_data()
                 return self.render_to_response(context)
 
-            centro = get_object_or_404(CentroDeInfancia, pk=self.kwargs["pk"])
-            existente = NominaCentroInfancia.objects.filter(
-                centro=centro,
-                ciudadano=ciudadano,
-                deleted_at__isnull=True,
-            ).exists()
-            if existente:
+            centro = self._get_centro()
+            try:
+                with transaction.atomic():
+                    creado = self._crear_nomina_con_bloqueo(
+                        centro=centro,
+                        ciudadano=ciudadano,
+                        estado=estado,
+                        observaciones=observaciones,
+                    )
+            except Exception:  # noqa: BLE001
+                logger.exception(
+                    "Error al agregar ciudadano existente a nómina de CDI",
+                    extra={
+                        "centro_id": centro.id,
+                        "ciudadano_id": ciudadano.id,
+                        "user_id": getattr(request.user, "id", None),
+                    },
+                )
+                messages.error(request, "No se pudo agregar la persona a la nómina.")
+                return redirect(self.get_success_url())
+            if not creado:
                 messages.warning(
                     request,
                     "El ciudadano ya se encuentra en la nómina de este centro.",
                 )
                 return redirect(self.get_success_url())
-
-            NominaCentroInfancia.objects.create(
-                centro=centro,
-                ciudadano=ciudadano,
-                estado=estado,
-                observaciones=observaciones,
-            )
             messages.success(request, "Persona agregada a la nómina.")
             return redirect(self.get_success_url())
 
@@ -634,7 +834,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
             estado = form_nomina_extra.cleaned_data.get("estado")
             observaciones = form_nomina_extra.cleaned_data.get("observaciones")
-            centro = get_object_or_404(CentroDeInfancia, pk=self.kwargs["pk"])
+            centro = self._get_centro()
 
             try:
                 with transaction.atomic():
@@ -645,16 +845,20 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                     ciudadano.modificado_por = request.user
                     ciudadano.save()
 
-                    NominaCentroInfancia.objects.create(
+                    self._crear_nomina_con_bloqueo(
                         centro=centro,
                         ciudadano=ciudadano,
                         estado=estado,
                         observaciones=observaciones,
                     )
-            except Exception as exc:  # noqa: BLE001
+            except Exception:  # noqa: BLE001
+                logger.exception(
+                    "Error al crear ciudadano y agregarlo a la nómina de CDI",
+                    extra={"centro_id": centro.id, "user_id": getattr(request.user, "id", None)},
+                )
                 messages.error(
                     request,
-                    f"No se pudo crear el ciudadano y agregarlo a la nómina: {exc}",
+                    "No se pudo crear el ciudadano y agregarlo a la nómina.",
                 )
                 context = self.get_context_data(
                     form_ciudadano=form_ciudadano,
@@ -683,12 +887,17 @@ class NominaCentroInfanciaDeleteView(
     pk_url_kwarg = "pk2"
     success_message = "Registro de nómina dado de baja correctamente."
 
+    def get_queryset(self):
+        queryset = _nomina_cdi_queryset_scoped(self.request.user)
+        return queryset.filter(centro_id=self.kwargs["pk"])
+
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
 
+@login_required
 def nomina_centrodeinfancia_editar_ajax(request, pk):
-    nomina = get_object_or_404(NominaCentroInfancia, pk=pk)
+    nomina = get_object_or_404(_nomina_cdi_queryset_scoped(request.user), pk=pk)
     if request.method == "POST":
         form = NominaCentroInfanciaForm(request.POST, instance=nomina)
         if form.is_valid():
@@ -712,7 +921,8 @@ class IntervencionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     template_name = "centrodeinfancia/intervencion_form.html"
 
     def form_valid(self, form):
-        form.instance.centro_id = self.kwargs["pk"]
+        centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
+        form.instance.centro = centro
         messages.success(self.request, "Intervención creada correctamente.")
         return super().form_valid(form)
 
@@ -725,6 +935,11 @@ class IntervencionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
     form_class = IntervencionCentroInfanciaForm
     pk_url_kwarg = "pk2"
     template_name = "centrodeinfancia/intervencion_form.html"
+
+    def get_queryset(self):
+        return _intervenciones_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
 
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
@@ -740,6 +955,11 @@ class IntervencionCentroInfanciaDeleteView(
     pk_url_kwarg = "intervencion_id"
     success_message = "Intervención dada de baja correctamente."
 
+    def get_queryset(self):
+        return _intervenciones_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
 
@@ -752,14 +972,13 @@ class ObservacionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["centro"] = get_object_or_404(
-            CentroDeInfancia.objects.values("id", "nombre"),
-            pk=self.kwargs["pk"],
-        )
+        centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
+        context["centro"] = {"id": centro.id, "nombre": centro.nombre}
         return context
 
     def form_valid(self, form):
-        form.instance.centro_id = self.kwargs["pk"]
+        centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
+        form.instance.centro = centro
         usuario = self.request.user
         form.instance.observador = f"{usuario.first_name} {usuario.last_name}".strip()
         if not form.instance.observador:
@@ -780,12 +999,18 @@ class ObservacionCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
     template_name = "centrodeinfancia/observacion_detail.html"
     context_object_name = "observacion"
 
+    def get_queryset(self):
+        return _observaciones_cdi_queryset_scoped(self.request.user)
+
 
 class ObservacionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
     model = ObservacionCentroInfancia
     form_class = ObservacionCentroInfanciaForm
     template_name = "centrodeinfancia/observacion_form.html"
     context_object_name = "observacion"
+
+    def get_queryset(self):
+        return _observaciones_cdi_queryset_scoped(self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -796,11 +1021,6 @@ class ObservacionCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         form.instance.centro = self.object.centro
-        usuario = self.request.user
-        form.instance.observador = f"{usuario.first_name} {usuario.last_name}".strip()
-        if not form.instance.observador:
-            form.instance.observador = getattr(usuario, "username", "")
-        form.instance.fecha_visita = timezone.now()
         self.object = form.save()
         return redirect(
             "centrodeinfancia_observacion_detalle",
@@ -818,6 +1038,9 @@ class ObservacionCentroInfanciaDeleteView(
     context_object_name = "observacion"
     success_message = "Observación dada de baja correctamente."
 
+    def get_queryset(self):
+        return _observaciones_cdi_queryset_scoped(self.request.user)
+
     def get_success_url(self):
         return reverse_lazy(
             "centrodeinfancia_detalle",
@@ -828,25 +1051,33 @@ class ObservacionCentroInfanciaDeleteView(
 @login_required
 @require_POST
 def subir_archivo_intervencion_centrodeinfancia(request, intervencion_id):
-    intervencion = get_object_or_404(IntervencionCentroInfancia, id=intervencion_id)
-    if request.method == "POST" and request.FILES.get("documentacion"):
-        intervencion.documentacion = request.FILES["documentacion"]
-        intervencion.tiene_documentacion = True
-        intervencion.save()
-        return JsonResponse(
-            {"success": True, "message": "Archivo subido correctamente."}
-        )
-    return JsonResponse({"success": False, "message": "No se proporcionó un archivo."})
+    intervencion = get_object_or_404(
+        _intervenciones_cdi_queryset_scoped(request.user),
+        id=intervencion_id,
+    )
+    archivo = request.FILES.get("documentacion")
+    error = _validar_archivo_documentacion_intervencion(archivo)
+    if error:
+        return JsonResponse({"success": False, "message": error}, status=400)
+
+    intervencion.documentacion = archivo
+    intervencion.tiene_documentacion = True
+    intervencion.save(update_fields=["documentacion", "tiene_documentacion"])
+    return JsonResponse({"success": True, "message": "Archivo subido correctamente."})
 
 
 @login_required
 @require_POST
 def eliminar_archivo_intervencion_centrodeinfancia(request, intervencion_id):
-    intervencion = get_object_or_404(IntervencionCentroInfancia, id=intervencion_id)
+    intervencion = get_object_or_404(
+        _intervenciones_cdi_queryset_scoped(request.user),
+        id=intervencion_id,
+    )
     if intervencion.documentacion:
-        intervencion.documentacion.delete()
+        intervencion.documentacion.delete(save=False)
+        intervencion.documentacion = None
         intervencion.tiene_documentacion = False
-        intervencion.save()
+        intervencion.save(update_fields=["documentacion", "tiene_documentacion"])
         messages.success(request, "El archivo fue eliminado correctamente.")
     else:
         messages.error(request, "No hay archivo para eliminar.")
