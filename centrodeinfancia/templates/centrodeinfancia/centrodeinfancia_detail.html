@@ -17,10 +17,12 @@
                class="btn btn-md btn-outline-light">
                 <i class="bi bi-people me-1"></i>Ver Nómina
             </a>
-            <a href="{% url 'centrodeinfancia_intervencion_crear' centro.id %}"
-               class="btn btn-md btn-outline-light">
+            <button type="button"
+                    class="btn btn-md btn-outline-light"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalIntervencion">
                 <i class="bi bi-clipboard-plus me-1"></i>Nueva Intervención
-            </a>
+            </button>
             {% if perms.auditlog.view_logentry %}
                 <a href="{% url 'audittrail:log_instance' 'centrodeinfancia' 'centrodeinfancia' centro.pk %}"
                    class="btn btn-md btn-outline-light"><i class="bi bi-journal-text me-1"></i>Historial</a>
