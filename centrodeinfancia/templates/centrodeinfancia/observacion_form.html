@@ -1,0 +1,29 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Observación - Centro de Infancia{% endblock %}
+{% block titulo-pagina %}Observación{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-primary card-outline">
+                <div class="card-header mb-3">
+                    <h3 class="card-title">
+                        Agregar observación al centro: <a href="{% url 'centrodeinfancia_detalle' centro.id %}">{{ centro.nombre }}</a>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-row justify-content-center">
+                        <form method="post" class="w-100">
+                            {% csrf_token %}
+                            {{ form.observacion|as_crispy_field }}
+                            <button class="btn btn-primary mx-1" type="submit">Confirmar</button>
+                            <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

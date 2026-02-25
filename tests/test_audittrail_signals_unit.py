@@ -2,6 +2,8 @@
 
 from types import SimpleNamespace
 
+from django.db import OperationalError
+
 from audittrail import signals as module
 
 
@@ -195,3 +197,88 @@ def test_cache_firmante_and_aval_state_does_not_exist_paths():
     inst_a = SimpleNamespace(pk=1)
     module.cache_aval_state(sender_a, inst_a)
     assert getattr(inst_a, "_previous_state", None) is None
+
+
+def test_firmante_and_aval_delete_signals_without_duplicates(mocker):
+    log_org = mocker.patch("audittrail.signals._log_organizacion_event")
+
+    firmante = SimpleNamespace(organizacion="org-f", __str__=lambda self: "Firmante X")
+    module.log_firmante_delete(None, firmante)
+    module.log_firmante_delete(None, firmante)
+    assert log_org.call_count == 1
+    assert log_org.call_args.args[1] == {"Firmante": [str(firmante), "Eliminado"]}
+    assert log_org.call_args.args[2] == module.LogEntry.Action.DELETE
+
+    log_org.reset_mock()
+    aval = SimpleNamespace(organizacion="org-a", __str__=lambda self: "Aval X")
+    module.log_aval_delete(None, aval)
+    module.log_aval_delete(None, aval)
+    assert log_org.call_count == 1
+    assert log_org.call_args.args[1] == {"Aval": [str(aval), "Eliminado"]}
+
+
+def test_delete_helpers_skip_without_organizacion_or_repeated_instance():
+    instance = SimpleNamespace(organizacion=None)
+    assert module._mark_delete_event_logged(instance) is False
+    assert module._mark_delete_event_logged(instance) is True
+
+
+def test_build_audit_entry_meta_defaults_uses_context_and_snapshots(mocker):
+    actor = SimpleNamespace(
+        is_authenticated=True,
+        username="ana",
+        first_name="Ana",
+        last_name="Pérez",
+        get_username=lambda: "ana",
+    )
+    mocker.patch(
+        "audittrail.signals.get_audit_context",
+        return_value={
+            "actor": actor,
+            "source": "management_command:fix_audit",
+            "batch_key": "fix-001",
+            "extra": {"ticket": "OPS-12"},
+        },
+    )
+
+    entry = SimpleNamespace(
+        actor=None,
+        actor_id=None,
+        cid="req-123",
+        additional_data={
+            "audittrail_source": "custom_signal",
+            "audittrail_batch_key": "legacy-batch",
+            "audittrail_context": {"foo": "bar"},
+        },
+    )
+
+    defaults = module._build_audit_entry_meta_defaults(entry)
+    assert defaults["actor_username_snapshot"] == "ana"
+    assert defaults["actor_full_name_snapshot"] == "Ana Pérez"
+    assert defaults["source"] == "management_command:fix_audit"
+    assert defaults["batch_key"] == "fix-001"
+    assert defaults["extra"]["context"] == {"ticket": "OPS-12"}
+    assert defaults["extra"]["cid"] == "req-123"
+
+
+def test_ensure_audit_entry_meta_persists_and_tolerates_missing_table(mocker):
+    defaults = {"source": "http", "batch_key": "", "extra": {}}
+    mocker.patch(
+        "audittrail.signals._build_audit_entry_meta_defaults",
+        return_value=defaults,
+    )
+    update_or_create = mocker.patch(
+        "audittrail.signals.AuditEntryMeta.objects.update_or_create"
+    )
+
+    entry = SimpleNamespace(pk=123)
+    module.ensure_audit_entry_meta(None, entry, created=True)
+    update_or_create.assert_called_once_with(log_entry=entry, defaults=defaults)
+
+    update_or_create.reset_mock(side_effect=True)
+    update_or_create.side_effect = OperationalError("tabla no existe")
+    module.ensure_audit_entry_meta(None, entry, created=True)
+
+    update_or_create.reset_mock(side_effect=True)
+    module.ensure_audit_entry_meta(None, entry, created=False)
+    update_or_create.assert_not_called()

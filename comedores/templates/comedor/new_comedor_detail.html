@@ -1673,11 +1673,29 @@
         }
       }
 
+            function resetSubintervenciones() {
+                if (!subIntervencionSelect) {
+                    return;
+                }
+                subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
+                subIntervencionSelect.value = "";
+            }
+
       if (tipoIntervencionSelect) {
         tipoIntervencionSelect.addEventListener("change", function () {
           cargarSubintervenciones(this.value);
         });
       }
+
+            const modalIntervencion = document.getElementById("modalIntervencion");
+            if (modalIntervencion) {
+                modalIntervencion.addEventListener("show.bs.modal", function () {
+                    if (tipoIntervencionSelect) {
+                        tipoIntervencionSelect.value = "";
+                    }
+                    resetSubintervenciones();
+                });
+            }
 
       function validarFecha() {
         if (!fechaInput) {

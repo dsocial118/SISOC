@@ -1,21 +1,313 @@
 {% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
 
 {% block title %}Centro de Infancia{% endblock %}
 {% block titulo-pagina %}Centro de Infancia{% endblock %}
 
 {% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
     <div class="container-fluid">
-        <div class="card">
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary" type="submit">Guardar</button>
-                        <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Volver</a>
-                    </div>
-                </form>
+        <div class="d-flex justify-content-between mb-3">
+            <div>
+                {% if form.instance.pk %}
+                    <a href="{% url 'centrodeinfancia_detalle' form.instance.pk %}"
+                       class="btn btn-secondary">Volver</a>
+                {% else %}
+                    <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Volver</a>
+                {% endif %}
+            </div>
+            <div>
+                <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
             </div>
         </div>
+
+        <form method="post" class="w-100">
+            {% csrf_token %}
+
+            <div class="section-card mb-3">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <div class="section-icon">
+                            <i class="fas fa-child"></i>
+                        </div>
+                        <div class="section-title-group">
+                            <h3 class="section-title">Información Básica</h3>
+                            <p class="section-subtitle">Datos principales del centro de infancia</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body show">
+                    <div class="form-group row">
+                        <div class="col-md-6">{{ form.nombre|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.organizacion|as_crispy_field }}</div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-6">{{ form.telefono|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.fecha_inicio|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card mb-3">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <div class="section-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="section-title-group">
+                            <h3 class="section-title">Ubicación</h3>
+                            <p class="section-subtitle">Provincia, municipio, localidad y calle</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body show">
+                    <div class="form-group row">
+                        <div class="col-md-4">{{ form.provincia|as_crispy_field }}</div>
+                        <div class="col-md-4">
+                            <div id="municipio-loader" class="skeleton-loader d-none"></div>
+                            <div id="municipio-field">{{ form.municipio|as_crispy_field }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="localidad-loader" class="skeleton-loader d-none"></div>
+                            <div id="localidad-field">{{ form.localidad|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-12">{{ form.calle|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card mb-3">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <div class="section-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="section-title-group">
+                            <h3 class="section-title">Referente</h3>
+                            <p class="section-subtitle">Datos de contacto de la persona referente</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body show">
+                    <div class="form-group row">
+                        <div class="col-md-4">{{ form.nombre_referente|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.email_referente|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.telefono_referente|as_crispy_field }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end mt-3">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+                {% if form.instance.pk %}
+                    <a href="{% url 'centrodeinfancia_detalle' form.instance.pk %}"
+                       class="btn btn-secondary">Cancelar</a>
+                {% else %}
+                    <a href="{% url 'centrodeinfancia' %}" class="btn btn-secondary">Cancelar</a>
+                {% endif %}
+            </div>
+        </form>
     </div>
+{% endblock %}
+
+{% block customJS %}
+    <script id="provincias-json" type="application/json">[
+        {% for provincia in form.fields.provincia.queryset %}
+            {"id": {{ provincia.id }}, "nombre": "{{ provincia.nombre|escapejs }}"}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ]
+    </script>
+    <script>
+        var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
+        var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+    </script>
+
+    <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async function() {
+            const provinciaSelect = document.getElementById("id_provincia");
+            const municipioSelect = document.getElementById("id_municipio");
+            const localidadSelect = document.getElementById("id_localidad");
+
+            const municipioInicial = municipioSelect ? municipioSelect.value : "";
+            const localidadInicial = localidadSelect ? localidadSelect.value : "";
+
+            function ensurePlaceholder(selectEl, label) {
+                if (!selectEl) {
+                    return;
+                }
+                const hasEmpty = Array.from(selectEl.options).some(function(opt) {
+                    return opt.value === "";
+                });
+                if (!hasEmpty) {
+                    const option = document.createElement("option");
+                    option.value = "";
+                    option.textContent = label;
+                    selectEl.insertBefore(option, selectEl.firstChild);
+                }
+            }
+
+            function replaceOptions(selectEl, data, selectedValue, placeholderLabel) {
+                if (!selectEl) {
+                    return;
+                }
+                selectEl.innerHTML = "";
+                const emptyOption = document.createElement("option");
+                emptyOption.value = "";
+                emptyOption.textContent = placeholderLabel;
+                selectEl.appendChild(emptyOption);
+
+                data.forEach(function(item) {
+                    const option = document.createElement("option");
+                    option.value = item.id;
+                    option.textContent = item.nombre || item.nombre_region || "";
+                    selectEl.appendChild(option);
+                });
+
+                if (selectedValue) {
+                    selectEl.value = String(selectedValue);
+                }
+            }
+
+            async function loadMunicipiosFallback(provinciaId, selectedMunicipio) {
+                if (!municipioSelect) {
+                    return;
+                }
+                if (!provinciaId) {
+                    replaceOptions(municipioSelect, [], "", "Seleccione un municipio");
+                    replaceOptions(localidadSelect, [], "", "Seleccione una localidad");
+                    return;
+                }
+                const response = await fetch(`${ajaxLoadMunicipiosUrl}?provincia_id=${encodeURIComponent(provinciaId)}`, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    credentials: "same-origin",
+                });
+                const data = response.ok ? await response.json() : [];
+                replaceOptions(municipioSelect, data, selectedMunicipio, "Seleccione un municipio");
+            }
+
+            async function loadLocalidadesFallback(municipioId, selectedLocalidad) {
+                if (!localidadSelect) {
+                    return;
+                }
+                if (!municipioId) {
+                    replaceOptions(localidadSelect, [], "", "Seleccione una localidad");
+                    return;
+                }
+                const response = await fetch(`${ajaxLoadLocalidadesUrl}?municipio_id=${encodeURIComponent(municipioId)}`, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    credentials: "same-origin",
+                });
+                const data = response.ok ? await response.json() : [];
+                replaceOptions(localidadSelect, data, selectedLocalidad, "Seleccione una localidad");
+            }
+
+            ensurePlaceholder(provinciaSelect, "Seleccione una provincia");
+            ensurePlaceholder(municipioSelect, "Seleccione un municipio");
+            ensurePlaceholder(localidadSelect, "Seleccione una localidad");
+
+            const provinciasJsonEl = document.getElementById("provincias-json");
+            if (provinciaSelect && provinciasJsonEl && provinciaSelect.options.length <= 1) {
+                try {
+                    const provinciasData = JSON.parse(provinciasJsonEl.textContent || "[]");
+                    replaceOptions(
+                        provinciaSelect,
+                        provinciasData,
+                        provinciaSelect.value,
+                        "Seleccione una provincia",
+                    );
+                } catch (error) {
+                    console.error("No se pudieron cargar provincias desde fallback JSON", error);
+                }
+            }
+
+            if (typeof initializeSelect2 === "function") {
+                initializeSelect2("id_organizacion", {
+                    placeholder: "Seleccione una organización",
+                    allowClear: true,
+                });
+                initializeSelect2("id_provincia", {
+                    placeholder: "Seleccione una provincia",
+                    allowClear: true,
+                });
+                initializeSelect2("id_municipio", {
+                    placeholder: "Seleccione un municipio",
+                    allowClear: true,
+                });
+                initializeSelect2("id_localidad", {
+                    placeholder: "Seleccione una localidad",
+                    allowClear: true,
+                });
+            }
+
+            if (typeof window.setupUbicacionSelects === "function") {
+                await window.setupUbicacionSelects({
+                    ajaxMunicipiosUrl: ajaxLoadMunicipiosUrl,
+                    ajaxLocalidadesUrl: ajaxLoadLocalidadesUrl,
+                    selectors: {
+                        provincia: "#id_provincia",
+                        municipio: "#id_municipio",
+                        localidad: "#id_localidad",
+                    },
+                    ui: {
+                        municipio: {
+                            loader: "#municipio-loader",
+                            wrapper: "#municipio-field",
+                            dropdownParent: "#municipio-field",
+                        },
+                        localidad: {
+                            loader: "#localidad-loader",
+                            wrapper: "#localidad-field",
+                            dropdownParent: "#localidad-field",
+                        },
+                    },
+                    autoPrefetch: true,
+                });
+            } else if (typeof window.initUbicacionSelects === "function") {
+                await window.initUbicacionSelects({
+                    ajaxMunicipiosUrl: ajaxLoadMunicipiosUrl,
+                    ajaxLocalidadesUrl: ajaxLoadLocalidadesUrl,
+                    selectors: {
+                        provincia: "#id_provincia",
+                        municipio: "#id_municipio",
+                        localidad: "#id_localidad",
+                    },
+                    ui: {
+                        municipio: {
+                            loader: "#municipio-loader",
+                            wrapper: "#municipio-field",
+                            dropdownParent: "#municipio-field",
+                        },
+                        localidad: {
+                            loader: "#localidad-loader",
+                            wrapper: "#localidad-field",
+                            dropdownParent: "#localidad-field",
+                        },
+                    },
+                    autoPrefetch: true,
+                });
+            }
+
+            if (provinciaSelect && municipioSelect && localidadSelect) {
+                provinciaSelect.addEventListener("change", async function() {
+                    await loadMunicipiosFallback(this.value, "");
+                    replaceOptions(localidadSelect, [], "", "Seleccione una localidad");
+                });
+
+                municipioSelect.addEventListener("change", async function() {
+                    await loadLocalidadesFallback(this.value, "");
+                });
+
+                if (provinciaSelect.value && municipioSelect.options.length <= 1) {
+                    await loadMunicipiosFallback(provinciaSelect.value, municipioInicial);
+                }
+                if (municipioSelect.value && localidadSelect.options.length <= 1) {
+                    await loadLocalidadesFallback(municipioSelect.value, localidadInicial);
+                }
+            }
+        });
+    </script>
 {% endblock %}

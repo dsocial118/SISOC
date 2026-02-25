@@ -7,7 +7,11 @@
         <a href="{% url 'inicio' %}">Inicio</a>
     </li>
     <li class="breadcrumb-item">
-        <a href="{% url 'audittrail:log_list' %}">Auditoría</a>
+        {% if back_url %}
+            <a href="{{ back_url }}">Auditoría</a>
+        {% else %}
+            <a href="{% url 'audittrail:log_list' %}">Auditoría</a>
+        {% endif %}
     </li>
     <li class="breadcrumb-item active">Evento {{ entry.pk }}</li>
 {% endblock %}
@@ -18,6 +22,9 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">Evento #{{ entry.pk }}</h3>
+                    <div class="card-tools">
+                        <a href="{{ back_url }}" class="btn btn-sm btn-outline-secondary">Volver al listado</a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
@@ -28,11 +35,10 @@
 
                         <dt class="col-sm-3">Usuario</dt>
                         <dd class="col-sm-9">
-                            {% if entry.actor %}
-                                {{ entry.actor.get_username }}
-                            {% else %}
-                                Sistema
-                            {% endif %}
+                            <div class="{% if entry.ui_actor_is_fallback %}text-muted{% endif %}">
+                                {{ entry.ui_actor_primary|default:"Sistema" }}
+                            </div>
+                            {% if entry.ui_actor_secondary %}<small class="text-muted d-block">{{ entry.ui_actor_secondary }}</small>{% endif %}
                         </dd>
 
                         <dt class="col-sm-3">Modelo</dt>
@@ -47,7 +53,27 @@
 
                         <dt class="col-sm-3">Evento</dt>
                         <dd class="col-sm-9">
-                            {{ entry.get_action_display }}
+                            <span class="badge {{ entry.ui_action_badge_class|default:'bg-secondary' }}">
+                                {{ entry.ui_action_label|default:entry.get_action_display }}
+                            </span>
+                            {% if not entry.ui_has_diffs %}<span class="badge bg-warning text-dark ms-1">Sin diffs</span>{% endif %}
+                            {% if entry.ui_bulk_grouped or entry.ui_bulk_marker %}
+                                <small class="text-muted d-block mt-1">
+                                    {% if entry.ui_bulk_grouped %}
+                                        Evento asociado a acción masiva ({{ entry.ui_bulk_source_label }})
+                                    {% else %}
+                                        Evento asociado a proceso con correlación
+                                    {% endif %}
+                                </small>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-3">Origen</dt>
+                        <dd class="col-sm-9">
+                            {{ entry.ui_source_label|default:"-" }}
+                            {% if entry.ui_bulk_source == "batch_key" and entry.ui_bulk_value %}
+                                <small class="text-muted d-block">Batch key: {{ entry.ui_bulk_value }}</small>
+                            {% endif %}
                         </dd>
 
                         <dt class="col-sm-3">IP</dt>
@@ -64,7 +90,14 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Cambios</h3>
+                    <h3 class="card-title">
+                        Cambios
+                        {% if changes %}
+                            <span class="badge bg-secondary">{{ changes|length }}</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Sin diffs</span>
+                        {% endif %}
+                    </h3>
                 </div>
                 <div class="card-body">
                     {% if changes %}
@@ -80,16 +113,49 @@
                                 <tbody>
                                     {% for field, change in changes.items %}
                                         <tr>
-                                            <td>{{ field }}</td>
-                                            <td>{{ change.old }}</td>
-                                            <td>{{ change.new }}</td>
+                                            <td class="align-top">
+                                                <strong>{{ field }}</strong>
+                                            </td>
+                                            <td class="align-top">
+                                                {% with old_preview=change.old|striptags %}
+                                                    {% if old_preview|length > 180 %}
+                                                        <details>
+                                                            <summary class="text-muted">{{ old_preview|truncatechars:180 }}</summary>
+                                                            <div class="mt-2 text-break" style="white-space: pre-wrap;">{{ change.old }}</div>
+                                                        </details>
+                                                    {% else %}
+                                                        <div class="text-break" style="white-space: pre-wrap;">{{ change.old }}</div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td class="align-top">
+                                                {% with new_preview=change.new|striptags %}
+                                                    {% if new_preview|length > 180 %}
+                                                        <details>
+                                                            <summary class="text-muted">{{ new_preview|truncatechars:180 }}</summary>
+                                                            <div class="mt-2 text-break" style="white-space: pre-wrap;">{{ change.new }}</div>
+                                                        </details>
+                                                    {% else %}
+                                                        <div class="text-break" style="white-space: pre-wrap;">{{ change.new }}</div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                     {% else %}
-                        <p class="mb-0">Sin diffs registrados para este evento.</p>
+                        <div class="alert alert-light mb-0" role="status">
+                            <div class="fw-semibold">Sin diffs registrados para este evento.</div>
+                            <div class="small text-muted mt-1">
+                                {% if entry.ui_action_is_delete %}
+                                    Las eliminaciones o eventos automáticos pueden no incluir detalle de cambios.
+                                {% else %}
+                                    El backend no expuso diferencias para este evento.
+                                {% endif %}
+                            </div>
+                        </div>
                     {% endif %}
                 </div>
             </div>
