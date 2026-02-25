@@ -19,9 +19,15 @@
                 <strong>Centro:</strong>
                 <a href="{% url 'centrodeinfancia_detalle' observacion.centro.id %}">{{ observacion.centro.nombre }}</a>
             </p>
-            <p class="mb-2"><strong>Observador:</strong> {{ observacion.observador|default:"-" }}</p>
-            <p class="mb-2"><strong>Fecha y hora:</strong> {{ observacion.fecha_visita|date:"d/m/Y H:i" }}</p>
-            <p class="mb-0"><strong>Observación:</strong> {{ observacion.observacion }}</p>
+            <p class="mb-2">
+                <strong>Observador:</strong> {{ observacion.observador|default:"-" }}
+            </p>
+            <p class="mb-2">
+                <strong>Fecha y hora:</strong> {{ observacion.fecha_visita|date:"d/m/Y H:i" }}
+            </p>
+            <p class="mb-0">
+                <strong>Observación:</strong> {{ observacion.observacion }}
+            </p>
         </div>
     </div>
 {% endblock %}

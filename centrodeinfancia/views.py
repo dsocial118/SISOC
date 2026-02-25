@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -21,7 +23,6 @@ from django.views.generic import (
     UpdateView,
 )
 from auditlog.models import LogEntry
-from datetime import date, datetime
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import CiudadanoFormParaNomina, NominaExtraForm
 from comedores.services.comedor_service import ComedorService
@@ -150,7 +151,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             "organizacion", "provincia", "municipio", "localidad"
         )
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+        self, **kwargs
+    ):
         context = super().get_context_data(**kwargs)
         nomina_qs = self.object.nominas.select_related("ciudadano").order_by("-fecha")
         intervenciones_qs = self.object.intervenciones.select_related(
@@ -579,7 +582,9 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
 
         return renaper_data
 
-    def post(self, request, *args, **kwargs):
+    def post(  # pylint: disable=too-many-return-statements
+        self, request, *args, **kwargs
+    ):
         self.object = None
         ciudadano_id = request.POST.get("ciudadano_id")
 

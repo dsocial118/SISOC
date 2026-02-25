@@ -38,9 +38,7 @@
                             <div class="{% if entry.ui_actor_is_fallback %}text-muted{% endif %}">
                                 {{ entry.ui_actor_primary|default:"Sistema" }}
                             </div>
-                            {% if entry.ui_actor_secondary %}
-                                <small class="text-muted d-block">{{ entry.ui_actor_secondary }}</small>
-                            {% endif %}
+                            {% if entry.ui_actor_secondary %}<small class="text-muted d-block">{{ entry.ui_actor_secondary }}</small>{% endif %}
                         </dd>
 
                         <dt class="col-sm-3">Modelo</dt>
@@ -58,9 +56,7 @@
                             <span class="badge {{ entry.ui_action_badge_class|default:'bg-secondary' }}">
                                 {{ entry.ui_action_label|default:entry.get_action_display }}
                             </span>
-                            {% if not entry.ui_has_diffs %}
-                                <span class="badge bg-warning text-dark ms-1">Sin diffs</span>
-                            {% endif %}
+                            {% if not entry.ui_has_diffs %}<span class="badge bg-warning text-dark ms-1">Sin diffs</span>{% endif %}
                             {% if entry.ui_bulk_grouped or entry.ui_bulk_marker %}
                                 <small class="text-muted d-block mt-1">
                                     {% if entry.ui_bulk_grouped %}
@@ -124,12 +120,8 @@
                                                 {% with old_preview=change.old|striptags %}
                                                     {% if old_preview|length > 180 %}
                                                         <details>
-                                                            <summary class="text-muted">
-                                                                {{ old_preview|truncatechars:180 }}
-                                                            </summary>
-                                                            <div class="mt-2 text-break" style="white-space: pre-wrap;">
-                                                                {{ change.old }}
-                                                            </div>
+                                                            <summary class="text-muted">{{ old_preview|truncatechars:180 }}</summary>
+                                                            <div class="mt-2 text-break" style="white-space: pre-wrap;">{{ change.old }}</div>
                                                         </details>
                                                     {% else %}
                                                         <div class="text-break" style="white-space: pre-wrap;">{{ change.old }}</div>
@@ -140,12 +132,8 @@
                                                 {% with new_preview=change.new|striptags %}
                                                     {% if new_preview|length > 180 %}
                                                         <details>
-                                                            <summary class="text-muted">
-                                                                {{ new_preview|truncatechars:180 }}
-                                                            </summary>
-                                                            <div class="mt-2 text-break" style="white-space: pre-wrap;">
-                                                                {{ change.new }}
-                                                            </div>
+                                                            <summary class="text-muted">{{ new_preview|truncatechars:180 }}</summary>
+                                                            <div class="mt-2 text-break" style="white-space: pre-wrap;">{{ change.new }}</div>
                                                         </details>
                                                     {% else %}
                                                         <div class="text-break" style="white-space: pre-wrap;">{{ change.new }}</div>

@@ -118,7 +118,8 @@
         {% for provincia in form.fields.provincia.queryset %}
             {"id": {{ provincia.id }}, "nombre": "{{ provincia.nombre|escapejs }}"}{% if not forloop.last %},{% endif %}
         {% endfor %}
-    ]</script>
+    ]
+    </script>
     <script>
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";

@@ -117,7 +117,9 @@ class AuditLogFilterForm(forms.Form):
         field_name = cleaned_data.get("field_name")
 
         if start_date and end_date and start_date > end_date:
-            self.add_error("end_date", "La fecha 'Hasta' no puede ser anterior a 'Desde'.")
+            self.add_error(
+                "end_date", "La fecha 'Hasta' no puede ser anterior a 'Desde'."
+            )
             return cleaned_data
 
         if not (keyword or field_name):

@@ -36,7 +36,10 @@ def test_register_tracked_models_uses_single_source_definitions(mocker):
     )
     register_mock = mocker.Mock()
 
-    mocker.patch("audittrail.registry.get_tracked_model_definitions", return_value=[fake_definition])
+    mocker.patch(
+        "audittrail.registry.get_tracked_model_definitions",
+        return_value=[fake_definition],
+    )
     mocker.patch.object(registry.auditlog, "_registry", {}, create=True)
     mocker.patch.object(registry.auditlog, "register", register_mock)
 

@@ -1,29 +1,3 @@
-# Versión SISOC 25.02.2026
-
-## Nuevas Funcionalidades
-
-- MVP Audittrail Fase 1 en módulo Auditoría: búsqueda por keyword sobre eventos/diffs para acelerar soporte y análisis operativo.
-- Visualización de actor más legible en auditoría (prioriza datos de `auth_user` para mostrar usuario identificable cuando existe).
-- Agrupación de eventos en lotes heurísticos para lectura de operaciones masivas sin revisar entrada por entrada.
-- Deletes custom en auditoría para casos específicos (ej. relaciones/adjuntos) con mensajes más útiles que el diff crudo.
-- Audittrail Fase 2: metadata persistida por evento (`AuditEntryMeta`) con snapshot de actor, origen (`source`) y `batch_key` para mejorar trazabilidad y agrupación más confiable.
-- Nuevos filtros de auditoría por campo, origen y `batch_key`, más exportación `CSV/JSON` con permiso específico de exportación.
-
-## Actualizaciones
-
-- Mejoras de trazabilidad y lectura en el historial de auditoría (actor, diffs y navegación para soporte/ops).
-- Alineación del uso de `auth_user` en consultas/presentación de auditoría para compatibilidad con registros históricos y usuarios existentes.
-- Documentación operativa de Fase 1 (deploy, rollback, riesgos y métricas) agregada en `docs/implementaciones/audittrail_mvp_fase1.md`.
-- Query service de auditoría extendido para consumir metadata Fase 2 y priorizar snapshots persistidos al renderizar el panel.
-- Optimización de búsqueda en auditoría para MySQL 8.0 (FULLTEXT sobre `changes_text` cuando está disponible) e índices adicionales sobre `auditlog_logentry`.
-
-## Cambios con impacto operativo (breaking / atención)
-
-- La lectura de auditoría puede mostrar `Sistema` / actor vacío en procesos batch, comandos o ejecuciones sin usuario autenticado (`actor=None`); soporte no debe interpretarlo como falla por sí solo.
-- La agrupación en lotes es heurística (no contractual): un mismo proceso puede verse separado o combinado según ventana temporal/criterios de agrupación.
-- Se mantiene la retención operativa por defecto de 180 días (`purge_auditlog --days=180`); si compliance requiere mayor retención, ajustar cron/operación antes del release.
-- Fase 2 agrega migración de `audittrail` (tabla `audittrail_auditentrymeta`); el deploy requiere `migrate` antes de habilitar tráfico al panel.
-
 # Versión SISOC 18.02.2026
 
 ## Nuevas Funcionalidades

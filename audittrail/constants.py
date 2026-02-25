@@ -131,5 +131,7 @@ def tracked_model_choices(include_blank: bool = True):
     choices = []
     if include_blank:
         choices.append(("", "Todos los modelos"))
-    choices.extend((f"{app}.{model}", label) for app, model, label in get_tracked_models())
+    choices.extend(
+        (f"{app}.{model}", label) for app, model, label in get_tracked_models()
+    )
     return choices

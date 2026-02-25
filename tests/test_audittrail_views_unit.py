@@ -96,7 +96,8 @@ def test_base_apply_filters_and_context_data(mocker):
     # keyword + model + object_pk + actor + start + end
     assert len(qs.calls) == 6
     assert any(
-        call[1] in ({"changes__icontains": "estado"}, {"changes_text__icontains": "estado"})
+        call[1]
+        in ({"changes__icontains": "estado"}, {"changes_text__icontains": "estado"})
         for call in qs.calls
     )
 
@@ -240,7 +241,11 @@ def test_filter_form_requires_date_range_for_text_or_field_search():
     assert form.non_field_errors()
 
     form2 = AuditLogFilterForm(
-        data={"field_name": "estado", "start_date": "2024-01-01", "end_date": "2024-05-01"}
+        data={
+            "field_name": "estado",
+            "start_date": "2024-01-01",
+            "end_date": "2024-05-01",
+        }
     )
     assert form2.is_valid() is False
     assert form2.non_field_errors()
@@ -285,11 +290,15 @@ def test_actor_legible_helpers_and_grouping_heuristico_service():
     ]
 
     def _decorate(entry):
-        entry.ui_bulk_marker = f"cid:{entry.cid}" if getattr(entry, "cid", None) else None
+        entry.ui_bulk_marker = (
+            f"cid:{entry.cid}" if getattr(entry, "cid", None) else None
+        )
         entry.ui_bulk_source = "cid" if getattr(entry, "cid", None) else None
         return entry
 
-    query_service.decorate_entries_for_display(entries=entries, decorate_entry=_decorate)
+    query_service.decorate_entries_for_display(
+        entries=entries, decorate_entry=_decorate
+    )
     assert entries[0].ui_bulk_grouped is True
     assert entries[0].ui_bulk_sequence_start is True
     assert entries[1].ui_bulk_sequence_continuation is True
@@ -314,7 +323,10 @@ def test_query_service_new_filters_and_export_guards(mocker):
         },
     )
     assert out is qs
-    assert any(call[1].get("audittrail_meta__batch_key__icontains") == "lote-1" for call in qs.calls)
+    assert any(
+        call[1].get("audittrail_meta__batch_key__icontains") == "lote-1"
+        for call in qs.calls
+    )
 
     export_errors = query_service.validate_export_request(
         {
@@ -327,7 +339,9 @@ def test_query_service_new_filters_and_export_guards(mocker):
     assert export_errors
 
     assert query_service._build_mysql_boolean_fulltext_query("aprobado convenio 1510")
-    mocker.patch("audittrail.services.query_service._mysql_can_use_fulltext", return_value=True)
+    mocker.patch(
+        "audittrail.services.query_service._mysql_can_use_fulltext", return_value=True
+    )
     qs_ft = _QS()
     out_ft = query_service.apply_optimized_keyword_filter(qs_ft, "aprobado convenio")
     assert out_ft is qs_ft

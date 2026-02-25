@@ -178,7 +178,9 @@ def apply_origin_filter(qs, origin: str | None):
     if origin == "web":
         legacy_web_fallback = Q(audittrail_meta__isnull=True) & Q(actor__isnull=False)
         if _logentry_has_field("cid"):
-            legacy_web_fallback |= Q(audittrail_meta__isnull=True) & Q(cid__isnull=False)
+            legacy_web_fallback |= Q(audittrail_meta__isnull=True) & Q(
+                cid__isnull=False
+            )
         return qs.filter(
             Q(audittrail_meta__source="http")
             | Q(audittrail_meta__source__startswith="http:")
@@ -294,10 +296,9 @@ def apply_optimized_keyword_filter(qs, keyword: str | None):
         if boolean_query:
             table_name = LogEntry._meta.db_table
             sql = f"MATCH({table_name}.changes_text) AGAINST (%s IN BOOLEAN MODE)"
-            return (
-                qs.annotate(_audittrail_changes_rank=RawSQL(sql, [boolean_query]))
-                .filter(_audittrail_changes_rank__gt=0)
-            )
+            return qs.annotate(
+                _audittrail_changes_rank=RawSQL(sql, [boolean_query])
+            ).filter(_audittrail_changes_rank__gt=0)
 
     return apply_keyword_filter(qs, keyword)
 
@@ -326,7 +327,7 @@ def apply_filters(qs, cleaned_data: dict):
             | Q(actor__email__icontains=actor)
             | Q(actor__first_name__icontains=actor)
             | Q(actor__last_name__icontains=actor)
-            )
+        )
 
     field_name = data.get("field_name")
     if field_name:
@@ -453,9 +454,7 @@ def format_actor_display(actor, fallback_label="Sistema"):
             username = ""
     if not username:
         username = (
-            getattr(actor, "username", "")
-            or getattr(actor, "email", "")
-            or "Usuario"
+            getattr(actor, "username", "") or getattr(actor, "email", "") or "Usuario"
         )
 
     first_name = (getattr(actor, "first_name", "") or "").strip()
@@ -559,7 +558,9 @@ def get_entry_actor_ui(entry, fallback_label="Sistema"):
     )
     if has_snapshot:
         return format_actor_snapshot_display(meta, fallback_label=fallback_label)
-    return format_actor_display(getattr(entry, "actor", None), fallback_label=fallback_label)
+    return format_actor_display(
+        getattr(entry, "actor", None), fallback_label=fallback_label
+    )
 
 
 def get_entry_actor_display(entry):

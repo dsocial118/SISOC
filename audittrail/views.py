@@ -119,7 +119,9 @@ class AuditLogResolveMixin:
 
         data = form.cleaned_data
         form_fields = getattr(form, "fields", {})
-        action_field = form_fields.get("action") if hasattr(form_fields, "get") else None
+        action_field = (
+            form_fields.get("action") if hasattr(form_fields, "get") else None
+        )
         action_choices = dict(getattr(action_field, "choices", []))
         chips = []
 
@@ -134,7 +136,9 @@ class AuditLogResolveMixin:
         if data.get("actor"):
             chips.append({"label": "Usuario", "value": data["actor"]})
         if data.get("origin"):
-            origin_field = form_fields.get("origin") if hasattr(form_fields, "get") else None
+            origin_field = (
+                form_fields.get("origin") if hasattr(form_fields, "get") else None
+            )
             origin_choices = dict(getattr(origin_field, "choices", []))
             chips.append(
                 {
@@ -423,7 +427,9 @@ class BaseAuditLogListView(
                     row["batch_key"],
                     row["remote_addr"],
                     json.dumps(row["changes"], ensure_ascii=False, default=str),
-                    json.dumps(row["changes_resolved"], ensure_ascii=False, default=str),
+                    json.dumps(
+                        row["changes_resolved"], ensure_ascii=False, default=str
+                    ),
                 ]
             )
         return response
