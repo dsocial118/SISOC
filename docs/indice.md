@@ -19,6 +19,8 @@
 - `docs/implementaciones/preferencias_columnas.md`: sistema de configuración de columnas, modal y helpers reutilizables.
 - `docs/implementaciones/exportar_listados.md`: mixin CSV y helper JS para exportar datos con filtros/columnas activos.
 - `docs/implementaciones/pwa_backend.md`: diseño e implementación actual de la API PWA (auth token, scope por comedor, endpoints y permisos).
+- `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
+- `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.
 - `docs/agentes.md`: guía rápida para asistentes automáticos y workflows de documentación.
 
 ### 4. Flujos y sincronizaciones
