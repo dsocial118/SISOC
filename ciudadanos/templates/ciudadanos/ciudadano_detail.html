@@ -411,6 +411,8 @@
                     {% endif %}
                     <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
                        class="btn btn-outline-light">Editar</a>
+                    <a href="{% url 'ciudadanos_eliminar' ciudadano.pk %}"
+                       class="btn btn-danger">Dar de baja</a>
                 </div>
             </div>
         </div>
