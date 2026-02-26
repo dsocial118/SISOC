@@ -391,10 +391,12 @@
                                    rel="noopener">Descargar Word</a>
                             {% endif %}
                         {% else %}
-                            <a href="{{ informe_tecnico_pdf.archivo.url }}"
-                               class="btn btn-outline-primary btn-sm me-2"
-                               target="_blank"
-                               rel="noopener">Descargar PDF</a>
+                            {% if informe_tecnico_pdf.archivo %}
+                                <a href="{{ informe_tecnico_pdf.archivo.url }}"
+                                   class="btn btn-outline-primary btn-sm me-2"
+                                   target="_blank"
+                                   rel="noopener">Descargar PDF</a>
+                            {% endif %}
                             {% if informe_tecnico_pdf.archivo_docx %}
                                 <a href="{{ informe_tecnico_pdf.archivo_docx.url }}"
                                    class="btn btn-outline-primary btn-sm"
@@ -455,7 +457,7 @@
                                         {% endif %}
                                     </td>
                                     <td class="text-center">
-                                        {% if comp.pdf_final %}
+                                        {% if comp.pdf_final and comp.pdf_final.archivo %}
                                             <a href="{{ comp.pdf_final.archivo.url }}"
                                                class="btn btn-outline-primary btn-sm"
                                                target="_blank"
