@@ -12,6 +12,7 @@ from centrodeinfancia.models import (
     ObservacionCentroInfancia,
 )
 
+
 class CentroDeInfanciaForm(forms.ModelForm):
 
     @staticmethod
@@ -232,7 +233,10 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
         if not tipo_intervencion:
             return cleaned_data
 
-        if subintervencion and subintervencion.tipo_intervencion_id != tipo_intervencion.id:
+        if (
+            subintervencion
+            and subintervencion.tipo_intervencion_id != tipo_intervencion.id
+        ):
             self.add_error(
                 "subintervencion",
                 "La subintervención seleccionada no corresponde al tipo de intervención.",
@@ -242,7 +246,9 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
         subintervenciones_disponibles = tipo_intervencion.subintervenciones.all()
         if subintervenciones_disponibles.exists():
             if not subintervencion:
-                self.add_error("subintervencion", "Debe seleccionar una subintervención.")
+                self.add_error(
+                    "subintervencion", "Debe seleccionar una subintervención."
+                )
         else:
             cleaned_data["subintervencion"] = None
 
