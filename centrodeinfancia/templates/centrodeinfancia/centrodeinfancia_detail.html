@@ -139,7 +139,8 @@
                 </div>
 
                 <div class="accordion-panel">
-                    <button type="button" class="accordion-header h5 accordion-header--responsables">Referente</button>
+                    <button type="button"
+                            class="accordion-header h5 accordion-header--responsables">Referente</button>
                     <div class="accordion-content">
                         <p class="mb-2">
                             <i class="bi bi-person me-2"></i><strong>Nombre:</strong> {{ centro.nombre_referente|default:"-" }}
@@ -378,7 +379,7 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function() {
             const shell = document.querySelector(".accordion-shell");
             const accordion = document.querySelector(".accordion-horizontal");

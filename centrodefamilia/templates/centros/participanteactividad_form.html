@@ -71,9 +71,7 @@
                                             <input type="hidden" name="ciudadano_id" value="{{ c.id }}" />
                                             <button type="submit"
                                                     class="btn btn-sm btn-success"
-                                                    onclick="this.disabled=true;this.innerHTML='<span class=&quot;spinner-border spinner-border-sm&quot; role=&quot;status&quot; aria-hidden=&quot;true&quot;></span> Agregando…'; this.form.submit();">
-                                                Agregar
-                                            </button>
+                                                    data-submit-with-spinner="Agregando…">Agregar</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -95,9 +93,7 @@
                         <button id="btn-crear"
                                 type="submit"
                                 class="btn btn-primary"
-                                onclick="this.disabled=true;this.innerHTML='<span class=&quot;spinner-border spinner-border-sm&quot; role=&quot;status&quot; aria-hidden=&quot;true&quot;></span> Procesando…'; this.form.submit();">
-                            Crear y Asociar
-                        </button>
+                                data-submit-with-spinner="Procesando…">Crear y Asociar</button>
                     </form>
                 </div>
             </div>
@@ -136,7 +132,7 @@
                 </div>
             </div>
         </div>
-        <script>
+        <script nonce="{{ request.csp_nonce }}">
   document.addEventListener('DOMContentLoaded', function() {
     $('#waitlistModal').modal('show');
   });

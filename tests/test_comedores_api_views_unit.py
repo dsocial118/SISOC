@@ -108,7 +108,9 @@ def test_collect_documentos_aggregates_multiple_sources(mocker):
         archivo=SimpleNamespace(name="mensual.pdf"),
         ultima_modificacion="2025-01-03",
     )
-    rendicion = SimpleNamespace(arvhios_adjuntos=SimpleNamespace(all=lambda: [adjunto]))
+    rendicion = SimpleNamespace(
+        archivos_adjuntos=SimpleNamespace(all=lambda: [adjunto])
+    )
 
     mocker.patch(
         "comedores.api_views.Intervencion.objects.filter",

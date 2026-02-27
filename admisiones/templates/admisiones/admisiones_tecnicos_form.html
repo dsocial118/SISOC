@@ -141,7 +141,7 @@
                                     <div class="d-inline-flex align-items-center gap-2">
                                         <div id="convenio-numero-display"
                                              class="convenio-numero-display"
-                                             onclick="activarEdicionConvenioNumero()">
+                                             data-call-click="activarEdicionConvenioNumero">
                                             {% if admision.convenio_numero is not None %}
                                                 <span class="text-success fw-bold">{{ admision.convenio_numero }}</span>
                                                 <i class="bi bi-pencil-square ms-2 text-muted"
@@ -161,13 +161,13 @@
                                                    step="1" />
                                             <button type="button"
                                                     class="btn btn-success btn-sm convenio-numero-btn"
-                                                    onclick="guardarConvenioNumero()"
+                                                    data-call-click="guardarConvenioNumero"
                                                     title="Guardar">
                                                 <i class="bi bi-check-lg"></i>
                                             </button>
                                             <button type="button"
                                                     class="btn btn-danger btn-sm convenio-numero-btn"
-                                                    onclick="cancelarEdicionConvenioNumero()"
+                                                    data-call-click="cancelarEdicionConvenioNumero"
                                                     title="Cancelar">
                                                 <i class="bi bi-x-lg"></i>
                                             </button>
@@ -855,9 +855,16 @@
                     </div>
                 {% endblock %}
                 {% block customJS %}
-                    <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
+                    <div id="admisiones-tecnicos-config"
+                         data-csrf-token="{{ csrf_token }}"
+                         data-url-actualizar-estado="{% url 'actualizar_estado_archivo' %}"
+                         data-url-actualizar-numero-gde="{% url 'actualizar_numero_gde_archivo' %}"
+                         data-url-actualizar-convenio-numero="{% url 'actualizar_convenio_numero' %}"
+                         data-url-crear-documento-personalizado="{% url 'documento_personalizado_crear' admision.id %}"
+                         data-admision-id="{{ admision.id }}"
+                         hidden></div>
                     {% if not admision.tipo_convenio and not admision.enviada_a_archivo %}
-                        <script>
+                        <script nonce="{{ request.csp_nonce }}">
                                         document.addEventListener('DOMContentLoaded', function() {
                                             var modal = new bootstrap.Modal(document.getElementById('seleccionModal'));
                                             modal.show();
@@ -872,11 +879,6 @@
                     <script src="{% static 'custom/js/admisionestecnico.js' %}"></script>
                     <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
                     <script src="{% static 'custom/js/admisionesTecnicoCrear.js' %}"></script>
-                    <script>window.URL_ACTUALIZAR_ESTADO = "{% url 'actualizar_estado_archivo' %}";</script>
-                    <script>window.URL_ACTUALIZAR_NUMERO_GDE = "{% url 'actualizar_numero_gde_archivo' %}";</script>
-                    <script>window.URL_ACTUALIZAR_CONVENIO_NUMERO = "{% url 'actualizar_convenio_numero' %}";</script>
-                    <script>window.ADMISION_ID = {{ admision.id }};</script>
-                    <script>window.URL_CREAR_DOCUMENTO_PERSONALIZADO = "{% url 'documento_personalizado_crear' admision.id %}";</script>
                     <!-- Estilos para la UI de número GDE -->
                     <style>
                                     .gde-display {

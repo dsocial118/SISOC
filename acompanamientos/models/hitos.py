@@ -16,7 +16,10 @@ class Hitos(models.Model):
         default=False, verbose_name="Alta de usuario en plataforma"
     )
     capacitacion_realizada = models.BooleanField(
-        default=False, verbose_name="Capacitación realizada"
+        default=False, verbose_name="Capacitación Sincrónica Realizada"
+    )
+    capacitacion_fch_realizada = models.BooleanField(
+        default=False, verbose_name="Capacitación Formando Capital Humano Realizada"
     )
     notificacion_acreditacion_1 = models.BooleanField(
         default=False, verbose_name="Notificación de primera acreditación"

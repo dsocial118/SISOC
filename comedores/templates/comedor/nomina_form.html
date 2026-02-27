@@ -110,9 +110,7 @@
                         </div>
                         <button type="submit"
                                 class="btn btn-primary"
-                                onclick="this.disabled=true;this.innerHTML='<span class=&quot;spinner-border spinner-border-sm&quot; role=&quot;status&quot; aria-hidden=&quot;true&quot;></span> Procesando…'; this.form.submit();">
-                            Crear y Agregar
-                        </button>
+                                data-submit-with-spinner="Procesando…">Crear y Agregar</button>
                     </form>
                 </div>
             </div>
@@ -165,7 +163,7 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function() {
             // Configurar modal para agregar ciudadanos existentes
             document.querySelectorAll(".btn-agregar").forEach(function(btn) {

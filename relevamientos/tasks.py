@@ -20,6 +20,17 @@ MAX_WORKERS = int(
 _EXECUTOR = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
 
+def _run_async_threads():
+    """
+    Permite desactivar hilos reales durante tests para evitar flakiness.
+    """
+    if os.getenv("DISABLE_ASYNC_THREADS", "false").lower() == "true":
+        return False
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        return False
+    return True
+
+
 def build_relevamiento_payload(relevamiento):
     fecha = (
         relevamiento.fecha_visita.strftime("%Y-%m-%d")
@@ -46,7 +57,6 @@ def build_relevamiento_payload(relevamiento):
     }
 
 
-# FIXME: Evitar que se ejecute el hilo al correr los tests
 class AsyncSendRelevamientoToGestionar(threading.Thread):
     """Hilo para enviar relevamiento a GESTIONAR asincronamente"""
 
@@ -57,7 +67,11 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
 
     def start(self):  # type: ignore[override]
         # Encola la ejecución en un pool limitado para evitar demasiadas conexiones
-        _EXECUTOR.submit(self.run)
+        if _run_async_threads():
+            _EXECUTOR.submit(self.run)
+            return None
+        self.run()
+        return None
 
     def run(self):
         # Asegura estado sano de conexiones en hilos de pool reutilizables
@@ -111,7 +125,11 @@ class AsyncRemoveRelevamientoToGestionar(threading.Thread):
         self.relevamiento_id = relevamiento_id
 
     def start(self):  # type: ignore[override]
-        _EXECUTOR.submit(self.run)
+        if _run_async_threads():
+            _EXECUTOR.submit(self.run)
+            return None
+        self.run()
+        return None
 
     def run(self):
         close_old_connections()
