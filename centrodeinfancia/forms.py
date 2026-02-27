@@ -5,6 +5,7 @@ from core.models import Localidad, Municipio, Provincia
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 from intervenciones.models.intervenciones import TipoIntervencion
 from organizaciones.models import Organizacion
+from users.models import Profile
 from centrodeinfancia.models import (
     CentroDeInfancia,
     IntervencionCentroInfancia,
@@ -17,11 +18,15 @@ class CentroDeInfanciaForm(forms.ModelForm):
 
     @staticmethod
     def _obtener_provincia_usuario(user):
-        if not user:
+        if not user or not getattr(user, "is_authenticated", False):
             return None
-        try:
-            profile = user.profile
-        except Exception:
+
+        profile = (
+            Profile.objects.select_related("provincia")
+            .filter(user=user)
+            .first()
+        )
+        if not profile:
             return None
 
         provincia_usuario = getattr(profile, "provincia", None)
