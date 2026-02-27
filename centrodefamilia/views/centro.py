@@ -34,7 +34,7 @@ from centrodefamilia.services.centro_filter_config import (
 from centrodefamilia.forms import CentroForm
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 
 BOOL_ADVANCED_FILTER = AdvancedFilterEngine(

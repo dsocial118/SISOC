@@ -14,7 +14,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from organizaciones.forms import OrganizacionForm, FirmanteForm, AvalForm
 from organizaciones.models import (

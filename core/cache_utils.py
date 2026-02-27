@@ -9,7 +9,7 @@ import logging
 from django.core.cache import cache
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from core.soft_delete_signals import post_soft_delete, post_restore
+from core.soft_delete.signals import post_soft_delete, post_restore
 
 logger = logging.getLogger("django")
 

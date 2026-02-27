@@ -7,7 +7,7 @@ from relevamientos.tasks import (
     AsyncRemoveRelevamientoToGestionar,
     build_relevamiento_payload,
 )
-from core.soft_delete_signals import post_soft_delete
+from core.soft_delete.signals import post_soft_delete
 
 
 @receiver(post_save, sender=Relevamiento)

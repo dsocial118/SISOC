@@ -13,7 +13,7 @@ from comedores.forms.comedor_form import (
 )
 from comedores.models import Nomina
 from comedores.services.comedor_service import ComedorService
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 
 @login_required
