@@ -59,7 +59,7 @@
     "model": "intervenciones.tipointervencion",
     "pk": 9,
     "fields": {
-      "nombre": "Asistencia a capacitación"
+      "nombre": "Asistencia a Capacitación Sincrónica"
     }
   },
   {
@@ -137,6 +137,13 @@
     "pk": 20,
     "fields":{
       "nombre": "Otros"
+    }
+  },
+  {
+    "model": "intervenciones.tipointervencion",
+    "pk": 21,
+    "fields": {
+      "nombre": "Asistencia a Capacitación Formando Capital Humano"
     }
   },
   {
@@ -377,6 +384,70 @@
     "fields": {
       "nombre": "Certificacion mes 6",
       "tipo_intervencion": 13
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 31,
+    "fields": {
+      "nombre": "Creación de Usuario en Plataforma Alimentar Comunidad",
+      "tipo_intervencion": 21
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 32,
+    "fields": {
+      "nombre": "Uso de Plataforma Alimentar Comunidad: Cómo consultar saldo y subir comprobantes",
+      "tipo_intervencion": 21
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 33,
+    "fields": {
+      "nombre": "Retiro y Uso de la Tarjeta Alimentar Comunidad",
+      "tipo_intervencion": 21
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 34,
+    "fields": {
+      "nombre": "Criterios Nutricionales - Alimentar Comunidad",
+      "tipo_intervencion": 21
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 35,
+    "fields": {
+      "nombre": "Rendición de Cuentas Resolución 650/25 - Alimentar Comunidad",
+      "tipo_intervencion": 21
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 36,
+    "fields": {
+      "nombre": "Gastos Accesorios 6% - Resolución 650/25 - Alimentar Comunidad",
+      "tipo_intervencion": 21
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 37,
+    "fields": {
+      "nombre": "Pautas de Higiene - Alimentar Comunidad",
+      "tipo_intervencion": 21
+    }
+  },
+  {
+    "model": "intervenciones.subintervencion",
+    "pk": 38,
+    "fields": {
+      "nombre": "Seguridad en la Cocina - Alimentar Comunidad",
+      "tipo_intervencion": 21
     }
   }
 ]
