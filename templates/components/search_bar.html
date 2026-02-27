@@ -205,7 +205,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
     <script src="{% static filters_js|default:'custom/js/advanced_filters.js' %}"></script>
     <script src="{% static 'custom/js/favorite_filters.js' %}"></script>
 {% elif ajax_search_mode %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
   document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("ajax-search-input");
     const tbody = document.getElementById(

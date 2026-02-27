@@ -411,6 +411,8 @@
                     {% endif %}
                     <a href="{% url 'ciudadanos_editar' ciudadano.pk %}"
                        class="btn btn-outline-light">Editar</a>
+                    <a href="{% url 'ciudadanos_eliminar' ciudadano.pk %}"
+                       class="btn btn-danger">Dar de baja</a>
                 </div>
             </div>
         </div>
@@ -616,11 +618,11 @@
                             <div class="historial-header">
                                 <h6>Historial de Transferencia directa e indirecta</h6>
                                 <div class="periodo-selector">
-                                    <button class="btn" onclick="cambiarMes(-1)">
+                                    <button class="btn" data-call-click="cambiarMes" data-call-args="[-1]">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
                                     <span class="mes-actual" id="mes-actual">4 Diciembre 2025</span>
-                                    <button class="btn" onclick="cambiarMes(1)">
+                                    <button class="btn" data-call-click="cambiarMes" data-call-args="[1]">
                                         <i class="fas fa-chevron-right"></i>
                                     </button>
                                 </div>
@@ -1953,7 +1955,7 @@
     {% if google_maps_api_key %}
         <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}"></script>
     {% endif %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
 let mesActual = new Date().getMonth() + 1;
 let anioActual = new Date().getFullYear();
 const mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];

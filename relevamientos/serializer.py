@@ -13,231 +13,169 @@ logger = logging.getLogger("django")
 
 
 class RelevamientoSerializer(serializers.ModelSerializer):
+    CONTACT_BLOCK_FIELDS = ("referente_comedor", "responsable_relevamiento")
 
-    # TODO: Refactorizar
+    def _run_steps(self, steps):
+        for step in steps:
+            step()
+
+    def _run_clean_normalization_steps(self):
+        self._run_steps(
+            (
+                lambda: self._convert_yn_to_boolean(self.initial_data),
+                self._normalize_fecha_visita,
+                self._process_comedor,
+                self._process_territorial,
+                self._normalize_responsable_es_referente,
+                self._normalize_contact_blocks,
+                self._validate_contact_blocks_emails,
+                self._normalize_imagenes,
+            )
+        )
+
+    def _run_clean_related_entity_steps(self):
+        self._run_steps(
+            (
+                self._process_related_blocks,
+                self._process_responsable_y_referente,
+            )
+        )
+
+    def _run_clean_pipeline(self):
+        self._run_clean_normalization_steps()
+        self._run_clean_related_entity_steps()
+
     def clean(  # pylint: disable=too-many-statements,too-many-branches, too-many-locals
         self,
     ):
-        # Convertir valores Y/N a booleanos automáticamente
-        self._convert_yn_to_boolean(self.initial_data)
+        self._run_clean_pipeline()
 
+        return self
+
+    def _get_related_instance(self, field_name):
+        if not self.instance:
+            return None
+        return getattr(self.instance, field_name, None)
+
+    def _normalize_fecha_visita(self):
         if "fecha_visita" in self.initial_data:
             self.initial_data["fecha_visita"] = format_fecha_django(
                 self.initial_data["fecha_visita"]
             )
 
-        if "comedor" in self.initial_data:
-            self.initial_data["comedor"] = RelevamientoService.update_comedor(
-                self.initial_data["comedor"],
-                (
-                    self.instance.comedor
-                    if self.instance and self.instance.comedor
-                    else None
-                ),
+    def _process_comedor(self):
+        if "comedor" not in self.initial_data:
+            return
+        self.initial_data["comedor"] = RelevamientoService.update_comedor(
+            self.initial_data["comedor"],
+            self._get_related_instance("comedor"),
+        )
+
+    def _process_territorial(self):
+        if "territorial" not in self.initial_data:
+            return
+        territorial_data = self.initial_data["territorial"]
+        self.initial_data["territorial_nombre"] = territorial_data["nombre"]
+        self.initial_data["territorial_uid"] = territorial_data["gestionar_uid"]
+        # Evitar que quede un campo no modelado que rompa la validación
+        self.initial_data.pop("territorial", None)
+
+    def _replace_related_block_with_id(self, field_name, service_method):
+        if field_name not in self.initial_data:
+            return
+        related_instance = self._get_related_instance(field_name)
+        self.initial_data[field_name] = service_method(
+            self.initial_data[field_name], related_instance
+        ).id
+
+    def _get_related_block_handlers(self):
+        return {
+            "funcionamiento": RelevamientoService.create_or_update_funcionamiento,
+            "espacio": RelevamientoService.create_or_update_espacio,
+            "colaboradores": RelevamientoService.create_or_update_colaboradores,
+            "recursos": RelevamientoService.create_or_update_recursos,
+            "compras": RelevamientoService.create_or_update_compras,
+            "anexo": RelevamientoService.create_or_update_anexo,
+            "punto_entregas": RelevamientoService.create_or_update_punto_entregas,
+            "prestacion": RelevamientoService.create_or_update_prestacion,
+            "excepcion": RelevamientoService.create_or_update_excepcion,
+        }
+
+    def _process_related_blocks(self):
+        for field_name, service_method in self._get_related_block_handlers().items():
+            self._replace_related_block_with_id(field_name, service_method)
+
+    def _normalize_responsable_es_referente(self):
+        if "responsable_es_referente" not in self.initial_data:
+            return
+        responsable_es_referente = self.initial_data["responsable_es_referente"]
+        if isinstance(responsable_es_referente, str):
+            self.initial_data["responsable_es_referente"] = (
+                responsable_es_referente.upper() == "Y"
             )
 
-        if "territorial" in self.initial_data:
-            territorial_data = self.initial_data["territorial"]
-            self.initial_data["territorial_nombre"] = territorial_data["nombre"]
-            self.initial_data["territorial_uid"] = territorial_data["gestionar_uid"]
-            # Evitar que quede un campo no modelado que rompa la validación
-            self.initial_data.pop("territorial", None)
+    def _normalize_phone_or_document(self, value):
+        if value == "":
+            return None
+        if isinstance(value, str):
+            return value.strip().replace(" ", "").replace("-", "").replace(".", "")
+        return value
 
-        if "funcionamiento" in self.initial_data:
-            funcionamiento_instance = (
-                self.instance.funcionamiento
-                if self.instance and self.instance.funcionamiento
-                else None
-            )
-            self.initial_data["funcionamiento"] = (
-                RelevamientoService.create_or_update_funcionamiento(
-                    self.initial_data["funcionamiento"], funcionamiento_instance
-                ).id
-            )
+    def _normalize_contact_block(self, field_name):
+        data = self.initial_data.get(field_name)
+        if not isinstance(data, dict):
+            return
 
-        if "espacio" in self.initial_data:
-            espacio_instance = (
-                self.instance.espacio
-                if self.instance and self.instance.espacio
-                else None
-            )
-            self.initial_data["espacio"] = RelevamientoService.create_or_update_espacio(
-                self.initial_data["espacio"], espacio_instance
-            ).id
+        if "celular" in data:
+            data["celular"] = self._normalize_phone_or_document(data["celular"])
+        if "documento" in data:
+            data["documento"] = self._normalize_phone_or_document(data["documento"])
 
-        if "colaboradores" in self.initial_data:
-            colaboradores_instance = (
-                self.instance.colaboradores
-                if self.instance and self.instance.colaboradores
-                else None
-            )
-            self.initial_data["colaboradores"] = (
-                RelevamientoService.create_or_update_colaboradores(
-                    self.initial_data["colaboradores"], colaboradores_instance
-                ).id
-            )
+    def _normalize_contact_blocks(self):
+        for field_name in self.CONTACT_BLOCK_FIELDS:
+            self._normalize_contact_block(field_name)
 
-        if "recursos" in self.initial_data:
-            recursos_instance = (
-                self.instance.recursos
-                if self.instance and self.instance.recursos
-                else None
-            )
-            self.initial_data["recursos"] = (
-                RelevamientoService.create_or_update_recursos(
-                    self.initial_data["recursos"], recursos_instance
-                ).id
-            )
-
-        if "compras" in self.initial_data:
-            compras_instance = (
-                self.instance.compras
-                if self.instance and self.instance.compras
-                else None
-            )
-            self.initial_data["compras"] = RelevamientoService.create_or_update_compras(
-                self.initial_data["compras"], compras_instance
-            ).id
-
-        if "anexo" in self.initial_data:
-            anexo_instance = (
-                self.instance.anexo if self.instance and self.instance.anexo else None
-            )
-            self.initial_data["anexo"] = RelevamientoService.create_or_update_anexo(
-                self.initial_data["anexo"], anexo_instance
-            ).id
-        if "punto_entregas" in self.initial_data:
-            punto_entregas_instance = (
-                self.instance.punto_entregas
-                if self.instance and self.instance.punto_entregas
-                else None
-            )
-            self.initial_data["punto_entregas"] = (
-                RelevamientoService.create_or_update_punto_entregas(
-                    self.initial_data["punto_entregas"], punto_entregas_instance
-                ).id
-            )
-
-        if "prestacion" in self.initial_data:
-            prestacion_instance = (
-                self.instance.prestacion
-                if self.instance and self.instance.prestacion
-                else None
-            )
-            self.initial_data["prestacion"] = (
-                RelevamientoService.create_or_update_prestacion(
-                    self.initial_data["prestacion"], prestacion_instance
-                ).id
-            )
-
-        if "excepcion" in self.initial_data:
-            excepcion_instance = (
-                self.instance.excepcion
-                if self.instance and self.instance.excepcion
-                else None
-            )
-            self.initial_data["excepcion"] = (
-                RelevamientoService.create_or_update_excepcion(
-                    self.initial_data["excepcion"], excepcion_instance
-                ).id
-            )
-
-        if "responsable_es_referente" in self.initial_data:
-            responsable_es_referente = self.initial_data["responsable_es_referente"]
-            if isinstance(responsable_es_referente, str):
-                self.initial_data["responsable_es_referente"] = (
-                    responsable_es_referente.upper() == "Y"
-                )
-        if "referente_comedor" in self.initial_data:
-            if "celular" in self.initial_data["referente_comedor"]:
-                # TODO: Crear una funcion que limpie todo
-                if self.initial_data["referente_comedor"]["celular"] == "":
-                    self.initial_data["referente_comedor"]["celular"] = None
-                else:
-                    self.initial_data["referente_comedor"]["celular"] = (
-                        self.initial_data["referente_comedor"]["celular"]
-                        .strip()
-                        .replace(" ", "")
-                        .replace("-", "")
-                        .replace(".", "")
-                    )
-            if "documento" in self.initial_data["referente_comedor"]:
-                if self.initial_data["referente_comedor"]["documento"] == "":
-                    self.initial_data["referente_comedor"]["documento"] = None
-                else:
-                    self.initial_data["referente_comedor"]["documento"] = (
-                        self.initial_data["referente_comedor"]["documento"]
-                        .strip()
-                        .replace(" ", "")
-                        .replace("-", "")
-                        .replace(".", "")
-                    )
-
-        if "responsable_relevamiento" in self.initial_data:
-            if "celular" in self.initial_data["responsable_relevamiento"]:
-                if self.initial_data["responsable_relevamiento"]["celular"] == "":
-                    self.initial_data["responsable_relevamiento"]["celular"] = None
-                else:
-                    self.initial_data["responsable_relevamiento"]["celular"] = (
-                        self.initial_data["responsable_relevamiento"]["celular"]
-                        .strip()
-                        .replace(" ", "")
-                        .replace("-", "")
-                        .replace(".", "")
-                    )
-            if "documento" in self.initial_data["responsable_relevamiento"]:
-                if self.initial_data["responsable_relevamiento"]["documento"] == "":
-                    self.initial_data["responsable_relevamiento"]["documento"] = None
-                else:
-                    self.initial_data["responsable_relevamiento"]["documento"] = (
-                        self.initial_data["responsable_relevamiento"]["documento"]
-                        .strip()
-                        .replace(" ", "")
-                        .replace("-", "")
-                        .replace(".", "")
-                    )
-
+    def _validate_contact_blocks_emails(self):
         email_errors = {}
-        self._validate_nested_email(
-            self.initial_data.get("referente_comedor"),
-            "referente_comedor",
-            email_errors,
-        )
-        self._validate_nested_email(
-            self.initial_data.get("responsable_relevamiento"),
-            "responsable_relevamiento",
-            email_errors,
-        )
+        for field_name in self.CONTACT_BLOCK_FIELDS:
+            self._validate_nested_email(
+                self.initial_data.get(field_name),
+                field_name,
+                email_errors,
+            )
         if email_errors:
             raise serializers.ValidationError(email_errors)
 
+    def _process_responsable_y_referente(self):
         if (
-            "referente_comedor" in self.initial_data
-            or "responsable_relevamiento" in self.initial_data
+            "referente_comedor" not in self.initial_data
+            and "responsable_relevamiento" not in self.initial_data
         ):
-            responsable_relevamiento_id, referente_comedor_id = (
-                RelevamientoService.create_or_update_responsable_y_referente(
-                    self.initial_data.get("responsable_es_referente", False),
-                    self.initial_data.get("responsable_relevamiento", {}),
-                    self.initial_data.get("referente_comedor", {}),
-                    self.initial_data.get("sisoc_id"),
-                )
+            return
+
+        responsable_relevamiento_id, referente_comedor_id = (
+            RelevamientoService.create_or_update_responsable_y_referente(
+                self.initial_data.get("responsable_es_referente", False),
+                self.initial_data.get("responsable_relevamiento", {}),
+                self.initial_data.get("referente_comedor", {}),
+                self.initial_data.get("sisoc_id"),
             )
-            self.initial_data["responsable_relevamiento"] = responsable_relevamiento_id
-            self.initial_data["referente_comedor"] = referente_comedor_id
+        )
+        self.initial_data["responsable_relevamiento"] = responsable_relevamiento_id
+        self.initial_data["referente_comedor"] = referente_comedor_id
 
-        if "imagenes" in self.initial_data:
-            imagenes = self.initial_data["imagenes"]
-            if isinstance(imagenes, str):
-                self.initial_data["imagenes"] = [
-                    img.strip() for img in imagenes.split(",") if img.strip()
-                ]
-            elif isinstance(imagenes, list):
-                self.initial_data["imagenes"] = imagenes
-            else:
-                self.initial_data["imagenes"] = []
-
-        return self
+    def _normalize_imagenes(self):
+        if "imagenes" not in self.initial_data:
+            return
+        imagenes = self.initial_data["imagenes"]
+        if isinstance(imagenes, str):
+            self.initial_data["imagenes"] = [
+                img.strip() for img in imagenes.split(",") if img.strip()
+            ]
+        elif isinstance(imagenes, list):
+            self.initial_data["imagenes"] = imagenes
+        else:
+            self.initial_data["imagenes"] = []
 
     def validate(self, attrs):
         """Validación personalizada con mejor logging de errores."""

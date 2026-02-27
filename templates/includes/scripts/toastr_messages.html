@@ -1,0 +1,10 @@
+{% if messages %}
+    {% for message in messages %}
+        <!-- Mensajes Success y Error --- TOASTR-->
+        <!-- FIXME: Validar si es necesario mover este script dado que es pequeño y contiene tags de django -->
+        <script language="JavaScript" type="text/javascript" nonce="{{ request.csp_nonce }}">
+toastr.options = {"positionClass": "toast-bottom-right"}
+toastr.{{ message.tags }}("{{ message }}");
+        </script>
+    {% endfor %}
+{% endif %}

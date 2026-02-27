@@ -29,7 +29,7 @@
                    id="duplaFilter"
                    class="form-control"
                    placeholder="Filtrar por nombre de equipo técnico..."
-                   onkeyup="filterTable()" />
+                   data-filter-table-on-keyup="true" />
         </div>
         <form method="post">
             {% csrf_token %}
@@ -55,7 +55,7 @@
                                 <button type="submit"
                                         name="dupla_id"
                                         value="{{ dupla.id }}"
-                                        onclick="return confirm('¿Estás seguro de que deseas asignar esta dupla?')"
+                                        data-confirm-click="¿Estás seguro de que deseas asignar esta dupla?"
                                         class="btn btn-primary btn-sm">Asignar</button>
                             </td>
                             <td style="width: 100px;">
@@ -71,7 +71,7 @@
             </table>
         </form>
     </div>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
     function filterTable() {
         const filter = document.getElementById("duplaFilter").value.toUpperCase();
         const table = document.getElementById("duplaTable");

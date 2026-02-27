@@ -12,7 +12,7 @@
  *   RECEPCIONADO|ASIGNADO → (asignar técnico) → ASIGNADO
  *
  * Dependencias:
- *   - Plantilla 'celiaquia/expediente_list.html' inyecta window.CSRF_TOKEN.
+ *   - Plantilla 'celiaquia/expediente_list.html' inyecta token CSRF vía data-attribute.
  *   - Rutas:
  *       name='expediente_procesar'        (POST)
  *       name='expediente_confirm'         (POST)
@@ -54,8 +54,16 @@
     const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
     return m ? m[2] : null;
   }
+  function getConfigValue(key) {
+    const config = document.getElementById('celiaquia-list-config');
+    return config ? config.dataset[key] : null;
+  }
   function csrfToken() {
-    return (typeof window !== 'undefined' && window.CSRF_TOKEN) || getCookie('csrftoken');
+    return (
+      getConfigValue('csrfToken') ||
+      (typeof window !== 'undefined' && window.CSRF_TOKEN) ||
+      getCookie('csrftoken')
+    );
   }
   function alertsZone() {
     let zone = document.getElementById('list-alerts');
