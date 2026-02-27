@@ -3,6 +3,7 @@ Middleware para Content Security Policy (CSP).
 Ayuda a prevenir XSS y otros ataques de inyección de código.
 """
 
+import base64
 import secrets
 
 from django.conf import settings
@@ -25,7 +26,9 @@ class ContentSecurityPolicyMiddleware:
         # Se genera nonce por request para poder habilitar modo estricto gradualmente.
         # En modo compatible el nonce no se agrega al header para evitar ambigüedad
         # de compatibilidad con `unsafe-inline` en navegadores modernos.
-        request.csp_nonce = secrets.token_urlsafe(16)
+        # Usar base64 estándar (no URL-safe) para validez de sintaxis CSP universal.
+        nonce_bytes = secrets.token_bytes(16)
+        request.csp_nonce = base64.b64encode(nonce_bytes).decode('ascii').rstrip('=')
         response = self.get_response(request)
         allow_unsafe_inline_scripts = getattr(
             settings, "CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", True
