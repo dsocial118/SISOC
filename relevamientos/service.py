@@ -286,10 +286,11 @@ def _create_or_update_related_instance_with_logging(
     instance,
     populate_fn,
     create_fn,
-    method_name,
-    data_extra_key,
-    body_key,
+    error_context,
 ):
+    method_name = error_context["method_name"]
+    data_extra_key = error_context["data_extra_key"]
+    body_key = error_context["body_key"]
     parsed_data = raw_data
     try:
         parsed_data = populate_fn(raw_data)
@@ -829,9 +830,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             instance=funcionamiento_instance,
             populate_fn=RelevamientoService.populate_funcionamiento_data,
             create_fn=lambda parsed: FuncionamientoPrestacion.objects.create(**parsed),
-            method_name="create_or_update_funcionamiento",
-            data_extra_key="funcionamiento_data",
-            body_key="excepcion",
+            error_context={
+                "method_name": "create_or_update_funcionamiento",
+                "data_extra_key": "funcionamiento_data",
+                "body_key": "excepcion",
+            },
         )
 
     @staticmethod
@@ -871,9 +874,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             instance=espacio_prestacion_instance,
             populate_fn=RelevamientoService.populate_espacio_prestacion_data,
             create_fn=lambda parsed: EspacioPrestacion.objects.create(**parsed),
-            method_name="create_or_update_espacio_prestacion",
-            data_extra_key="espacio_prestacion_data",
-            body_key="excepcion",
+            error_context={
+                "method_name": "create_or_update_espacio_prestacion",
+                "data_extra_key": "espacio_prestacion_data",
+                "body_key": "excepcion",
+            },
         )
 
     @staticmethod
@@ -959,9 +964,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             instance=colaboradores_instance,
             populate_fn=RelevamientoService.populate_colaboradores_data,
             create_fn=lambda parsed: Colaboradores.objects.create(**parsed),
-            method_name="create_or_update_colaboradores",
-            data_extra_key="colaboradores_data",
-            body_key="excepcion",
+            error_context={
+                "method_name": "create_or_update_colaboradores",
+                "data_extra_key": "colaboradores_data",
+                "body_key": "excepcion",
+            },
         )
 
     @staticmethod
@@ -1051,9 +1058,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             instance=compras_instance,
             populate_fn=RelevamientoService.populate_compras_data,
             create_fn=lambda parsed: FuenteCompras.objects.create(**parsed),
-            method_name="create_or_update_compras",
-            data_extra_key="compras_data",
-            body_key="excepcion",
+            error_context={
+                "method_name": "create_or_update_compras",
+                "data_extra_key": "compras_data",
+                "body_key": "excepcion",
+            },
         )
 
     @staticmethod
@@ -1063,9 +1072,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             instance=anexo_instance,
             populate_fn=RelevamientoService.populate_anexo_data,
             create_fn=lambda parsed: Anexo.objects.create(**parsed),
-            method_name="create_or_update_anexo",
-            data_extra_key="anexo_data",
-            body_key="anexo",
+            error_context={
+                "method_name": "create_or_update_anexo",
+                "data_extra_key": "anexo_data",
+                "body_key": "anexo",
+            },
         )
 
     @staticmethod
@@ -1136,9 +1147,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             instance=prestacion_instance,
             populate_fn=RelevamientoService.populate_prestacion_data,
             create_fn=lambda parsed: Prestacion.objects.create(**parsed),
-            method_name="create_or_update_prestacion",
-            data_extra_key="prestacion_data",
-            body_key="prestacion",
+            error_context={
+                "method_name": "create_or_update_prestacion",
+                "data_extra_key": "prestacion_data",
+                "body_key": "prestacion",
+            },
         )
 
     @staticmethod
@@ -1188,9 +1201,11 @@ class RelevamientoService:  # pylint: disable=too-many-public-methods
             instance=excepcion_instance,
             populate_fn=RelevamientoService.populate_excepcion_data,
             create_fn=lambda parsed: Excepcion.objects.create(**parsed),
-            method_name="create_or_update_excepcion",
-            data_extra_key="excepcion_data",
-            body_key="excepcion",
+            error_context={
+                "method_name": "create_or_update_excepcion",
+                "data_extra_key": "excepcion_data",
+                "body_key": "excepcion",
+            },
         )
 
     @staticmethod

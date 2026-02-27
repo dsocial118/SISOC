@@ -69,7 +69,9 @@ def test_nomina_detalle_no_permite_centro_fuera_de_provincia():
     provincia_a = Provincia.objects.create(nombre="Mendoza")
     provincia_b = Provincia.objects.create(nombre="Salta")
     user = _crear_usuario("user-prov-mza", provincia=provincia_a)
-    centro_b = CentroDeInfancia.objects.create(nombre="CDI Salta", provincia=provincia_b)
+    centro_b = CentroDeInfancia.objects.create(
+        nombre="CDI Salta", provincia=provincia_b
+    )
 
     request = RequestFactory().get(f"/centrodeinfancia/{centro_b.pk}/nomina/")
     request.user = user
@@ -166,7 +168,9 @@ def test_upload_documentacion_no_permite_intervencion_fuera_de_scope():
     provincia_a = Provincia.objects.create(nombre="Jujuy")
     provincia_b = Provincia.objects.create(nombre="Misiones")
     user = _crear_usuario("user-prov-jujuy", provincia=provincia_a)
-    centro_b = CentroDeInfancia.objects.create(nombre="CDI Mision", provincia=provincia_b)
+    centro_b = CentroDeInfancia.objects.create(
+        nombre="CDI Mision", provincia=provincia_b
+    )
     intervencion = IntervencionCentroInfancia.objects.create(centro=centro_b)
 
     request = RequestFactory().post(

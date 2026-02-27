@@ -1,12 +1,14 @@
-"""Herramientas reutilizables para construir filtros avanzados en listados."""
+"""Engine principal para filtros avanzados reutilizables."""
 
 from __future__ import annotations
 
-import json
-from datetime import date, datetime
 from typing import Any, Callable, Dict, Iterable, Mapping, MutableMapping, Optional
 
 from django.db.models import Q, QuerySet
+
+from .coercion import coerce_value
+from .lookups import resolve_lookup
+from .payload import extract_raw_filters, load_payload
 
 
 class AdvancedFilterEngine:
@@ -126,51 +128,12 @@ class AdvancedFilterEngine:
     def _extract_raw_filters(self, request_or_get: Any) -> Any:
         """Obtiene el valor del parámetro configurado desde distintas fuentes."""
 
-        params: Optional[Mapping[str, Any]] = None
-        # ``HttpRequest`` expone ``GET`` cuya lectura puede fallar en tests.
-        if hasattr(request_or_get, "GET"):
-            try:
-                params = request_or_get.GET
-            except Exception:  # pragma: no cover - protección adicional
-                params = None
-        if params is None:
-            if isinstance(request_or_get, Mapping):
-                params = request_or_get
-            else:
-                params = None
-
-        if not params:
-            return None
-
-        try:
-            return params.get(self.param_name)
-        except Exception:  # pragma: no cover - compatibilidad con QueryDict
-            return None
+        return extract_raw_filters(self.param_name, request_or_get)
 
     def _load_payload(self, raw_filters: Any) -> Optional[dict[str, Any]]:
         """Decodifica el JSON enviado en el parámetro de filtros."""
 
-        if isinstance(raw_filters, (bytes, bytearray)):
-            raw_filters = raw_filters.decode()
-
-        if isinstance(raw_filters, str):
-            raw_filters = raw_filters.strip()
-            if not raw_filters:
-                return None
-            try:
-                parsed = json.loads(raw_filters)
-            except (json.JSONDecodeError, TypeError):
-                return None
-        elif isinstance(raw_filters, MutableMapping):
-            parsed = dict(raw_filters)
-        elif isinstance(raw_filters, Mapping):
-            parsed = dict(raw_filters)
-        else:
-            return None
-
-        if not isinstance(parsed, dict):
-            return None
-        return parsed
+        return load_payload(raw_filters)
 
     def _build_q_for_item(self, item: MutableMapping[str, Any]) -> Optional[Q]:
         """Construye el ``Q`` para un filtro individual."""
@@ -209,52 +172,7 @@ class AdvancedFilterEngine:
         if not ok:
             return None
 
-        lookup = None
-        negate = False
-        if field_type == "text":
-            if op == "eq":
-                lookup = f"{mapped_field}__iexact"
-            elif op == "ne":
-                lookup = f"{mapped_field}__iexact"
-                negate = True
-            elif op == "contains":
-                lookup = f"{mapped_field}__icontains"
-            elif op == "ncontains":
-                lookup = f"{mapped_field}__icontains"
-                negate = True
-        elif field_type == "choice":
-            if op == "eq":
-                lookup = f"{mapped_field}__iexact"
-            elif op == "ne":
-                lookup = f"{mapped_field}__iexact"
-                negate = True
-        elif field_type == "number":
-            if op == "eq":
-                lookup = f"{mapped_field}__exact"
-            elif op == "ne":
-                lookup = f"{mapped_field}__exact"
-                negate = True
-            elif op == "gt":
-                lookup = f"{mapped_field}__gt"
-            elif op == "lt":
-                lookup = f"{mapped_field}__lt"
-        elif field_type == "date":
-            if op == "eq":
-                lookup = f"{mapped_field}__exact"
-            elif op == "ne":
-                lookup = f"{mapped_field}__exact"
-                negate = True
-            elif op == "gt":
-                lookup = f"{mapped_field}__gt"
-            elif op == "lt":
-                lookup = f"{mapped_field}__lt"
-        elif field_type == "boolean":
-            if op == "eq":
-                lookup = f"{mapped_field}__exact"
-            elif op == "ne":
-                lookup = f"{mapped_field}__exact"
-                negate = True
-
+        lookup, negate = resolve_lookup(field_type, op, mapped_field)
         if not lookup:
             return None
 
@@ -266,52 +184,9 @@ class AdvancedFilterEngine:
     ) -> tuple[bool, Any]:
         """Intenta castear ``value`` según el tipo del campo."""
 
-        if field in self.field_casts:
-            try:
-                return True, self.field_casts[field](value)
-            except Exception:  # pragma: no cover - protección frente a errores
-                return False, None
-
-        if field_type == "number":
-            try:
-                return True, int(value)
-            except (TypeError, ValueError):
-                return False, None
-        if field_type == "date":
-            if isinstance(value, date) and not isinstance(value, datetime):
-                return True, value
-            if isinstance(value, datetime):
-                return True, value.date()
-            if isinstance(value, str):
-                cleaned = value.strip()
-                if not cleaned:
-                    return False, None
-                if cleaned.endswith("Z"):
-                    cleaned = cleaned[:-1]
-                try:
-                    return True, datetime.fromisoformat(cleaned).date()
-                except ValueError:
-                    pass
-                for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"):
-                    try:
-                        return True, datetime.strptime(cleaned, fmt).date()
-                    except ValueError:
-                        continue
-            return False, None
-        if field_type == "boolean":
-            truthy = {True, 1, "1", "true", "t", "yes", "y"}
-            falsy = {False, 0, "0", "false", "f", "no", "n"}
-
-            if isinstance(value, str):
-                value = value.strip().lower()
-
-            if value in truthy:
-                return True, True
-            if value in falsy:
-                return True, False
-            return False, None
-
-        return True, value
-
-
-__all__ = ["AdvancedFilterEngine"]
+        return coerce_value(
+            field=field,
+            value=value,
+            field_type=field_type,
+            field_casts=self.field_casts,
+        )
