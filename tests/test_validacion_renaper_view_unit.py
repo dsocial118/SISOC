@@ -273,3 +273,96 @@ def test_post_routes_to_save_or_consulta(mocker):
     assert save.called
     assert view.post.__wrapped__(view, req_consulta, 1, 2) == "consulta"
     assert consulta.called
+
+
+def test_consultar_renaper_sin_sexo_reintenta_y_reutiliza_respuesta(mocker):
+    view = module.ValidacionRenaperView()
+    ciudadano = SimpleNamespace(
+        documento="12345678",
+        sexo=None,
+        nombre="ana",
+        apellido="perez",
+        fecha_nacimiento=None,
+        calle="mitre",
+        altura=10,
+        piso_departamento="1a",
+        ciudad="la plata",
+        provincia=None,
+        codigo_postal=1900,
+    )
+    legajo = _Legajo(ciudadano=ciudadano, assigned=True)
+    mocker.patch(
+        "celiaquia.views.validacion_renaper.get_object_or_404",
+        return_value=legajo,
+    )
+    consultar = mocker.patch(
+        "celiaquia.views.validacion_renaper.consultar_datos_renaper",
+        side_effect=[
+            {"success": False, "error": "mismatch"},
+            {
+                "success": True,
+                "fallecido": False,
+                "data": {
+                    "documento": "12345678",
+                    "nombre": "ANA",
+                    "apellido": "PEREZ",
+                    "fecha_nacimiento": "2000-01-02",
+                    "calle": "MITRE",
+                    "altura": "10",
+                    "piso_departamento": "1A",
+                    "ciudad": "LA PLATA",
+                    "provincia": None,
+                    "codigo_postal": "1900",
+                },
+            },
+        ],
+    )
+
+    resp = view._consultar_renaper(
+        SimpleNamespace(user=_User(superuser=True)), pk=1, legajo_id=1
+    )
+    body = json.loads(resp.content)
+
+    assert body["success"] is True
+    assert body["datos_renaper"]["sexo"] == "Femenino"
+    assert consultar.call_count == 2
+    assert consultar.call_args_list[0].args == ("12345678", "M")
+    assert consultar.call_args_list[1].args == ("12345678", "F")
+
+
+def test_consultar_datos_renaper_con_reintentos_respeta_backoff(mocker):
+    mocker.patch.object(module.settings, "RENAPER_VALIDACION_MAX_RETRIES", 3)
+    mocker.patch.object(module.settings, "RENAPER_VALIDACION_BACKOFF_SECONDS", 0.25)
+    consultar = mocker.patch(
+        "celiaquia.views.validacion_renaper.consultar_datos_renaper",
+        side_effect=[
+            {"success": False, "error": "timeout"},
+            {"success": False, "error": "timeout"},
+            {"success": True, "data": {"documento": "12345678"}},
+        ],
+    )
+    sleep = mocker.patch("celiaquia.views.validacion_renaper.time.sleep")
+
+    out = module._consultar_datos_renaper_con_reintentos("12345678", "M")
+
+    assert out["success"] is True
+    assert consultar.call_count == 3
+    assert sleep.call_count == 2
+    assert sleep.call_args_list[0].args == (0.25,)
+    assert sleep.call_args_list[1].args == (0.5,)
+
+
+def test_consultar_datos_renaper_con_reintentos_defaults_invalidos(mocker):
+    mocker.patch.object(module.settings, "RENAPER_VALIDACION_MAX_RETRIES", "abc")
+    mocker.patch.object(module.settings, "RENAPER_VALIDACION_BACKOFF_SECONDS", "x")
+    consultar = mocker.patch(
+        "celiaquia.views.validacion_renaper.consultar_datos_renaper",
+        return_value={"success": False, "error": "fail"},
+    )
+    sleep = mocker.patch("celiaquia.views.validacion_renaper.time.sleep")
+
+    out = module._consultar_datos_renaper_con_reintentos("12345678", "F")
+
+    assert out["success"] is False
+    assert consultar.call_count == 1
+    sleep.assert_not_called()

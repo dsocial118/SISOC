@@ -9,6 +9,12 @@ def register_tracked_models():
     """
     for definition in get_tracked_model_definitions():
         model = definition.get_model()
-        if getattr(auditlog, "_registry", {}).get(model):
+        registry = getattr(auditlog, "_registry", {})
+        try:
+            already_registered = model in registry
+        except TypeError:
+            already_registered = False
+
+        if already_registered:
             continue
         auditlog.register(model, exclude_fields=definition.get_excluded_fields())

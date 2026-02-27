@@ -1,5 +1,21 @@
 const PERSONALIZED_FLAG = "1";
 
+function getAdmisionesTecnicosConfig() {
+    return document.getElementById("admisiones-tecnicos-config");
+}
+
+function getAdmisionesConfigValue(key, fallbackValue = null) {
+    const config = getAdmisionesTecnicosConfig();
+    if (config && config.dataset && config.dataset[key]) {
+        return config.dataset[key];
+    }
+    return fallbackValue;
+}
+
+function getCsrfToken() {
+    return getAdmisionesConfigValue("csrfToken", typeof CSRF_TOKEN !== "undefined" ? CSRF_TOKEN : null);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const nombreInput = document.getElementById("nuevoDocumentoNombre");
     const archivoInput = document.getElementById("nuevoDocumentoArchivo");
@@ -7,7 +23,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const progressContainer = document.getElementById("progress-container-nuevo");
     const progressBar = document.getElementById("progress-bar-nuevo");
 
-    if (nombreInput && archivoInput && abrirBtn && window.URL_CREAR_DOCUMENTO_PERSONALIZADO) {
+    const urlCrearDocumentoPersonalizado = getAdmisionesConfigValue(
+        "urlCrearDocumentoPersonalizado",
+        window.URL_CREAR_DOCUMENTO_PERSONALIZADO
+    );
+
+    if (nombreInput && archivoInput && abrirBtn && urlCrearDocumentoPersonalizado) {
         abrirBtn.addEventListener("click", function () {
             if (!nombreInput.value.trim()) {
                 alert("Por favor, escriba un nombre antes de adjuntar un archivo.");
@@ -28,8 +49,8 @@ document.addEventListener("DOMContentLoaded", function () {
             progressBar.textContent = "0%";
 
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", window.URL_CREAR_DOCUMENTO_PERSONALIZADO, true);
-            xhr.setRequestHeader("X-CSRFToken", CSRF_TOKEN);
+            xhr.open("POST", urlCrearDocumentoPersonalizado, true);
+            xhr.setRequestHeader("X-CSRFToken", getCsrfToken());
 
             xhr.upload.addEventListener("progress", function (e) {
                 if (e.lengthComputable) {
@@ -153,7 +174,7 @@ function subirArchivo(admisionId, documentoId) {
         }
     };
 
-    xhr.setRequestHeader("X-CSRFToken", CSRF_TOKEN);
+    xhr.setRequestHeader("X-CSRFToken", getCsrfToken());
     xhr.send(formData);
 }
 
@@ -214,7 +235,7 @@ function confirmarEliminar(admisionId, documentacionId, archivoId) {
 
     fetch(construirUrlEliminar(admisionIdEliminar, identifier, true), {
         method: "DELETE",
-        headers: { "X-CSRFToken": CSRF_TOKEN }
+        headers: { "X-CSRFToken": getCsrfToken() }
     })
         .then((response) => response.json())
         .then((data) => {
@@ -267,7 +288,7 @@ function eliminarArchivo(admisionId) {
     fetch(url, {
         method: "DELETE",
         headers: {
-            "X-CSRFToken": CSRF_TOKEN,
+            "X-CSRFToken": getCsrfToken(),
         }
     })
         .then(response => response.json())
