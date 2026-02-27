@@ -300,9 +300,7 @@
                                     {{ intervencion_form.subintervencion }}
                                 </div>
                                 {% if intervencion_form.destinatario.is_hidden %}
-                                    <div class="col-md-6 d-none">
-                                        {{ intervencion_form.destinatario }}
-                                    </div>
+                                    <div class="col-md-6 d-none">{{ intervencion_form.destinatario }}</div>
                                 {% else %}
                                     <div class="col-md-6">
                                         <label for="{{ intervencion_form.destinatario.id_for_label }}"
