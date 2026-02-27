@@ -22,7 +22,6 @@ urlpatterns = [
     path("", include("dashboard.urls")),
     path("", include("comedores.urls")),
     path("", include("organizaciones.urls")),
-    path("", include("cdi.urls")),
     path("", include("duplas.urls")),
     path("", include("audittrail.urls")),
     path("", include("ciudadanos.urls")),
