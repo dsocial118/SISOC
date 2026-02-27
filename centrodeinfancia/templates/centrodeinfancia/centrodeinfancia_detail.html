@@ -299,11 +299,17 @@
                                            class="form-label">{{ intervencion_form.subintervencion.label }}</label>
                                     {{ intervencion_form.subintervencion }}
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="{{ intervencion_form.destinatario.id_for_label }}"
-                                           class="form-label">{{ intervencion_form.destinatario.label }}</label>
-                                    {{ intervencion_form.destinatario }}
-                                </div>
+                                {% if intervencion_form.destinatario.is_hidden %}
+                                    <div class="col-md-6 d-none">
+                                        {{ intervencion_form.destinatario }}
+                                    </div>
+                                {% else %}
+                                    <div class="col-md-6">
+                                        <label for="{{ intervencion_form.destinatario.id_for_label }}"
+                                               class="form-label">{{ intervencion_form.destinatario.label }}</label>
+                                        {{ intervencion_form.destinatario }}
+                                    </div>
+                                {% endif %}
                                 <div class="col-md-6">
                                     <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
                                            class="form-label">{{ intervencion_form.forma_contacto.label }}</label>

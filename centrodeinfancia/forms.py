@@ -3,7 +3,7 @@ from django import forms
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
-from intervenciones.models.intervenciones import TipoIntervencion
+from intervenciones.models.intervenciones import TipoDestinatario, TipoIntervencion
 from organizaciones.models import Organizacion
 from users.models import Profile
 from centrodeinfancia.models import (
@@ -171,12 +171,34 @@ class NominaCentroInfanciaCreateForm(forms.ModelForm):
 
 class IntervencionCentroInfanciaForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        destinatario_fijo_nombre = kwargs.pop("destinatario_fijo_nombre", None)
+        hide_destinatario = kwargs.pop("hide_destinatario", False)
         super().__init__(*args, **kwargs)
         selected_tipo_id = getattr(self.instance, "tipo_intervencion_id", None)
         self.fields["tipo_intervencion"].queryset = TipoIntervencion.para_programas(
             *PROGRAMA_ALIASES_CENTRO_INFANCIA,
             include_ids=[selected_tipo_id] if selected_tipo_id else None,
         )
+
+        self.destinatario_fijo_instance = None
+        self.destinatario_fijo_missing = False
+        self.destinatario_fijo_nombre = destinatario_fijo_nombre
+        if destinatario_fijo_nombre:
+            destinatario_fijo = TipoDestinatario.objects.filter(
+                nombre__iexact=destinatario_fijo_nombre
+            ).first()
+            if destinatario_fijo:
+                self.destinatario_fijo_instance = destinatario_fijo
+                self.fields["destinatario"].required = False
+                self.fields["destinatario"].initial = destinatario_fijo.pk
+                self.fields["destinatario"].queryset = TipoDestinatario.objects.filter(
+                    pk=destinatario_fijo.pk
+                )
+            else:
+                self.destinatario_fijo_missing = True
+                self.fields["destinatario"].required = False
+            if hide_destinatario:
+                self.fields["destinatario"].widget = forms.HiddenInput()
 
         for field_name in [
             "tipo_intervencion",
@@ -229,6 +251,20 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
         cleaned_data = super().clean()
         tipo_intervencion = cleaned_data.get("tipo_intervencion")
         subintervencion = cleaned_data.get("subintervencion")
+        destinatario = cleaned_data.get("destinatario")
+
+        if self.destinatario_fijo_instance:
+            cleaned_data["destinatario"] = self.destinatario_fijo_instance
+        elif self.destinatario_fijo_missing:
+            self.add_error(
+                "destinatario",
+                f"No existe el destinatario requerido: {self.destinatario_fijo_nombre}.",
+            )
+        elif destinatario is None:
+            self.add_error(
+                "destinatario",
+                "Debe seleccionar un destinatario.",
+            )
 
         if not tipo_intervencion:
             return cleaned_data
