@@ -1,7 +1,25 @@
-"""Compatibility alias that preserves original module patch semantics."""
+"""Servicio para gestión de participantes en actividades."""
 
-import sys as _sys
+from .impl import (
+    ActividadService,
+    AlreadyRegistered,
+    CupoExcedido,
+    ParticipanteService,
+    SexoNoPermitido,
+    obtener_centros_adheridos_de_faro,
+    puede_operar,
+    validar_ciudadano_en_rango_para_actividad,
+    validar_cuit,
+)
 
-from . import impl as _impl
-
-_sys.modules[__name__] = _impl
+__all__ = [
+    "ActividadService",
+    "AlreadyRegistered",
+    "CupoExcedido",
+    "ParticipanteService",
+    "SexoNoPermitido",
+    "obtener_centros_adheridos_de_faro",
+    "puede_operar",
+    "validar_ciudadano_en_rango_para_actividad",
+    "validar_cuit",
+]

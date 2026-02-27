@@ -169,8 +169,9 @@ def _get_models_to_scan(selected_key, models_by_key, order_keys):
     return [models_by_key[key] for key in order_keys]
 
 
-def _build_deleted_rows(models_to_scan, filter_data):
-    rows = []
+def _build_deleted_queryset(models_to_scan, filter_data):
+    """Build a combined queryset of deleted items without materializing rows."""
+    querysets = []
     for model in models_to_scan:
         queryset = model.all_objects.filter(deleted_at__isnull=False).select_related(
             "deleted_by"
@@ -183,22 +184,32 @@ def _build_deleted_rows(models_to_scan, filter_data):
                 filter_data.get("deleted_from"),
                 filter_data.get("deleted_to"),
             )
+        querysets.append(queryset)
 
+    if not querysets:
+        return models_to_scan[0].all_objects.none()
+
+    combined = querysets[0]
+    for qs in querysets[1:]:
+        combined = combined.union(qs)
+
+    return combined.order_by("-deleted_at", "-pk")
+
+
+def _rows_from_items(items, models_by_key):
+    """Convert items into row dicts with metadata."""
+    rows = []
+    for item in items:
+        model = type(item)
         model_label = str(model._meta.verbose_name).title()
-        for item in queryset.order_by("-deleted_at", "-pk"):
-            rows.append(
-                {
-                    "obj": item,
-                    "app_label": item._meta.app_label,
-                    "model_name": item._meta.model_name,
-                    "model_label": model_label,
-                }
-            )
-
-    rows.sort(
-        key=lambda row: (row["obj"].deleted_at, row["obj"].pk),
-        reverse=True,
-    )
+        rows.append(
+            {
+                "obj": item,
+                "app_label": item._meta.app_label,
+                "model_name": item._meta.model_name,
+                "model_label": model_label,
+            }
+        )
     return rows
 
 
@@ -233,7 +244,8 @@ class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
             else "Todos los modelos"
         )
 
-        rows = _build_deleted_rows(
+        # Get paginated queryset without materializing all rows
+        queryset = _build_deleted_queryset(
             models_to_scan=_get_models_to_scan(
                 selected_key=selected_key,
                 models_by_key=models_by_key,
@@ -241,9 +253,11 @@ class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
             ),
             filter_data=filter_data,
         )
-        page_obj = Paginator(rows, self.paginate_by).get_page(
-            request.GET.get("page") or 1
-        )
+        paginator = Paginator(queryset, self.paginate_by)
+        page_obj = paginator.get_page(request.GET.get("page") or 1)
+        
+        # Build rows only for the current page's items
+        rows = _rows_from_items(page_obj.object_list, models_by_key)
 
         active_filters = (
             _build_active_filters(
@@ -261,7 +275,7 @@ class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
             "selected_model_key": selected_key,
             "selected_model_label": selected_model_label,
             "page_obj": page_obj,
-            "rows": page_obj.object_list,
+            "rows": rows,
             "search_query": filter_data.get("q", ""),
             "active_filters": active_filters,
             "pagination_querystring": _build_pagination_querystring(request),

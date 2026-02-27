@@ -71,7 +71,11 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
             },
             {
                 "campo": "capacitacion_realizada",
-                "descripcion": "Capacitación realizada",
+                "descripcion": "Capacitación Sincrónica Realizada",
+            },
+            {
+                "campo": "capacitacion_fch_realizada",
+                "descripcion": "Capacitación Formando Capital Humano Realizada",
             },
             {
                 "campo": "notificacion_acreditacion_1",
