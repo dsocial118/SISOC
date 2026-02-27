@@ -1,6 +1,9 @@
+from datetime import datetime
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 
 from comedores.models import (
     Comedor,
@@ -11,6 +14,21 @@ from comedores.models import (
 )
 from centrodefamilia.models import Actividad, Categoria
 from core.soft_delete_preview import build_delete_preview
+
+
+def _categoria_model_key():
+    return f"{Categoria._meta.app_label}.{Categoria.__name__}"
+
+
+def _set_deleted_at(instance, value):
+    instance.__class__.all_objects.filter(pk=instance.pk).update(deleted_at=value)
+    instance.deleted_at = value
+
+
+def _create_deleted_categoria(nombre, deleted_by):
+    categoria = Categoria.objects.create(nombre=nombre)
+    categoria.delete(user=deleted_by, cascade=True)
+    return Categoria.all_objects.get(pk=categoria.pk)
 
 
 @pytest.mark.django_db
@@ -75,6 +93,185 @@ def test_papelera_only_superadmin_can_access(client):
     client.force_login(superuser)
     resp_ok = client.get(reverse("papelera_list"))
     assert resp_ok.status_code == 200
+
+
+@pytest.mark.django_db
+def test_papelera_list_filters_by_deleted_by(auth_client):
+    user_model = get_user_model()
+    deleter_1 = user_model.objects.create_user(username="maria.papelera", password="x")
+    deleter_2 = user_model.objects.create_user(username="juan.papelera", password="x")
+
+    kept = _create_deleted_categoria("Categoria Maria", deleter_1)
+    hidden = _create_deleted_categoria("Categoria Juan", deleter_2)
+
+    response = auth_client.get(
+        reverse("papelera_list"),
+        {"model": _categoria_model_key(), "deleted_by": "maria"},
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert str(kept) in content
+    assert str(hidden) not in content
+    assert "Filtros activos:" in content
+
+
+@pytest.mark.django_db
+def test_papelera_list_filters_by_deleted_date_range(auth_client):
+    user_model = get_user_model()
+    deleter = user_model.objects.create_user(username="date_filter_user", password="x")
+
+    inside = _create_deleted_categoria("Categoria Dentro Rango", deleter)
+    outside = _create_deleted_categoria("Categoria Fuera Rango", deleter)
+
+    inside_dt = timezone.make_aware(datetime(2026, 1, 10, 10, 30, 0))
+    outside_dt = timezone.make_aware(datetime(2026, 2, 20, 9, 0, 0))
+    _set_deleted_at(inside, inside_dt)
+    _set_deleted_at(outside, outside_dt)
+
+    response = auth_client.get(
+        reverse("papelera_list"),
+        {
+            "model": _categoria_model_key(),
+            "deleted_from": "2026-01-01",
+            "deleted_to": "2026-01-31",
+        },
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert str(inside) in content
+    assert str(outside) not in content
+
+
+@pytest.mark.django_db
+def test_papelera_list_invalid_date_range_shows_error(auth_client):
+    response = auth_client.get(
+        reverse("papelera_list"),
+        {
+            "model": _categoria_model_key(),
+            "deleted_from": "2026-02-10",
+            "deleted_to": "2026-02-01",
+        },
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert (
+        "La fecha &#x27;Desde&#x27; no puede ser posterior a la fecha &#x27;Hasta&#x27;."
+        in content
+    )
+    assert "alert alert-warning" in content
+
+
+@pytest.mark.django_db
+def test_papelera_pagination_preserves_filters(auth_client):
+    user_model = get_user_model()
+    deleter = user_model.objects.create_user(username="paginador", password="x")
+
+    deleted_ids = []
+    for index in range(30):
+        deleted = _create_deleted_categoria(f"Paginacion Papelera {index}", deleter)
+        deleted_ids.append(deleted.pk)
+
+    fixed_deleted_at = timezone.make_aware(datetime(2026, 1, 15, 12, 0, 0))
+    Categoria.all_objects.filter(pk__in=deleted_ids).update(deleted_at=fixed_deleted_at)
+
+    response = auth_client.get(
+        reverse("papelera_list"),
+        {
+            "model": _categoria_model_key(),
+            "q": "Paginacion",
+            "deleted_by": "paginador",
+            "deleted_from": "2026-01-15",
+            "deleted_to": "2026-01-15",
+            "page": 2,
+        },
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "q=Paginacion" in content
+    assert "deleted_by=paginador" in content
+    assert "deleted_from=2026-01-15" in content
+    assert "deleted_to=2026-01-15" in content
+    assert "page=1&amp;model=" in content or "page=1&model=" in content
+
+
+@pytest.mark.django_db
+def test_papelera_restore_preview_and_post_preserve_next_when_safe(client):
+    user_model = get_user_model()
+    actor = user_model.objects.create_user(username="deleter_restore", password="x")
+    superuser = user_model.objects.create_superuser(
+        username="super_restore",
+        email="super_restore@example.com",
+        password="x",
+    )
+    client.force_login(superuser)
+
+    deleted = _create_deleted_categoria("Categoria Restore Safe", actor)
+    model_key = _categoria_model_key()
+    next_url = f"{reverse('papelera_list')}?model={model_key}&q=Restore&page=2"
+    preview_url = reverse(
+        "papelera_preview_restore",
+        kwargs={
+            "app_label": Categoria._meta.app_label,
+            "model_name": Categoria._meta.model_name,
+            "pk": deleted.pk,
+        },
+    )
+    restore_url = reverse(
+        "papelera_restore",
+        kwargs={
+            "app_label": Categoria._meta.app_label,
+            "model_name": Categoria._meta.model_name,
+            "pk": deleted.pk,
+        },
+    )
+
+    preview_response = client.get(preview_url, {"next": next_url})
+    assert preview_response.status_code == 200
+    assert preview_response.context["back_url"] == next_url
+    assert preview_response.context["next_url"] == next_url
+
+    restore_response = client.post(
+        restore_url,
+        {"confirmed": "1", "next": next_url},
+    )
+    assert restore_response.status_code == 302
+    assert restore_response["Location"] == next_url
+
+
+@pytest.mark.django_db
+def test_papelera_restore_ignores_unsafe_next(client):
+    user_model = get_user_model()
+    actor = user_model.objects.create_user(username="deleter_unsafe", password="x")
+    superuser = user_model.objects.create_superuser(
+        username="super_unsafe",
+        email="super_unsafe@example.com",
+        password="x",
+    )
+    client.force_login(superuser)
+
+    deleted = _create_deleted_categoria("Categoria Restore Unsafe", actor)
+    model_key = _categoria_model_key()
+    restore_url = reverse(
+        "papelera_restore",
+        kwargs={
+            "app_label": Categoria._meta.app_label,
+            "model_name": Categoria._meta.model_name,
+            "pk": deleted.pk,
+        },
+    )
+
+    restore_response = client.post(
+        restore_url,
+        {"confirmed": "1", "next": "https://evil.example/fake"},
+    )
+    assert restore_response.status_code == 302
+    assert (
+        restore_response["Location"] == f"{reverse('papelera_list')}?model={model_key}"
+    )
 
 
 @pytest.mark.django_db

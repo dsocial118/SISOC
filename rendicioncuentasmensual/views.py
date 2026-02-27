@@ -102,7 +102,7 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
                 nombre=archivo_enviado.name,
                 archivo=archivo_enviado,
             )
-            rendicion.arvhios_adjuntos.add(doc_adjunta)
+            rendicion.archivos_adjuntos.add(doc_adjunta)
 
         return super().form_valid(form)
 
@@ -139,7 +139,7 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
                 nombre=archivo.name,
                 archivo=archivo,
             )
-            rendicion.arvhios_adjuntos.add(doc_adjunta)
+            rendicion.archivos_adjuntos.add(doc_adjunta)
 
         return super().form_valid(form)
 
@@ -155,7 +155,7 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
         context["comedorid"] = comedor_id
         context["form"] = RendicionCuentaMensualForm(instance=self.object)
         context["documentacion_adjunta_form"] = DocumentacionAdjuntaForm()
-        context["archivos_adjuntos"] = self.object.arvhios_adjuntos.all()
+        context["archivos_adjuntos"] = self.object.archivos_adjuntos.all()
         return context
 
 

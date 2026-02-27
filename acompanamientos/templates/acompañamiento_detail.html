@@ -1008,7 +1008,7 @@
             <i class="fas fa-arrow-left"></i>
         </a>
     </div>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
   document.addEventListener("DOMContentLoaded", function () {
     // Contar hitos completados y pendientes
     const completados = document.querySelectorAll(

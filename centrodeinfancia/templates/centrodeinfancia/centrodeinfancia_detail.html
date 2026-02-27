@@ -379,7 +379,7 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function() {
             const shell = document.querySelector(".accordion-shell");
             const accordion = document.querySelector(".accordion-horizontal");
