@@ -46,8 +46,8 @@ from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
-from core.soft_delete_preview import build_delete_preview
-from core.soft_delete_views import is_soft_deletable_instance
+from core.soft_delete.preview import build_delete_preview
+from core.soft_delete.view_helpers import is_soft_deletable_instance
 
 logger = logging.getLogger("django")
 

@@ -16,12 +16,12 @@ from django.views import View
 
 from core.forms import TrashFilterForm
 from core.security import safe_redirect
-from core.soft_delete_preview import build_restore_preview
-from core.soft_delete_registry import (
+from core.soft_delete.preview import build_restore_preview
+from core.soft_delete.registry import (
     get_soft_delete_model_choices,
     iter_soft_delete_models,
 )
-from core.soft_delete_views import SuperAdminRequiredMixin
+from core.soft_delete.view_helpers import SuperAdminRequiredMixin
 
 
 def _model_key(model):

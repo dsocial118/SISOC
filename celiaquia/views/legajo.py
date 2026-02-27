@@ -9,8 +9,8 @@ from celiaquia.models import EstadoLegajo, ExpedienteCiudadano, RevisionTecnico
 from celiaquia.services.legajo_service import LegajoService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from celiaquia.permissions import can_edit_legajo_files, can_review_legajo
-from core.soft_delete_preview import build_delete_preview
-from core.soft_delete_views import is_soft_deletable_instance
+from core.soft_delete.preview import build_delete_preview
+from core.soft_delete.view_helpers import is_soft_deletable_instance
 
 
 logger = logging.getLogger("django")

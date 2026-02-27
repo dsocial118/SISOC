@@ -32,7 +32,7 @@ from comedores.services.comedor_service import ComedorService
 from core.decorators import group_required
 from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from centrodeinfancia.access import (
     aplicar_filtro_provincia_usuario as _aplicar_filtro_provincia_usuario,

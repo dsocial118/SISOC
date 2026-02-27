@@ -10,7 +10,7 @@ from django.views.generic import (
 from django.urls import reverse_lazy, reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.services.column_preferences import build_columns_context_from_fields
 from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
