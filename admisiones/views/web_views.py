@@ -35,8 +35,8 @@ from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
-from core.soft_delete_preview import build_delete_preview
-from core.soft_delete_views import is_soft_deletable_instance
+from core.soft_delete.preview import build_delete_preview
+from core.soft_delete.view_helpers import is_soft_deletable_instance
 from core.security import safe_redirect
 from django.views.generic.edit import FormMixin
 from django.template.loader import render_to_string

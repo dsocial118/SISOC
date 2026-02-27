@@ -13,7 +13,7 @@ from comedores.models import (
     EstadoProceso,
 )
 from centrodefamilia.models import Actividad, Categoria
-from core.soft_delete_preview import build_delete_preview
+from core.soft_delete.preview import build_delete_preview
 
 
 def _categoria_model_key():

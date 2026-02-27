@@ -21,7 +21,7 @@ from ciudadanos.models import Ciudadano, GrupoFamiliar
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio
 from core.security import safe_redirect
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 logger = logging.getLogger("django")
 
