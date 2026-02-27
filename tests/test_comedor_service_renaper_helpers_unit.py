@@ -28,6 +28,95 @@ class _QS(list):
         return _QS(out)
 
 
+class _ComedoresListQS:
+    """QS falso para caracterizar encadenamiento de filtros de listado."""
+
+    def __init__(self):
+        self.calls = []
+
+    def select_related(self, *args, **_kwargs):
+        self.calls.append(("select_related", args))
+        return self
+
+    def annotate(self, **kwargs):
+        self.calls.append(("annotate", tuple(kwargs.keys())))
+        return self
+
+    def values(self, *args):
+        self.calls.append(("values", args))
+        return self
+
+    def order_by(self, *args):
+        self.calls.append(("order_by", args))
+        return self
+
+    def filter(self, *args, **kwargs):
+        self.calls.append(("filter", args, kwargs))
+        return self
+
+    def none(self):
+        self.calls.append(("none",))
+        return self
+
+
+class _NominaQS:
+    def __init__(self, resumen):
+        self.resumen = resumen
+        self.calls = []
+
+    def select_related(self, *args):
+        self.calls.append(("select_related", args))
+        return self
+
+    def annotate(self, **kwargs):
+        self.calls.append(("annotate", tuple(kwargs.keys())))
+        return self
+
+    def aggregate(self, **kwargs):
+        self.calls.append(("aggregate", tuple(kwargs.keys())))
+        return self.resumen
+
+    def only(self, *args):
+        self.calls.append(("only", args))
+        return self
+
+
+class _RelevamientoLookupQS:
+    def __init__(self, first_result):
+        self.first_result = first_result
+        self.calls = []
+
+    def filter(self, **kwargs):
+        self.calls.append(("filter", kwargs))
+        return self
+
+    def order_by(self, *args):
+        self.calls.append(("order_by", args))
+        return self
+
+    def only(self, *args):
+        self.calls.append(("only", args))
+        return self
+
+    def first(self):
+        self.calls.append(("first",))
+        return self.first_result
+
+
+class _RelevamientoManagerSeq:
+    def __init__(self, results):
+        self._results = list(results)
+        self.select_related_calls = []
+        self.qs_instances = []
+
+    def select_related(self, *args):
+        self.select_related_calls.append(args)
+        result = self._results.pop(0) if self._results else None
+        qs = _RelevamientoLookupQS(result)
+        self.qs_instances.append(qs)
+        return qs
+
+
 def test_parse_fecha_and_text_normalizers():
     assert module.ComedorService._parse_fecha_renaper("2024-01-20") == date(2024, 1, 20)
     assert module.ComedorService._parse_fecha_renaper("20/01/2024") == date(2024, 1, 20)
@@ -448,6 +537,56 @@ def test_post_comedor_relevamiento_branches(mocker):
     assert ok_redirect.called
 
 
+def test_get_presupuestos_queries_finalizado_y_fallback(mocker):
+    mocker.patch(
+        "comedores.services.comedor_service.preload_valores_comida_cache",
+        return_value={"cena": 1, "desayuno": 2, "almuerzo": 3, "merienda": 4},
+    )
+    prestacion = SimpleNamespace()
+    setattr(prestacion, "lunes_desayuno_actual", 1)
+    setattr(prestacion, "lunes_almuerzo_actual", 2)
+    setattr(prestacion, "lunes_merienda_actual", 3)
+    setattr(prestacion, "lunes_cena_actual", 4)
+    setattr(prestacion, "lunes_merienda_reforzada_actual", 5)
+
+    manager_finalizado = _RelevamientoManagerSeq(
+        [SimpleNamespace(prestacion=prestacion, estado="Finalizado")]
+    )
+    mocker.patch(
+        "comedores.services.comedor_service.Relevamiento.objects",
+        manager_finalizado,
+    )
+    result = module.ComedorService.get_presupuestos(77)
+    assert manager_finalizado.select_related_calls == [("prestacion",)]
+    assert result[:5] == (15, 4, 2, 6, 12)
+
+    manager_fallback = _RelevamientoManagerSeq(
+        [None, SimpleNamespace(prestacion=prestacion, estado="Pendiente")]
+    )
+    mocker.patch(
+        "comedores.services.comedor_service.Relevamiento.objects",
+        manager_fallback,
+    )
+    result_fallback = module.ComedorService.get_presupuestos(88)
+    assert manager_fallback.select_related_calls == [("prestacion",), ("prestacion",)]
+    assert result_fallback[:5] == (15, 4, 2, 6, 12)
+
+
+def test_get_presupuestos_sin_relevamientos_devuelve_ceros(mocker):
+    mocker.patch(
+        "comedores.services.comedor_service.preload_valores_comida_cache",
+        return_value={"cena": 10, "desayuno": 20, "almuerzo": 30, "merienda": 40},
+    )
+    mocker.patch(
+        "comedores.services.comedor_service.Relevamiento.objects",
+        _RelevamientoManagerSeq([None, None]),
+    )
+
+    result = module.ComedorService.get_presupuestos(999)
+
+    assert result == (0, 0, 0, 0, 0, 0)
+
+
 def test_crear_admision_desde_comedor_flows(mocker):
     comedor = SimpleNamespace(pk=5)
     request = SimpleNamespace(POST={}, get_full_path=lambda: "/x")
@@ -526,3 +665,219 @@ def test_crear_admision_desde_comedor_flows(mocker):
     assert out_ok[0][0] == "comedor_detalle"
     assert hitos_create.called
     assert success.call_count >= 1
+
+
+def test_get_filtered_comedores_coordinador_general_delega_filtro_avanzado(mocker):
+    base_qs = _ComedoresListQS()
+    mocker.patch.object(
+        module.Comedor,
+        "objects",
+        SimpleNamespace(select_related=lambda *_a, **_k: base_qs),
+    )
+    filter_mock = mocker.patch.object(
+        module.COMEDOR_ADVANCED_FILTER,
+        "filter_queryset",
+        return_value="filtrado-final",
+    )
+    mocker.patch(
+        "users.services.UserPermissionService.tiene_grupo",
+        return_value=True,
+    )
+    mocker.patch(
+        "users.services.UserPermissionService.get_coordinador_duplas",
+        return_value=(False, []),
+    )
+    mocker.patch(
+        "users.services.UserPermissionService.es_tecnico_o_abogado",
+        return_value=False,
+    )
+
+    req_get = {"filters": "[]"}
+    user = SimpleNamespace(is_superuser=False)
+    out = module.ComedorService.get_filtered_comedores(req_get, user=user)
+
+    assert out == "filtrado-final"
+    filter_mock.assert_called_once_with(base_qs, req_get)
+    assert any(call[0] == "values" for call in base_qs.calls)
+    assert any(call[0] == "order_by" for call in base_qs.calls)
+
+
+def test_get_filtered_comedores_coordinador_sin_duplas_aplica_none(mocker):
+    base_qs = _ComedoresListQS()
+    mocker.patch.object(
+        module.Comedor,
+        "objects",
+        SimpleNamespace(select_related=lambda *_a, **_k: base_qs),
+    )
+    filter_mock = mocker.patch.object(
+        module.COMEDOR_ADVANCED_FILTER,
+        "filter_queryset",
+        return_value="filtrado-none",
+    )
+    mocker.patch(
+        "users.services.UserPermissionService.tiene_grupo",
+        return_value=False,
+    )
+    mocker.patch(
+        "users.services.UserPermissionService.get_coordinador_duplas",
+        return_value=(True, []),
+    )
+    mocker.patch(
+        "users.services.UserPermissionService.es_tecnico_o_abogado",
+        return_value=False,
+    )
+
+    out = module.ComedorService.get_filtered_comedores(
+        {}, user=SimpleNamespace(is_superuser=False)
+    )
+
+    assert out == "filtrado-none"
+    assert ("none",) in base_qs.calls
+    filter_mock.assert_called_once_with(base_qs, {})
+
+
+def test_get_filtered_comedores_tecnico_abogado_reconstruye_queryset(mocker):
+    class _FakeExistsExpr:
+        def __init__(self, value):
+            self.value = value
+
+        def __or__(self, other):
+            return ("OR", self.value, other.value)
+
+    base_qs = _ComedoresListQS()
+    dupla_qs = _ComedoresListQS()
+
+    class _ComedorObjects:
+        def select_related(self, *_a, **_k):
+            return base_qs
+
+        def filter(self, *args, **kwargs):
+            dupla_qs.calls.append(("manager_filter", args, kwargs))
+            return dupla_qs
+
+    mocker.patch("django.db.models.Exists", side_effect=lambda q: _FakeExistsExpr(q))
+    mocker.patch(
+        "django.db.models.OuterRef", side_effect=lambda field: f"OUTER:{field}"
+    )
+    mocker.patch.object(
+        module,
+        "Comedor",
+        SimpleNamespace(objects=_ComedorObjects(), ESTADO_GENERAL_DEFAULT="Sin estado"),
+    )
+    mocker.patch.object(
+        module.Dupla,
+        "objects",
+        SimpleNamespace(
+            filter=lambda **kwargs: ("dupla_filter", tuple(sorted(kwargs.items())))
+        ),
+    )
+    filter_mock = mocker.patch.object(
+        module.COMEDOR_ADVANCED_FILTER,
+        "filter_queryset",
+        return_value="filtrado-dupla",
+    )
+    mocker.patch(
+        "users.services.UserPermissionService.tiene_grupo",
+        return_value=False,
+    )
+    mocker.patch(
+        "users.services.UserPermissionService.get_coordinador_duplas",
+        return_value=(False, []),
+    )
+    mocker.patch(
+        "users.services.UserPermissionService.es_tecnico_o_abogado",
+        return_value=True,
+    )
+
+    out = module.ComedorService.get_filtered_comedores(
+        {"filters": "[]"}, user=SimpleNamespace(is_superuser=False, pk=7)
+    )
+
+    assert out == "filtrado-dupla"
+    assert any(call[0] == "manager_filter" for call in dupla_qs.calls)
+    assert any(call[0] == "values" for call in dupla_qs.calls)
+    filter_mock.assert_called_once_with(dupla_qs, {"filters": "[]"})
+
+
+def test_get_nomina_detail_calcula_resumen_y_porcentajes(mocker):
+    resumen = {
+        "cantidad_nomina_m": 3,
+        "cantidad_nomina_f": 4,
+        "cantidad_nomina_x": 1,
+        "espera": 2,
+        "cantidad_total": 10,
+        "rango_ninos": 2,
+        "rango_adolescentes": 1,
+        "rango_adultos": 3,
+        "rango_adultos_mayores": 2,
+        "rango_adulto_mayor_avanzado": 1,
+        "rango_total_activos": 9,
+    }
+    nomina_qs = _NominaQS(resumen)
+    mocker.patch.object(
+        module.Nomina,
+        "objects",
+        SimpleNamespace(filter=lambda **_kwargs: nomina_qs),
+    )
+    page_obj = SimpleNamespace(number=1)
+    paginator_mock = mocker.patch(
+        "comedores.services.comedor_service.Paginator",
+        return_value=SimpleNamespace(get_page=lambda _page: page_obj),
+    )
+
+    out = module.ComedorService.get_nomina_detail(comedor_pk=99, page=2, per_page=25)
+
+    assert out[0] is page_obj
+    assert out[1:6] == (3, 4, 1, 2, 10)
+    rangos = out[6]
+    assert rangos["total_activos"] == 9
+    assert rangos["pct_ninos"] == 22
+    assert rangos["pct_adolescentes"] == 11
+    assert rangos["pct_adultos"] == 33
+    assert rangos["pct_adultos_mayores"] == 22
+    assert rangos["pct_adulto_mayor_avanzado"] == 11
+    assert any(call[0] == "aggregate" for call in nomina_qs.calls)
+    paginator_mock.assert_called_once()
+
+
+def test_get_comedor_detail_object_prepara_queryset_y_prefetch(mocker):
+    class _DetailQS:
+        def __init__(self):
+            self.select_related_args = None
+            self.prefetch_args = None
+
+        def select_related(self, *args):
+            self.select_related_args = args
+            return self
+
+        def prefetch_related(self, *args):
+            self.prefetch_args = args
+            return self
+
+    detail_qs = _DetailQS()
+    mocker.patch("comedores.services.comedor_service.preload_valores_comida_cache")
+    mocker.patch.object(
+        module.Comedor,
+        "objects",
+        SimpleNamespace(select_related=lambda *args: detail_qs.select_related(*args)),
+    )
+    get_obj_mock = mocker.patch(
+        "comedores.services.comedor_service.get_object_or_404",
+        return_value="comedor-detalle",
+    )
+
+    out = module.ComedorService.get_comedor_detail_object(123)
+
+    assert out == "comedor-detalle"
+    assert detail_qs.select_related_args is not None
+    assert detail_qs.prefetch_args is not None
+    assert len(detail_qs.prefetch_args) >= 6
+    prefetch_to_attrs = [
+        getattr(arg, "to_attr", None)
+        for arg in detail_qs.prefetch_args
+        if hasattr(arg, "to_attr")
+    ]
+    assert "imagenes_optimized" in prefetch_to_attrs
+    assert "relevamientos_optimized" in prefetch_to_attrs
+    assert "observaciones_optimized" in prefetch_to_attrs
+    get_obj_mock.assert_called_once_with(detail_qs, pk=123)

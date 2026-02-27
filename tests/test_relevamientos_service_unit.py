@@ -317,6 +317,95 @@ def test_create_or_update_punto_entregas_and_prestacion_flows(mocker):
     assert module.RelevamientoService.create_or_update_prestacion({"k": 1}) is not None
 
 
+def test_extraer_frecuencia_recepcion_mercaderias_queryset(mocker):
+    none_qs = SimpleNamespace(name="none")
+    filtered_qs = SimpleNamespace(name="filtered")
+    none_mock = mocker.patch(
+        "relevamientos.service.TipoFrecuenciaBolsones.objects.none",
+        return_value=none_qs,
+    )
+    filter_mock = mocker.patch(
+        "relevamientos.service.TipoFrecuenciaBolsones.objects.filter",
+        return_value=filtered_qs,
+    )
+
+    data_without_field = {"x": 1}
+    out_none = module._extraer_frecuencia_recepcion_mercaderias_queryset(
+        data_without_field
+    )
+    assert out_none is none_qs
+    assert data_without_field == {"x": 1}
+    none_mock.assert_called_once()
+    filter_mock.assert_not_called()
+
+    data_with_field = {"frecuencia_recepcion_mercaderias": "Semanal, Mensual", "y": 2}
+    out_filtered = module._extraer_frecuencia_recepcion_mercaderias_queryset(
+        data_with_field
+    )
+    assert out_filtered is filtered_qs
+    assert data_with_field == {"y": 2}
+    filter_mock.assert_called_once_with(nombre__in=["Semanal", "Mensual"])
+
+
+def test_extraer_frecuencia_recepcion_mercaderias_queryset_handles_varied_inputs(
+    mocker,
+):
+    none_qs = SimpleNamespace(name="none")
+    filtered_qs = SimpleNamespace(name="filtered")
+    mocker.patch(
+        "relevamientos.service.TipoFrecuenciaBolsones.objects.none",
+        return_value=none_qs,
+    )
+    filter_mock = mocker.patch(
+        "relevamientos.service.TipoFrecuenciaBolsones.objects.filter",
+        return_value=filtered_qs,
+    )
+
+    data_blank = {"frecuencia_recepcion_mercaderias": "   "}
+    out_blank = module._extraer_frecuencia_recepcion_mercaderias_queryset(data_blank)
+    assert out_blank is none_qs
+    assert data_blank == {}
+    assert filter_mock.call_count == 0
+
+    data_list = {"frecuencia_recepcion_mercaderias": ["Semanal", "Mensual"]}
+    out_list = module._extraer_frecuencia_recepcion_mercaderias_queryset(data_list)
+    assert out_list is filtered_qs
+    assert data_list == {}
+    filter_mock.assert_called_once_with(nombre__in=["Semanal", "Mensual"])
+
+
+def test_actualizar_y_aplicar_frecuencia_punto_entregas_helpers(mocker):
+    set_mock = mocker.Mock()
+    save_mock = mocker.Mock()
+    punto_instance = SimpleNamespace(
+        frecuencia_recepcion_mercaderias=SimpleNamespace(set=set_mock),
+        save=save_mock,
+        x=None,
+    )
+    module._actualizar_campos_punto_entregas_instance(
+        punto_entregas_instance=punto_instance,
+        punto_entregas_data={
+            "x": 123,
+            "frecuencia_recepcion_mercaderias": "Semanal",
+        },
+    )
+    assert punto_instance.x == 123
+
+    qs_false = SimpleNamespace(exists=lambda: False)
+    module._aplicar_frecuencia_recepcion_mercaderias(
+        punto_entregas_instance=punto_instance,
+        frecuencia_recepcion_mercaderias_queryset=qs_false,
+    )
+    set_mock.assert_not_called()
+
+    qs_true = SimpleNamespace(exists=lambda: True)
+    module._aplicar_frecuencia_recepcion_mercaderias(
+        punto_entregas_instance=punto_instance,
+        frecuencia_recepcion_mercaderias_queryset=qs_true,
+    )
+    set_mock.assert_called_once_with(qs_true)
+
+
 def test_populate_prestacion_data_converts_day_meals(mocker):
     """populate_prestacion_data should convert known day/meal keys to integers."""
     converted = mocker.patch(

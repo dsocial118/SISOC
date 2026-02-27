@@ -12,11 +12,9 @@ from io import BytesIO
 from docx import Document
 from htmldocx import HtmlToDocx
 from .docx_service import DocumentTemplateService, AdmisionesContextService
-from django.template import TemplateDoesNotExist
 from django.db import transaction
 from django.contrib import messages
 import logging
-import tempfile
 import traceback
 import os
 

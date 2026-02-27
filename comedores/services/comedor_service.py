@@ -91,6 +91,451 @@ class TimestampDiffYears(Func):
         return sql, right_params + left_params
 
 
+def _aggregate_nomina_resumen(qs_nomina_age):
+    return qs_nomina_age.aggregate(
+        cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
+        cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
+        cantidad_nomina_x=Count("id", filter=Q(ciudadano__sexo__sexo="X")),
+        espera=Count("id", filter=Q(estado=Nomina.ESTADO_PENDIENTE)),
+        cantidad_total=Count("id"),
+        rango_ninos=Count("id", filter=Q(edad__lte=13, estado=Nomina.ESTADO_ACTIVO)),
+        rango_adolescentes=Count(
+            "id", filter=Q(edad__gte=14, edad__lte=17, estado=Nomina.ESTADO_ACTIVO)
+        ),
+        rango_adultos=Count(
+            "id", filter=Q(edad__gte=18, edad__lte=49, estado=Nomina.ESTADO_ACTIVO)
+        ),
+        rango_adultos_mayores=Count(
+            "id", filter=Q(edad__gte=50, edad__lte=65, estado=Nomina.ESTADO_ACTIVO)
+        ),
+        rango_adulto_mayor_avanzado=Count(
+            "id", filter=Q(edad__gte=66, estado=Nomina.ESTADO_ACTIVO)
+        ),
+        rango_total_activos=Count(
+            "id",
+            filter=Q(
+                estado=Nomina.ESTADO_ACTIVO,
+                ciudadano__fecha_nacimiento__isnull=False,
+            ),
+        ),
+    )
+
+
+def _build_nomina_rangos_resumen(resumen):
+    total_activos = resumen["rango_total_activos"] or 0
+
+    def _pct(value):
+        if not total_activos:
+            return 0
+        return int(round((value or 0) * 100 / total_activos))
+
+    return {
+        "ninos": resumen["rango_ninos"],
+        "adolescentes": resumen["rango_adolescentes"],
+        "adultos": resumen["rango_adultos"],
+        "adultos_mayores": resumen["rango_adultos_mayores"],
+        "adulto_mayor_avanzado": resumen["rango_adulto_mayor_avanzado"],
+        "total_activos": total_activos,
+        "pct_ninos": _pct(resumen["rango_ninos"]),
+        "pct_adolescentes": _pct(resumen["rango_adolescentes"]),
+        "pct_adultos": _pct(resumen["rango_adultos"]),
+        "pct_adultos_mayores": _pct(resumen["rango_adultos_mayores"]),
+        "pct_adulto_mayor_avanzado": _pct(resumen["rango_adulto_mayor_avanzado"]),
+    }
+
+
+def _build_nomina_qs_and_age_qs(comedor_pk):
+    qs_nomina = Nomina.objects.filter(comedor_id=comedor_pk).select_related(
+        "ciudadano__sexo"
+    )
+    age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
+    return qs_nomina, qs_nomina.annotate(edad=age_expr)
+
+
+def _build_nomina_page(qs_nomina, page, per_page):
+    paginator = Paginator(
+        qs_nomina.only(
+            "fecha",
+            "ciudadano__apellido",
+            "ciudadano__nombre",
+            "ciudadano__sexo",
+            "ciudadano__documento",
+            "estado",
+        ),
+        per_page,
+    )
+    return paginator.get_page(page)
+
+
+PRESTACION_DIAS_SEMANA = (
+    "lunes",
+    "martes",
+    "miercoles",
+    "jueves",
+    "viernes",
+    "sabado",
+    "domingo",
+)
+
+PRESTACION_TIPOS_ACTUALES = (
+    "desayuno",
+    "almuerzo",
+    "merienda",
+    "cena",
+    "merienda_reforzada",
+)
+
+
+def _validar_dni_para_renaper_response(dni):
+    dni_str = str(dni or "").strip()
+    if not dni_str.isdigit() or len(dni_str) < 7:
+        return None, {
+            "success": False,
+            "message": "Ingrese un DNI numérico válido para consultar RENAPER.",
+        }
+    return dni_str, None
+
+
+def _nomina_ya_contiene_ciudadano(comedor_id, ciudadano):
+    return Nomina.objects.filter(ciudadano=ciudadano, comedor_id=comedor_id).exists()
+
+
+def _crear_nomina_registro(comedor_id, ciudadano, estado=None, observaciones=None):
+    return Nomina.objects.create(
+        ciudadano=ciudadano,
+        comedor_id=comedor_id,
+        estado=estado or Nomina.ESTADO_PENDIENTE,
+        observaciones=observaciones,
+    )
+
+
+def _buscar_relevamiento_presupuesto_finalizado(comedor_id):
+    return (
+        Relevamiento.objects.select_related("prestacion")
+        .filter(
+            comedor=comedor_id,
+            estado__in=["Finalizado", "Finalizado/Excepciones"],
+        )
+        .order_by("-fecha_visita", "-id")
+        .only("prestacion", "fecha_visita", "estado")
+        .first()
+    )
+
+
+def _buscar_relevamiento_presupuesto_ultimo(comedor_id):
+    return (
+        Relevamiento.objects.select_related("prestacion")
+        .filter(comedor=comedor_id)
+        .order_by("-fecha_visita", "-id")
+        .only("prestacion", "fecha_visita")
+        .first()
+    )
+
+
+def _resolver_relevamiento_para_presupuesto(comedor_id, relevamientos_prefetched=None):
+    if relevamientos_prefetched:
+        return ComedorService.get_relevamiento_resumen(relevamientos_prefetched)
+
+    relevamiento = _buscar_relevamiento_presupuesto_finalizado(comedor_id)
+    if relevamiento:
+        return relevamiento
+    return _buscar_relevamiento_presupuesto_ultimo(comedor_id)
+
+
+def _contar_prestaciones_actuales_relevamiento(relevamiento):
+    count = {
+        "desayuno": 0,
+        "almuerzo": 0,
+        "merienda": 0,
+        "cena": 0,
+    }
+    if not (relevamiento and getattr(relevamiento, "prestacion", None)):
+        return count
+
+    prestacion = relevamiento.prestacion
+    for tipo in PRESTACION_TIPOS_ACTUALES:
+        count[tipo] = sum(
+            getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0
+            for dia in PRESTACION_DIAS_SEMANA
+        )
+
+    return count
+
+
+def _calcular_presupuesto_desde_prestaciones(count, valor_map):
+    count_beneficiarios = sum(count.values())
+    total_almuerzo_cena = count["almuerzo"] + count["cena"]
+    total_desayuno_merienda = (
+        count["desayuno"] + count["merienda"] + count.get("merienda_reforzada", 0)
+    )
+    monto_prestacion_mensual = total_almuerzo_cena * 763 + total_desayuno_merienda * 383
+    valor_cena = count["cena"] * valor_map.get("cena", 0)
+    valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
+    valor_almuerzo = count["almuerzo"] * valor_map.get("almuerzo", 0)
+    valor_merienda = count["merienda"] * valor_map.get("merienda", 0)
+
+    return (
+        count_beneficiarios,
+        valor_cena,
+        valor_desayuno,
+        valor_almuerzo,
+        valor_merienda,
+        monto_prestacion_mensual,
+    )
+
+
+def _build_comedores_list_values_queryset(base_qs):
+    return (
+        base_qs.select_related(
+            "provincia",
+            "municipio",
+            "localidad",
+            "referente",
+            "tipocomedor",
+            "ultimo_estado__estado_general__estado_actividad",
+            "ultimo_estado__estado_general__estado_proceso",
+            "ultimo_estado__estado_general__estado_detalle",
+        )
+        .annotate(
+            estado_general=Coalesce(
+                "ultimo_estado__estado_general__estado_actividad__estado",
+                Value(Comedor.ESTADO_GENERAL_DEFAULT),
+            )
+        )
+        .values(
+            "id",
+            "nombre",
+            "estado_general",
+            "tipocomedor__nombre",
+            "organizacion__nombre",
+            "programa__nombre",
+            "dupla__nombre",
+            "provincia__nombre",
+            "municipio__nombre",
+            "localidad__nombre",
+            "barrio",
+            "partido",
+            "calle",
+            "numero",
+            "referente__nombre",
+            "referente__apellido",
+            "referente__celular",
+            "ultimo_estado__estado_general__estado_actividad__estado",
+            "ultimo_estado__estado_general__estado_proceso",
+            "ultimo_estado__estado_general__estado_detalle",
+            "estado_validacion",
+            "fecha_validado",
+        )
+        .order_by("-id")
+    )
+
+
+def _build_dupla_user_scoped_comedores_list_queryset(user):
+    from django.db.models import Exists, OuterRef
+
+    dupla_abogado_subq = Dupla.objects.filter(comedor=OuterRef("pk"), abogado=user)
+    dupla_tecnico_subq = Dupla.objects.filter(comedor=OuterRef("pk"), tecnico=user)
+    return _build_comedores_list_values_queryset(
+        Comedor.objects.filter(Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq))
+    )
+
+
+def _user_tiene_scope_global_comedores(user):
+    if not user or user.is_superuser:
+        return True
+
+    from users.services import UserPermissionService
+
+    return UserPermissionService.tiene_grupo(user, UserGroups.COORDINADOR_GENERAL)
+
+
+def _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids):
+    if not duplas_ids:
+        return base_qs.none()
+    return base_qs.filter(dupla_id__in=duplas_ids)
+
+
+def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
+    if _user_tiene_scope_global_comedores(user):
+        return base_qs
+
+    from users.services import UserPermissionService
+
+    is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
+    is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
+
+    if is_coordinador:
+        return _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
+
+    if is_dupla:
+        return _build_dupla_user_scoped_comedores_list_queryset(user)
+
+    return base_qs
+
+
+def _build_relevamientos_detail_prefetch_queryset():
+    return Relevamiento.objects.select_related(
+        "prestacion",
+        "colaboradores",
+        "colaboradores__cantidad_colaboradores",
+        "recursos",
+        "funcionamiento",
+        "funcionamiento__modalidad_prestacion",
+        "espacio",
+        "espacio__tipo_espacio_fisico",
+        "anexo",
+    ).order_by("-fecha_visita", "-id")
+
+
+def _build_programa_changes_prefetch_queryset():
+    return AuditComedorPrograma.objects.select_related(
+        "from_programa",
+        "to_programa",
+        "changed_by",
+    ).order_by("-changed_at", "-id")
+
+
+def _get_comedor_detail_prefetches():
+    return (
+        "expedientes_pagos",
+        Prefetch(
+            "imagenes",
+            queryset=ImagenComedor.objects.only("imagen"),
+            to_attr="imagenes_optimized",
+        ),
+        Prefetch(
+            "relevamiento_set",
+            queryset=_build_relevamientos_detail_prefetch_queryset(),
+            to_attr="relevamientos_optimized",
+        ),
+        Prefetch(
+            "observacion_set",
+            queryset=Observacion.objects.order_by("-fecha_visita")[:3],
+            to_attr="observaciones_optimized",
+        ),
+        Prefetch(
+            "clasificacioncomedor_set",
+            queryset=ClasificacionComedor.objects.select_related("categoria").order_by(
+                "-fecha"
+            ),
+            to_attr="clasificaciones_optimized",
+        ),
+        Prefetch(
+            "rendiciones_cuentas_mensuales",
+            queryset=RendicionCuentaMensual.objects.only("id"),
+            to_attr="rendiciones_optimized",
+        ),
+        Prefetch(
+            "programa_changes",
+            queryset=_build_programa_changes_prefetch_queryset(),
+            to_attr="programa_changes_optimized",
+        ),
+    )
+
+
+def _build_comedor_detail_queryset():
+    return Comedor.objects.select_related(
+        "provincia",
+        "municipio",
+        "localidad",
+        "referente",
+        "organizacion",
+        "programa",
+        "tipocomedor",
+        "dupla",
+        "ultimo_estado__estado_general__estado_actividad",
+        "ultimo_estado__estado_general__estado_proceso",
+        "ultimo_estado__estado_general__estado_detalle",
+    ).prefetch_related(*_get_comedor_detail_prefetches())
+
+
+def _resolve_relevamiento_post_action(request):
+    if "territorial" in request.POST:
+        return "create"
+    if "territorial_editar" in request.POST:
+        return "update"
+    return None
+
+
+def _execute_relevamiento_post_action(action, request, comedor_id):
+    if action == "create":
+        return RelevamientoService.create_pendiente(request, comedor_id)
+    if action == "update":
+        return RelevamientoService.update_territorial(request)
+    return None
+
+
+def _redirect_relevamiento_detalle(relevamiento):
+    return redirect(
+        reverse(
+            "relevamiento_detalle",
+            kwargs={
+                "pk": relevamiento.pk,
+                "comedor_pk": relevamiento.comedor.pk,
+            },
+        )
+    )
+
+
+def _redirect_comedor_detalle(comedor_id):
+    return redirect("comedor_detalle", pk=comedor_id)
+
+
+def _safe_redirect_comedor_detalle(request, comedor_id):
+    return safe_redirect(
+        request,
+        default=reverse("comedor_detalle", kwargs={"pk": comedor_id}),
+        target=request.get_full_path(),
+    )
+
+
+def _validar_creacion_admision_desde_comedor(request, comedor, tipo_admision):
+    if not tipo_admision:
+        messages.error(request, "Debe seleccionar un tipo de admisión.")
+        return _redirect_comedor_detalle(comedor.pk)
+
+    if (
+        tipo_admision == "renovacion"
+        and not Admision.objects.filter(comedor=comedor, tipo="incorporacion").exists()
+    ):
+        messages.error(
+            request,
+            "No se puede crear una admisión de Renovación sin una Incorporación previa. "
+            "Debe existir al menos una admisión de Incorporación para este comedor, "
+            "independientemente de su estado.",
+        )
+        return _redirect_comedor_detalle(comedor.pk)
+
+    if tipo_admision == "incorporacion":
+        if Admision.objects.filter(
+            comedor=comedor, tipo="incorporacion", activa=True
+        ).exists():
+            messages.warning(
+                request,
+                "Ya existe una admision de Incorporacion activa para este comedor.",
+            )
+            return _redirect_comedor_detalle(comedor.pk)
+        return None
+
+    renovaciones_activas = Admision.objects.filter(
+        comedor=comedor, tipo="renovacion", activa=True
+    ).count()
+    if renovaciones_activas >= 4:
+        messages.warning(
+            request,
+            "Ya existen 4 admisiones de Renovacion activas para este comedor.",
+        )
+        return _safe_redirect_comedor_detalle(request, comedor.pk)
+    return None
+
+
+def _ensure_hito_para_comedor(comedor):
+    if Hitos.objects.filter(comedor=comedor).exists():
+        return True
+    Hitos.objects.create(comedor=comedor)
+    return False
+
+
 class ComedorService:
     """Operaciones de alto nivel relacionadas a comedores."""
 
@@ -222,126 +667,8 @@ class ComedorService:
         - Técnico/Abogado de dupla: ve comedores donde está asignado
         """
 
-        base_qs = (
-            Comedor.objects.select_related(
-                "provincia",
-                "municipio",
-                "localidad",
-                "referente",
-                "tipocomedor",
-                "ultimo_estado__estado_general__estado_actividad",
-                "ultimo_estado__estado_general__estado_proceso",
-                "ultimo_estado__estado_general__estado_detalle",
-            )
-            .annotate(
-                estado_general=Coalesce(
-                    "ultimo_estado__estado_general__estado_actividad__estado",
-                    Value(Comedor.ESTADO_GENERAL_DEFAULT),
-                )
-            )
-            .values(
-                "id",
-                "nombre",
-                "estado_general",
-                "tipocomedor__nombre",
-                "organizacion__nombre",
-                "programa__nombre",
-                "dupla__nombre",
-                "provincia__nombre",
-                "municipio__nombre",
-                "localidad__nombre",
-                "barrio",
-                "partido",
-                "calle",
-                "numero",
-                "referente__nombre",
-                "referente__apellido",
-                "referente__celular",
-                "ultimo_estado__estado_general__estado_actividad__estado",
-                "ultimo_estado__estado_general__estado_proceso",
-                "ultimo_estado__estado_general__estado_detalle",
-                "estado_validacion",
-                "fecha_validado",
-            )
-            .order_by("-id")
-        )
-
-        # Filtrar por usuario si se proporciona
-        if user and not user.is_superuser:
-            from users.services import UserPermissionService
-
-            if UserPermissionService.tiene_grupo(user, UserGroups.COORDINADOR_GENERAL):
-                return COMEDOR_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
-
-            # Verificar si es coordinador usando servicio centralizado
-            is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(
-                user
-            )
-            is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
-
-            # Aplicar filtros según el rol
-            if is_coordinador:
-                if not duplas_ids:
-                    base_qs = base_qs.none()
-                else:
-                    # Coordinador: ver comedores de sus duplas asignadas
-                    base_qs = base_qs.filter(dupla_id__in=duplas_ids)
-            elif is_dupla:
-                # Técnico o Abogado: ver comedores donde está asignado
-                from django.db.models import Exists, OuterRef
-
-                dupla_abogado_subq = Dupla.objects.filter(
-                    comedor=OuterRef("pk"), abogado=user
-                )
-                dupla_tecnico_subq = Dupla.objects.filter(
-                    comedor=OuterRef("pk"), tecnico=user
-                )
-                base_qs = (
-                    Comedor.objects.filter(
-                        Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
-                    )
-                    .select_related(
-                        "provincia",
-                        "municipio",
-                        "localidad",
-                        "referente",
-                        "tipocomedor",
-                        "ultimo_estado__estado_general__estado_actividad",
-                        "ultimo_estado__estado_general__estado_proceso",
-                        "ultimo_estado__estado_general__estado_detalle",
-                    )
-                    .annotate(
-                        estado_general=Coalesce(
-                            "ultimo_estado__estado_general__estado_actividad__estado",
-                            Value(Comedor.ESTADO_GENERAL_DEFAULT),
-                        )
-                    )
-                    .values(
-                        "id",
-                        "nombre",
-                        "estado_general",
-                        "tipocomedor__nombre",
-                        "organizacion__nombre",
-                        "programa__nombre",
-                        "dupla__nombre",
-                        "provincia__nombre",
-                        "municipio__nombre",
-                        "localidad__nombre",
-                        "barrio",
-                        "partido",
-                        "calle",
-                        "numero",
-                        "referente__nombre",
-                        "referente__apellido",
-                        "referente__celular",
-                        "ultimo_estado__estado_general__estado_actividad__estado",
-                        "ultimo_estado__estado_general__estado_proceso",
-                        "ultimo_estado__estado_general__estado_detalle",
-                        "estado_validacion",
-                        "fecha_validado",
-                    )
-                    .order_by("-id")
-                )
+        base_qs = _build_comedores_list_values_queryset(Comedor.objects)
+        base_qs = _apply_user_scope_to_comedores_list_queryset(base_qs, user)
 
         return COMEDOR_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
@@ -349,65 +676,7 @@ class ComedorService:
     def get_comedor_detail_object(comedor_id: int):
         """Obtiene un comedor con todas sus relaciones optimizadas para la vista de detalle."""
         preload_valores_comida_cache()
-        qs = Comedor.objects.select_related(
-            "provincia",
-            "municipio",
-            "localidad",
-            "referente",
-            "organizacion",
-            "programa",
-            "tipocomedor",
-            "dupla",
-            "ultimo_estado__estado_general__estado_actividad",
-            "ultimo_estado__estado_general__estado_proceso",
-            "ultimo_estado__estado_general__estado_detalle",
-        ).prefetch_related(
-            "expedientes_pagos",
-            Prefetch(
-                "imagenes",
-                queryset=ImagenComedor.objects.only("imagen"),
-                to_attr="imagenes_optimized",
-            ),
-            Prefetch(
-                "relevamiento_set",
-                queryset=Relevamiento.objects.select_related(
-                    "prestacion",
-                    "colaboradores",
-                    "colaboradores__cantidad_colaboradores",
-                    "recursos",
-                    "funcionamiento",
-                    "funcionamiento__modalidad_prestacion",
-                    "espacio",
-                    "espacio__tipo_espacio_fisico",
-                    "anexo",
-                ).order_by("-fecha_visita", "-id"),
-                to_attr="relevamientos_optimized",
-            ),
-            Prefetch(
-                "observacion_set",
-                queryset=Observacion.objects.order_by("-fecha_visita")[:3],
-                to_attr="observaciones_optimized",
-            ),
-            Prefetch(
-                "clasificacioncomedor_set",
-                queryset=ClasificacionComedor.objects.select_related(
-                    "categoria"
-                ).order_by("-fecha"),
-                to_attr="clasificaciones_optimized",
-            ),
-            Prefetch(
-                "rendiciones_cuentas_mensuales",
-                queryset=RendicionCuentaMensual.objects.only("id"),
-                to_attr="rendiciones_optimized",
-            ),
-            Prefetch(
-                "programa_changes",
-                queryset=AuditComedorPrograma.objects.select_related(
-                    "from_programa", "to_programa", "changed_by"
-                ).order_by("-changed_at", "-id"),
-                to_attr="programa_changes_optimized",
-            ),
-        )
+        qs = _build_comedor_detail_queryset()
         return get_object_or_404(qs, pk=comedor_id)
 
     @staticmethod
@@ -468,79 +737,11 @@ class ComedorService:
     @staticmethod
     def get_presupuestos(comedor_id: int, relevamientos_prefetched=None):
         valor_map = preload_valores_comida_cache()
-        if relevamientos_prefetched:
-            relevamiento = ComedorService.get_relevamiento_resumen(
-                relevamientos_prefetched
-            )
-        else:
-            relevamiento = (
-                Relevamiento.objects.select_related("prestacion")
-                .filter(
-                    comedor=comedor_id,
-                    estado__in=["Finalizado", "Finalizado/Excepciones"],
-                )
-                .order_by("-fecha_visita", "-id")
-                .only("prestacion", "fecha_visita", "estado")
-                .first()
-            )
-            if not relevamiento:
-                relevamiento = (
-                    Relevamiento.objects.select_related("prestacion")
-                    .filter(comedor=comedor_id)
-                    .order_by("-fecha_visita", "-id")
-                    .only("prestacion", "fecha_visita")
-                    .first()
-                )
-        count = {
-            "desayuno": 0,
-            "almuerzo": 0,
-            "merienda": 0,
-            "cena": 0,
-        }
-        if relevamiento and relevamiento.prestacion:
-            # Obtener prestación del relevamiento
-            prestacion = relevamiento.prestacion
-            dias = [
-                "lunes",
-                "martes",
-                "miercoles",
-                "jueves",
-                "viernes",
-                "sabado",
-                "domingo",
-            ]
-            tipos = [
-                "desayuno",
-                "almuerzo",
-                "merienda",
-                "cena",
-                "merienda_reforzada",
-            ]
-            for tipo in tipos:
-                count[tipo] = sum(
-                    getattr(prestacion, f"{dia}_{tipo}_actual", 0) or 0 for dia in dias
-                )
-        count_beneficiarios = sum(count.values())
-        total_almuerzo_cena = count["almuerzo"] + count["cena"]
-        total_desayuno_merienda = (
-            count["desayuno"] + count["merienda"] + count.get("merienda_reforzada", 0)
+        relevamiento = _resolver_relevamiento_para_presupuesto(
+            comedor_id, relevamientos_prefetched
         )
-        monto_prestacion_mensual = (
-            total_almuerzo_cena * 763 + total_desayuno_merienda * 383
-        )
-        valor_cena = count["cena"] * valor_map.get("cena", 0)
-        valor_desayuno = count["desayuno"] * valor_map.get("desayuno", 0)
-        valor_almuerzo = count["almuerzo"] * valor_map.get("almuerzo", 0)
-        valor_merienda = count["merienda"] * valor_map.get("merienda", 0)
-
-        return (
-            count_beneficiarios,
-            valor_cena,
-            valor_desayuno,
-            valor_almuerzo,
-            valor_merienda,
-            monto_prestacion_mensual,
-        )
+        count = _contar_prestaciones_actuales_relevamiento(relevamiento)
+        return _calcular_presupuesto_desde_prestaciones(count, valor_map)
 
     @staticmethod
     def get_prestaciones_aprobadas_por_tipo(informe_tecnico):
@@ -586,59 +787,10 @@ class ComedorService:
 
     @staticmethod
     def get_nomina_detail(comedor_pk, page=1, per_page=100):
-        qs_nomina = Nomina.objects.filter(comedor_id=comedor_pk).select_related(
-            "ciudadano__sexo"
-        )
-        age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
-        qs_nomina_age = qs_nomina.annotate(edad=age_expr)
-        resumen = qs_nomina_age.aggregate(
-            cantidad_nomina_m=Count("id", filter=Q(ciudadano__sexo__sexo="Masculino")),
-            cantidad_nomina_f=Count("id", filter=Q(ciudadano__sexo__sexo="Femenino")),
-            cantidad_nomina_x=Count("id", filter=Q(ciudadano__sexo__sexo="X")),
-            espera=Count("id", filter=Q(estado=Nomina.ESTADO_PENDIENTE)),
-            cantidad_total=Count("id"),
-            rango_ninos=Count(
-                "id", filter=Q(edad__lte=13, estado=Nomina.ESTADO_ACTIVO)
-            ),
-            rango_adolescentes=Count(
-                "id", filter=Q(edad__gte=14, edad__lte=17, estado=Nomina.ESTADO_ACTIVO)
-            ),
-            rango_adultos=Count(
-                "id", filter=Q(edad__gte=18, edad__lte=49, estado=Nomina.ESTADO_ACTIVO)
-            ),
-            rango_adultos_mayores=Count(
-                "id", filter=Q(edad__gte=50, edad__lte=65, estado=Nomina.ESTADO_ACTIVO)
-            ),
-            rango_adulto_mayor_avanzado=Count(
-                "id", filter=Q(edad__gte=66, estado=Nomina.ESTADO_ACTIVO)
-            ),
-            rango_total_activos=Count(
-                "id",
-                filter=Q(
-                    estado=Nomina.ESTADO_ACTIVO,
-                    ciudadano__fecha_nacimiento__isnull=False,
-                ),
-            ),
-        )
-        total_activos = resumen["rango_total_activos"] or 0
-
-        def _pct(value):
-            if not total_activos:
-                return 0
-            return int(round((value or 0) * 100 / total_activos))
-
-        paginator = Paginator(
-            qs_nomina.only(
-                "fecha",
-                "ciudadano__apellido",
-                "ciudadano__nombre",
-                "ciudadano__sexo",
-                "ciudadano__documento",
-                "estado",
-            ),
-            per_page,
-        )
-        page_obj = paginator.get_page(page)
+        qs_nomina, qs_nomina_age = _build_nomina_qs_and_age_qs(comedor_pk)
+        resumen = _aggregate_nomina_resumen(qs_nomina_age)
+        rangos_resumen = _build_nomina_rangos_resumen(resumen)
+        page_obj = _build_nomina_page(qs_nomina, page, per_page)
         return (
             page_obj,
             resumen["cantidad_nomina_m"],
@@ -646,56 +798,29 @@ class ComedorService:
             resumen["cantidad_nomina_x"],
             resumen["espera"],
             resumen["cantidad_total"],
-            {
-                "ninos": resumen["rango_ninos"],
-                "adolescentes": resumen["rango_adolescentes"],
-                "adultos": resumen["rango_adultos"],
-                "adultos_mayores": resumen["rango_adultos_mayores"],
-                "adulto_mayor_avanzado": resumen["rango_adulto_mayor_avanzado"],
-                "total_activos": total_activos,
-                "pct_ninos": _pct(resumen["rango_ninos"]),
-                "pct_adolescentes": _pct(resumen["rango_adolescentes"]),
-                "pct_adultos": _pct(resumen["rango_adultos"]),
-                "pct_adultos_mayores": _pct(resumen["rango_adultos_mayores"]),
-                "pct_adulto_mayor_avanzado": _pct(
-                    resumen["rango_adulto_mayor_avanzado"]
-                ),
-            },
+            rangos_resumen,
         )
 
     @staticmethod
     def post_comedor_relevamiento(request, comedor):
-        is_new_relevamiento = "territorial" in request.POST
-        is_edit_relevamiento = "territorial_editar" in request.POST
-        if is_new_relevamiento or is_edit_relevamiento:
-            try:
-                relevamiento = None
-                if is_new_relevamiento:
-                    relevamiento = RelevamientoService.create_pendiente(
-                        request, comedor.id
-                    )
-                elif is_edit_relevamiento:
-                    relevamiento = RelevamientoService.update_territorial(request)
-                if not relevamiento or not getattr(relevamiento, "comedor", None):
-                    messages.error(
-                        request,
-                        "Error al crear o editar el relevamiento: No se pudo obtener el relevamiento o su comedor.",
-                    )
-                    return redirect("comedor_detalle", pk=comedor.id)
-                return redirect(
-                    reverse(
-                        "relevamiento_detalle",
-                        kwargs={
-                            "pk": relevamiento.pk,
-                            "comedor_pk": relevamiento.comedor.pk,
-                        },
-                    )
+        action = _resolve_relevamiento_post_action(request)
+        if not action:
+            return _redirect_comedor_detalle(comedor.id)
+
+        try:
+            relevamiento = _execute_relevamiento_post_action(
+                action, request, comedor.id
+            )
+            if not relevamiento or not getattr(relevamiento, "comedor", None):
+                messages.error(
+                    request,
+                    "Error al crear o editar el relevamiento: No se pudo obtener el relevamiento o su comedor.",
                 )
-            except Exception as e:
-                messages.error(request, f"Error al crear el relevamiento: {e}")
-                return redirect("comedor_detalle", pk=comedor.id)
-        else:
-            return redirect("comedor_detalle", pk=comedor.id)
+                return _redirect_comedor_detalle(comedor.id)
+            return _redirect_relevamiento_detalle(relevamiento)
+        except Exception as exc:
+            messages.error(request, f"Error al crear el relevamiento: {exc}")
+            return _redirect_comedor_detalle(comedor.id)
 
     @staticmethod
     def buscar_ciudadanos_por_documento(query, max_results=10):
@@ -912,12 +1037,109 @@ class ComedorService:
         }
 
     @staticmethod
-    def _build_ciudadano_data_from_renaper(datos, dni_str):
-        """Mapea datos de RENAPER a campos de Ciudadano."""
+    def _resolver_consulta_renaper(dni_str, sexo=None):
+        sexo_value = (sexo or "").upper()
+        if sexo_value in ("M", "F", "X"):
+            return consultar_datos_renaper(dni_str, sexo_value)
+        return ComedorService._consultar_renaper_por_dni(dni_str)
+
+    @staticmethod
+    def _build_ciudadano_data_contacto_desde_renaper(datos):
+        return {
+            "calle": datos.get("calle") or None,
+            "altura": str(datos.get("altura")) if datos.get("altura") else None,
+            "piso_departamento": datos.get("piso_vivienda")
+            or datos.get("departamento_vivienda"),
+            "barrio": datos.get("barrio") or None,
+            "codigo_postal": (
+                str(datos.get("codigo_postal")) if datos.get("codigo_postal") else None
+            ),
+        }
+
+    @staticmethod
+    def _apply_ubicacion_to_ciudadano_data_from_renaper(ciudadano_data, datos):
+        ubicacion = ComedorService._mapear_ubicacion_desde_renaper(datos)
+        if ubicacion["provincia"]:
+            ciudadano_data["provincia"] = ubicacion["provincia"].pk
+        if ubicacion["municipio"]:
+            ciudadano_data["municipio"] = ubicacion["municipio"].pk
+        if ubicacion["localidad"]:
+            ciudadano_data["localidad"] = ubicacion["localidad"].pk
+
+    @staticmethod
+    def _apply_nacionalidad_to_ciudadano_data_from_renaper(ciudadano_data, datos):
+        nacionalidad_obj = ComedorService._match_nacionalidad(
+            datos.get("nacionalidad_api")
+        )
+        if nacionalidad_obj:
+            ciudadano_data["nacionalidad"] = nacionalidad_obj.pk
+
+    @staticmethod
+    def _buscar_ciudadano_existente_por_dni_renaper(dni_str):
+        return Ciudadano.objects.filter(
+            tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_str)
+        ).first()
+
+    @staticmethod
+    def _agregar_usuario_a_ciudadano_data_renaper(ciudadano_data, user=None):
+        if user and getattr(user, "is_authenticated", False):
+            ciudadano_data["creado_por"] = user
+            ciudadano_data["modificado_por"] = user
+
+    @staticmethod
+    def _crear_ciudadano_desde_datos_renaper(dni_str, ciudadano_data):
+        try:
+            ciudadano = Ciudadano.objects.create(**ciudadano_data)
+        except Exception:
+            logger.exception(
+                "No se pudo crear ciudadano desde RENAPER",
+                extra={"dni": dni_str, "datos": ciudadano_data},
+            )
+            return None
+        return ciudadano
+
+    @staticmethod
+    def _resolver_datos_minimos_ciudadano_renaper(datos):
         apellido = ComedorService._to_camel_case(datos.get("apellido"))
         nombre = ComedorService._to_camel_case(datos.get("nombre"))
         fecha_nacimiento = ComedorService._parse_fecha_renaper(
             datos.get("fecha_nacimiento")
+        )
+        if not apellido or not nombre or not fecha_nacimiento:
+            return None, None, None
+        return apellido, nombre, fecha_nacimiento
+
+    @staticmethod
+    def _parse_documento_renaper_para_ciudadano(datos, dni_str):
+        try:
+            return int(datos.get("dni") or dni_str), None
+        except (TypeError, ValueError):
+            return None, "RENAPER devolvió un DNI inválido."
+
+    @staticmethod
+    def _build_ciudadano_existente_desde_renaper_response(existente):
+        return {
+            "success": True,
+            "ciudadano": existente,
+            "created": False,
+            "message": "El ciudadano ya existe en la base.",
+        }
+
+    @staticmethod
+    def _build_ciudadano_creado_desde_renaper_response(ciudadano, resultado_renaper):
+        return {
+            "success": True,
+            "ciudadano": ciudadano,
+            "created": True,
+            "message": "Ciudadano creado automáticamente con datos de RENAPER.",
+            "datos_api": resultado_renaper.get("datos_api"),
+        }
+
+    @staticmethod
+    def _build_ciudadano_data_from_renaper(datos, dni_str):
+        """Mapea datos de RENAPER a campos de Ciudadano."""
+        apellido, nombre, fecha_nacimiento = (
+            ComedorService._resolver_datos_minimos_ciudadano_renaper(datos)
         )
 
         if not apellido or not nombre or not fecha_nacimiento:
@@ -926,10 +1148,11 @@ class ComedorService:
                 "RENAPER no devolvió datos mínimos para crear el ciudadano.",
             )
 
-        try:
-            documento_valor = int(datos.get("dni") or dni_str)
-        except (TypeError, ValueError):
-            return (None, "RENAPER devolvió un DNI inválido.")
+        documento_valor, documento_error = (
+            ComedorService._parse_documento_renaper_para_ciudadano(datos, dni_str)
+        )
+        if documento_error:
+            return (None, documento_error)
 
         ciudadano_data = {
             "apellido": apellido,
@@ -943,35 +1166,15 @@ class ComedorService:
         if datos.get("sexo"):
             ciudadano_data["sexo"] = datos["sexo"]
 
-        # Datos de contacto básicos desde RENAPER
         ciudadano_data.update(
-            {
-                "calle": datos.get("calle") or None,
-                "altura": str(datos.get("altura")) if datos.get("altura") else None,
-                "piso_departamento": datos.get("piso_vivienda")
-                or datos.get("departamento_vivienda"),
-                "barrio": datos.get("barrio") or None,
-                "codigo_postal": (
-                    str(datos.get("codigo_postal"))
-                    if datos.get("codigo_postal")
-                    else None
-                ),
-            }
+            ComedorService._build_ciudadano_data_contacto_desde_renaper(datos)
         )
-
-        ubicacion = ComedorService._mapear_ubicacion_desde_renaper(datos)
-        if ubicacion["provincia"]:
-            ciudadano_data["provincia"] = ubicacion["provincia"].pk
-        if ubicacion["municipio"]:
-            ciudadano_data["municipio"] = ubicacion["municipio"].pk
-        if ubicacion["localidad"]:
-            ciudadano_data["localidad"] = ubicacion["localidad"].pk
-
-        nacionalidad_obj = ComedorService._match_nacionalidad(
-            datos.get("nacionalidad_api")
+        ComedorService._apply_ubicacion_to_ciudadano_data_from_renaper(
+            ciudadano_data, datos
         )
-        if nacionalidad_obj:
-            ciudadano_data["nacionalidad"] = nacionalidad_obj.pk
+        ComedorService._apply_nacionalidad_to_ciudadano_data_from_renaper(
+            ciudadano_data, datos
+        )
 
         return (ciudadano_data, None)
 
@@ -980,18 +1183,11 @@ class ComedorService:
         """
         Consulta RENAPER y devuelve datos listos para precargar un formulario.
         """
-        dni_str = str(dni or "").strip()
-        if not dni_str.isdigit() or len(dni_str) < 7:
-            return {
-                "success": False,
-                "message": "Ingrese un DNI numérico válido para consultar RENAPER.",
-            }
+        dni_str, error_response = _validar_dni_para_renaper_response(dni)
+        if error_response:
+            return error_response
 
-        sexo_value = (sexo or "").upper()
-        if sexo_value in ("M", "F", "X"):
-            resultado = consultar_datos_renaper(dni_str, sexo_value)
-        else:
-            resultado = ComedorService._consultar_renaper_por_dni(dni_str)
+        resultado = ComedorService._resolver_consulta_renaper(dni_str, sexo)
 
         if not resultado.get("success"):
             return {
@@ -1020,23 +1216,15 @@ class ComedorService:
         Intenta crear un ciudadano a partir de una consulta a RENAPER.
         Si ya existe, devuelve el registro actual sin crearlo nuevamente.
         """
-        dni_str = str(dni or "").strip()
-        if not dni_str.isdigit() or len(dni_str) < 7:
-            return {
-                "success": False,
-                "message": "Ingrese un DNI numérico válido para consultar RENAPER.",
-            }
+        dni_str, error_response = _validar_dni_para_renaper_response(dni)
+        if error_response:
+            return error_response
 
-        existente = Ciudadano.objects.filter(
-            tipo_documento=Ciudadano.DOCUMENTO_DNI, documento=int(dni_str)
-        ).first()
+        existente = ComedorService._buscar_ciudadano_existente_por_dni_renaper(dni_str)
         if existente:
-            return {
-                "success": True,
-                "ciudadano": existente,
-                "created": False,
-                "message": "El ciudadano ya existe en la base.",
-            }
+            return ComedorService._build_ciudadano_existente_desde_renaper_response(
+                existente
+            )
 
         resultado = ComedorService.obtener_datos_ciudadano_desde_renaper(dni_str)
         if not resultado.get("success"):
@@ -1048,30 +1236,20 @@ class ComedorService:
             }
 
         ciudadano_data = dict(resultado.get("data") or {})
+        ComedorService._agregar_usuario_a_ciudadano_data_renaper(ciudadano_data, user)
 
-        if user and getattr(user, "is_authenticated", False):
-            ciudadano_data["creado_por"] = user
-            ciudadano_data["modificado_por"] = user
-
-        try:
-            ciudadano = Ciudadano.objects.create(**ciudadano_data)
-        except Exception:
-            logger.exception(
-                "No se pudo crear ciudadano desde RENAPER",
-                extra={"dni": dni_str, "datos": ciudadano_data},
-            )
+        ciudadano = ComedorService._crear_ciudadano_desde_datos_renaper(
+            dni_str, ciudadano_data
+        )
+        if not ciudadano:
             return {
                 "success": False,
                 "message": "No se pudo crear el ciudadano con los datos de RENAPER.",
             }
 
-        return {
-            "success": True,
-            "ciudadano": ciudadano,
-            "created": True,
-            "message": "Ciudadano creado automáticamente con datos de RENAPER.",
-            "datos_api": resultado.get("datos_api"),
-        }
+        return ComedorService._build_ciudadano_creado_desde_renaper_response(
+            ciudadano, resultado
+        )
 
     @staticmethod
     def agregar_ciudadano_a_nomina(
@@ -1079,15 +1257,15 @@ class ComedorService:
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
-        if Nomina.objects.filter(ciudadano=ciudadano, comedor_id=comedor_id).exists():
+        if _nomina_ya_contiene_ciudadano(comedor_id, ciudadano):
             return False, "Esta persona ya está en la nómina."
 
         try:
             with transaction.atomic():
-                Nomina.objects.create(
-                    ciudadano=ciudadano,
+                _crear_nomina_registro(
                     comedor_id=comedor_id,
-                    estado=estado or Nomina.ESTADO_PENDIENTE,
+                    ciudadano=ciudadano,
+                    estado=estado,
                     observaciones=observaciones,
                 )
 
@@ -1129,68 +1307,31 @@ class ComedorService:
         """
 
         tipo_admision = request.POST.get("admision")
-
-        if not tipo_admision:
-            messages.error(request, "Debe seleccionar un tipo de admisión.")
-            return redirect("comedor_detalle", pk=comedor.pk)
-
-        if (
-            tipo_admision == "renovacion"
-            and not Admision.objects.filter(
-                comedor=comedor, tipo="incorporacion"
-            ).exists()
-        ):
-            messages.error(
-                request,
-                "No se puede crear una admisión de Renovación sin una Incorporación previa. "
-                "Debe existir al menos una admisión de Incorporación para este comedor, "
-                "independientemente de su estado.",
-            )
-            return redirect("comedor_detalle", pk=comedor.pk)
-
-        if tipo_admision == "incorporacion":
-            if Admision.objects.filter(
-                comedor=comedor, tipo="incorporacion", activa=True
-            ).exists():
-                messages.warning(
-                    request,
-                    "Ya existe una admision de Incorporacion activa para este comedor.",
-                )
-                return redirect("comedor_detalle", pk=comedor.pk)
-        else:
-            renovaciones_activas = Admision.objects.filter(
-                comedor=comedor, tipo="renovacion", activa=True
-            ).count()
-            if renovaciones_activas >= 4:
-                messages.warning(
-                    request,
-                    "Ya existen 4 admisiones de Renovacion activas para este comedor.",
-                )
-                return safe_redirect(
-                    request,
-                    default=reverse("comedor_detalle", kwargs={"pk": comedor.pk}),
-                    target=request.get_full_path(),
-                )
+        validation_response = _validar_creacion_admision_desde_comedor(
+            request=request,
+            comedor=comedor,
+            tipo_admision=tipo_admision,
+        )
+        if validation_response is not None:
+            return validation_response
 
         nueva_admision = Admision.objects.create(
             comedor=comedor,
             tipo=tipo_admision,
         )
-        if Hitos.objects.filter(comedor=comedor).exists():
+        hitos_ya_existian = _ensure_hito_para_comedor(comedor)
+        if hitos_ya_existian:
             messages.info(
                 request,
                 "El comedor ya tiene hitos registrados.",
             )
-        else:
-            Hitos.objects.create(comedor=comedor)
         messages.success(
             request,
             f"Se creó una nueva admisión de tipo '{nueva_admision.get_tipo_display()}' correctamente.",
         )
-
         messages.success(
             request,
-            f"Se creó una nuevo hito correctamente.",
+            "Se creó una nuevo hito correctamente.",
         )
 
         # 🔁 Redirigir al mismo comedor

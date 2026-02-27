@@ -290,6 +290,40 @@ def test_tecnicos_update_view_post_docx_and_router_paths(mocker):
     assert view.post(req_router) == "sr2"
 
 
+def test_tecnicos_update_view_post_docx_happy_path(mocker):
+    view = module.AdmisionesTecnicosUpdateView()
+    adm = SimpleNamespace(
+        pk=1, comedor=SimpleNamespace(), estado_admision="informe_tecnico_finalizado"
+    )
+    view.get_object = lambda: adm
+
+    req = _Req(
+        POST={"subir_docx_final": "1"},
+        FILES={"docx_final": object()},
+        user=_user(True),
+        get_full_path=lambda: "/x",
+    )
+    view.request = req
+
+    informe = SimpleNamespace(id=8, estado="Docx generado")
+    mocker.patch(
+        "admisiones.views.web_views.InformeTecnico.objects.filter",
+        return_value=_ListChain([informe]),
+    )
+    subir_mock = mocker.patch(
+        "admisiones.views.web_views.InformeService.subir_docx_editado",
+        return_value=True,
+    )
+    success_mock = mocker.patch("admisiones.views.web_views.messages.success")
+    mocker.patch("admisiones.views.web_views.messages.error")
+    mocker.patch("admisiones.views.web_views.safe_redirect", return_value="redir")
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/edit")
+
+    assert view.post(req) == "redir"
+    subir_mock.assert_called_once_with(informe, req.FILES["docx_final"], req.user)
+    success_mock.assert_called_once()
+
+
 def test_admision_detail_get_object_mismatch_raises(mocker):
     """Detail view should reject comedor/admision mismatch."""
     view = module.AdmisionDetailView()
@@ -447,6 +481,75 @@ def test_admision_detail_get_context_data_builds_full_context(mocker):
     assert ctx["historial_estados_items"]
 
 
+def test_admision_detail_get_context_data_sin_comedor_usa_fallbacks(mocker):
+    """Detail context should handle admision without comedor and empty historiales safely."""
+    view = module.AdmisionDetailView()
+    admision = SimpleNamespace(
+        comedor=None,
+        historial=_ListChain([]),
+        historial_estados=_ListChain([]),
+    )
+    view.object = admision
+    view.request = _Req(user=_user(), GET={"historial_page": "2"})
+
+    mocker.patch(
+        "django.views.generic.detail.SingleObjectMixin.get_context_data",
+        return_value={},
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.get_admision_update_context",
+        return_value=None,
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._verificar_permiso_tecnico_dupla",
+        return_value=False,
+    )
+    informes_comp_qs = _ListChain([])
+    mocker.patch(
+        "admisiones.views.web_views.InformeComplementario.objects.filter",
+        return_value=informes_comp_qs,
+    )
+    acomp_mock = mocker.patch(
+        "admisiones.views.web_views.AcompanamientoService.obtener_datos_admision",
+        return_value={},
+    )
+    prestaciones_mock = mocker.patch(
+        "admisiones.views.web_views.AcompanamientoService.obtener_prestaciones_detalladas",
+        return_value={},
+    )
+    exp_pagos_mock = mocker.patch(
+        "admisiones.views.web_views.ExpedientesPagosService.obtener_expedientes_pagos"
+    )
+    rendiciones_mock = mocker.patch(
+        "admisiones.views.web_views.RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales"
+    )
+    rendicion_final_filter = mocker.patch(
+        "admisiones.views.web_views.RendicionCuentasFinal.objects.filter"
+    )
+    mocker.patch("admisiones.templatetags.estado_filters.format_estado")
+
+    ctx = view.get_context_data()
+
+    assert ctx["comedor"] is None
+    assert ctx["documentos"] == []
+    assert ctx["documentos_personalizados"] == []
+    assert ctx["informes_complementarios"] == []
+    assert ctx["expedientes_pagos"] == []
+    assert ctx["rendiciones_mensuales"] == []
+    assert ctx["rendicion_final"] is None
+    assert ctx["rendicion_final_documentos"] == []
+    assert ctx["rendicion_final_historial"] == []
+    assert ctx["admision_historial_items"] == []
+    assert ctx["historial_estados_items"] == []
+    assert ctx["admision_historial_page_param"] == "historial_page"
+    assert ctx["historial_estados_page_param"] == "historial_estados_page"
+    acomp_mock.assert_not_called()
+    exp_pagos_mock.assert_not_called()
+    rendiciones_mock.assert_not_called()
+    rendicion_final_filter.assert_not_called()
+    prestaciones_mock.assert_called_once_with(None)
+
+
 def test_admision_detail_post_forzar_cierre_permission_and_validation(mocker):
     """Detail post should enforce permissions and require reason for forced close."""
     view = module.AdmisionDetailView()
@@ -564,6 +667,47 @@ def test_admision_detail_post_file_and_docx_paths(mocker):
     assert view.post(req_docx_invalid_state) == "redir"
 
 
+def test_admision_detail_post_docx_happy_path(mocker):
+    """Detail post should upload DOCX final successfully when state and permissions match."""
+    view = module.AdmisionDetailView()
+    view.kwargs = {"comedor_pk": 2, "pk": 7}
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/detalle")
+    mocker.patch("admisiones.views.web_views.safe_redirect", return_value="redir")
+    mocker.patch("admisiones.views.web_views.messages.error")
+    success_mock = mocker.patch("admisiones.views.web_views.messages.success")
+
+    informe = SimpleNamespace(id=55, estado="Docx generado")
+    mocker.patch(
+        "admisiones.views.web_views.InformeTecnico.objects.filter",
+        return_value=_ListChain([informe]),
+    )
+    subir_mock = mocker.patch(
+        "admisiones.views.web_views.InformeService.subir_docx_editado",
+        return_value=True,
+    )
+
+    admision = SimpleNamespace(
+        id=5,
+        pk=5,
+        comedor=SimpleNamespace(),
+        estado_admision="informe_tecnico_finalizado",
+    )
+    view.get_object = lambda: admision
+
+    req_docx_ok = _Req(
+        POST={"subir_docx_final": "1"},
+        FILES={"docx_final": object()},
+        user=_user(True),
+        get_full_path=lambda: "/x",
+    )
+
+    assert view.post(req_docx_ok) == "redir"
+    subir_mock.assert_called_once_with(
+        informe, req_docx_ok.FILES["docx_final"], req_docx_ok.user
+    )
+    success_mock.assert_called_once()
+
+
 def test_informe_tecnicos_create_dispatch_branches(mocker):
     view = module.InformeTecnicosCreateView()
     view.kwargs = {"pk": 10, "tipo": "base"}
@@ -648,6 +792,65 @@ def test_informe_tecnicos_update_dispatch_and_form_kwargs(mocker):
     assert kwargs["require_full"] is False
 
 
+def test_informe_tecnicos_create_form_valid_success_and_error(mocker):
+    view = module.InformeTecnicosCreateView()
+    view.request = _Req(user=_user(), POST={"action": "submit"})
+    view.admision_obj = SimpleNamespace(id=10)
+    view.tipo = "base"
+    form = SimpleNamespace(instance=SimpleNamespace(tipo=None))
+
+    mocker.patch.object(view, "get_success_url", return_value="/ok")
+    mocker.patch("admisiones.views.web_views.messages.error")
+
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_informe",
+        return_value={
+            "success": True,
+            "informe": SimpleNamespace(admision=SimpleNamespace(id=10)),
+        },
+    )
+    ok_response = view.form_valid(form)
+    assert ok_response.status_code == 302
+    assert form.instance.tipo == view.tipo
+
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_informe",
+        return_value={"success": False, "error": "fallo"},
+    )
+    mocker.patch.object(view, "render_to_response", return_value="RENDER")
+    mocker.patch.object(view, "get_context_data", return_value={"form": form})
+
+    error_response = view.form_valid(form)
+    assert error_response == "RENDER"
+
+
+def test_informe_tecnicos_update_form_valid_success_and_error(mocker):
+    view = module.InformeTecnicosUpdateView()
+    view.request = _Req(user=_user(), POST={"action": "save"})
+    admision = SimpleNamespace(id=22)
+    form = SimpleNamespace(instance=SimpleNamespace(admision=admision))
+
+    mocker.patch.object(view, "get_success_url", return_value="/ok")
+    mocker.patch("admisiones.views.web_views.messages.error")
+
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_informe",
+        return_value={"success": True, "informe": SimpleNamespace(admision=admision)},
+    )
+    ok_response = view.form_valid(form)
+    assert ok_response.status_code == 302
+
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_informe",
+        return_value={"success": False, "error": "fallo"},
+    )
+    mocker.patch.object(view, "render_to_response", return_value="INVALID")
+    mocker.patch.object(view, "get_context_data", return_value={"form": form})
+
+    error_response = view.form_valid(form)
+    assert error_response == "INVALID"
+
+
 def test_informe_tecnico_detail_context_muestra_revision_tecnico(mocker):
     view = module.InformeTecnicoDetailView()
     view.request = _Req(
@@ -672,6 +875,87 @@ def test_informe_tecnico_detail_context_muestra_revision_tecnico(mocker):
 
     assert context["k"] == "v"
     assert context["mostrar_revision_tecnico"] is True
+
+
+def test_informe_tecnico_detail_post_subir_docx_branches(mocker):
+    view = module.InformeTecnicoDetailView()
+    informe = SimpleNamespace(
+        pk=44,
+        estado="Docx generado",
+        admision=SimpleNamespace(id=77, comedor=SimpleNamespace()),
+    )
+    view.kwargs = {"tipo": "base", "pk": 44}
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_informe_por_tipo_y_pk",
+        return_value=informe,
+    )
+    safe_redirect = mocker.patch(
+        "admisiones.views.web_views.safe_redirect", return_value="SAFE"
+    )
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/informe/44")
+    success_msg = mocker.patch("admisiones.views.web_views.messages.success")
+    error_msg = mocker.patch("admisiones.views.web_views.messages.error")
+
+    req_sin_archivo = _Req(
+        POST={"subir_docx": "1"},
+        FILES={},
+        user=_user(),
+        get_full_path=lambda: "/full",
+    )
+    assert view.post(req_sin_archivo, pk=44) == "SAFE"
+    assert error_msg.called
+
+    req_sin_permiso = _Req(
+        POST={"subir_docx": "1"},
+        FILES={"docx_editado": object()},
+        user=_user(False),
+        get_full_path=lambda: "/full",
+    )
+    mocker.patch.object(
+        module.AdmisionService, "_verificar_permiso_tecnico_dupla", return_value=False
+    )
+    resp_403 = view.post(req_sin_permiso, pk=44)
+    assert resp_403.status_code == 403
+
+    req_ok = _Req(
+        POST={"subir_docx": "1"},
+        FILES={"docx_editado": object()},
+        user=_user(True),
+        get_full_path=lambda: "/full",
+    )
+    subir_docx = mocker.patch(
+        "admisiones.views.web_views.InformeService.subir_docx_editado",
+        return_value=True,
+    )
+    assert view.post(req_ok, pk=44) == "SAFE"
+    subir_docx.assert_called_once_with(
+        informe, req_ok.FILES["docx_editado"], req_ok.user
+    )
+    assert success_msg.called
+    assert safe_redirect.called
+
+
+def test_informe_tecnico_detail_post_revision_redirect(mocker):
+    view = module.InformeTecnicoDetailView()
+    informe = SimpleNamespace(pk=55, admision=SimpleNamespace(id=99))
+    view.kwargs = {"tipo": "juridico", "pk": 55}
+    req = _Req(
+        POST={"aprobar": "1"}, FILES={}, user=_user(), get_full_path=lambda: "/x"
+    )
+
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_informe_por_tipo_y_pk",
+        return_value=informe,
+    )
+    procesar_revision = mocker.patch(
+        "admisiones.views.web_views.InformeService.procesar_revision_informe"
+    )
+    mocker.patch("admisiones.views.web_views.reverse", return_value="/edit/99")
+
+    response = view.post(req, pk=55)
+
+    procesar_revision.assert_called_once_with(req, "juridico", informe)
+    assert response.status_code == 302
 
 
 def test_admisiones_legales_ajax_devuelve_json(mocker):
