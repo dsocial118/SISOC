@@ -1,0 +1,364 @@
+/* ============================================
+   COMUNICADO FORM - ESTILO EDITOR/COMPOSITOR
+   Paleta del sistema: #1a2332, #2c3e50, #f39c12
+   ============================================ */
+
+.comunicado-editor {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+/* Paneles */
+.editor-panel {
+  background: #2c3e50;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.panel-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #374151;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panel-label i {
+  color: #f39c12;
+  font-size: 14px;
+}
+
+.panel-body {
+  padding: 20px;
+}
+
+/* Campos del formulario */
+.comunicado-editor .form-control,
+.comunicado-editor input[type="text"],
+.comunicado-editor input[type="datetime-local"],
+.comunicado-editor select,
+.comunicado-editor textarea {
+  background-color: #1a2332;
+  color: #e5e7eb;
+  border: 1px solid #3d4f63;
+  border-radius: 6px;
+}
+
+.comunicado-editor .form-control:focus,
+.comunicado-editor input:focus,
+.comunicado-editor select:focus,
+.comunicado-editor textarea:focus {
+  background-color: #1e2a3a;
+  border-color: #f39c12;
+  box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15);
+  color: #e5e7eb;
+}
+
+.comunicado-editor .form-control::placeholder {
+  color: #6b7280;
+}
+
+/* Título input - más grande */
+.comunicado-editor #id_titulo {
+  font-size: 17px;
+  font-weight: 500;
+  padding: 10px 14px;
+  background-color: #1a2332;
+  border: 1px solid #3d4f63;
+  border-radius: 6px;
+}
+
+.comunicado-editor #id_titulo:focus {
+  background-color: #1e2a3a;
+  border-color: #f39c12;
+  box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15);
+}
+
+/* Textarea cuerpo */
+.comunicado-editor #id_cuerpo {
+  background-color: #1a2332;
+  border: 1px solid #3d4f63;
+  border-radius: 6px;
+  resize: vertical;
+  min-height: 180px;
+  padding: 14px;
+  line-height: 1.7;
+}
+
+.comunicado-editor #id_cuerpo:focus {
+  background-color: #1e2a3a;
+  border-color: #f39c12;
+  box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15);
+}
+
+/* Labels */
+.comunicado-editor label {
+  color: #d1d5db;
+  font-weight: 500;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+/* Help text */
+.comunicado-editor .form-text {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* Select tipo/subtipo */
+.comunicado-editor .form-select {
+  background-color: #1a2332;
+  color: #e5e7eb;
+  border: 1px solid #3d4f63;
+}
+
+.comunicado-editor .form-select:focus {
+  background-color: #1e2a3a;
+  border-color: #f39c12;
+  box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15);
+  color: #e5e7eb;
+}
+
+/* Fila de opciones inline */
+.options-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.options-row > .option-item {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Switch toggle */
+.comunicado-editor .form-check-input {
+  background-color: #3d4f63;
+  border-color: #4b5563;
+}
+
+.comunicado-editor .form-check-input:checked {
+  background-color: #f39c12;
+  border-color: #f39c12;
+}
+
+.comunicado-editor .form-check-label {
+  color: #d1d5db;
+}
+
+/* Comedores selector */
+.comedores-lista-container {
+  background: #1a2332;
+  border: 1px solid #3d4f63;
+  border-radius: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.comedores-lista-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.comedores-lista-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.comedores-lista-container::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+
+.comedor-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 14px;
+  border-bottom: 1px solid rgba(55, 65, 81, 0.5);
+  transition: background 0.1s;
+}
+
+.comedor-row:last-child {
+  border-bottom: none;
+}
+
+.comedor-row:hover {
+  background: rgba(243, 156, 18, 0.05);
+}
+
+.comedor-row .comedor-nombre {
+  color: #d1d5db;
+  font-size: 13px;
+}
+
+.comedor-row .btn-sm {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+/* Badges comedores seleccionados */
+.comedores-badges .badge {
+  background: rgba(243, 156, 18, 0.12) !important;
+  color: #f39c12 !important;
+  border: 1px solid rgba(243, 156, 18, 0.25);
+  font-weight: 500;
+  font-size: 0.8em;
+  padding: 4px 9px;
+}
+
+.comedores-badges .badge .btn-close {
+  font-size: 0.55em;
+  filter: none;
+  opacity: 0.7;
+}
+
+.comedores-badges .badge .btn-close:hover {
+  opacity: 1;
+}
+
+/* Buscador comedores */
+.comedores-search .input-group-text {
+  background: #1a2332;
+  border: 1px solid #3d4f63;
+  color: #6b7280;
+  border-right: none;
+}
+
+.comedores-search .form-control {
+  border-left: none !important;
+}
+
+/* Archivos adjuntos */
+.btn-add-files {
+  background: rgba(243, 156, 18, 0.08);
+  border: 2px dashed rgba(243, 156, 18, 0.25);
+  color: #f39c12;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.btn-add-files:hover {
+  background: rgba(243, 156, 18, 0.15);
+  border-color: #f39c12;
+}
+
+.archivo-preview-item {
+  background: #1a2332;
+  border: 1px solid #3d4f63;
+  border-radius: 6px;
+  color: #d1d5db;
+}
+
+.archivo-preview-item .fw-bold {
+  color: #e5e7eb;
+}
+
+.files-badge {
+  background: rgba(96, 165, 250, 0.12) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+/* Adjuntos existentes */
+.adjunto-row {
+  background: #1a2332;
+  border: 1px solid #3d4f63;
+  color: #d1d5db;
+  border-radius: 6px;
+}
+
+.adjunto-row a {
+  color: #60a5fa;
+}
+
+.adjunto-row a:hover {
+  color: #93bbfc;
+}
+
+/* Info comunicado (edición) */
+.comunicado-info {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.comunicado-info .info-item {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.comunicado-info .info-item strong {
+  color: #d1d5db;
+}
+
+/* Barra de acciones */
+.editor-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  margin-top: 8px;
+}
+
+.editor-actions .btn-save {
+  background: #e7ba61;
+  border: none;
+  color: #1a2332;
+  font-weight: 600;
+  padding: 10px 28px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.editor-actions .btn-save:hover {
+  background: #e7ba61;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+}
+
+.editor-actions .btn-cancel {
+  background: transparent;
+  border: 1px solid #4b5563;
+  color: #9ca3af;
+  padding: 10px 20px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.editor-actions .btn-cancel:hover {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .options-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .comunicado-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .editor-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .editor-actions .btn-save,
+  .editor-actions .btn-cancel {
+    width: 100%;
+    text-align: center;
+  }
+}

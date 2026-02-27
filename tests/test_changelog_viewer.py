@@ -4,7 +4,11 @@ from unittest.mock import patch
 import pytest
 from django.urls import reverse
 from django.core.cache import cache
-from core.views import get_current_version, fetch_changelog_content
+from core.views import (
+    get_current_version,
+    fetch_changelog_content,
+    parse_changelog_versions,
+)
 
 pytestmark = [pytest.mark.django_db]
 
@@ -32,8 +36,10 @@ def test_changelog_view_authenticated_success(auth_client):
     url = reverse("changelog")
     response = auth_client.get(url)
     assert response.status_code == 200
-    assert "changelog_html" in response.context
+    assert "versions" in response.context
     assert "current_version" in response.context
+    assert response.context["error"] is False
+    assert response.context["versions"]
 
 
 def test_get_current_version():
@@ -47,6 +53,38 @@ def test_get_current_version():
         assert len(version.split(".")) == 3
 
 
+def test_parse_changelog_versions():
+    """Test that parse_changelog_versions splits content into per-version blocks."""
+    sample = (
+        "## Despliegue: 2026.02.03\n### Added\n- Feature A\n\n"
+        "## Despliegue: 2026.01.23\n### Fixed\n- Bug B\n"
+    )
+    versions = parse_changelog_versions(sample)
+    assert len(versions) == 2
+    assert versions[0]["version"] == "2026.02.03"
+    assert versions[1]["version"] == "2026.01.23"
+    # The "## Despliegue:" header should not appear in the rendered HTML
+    assert "Despliegue" not in versions[0]["html"]
+    # Content items should be present
+    assert "Feature A" in versions[0]["html"]
+    assert "Bug B" in versions[1]["html"]
+
+
+def test_parse_changelog_versions_current_format():
+    """Test parsing of current '# Versión SISOC DD.MM.YYYY' changelog format."""
+    sample = (
+        "# Versión SISOC 18.02.2026\n\n## Nuevas Funcionalidades\n\n- Feature A\n\n"
+        "# Vresión SISOC 03.09.2025\n\n## Actualizaciones\n\n- Ajuste B\n"
+    )
+    versions = parse_changelog_versions(sample)
+    assert len(versions) == 2
+    assert versions[0]["version"] == "18.02.2026"
+    assert versions[1]["version"] == "03.09.2025"
+    assert "Versión SISOC" not in versions[0]["html"]
+    assert "Feature A" in versions[0]["html"]
+    assert "Ajuste B" in versions[1]["html"]
+
+
 def test_fetch_changelog_content_success():
     """Test that fetch_changelog_content reads the changelog file."""
     content = fetch_changelog_content()
@@ -54,7 +92,12 @@ def test_fetch_changelog_content_success():
     assert content is None or isinstance(content, str)
     # If content exists, should contain expected markers
     if content:
-        assert "CHANGELOG" in content or "Despliegue" in content
+        assert (
+            "CHANGELOG" in content
+            or "Despliegue" in content
+            or "Versión SISOC" in content
+            or "Vresión SISOC" in content
+        )
 
 
 def test_changelog_view_uses_cache(auth_client):
@@ -84,7 +127,7 @@ def test_changelog_view_error_handling(auth_client):
         response = auth_client.get(url)
         assert response.status_code == 200
         assert response.context["error"] is True
-        assert response.context["changelog_html"] is None
+        assert response.context["versions"] is None
 
 
 def test_fetch_changelog_github_fallback():
@@ -115,3 +158,14 @@ def test_get_current_version_github_fallback():
             # Should have attempted to call GitHub
             mock_get.assert_called_once()
             assert version == "2025.01.01"
+
+
+def test_get_current_version_current_format_local_file():
+    """Test local current version extraction from current changelog format."""
+    sample = "# Versión SISOC 18.02.2026\n\n## Nuevas Funcionalidades\n\n- Cambio\n"
+    with patch("builtins.open", create=True) as mock_open:
+        mock_open.return_value.__enter__.return_value.read.return_value = sample
+        with patch("requests.get") as mock_get:
+            version = get_current_version()
+            mock_get.assert_not_called()
+            assert version == "18.02.2026"

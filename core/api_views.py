@@ -9,10 +9,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework_api_key.permissions import HasAPIKey
 
-# FIXME: Cuando se mergee development a main, cambiar este import a:
-# from centrodefamilia.services.consulta_renaper.impl import APIClient
-# (en development, consulta_renaper es un paquete, no un archivo)
-from centrodefamilia.services.consulta_renaper import APIClient
+from centrodefamilia.services.consulta_renaper.impl import APIClient
 from core.api_serializers import RenaperConsultaSerializer
 
 logger = logging.getLogger("django")

@@ -20,7 +20,8 @@
                 <span class="badge bg-primary">A Validar Abogado</span>
             {% elif request.user|has_group:"Abogado Dupla" and doc.archivo_id %}
                 <select class="form-control form-control-sm mb-2 border border-2 border-primary"
-                        onchange="actualizarEstado(this)"
+                        data-call-change="actualizarEstado"
+                        data-call-pass-this="true"
                         data-admision-id="{{ admision.id }}"
                         data-documento-id="{{ doc.archivo_id }}"
                         data-url="{% url 'actualizar_estado_archivo' %}"
@@ -37,7 +38,8 @@
         {% else %}
             {% if request.user|has_group:"Tecnico Comedor" and doc.archivo_id %}
                 <select class="form-control form-control-sm mb-2{% if doc.estado == 'Rectificar' %} border border-danger border-2{% endif %}"
-                        onchange="actualizarEstado(this)"
+                        data-call-change="actualizarEstado"
+                        data-call-pass-this="true"
                         data-admision-id="{{ admision.id }}"
                         data-documento-id="{{ doc.archivo_id }}"
                         data-url="{% url 'actualizar_estado_archivo' %}"
@@ -68,7 +70,8 @@
             {% if request.user|has_group:"Tecnico Comedor" and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
                 {% if doc.estado_valor != "Aceptado" and doc.estado_valor != "A Validar Abogado" %}
                     <button class="btn btn-sm btn-danger px-3 ms-2"
-                            onclick="confirmarEliminar({{ admision.id }}, {{ doc.documentacion_id|default:'null' }}, {{ doc.archivo_id|default:'null' }})">
+                            data-call-click="confirmarEliminar"
+                            data-call-args='[{{ admision.id }}, {{ doc.documentacion_id|default:"null" }}, {{ doc.archivo_id|default:"null" }}]'>
                         Eliminar
                     </button>
                 {% endif %}
@@ -78,10 +81,11 @@
                 <input type="file"
                        id="file-{{ doc.documentacion_id }}"
                        class="d-none"
-                       onchange="subirArchivo({{ admision.id }}, {{ doc.documentacion_id }})" />
+                       data-call-change="subirArchivo"
+                       data-call-args='[{{ admision.id }}, {{ doc.documentacion_id }}]' />
                 <button type="button"
                         class="btn btn-sm btn-outline-primary"
-                        onclick="document.getElementById('file-{{ doc.documentacion_id }}').click()">Adjuntar</button>
+                        data-click-target-id="file-{{ doc.documentacion_id }}">Adjuntar</button>
                 <div class="progress mt-2"
                      id="progress-container-{{ doc.documentacion_id }}"
                      style="display:none;
@@ -100,7 +104,8 @@
                 <!-- Modo vista (por defecto) -->
                 <div id="gde-display-{{ doc.id }}"
                      class="gde-display"
-                     onclick="activarEdicionGDE({{ doc.id }})">
+                     data-call-click="activarEdicionGDE"
+                     data-call-args="[{{ doc.id }}]">
                     {% if doc.numero_gde %}
                         <span class="text-success fw-bold">{{ doc.numero_gde }}</span>
                         <i class="bi bi-pencil-square ms-2 text-muted"
@@ -124,12 +129,14 @@
                                maxlength="50"
                                style="max-width: 150px" />
                         <button class="btn btn-success btn-sm me-1"
-                                onclick="guardarNumeroGDE({{ doc.id }})"
+                                data-call-click="guardarNumeroGDE"
+                                data-call-args="[{{ doc.id }}]"
                                 title="Guardar">
                             <i class="bi bi-check"></i>
                         </button>
                         <button class="btn btn-secondary btn-sm"
-                                onclick="cancelarEdicionGDE({{ doc.id }})"
+                                data-call-click="cancelarEdicionGDE"
+                                data-call-args="[{{ doc.id }}]"
                                 title="Cancelar">
                             <i class="bi bi-x"></i>
                         </button>

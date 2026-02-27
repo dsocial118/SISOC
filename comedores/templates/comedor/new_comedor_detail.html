@@ -1482,10 +1482,10 @@
                     <div class="d-grid gap-2">
                         <button type="button"
                                 class="btn btn-success btn-lg"
-                                onclick="validarComedor()">Validar</button>
+                                data-call-click="validarComedor">Validar</button>
                         <button type="button"
                                 class="btn btn-danger btn-lg"
-                                onclick="mostrarOpcionesNoValidar()">No Validar</button>
+                                data-call-click="mostrarOpcionesNoValidar">No Validar</button>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1537,7 +1537,7 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit"
                                 class="btn btn-danger"
-                                onclick="return validarFormNoValidar()">No Validar</button>
+                                data-call-click="validarFormNoValidar">No Validar</button>
                     </div>
                 </form>
             </div>
@@ -1545,7 +1545,7 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
     function validarComedor() {
       const form = document.createElement('form');
       form.method = 'POST';
@@ -1633,7 +1633,7 @@
       return true;
     }
     </script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
     document.addEventListener("DOMContentLoaded", function () {
       const tieneDocumentacion = document.getElementById("id_tiene_documentacion");
       const documentacionField = document.getElementById("documentacion-field-modal");
@@ -1673,11 +1673,29 @@
         }
       }
 
+            function resetSubintervenciones() {
+                if (!subIntervencionSelect) {
+                    return;
+                }
+                subIntervencionSelect.innerHTML = '<option value="">Seleccione una opción</option>';
+                subIntervencionSelect.value = "";
+            }
+
       if (tipoIntervencionSelect) {
         tipoIntervencionSelect.addEventListener("change", function () {
           cargarSubintervenciones(this.value);
         });
       }
+
+            const modalIntervencion = document.getElementById("modalIntervencion");
+            if (modalIntervencion) {
+                modalIntervencion.addEventListener("show.bs.modal", function () {
+                    if (tipoIntervencionSelect) {
+                        tipoIntervencionSelect.value = "";
+                    }
+                    resetSubintervenciones();
+                });
+            }
 
       function validarFecha() {
         if (!fechaInput) {
@@ -1721,7 +1739,7 @@
     });
     </script>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
     const comedorId = "{{ comedor.id }}"
     const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
     const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";
@@ -1729,7 +1747,7 @@
     <script src="{% static 'custom/js/comedordetail.js' %}"></script>
     <script src="{% static 'custom/js/newcomedor.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
 const donutCanvas = document.getElementById('donutChart');
 if (donutCanvas) {
   const ctx = donutCanvas.getContext('2d');
@@ -1755,7 +1773,7 @@ if (donutCanvas) {
   });
 }
     </script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
     const nominaEdadCtx = document.getElementById('nominaEdadChart');
     if (nominaEdadCtx) {
       const nominaEdadData = [
@@ -1828,7 +1846,7 @@ if (donutCanvas) {
       });
     }
     </script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
     const interaccionesCtx = document.getElementById('interaccionesChart');
     if (interaccionesCtx) {
       const labels = {{ interacciones_labels|default:"[]"|safe }};

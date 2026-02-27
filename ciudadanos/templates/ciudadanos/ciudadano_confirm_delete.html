@@ -1,14 +1,5 @@
 {% extends "includes/main.html" %}
 
 {% block content %}
-    <h1>Eliminar ciudadano</h1>
-    <p>
-        ¿Confirmás que querés eliminar a <strong>{{ object }}</strong>? Esta acción no se puede deshacer.
-    </p>
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Eliminar</button>
-        <a href="{{ object.get_absolute_url }}"
-           class="btn btn-outline-secondary">Cancelar</a>
-    </form>
+    {% include 'components/delete_confirm.html' with object_name=object cancel_url_full=object.get_absolute_url confirm_text='Dar de baja' %}
 {% endblock %}

@@ -22,6 +22,7 @@ urlpatterns = [
     path("", include("dashboard.urls")),
     path("", include("comedores.urls")),
     path("", include("organizaciones.urls")),
+    path("", include("cdi.urls")),
     path("", include("duplas.urls")),
     path("", include("audittrail.urls")),
     path("", include("ciudadanos.urls")),
@@ -45,8 +46,10 @@ urlpatterns = [
     path("api/users/", include("users.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
+    path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
     path("", include("importarexpediente.urls")),
+    path("", include("comunicados.urls")),
 ]
 
 if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):

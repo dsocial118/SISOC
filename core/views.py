@@ -1,26 +1,42 @@
 # Crea tus vistas aqui.
+
+# Standard library
 import json
 import re
 import logging
 from pathlib import Path
 
+# Third-party
 import markdown
 import requests
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
-from django.db import IntegrityError
-from django.http import JsonResponse
+from django.db import IntegrityError, transaction
+from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_http_methods
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
+# First-party (local)
 from core.models import (
     FiltroFavorito,
     Localidad,
     Municipio,
     PreferenciaColumnas,
+    MontoPrestacionPrograma,
 )
+from core.forms import MontoPrestacionProgramaForm
 from core.services.favorite_filters import (
     TTL_CACHE_FILTROS_FAVORITOS,
     clave_cache_filtros_favoritos,
@@ -29,8 +45,17 @@ from core.services.favorite_filters import (
     obtener_items_obsoletos,
 )
 from organizaciones.models import Organizacion
+from historial.services.historial_service import HistorialService
 
 logger = logging.getLogger(__name__)
+
+CHANGELOG_HEADER_PATTERN = re.compile(
+    (
+        r"^(?:##\s*Despliegue:\s*(?P<deploy>\d{4}\.\d{2}\.\d{2})"
+        r"|#\s*(?:Versión|Vresión)\s+SISOC\s+(?P<release>\d{2}\.\d{2}\.\d{4}))\s*$"
+    ),
+    flags=re.MULTILINE,
+)
 
 
 @login_required
@@ -312,6 +337,14 @@ def inicio_view(request):
     return render(request, "inicio.html")
 
 
+def _extract_first_changelog_version(content):
+    """Extrae la primera versión del changelog para formatos nuevos y legacy."""
+    match = CHANGELOG_HEADER_PATTERN.search(content)
+    if not match:
+        return None
+    return match.group("deploy") or match.group("release")
+
+
 def get_current_version():
     """
     Extrae la versión actual del sistema desde CHANGELOG.md.
@@ -324,10 +357,9 @@ def get_current_version():
     try:
         with open(changelog_path, "r", encoding="utf-8") as file:
             content = file.read()
-            # Buscar el primer "Despliegue: YYYY.MM.DD"
-            match = re.search(r"##\s*Despliegue:\s*(\d{4}\.\d{2}\.\d{2})", content)
-            if match:
-                return match.group(1)
+            version = _extract_first_changelog_version(content)
+            if version:
+                return version
     except (FileNotFoundError, IOError) as e:
         logger.warning(f"No se pudo leer CHANGELOG.md local para versión: {e}")
 
@@ -336,9 +368,9 @@ def get_current_version():
         response = requests.get(settings.CHANGELOG_GITHUB_URL, timeout=10)
         response.raise_for_status()
         content = response.text
-        match = re.search(r"##\s*Despliegue:\s*(\d{4}\.\d{2}\.\d{2})", content)
-        if match:
-            return match.group(1)
+        version = _extract_first_changelog_version(content)
+        if version:
+            return version
     except requests.RequestException as e:
         logger.error(f"Error al obtener versión desde GitHub: {e}")
 
@@ -348,25 +380,45 @@ def get_current_version():
 def fetch_changelog_content():
     """
     Obtiene el contenido del CHANGELOG.md.
-    Primero intenta obtenerlo desde GitHub y, si no puede, usa el archivo local.
+    Primero intenta leer el archivo local y, si no puede, usa GitHub.
     """
     changelog_path = Path(settings.BASE_DIR) / "CHANGELOG.md"
 
-    # Intentar obtener desde GitHub primero
+    # Intentar leer del archivo local primero
+    try:
+        with open(changelog_path, "r", encoding="utf-8") as file:
+            return file.read()
+    except (FileNotFoundError, IOError) as e:
+        logger.warning(f"No se pudo leer CHANGELOG.md local: {e}")
+
+    # Como fallback, intentar obtener desde GitHub
     try:
         response = requests.get(settings.CHANGELOG_GITHUB_URL, timeout=10)
         response.raise_for_status()
         return response.text
     except requests.RequestException as e:
-        logger.warning(f"No se pudo obtener CHANGELOG.md desde GitHub: {e}")
-
-    # Como fallback, intentar leer el archivo local
-    try:
-        with open(changelog_path, "r", encoding="utf-8") as file:
-            return file.read()
-    except (FileNotFoundError, IOError) as e:
-        logger.error(f"No se pudo leer CHANGELOG.md local: {e}")
+        logger.error(f"No se pudo obtener CHANGELOG.md desde GitHub: {e}")
         return None
+
+
+def parse_changelog_versions(content):
+    """
+    Divide el contenido de CHANGELOG.md en bloques individuales por versión.
+    Retorna una lista de dicts con claves 'version' y 'html'.
+    """
+    versions = []
+    matches = list(CHANGELOG_HEADER_PATTERN.finditer(content))
+    for index, match in enumerate(matches):
+        version_date = match.group("deploy") or match.group("release")
+        block_start = match.end()
+        block_end = (
+            matches[index + 1].start() if index + 1 < len(matches) else len(content)
+        )
+        block_content = content[block_start:block_end].strip()
+        md_parser = markdown.Markdown(extensions=["extra", "sane_lists"])
+        block_html = md_parser.convert(block_content)
+        versions.append({"version": version_date, "html": block_html})
+    return versions
 
 
 @login_required
@@ -381,33 +433,36 @@ def changelog_view(request):
     # Intentar obtener desde cache
     cached_data = cache.get(cache_key)
 
-    if cached_data:
-        changelog_html = cached_data["html"]
+    if cached_data and cached_data.get("versions"):
+        versions = cached_data["versions"]
         current_version = cached_data["version"]
     else:
         # Obtener contenido del changelog
         changelog_content = fetch_changelog_content()
 
         if changelog_content:
-            # Convertir markdown a HTML
-            md = markdown.Markdown(extensions=["extra", "sane_lists"])
-            changelog_html = md.convert(changelog_content)
+            versions = parse_changelog_versions(changelog_content)
             current_version = get_current_version()
 
-            # Guardar en cache
-            cache.set(
-                cache_key,
-                {"html": changelog_html, "version": current_version},
-                cache_timeout,
-            )
+            # Evitar cachear respuestas parseadas vacías para no dejar la página en blanco.
+            if versions:
+                cache.set(
+                    cache_key,
+                    {"versions": versions, "version": current_version},
+                    cache_timeout,
+                )
+            else:
+                logger.warning(
+                    "Se leyó CHANGELOG.md pero no se detectaron bloques de versión."
+                )
         else:
-            changelog_html = None
+            versions = None
             current_version = get_current_version()
 
     context = {
-        "changelog_html": changelog_html,
+        "versions": versions,
         "current_version": current_version,
-        "error": changelog_html is None,
+        "error": not versions,
     }
 
     return render(request, "changelog.html", context)
@@ -415,3 +470,154 @@ def changelog_view(request):
 
 def error_500_view(request):
     return render(request, "500.html")
+
+
+class MontoPrestacionProgramaListView(LoginRequiredMixin, ListView):
+    model = MontoPrestacionPrograma
+    template_name = "monto_prestacion_list.html"
+    context_object_name = "prestaciones"
+    paginate_by = 10
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .select_related("usuario_creador", "programa")
+            .order_by("id")
+        )
+
+
+class MontoPrestacionProgramaContextMixin:
+    @staticmethod
+    def _list_url():
+        return reverse("montoprestacion_listar")
+
+    def _back_button(self):
+        return {
+            "url": self._list_url(),
+            "text": "Volver",
+            "type": "outline-light",
+        }
+
+    def _breadcrumb_items(self, actual):
+        return [
+            {"text": "Monto de Prestaciones", "url": self._list_url()},
+            {"text": actual, "active": True},
+        ]
+
+    def _form_template_context(self, actual):
+        return {
+            "breadcrumb_items": self._breadcrumb_items(actual),
+            "back_button": self._back_button(),
+            "action_buttons": [],
+            "hidden_fields_send": [],
+            "guardar_otro_send": False,
+        }
+
+
+class MontoPrestacionProgramaCreateView(
+    MontoPrestacionProgramaContextMixin, LoginRequiredMixin, CreateView
+):
+    model = MontoPrestacionPrograma
+    form_class = MontoPrestacionProgramaForm
+    template_name = "monto_prestacion_form.html"
+    success_url = reverse_lazy("montoprestacion_listar")
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            obj = form.save(commit=False)
+            if not getattr(obj, "usuario_creador", None):
+                obj.usuario_creador = self.request.user
+            obj.save()
+            self.object = obj
+            HistorialService.registrar_historial(
+                accion="Creación de Monto de Prestación",
+                instancia=obj,
+                diferencias=form.cleaned_data,
+            )
+        messages.success(self.request, "Monto de Prestación creada correctamente.")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(self._form_template_context("Crear Monto de Prestación"))
+        return context
+
+
+class MontoPrestacionProgramaUpdateView(
+    MontoPrestacionProgramaContextMixin, LoginRequiredMixin, UpdateView
+):
+    model = MontoPrestacionPrograma
+    form_class = MontoPrestacionProgramaForm
+    template_name = "monto_prestacion_form.html"
+    success_url = reverse_lazy("montoprestacion_listar")
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            obj = form.save()
+            self.object = obj
+            HistorialService.registrar_historial(
+                accion="Edición de Monto de Prestación",
+                instancia=obj,
+                diferencias=form.cleaned_data,
+            )
+        messages.success(self.request, "Monto de Prestación actualizado correctamente.")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(self._form_template_context("Editar Monto de Prestación"))
+        return context
+
+
+class MontoPrestacionProgramaDeleteView(
+    MontoPrestacionProgramaContextMixin, LoginRequiredMixin, DeleteView
+):
+    model = MontoPrestacionPrograma
+    template_name = "monto_prestacion_confirm_delete.html"
+    success_url = reverse_lazy("montoprestacion_listar")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        obj = getattr(self, "object", None) or self.get_object()
+        context["breadcrumb_items"] = [
+            {"text": "Monto de Prestaciones", "url": self._list_url()},
+            {"text": "Eliminar Monto de Prestación", "active": True},
+        ]
+        context["object_title"] = str(obj)
+        context["delete_message"] = (
+            "¿Desea eliminar este monto de prestación? Esta acción no se puede deshacer."
+        )
+        context["cancel_url"] = self._list_url()
+        return context
+
+    def form_valid(self, form):
+        obj = getattr(self, "object", None) or self.get_object()
+        self.object = obj
+        with transaction.atomic():
+            HistorialService.registrar_historial(
+                accion="Eliminación de Prestación",
+                instancia=obj,
+                diferencias={"programa": getattr(obj, "programa", None)},
+            )
+            response = super().form_valid(form)
+        messages.success(self.request, "Monto de Prestación eliminado correctamente.")
+        return response
+
+
+class MontoPrestacionProgramaDetailView(
+    MontoPrestacionProgramaContextMixin, LoginRequiredMixin, DetailView
+):
+    model = MontoPrestacionPrograma
+    template_name = "monto_prestacion_detail.html"
+    context_object_name = "prestacion"
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("usuario_creador", "programa")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["breadcrumb_items"] = self._breadcrumb_items("Detalle")
+        context["back_button"] = self._back_button()
+        context["action_buttons"] = []
+        return context

@@ -24,42 +24,29 @@
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="row">
-                <!-- Campos visibles solo para el grupo "Área Legales" -->
-                {% if es_area_legales %}
-                    <div class="col-md-6">
-                        <div class="form-group">{{ form.expediente_pago|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.expediente_convenio|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.anexo|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.if_cantidad_de_prestaciones|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.if_pagado|as_crispy_field }}</div>
-                    </div>
-                {% endif %}
-                <!-- Campos visibles solo para el grupo "Técnico Comedor" -->
-                {% if es_tecnico_comedor %}
-                    <div class="col-md-8">
-                        <div class="form-group">{{ form.expediente_pago|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.expediente_convenio|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.anexo|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.if_cantidad_de_prestaciones|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.if_pagado|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.total|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.mes_pago|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.ano|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.organizacion_creacion|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.numero_orden_pago|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.fecha_pago_al_banco|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.fecha_acreditacion|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.prestaciones_mensuales_desayuno|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.prestaciones_mensuales_almuerzo|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.prestaciones_mensuales_merienda|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.prestaciones_mensuales_cena|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.monto_mensual_desayuno|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.monto_mensual_almuerzo|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.monto_mensual_merienda|as_crispy_field }}</div>
-                        <div class="form-group">{{ form.monto_mensual_cena|as_crispy_field }}</div>
-                    </div>
-                {% endif %}
+                <div class="col-md-8">
+                    <div class="form-group">{{ form.expediente_pago|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.expediente_convenio|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.anexo|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.if_cantidad_de_prestaciones|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.if_pagado|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.total|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.mes_pago|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.ano|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.organizacion_creacion|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.numero_orden_pago|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.fecha_pago_al_banco|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.fecha_acreditacion|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.observaciones|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.prestaciones_mensuales_desayuno|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.prestaciones_mensuales_almuerzo|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.prestaciones_mensuales_merienda|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.prestaciones_mensuales_cena|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.monto_mensual_desayuno|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.monto_mensual_almuerzo|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.monto_mensual_merienda|as_crispy_field }}</div>
+                    <div class="form-group">{{ form.monto_mensual_cena|as_crispy_field }}</div>
+                </div>
             </div>
             <!-- Botones de acción -->
             {% include 'components/form_buttons.html' with cancel_url_full=expedientes_list_url default_save=True save_text='Guardar' layout='center' %}

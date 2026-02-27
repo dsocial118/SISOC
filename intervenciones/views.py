@@ -10,6 +10,8 @@ from django.views.generic import CreateView, UpdateView, DeleteView, TemplateVie
 
 from comedores.services.comedor_service import ComedorService
 from core.security import safe_redirect
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
 from intervenciones.models.intervenciones import (
     Intervencion,
     SubIntervencion,
@@ -74,7 +76,9 @@ class IntervencionDetailView(LoginRequiredMixin, TemplateView):
 
         # Cache los tipos e intervenciones para evitar consultas repetidas
         context["tipos_intervencion"] = cache.get_or_set(
-            "tipos_intervencion_all", list(TipoIntervencion.objects.all()), 300
+            "tipos_intervencion_comedores",
+            list(TipoIntervencion.para_programas(*PROGRAMA_ALIASES_COMEDORES)),
+            300,
         )
         context["destinatarios"] = cache.get_or_set(
             "destinatarios_all", list(TipoDestinatario.objects.all()), 300
@@ -179,11 +183,12 @@ class IntervencionUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
 
-class IntervencionDeleteView(LoginRequiredMixin, DeleteView):
+class IntervencionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     """Eliminar una intervención existente."""
 
     model = Intervencion
     template_name = "intervencion_confirm_delete.html"
+    success_message = "Intervención dada de baja correctamente."
 
     def get_object(self, queryset=None):
         """Obtener la intervención a eliminar."""

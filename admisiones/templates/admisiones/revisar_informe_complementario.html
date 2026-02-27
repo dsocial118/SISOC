@@ -129,7 +129,7 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.querySelectorAll('input[name="accion_complementario"]').forEach(function(radio) {
             radio.addEventListener('change', function() {
                 const observacionesGroup = document.getElementById('observaciones-group');
