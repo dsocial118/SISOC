@@ -25,6 +25,7 @@ from admisiones.forms.admisiones_forms import (
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from .docx_service import DocumentTemplateService, TextFormatterService
+from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
 from admisiones.services.admisiones_filter_config import (
     FIELD_MAP as ADMISION_FILTER_MAP,
@@ -172,6 +173,52 @@ class AdmisionService:
             "es_personalizado": False,
             "row_id": row_id,
             "observaciones": archivo.observaciones if archivo else None,
+        }
+
+    @staticmethod
+    def _build_documentos_update_context(documentaciones, archivos_subidos):
+        archivos_por_documentacion = {
+            archivo.documentacion_id: archivo
+            for archivo in archivos_subidos
+            if archivo.documentacion_id
+        }
+
+        documentos_info = []
+        obligatorios_totales = 0
+        obligatorios_completos = 0
+
+        for documentacion in documentaciones:
+            archivo = archivos_por_documentacion.get(documentacion.id)
+            doc_serializado = AdmisionService._serialize_documentacion(
+                documentacion, archivo
+            )
+            documentos_info.append(doc_serializado)
+
+            if documentacion.obligatorio:
+                obligatorios_totales += 1
+                if doc_serializado.get("estado") == "Aceptado":
+                    obligatorios_completos += 1
+
+        documentos_personalizados_info = [
+            AdmisionService.serialize_documento_personalizado(archivo)
+            for archivo in archivos_subidos
+            if not archivo.documentacion_id
+        ]
+
+        resumen_estados = AdmisionService._resumen_documentos(
+            documentos_info, documentos_personalizados_info
+        )
+        stats = AdmisionService._stats_from_resumen(
+            resumen_estados, obligatorios_totales, obligatorios_completos
+        )
+
+        return {
+            "documentos": documentos_info,
+            "documentos_personalizados": documentos_personalizados_info,
+            "resumen_estados": resumen_estados,
+            "obligatorios_totales": obligatorios_totales,
+            "obligatorios_completos": obligatorios_completos,
+            "stats": stats,
         }
 
     @staticmethod
@@ -400,6 +447,99 @@ class AdmisionService:
         return table_items
 
     @staticmethod
+    def _build_informe_complementario_update_context(
+        admision, informes_complementarios
+    ):
+        informe_complementario_pendiente = informes_complementarios.filter(
+            estado__in=["rectificar", "borrador"]
+        ).first()
+
+        mostrar_informe_complementario = (
+            admision.estado_legales == "Informe Complementario Solicitado"
+            or (
+                informe_complementario_pendiente
+                and informe_complementario_pendiente.estado == "rectificar"
+            )
+        )
+
+        observaciones_complementario = None
+        if (
+            informe_complementario_pendiente
+            and informe_complementario_pendiente.observaciones_legales
+        ):
+            observaciones_complementario = (
+                informe_complementario_pendiente.observaciones_legales
+            )
+
+        return {
+            "mostrar_informe_complementario": mostrar_informe_complementario,
+            "observaciones_complementario": observaciones_complementario,
+        }
+
+    @staticmethod
+    def _puede_editar_convenio_numero_update_context(user, comedor):
+        if not user:
+            return False
+        return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+            user, comedor
+        )
+
+    @staticmethod
+    def _build_objetos_update_context(admision):
+        return {
+            "comedor": admision.comedor,
+            "convenios": TipoConvenio.objects.exclude(id=4),
+            "caratular_form": CaratularForm(instance=admision) if admision else None,
+            "form_if_informe_tecnico": (
+                IFInformeTecnicoForm(instance=admision) if admision else None
+            ),
+            "informe_tecnico": (
+                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+            ),
+            "informes_complementarios": InformeComplementario.objects.filter(
+                admision=admision
+            ),
+            "pdf": InformeTecnicoPDF.objects.filter(admision=admision).first(),
+        }
+
+    @staticmethod
+    def _build_response_update_context(
+        *,
+        admision,
+        documentos_context,
+        objetos_contexto,
+        informe_complementario_context,
+        botones_disponibles,
+        puede_editar_convenio_numero,
+    ):
+        return {
+            "documentos": documentos_context["documentos"],
+            "documentos_personalizados": documentos_context[
+                "documentos_personalizados"
+            ],
+            "comedor": objetos_contexto["comedor"],
+            "convenios": objetos_contexto["convenios"],
+            "caratular_form": objetos_contexto["caratular_form"],
+            "form_if_informe_tecnico": objetos_contexto["form_if_informe_tecnico"],
+            "informe_tecnico": objetos_contexto["informe_tecnico"],
+            "pdf": objetos_contexto["pdf"],
+            "informes_complementarios": objetos_contexto["informes_complementarios"],
+            "resumen_estados": documentos_context["resumen_estados"],
+            "obligatorios_totales": documentos_context["obligatorios_totales"],
+            "obligatorios_completos": documentos_context["obligatorios_completos"],
+            "stats": documentos_context["stats"],
+            "mostrar_informe_complementario": informe_complementario_context[
+                "mostrar_informe_complementario"
+            ],
+            "observaciones_complementario": informe_complementario_context[
+                "observaciones_complementario"
+            ],
+            "observaciones_informe_tecnico_complementario": admision.observaciones_informe_tecnico_complementario,
+            "botones_disponibles": botones_disponibles,
+            "puede_editar_convenio_numero": puede_editar_convenio_numero,
+        }
+
+    @staticmethod
     def get_admision_update_context(admision, user=None):
         try:
             documentaciones = (
@@ -411,110 +551,39 @@ class AdmisionService:
             archivos_subidos = ArchivoAdmision.objects.filter(
                 admision=admision
             ).select_related("documentacion")
-
-            archivos_por_documentacion = {
-                archivo.documentacion_id: archivo
-                for archivo in archivos_subidos
-                if archivo.documentacion_id
-            }
-
-            documentos_info = []
-            obligatorios_totales = 0
-            obligatorios_completos = 0
-
-            for documentacion in documentaciones:
-                archivo = archivos_por_documentacion.get(documentacion.id)
-                doc_serializado = AdmisionService._serialize_documentacion(
-                    documentacion, archivo
-                )
-                documentos_info.append(doc_serializado)
-
-                if documentacion.obligatorio:
-                    obligatorios_totales += 1
-                    if doc_serializado.get("estado") == "Aceptado":
-                        obligatorios_completos += 1
-
-            documentos_personalizados_info = [
-                AdmisionService.serialize_documento_personalizado(archivo)
-                for archivo in archivos_subidos
-                if not archivo.documentacion_id
-            ]
-
-            resumen_estados = AdmisionService._resumen_documentos(
-                documentos_info, documentos_personalizados_info
+            documentos_context = AdmisionService._build_documentos_update_context(
+                documentaciones=documentaciones,
+                archivos_subidos=archivos_subidos,
             )
-            stats = AdmisionService._stats_from_resumen(
-                resumen_estados, obligatorios_totales, obligatorios_completos
-            )
-
-            comedor = admision.comedor
-            convenios = TipoConvenio.objects.exclude(id=4)
-            caratular_form = CaratularForm(instance=admision) if admision else None
-            form_if_informe_tecnico = (
-                IFInformeTecnicoForm(instance=admision) if admision else None
-            )
-            informe_tecnico = (
-                InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
-            )
-            informes_complementarios = InformeComplementario.objects.filter(
-                admision=admision
-            )
-
-            # Información para informe complementario
-            informe_complementario_pendiente = informes_complementarios.filter(
-                estado__in=["rectificar", "borrador"]
-            ).first()
-
-            mostrar_informe_complementario = (
-                admision.estado_legales == "Informe Complementario Solicitado"
-                or (
-                    informe_complementario_pendiente
-                    and informe_complementario_pendiente.estado == "rectificar"
+            objetos_contexto = AdmisionService._build_objetos_update_context(admision)
+            informe_complementario_context = (
+                AdmisionService._build_informe_complementario_update_context(
+                    admision,
+                    objetos_contexto["informes_complementarios"],
                 )
             )
-
-            observaciones_complementario = None
-            if (
-                informe_complementario_pendiente
-                and informe_complementario_pendiente.observaciones_legales
-            ):
-                observaciones_complementario = (
-                    informe_complementario_pendiente.observaciones_legales
-                )
-            pdf = InformeTecnicoPDF.objects.filter(admision=admision).first()
 
             # Determinar botones disponibles basado en el estado de la admisión
             botones_disponibles = AdmisionService._get_botones_disponibles(
-                admision, informe_tecnico, mostrar_informe_complementario, user
+                admision,
+                objetos_contexto["informe_tecnico"],
+                informe_complementario_context["mostrar_informe_complementario"],
+                user,
+            )
+            puede_editar_convenio_numero = (
+                AdmisionService._puede_editar_convenio_numero_update_context(
+                    user, objetos_contexto["comedor"]
+                )
             )
 
-            puede_editar_convenio_numero = False
-            if user:
-                puede_editar_convenio_numero = (
-                    user.is_superuser
-                    or AdmisionService._verificar_permiso_tecnico_dupla(user, comedor)
-                )
-
-            return {
-                "documentos": documentos_info,
-                "documentos_personalizados": documentos_personalizados_info,
-                "comedor": comedor,
-                "convenios": convenios,
-                "caratular_form": caratular_form,
-                "form_if_informe_tecnico": form_if_informe_tecnico,
-                "informe_tecnico": informe_tecnico,
-                "pdf": pdf,
-                "informes_complementarios": informes_complementarios,
-                "resumen_estados": resumen_estados,
-                "obligatorios_totales": obligatorios_totales,
-                "obligatorios_completos": obligatorios_completos,
-                "stats": stats,
-                "mostrar_informe_complementario": mostrar_informe_complementario,
-                "observaciones_complementario": observaciones_complementario,
-                "observaciones_informe_tecnico_complementario": admision.observaciones_informe_tecnico_complementario,
-                "botones_disponibles": botones_disponibles,
-                "puede_editar_convenio_numero": puede_editar_convenio_numero,
-            }
+            return AdmisionService._build_response_update_context(
+                admision=admision,
+                documentos_context=documentos_context,
+                objetos_contexto=objetos_contexto,
+                informe_complementario_context=informe_complementario_context,
+                botones_disponibles=botones_disponibles,
+                puede_editar_convenio_numero=puede_editar_convenio_numero,
+            )
 
         except Exception:
 
@@ -526,94 +595,98 @@ class AdmisionService:
             return {}
 
     @staticmethod
-    def procesar_post_update(request, admision):
+    def _procesar_post_mandar_legales(admision, user):
+        if not AdmisionService.marcar_como_enviado_a_legales(admision, user):
+            return False, "La admisión ya estaba marcada como enviada a legales."
 
-        try:
+        AdmisionService.actualizar_estado_admision(admision, "enviar_a_legales")
+        return True, "La admisión fue enviada a legales correctamente."
 
-            if "mandarLegales" in request.POST:
+    @staticmethod
+    def _procesar_post_if_informe_tecnico(request, admision):
+        success, message = AdmisionService.guardar_if_informe_tecnico(request, admision)
+        if success:
+            AdmisionService.actualizar_estado_admision(
+                admision, "cargar_if_informe_tecnico"
+            )
+        return success, message
 
-                if AdmisionService.marcar_como_enviado_a_legales(
+    @staticmethod
+    def _procesar_post_disponibilizar_acomp(admision, user):
+        if not AdmisionService.marcar_como_enviado_a_acompaniamiento(admision, user):
+            return False, "Error al enviar a Acompañamiento."
+
+        AdmisionService.actualizar_estado_admision(admision, "enviar_a_acompaniamiento")
+        return True, "Se envió a Acompañamiento correctamente."
+
+    @staticmethod
+    def _procesar_post_rectificar_documentacion(admision, user):
+        if not AdmisionService.marcar_como_documentacion_rectificada(admision, user):
+            return False, "Error al querer realizar la rectificación."
+        return True, "Se rectificó la documentación."
+
+    @staticmethod
+    def _procesar_post_caratulacion(request, admision):
+        form = CaratularForm(request.POST, instance=admision)
+        if not form.is_valid():
+            return False, "Error al guardar la caratulación."
+
+        form.save()
+        AdmisionService.actualizar_estado_admision(admision, "cargar_expediente")
+        admision.refresh_from_db()
+        return True, "Caratulación del expediente guardado correctamente."
+
+    @staticmethod
+    def _procesar_post_tipo_convenio(request, admision):
+        if AdmisionService.update_convenio(admision, request.POST.get("tipo_convenio")):
+            return True, "Tipo de convenio actualizado correctamente."
+        return None, None
+
+    @staticmethod
+    def _dispatch_post_update_action(request, admision):
+        actions = (
+            (
+                "mandarLegales",
+                lambda: AdmisionService._procesar_post_mandar_legales(
                     admision, request.user
-                ):
-
-                    # Actualizar estado de admisión
-                    AdmisionService.actualizar_estado_admision(
-                        admision, "enviar_a_legales"
-                    )
-
-                    return True, "La admisión fue enviada a legales correctamente."
-
-                return False, "La admisión ya estaba marcada como enviada a legales."
-
-            if "btnIFInformeTecnico" in request.POST:
-
-                success, message = AdmisionService.guardar_if_informe_tecnico(
+                ),
+            ),
+            (
+                "btnIFInformeTecnico",
+                lambda: AdmisionService._procesar_post_if_informe_tecnico(
                     request, admision
-                )
-
-                if success:
-                    # Actualizar estado cuando se carga el IF
-                    AdmisionService.actualizar_estado_admision(
-                        admision, "cargar_if_informe_tecnico"
-                    )
-
-                return success, message
-
-            if "btnDisponibilizarAcomp" in request.POST:
-
-                if AdmisionService.marcar_como_enviado_a_acompaniamiento(
+                ),
+            ),
+            (
+                "btnDisponibilizarAcomp",
+                lambda: AdmisionService._procesar_post_disponibilizar_acomp(
                     admision, request.user
-                ):
-
-                    # Actualizar estado de admisión
-                    AdmisionService.actualizar_estado_admision(
-                        admision, "enviar_a_acompaniamiento"
-                    )
-
-                    return True, "Se envió a Acompañamiento correctamente."
-
-                return False, "Error al enviar a Acompañamiento."
-
-            if "btnRectificarDocumentacion" in request.POST:
-
-                if AdmisionService.marcar_como_documentacion_rectificada(
+                ),
+            ),
+            (
+                "btnRectificarDocumentacion",
+                lambda: AdmisionService._procesar_post_rectificar_documentacion(
                     admision, request.user
-                ):
+                ),
+            ),
+            (
+                "btnCaratulacion",
+                lambda: AdmisionService._procesar_post_caratulacion(request, admision),
+            ),
+            (
+                "tipo_convenio",
+                lambda: AdmisionService._procesar_post_tipo_convenio(request, admision),
+            ),
+        )
+        for key, handler in actions:
+            if key in request.POST:
+                return handler()
+        return None, None
 
-                    return True, "Se rectificó la documentación."
-
-                return False, "Error al querer realizar la rectificación."
-
-            if "btnCaratulacion" in request.POST:
-
-                form = CaratularForm(request.POST, instance=admision)
-
-                if form.is_valid():
-
-                    form.save()
-
-                    # Actualizar estado cuando se carga el expediente
-                    AdmisionService.actualizar_estado_admision(
-                        admision, "cargar_expediente"
-                    )
-
-                    # Refrescar la instancia desde la base de datos
-                    admision.refresh_from_db()
-
-                    return True, "Caratulación del expediente guardado correctamente."
-
-                return False, "Error al guardar la caratulación."
-
-            if "tipo_convenio" in request.POST:
-
-                if AdmisionService.update_convenio(
-                    admision, request.POST.get("tipo_convenio")
-                ):
-
-                    return True, "Tipo de convenio actualizado correctamente."
-
-            return None, None
-
+    @staticmethod
+    def procesar_post_update(request, admision):
+        try:
+            return AdmisionService._dispatch_post_update_action(request, admision)
         except Exception:
 
             logger.exception(
@@ -622,6 +695,14 @@ class AdmisionService:
             )
 
             return None, "Error inesperado."
+
+    @staticmethod
+    def _aplicar_cambio_convenio_y_reset_documentos(admision, nuevo_convenio):
+        admision.tipo_convenio = nuevo_convenio
+        admision.estado_id = 1
+        admision.save()
+        AdmisionService.actualizar_estado_admision(admision, "seleccionar_convenio")
+        ArchivoAdmision.objects.filter(admision=admision).delete()
 
     @staticmethod
     def update_convenio(admision, nuevo_convenio_id):
@@ -634,15 +715,9 @@ class AdmisionService:
 
             nuevo_convenio = TipoConvenio.objects.get(pk=nuevo_convenio_id)
 
-            admision.tipo_convenio = nuevo_convenio
-            admision.estado_id = 1
-
-            admision.save()
-
-            # Actualizar estado de admisión
-            AdmisionService.actualizar_estado_admision(admision, "seleccionar_convenio")
-
-            ArchivoAdmision.objects.filter(admision=admision).delete()
+            AdmisionService._aplicar_cambio_convenio_y_reset_documentos(
+                admision, nuevo_convenio
+            )
 
             return True
 
@@ -659,6 +734,29 @@ class AdmisionService:
             return False
 
     @staticmethod
+    def _build_defaults_handle_file_upload(archivo, usuario=None):
+        defaults = {
+            "archivo": archivo,
+            "estado": "Documento adjunto",
+            "nombre_personalizado": None,
+        }
+        if usuario and usuario.is_authenticated:
+            defaults["modificado_por"] = usuario
+        return defaults
+
+    @staticmethod
+    def _postprocesar_archivo_admision_creado(
+        archivo_admision, created, admision, usuario=None
+    ):
+        if created and usuario and usuario.is_authenticated:
+            archivo_admision.creado_por = usuario
+            archivo_admision.save(update_fields=["creado_por"])
+
+        if created and admision.estado_admision == "convenio_seleccionado":
+            AdmisionService.actualizar_estado_admision(admision, "cargar_documento")
+            admision.save()
+
+    @staticmethod
     def handle_file_upload(admision_id, documentacion_id, archivo, usuario=None):
 
         try:
@@ -667,29 +765,21 @@ class AdmisionService:
 
             documentacion = get_object_or_404(Documentacion, pk=documentacion_id)
 
-            defaults = {
-                "archivo": archivo,
-                "estado": "Documento adjunto",
-                "nombre_personalizado": None,
-            }
-            if usuario and usuario.is_authenticated:
-                defaults["modificado_por"] = usuario
+            defaults = AdmisionService._build_defaults_handle_file_upload(
+                archivo, usuario
+            )
 
             archivo_admision, created = ArchivoAdmision.objects.update_or_create(
                 admision=admision,
                 documentacion=documentacion,
                 defaults=defaults,
             )
-            if created and usuario and usuario.is_authenticated:
-                archivo_admision.creado_por = usuario
-                archivo_admision.save(update_fields=["creado_por"])
-
-            # Actualizar estado de admisión solo si es la primera vez que se carga un documento
-            # y el estado actual permite la transición
-            if created and admision.estado_admision == "convenio_seleccionado":
-                AdmisionService.actualizar_estado_admision(admision, "cargar_documento")
-                # Forzar actualización del estado_mostrar
-                admision.save()
+            AdmisionService._postprocesar_archivo_admision_creado(
+                archivo_admision=archivo_admision,
+                created=created,
+                admision=admision,
+                usuario=usuario,
+            )
 
             return archivo_admision, created
 
@@ -706,33 +796,47 @@ class AdmisionService:
             return None, False
 
     @staticmethod
+    def _normalizar_y_validar_documento_personalizado(nombre, archivo):
+        nombre = (nombre or "").strip()
+        if not nombre:
+            return None, None, "Debe indicar un nombre para el documento."
+        if not archivo:
+            return None, None, "Debe adjuntar un archivo."
+        return nombre[:255], archivo, None
+
+    @staticmethod
+    def _verificar_permiso_documento_personalizado(usuario, admision):
+        if usuario.is_superuser:
+            return True, None
+
+        comedor = admision.comedor
+        if not comedor or not AdmisionService._verificar_permiso_dupla(
+            usuario, comedor
+        ):
+            return False, "Sin permisos para modificar esta admision."
+        return True, None
+
+    @staticmethod
     def crear_documento_personalizado(admision_id, nombre, archivo, usuario):
 
         try:
 
-            nombre = (nombre or "").strip()
-
-            if not nombre:
-
-                return None, "Debe indicar un nombre para el documento."
-
-            nombre = nombre[:255]
-
-            if not archivo:
-
-                return None, "Debe adjuntar un archivo."
+            nombre, archivo, validation_error = (
+                AdmisionService._normalizar_y_validar_documento_personalizado(
+                    nombre, archivo
+                )
+            )
+            if validation_error:
+                return None, validation_error
 
             admision = get_object_or_404(Admision, pk=admision_id)
-
-            if not usuario.is_superuser:
-
-                comedor = admision.comedor
-
-                if not comedor or not AdmisionService._verificar_permiso_dupla(
-                    usuario, comedor
-                ):
-
-                    return None, "Sin permisos para modificar esta admision."
+            has_permission, permission_error = (
+                AdmisionService._verificar_permiso_documento_personalizado(
+                    usuario, admision
+                )
+            )
+            if not has_permission:
+                return None, permission_error
 
             with transaction.atomic():
 
@@ -801,55 +905,114 @@ class AdmisionService:
             )
 
     @staticmethod
+    def _parse_payload_actualizar_estado_ajax(request):
+        estado = request.POST.get("estado")
+        documento_id = request.POST.get("documento_id")
+        admision_id = request.POST.get("admision_id")
+        if not all([estado, documento_id, admision_id]):
+            return None, None, None, {"success": False, "error": "Datos incompletos."}
+        return estado, documento_id, admision_id, None
+
+    @staticmethod
+    def _validar_permiso_actualizar_estado_ajax(request, admision):
+        if request.user.is_superuser:
+            return None
+
+        comedor = admision.comedor
+        if not comedor:
+            return {"success": False, "error": "Admision sin comedor asociado."}
+
+        if not AdmisionService._verificar_permiso_dupla(request.user, comedor):
+            return {
+                "success": False,
+                "error": "Sin permisos para modificar esta admision.",
+            }
+
+        return None
+
+    @staticmethod
+    def _build_success_actualizar_estado_ajax_response(
+        archivo, display_objetivo, grupo_usuario
+    ):
+        return {
+            "success": True,
+            "nuevo_estado": display_objetivo,
+            "grupo_usuario": grupo_usuario,
+            "observaciones": archivo.observaciones,
+        }
+
+    @staticmethod
+    def _resolver_estado_y_observacion_actualizar_estado_ajax(request):
+        estado = request.POST.get("estado")
+        grupo_usuario = AdmisionService.get_dupla_grupo_por_usuario(request.user)
+        observacion = (request.POST.get("observacion", "") or "").strip()
+        display_objetivo, estado_canonico = AdmisionService._normalize_estado_display(
+            estado
+        )
+        return grupo_usuario, observacion, display_objetivo, estado_canonico
+
+    @staticmethod
+    def _validar_observacion_rectificar_actualizar_estado_ajax(
+        display_objetivo, grupo_usuario, observacion
+    ):
+        requiere_observacion = (
+            display_objetivo.lower() == "rectificar"
+            and grupo_usuario == "Abogado Dupla"
+        )
+        if requiere_observacion and not observacion:
+            return {
+                "success": False,
+                "error": "Debe ingresar observaciones para rectificar.",
+            }
+        return None
+
+    @staticmethod
+    def _aplicar_observacion_archivo(archivo, observacion):
+        if observacion is None:
+            return
+        archivo.observaciones = (
+            observacion.strip() if isinstance(observacion, str) else observacion
+        )
+
+    @staticmethod
+    def _persistir_cambio_estado_archivo(archivo, estado_normalizado):
+        archivo.estado = estado_normalizado
+        archivo.save()
+        AdmisionService._actualizar_estados_por_cambio_documento(
+            archivo.admision, estado_normalizado
+        )
+
+    @staticmethod
     def actualizar_estado_ajax(request):
 
         try:
-
-            estado = request.POST.get("estado")
-
-            documento_id = request.POST.get("documento_id")
-
-            admision_id = request.POST.get("admision_id")
-
-            if not all([estado, documento_id, admision_id]):
-
-                return {"success": False, "error": "Datos incompletos."}
+            estado, documento_id, admision_id, payload_error = (
+                AdmisionService._parse_payload_actualizar_estado_ajax(request)
+            )
+            if payload_error:
+                return payload_error
 
             admision = get_object_or_404(Admision, pk=admision_id)
-
-            if not request.user.is_superuser:
-
-                comedor = admision.comedor
-
-                if not comedor:
-
-                    return {"success": False, "error": "Admision sin comedor asociado."}
-
-                if not AdmisionService._verificar_permiso_dupla(request.user, comedor):
-
-                    return {
-                        "success": False,
-                        "error": "Sin permisos para modificar esta admision.",
-                    }
+            permission_error = AdmisionService._validar_permiso_actualizar_estado_ajax(
+                request, admision
+            )
+            if permission_error:
+                return permission_error
 
             archivo = get_object_or_404(ArchivoAdmision, id=documento_id)
 
-            grupo_usuario = AdmisionService.get_dupla_grupo_por_usuario(request.user)
-            observacion = (request.POST.get("observacion", "") or "").strip()
-
-            display_objetivo, estado_canonico = (
-                AdmisionService._normalize_estado_display(estado)
+            grupo_usuario, observacion, display_objetivo, estado_canonico = (
+                AdmisionService._resolver_estado_y_observacion_actualizar_estado_ajax(
+                    request
+                )
             )
-
-            requiere_observacion = (
-                display_objetivo.lower() == "rectificar"
-                and grupo_usuario == "Abogado Dupla"
+            observacion_error = (
+                AdmisionService._validar_observacion_rectificar_actualizar_estado_ajax(
+                    display_objetivo, grupo_usuario, observacion
+                )
             )
-            if requiere_observacion and not observacion:
-                return {
-                    "success": False,
-                    "error": "Debe ingresar observaciones para rectificar.",
-                }
+            if observacion_error:
+                return observacion_error
 
             exito = AdmisionService.update_estado_archivo(
                 archivo,
@@ -861,12 +1024,11 @@ class AdmisionService:
 
                 return {"success": False, "error": "No se pudo actualizar el estado."}
 
-            return {
-                "success": True,
-                "nuevo_estado": display_objetivo,
-                "grupo_usuario": grupo_usuario,
-                "observaciones": archivo.observaciones,
-            }
+            return AdmisionService._build_success_actualizar_estado_ajax_response(
+                archivo=archivo,
+                display_objetivo=display_objetivo,
+                grupo_usuario=grupo_usuario,
+            )
 
         except Exception as e:
 
@@ -889,18 +1051,9 @@ class AdmisionService:
             _, estado_normalizado = AdmisionService._normalize_estado_display(
                 nuevo_estado
             )
-            archivo.estado = estado_normalizado
-
-            if observacion is not None:
-                archivo.observaciones = (
-                    observacion.strip() if isinstance(observacion, str) else observacion
-                )
-
-            archivo.save()
-
-            # Actualizar estados según la acción del usuario
-            AdmisionService._actualizar_estados_por_cambio_documento(
-                archivo.admision, estado_normalizado
+            AdmisionService._aplicar_observacion_archivo(archivo, observacion)
+            AdmisionService._persistir_cambio_estado_archivo(
+                archivo, estado_normalizado
             )
 
             return True
@@ -922,19 +1075,13 @@ class AdmisionService:
 
         try:
 
-            archivos = ArchivoAdmision.objects.filter(admision=admision).only("estado")
+            if not AdmisionService._puede_verificar_documentacion_admision(admision):
+                return
 
-            if admision.estado_id != 3:
-                # Verificar que todos los documentos obligatorios estén aceptados
-                if AdmisionService._todos_obligatorios_aceptados(admision):
-                    if admision.estado_id != 2:
-                        admision.estado_id = 2
-                        admision.save()
+            if not AdmisionService._todos_obligatorios_aceptados(admision):
+                return
 
-                        # Actualizar estado de admisión cuando toda la documentación obligatoria está aprobada
-                        AdmisionService.actualizar_estado_admision(
-                            admision, "aprobar_documentacion"
-                        )
+            AdmisionService._aprobar_documentacion_obligatoria_admision(admision)
 
         except Exception:
 
@@ -942,6 +1089,25 @@ class AdmisionService:
                 "Error en verificar_estado_admision",
                 extra={"admision_pk": getattr(admision, "pk", None)},
             )
+
+    @staticmethod
+    def _puede_verificar_documentacion_admision(admision):
+
+        return getattr(admision, "estado_id", None) != 3
+
+    @staticmethod
+    def _aprobar_documentacion_obligatoria_admision(admision):
+
+        if admision.estado_id == 2:
+
+            return False
+
+        admision.estado_id = 2
+        admision.save()
+
+        AdmisionService.actualizar_estado_admision(admision, "aprobar_documentacion")
+
+        return True
 
     @staticmethod
     def get_dupla_grupo_por_usuario(user):
@@ -986,14 +1152,49 @@ class AdmisionService:
             return None
 
     @staticmethod
+    def _set_attr_if_changed(instance, field_name, new_value):
+
+        if getattr(instance, field_name) == new_value:
+
+            return False
+
+        setattr(instance, field_name, new_value)
+
+        return True
+
+    @staticmethod
+    def _clear_attr_if_present(instance, field_name):
+
+        if not getattr(instance, field_name):
+
+            return False
+
+        setattr(instance, field_name, None)
+
+        return True
+
+    @staticmethod
+    def _save_admision_if_changed(admision, cambios):
+
+        if not cambios:
+
+            return False
+
+        admision.save()
+
+        return True
+
+    @staticmethod
     def marcar_como_enviado_a_legales(admision, usuario=None):
 
         try:
 
             if not admision.enviado_legales:
 
-                admision.enviado_legales = True
-                admision.estado_legales = "Enviado a Legales"
+                AdmisionService._set_attr_if_changed(admision, "enviado_legales", True)
+                AdmisionService._set_attr_if_changed(
+                    admision, "estado_legales", "Enviado a Legales"
+                )
                 admision.save()
 
                 # Actualizar estado de admisión
@@ -1043,8 +1244,12 @@ class AdmisionService:
 
             if not admision.enviado_acompaniamiento:
 
-                admision.enviado_acompaniamiento = True
-                admision.estado_legales = "Acompañamiento Iniciado"
+                AdmisionService._set_attr_if_changed(
+                    admision, "enviado_acompaniamiento", True
+                )
+                AdmisionService._set_attr_if_changed(
+                    admision, "estado_legales", "Acompañamiento Iniciado"
+                )
                 admision.save()
 
                 return True
@@ -1067,37 +1272,26 @@ class AdmisionService:
 
             cambios = False
 
-            if not admision.enviado_legales:
+            cambios = (
+                AdmisionService._set_attr_if_changed(admision, "enviado_legales", True)
+                or cambios
+            )
+            cambios = (
+                AdmisionService._set_attr_if_changed(admision, "estado_id", 2)
+                or cambios
+            )
+            cambios = (
+                AdmisionService._set_attr_if_changed(
+                    admision, "estado_legales", "Rectificado"
+                )
+                or cambios
+            )
+            cambios = (
+                AdmisionService._clear_attr_if_present(admision, "observaciones")
+                or cambios
+            )
 
-                admision.enviado_legales = True
-
-                cambios = True
-
-            if admision.estado_id != 2:
-
-                admision.estado_id = 2
-
-                cambios = True
-
-            if admision.estado_legales != "Rectificado":
-
-                admision.estado_legales = "Rectificado"
-
-                cambios = True
-
-            if admision.observaciones:
-
-                admision.observaciones = None
-
-                cambios = True
-
-            if cambios:
-
-                admision.save()
-
-                return True
-
-            return False
+            return AdmisionService._save_admision_if_changed(admision, cambios)
 
         except Exception:
 
@@ -1234,6 +1428,22 @@ class AdmisionService:
             return None
 
     @staticmethod
+    def _build_error_response_actualizar_numero_gde(message):
+        return {"success": False, "error": message}
+
+    @staticmethod
+    def _parse_actualizar_numero_gde_payload(request):
+        documento_id = request.POST.get("documento_id")
+        numero_gde = request.POST.get("numero_gde", "").strip()
+        return documento_id, numero_gde
+
+    @staticmethod
+    def _puede_editar_numero_gde(user, archivo):
+        return user.is_superuser or AdmisionService._verificar_permiso_dupla(
+            user, archivo.admision.comedor
+        )
+
+    @staticmethod
     def actualizar_numero_gde_ajax(request):
         """
 
@@ -1315,34 +1525,26 @@ class AdmisionService:
 
         try:
 
-            documento_id = request.POST.get("documento_id")
-
-            numero_gde = request.POST.get("numero_gde", "").strip()
+            documento_id, numero_gde = (
+                AdmisionService._parse_actualizar_numero_gde_payload(request)
+            )
 
             if not documento_id:
-
-                return {"success": False, "error": "ID de documento requerido."}
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    "ID de documento requerido."
+                )
 
             archivo = get_object_or_404(ArchivoAdmision, id=documento_id)
 
             if archivo.estado != "Aceptado":
-
-                return {
-                    "success": False,
-                    "error": "Solo se puede actualizar el número GDE en documentos aceptados.",
-                }
-
-            if not (
-                request.user.is_superuser
-                or AdmisionService._verificar_permiso_dupla(
-                    request.user, archivo.admision.comedor
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    "Solo se puede actualizar el número GDE en documentos aceptados."
                 )
-            ):
 
-                return {
-                    "success": False,
-                    "error": "No tiene permisos para editar este documento.",
-                }
+            if not AdmisionService._puede_editar_numero_gde(request.user, archivo):
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    "No tiene permisos para editar este documento."
+                )
 
             valor_anterior = archivo.numero_gde
 
@@ -1371,45 +1573,67 @@ class AdmisionService:
             return {"success": False, "error": str(e)}
 
     @staticmethod
+    def _build_error_response_actualizar_convenio_numero(message):
+        return {"success": False, "error": message}
+
+    @staticmethod
+    def _parse_actualizar_convenio_payload(request):
+        admision_id = request.POST.get("admision_id")
+        convenio_numero_raw = request.POST.get("convenio_numero", "").strip()
+        return admision_id, convenio_numero_raw
+
+    @staticmethod
+    def _parse_convenio_numero_value(convenio_numero_raw):
+        if convenio_numero_raw == "":
+            return None, None
+
+        try:
+            nuevo_valor = int(convenio_numero_raw)
+        except ValueError:
+            return None, "Debe ingresar un numero valido."
+
+        if nuevo_valor < 0:
+            return None, "El numero de convenio no puede ser negativo."
+
+        return nuevo_valor, None
+
+    @staticmethod
+    def _puede_editar_convenio_numero(user, admision):
+        return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+            user, admision.comedor
+        )
+
+    @staticmethod
     def actualizar_convenio_numero_ajax(request):
         """
         Actualiza el numero de convenio de una admision via AJAX.
         """
         try:
-            admision_id = request.POST.get("admision_id")
-            convenio_numero_raw = request.POST.get("convenio_numero", "").strip()
+            admision_id, convenio_numero_raw = (
+                AdmisionService._parse_actualizar_convenio_payload(request)
+            )
 
             if not admision_id:
-                return {"success": False, "error": "ID de admision requerido."}
+                return AdmisionService._build_error_response_actualizar_convenio_numero(
+                    "ID de admision requerido."
+                )
 
             admision = get_object_or_404(Admision, id=admision_id)
 
-            if not (
-                request.user.is_superuser
-                or AdmisionService._verificar_permiso_tecnico_dupla(
-                    request.user, admision.comedor
-                )
+            if not AdmisionService._puede_editar_convenio_numero(
+                request.user, admision
             ):
-                return {
-                    "success": False,
-                    "error": "No tiene permisos para editar esta admision.",
-                }
+                return AdmisionService._build_error_response_actualizar_convenio_numero(
+                    "No tiene permisos para editar esta admision."
+                )
 
-            if convenio_numero_raw == "":
-                nuevo_valor = None
-            else:
-                try:
-                    nuevo_valor = int(convenio_numero_raw)
-                except ValueError:
-                    return {
-                        "success": False,
-                        "error": "Debe ingresar un numero valido.",
-                    }
-                if nuevo_valor < 0:
-                    return {
-                        "success": False,
-                        "error": "El numero de convenio no puede ser negativo.",
-                    }
+            nuevo_valor, parse_error = AdmisionService._parse_convenio_numero_value(
+                convenio_numero_raw
+            )
+            if parse_error:
+                return AdmisionService._build_error_response_actualizar_convenio_numero(
+                    parse_error
+                )
 
             valor_anterior = admision.convenio_numero
             admision.convenio_numero = nuevo_valor
@@ -1506,107 +1730,134 @@ class AdmisionService:
         botones = []
 
         # Determinar grupo del usuario
-        es_tecnico = user and user.groups.filter(name="Tecnico Comedor").exists()
-        es_abogado = user and user.groups.filter(name="Abogado Dupla").exists()
+        es_tecnico, es_abogado = AdmisionService._resolver_roles_para_botones(user)
 
-        # Botón para comenzar acompañamiento
+        AdmisionService._append_botones_generales_admision(botones, admision)
+        AdmisionService._append_botones_tecnico_admision(
+            botones,
+            admision,
+            informe_tecnico,
+            mostrar_informe_complementario,
+            es_tecnico,
+        )
+        AdmisionService._append_botones_abogado_admision(
+            botones,
+            admision,
+            informe_tecnico,
+            es_abogado,
+        )
+
+        return botones
+
+    @staticmethod
+    def _resolver_roles_para_botones(user):
+        if not user:
+            return False, False
+        groups = getattr(user, "groups", None)
+        if groups is None:
+            return False, False
+        es_tecnico = groups.filter(name=UserGroups.TECNICO_COMEDOR).exists()
+        es_abogado = groups.filter(name=UserGroups.ABOGADO_DUPLA).exists()
+        return es_tecnico, es_abogado
+
+    @staticmethod
+    def _get_boton_tecnico_informe(admision, informe_tecnico):
+        if admision.estado_admision == "expediente_cargado" and not informe_tecnico:
+            return "crear_informe_tecnico"
+        if (
+            admision.estado_admision == "informe_tecnico_en_proceso"
+            and informe_tecnico
+            and informe_tecnico.estado in ["Iniciado", "Para revision"]
+            and informe_tecnico.estado_formulario == "borrador"
+        ):
+            return "editar_informe_tecnico"
+        if informe_tecnico and informe_tecnico.estado == "A subsanar":
+            return "editar_informe_tecnico"
+        if (
+            admision.estado_admision == "informe_tecnico_finalizado"
+            and informe_tecnico
+            and informe_tecnico.estado == "Docx generado"
+        ):
+            return "revisar_informe_tecnico"
+        return None
+
+    @staticmethod
+    def _puede_ver_informe_tecnico_como_abogado(es_abogado, admision, informe_tecnico):
+        return bool(
+            es_abogado
+            and informe_tecnico
+            and admision.estado_admision == "informe_tecnico_docx_editado"
+            and informe_tecnico.estado == "Docx editado"
+        )
+
+    @staticmethod
+    def _append_botones_generales_admision(botones, admision):
         if admision.numero_disposicion and not admision.enviado_acompaniamiento:
             botones.append("comenzar_acompaniamiento")
 
-        # Botón para rectificar documentación
         if admision.estado_legales == "A Rectificar":
             botones.append("rectificar_documentacion")
 
-        # Botón para caratular expediente (solo técnicos)
+    @staticmethod
+    def _append_botones_tecnico_admision(
+        botones,
+        admision,
+        informe_tecnico,
+        mostrar_informe_complementario,
+        es_tecnico,
+    ):
+        if not es_tecnico:
+            return
+
         if (
-            es_tecnico
-            and admision.estado_admision == "documentacion_aprobada"
+            admision.estado_admision == "documentacion_aprobada"
             and not admision.num_expediente
         ):
             botones.append("caratular_expediente")
 
-        # Botones para crear/editar informe técnico (solo técnicos)
-        if es_tecnico and admision.num_expediente:
-            if admision.estado_admision == "expediente_cargado" and not informe_tecnico:
-                botones.append("crear_informe_tecnico")
-            elif (
-                admision.estado_admision == "informe_tecnico_en_proceso"
-                and informe_tecnico
-                and informe_tecnico.estado in ["Iniciado", "Para revision"]
-                and informe_tecnico.estado_formulario == "borrador"
-            ):
-                botones.append("editar_informe_tecnico")
-            elif informe_tecnico and informe_tecnico.estado == "A subsanar":
-                botones.append("editar_informe_tecnico")
-            elif (
-                admision.estado_admision == "informe_tecnico_finalizado"
-                and informe_tecnico
-                and informe_tecnico.estado == "Docx generado"
-            ):
-                botones.append("revisar_informe_tecnico")
+        if admision.num_expediente:
+            boton_informe = AdmisionService._get_boton_tecnico_informe(
+                admision, informe_tecnico
+            )
+            if boton_informe:
+                botones.append(boton_informe)
 
-        # Botón IF Informe Técnico cuando está aprobado (solo técnicos)
         if (
-            es_tecnico
-            and admision.estado_admision == "informe_tecnico_aprobado"
+            admision.estado_admision == "informe_tecnico_aprobado"
             and not admision.numero_if_tecnico
         ):
             botones.append("if_informe_tecnico")
 
-        # Botón para derivar a legales cuando el IF está cargado (solo técnicos)
         if (
-            es_tecnico
-            and admision.estado_admision == "if_informe_tecnico_cargado"
+            admision.estado_admision == "if_informe_tecnico_cargado"
             and not admision.enviado_legales
         ):
             botones.append("mandar_a_legales")
 
-        # Informe técnico validado - informe complementario
         if (
-            es_tecnico
-            and informe_tecnico
+            informe_tecnico
             and informe_tecnico.estado == "Validado"
             and mostrar_informe_complementario
         ):
             botones.append("informe_tecnico_complementario")
 
-        # Botón para ver informe técnico (abogados solo cuando el DOCX editado está subido)
-        if (
-            es_abogado
-            and informe_tecnico
-            and admision.estado_admision == "informe_tecnico_docx_editado"
-            and informe_tecnico.estado == "Docx editado"
+    @staticmethod
+    def _append_botones_abogado_admision(
+        botones, admision, informe_tecnico, es_abogado
+    ):
+        if AdmisionService._puede_ver_informe_tecnico_como_abogado(
+            es_abogado,
+            admision,
+            informe_tecnico,
         ):
             botones.append("ver_informe_tecnico")
-
-        return botones
 
     @staticmethod
     def actualizar_estado_admision(admision, accion):
         """Actualiza el estado_admision basado en la acción realizada"""
         try:
             estado_actual = admision.estado_admision
-            nuevo_estado = None
-
-            # Mapeo de acciones a nuevos estados
-            transiciones = {
-                "seleccionar_convenio": "convenio_seleccionado",
-                "cargar_documento": "documentacion_en_proceso",
-                "finalizar_documentacion": "documentacion_finalizada",
-                "aprobar_documentacion": "documentacion_aprobada",
-                "rectificar_documento": "documentacion_en_proceso",
-                "cargar_expediente": "expediente_cargado",
-                "iniciar_informe_tecnico": "informe_tecnico_en_proceso",
-                "finalizar_informe_tecnico": "informe_tecnico_finalizado",
-                "enviar_informe_revision": "informe_tecnico_docx_editado",
-                "subsanar_informe": "informe_tecnico_en_subsanacion",
-                "aprobar_informe_tecnico": "informe_tecnico_aprobado",
-                "cargar_if_informe_tecnico": "if_informe_tecnico_cargado",
-                "enviar_a_legales": "enviado_a_legales",
-                "enviar_a_acompaniamiento": "enviado_a_acompaniamiento",
-            }
-
-            nuevo_estado = transiciones.get(accion)
+            nuevo_estado = AdmisionService._transiciones_estado_admision().get(accion)
 
             if nuevo_estado and nuevo_estado != estado_actual:
                 admision.estado_admision = nuevo_estado
@@ -1623,21 +1874,38 @@ class AdmisionService:
             return False
 
     @staticmethod
+    def _transiciones_estado_admision():
+
+        return {
+            "seleccionar_convenio": "convenio_seleccionado",
+            "cargar_documento": "documentacion_en_proceso",
+            "finalizar_documentacion": "documentacion_finalizada",
+            "aprobar_documentacion": "documentacion_aprobada",
+            "rectificar_documento": "documentacion_en_proceso",
+            "cargar_expediente": "expediente_cargado",
+            "iniciar_informe_tecnico": "informe_tecnico_en_proceso",
+            "finalizar_informe_tecnico": "informe_tecnico_finalizado",
+            "enviar_informe_revision": "informe_tecnico_docx_editado",
+            "subsanar_informe": "informe_tecnico_en_subsanacion",
+            "aprobar_informe_tecnico": "informe_tecnico_aprobado",
+            "cargar_if_informe_tecnico": "if_informe_tecnico_cargado",
+            "enviar_a_legales": "enviado_a_legales",
+            "enviar_a_acompaniamiento": "enviado_a_acompaniamiento",
+        }
+
+    @staticmethod
     def _todos_obligatorios_aceptados(admision):
         """Verifica que todos los documentos obligatorios del tipo de convenio estén aceptados"""
         try:
-            # Obtener documentos obligatorios para el tipo de convenio
-            documentos_obligatorios = Documentacion.objects.filter(
-                convenios=admision.tipo_convenio, obligatorio=True
-            )
-
-            # Verificar que cada documento obligatorio tenga un archivo aceptado
-            for doc_obligatorio in documentos_obligatorios:
-                archivo = ArchivoAdmision.objects.filter(
-                    admision=admision, documentacion=doc_obligatorio, estado="Aceptado"
-                ).first()
-
-                if not archivo:
+            for (
+                doc_obligatorio
+            ) in AdmisionService._iter_documentos_obligatorios_admision(admision):
+                if not AdmisionService._existe_archivo_obligatorio_admision(
+                    admision=admision,
+                    doc_obligatorio=doc_obligatorio,
+                    estado="Aceptado",
+                    requiere_archivo=False,
+                ):
                     return False
 
             return True
@@ -1650,52 +1918,51 @@ class AdmisionService:
             return False
 
     @staticmethod
+    def _iter_documentos_obligatorios_admision(admision):
+
+        return Documentacion.objects.filter(
+            convenios=admision.tipo_convenio, obligatorio=True
+        )
+
+    @staticmethod
+    def _existe_archivo_obligatorio_admision(
+        *,
+        admision,
+        doc_obligatorio,
+        estado=None,
+        requiere_archivo=False,
+    ):
+
+        filtros = {
+            "admision": admision,
+            "documentacion": doc_obligatorio,
+        }
+        if estado is not None:
+            filtros["estado"] = estado
+
+        archivo = ArchivoAdmision.objects.filter(**filtros).first()
+        if not archivo:
+            return False
+
+        if requiere_archivo and not archivo.archivo:
+            return False
+
+        return True
+
+    @staticmethod
     def _actualizar_estados_por_cambio_documento(admision, estado_documento):
         """Actualiza estados de admisión basado en cambios de documentos"""
         try:
-            # Si un documento se marca como "Rectificar", solo retroceder si es un documento obligatorio
-            if estado_documento == "Rectificar":
-                if admision.estado_admision in [
-                    "documentacion_finalizada",
-                    "documentacion_aprobada",
-                ]:
-                    # Solo retroceder si hay documentos obligatorios que necesitan rectificación
-                    if not AdmisionService._todos_obligatorios_aceptados(admision):
-                        admision.estado_admision = "documentacion_en_proceso"
-                        admision.save()  # Save completo para actualizar estado_mostrar
+            if AdmisionService._manejar_rectificacion_documento_admision(
+                admision, estado_documento
+            ):
                 return
 
-            # No avanzar estados si ya está en documentacion_aprobada o más adelante
-            # Esto evita que documentos adicionales hagan retroceder el estado
-            if admision.estado_admision in [
-                "documentacion_aprobada",
-                "expediente_cargado",
-                "informe_tecnico_en_proceso",
-                "informe_tecnico_finalizado",
-                "informe_tecnico_docx_editado",
-                "informe_tecnico_en_revision",
-                "informe_tecnico_en_subsanacion",
-                "informe_tecnico_aprobado",
-                "if_informe_tecnico_cargado",
-                "enviado_a_legales",
-                "enviado_a_acompaniamiento",
-            ]:
+            if AdmisionService._bloquea_avance_estado_documental(admision):
                 return
 
-            # Verificar si todos los obligatorios tienen archivos (no necesariamente aceptados)
-            if AdmisionService._todos_obligatorios_tienen_archivos(admision):
-                if admision.estado_admision == "documentacion_en_proceso":
-                    admision.estado_admision = "documentacion_finalizada"
-                    admision.save()  # Save completo para actualizar estado_mostrar
-
-            # Verificar si todos los obligatorios están aceptados
-            if AdmisionService._todos_obligatorios_aceptados(admision):
-                if admision.estado_admision == "documentacion_finalizada":
-                    admision.estado_admision = "documentacion_aprobada"
-                    # También actualizar el estado principal a "Finalizada"
-                    if admision.estado_id != 2:
-                        admision.estado_id = 2
-                    admision.save()  # Save completo para actualizar estado_mostrar
+            AdmisionService._marcar_documentacion_finalizada_si_corresponde(admision)
+            AdmisionService._marcar_documentacion_aprobada_si_corresponde(admision)
 
         except Exception:
             logger.exception(
@@ -1707,19 +1974,93 @@ class AdmisionService:
             )
 
     @staticmethod
+    def _manejar_rectificacion_documento_admision(admision, estado_documento):
+
+        if estado_documento != "Rectificar":
+
+            return False
+
+        if admision.estado_admision not in [
+            "documentacion_finalizada",
+            "documentacion_aprobada",
+        ]:
+
+            return True
+
+        if AdmisionService._todos_obligatorios_aceptados(admision):
+
+            return True
+
+        admision.estado_admision = "documentacion_en_proceso"
+        admision.save()
+
+        return True
+
+    @staticmethod
+    def _bloquea_avance_estado_documental(admision):
+
+        return admision.estado_admision in [
+            "documentacion_aprobada",
+            "expediente_cargado",
+            "informe_tecnico_en_proceso",
+            "informe_tecnico_finalizado",
+            "informe_tecnico_docx_editado",
+            "informe_tecnico_en_revision",
+            "informe_tecnico_en_subsanacion",
+            "informe_tecnico_aprobado",
+            "if_informe_tecnico_cargado",
+            "enviado_a_legales",
+            "enviado_a_acompaniamiento",
+        ]
+
+    @staticmethod
+    def _marcar_documentacion_finalizada_si_corresponde(admision):
+
+        if not AdmisionService._todos_obligatorios_tienen_archivos(admision):
+
+            return False
+
+        if admision.estado_admision != "documentacion_en_proceso":
+
+            return False
+
+        admision.estado_admision = "documentacion_finalizada"
+        admision.save()
+
+        return True
+
+    @staticmethod
+    def _marcar_documentacion_aprobada_si_corresponde(admision):
+
+        if not AdmisionService._todos_obligatorios_aceptados(admision):
+
+            return False
+
+        if admision.estado_admision != "documentacion_finalizada":
+
+            return False
+
+        admision.estado_admision = "documentacion_aprobada"
+
+        if admision.estado_id != 2:
+            admision.estado_id = 2
+
+        admision.save()
+
+        return True
+
+    @staticmethod
     def _todos_obligatorios_tienen_archivos(admision):
         """Verifica que todos los documentos obligatorios tengan archivos cargados"""
         try:
-            documentos_obligatorios = Documentacion.objects.filter(
-                convenios=admision.tipo_convenio, obligatorio=True
-            )
-
-            for doc_obligatorio in documentos_obligatorios:
-                archivo = ArchivoAdmision.objects.filter(
-                    admision=admision, documentacion=doc_obligatorio
-                ).first()
-
-                if not archivo or not archivo.archivo:
+            for (
+                doc_obligatorio
+            ) in AdmisionService._iter_documentos_obligatorios_admision(admision):
+                if not AdmisionService._existe_archivo_obligatorio_admision(
+                    admision=admision,
+                    doc_obligatorio=doc_obligatorio,
+                    requiere_archivo=True,
+                ):
                     return False
 
             return True

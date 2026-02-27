@@ -17,7 +17,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
     rendicion_cuenta_mensual = models.ForeignKey(
         "RendicionCuentaMensual",
         on_delete=models.CASCADE,
-        related_name="arvhios_adjuntos",  # FIXME: Arreglar typo
+        related_name="archivos_adjuntos",
         verbose_name="Rendición de Cuenta Mensual",
         null=True,
         blank=True,
@@ -68,3 +68,7 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
     class Meta:
         verbose_name = "Rendición de Cuenta Mensual"
         verbose_name_plural = "Rendiciones de Cuenta Mensuales"
+
+    @property
+    def arvhios_adjuntos(self):  # compat legacy (typo histórico)
+        return self.archivos_adjuntos

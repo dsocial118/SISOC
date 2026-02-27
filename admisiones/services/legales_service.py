@@ -9,7 +9,6 @@ from django.db.models import Q
 from django.urls import reverse
 import logging
 from io import BytesIO
-import tempfile
 from datetime import date, datetime
 
 from django.core.files.base import ContentFile
