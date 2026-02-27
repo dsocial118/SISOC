@@ -1,7 +1,6 @@
 from django import forms
 
 from ciudadanos.models import Ciudadano
-from users.models import Profile
 from core.models import Localidad, Municipio, Provincia
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 from intervenciones.models.intervenciones import TipoIntervencion
@@ -21,11 +20,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def _obtener_provincia_usuario(user):
         if not user or not getattr(user, "is_authenticated", False):
             return None
-        profile = (
-            Profile.objects.select_related("provincia")
-            .filter(user=user)
-            .first()
-        )
+        profile = Profile.objects.select_related("provincia").filter(user=user).first()
         if not profile:
             return None
 
