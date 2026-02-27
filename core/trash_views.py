@@ -255,7 +255,7 @@ class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
         )
         paginator = Paginator(queryset, self.paginate_by)
         page_obj = paginator.get_page(request.GET.get("page") or 1)
-        
+
         # Build rows only for the current page's items
         rows = _rows_from_items(page_obj.object_list, models_by_key)
 
