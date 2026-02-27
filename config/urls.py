@@ -47,6 +47,7 @@ urlpatterns = [
     path("api/comedores/", include("comedores.api_urls")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     path("api/comunicados/", include("comunicados.api_urls")),
+    path("api/renaper/", include("core.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
 ]
