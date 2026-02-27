@@ -28,7 +28,7 @@ class ContentSecurityPolicyMiddleware:
         # de compatibilidad con `unsafe-inline` en navegadores modernos.
         # Usar base64 estándar (no URL-safe) para validez de sintaxis CSP universal.
         nonce_bytes = secrets.token_bytes(16)
-        request.csp_nonce = base64.b64encode(nonce_bytes).decode('ascii').rstrip('=')
+        request.csp_nonce = base64.b64encode(nonce_bytes).decode("ascii").rstrip("=")
         response = self.get_response(request)
         allow_unsafe_inline_scripts = getattr(
             settings, "CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", True
