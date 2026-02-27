@@ -6,13 +6,13 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-from core.soft_delete_cascade import (
+from .cascade import (
     build_delete_plan,
     build_restore_plan,
     execute_delete_plan,
     execute_restore_plan,
 )
-from core.soft_delete_signals import post_restore, post_soft_delete
+from .signals import post_restore, post_soft_delete
 
 
 class SoftDeleteQuerySet(models.QuerySet):
