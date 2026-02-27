@@ -1,6 +1,6 @@
 {% load static %}
 <!-- Alpine.js -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js" nonce="{{ request.csp_nonce }}">
     window.Alpine = Alpine
     Alpine.start()
 
@@ -33,7 +33,7 @@
 <!-- JQuery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-<script> $.widget.bridge("uibutton", $.ui.button);	</script>
+<script nonce="{{ request.csp_nonce }}"> $.widget.bridge("uibutton", $.ui.button);	</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
 <!-- FIXME: Se utiliza unicamente en un formuilario de ejemplo -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
@@ -80,7 +80,7 @@
 <script src="{% static 'custom/js/navigator.js' %}"></script>
 <script src="{% static 'custom/js/base.js' %}"></script>
 <script src="{% static 'custom/js/sidebar.js' %}"></script>
-<script>
+<script nonce="{{ request.csp_nonce }}">
     const connectedSortables =
     document.querySelectorAll(".connectedSortable");
     connectedSortables.forEach((connectedSortable) => {
@@ -110,7 +110,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jsvectormap@1.5.3/dist/maps/world.js"
         integrity="sha256-XPpPaZlU8S/HWf7FZLAncLg2SAkP8ScUTII89x9D3lY="
         crossorigin="anonymous"></script> <!-- jsvectormap -->
-<script>
+<script nonce="{{ request.csp_nonce }}">
     const SELECTOR_SIDEBAR_WRAPPER = ".sidebar-wrapper";
     const Default = {
         scrollbarTheme: "os-theme-dark",

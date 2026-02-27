@@ -36,7 +36,7 @@
                        type="checkbox"
                        id="fisicamentePresentadaSwitch"
                        name="fisicamente_presentada"
-                       onchange="this.disabled = true; this.form.submit();"
+                       data-auto-submit-on-change="disable"
                        {% if rendicion.fisicamente_presentada %}checked{% endif %} />
                 <label class="form-check-label" for="fisicamentePresentadaSwitch">Revisión físicamente presentada</label>
             </div>
@@ -98,7 +98,7 @@
                             {% if doc.validable %}
                                 <form method="post"
                                       action="{% url 'validar_documento_rendicion_cuentas_final' doc.id %}"
-                                      onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
+                                      data-confirm-submit="¿Estás seguro de que querés validar este documento?">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-warning btn-sm">Validar</button>
                                 </form>
@@ -110,7 +110,7 @@
                             {% if doc.eliminable %}
                                 <form method="post"
                                       action="{% url 'eliminar_documento_rendicion_cuentas_final' doc.id %}"
-                                      onsubmit="return confirm('¿Estás seguro de que querés eliminar este documento?');">
+                                      data-confirm-submit="¿Estás seguro de que querés eliminar este documento?">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-danger btn-sm bi bi-trash"></button>
                                 </form>
@@ -172,7 +172,7 @@
                   method="post"
                   enctype="multipart/form-data"
                   action="{% url 'adjuntar_documento_rendicion_cuenta_final' %}"
-                  onsubmit="return confirm('¿Estás seguro de que querés adjuntar este documento?');">
+                  data-confirm-submit="¿Estás seguro de que querés adjuntar este documento?">
                 {% csrf_token %}
                 <input type="hidden" name="documento_id" id="documento_id" value="" />
                 <div class="modal-content">
@@ -207,7 +207,7 @@
             <form method="POST"
                   action="{% url 'crear_documento_rendicion_cuentas_final' rendicion.id %}"
                   enctype="multipart/form-data"
-                  onsubmit="return confirm('¿Estás seguro de que querés crear este documento?');">
+                  data-confirm-submit="¿Estás seguro de que querés crear este documento?">
                 {% csrf_token %}
                 <div class="modal-content">
                     <div class="modal-header">

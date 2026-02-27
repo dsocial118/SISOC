@@ -238,7 +238,7 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
+    <div id="celiaquia-list-config" data-csrf-token="{{ csrf_token }}" hidden></div>
     <script src="{% static 'custom/js/celiaquia_list.js' %}"></script>
     <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>

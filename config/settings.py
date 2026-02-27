@@ -39,6 +39,26 @@ def _to_origin(h: str) -> str:
     return h if h.startswith(("http://", "https://")) else f"{DEFAULT_SCHEME}://{h}"
 
 
+def _safe_int_env(var_name: str, default: int) -> int:
+    raw_value = os.getenv(var_name)
+    if raw_value is None or raw_value.strip() == "":
+        return default
+    try:
+        return int(raw_value)
+    except ValueError:
+        return default
+
+
+def _safe_float_env(var_name: str, default: float) -> float:
+    raw_value = os.getenv(var_name)
+    if raw_value is None or raw_value.strip() == "":
+        return default
+    try:
+        return float(raw_value)
+    except ValueError:
+        return default
+
+
 CSRF_TRUSTED_ORIGINS = [_to_origin(h) for h in ALLOWED_HOSTS]
 
 # Apps
@@ -267,6 +287,14 @@ DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+RENAPER_VALIDACION_MAX_RETRIES = _safe_int_env(
+    "RENAPER_VALIDACION_MAX_RETRIES",
+    1,
+)
+RENAPER_VALIDACION_BACKOFF_SECONDS = _safe_float_env(
+    "RENAPER_VALIDACION_BACKOFF_SECONDS",
+    0.0,
+)
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 # Changelog
@@ -457,6 +485,14 @@ else:
     X_FRAME_OPTIONS = "SAMEORIGIN"
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
     ENABLE_CSP = True
+
+# Overrides y flags de endurecimiento CSP (migración gradual)
+ENABLE_CSP = os.getenv("ENABLE_CSP", str(ENABLE_CSP)).lower() == "true"
+CSP_REPORT_ONLY = os.getenv("CSP_REPORT_ONLY", "false").lower() == "true"
+CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
+    os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "true").lower() == "true"
+)
+CSP_ALLOW_UNSAFE_EVAL = os.getenv("CSP_ALLOW_UNSAFE_EVAL", "true").lower() == "true"
 
 # Config propia (constantes)
 PROG_MILD = 24
