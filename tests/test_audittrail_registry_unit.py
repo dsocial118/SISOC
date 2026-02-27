@@ -29,7 +29,7 @@ def test_tracked_models_include_auth_user_with_sensitive_excludes():
 
 
 def test_register_tracked_models_uses_single_source_definitions(mocker):
-    fake_model = SimpleNamespace()
+    fake_model = mocker.MagicMock()
     fake_definition = SimpleNamespace(
         get_model=lambda: fake_model,
         get_excluded_fields=lambda: ["password"],

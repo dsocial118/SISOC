@@ -20,12 +20,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def _obtener_provincia_usuario(user):
         if not user or not getattr(user, "is_authenticated", False):
             return None
-
-        profile = (
-            Profile.objects.select_related("provincia")
-            .filter(user=user)
-            .first()
-        )
+        profile = Profile.objects.select_related("provincia").filter(user=user).first()
         if not profile:
             return None
 

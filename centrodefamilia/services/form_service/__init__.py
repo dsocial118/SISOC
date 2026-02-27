@@ -1,7 +1,5 @@
-"""Compatibility alias that preserves original module patch semantics."""
+"""Servicios para gestión de formularios."""
 
-import sys as _sys
+from .impl import set_readonly_fields, setup_location_fields
 
-from . import impl as _impl
-
-_sys.modules[__name__] = _impl
+__all__ = ["setup_location_fields", "set_readonly_fields"]
