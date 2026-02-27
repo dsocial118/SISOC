@@ -311,6 +311,13 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
 
             actions = [
                 format_html(
+                    '<a href="{}" class="btn btn-sm btn-primary">Ver</a>',
+                    reverse(
+                        "centrodeinfancia_intervencion_detalle",
+                        args=[intervencion.id],
+                    ),
+                ),
+                format_html(
                     '<a href="{}" class="btn btn-sm btn-warning">Editar</a>',
                     reverse(
                         "centrodeinfancia_intervencion_editar",
@@ -435,7 +442,10 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["observaciones_page_obj"] = observaciones_page_obj
         context["observaciones_is_paginated"] = observaciones_page_obj.has_other_pages()
         context["observaciones_page_range"] = observaciones_page_range
-        context["intervencion_form"] = IntervencionCentroInfanciaForm()
+        context["intervencion_form"] = IntervencionCentroInfanciaForm(
+            destinatario_fijo_nombre="Centro",
+            hide_destinatario=True,
+        )
         context["observacion_form"] = ObservacionCentroInfanciaForm()
         return context
 
@@ -926,9 +936,17 @@ class IntervencionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     form_class = IntervencionCentroInfanciaForm
     template_name = "centrodeinfancia/intervencion_form.html"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["destinatario_fijo_nombre"] = "Centro"
+        kwargs["hide_destinatario"] = True
+        return kwargs
+
     def form_valid(self, form):
         centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
         form.instance.centro = centro
+        if form.destinatario_fijo_instance:
+            form.instance.destinatario = form.destinatario_fijo_instance
         messages.success(self.request, "Intervención creada correctamente.")
         return super().form_valid(form)
 
@@ -968,6 +986,24 @@ class IntervencionCentroInfanciaDeleteView(
 
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
+
+
+class IntervencionCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
+    # TODO: Unificar modelo de intervenciones (Intervencion para comedores e IntervencionCentroInfancia para CDI)
+    # para evitar duplicación de vistas y templates de detalle.
+    model = IntervencionCentroInfancia
+    template_name = "centrodeinfancia/intervencion_detail_view.html"
+    context_object_name = "intervencion"
+
+    def get_queryset(self):
+        return _intervenciones_cdi_queryset_scoped(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = getattr(self.object, "centro", None)
+        if centro:
+            context["centro"] = {"id": centro.id, "nombre": centro.nombre}
+        return context
 
 
 class ObservacionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):

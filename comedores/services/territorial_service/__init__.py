@@ -1,7 +1,5 @@
-"""Compatibility alias that preserves original module patch semantics."""
+"""Servicio para gestión de territoriales."""
 
-import sys as _sys
+from .impl import TerritorialService
 
-from . import impl as _impl
-
-_sys.modules[__name__] = _impl
+__all__ = ["TerritorialService"]
