@@ -45,7 +45,7 @@
                 Volver
             </a>
             <a href="#"
-               onclick="window.history.back();"
+               data-history-back="true"
                class="btn btn-outline-secondary">Cancelar</a>
         </div>
     </div>
@@ -109,7 +109,7 @@
                 </div>
 
                 <div class="section-card" data-section="identidad">
-                    <div class="section-header" onclick="toggleSectionCiudadano('identidad')">
+                    <div class="section-header" data-toggle-section-ciudadano="identidad">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-id-card"></i>
@@ -251,7 +251,7 @@
                 </div>
 
                 <div class="section-card" data-section="domicilio">
-                    <div class="section-header" onclick="toggleSectionCiudadano('domicilio')">
+                    <div class="section-header" data-toggle-section-ciudadano="domicilio">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-map-marker-alt"></i>
@@ -411,7 +411,7 @@
                 </div>
 
                 <div class="section-card" data-section="contacto">
-                    <div class="section-header" onclick="toggleSectionCiudadano('contacto')">
+                    <div class="section-header" data-toggle-section-ciudadano="contacto">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-phone-alt"></i>
@@ -485,7 +485,7 @@
                 </div>
 
                 <div class="section-card" data-section="estado">
-                    <div class="section-header" onclick="toggleSectionCiudadano('estado')">
+                    <div class="section-header" data-toggle-section-ciudadano="estado">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-toggle-on"></i>
@@ -546,7 +546,7 @@
 
                 <div class="section-card" data-section="documentacion">
                     <div class="section-header"
-                         onclick="toggleSectionCiudadano('documentacion')">
+                         data-toggle-section-ciudadano="documentacion">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-camera"></i>
@@ -609,7 +609,8 @@
                                         </div>
                                         <button type="button"
                                                 class="btn btn-outline-primary btn-sm"
-                                                onclick="abrirFotoCiudadanoModal('{{ form.instance.foto.url|escapejs }}', '{{ form.instance.foto.name|escapejs }}')">
+                                                data-call-click="abrirFotoCiudadanoModal"
+                                                data-call-args='["{{ form.instance.foto.url|escapejs }}", "{{ form.instance.foto.name|escapejs }}"]'>
                                             <i class="fas fa-expand-alt mr-1"></i>
                                             Ver completa
                                         </button>
@@ -648,7 +649,7 @@
                                              class="foto-preview-img" />
                                         <button type="button"
                                                 class="btn-remover-preview"
-                                                onclick="removerPreviewFotoCiudadano()">
+                                                data-call-click="removerPreviewFotoCiudadano">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
@@ -676,7 +677,7 @@
                     </div>
                     <div>
                         <button type="button"
-                                onclick="window.history.back();"
+                                data-history-back="true"
                                 class="btn btn-secondary mr-2">
                             <i class="fas fa-times mr-1"></i>
                             Cancelar
@@ -731,7 +732,7 @@
                     <div class="acciones-foto">
                         <button type="button"
                                 class="btn btn-outline-success btn-sm"
-                                onclick="descargarFotoCiudadano()">
+                                data-call-click="descargarFotoCiudadano">
                             <i class="fas fa-download mr-1"></i>Descargar
                         </button>
                         <button type="button"
@@ -747,14 +748,14 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         // Variables globales para emular la inicialización de comedores
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
     <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
     <script src="{% static 'custom/js/ciudadanosform.js' %}"></script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         function toggleSectionCiudadano(sectionId) {
             const sectionBody = document.getElementById("section-" + sectionId);
             const sectionHeader = document.querySelector(`[data-section="${sectionId}"] .section-header`);
@@ -900,7 +901,7 @@
             updateProgress();
         });
     </script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function () {
             const fotoInput = document.getElementById("foto-input") || document.getElementById("id_foto");
             const triggerBtn = document.getElementById("foto-picker-btn");
@@ -1016,7 +1017,7 @@
             };
         });
     </script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function () {
             const fechaNacimientoInput = document.getElementById("id_fecha_nacimiento");
             const fechaNacimientoInicial = "{{ form.instance.fecha_nacimiento|date:'Y-m-d' }}";

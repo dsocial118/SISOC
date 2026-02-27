@@ -106,7 +106,7 @@
     <script src="{% static 'custom/js/listSort.js' %}"></script>
     <script src="{% static 'custom/js/export_helper.js' %}"></script>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function () {
             const searchInput = document.getElementById("ajax-search-input");
             const hiddenQInput = document.getElementById("hidden-q-input");

@@ -116,7 +116,7 @@
                                     {% csrf_token %}
                                     <button type="submit"
                                             class="btn btn-outline-success"
-                                            onclick="return confirm('¿Publicar este comunicado?')">
+                                            data-confirm-click="¿Publicar este comunicado?">
                                         <i class="fas fa-paper-plane"></i> Publicar
                                     </button>
                                 </form>
@@ -129,7 +129,7 @@
                                     {% csrf_token %}
                                     <button type="submit"
                                             class="btn btn-outline-dark"
-                                            onclick="return confirm('¿Archivar este comunicado?')">
+                                            data-confirm-click="¿Archivar este comunicado?">
                                         <i class="fas fa-archive"></i> Archivar
                                     </button>
                                 </form>

@@ -1,0 +1,15 @@
+<script nonce="{{ request.csp_nonce }}">
+    (function() {
+        const root = document.documentElement;
+        try {
+            if (root.getAttribute("data-bs-theme") !== "dark") {
+                root.setAttribute("data-bs-theme", "dark");
+            }
+            if (localStorage.getItem("theme") !== "dark") {
+                localStorage.setItem("theme", "dark");
+            }
+        } catch (err) {
+            root.setAttribute("data-bs-theme", "dark");
+        }
+    })();
+</script>

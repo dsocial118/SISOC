@@ -187,19 +187,19 @@
                     <button id="submit-todos-btn" class="btn btn-primary me-3">Confirmar Preinscripción</button>
                     <button type="button"
                             class="btn btn-secondary"
-                            onclick="window.location.reload();">Cancelar</button>
+                            data-page-reload="true">Cancelar</button>
                 </div>
             </div>
         </div>
     {% endblock %}
     {% block customJS %}
-        <script>
+        <script nonce="{{ request.csp_nonce }}">
 // Variables globales para las URLs
 window.buscarCuilUrl = "{% url 'buscar_cuil' %}";
 window.buscarResponsableUrl = "{% url 'buscar_responsable' %}";
         </script>
         <script src="{% static 'custom/js/centro_familia_beneficiarios.js' %}"></script>
-        <script>
+        <script nonce="{{ request.csp_nonce }}">
 document.getElementById("dni-input").addEventListener("input", function (e) {
   // Quita todo lo que no sea dígito
   this.value = this.value.replace(/\D/g, "");
