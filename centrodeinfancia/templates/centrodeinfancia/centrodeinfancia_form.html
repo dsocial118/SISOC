@@ -18,7 +18,7 @@
                 {% endif %}
             </div>
             <div>
-                <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
+                <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
             </div>
         </div>
 
@@ -114,13 +114,13 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
 
     <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", async function() {
             const provinciaSelect = document.getElementById("id_provincia");
             const municipioSelect = document.getElementById("id_municipio");

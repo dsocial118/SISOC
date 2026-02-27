@@ -140,6 +140,69 @@ $.widget.bridge("uibutton", $.ui.button);
         }
     }
 
+    function resolveGlobalFunction(functionName) {
+        if (!functionName) {
+            return null;
+        }
+
+        return functionName.split(".").reduce(function(ctx, part) {
+            if (ctx && typeof ctx[part] !== "undefined") {
+                return ctx[part];
+            }
+            return null;
+        }, window);
+    }
+
+    function parseDataCallArgs(element) {
+        const rawArgs = element.getAttribute("data-call-args");
+        if (!rawArgs) {
+            return [];
+        }
+
+        try {
+            const parsed = JSON.parse(rawArgs);
+            return Array.isArray(parsed) ? parsed : [parsed];
+        } catch (error) {
+            console.warn("No se pudieron parsear los argumentos de data-call-args.", {
+                element: element,
+                rawArgs: rawArgs,
+                error: error,
+            });
+            return [];
+        }
+    }
+
+    function invokeDataCall(element, attrName) {
+        const functionName = element.getAttribute(attrName);
+        const targetFn = resolveGlobalFunction(functionName);
+
+        if (typeof targetFn !== "function") {
+            console.warn("No se encontró la función global para data-call.", {
+                attrName: attrName,
+                functionName: functionName,
+                element: element,
+            });
+            return undefined;
+        }
+
+        let args = parseDataCallArgs(element);
+        if (element.getAttribute("data-call-pass-this") === "true") {
+            args = [element].concat(args);
+        }
+
+        try {
+            return targetFn.apply(window, args);
+        } catch (error) {
+            console.error("Error ejecutando función declarada con data-call.", {
+                attrName: attrName,
+                functionName: functionName,
+                args: args,
+                error: error,
+            });
+            throw error;
+        }
+    }
+
     $(function() {
         const logoutIcon = $("#logout_icon");
         if (logoutIcon.length) {
@@ -203,6 +266,114 @@ $.widget.bridge("uibutton", $.ui.button);
                 $(".sidebar-menu .nav-item.menu-open>ul").css("display", "block");
             });
         }
+
+        $(document).on("click", "[data-history-back]", function(event) {
+            event.preventDefault();
+            window.history.back();
+        });
+
+        $(document).on("click", "[data-confirm-click]", function(event) {
+            const message = $(this).attr("data-confirm-click") || "¿Confirmar acción?";
+            if (!window.confirm(message)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+
+        $(document).on("submit", "form[data-confirm-submit]", function(event) {
+            const message = $(this).attr("data-confirm-submit") || "¿Confirmar envío?";
+            if (!window.confirm(message)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+
+        $(document).on("click", "[data-page-reload]", function(event) {
+            event.preventDefault();
+            window.location.reload();
+        });
+
+        $(document).on("click", "[data-click-target-id]", function(event) {
+            event.preventDefault();
+            const targetId = $(this).attr("data-click-target-id");
+            if (!targetId) {
+                return;
+            }
+            const target = document.getElementById(targetId);
+            if (target && typeof target.click === "function") {
+                target.click();
+            }
+        });
+
+        $(document).on("click", "[data-call-click]", function(event) {
+            const result = invokeDataCall(this, "data-call-click");
+            if (result === false) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+
+        $(document).on("change", "[data-call-change]", function(event) {
+            const result = invokeDataCall(this, "data-call-change");
+            if (result === false) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+
+        $(document).on("submit", "form[data-call-submit]", function(event) {
+            const result = invokeDataCall(this, "data-call-submit");
+            if (result === false) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+
+        $(document).on("click", "[data-toggle-section]", function() {
+            const section = $(this).attr("data-toggle-section");
+            if (typeof window.toggleSection === "function") {
+                window.toggleSection(section);
+            }
+        });
+
+        $(document).on("click", "[data-toggle-section-ciudadano]", function() {
+            const section = $(this).attr("data-toggle-section-ciudadano");
+            if (typeof window.toggleSectionCiudadano === "function") {
+                window.toggleSectionCiudadano(section);
+            }
+        });
+
+        $(document).on("keyup", "[data-filter-table-on-keyup]", function() {
+            if (typeof window.filterTable === "function") {
+                window.filterTable();
+            }
+        });
+
+        $(document).on("change", "[data-auto-submit-on-change]", function() {
+            const mode = $(this).attr("data-auto-submit-on-change");
+            if (mode === "disable") {
+                this.disabled = true;
+            }
+            if (this.form) {
+                this.form.submit();
+            }
+        });
+
+        $(document).on("click", "[data-submit-with-spinner]", function(event) {
+            const form = this.form;
+            if (!form) {
+                return;
+            }
+            event.preventDefault();
+            if (this.disabled) {
+                return;
+            }
+
+            const message = $(this).attr("data-submit-with-spinner") || "Procesando…";
+            this.disabled = true;
+            this.innerHTML = "<span class=\"spinner-border spinner-border-sm\" role=\"status\" aria-hidden=\"true\"></span> " + message;
+            form.submit();
+        });
     });
 })(jQuery);
 

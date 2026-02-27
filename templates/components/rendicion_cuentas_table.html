@@ -35,7 +35,7 @@
                                     <td>
                                         <form method="post"
                                               action="{% url 'validar_documento_rendicion_cuentas_final' documento.id %}"
-                                              onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
+                                              data-confirm-submit="¿Estás seguro de que querés validar este documento?">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-warning btn-sm">Validar</button>
                                         </form>

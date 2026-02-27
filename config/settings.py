@@ -267,6 +267,10 @@ DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+RENAPER_VALIDACION_MAX_RETRIES = int(os.getenv("RENAPER_VALIDACION_MAX_RETRIES", "1"))
+RENAPER_VALIDACION_BACKOFF_SECONDS = float(
+    os.getenv("RENAPER_VALIDACION_BACKOFF_SECONDS", "0")
+)
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 # Changelog
@@ -457,6 +461,14 @@ else:
     X_FRAME_OPTIONS = "SAMEORIGIN"
     SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
     ENABLE_CSP = True
+
+# Overrides y flags de endurecimiento CSP (migración gradual)
+ENABLE_CSP = os.getenv("ENABLE_CSP", str(ENABLE_CSP)).lower() == "true"
+CSP_REPORT_ONLY = os.getenv("CSP_REPORT_ONLY", "false").lower() == "true"
+CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
+    os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "true").lower() == "true"
+)
+CSP_ALLOW_UNSAFE_EVAL = os.getenv("CSP_ALLOW_UNSAFE_EVAL", "true").lower() == "true"
 
 # Config propia (constantes)
 PROG_MILD = 24

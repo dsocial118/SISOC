@@ -10,7 +10,7 @@
     {% include 'components/form_card.html' with title=page_title form=form cancel_url=cancel_url submit_text=submit_text %}
 {% endblock %}
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>

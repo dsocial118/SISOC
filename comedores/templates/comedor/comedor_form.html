@@ -23,7 +23,7 @@
         </div>
         <div>
             <a class="btn btn-secondary print mr-1 d-none d-sm-inline">Imprimir</a>
-            <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
+            <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
         </div>
     </div>
     <div class="row comedor-form">
@@ -32,7 +32,7 @@
                   id="comedorForm"
                   class="w-100"
                   enctype="multipart/form-data"
-                  onsubmit="return confirmSubmit()">
+                  data-call-submit="confirmSubmit">
                 {% csrf_token %}
 
                 <!-- Indicador de progreso global -->
@@ -53,7 +53,7 @@
 
                 <!-- Sección 1: Información Básica -->
                 <div class="section-card" data-section="basic">
-                    <div class="section-header" onclick="toggleSection('basic')">
+                    <div class="section-header" data-toggle-section="basic">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-utensils"></i>
@@ -94,7 +94,7 @@
 
                 <!-- Sección 2: Estado y Proceso -->
                 <div class="section-card" data-section="estado">
-                    <div class="section-header" onclick="toggleSection('estado')">
+                    <div class="section-header" data-toggle-section="estado">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-tasks"></i>
@@ -131,7 +131,7 @@
 
                 <!-- Sección 3: Ubicación -->
                 <div class="section-card" data-section="ubicacion">
-                    <div class="section-header" onclick="toggleSection('ubicacion')">
+                    <div class="section-header" data-toggle-section="ubicacion">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-map-marker-alt"></i>
@@ -206,7 +206,7 @@
 
                 <!-- Sección 4: Datos del Referente -->
                 <div class="section-card" data-section="referente">
-                    <div class="section-header" onclick="toggleSection('referente')">
+                    <div class="section-header" data-toggle-section="referente">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-user-tie"></i>
@@ -247,7 +247,7 @@
 
                 <!-- Sección 5: Multimedia -->
                 <div class="section-card" data-section="multimedia">
-                    <div class="section-header" onclick="toggleSection('multimedia')">
+                    <div class="section-header" data-toggle-section="multimedia">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-images"></i>
@@ -308,7 +308,8 @@
                                         </div>
                                         <button type="button"
                                                 class="btn btn-outline-primary btn-sm"
-                                                onclick="ampliarFotoLegajo('{{ form.instance.foto_legajo.url|escapejs }}', '{{ form.instance.foto_legajo.name|escapejs }}')">
+                                                data-call-click="ampliarFotoLegajo"
+                                                data-call-args='["{{ form.instance.foto_legajo.url|escapejs }}", "{{ form.instance.foto_legajo.name|escapejs }}"]'>
                                             <i class="fas fa-expand-alt mr-1"></i>
                                             Ver completa
                                         </button>
@@ -342,7 +343,7 @@
                                              class="foto-preview-img" />
                                         <button type="button"
                                                 class="btn-remover-preview"
-                                                onclick="removerPreviewFotoLegajo()">
+                                                data-call-click="removerPreviewFotoLegajo">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
@@ -444,7 +445,7 @@
                     </div>
                     <div>
                         <button type="button"
-                                onclick="window.history.back();"
+                                data-history-back="true"
                                 class="btn btn-secondary mr-2">
                             <i class="fas fa-times mr-1"></i> Cancelar
                         </button>
@@ -493,7 +494,7 @@
                     <div class="acciones-foto">
                         <button type="button"
                                 class="btn btn-outline-success btn-sm"
-                                onclick="descargarFotoLegajo()">
+                                data-call-click="descargarFotoLegajo">
                             <i class="fas fa-download mr-1"></i>Descargar
                         </button>
                         <button type="button"
@@ -512,7 +513,7 @@
     {{ form.estado_tree|json_script:"estado-general-data" }}
 
     <!-- URLs de Django para AJAX (deben estar en el template por usar template tags) -->
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
         var ajaxLoadOrganizacionesUrl = "{% url 'ajax_load_organizaciones' %}";
