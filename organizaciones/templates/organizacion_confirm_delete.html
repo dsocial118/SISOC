@@ -13,5 +13,5 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% include 'components/delete_confirm.html' with object=organizacion object_name=organizacion.nombre title='Eliminar Organización' cancel_url='organizacion_detalle' cancel_url_with_id=True confirm_text='Eliminar Organización' %}
+    {% include 'components/delete_confirm.html' with object=organizacion object_name=organizacion.nombre title='Dar de baja Organización' cancel_url='organizacion_detalle' cancel_url_with_id=True confirm_text='Dar de baja Organización' %}
 {% endblock %}

@@ -1,6 +1,87 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class MontoPrestacionPrograma(models.Model):
+    programa = models.ForeignKey(
+        "Programa",
+        on_delete=models.PROTECT,
+        related_name="montos_prestacion",
+        verbose_name="Programa",
+    )
+    desayuno_valor = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Valor desayuno",
+        blank=True,
+        null=True,
+    )
+    almuerzo_valor = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Valor almuerzo",
+        blank=True,
+        null=True,
+    )
+    merienda_valor = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Valor merienda",
+        blank=True,
+        null=True,
+    )
+    cena_valor = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Valor cena",
+        blank=True,
+        null=True,
+    )
+    fecha_creacion = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de creación"
+    )
+    fecha_modificacion = models.DateTimeField(
+        auto_now=True, verbose_name="Fecha de modificación"
+    )
+    usuario_creador = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+
+    def clean(self):
+        super().clean()
+        if not any(
+            getattr(self, campo) is not None
+            for campo in (
+                "desayuno_valor",
+                "almuerzo_valor",
+                "merienda_valor",
+                "cena_valor",
+            )
+        ):
+            raise ValidationError("Debe informar al menos un monto.")
+
+    def __str__(self):
+        return str(self.programa)
+
+    class Meta:
+        ordering = ["id"]
+        verbose_name = "Prestación"
+        verbose_name_plural = "Prestaciones"
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    Q(desayuno_valor__isnull=False)
+                    | Q(almuerzo_valor__isnull=False)
+                    | Q(merienda_valor__isnull=False)
+                    | Q(cena_valor__isnull=False)
+                ),
+                name="monto_prestacion_al_menos_un_valor",
+            )
+        ]
 
 
 class Nacionalidad(models.Model):

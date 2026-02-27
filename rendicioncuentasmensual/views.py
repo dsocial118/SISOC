@@ -12,6 +12,8 @@ from django.views.generic import (
     DeleteView,
 )
 from comedores.models import Comedor
+from core.soft_delete.preview import build_delete_preview
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin, is_soft_deletable_instance
 from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasmensual.forms import (
@@ -24,7 +26,21 @@ from rendicioncuentasmensual.forms import (
 @require_POST
 def eliminar_archivo(request, archivo_id):
     archivo = get_object_or_404(DocumentacionAdjunta, id=archivo_id)
-    archivo.delete()
+    preview_enabled = str(
+        request.GET.get("preview") or request.POST.get("preview") or ""
+    )
+    if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(archivo):
+        return JsonResponse(
+            {
+                "success": True,
+                "preview": build_delete_preview(archivo),
+            }
+        )
+
+    if is_soft_deletable_instance(archivo):
+        archivo.delete(user=request.user, cascade=True)
+    else:
+        archivo.delete()
     return JsonResponse(
         {"success": True, "message": "Archivo eliminado correctamente."}
     )
@@ -86,7 +102,7 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
                 nombre=archivo_enviado.name,
                 archivo=archivo_enviado,
             )
-            rendicion.arvhios_adjuntos.add(doc_adjunta)
+            rendicion.archivos_adjuntos.add(doc_adjunta)
 
         return super().form_valid(form)
 
@@ -123,7 +139,7 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
                 nombre=archivo.name,
                 archivo=archivo,
             )
-            rendicion.arvhios_adjuntos.add(doc_adjunta)
+            rendicion.archivos_adjuntos.add(doc_adjunta)
 
         return super().form_valid(form)
 
@@ -139,18 +155,18 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
         context["comedorid"] = comedor_id
         context["form"] = RendicionCuentaMensualForm(instance=self.object)
         context["documentacion_adjunta_form"] = DocumentacionAdjuntaForm()
-        context["archivos_adjuntos"] = self.object.arvhios_adjuntos.all()
+        context["archivos_adjuntos"] = self.object.archivos_adjuntos.all()
         return context
 
 
-class RendicionCuentaMensualDeleteView(LoginRequiredMixin, DeleteView):
+class RendicionCuentaMensualDeleteView(
+    SoftDeleteDeleteViewMixin,
+    LoginRequiredMixin,
+    DeleteView,
+):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_confirm_delete.html"
-
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.arvhios_adjuntos.all().delete()
-        return super().delete(request, *args, **kwargs)
+    success_message = "Rendición dada de baja correctamente."
 
     def get_success_url(self):
         return reverse_lazy(

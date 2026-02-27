@@ -203,7 +203,7 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
   // Si usás nuestro JS, él ya lee el token desde cookie como fallback.
   window.urls = {
     informecabal_preview: '{% url "informecabal_preview" %}',

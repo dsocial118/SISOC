@@ -10,7 +10,7 @@
     {% include 'components/form_card.html' with title="Datos de Avales" hidden_fields=hidden_fields_send guardar_otro=guardar_otro_send %}
 {% endblock %}
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>

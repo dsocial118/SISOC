@@ -46,16 +46,8 @@
                                            class="btn btn-info btn-sm">Ver Detalle</a>
                                         <a href="{% url 'rendicioncuentasmensual_update' rendicion.id %}"
                                            class="btn btn-warning btn-sm">Editar</a>
-                                        <form method="post"
-                                              action="{% url 'rendicioncuentasmensual_delete' rendicion.id %}"
-                                              style="display: inline">
-                                            {% csrf_token %}
-                                            <button type="submit"
-                                                    class="btn btn-danger btn-sm"
-                                                    onclick="return confirm('¿Estás seguro de que deseas eliminar esta rendición y todos los archivos adjuntos?');">
-                                                Eliminar
-                                            </button>
-                                        </form>
+                                        <a href="{% url 'rendicioncuentasmensual_delete' rendicion.id %}"
+                                           class="btn btn-danger btn-sm">Dar de baja</a>
                                     </td>
                                 </tr>
                             {% endfor %}

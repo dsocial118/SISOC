@@ -1,0 +1,9 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Eliminar intervención{% endblock %}
+{% block titulo-pagina %}Eliminar intervención{% endblock %}
+
+{% block content %}
+    {% url 'centrodeinfancia_detalle' view.kwargs.pk as intervencion_cancel_url %}
+    {% include 'components/delete_confirm.html' with object_name=object cancel_url_full=intervencion_cancel_url confirm_text='Dar de baja' %}
+{% endblock %}

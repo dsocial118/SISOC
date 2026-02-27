@@ -15,20 +15,6 @@
 ;
 {% load crispy_forms_tags %}
 {% block content %}
-    <div class="error-page mt-5 px-3"></div>
-    <div class="error-content">
-        <h3>
-            <i class="fas fa-exclamation-triangle text-danger px-2"></i> Atención!
-        </h3>
-        <p>¿Estás seguro que deseas eliminar de manera permanente la intervencion?</p>
-        <div class="text-left">
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
-                <a href="{% url 'comedor_intervencion_ver' object.id %}">
-                    <button type="button" class="btn btn-secondary btn-sm">Cancelar</button>
-                </a>
-            </form>
-        </div>
-    </div>
+    {% url 'comedor_intervencion_ver' view.kwargs.comedor_id as intervencion_cancel_url %}
+    {% include 'components/delete_confirm.html' with object_name=object confirm_text='Dar de baja' cancel_url_full=intervencion_cancel_url %}
 {% endblock content %}

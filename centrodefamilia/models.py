@@ -4,10 +4,11 @@ from django.contrib.postgres.indexes import GinIndex
 from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo
+from core.soft_delete import SoftDeleteModelMixin
 from organizaciones.models import Organizacion
 
 
-class Centro(models.Model):
+class Centro(SoftDeleteModelMixin, models.Model):
     TIPO_CHOICES = [
         ("faro", "faro"),
         ("adherido", "Adherido"),
@@ -83,7 +84,7 @@ class Centro(models.Model):
         ]
 
 
-class Categoria(models.Model):
+class Categoria(SoftDeleteModelMixin, models.Model):
     nombre = models.CharField(max_length=100, verbose_name="Nombre de la Categoría")
 
     def __str__(self):
@@ -101,7 +102,7 @@ class Categoria(models.Model):
         ]
 
 
-class Actividad(models.Model):
+class Actividad(SoftDeleteModelMixin, models.Model):
     nombre = models.CharField(max_length=200, verbose_name="Nombre de la Actividad")
     categoria = models.ForeignKey(
         Categoria, on_delete=models.CASCADE, verbose_name="Categoría"
@@ -120,7 +121,7 @@ class Actividad(models.Model):
         ]
 
 
-class ActividadCentro(models.Model):
+class ActividadCentro(SoftDeleteModelMixin, models.Model):
     ESTADO_CHOICES = [
         ("planificada", "Planificada"),
         ("en_curso", "En curso"),
@@ -172,7 +173,7 @@ class ActividadCentro(models.Model):
         ]
 
 
-class ParticipanteActividad(models.Model):
+class ParticipanteActividad(SoftDeleteModelMixin, models.Model):
     ESTADO_INSCRIPCION = [
         ("inscrito", "Inscrito"),
         ("lista_espera", "Lista de Espera"),
@@ -333,7 +334,7 @@ class InformeCabalRegistro(models.Model):
 # ——— MODELOS DE BENEFICIARIOS ———
 
 
-class Responsable(models.Model):
+class Responsable(SoftDeleteModelMixin, models.Model):
     GENERO_CHOICES = [
         ("F", "Femenino"),
         ("M", "Masculino"),
@@ -413,7 +414,7 @@ class Responsable(models.Model):
         ordering = ["apellido", "nombre"]
 
 
-class Beneficiario(models.Model):
+class Beneficiario(SoftDeleteModelMixin, models.Model):
     GENERO_CHOICES = [
         ("F", "Femenino"),
         ("M", "Masculino"),
@@ -531,7 +532,7 @@ class Beneficiario(models.Model):
         ordering = ["apellido", "nombre"]
 
 
-class BeneficiarioResponsable(models.Model):
+class BeneficiarioResponsable(SoftDeleteModelMixin, models.Model):
     """Tabla para manejar vínculos específicos entre beneficiario y responsable"""
 
     VINCULO_PARENTAL_CHOICES = [

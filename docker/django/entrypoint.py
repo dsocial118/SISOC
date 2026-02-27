@@ -2,14 +2,27 @@ import logging
 import os
 import subprocess
 import time
-import pymysql
 import shutil
 from pathlib import Path
+
+import pymysql
 
 
 if not logging.getLogger().handlers:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("django")
+
+
+def run_command(cmd, *, stage, **kwargs):
+    """
+    Ejecuta un comando y falla explícitamente si el exit code es distinto de cero.
+    """
+    logger.info("▶ %s: %s", stage, " ".join(cmd))
+    try:
+        return subprocess.run(cmd, check=True, **kwargs)
+    except subprocess.CalledProcessError as exc:
+        logger.error("❌ Falló %s (exit=%s): %s", stage, exc.returncode, " ".join(cmd))
+        raise
 
 
 def wait_for_mysql():
@@ -52,15 +65,34 @@ def run_django_commands():
     """
     Ejecuta los comandos de Django necesarios para la preparación y el funcionamiento de la aplicación.
     """
-    subprocess.run(["python", "manage.py", "makemigrations"])
-    subprocess.run(["python", "manage.py", "migrate", "auth"])
-    subprocess.run(["python", "manage.py", "migrate", "--noinput"])
+    environment = os.getenv("ENVIRONMENT", "dev").lower()
+    run_makemigrations_on_start = (
+        os.getenv(
+            "RUN_MAKEMIGRATIONS_ON_START",
+            "true" if environment == "dev" else "false",
+        ).lower()
+        == "true"
+    )
+
+    if run_makemigrations_on_start:
+        run_command(
+            ["python", "manage.py", "makemigrations"],
+            stage="makemigrations",
+        )
+    else:
+        logger.info("⏭ Omitiendo makemigrations en arranque (flag desactivado).")
+
+    run_command(["python", "manage.py", "migrate", "auth"], stage="migrate auth")
+    run_command(["python", "manage.py", "migrate", "--noinput"], stage="migrate")
 
     # Cargar los fixtures condicionalmente, si se quiere forzar añadir `--force`
-    subprocess.run(["python", "manage.py", "load_fixtures"])
+    run_command(["python", "manage.py", "load_fixtures"], stage="load_fixtures")
 
-    subprocess.run(["python", "manage.py", "create_test_users"])
-    subprocess.run(["python", "manage.py", "create_groups"])
+    run_command(
+        ["python", "manage.py", "create_test_users"],
+        stage="create_test_users",
+    )
+    run_command(["python", "manage.py", "create_groups"], stage="create_groups")
     run_server()
 
 
@@ -88,10 +120,13 @@ def run_server():
         ]
         if threads and threads != "1":
             cmd.extend(["--threads", threads])
-        subprocess.run(cmd)
+        run_command(cmd, stage="gunicorn")
     else:
         logger.info("🧪 Iniciando Django en modo desarrollo...")
-        subprocess.run(["python", "manage.py", "runserver", "0.0.0.0:8000"])
+        run_command(
+            ["python", "manage.py", "runserver", "0.0.0.0:8000"],
+            stage="runserver",
+        )
 
 
 def cache_busting():
@@ -102,8 +137,9 @@ def cache_busting():
         logger.info("🧹 Eliminando carpeta de estáticos: %s", static_root)
         shutil.rmtree(static_root)
     logger.info("📦 Ejecutando collectstatic para cache busting...")
-    subprocess.run(
+    run_command(
         ["python", "manage.py", "collectstatic", "--noinput"],
+        stage="collectstatic",
         stdout=subprocess.DEVNULL,
     )
 

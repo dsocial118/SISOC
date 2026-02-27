@@ -7,7 +7,7 @@
 - DB: MySQL 8.0 (Docker Compose)
 - Infra: Docker/Docker Compose, Gunicorn
 - CI/CD: GitHub Actions (`.github/workflows/*.yml`)
-- Frontend: No hay Next.js/React en este repo (solo `package.json` sin deps). Si existe un frontend separado, queda fuera de este baseline.
+- Frontend: No hay Next.js/React ni toolchain Node formal en este repo. Si existe un frontend separado, queda fuera de este baseline.
 
 ## Controles minimos (checklist)
 - [ ] Secretos fuera del repo (no `.env` con valores reales en Git) - Evita filtraciones y obliga a gestionar secretos correctamente.
@@ -91,6 +91,6 @@
 - Smoke: `docker compose exec django pytest -m smoke` - Verifica críticos rápidos.
 - Django deploy checks: `python manage.py check --deploy` - Valida hardening.
 - Dependencias (pip): `python -m pip list --outdated` y `python -m pip check` - Detecta drift y conflictos.
-- Dependencias (npm): `npm audit --production` - Detecta CVEs frontend.
+- Dependencias (npm, opcional): `npm audit --production` - Solo si se formaliza un toolchain Node en este repo o en un frontend separado.
 - Secret scan: `gitleaks detect --source .` - Busca secretos expuestos.
 - Container scan: `trivy image <imagen>` - Escanea vulnerabilidades en imágenes.
