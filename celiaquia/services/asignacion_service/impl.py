@@ -32,7 +32,7 @@ class AsignacionService:
 
         # Registrar comentario si hay servicio disponible
         try:
-            from .comentarios_service import ComentariosService
+            from ..comentarios_service import ComentariosService
 
             for legajo in expediente.expediente_ciudadanos.all():
                 ComentariosService.agregar_comentario(
@@ -70,7 +70,7 @@ class AsignacionService:
 
             # Registrar comentario
             try:
-                from .comentarios_service import ComentariosService
+                from ..comentarios_service import ComentariosService
 
                 for legajo in expediente.expediente_ciudadanos.all():
                     ComentariosService.agregar_comentario(

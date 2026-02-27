@@ -12,7 +12,7 @@ import io
 import re
 from xml.sax.saxutils import escape
 
-from ..models.admisiones import (
+from ...models.admisiones import (
     ArchivoAdmision,
     InformeTecnico,
     FormularioProyectoDeConvenio,
@@ -182,7 +182,7 @@ class AdmisionesContextService:
 
     @staticmethod
     def preparar_contexto_informe_tecnico(informe):
-        from ..utils import generar_texto_comidas
+        from ...utils import generar_texto_comidas
 
         prestaciones = AdmisionesContextService._generar_prestaciones_semanales(informe)
         texto_comidas_raw = generar_texto_comidas(informe)

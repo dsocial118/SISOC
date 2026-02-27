@@ -11,14 +11,14 @@ from django.core.files.base import ContentFile
 from io import BytesIO
 from docx import Document
 from htmldocx import HtmlToDocx
-from .docx_service import DocumentTemplateService, AdmisionesContextService
+from ..docx_service import DocumentTemplateService, AdmisionesContextService
 from django.db import transaction
 from django.contrib import messages
 import logging
 import traceback
 import os
 
-from ..utils import generar_texto_comidas
+from ...utils import generar_texto_comidas
 
 logger = logging.getLogger("admisiones.services.informes")
 
@@ -236,7 +236,7 @@ class InformeService:
             informe.save()
 
             # Actualizar estado de admisión según el nuevo estado del informe
-            from .admisiones_service import AdmisionService
+            from ..admisiones_service import AdmisionService
 
             if nuevo_estado == "A subsanar":
                 AdmisionService.actualizar_estado_admision(
@@ -530,7 +530,7 @@ class InformeService:
                     raise Exception("No se pudo generar el DOCX borrador")
 
             # Actualizar estado de admisión según la acción
-            from .admisiones_service import AdmisionService
+            from ..admisiones_service import AdmisionService
 
             if es_creacion and action != "submit":
                 AdmisionService.actualizar_estado_admision(
@@ -888,7 +888,7 @@ class InformeService:
             informe.save()
 
             # Actualizar estado de admisión - ahora pasa a revisión
-            from .admisiones_service import AdmisionService
+            from ..admisiones_service import AdmisionService
 
             AdmisionService.actualizar_estado_admision(
                 informe.admision, "enviar_informe_revision"

@@ -24,7 +24,7 @@ from admisiones.forms.admisiones_forms import (
     IFInformeTecnicoForm,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
-from .docx_service import DocumentTemplateService, TextFormatterService
+from ..docx_service import DocumentTemplateService, TextFormatterService
 from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
 from admisiones.services.admisiones_filter_config import (
