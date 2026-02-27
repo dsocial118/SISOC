@@ -17,7 +17,7 @@ from django.utils.text import slugify
 from django.utils import timezone
 from docx import Document
 from htmldocx import HtmlToDocx
-from .docx_service import DocumentTemplateService, TextFormatterService
+from ..docx_service import DocumentTemplateService, TextFormatterService
 from django.db import transaction
 import unicodedata
 import traceback

@@ -52,7 +52,7 @@ class DocumentosService:
 
         # Registrar en historial de comentarios
         try:
-            from .comentarios_service import ComentariosService
+            from ..comentarios_service import ComentariosService
 
             accion = "actualizado" if not created else "cargado"
             ComentariosService.agregar_comentario(
@@ -107,7 +107,7 @@ class DocumentosService:
 
             # Registrar en historial
             try:
-                from .comentarios_service import ComentariosService
+                from ..comentarios_service import ComentariosService
 
                 ComentariosService.agregar_comentario(
                     legajo=legajo,
