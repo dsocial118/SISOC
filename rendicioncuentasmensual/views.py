@@ -12,8 +12,8 @@ from django.views.generic import (
     DeleteView,
 )
 from comedores.models import Comedor
-from core.soft_delete_preview import build_delete_preview
-from core.soft_delete_views import SoftDeleteDeleteViewMixin, is_soft_deletable_instance
+from core.soft_delete.preview import build_delete_preview
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin, is_soft_deletable_instance
 from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasmensual.forms import (

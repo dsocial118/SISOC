@@ -12,7 +12,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from comedores.forms.observacion_form import ObservacionForm
 from comedores.models import Comedor, Observacion
 from core.security import safe_redirect
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 
 class ObservacionCreateView(LoginRequiredMixin, CreateView):

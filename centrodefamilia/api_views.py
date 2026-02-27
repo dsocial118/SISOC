@@ -35,7 +35,7 @@ from centrodefamilia.serializers import (
 )
 from core.api_auth import HasAPIKey
 from core.models import Provincia, Municipio, Localidad
-from core.soft_delete_views import is_soft_deletable_instance
+from core.soft_delete.view_helpers import is_soft_deletable_instance
 from core.utils import format_serializer_errors
 
 logger = logging.getLogger("django")

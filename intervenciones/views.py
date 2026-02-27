@@ -10,7 +10,7 @@ from django.views.generic import CreateView, UpdateView, DeleteView, TemplateVie
 
 from comedores.services.comedor_service import ComedorService
 from core.security import safe_redirect
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
 from intervenciones.models.intervenciones import (
     Intervencion,
