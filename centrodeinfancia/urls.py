@@ -9,6 +9,7 @@ from centrodeinfancia.views import (
     CentroDeInfanciaUpdateView,
     IntervencionCentroInfanciaCreateView,
     IntervencionCentroInfanciaDeleteView,
+    IntervencionCentroInfanciaDetailView,
     IntervencionCentroInfanciaUpdateView,
     NominaCentroInfanciaCreateView,
     NominaCentroInfanciaDeleteView,
@@ -121,6 +122,13 @@ urlpatterns = [
             IntervencionCentroInfanciaDeleteView.as_view()
         ),
         name="centrodeinfancia_intervencion_borrar",
+    ),
+    path(
+        "centrodeinfancia/intervencion/detalle/<int:pk>/",
+        group_required(["Centro de Infancia Ver"])(
+            IntervencionCentroInfanciaDetailView.as_view()
+        ),
+        name="centrodeinfancia_intervencion_detalle",
     ),
     path(
         "centrodeinfancia/intervencion/<int:intervencion_id>/documentacion/subir/",

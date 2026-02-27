@@ -22,6 +22,17 @@ def _base_form_data(tipo_id, subtipo_id=""):
     }
 
 
+def _base_form_data_sin_destinatario(tipo_id, subtipo_id=""):
+    contacto = TipoContacto.objects.create(nombre="Presencial")
+    return {
+        "tipo_intervencion": str(tipo_id),
+        "subintervencion": str(subtipo_id) if subtipo_id else "",
+        "fecha": "2024-01-10",
+        "forma_contacto": str(contacto.id),
+        "observaciones": "Prueba",
+    }
+
+
 @pytest.mark.django_db
 def test_cdi_intervencion_requiere_subintervencion_si_el_tipo_tiene_subtipos():
     tipo = TipoIntervencion.objects.create(nombre="Seguimiento", programa="cdi")
@@ -60,3 +71,18 @@ def test_cdi_intervencion_acepta_tipo_sin_subintervenciones():
 
     assert form.is_valid(), form.errors
     assert form.cleaned_data["subintervencion"] is None
+
+
+@pytest.mark.django_db
+def test_cdi_intervencion_destinatario_fijo_centro():
+    tipo = TipoIntervencion.objects.create(nombre="Seguimiento", programa="cdi")
+    destinatario_centro = TipoDestinatario.objects.create(nombre="Centro")
+
+    form = IntervencionCentroInfanciaForm(
+        data=_base_form_data_sin_destinatario(tipo.id),
+        destinatario_fijo_nombre="Centro",
+        hide_destinatario=True,
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["destinatario"] == destinatario_centro
