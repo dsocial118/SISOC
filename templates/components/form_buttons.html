@@ -19,6 +19,17 @@
                                 {% if button.name %}name="{{ button.name }}"{% endif %}
                                 class="btn btn-{{ button.style|default:'primary' }} mb-3 {% if button.class %}{{ button.class }}{% endif %} {% if not forloop.last %}me-2{% endif %}"
                                 {% if button.onclick %}onclick="{{ button.onclick }}"{% endif %}
+                                {% if button.data_confirm_click %}data-confirm-click="{{ button.data_confirm_click }}"{% endif %}
+                                {% if button.data_history_back %}data-history-back{% endif %}
+                                {% if button.data_page_reload %}data-page-reload{% endif %}
+                                {% if button.data_click_target_id %}data-click-target-id="{{ button.data_click_target_id }}"{% endif %}
+                                {% if button.data_call_click %}data-call-click="{{ button.data_call_click }}"{% endif %}
+                                {% if button.data_call_args %}data-call-args="{{ button.data_call_args }}"{% endif %}
+                                {% if button.data_call_pass_this %}data-call-pass-this="true"{% endif %}
+                                {% if button.data_submit_with_spinner %}data-submit-with-spinner="{{ button.data_submit_with_spinner }}"{% endif %}
+                                {% if button.data_bs_dismiss %}data-bs-dismiss="{{ button.data_bs_dismiss }}"{% endif %}
+                                {% if button.data_bs_toggle %}data-bs-toggle="{{ button.data_bs_toggle }}"{% endif %}
+                                {% if button.data_bs_target %}data-bs-target="{{ button.data_bs_target }}"{% endif %}
                                 {% if button.disabled %}disabled{% endif %}>
                             {% if button.icon %}<i class="{{ button.icon }} me-1"></i>{% endif %}
                             {{ button.text }}

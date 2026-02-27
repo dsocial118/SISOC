@@ -308,12 +308,12 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             )
 
         documentos_rendicion_mensual = (
-            comedor.rendiciones_cuentas_mensuales.prefetch_related("arvhios_adjuntos")
+            comedor.rendiciones_cuentas_mensuales.prefetch_related("archivos_adjuntos")
             .all()
             .order_by("-anio", "-mes")
         )
         for rendicion in documentos_rendicion_mensual:
-            for adjunto in rendicion.arvhios_adjuntos.all():
+            for adjunto in rendicion.archivos_adjuntos.all():
                 documentos.append(
                     {
                         "id": f"rendicion-mensual-{adjunto.id}",
@@ -665,7 +665,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     def _get_rendiciones_queryset(self, comedor):
         return (
             RendicionCuentaMensual.objects.filter(comedor=comedor)
-            .prefetch_related("arvhios_adjuntos")
+            .prefetch_related("archivos_adjuntos")
             .order_by("-anio", "-mes", "-id")
         )
 
@@ -854,7 +854,7 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         if not rendicion:
             raise Http404("Rendición no encontrada.")
 
-        if not rendicion.arvhios_adjuntos.exists():
+        if not rendicion.archivos_adjuntos.exists():
             return Response(
                 {
                     "detail": "No se puede presentar una rendición sin comprobantes adjuntos."

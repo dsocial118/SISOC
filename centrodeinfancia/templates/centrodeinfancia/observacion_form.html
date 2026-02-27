@@ -19,7 +19,7 @@
                             {% csrf_token %}
                             {{ form.observacion|as_crispy_field }}
                             <button class="btn btn-primary mx-1" type="submit">Confirmar</button>
-                            <a href="#" onclick="window.history.back();" class="btn btn-secondary">Cancelar</a>
+                            <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
                         </form>
                     </div>
                 </div>

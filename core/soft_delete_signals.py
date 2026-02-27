@@ -1,11 +1,5 @@
-"""Domain signals emitted for soft-delete lifecycle events."""
+"""Compatibility wrapper for legacy imports of soft-delete signals."""
 
-from django.dispatch import Signal
+from core.soft_delete.signals import post_restore, post_soft_delete
 
-# Sent after a model instance was soft-deleted.
-# kwargs: user, cascade, root
-post_soft_delete = Signal()
-
-# Sent after a model instance was restored.
-# kwargs: user, cascade, root
-post_restore = Signal()
+__all__ = ["post_soft_delete", "post_restore"]

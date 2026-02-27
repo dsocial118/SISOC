@@ -55,7 +55,7 @@
                                         <td>
                                             <form method="post"
                                                   action="{% url 'validar_documento_rendicion_cuentas_final' documento.id %}"
-                                                  onsubmit="return confirm('¿Estás seguro de que querés validar este documento?');">
+                                                  data-confirm-submit="¿Estás seguro de que querés validar este documento?">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-warning btn-sm">Validar</button>
                                             </form>
@@ -125,6 +125,6 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script>SUBSANAR_URL = "{% url 'subsanar_documento_rendicion_cuentas_final' 0 %}";</script>
+    <script nonce="{{ request.csp_nonce }}">SUBSANAR_URL = "{% url 'subsanar_documento_rendicion_cuentas_final' 0 %}";</script>
     <script src="{% static 'custom/js/rendicioncuentasfinallist.js' %}"></script>
 {% endblock %}
