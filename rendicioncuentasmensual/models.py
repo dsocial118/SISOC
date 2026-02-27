@@ -71,4 +71,4 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
 
     @property
     def arvhios_adjuntos(self):  # compat legacy (typo histórico)
-        return self.archivos_adjuntos
+        return getattr(self, "archivos_adjuntos")

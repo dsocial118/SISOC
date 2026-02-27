@@ -708,7 +708,9 @@ def test_verificar_estado_admision_actualiza_solo_cuando_corresponde(mocker):
     actualizar_estado_2.assert_not_called()
 
 
-def test_verificar_estado_admision_no_actualiza_en_estados_excluidos_o_incompletos(mocker):
+def test_verificar_estado_admision_no_actualiza_en_estados_excluidos_o_incompletos(
+    mocker,
+):
     adm_cerrado = SimpleNamespace(pk=12, estado_id=3, save=mocker.Mock())
     mocker.patch(
         "admisiones.services.admisiones_service.ArchivoAdmision.objects.filter",

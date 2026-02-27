@@ -83,4 +83,6 @@ def test_subir_documentacion_acepta_archivo_valido(mocker):
     payload = json.loads(response.content)
     assert payload["success"] is True
     assert intervencion.tiene_documentacion is True
-    assert intervencion.saved_kwargs == {"update_fields": ["documentacion", "tiene_documentacion"]}
+    assert intervencion.saved_kwargs == {
+        "update_fields": ["documentacion", "tiene_documentacion"]
+    }

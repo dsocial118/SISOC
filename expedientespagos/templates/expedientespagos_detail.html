@@ -28,12 +28,14 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                        <a class="dropdown-item" href="{% url 'expedientespagos_update' expediente.id %}">
+                        <a class="dropdown-item"
+                           href="{% url 'expedientespagos_update' expediente.id %}">
                             <i class="bi bi-pencil me-1"></i>Editar
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item text-danger" href="{% url 'expedientespagos_delete' expediente.id %}">
+                        <a class="dropdown-item text-danger"
+                           href="{% url 'expedientespagos_delete' expediente.id %}">
                             <i class="bi bi-trash me-1"></i>Eliminar
                         </a>
                     </li>
@@ -80,7 +82,9 @@
                         <small class="text-muted d-block">Anexo</small>
                         <span class="fw-semibold">{{ expediente.anexo|default:"-" }}</span>
                     </div>
-                    <div class="col-12"><hr class="my-0"></div>
+                    <div class="col-12">
+                        <hr class="my-0" />
+                    </div>
                     <div class="col-md-6">
                         <small class="text-muted d-block">Número de Orden de Pago</small>
                         <span class="fw-semibold">{{ expediente.numero_orden_pago|default:"-" }}</span>
@@ -115,9 +119,17 @@
                 <table class="table table-bordered table-sm mb-0">
                     <thead>
                         <tr>
-                            <th scope="col" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">Tipo</th>
-                            <th scope="col" class="text-end" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">Prestaciones</th>
-                            <th scope="col" class="text-end" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">Monto Mensual</th>
+                            <th scope="col"
+                                style="background-color: #3d4f63 !important;
+                                       border-bottom: 2px solid #e7ba61 !important">Tipo</th>
+                            <th scope="col"
+                                class="text-end"
+                                style="background-color: #3d4f63 !important;
+                                       border-bottom: 2px solid #e7ba61 !important">Prestaciones</th>
+                            <th scope="col"
+                                class="text-end"
+                                style="background-color: #3d4f63 !important;
+                                       border-bottom: 2px solid #e7ba61 !important">Monto Mensual</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -144,9 +156,19 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <th scope="row" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">Total</th>
-                            <th scope="col" class="text-end" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">—</th>
-                            <th scope="col" class="text-end" style="background-color: #3d4f63 !important; border-bottom: 2px solid #e7ba61 !important;">${{ expediente.total|floatformat:2 }}</th>
+                            <th scope="row"
+                                style="background-color: #3d4f63 !important;
+                                       border-bottom: 2px solid #e7ba61 !important">Total</th>
+                            <th scope="col"
+                                class="text-end"
+                                style="background-color: #3d4f63 !important;
+                                       border-bottom: 2px solid #e7ba61 !important">—</th>
+                            <th scope="col"
+                                class="text-end"
+                                style="background-color: #3d4f63 !important;
+                                       border-bottom: 2px solid #e7ba61 !important">
+                                ${{ expediente.total|floatformat:2 }}
+                            </th>
                         </tr>
                     </tfoot>
                 </table>
