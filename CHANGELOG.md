@@ -5,10 +5,9 @@
 - Nuevo módulo de Comunicados con soporte para mensajes internos y externos, gestión de archivo adjuntos, destacados y control de visibilidad por permisos
 - Sistema de Papelera con vista previa de impacto antes de eliminar, permitiendo recuperación de registros eliminados y visualización de elementos afectados
 - Módulo Centro de Infancia completamente renovado con gestión de nómina, intervenciones, documentación y permisos por provincia
-- Integración con servicio RENAPER para consulta de datos de ciudadanos mediante endpoint proxy con autenticación APIKey
 - ABM de Montos de Prestaciones con vinculación directa a programas y gestión de histórico de valores
 - Nuevos tipos de capacitaciones: "Asistencia a Capacitación Formando Capital Humano" con 8 subtipos específicos y "Asistencia a Capacitación Sincrónica"
-- API REST para comunicados externos, permitiendo integración con sistemas de terceros
+- API REST para comunicados externos, permitiendo integración con SISOC Mobile
 - Validación individual y masiva de comedores mediante importación de archivos CSV
 - Consulta RENAPER con fallback automático para alta de beneficiarios en Centro de Infancia
 
@@ -21,7 +20,7 @@
 - Fortalecimiento de política de seguridad de contenidos (CSP) y saneamiento de plantillas y dependencias
 - Refactorización de servicios críticos en paquetes modulares manteniendo compatibilidad con código existente
 - Consolidación de infraestructura de borrado lógico en módulo central reutilizable
-- Ampliación de cobertura de pruebas automáticas en módulos de Comunicados, Centro de Infancia, Auditoría y eliminación lógica
+- Ampliación de cobertura de pruebas automáticas en un 75% de codigo total cubierto
 - Mejoras de rendimiento eliminando consultas N+1 en listados de comunicados con annotate
 - Actualización de grupos de usuarios y optimización de consultas en vistas de prestaciones
 - Mejoras en Novedades del Sistema con tarjetas colapsables por versión
