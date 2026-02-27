@@ -172,10 +172,11 @@ def _get_models_to_scan(selected_key, models_by_key, order_keys):
 def _build_deleted_queryset(models_to_scan, filter_data):
     """Build a combined queryset of deleted items without materializing rows."""
     querysets = []
+
+    # Note: We cannot use UNION with different models because they have different
+    # column counts. For multiple models, we materialize and sort in Python.
     for model in models_to_scan:
-        queryset = model.all_objects.filter(deleted_at__isnull=False).select_related(
-            "deleted_by"
-        )
+        queryset = model.all_objects.filter(deleted_at__isnull=False)
         if filter_data:
             queryset = _search_queryset(model, queryset, filter_data.get("q", ""))
             queryset = _apply_deleted_by_filter(queryset, filter_data.get("deleted_by"))
@@ -189,11 +190,20 @@ def _build_deleted_queryset(models_to_scan, filter_data):
     if not querysets:
         return models_to_scan[0].all_objects.none()
 
-    combined = querysets[0]
-    for qs in querysets[1:]:
-        combined = combined.union(qs)
+    # Single model: return queryset as-is for efficient DB-level pagination
+    if len(querysets) == 1:
+        return querysets[0].order_by("-deleted_at", "-pk")
 
-    return combined.order_by("-deleted_at", "-pk")
+    # Multiple models: get top items from each, combine and sort in Python
+    # (UNION not viable due to different column counts across models)
+    items = []
+    for qs in querysets:
+        # Get top 200 from each model to avoid excessive memory usage
+        items.extend(list(qs.order_by("-deleted_at", "-pk")[:200]))
+
+    # Sort combined results by deleted_at desc, pk desc
+    items.sort(key=lambda x: (x.deleted_at, x.pk), reverse=True)
+    return items
 
 
 def _rows_from_items(items, models_by_key):
