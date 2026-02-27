@@ -123,15 +123,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"Centro de Infancia Listar" %}
-                <li class="nav-item">
-                    <a href="{% url 'centrodeinfancia' %}"
-                       class="nav-link {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon bi bi-emoji-smile-fill"></i>
-                        <p>Centro de Infancia</p>
-                    </a>
-                </li>
-            {% endif %}
+            <!-- TODO: Restaurar Centro de Infancia cuando cdi.urls esté nuevamente en config/urls.py -->
             {% if request.user|has_group:"Ciudadanos" %}
                 <li class="nav-item">
                     <a href="{% url 'ciudadanos' %}"

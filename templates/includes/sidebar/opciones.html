@@ -184,7 +184,7 @@
         {% endif %}
     {% endwith %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
             <p>
@@ -330,29 +330,7 @@
                     </ul>
                 </li>
             {% endif %}
-
-            <!-- Centro de Infancia -->
-            {% if request.user|has_group:"Centro de Infancia Listar" %}
-                <li class="nav-item {% if 'centrodeinfancia' in pagina_actual %}menu-open{% endif %}">
-                    <a href="#"
-                       class="nav-link nav-dot ms-2 {% if 'centrodeinfancia' in pagina_actual %}active{% endif %}">
-                        <p>
-                            Centro de Infancia
-                            <i class="nav-arrow bi bi-chevron-right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{% url 'centrodeinfancia' %}"
-                               class="nav-link ms-4 {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
-                                <i class="nav-icon bi bi-arrow-return-right"></i>
-                                <p>Ver Centros de Infancia</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-            {% endif %}
-            <!-- CENTRO DE FAMILIA -->
+            <!-- TODO: Restaurar Centro de Infancia cuando cdi.urls esté nuevamente en config/urls.py -->
             {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or request.user|has_group:"CDF SSE" %}
                 <li class="nav-item {% if 'centros' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
