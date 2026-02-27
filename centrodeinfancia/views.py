@@ -323,7 +323,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
                         "centrodeinfancia_intervencion_editar",
                         args=[self.object.id, intervencion.id],
                     ),
-                )
+                ),
             ]
             if self.request.user.is_superuser:
                 actions.append(
