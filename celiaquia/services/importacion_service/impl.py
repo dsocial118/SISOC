@@ -1447,7 +1447,7 @@ def _procesar_beneficiario_desde_row_importacion(
     es_mismo_documento_resp = _es_mismo_documento_responsable_importacion(payload)
     doc_beneficiario = str(payload.get('documento', '')).strip()
     es_doble_rol = es_mismo_documento_resp or (doc_beneficiario in doble_rol_docs)
-    
+
     if es_doble_rol:
         add_warning(
             offset,
@@ -1602,17 +1602,17 @@ def _identificar_documentos_con_doble_rol(df):
     """Identifica qué documentos de beneficiarios también son responsables de otros."""
     documentos_beneficiarios = set()
     documentos_responsables = set()
-    
+
     for _, row in df.iterrows():
         doc_benef = str(row.get('documento', '')).strip()
         doc_resp = str(row.get('documento_responsable', '')).strip()
-        
+
         if doc_benef and doc_benef not in ('', 'nan', 'None'):
             documentos_beneficiarios.add(doc_benef)
-        
+
         if doc_resp and doc_resp not in ('', 'nan', 'None'):
             documentos_responsables.add(doc_resp)
-    
+
     # Documentos que son tanto beneficiarios como responsables
     doble_rol_docs = documentos_beneficiarios & documentos_responsables
     logger.info(f"Documentos con doble rol detectados: {doble_rol_docs}")
@@ -1641,7 +1641,7 @@ def _build_contexto_filas_importacion_legajos(
     precargas = _precargar_datos_importacion(df, provincia_usuario_id)
     sexos_cache = precargas["sexos_cache"]
     normalizar_sexo = _build_normalizar_sexo_importacion(sexos_cache)
-    
+
     # Identificar documentos con doble rol
     doble_rol_docs = _identificar_documentos_con_doble_rol(df)
 
