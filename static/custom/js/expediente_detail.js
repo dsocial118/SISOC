@@ -298,13 +298,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
       const selCampo = modalArchivo.querySelector('#campo-archivo');
-      if (selCampo) selCampo.value = defaultCampo;
-
-      // Actualizar labels dinámicamente
-      const optArchivo2 = document.getElementById('opt-archivo2');
-      const optArchivo3 = document.getElementById('opt-archivo3');
-      if (optArchivo2) optArchivo2.textContent = archivo2Label;
-      if (optArchivo3) optArchivo3.textContent = archivo3Label;
+      if (selCampo) {
+        selCampo.value = defaultCampo;
+        
+        // Actualizar opciones disponibles según los archivos requeridos
+        const optArchivo1 = document.getElementById('opt-archivo1');
+        const optArchivo2 = document.getElementById('opt-archivo2');
+        const optArchivo3 = document.getElementById('opt-archivo3');
+        
+        // Mostrar u ocultar archivo1 según si está en los requeridos
+        if (optArchivo1) {
+          const archivo1Label = button?.getAttribute('data-archivo1-label') || '';
+          if (archivo1Label) {
+            optArchivo1.textContent = archivo1Label;
+            optArchivo1.style.display = '';
+          } else {
+            optArchivo1.style.display = 'none';
+          }
+        }
+        
+        if (optArchivo2) optArchivo2.textContent = archivo2Label;
+        if (optArchivo3) optArchivo3.textContent = archivo3Label;
+      }
 
       const inputArchivo = uploadForm.querySelector('input[type="file"]');
       if (inputArchivo) inputArchivo.value = '';
@@ -319,9 +334,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = uploadForm.getAttribute('action');
       const formData = new FormData(uploadForm);
 
-      // mapear campo -> slot (2/3) que espera el backend
+      // mapear campo -> slot (1/2/3) que espera el backend
       const campo = (formData.get('campo') || '').toString().toLowerCase();
-      const slotMap = { 'archivo2': 2, 'archivo3': 3 };
+      const slotMap = { 'archivo1': 1, 'archivo2': 2, 'archivo3': 3 };
       const slot = slotMap[campo];
       if (!slot) {
         showAlert('danger', 'Campo inválido.');
@@ -1582,6 +1597,40 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== EDITAR LEGAJO ===== */
   const modalEditarLegajo = document.getElementById('modalEditarLegajo');
   if (modalEditarLegajo) {
+    // Configurar filtrado de localidades por municipio
+    const selectMunicipio = document.getElementById('editar-municipio');
+    const selectLocalidad = document.getElementById('editar-localidad');
+    
+    if (selectMunicipio && selectLocalidad) {
+      selectMunicipio.addEventListener('change', function() {
+        const municipioId = this.value;
+        const opciones = selectLocalidad.querySelectorAll('option');
+        
+        opciones.forEach(option => {
+          if (option.value === '') {
+            option.style.display = '';
+            return;
+          }
+          
+          const optionMunicipioId = option.getAttribute('data-municipio');
+          if (!municipioId || optionMunicipioId === municipioId) {
+            option.style.display = '';
+          } else {
+            option.style.display = 'none';
+          }
+        });
+        
+        // Si la localidad actual no pertenece al municipio seleccionado, limpiar
+        const localidadActual = selectLocalidad.value;
+        if (localidadActual) {
+          const optionActual = selectLocalidad.querySelector(`option[value="${localidadActual}"]`);
+          if (optionActual && optionActual.style.display === 'none') {
+            selectLocalidad.value = '';
+          }
+        }
+      });
+    }
+    
     modalEditarLegajo.addEventListener('show.bs.modal', async function(event) {
       const button = event.relatedTarget;
       const legajoId = button.getAttribute('data-legajo-id');
@@ -1629,6 +1678,20 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('editar-calle').value = legajo.calle;
           document.getElementById('editar-altura').value = legajo.altura;
           document.getElementById('editar-codigo-postal').value = legajo.codigo_postal;
+          
+          // Primero establecer municipio
+          if (legajo.municipio) {
+            document.getElementById('editar-municipio').value = legajo.municipio;
+            // Disparar el evento change para filtrar localidades
+            selectMunicipio.dispatchEvent(new Event('change'));
+          }
+          
+          // Luego establecer localidad (después del filtrado)
+          setTimeout(() => {
+            if (legajo.localidad) {
+              document.getElementById('editar-localidad').value = legajo.localidad;
+            }
+          }, 100);
           
           // Configurar la acción del formulario
           const form = document.getElementById('form-editar-legajo');
