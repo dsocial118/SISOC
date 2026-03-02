@@ -1445,7 +1445,7 @@ def _procesar_beneficiario_desde_row_importacion(
 
     # Detectar doble rol: mismo documento O documento en lista de doble rol
     es_mismo_documento_resp = _es_mismo_documento_responsable_importacion(payload)
-    doc_beneficiario = str(payload.get('documento', '')).strip()
+    doc_beneficiario = str(payload.get("documento", "")).strip()
     es_doble_rol = es_mismo_documento_resp or (doc_beneficiario in doble_rol_docs)
 
     if es_doble_rol:
@@ -1598,24 +1598,24 @@ def _procesar_fila_legajo_importacion(
         return 0, 1
 
 
-def _identificar_documentos_con_doble_rol(df):
+def _identificar_documentos_con_doble_rol(df):  # pylint: disable=invalid-name
     """Identifica qué documentos de beneficiarios también son responsables de otros."""
     documentos_beneficiarios = set()
     documentos_responsables = set()
 
     for _, row in df.iterrows():
-        doc_benef = str(row.get('documento', '')).strip()
-        doc_resp = str(row.get('documento_responsable', '')).strip()
+        doc_benef = str(row.get("documento", "")).strip()
+        doc_resp = str(row.get("documento_responsable", "")).strip()
 
-        if doc_benef and doc_benef not in ('', 'nan', 'None'):
+        if doc_benef and doc_benef not in ("", "nan", "None"):
             documentos_beneficiarios.add(doc_benef)
 
-        if doc_resp and doc_resp not in ('', 'nan', 'None'):
+        if doc_resp and doc_resp not in ("", "nan", "None"):
             documentos_responsables.add(doc_resp)
 
     # Documentos que son tanto beneficiarios como responsables
     doble_rol_docs = documentos_beneficiarios & documentos_responsables
-    logger.info(f"Documentos con doble rol detectados: {doble_rol_docs}")
+    logger.info("Documentos con doble rol detectados: %s", doble_rol_docs)
     return doble_rol_docs
 
 
