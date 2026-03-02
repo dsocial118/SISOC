@@ -136,53 +136,6 @@ class AcompanamientoService:
             if subtipos_registrados >= subtipos_fch:
                 hitos_objeto.capacitacion_fch_realizada = True
                 hitos_objeto.save()
-        @staticmethod
-        def _verificar_hito_capacitacion_fch(hitos_objeto, comedor):
-            """Marca el hito FCH como completado cuando todos los subtipos están registrados.
-
-            El hito 'Capacitación Formando Capital Humano Realizada' se completa únicamente
-            cuando se han registrado los 8 subtipos de intervención correspondientes al tipo
-            'Asistencia a Capacitación Formando Capital Humano' para el comedor dado.
-
-            Optimización: usa Count(distinct=True) agregado en lugar de set comparison
-            para evitar N+1 queries y ser más claro en intención.
-
-            Args:
-                hitos_objeto (Hitos): Instancia a modificar.
-                comedor: Comedor al cual pertenecen las intervenciones.
-
-            Returns:
-                None
-            """
-            from django.db.models import Count
-
-            tipo_fch = "Asistencia a Capacitación Formando Capital Humano"
-            subtipos_fch_nombres = [
-                "Creación de Usuario en Plataforma Alimentar Comunidad",
-                "Uso de Plataforma Alimentar Comunidad: Cómo consultar saldo y subir comprobantes",
-                "Retiro y Uso de la Tarjeta Alimentar Comunidad",
-                "Criterios Nutricionales - Alimentar Comunidad",
-                "Rendición de Cuentas Resolución 650/25 - Alimentar Comunidad",
-                "Gastos Accesorios 6% - Resolución 650/25 - Alimentar Comunidad",
-                "Pautas de Higiene - Alimentar Comunidad",
-                "Seguridad en la Cocina - Alimentar Comunidad",
-            ]
-            num_subtipos_esperados = len(subtipos_fch_nombres)
-            try:
-                result = Intervencion.objects.filter(
-                    comedor=comedor,
-                    tipo_intervencion__nombre=tipo_fch,
-                    subintervencion__nombre__in=subtipos_fch_nombres,
-                ).select_related(
-                    "tipo_intervencion", "subintervencion"
-                ).aggregate(
-                    unique_subtipos=Count("subintervencion__pk", distinct=True)
-                )
-            
-                # Si todas las 8 subtipos están registradas, marcar como completado
-                if result["unique_subtipos"] == num_subtipos_esperados:
-                    hitos_objeto.capacitacion_fch_realizada = True
-                    hitos_objeto.save()
         except Exception:
             logger.exception(
                 "Error en AcompanamientoService._verificar_hito_capacitacion_fch",

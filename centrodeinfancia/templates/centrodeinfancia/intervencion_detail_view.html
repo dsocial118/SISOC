@@ -52,7 +52,7 @@
                                         {% if request.user.is_superuser %}
                                             <form action="{% url 'centrodeinfancia_eliminar_archivo_intervencion' intervencion.id %}"
                                                   method="POST"
-                                                                                                    id="form-eliminar-documentacion"
+                                                  id="form-eliminar-documentacion"
                                                   style="display:inline">
                                                 {% csrf_token %}
                                                 <button type="button"
@@ -93,12 +93,14 @@
                 <div class="modal-body">¿Está seguro de que desea eliminar la documentación adjunta?</div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                        <button type="button" class="btn btn-danger" id="btn-confirmar-eliminar-documentacion">Eliminar</button>
+                    <button type="button"
+                            class="btn btn-danger"
+                            id="btn-confirmar-eliminar-documentacion">Eliminar</button>
                 </div>
             </div>
         </div>
     </div>
-        <script nonce="{{ request.csp_nonce }}">
+    <script nonce="{{ request.csp_nonce }}">
             document.addEventListener("DOMContentLoaded", function () {
                 const confirmBtn = document.getElementById("btn-confirmar-eliminar-documentacion");
                 const form = document.getElementById("form-eliminar-documentacion");
@@ -109,5 +111,5 @@
                     form.submit();
                 });
             });
-        </script>
+    </script>
 {% endblock %}

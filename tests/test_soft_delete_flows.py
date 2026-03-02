@@ -188,7 +188,9 @@ def test_papelera_list_fallbacks_when_queryset_count_fails(auth_client, monkeypa
         lambda **kwargs: failing_queryset,
     )
 
-    response = auth_client.get(reverse("papelera_list"), {"model": _categoria_model_key()})
+    response = auth_client.get(
+        reverse("papelera_list"), {"model": _categoria_model_key()}
+    )
 
     assert response.status_code == 200
     assert str(deleted) in response.content.decode()
