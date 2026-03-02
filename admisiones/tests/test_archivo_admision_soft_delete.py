@@ -58,7 +58,7 @@ def test_archivo_admision_soft_deleted_excluido_de_queries_normales(
 ):
     """
     Regresión: ArchivoAdmision.objects.all() excluye soft-deleted.
-    
+
     Valida que después de soft delete, la query normal no retorna el archivo
     (pero all_objects sí lo incluye).
     """
@@ -72,9 +72,9 @@ def test_archivo_admision_soft_deleted_excluido_de_queries_normales(
 
     # Verificar que está en query normal
     assert ArchivoAdmision.objects.filter(admision=admision_fixture).count() == 1
-    assert (
-        ArchivoAdmision.objects.filter(pk=archivo_pk).exists()
-    ), "Archivo debe existir antes de delete"
+    assert ArchivoAdmision.objects.filter(
+        pk=archivo_pk
+    ).exists(), "Archivo debe existir antes de delete"
 
     # Soft delete
     archivo.delete(user=user_fixture)
@@ -91,14 +91,16 @@ def test_archivo_admision_soft_deleted_excluido_de_queries_normales(
     assert (
         ArchivoAdmision.all_objects.filter(admision=admision_fixture).count() == 1
     ), "Soft deleted archivo debe estar en all_objects"
-    assert (
-        ArchivoAdmision.all_objects.filter(pk=archivo_pk).exists()
-    ), "Soft deleted archivo debe existir en all_objects"
+    assert ArchivoAdmision.all_objects.filter(
+        pk=archivo_pk
+    ).exists(), "Soft deleted archivo debe existir en all_objects"
 
     # Verificar que deleted_at y deleted_by fueron seteados
     deleted_archivo = ArchivoAdmision.all_objects.get(pk=archivo_pk)
     assert deleted_archivo.deleted_at is not None, "deleted_at debe estar seteado"
-    assert deleted_archivo.deleted_by_id == user_fixture.id, "deleted_by debe ser el usuario"
+    assert (
+        deleted_archivo.deleted_by_id == user_fixture.id
+    ), "deleted_by debe ser el usuario"
 
 
 def test_archivo_admision_reverse_relation_respeta_soft_delete(
@@ -106,7 +108,7 @@ def test_archivo_admision_reverse_relation_respeta_soft_delete(
 ):
     """
     Regresión: admision.archivoadmision_set respeta soft delete.
-    
+
     Valida que `.archivoadmision_set.all()` excluye soft-deleted en queries reverse.
     """
     archivo = ArchivoAdmision.objects.create(
@@ -126,9 +128,7 @@ def test_archivo_admision_reverse_relation_respeta_soft_delete(
     ), "Reverse relation debe excluir soft-deleted"
 
     # Pero all_objects sí lo ve
-    assert (
-        ArchivoAdmision.all_objects.filter(admision=admision_fixture).count() == 1
-    )
+    assert ArchivoAdmision.all_objects.filter(admision=admision_fixture).count() == 1
 
 
 def test_archivo_admision_multiple_soft_deleted(
@@ -136,7 +136,7 @@ def test_archivo_admision_multiple_soft_deleted(
 ):
     """
     Regresión: múltiples archivos, algunos deleted.
-    
+
     Verifica que un mix de normal + soft-deleted se filtre correctamente.
     """
     arch1 = ArchivoAdmision.objects.create(
@@ -180,7 +180,7 @@ def test_archivo_admision_soft_delete_restore(
 ):
     """
     Regresión: restore trae el archivo de vuelta.
-    
+
     Valida que `.restore()` reactive un soft-deleted.
     """
     archivo = ArchivoAdmision.objects.create(
@@ -199,7 +199,9 @@ def test_archivo_admision_soft_delete_restore(
 
     # Ahora está de vuelta en query normal
     assert ArchivoAdmision.objects.filter(pk=archivo_pk).exists()
-    assert deleted_archivo.deleted_at is None, "deleted_at debe ser None después de restore"
+    assert (
+        deleted_archivo.deleted_at is None
+    ), "deleted_at debe ser None después de restore"
 
 
 def test_archivo_admision_prefetch_related_respeta_soft_delete(
@@ -207,7 +209,7 @@ def test_archivo_admision_prefetch_related_respeta_soft_delete(
 ):
     """
     Regresión: prefetch_related respeta soft delete managers.
-    
+
     Valida que `prefetch_related("archivos")` no incluya soft-deleted.
     """
     archivo = ArchivoAdmision.objects.create(

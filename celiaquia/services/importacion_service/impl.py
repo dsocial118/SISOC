@@ -1949,48 +1949,46 @@ class ImportacionService:
         expediente, archivo_excel, usuario, batch_size=1000
     ):
         """Importa legajos desde un archivo Excel al expediente indicado."""
-            from django.db import transaction
-        
         data = _leer_bytes_archivo_importacion(archivo_excel)
         df = _leer_excel_importacion(data)
         df = _normalizar_dataframe_importacion(df)
-        
-            try:
-                with transaction.atomic():
-                    buffers = _inicializar_buffers_importacion_legajos()
-                    detalles_errores = buffers["detalles_errores"]
-                    excluidos = buffers["excluidos"]
-                    warnings = buffers["warnings"]
-                    legajos_crear = buffers["legajos_crear"]
-                    relaciones_familiares = buffers["relaciones_familiares"]  # padre-hijo
-                    relaciones_familiares_pairs = buffers["relaciones_familiares_pairs"]
-                    contexto_filas = _build_contexto_filas_importacion_legajos(
-                        df=df,
-                        usuario=usuario,
-                        expediente=expediente,
-                        warnings=warnings,
-                        detalles_errores=detalles_errores,
-                        excluidos=excluidos,
-                        legajos_crear=legajos_crear,
-                        relaciones_familiares_pairs=relaciones_familiares_pairs,
-                        relaciones_familiares=relaciones_familiares,
-                    )
-                    _, errores = _procesar_dataframe_importacion_legajos(df, contexto_filas)
 
-                    return _finalizar_importacion_legajos(
-                        expediente=expediente,
-                        batch_size=batch_size,
-                        legajos_crear=legajos_crear,
-                        excluidos=excluidos,
-                        relaciones_familiares=relaciones_familiares,
-                        detalles_errores=detalles_errores,
-                        warnings=warnings,
-                        errores=errores,
-                    )
-            except Exception as exc:
-                # transaction.atomic() revierte automáticamente todos los cambios
-                logger.exception(
-                    "Error durante importación de legajos desde Excel. Cambios revertidos.",
-                    extra={"expediente_id": expediente.id, "archivo": archivo_excel.name},
+        try:
+            with transaction.atomic():
+                buffers = _inicializar_buffers_importacion_legajos()
+                detalles_errores = buffers["detalles_errores"]
+                excluidos = buffers["excluidos"]
+                warnings = buffers["warnings"]
+                legajos_crear = buffers["legajos_crear"]
+                relaciones_familiares = buffers["relaciones_familiares"]  # padre-hijo
+                relaciones_familiares_pairs = buffers["relaciones_familiares_pairs"]
+                contexto_filas = _build_contexto_filas_importacion_legajos(
+                    df=df,
+                    usuario=usuario,
+                    expediente=expediente,
+                    warnings=warnings,
+                    detalles_errores=detalles_errores,
+                    excluidos=excluidos,
+                    legajos_crear=legajos_crear,
+                    relaciones_familiares_pairs=relaciones_familiares_pairs,
+                    relaciones_familiares=relaciones_familiares,
                 )
-                raise
+                _, errores = _procesar_dataframe_importacion_legajos(df, contexto_filas)
+
+                return _finalizar_importacion_legajos(
+                    expediente=expediente,
+                    batch_size=batch_size,
+                    legajos_crear=legajos_crear,
+                    excluidos=excluidos,
+                    relaciones_familiares=relaciones_familiares,
+                    detalles_errores=detalles_errores,
+                    warnings=warnings,
+                    errores=errores,
+                )
+        except Exception as exc:
+            # transaction.atomic() revierte automáticamente todos los cambios
+            logger.exception(
+                "Error durante importación de legajos desde Excel. Cambios revertidos.",
+                extra={"expediente_id": expediente.id, "archivo": archivo_excel.name},
+            )
+            raise

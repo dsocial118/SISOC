@@ -505,11 +505,12 @@ class ExpedienteDetailView(DetailView):
 
             rol_normalizado = (getattr(legajo, "rol", "") or "").strip().lower()
             legajo.es_doble_rol = (
-                rol_normalizado
-                == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
-            ) or (legajo.es_responsable and legajo.responsable_id is not None) or (
-                rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO
-                and bool(hijos_list)
+                (rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE)
+                or (legajo.es_responsable and legajo.responsable_id is not None)
+                or (
+                    rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO
+                    and bool(hijos_list)
+                )
             )
 
             # Determinar tipo de legajo segun roles efectivos.
