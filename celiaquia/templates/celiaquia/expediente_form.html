@@ -132,13 +132,13 @@
 {% endblock %}
 {% block customJS %}
     <!-- Datos de provincias para el buscador -->
-    <script id="provincias-data" type="application/json">[
+    <script nonce="{{ request.csp_nonce }}" id="provincias-data" type="application/json">[
     {% for p in provincias %}
       {"id": {{ p.id }}, "nombre": "{{ p.nombre }}"}{% if not forloop.last %},{% endif %}
     {% endfor %}
   ]
     </script>
-    <script type="text/javascript">
+    <script nonce="{{ request.csp_nonce }}" type="text/javascript">
     window.PREVIEW_URL = "{% url 'expediente_preview_excel' %}";
     window.EXPEDIENTE_LOCALIDADES_URL = "{% url 'expediente_localidades_lookup' %}";
     </script>

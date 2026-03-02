@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import logging
 import os
 from datetime import date, datetime
@@ -31,7 +32,7 @@ from comedores.services.comedor_service import ComedorService
 from core.decorators import group_required
 from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from centrodeinfancia.access import (
     aplicar_filtro_provincia_usuario as _aplicar_filtro_provincia_usuario,
@@ -310,12 +311,19 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
 
             actions = [
                 format_html(
+                    '<a href="{}" class="btn btn-sm btn-primary">Ver</a>',
+                    reverse(
+                        "centrodeinfancia_intervencion_detalle",
+                        args=[intervencion.id],
+                    ),
+                ),
+                format_html(
                     '<a href="{}" class="btn btn-sm btn-warning">Editar</a>',
                     reverse(
                         "centrodeinfancia_intervencion_editar",
                         args=[self.object.id, intervencion.id],
                     ),
-                )
+                ),
             ]
             if self.request.user.is_superuser:
                 actions.append(
@@ -434,7 +442,10 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["observaciones_page_obj"] = observaciones_page_obj
         context["observaciones_is_paginated"] = observaciones_page_obj.has_other_pages()
         context["observaciones_page_range"] = observaciones_page_range
-        context["intervencion_form"] = IntervencionCentroInfanciaForm()
+        context["intervencion_form"] = IntervencionCentroInfanciaForm(
+            destinatario_fijo_nombre="Centro",
+            hide_destinatario=True,
+        )
         context["observacion_form"] = ObservacionCentroInfanciaForm()
         return context
 
@@ -568,9 +579,13 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
             if registro.estado == NominaCentroInfancia.ESTADO_PENDIENTE:
                 resumen["espera"] += 1
 
-            sexo = str(
-                getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "") or ""
-            ).strip().lower()
+            sexo = (
+                str(
+                    getattr(getattr(registro.ciudadano, "sexo", None), "sexo", "") or ""
+                )
+                .strip()
+                .lower()
+            )
             if "mascul" in sexo or sexo == "m":
                 resumen["nomina_m"] += 1
             elif "femen" in sexo or sexo == "f":
@@ -639,9 +654,7 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         context["nominaX"] = stats["nomina_x"]
         context["espera"] = stats["espera"]
         context["cantidad_nomina"] = stats["total"]
-        context["menores"] = (
-            stats["rangos"]["ninos"] + stats["rangos"]["adolescentes"]
-        )
+        context["menores"] = stats["rangos"]["ninos"] + stats["rangos"]["adolescentes"]
         context["nomina_rangos"] = stats["rangos"]
         context["ejecucion_inicio"] = centro.fecha_inicio
         context["ejecucion_fin"] = None
@@ -854,7 +867,10 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             except Exception:  # noqa: BLE001
                 logger.exception(
                     "Error al crear ciudadano y agregarlo a la nómina de CDI",
-                    extra={"centro_id": centro.id, "user_id": getattr(request.user, "id", None)},
+                    extra={
+                        "centro_id": centro.id,
+                        "user_id": getattr(request.user, "id", None),
+                    },
                 )
                 messages.error(
                     request,
@@ -920,9 +936,17 @@ class IntervencionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     form_class = IntervencionCentroInfanciaForm
     template_name = "centrodeinfancia/intervencion_form.html"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["destinatario_fijo_nombre"] = "Centro"
+        kwargs["hide_destinatario"] = True
+        return kwargs
+
     def form_valid(self, form):
         centro = _get_centro_cdi_scoped_or_404(self.request.user, pk=self.kwargs["pk"])
         form.instance.centro = centro
+        if form.destinatario_fijo_instance:
+            form.instance.destinatario = form.destinatario_fijo_instance
         messages.success(self.request, "Intervención creada correctamente.")
         return super().form_valid(form)
 
@@ -962,6 +986,24 @@ class IntervencionCentroInfanciaDeleteView(
 
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.kwargs["pk"]})
+
+
+class IntervencionCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
+    # TODO: Unificar modelo de intervenciones (Intervencion para comedores e IntervencionCentroInfancia para CDI)
+    # para evitar duplicación de vistas y templates de detalle.
+    model = IntervencionCentroInfancia
+    template_name = "centrodeinfancia/intervencion_detail_view.html"
+    context_object_name = "intervencion"
+
+    def get_queryset(self):
+        return _intervenciones_cdi_queryset_scoped(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = getattr(self.object, "centro", None)
+        if centro:
+            context["centro"] = {"id": centro.id, "nombre": centro.nombre}
+        return context
 
 
 class ObservacionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):

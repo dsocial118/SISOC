@@ -19,7 +19,7 @@ from rendicioncuentasfinal.models import (
     TipoDocumentoRendicionFinal,
 )
 from config.middlewares.threadlocals import get_current_user
-from core.soft_delete_signals import post_soft_delete
+from core.soft_delete.signals import post_soft_delete
 
 
 @receiver(post_save, sender=Comedor)

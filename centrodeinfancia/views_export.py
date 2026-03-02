@@ -7,6 +7,7 @@ from centrodeinfancia.models import CentroDeInfancia
 from core.mixins import CSVExportMixin
 from core.services.column_preferences import build_columns_context_from_fields
 
+
 class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_centrodeinfancia.csv"
 

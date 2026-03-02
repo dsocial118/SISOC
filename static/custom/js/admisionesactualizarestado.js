@@ -1,6 +1,18 @@
 let rectificarContext = null;
 let modalRectificarInstance = null;
 
+function getAdmisionesTecnicosConfigNode() {
+    return document.getElementById("admisiones-tecnicos-config");
+}
+
+function getAdmisionesTecnicosConfigValue(key, fallbackValue = null) {
+    const config = getAdmisionesTecnicosConfigNode();
+    if (config && config.dataset && config.dataset[key]) {
+        return config.dataset[key];
+    }
+    return fallbackValue;
+}
+
 function escapeHtml(value) {
     if (value === null || value === undefined) {
         return '';
@@ -416,8 +428,16 @@ function guardarNumeroGDE(documentoId) {
 // Función principal de actualización (modificada)
 function actualizarNumeroGDE(documentoId, numeroGDE) {
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const urlActualizarNumeroGde = getAdmisionesTecnicosConfigValue(
+        "urlActualizarNumeroGde",
+        window.URL_ACTUALIZAR_NUMERO_GDE
+    );
+    if (!urlActualizarNumeroGde) {
+        alert("No se pudo actualizar el número GDE.");
+        return;
+    }
     
-    fetch(window.URL_ACTUALIZAR_NUMERO_GDE, {
+    fetch(urlActualizarNumeroGde, {
         method: "POST",
         headers: {
             "X-CSRFToken": csrfToken,
@@ -551,19 +571,28 @@ function actualizarConvenioNumero(numero) {
         return;
     }
 
-    if (!window.URL_ACTUALIZAR_CONVENIO_NUMERO || !window.ADMISION_ID) {
+    const urlActualizarConvenioNumero = getAdmisionesTecnicosConfigValue(
+        "urlActualizarConvenioNumero",
+        window.URL_ACTUALIZAR_CONVENIO_NUMERO
+    );
+    const admisionId = getAdmisionesTecnicosConfigValue(
+        "admisionId",
+        window.ADMISION_ID
+    );
+
+    if (!urlActualizarConvenioNumero || !admisionId) {
         alert("No se pudo actualizar el numero de convenio.");
         return;
     }
 
-    fetch(window.URL_ACTUALIZAR_CONVENIO_NUMERO, {
+    fetch(urlActualizarConvenioNumero, {
         method: "POST",
         headers: {
             "X-CSRFToken": csrfInput.value,
             "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-            admision_id: window.ADMISION_ID,
+            admision_id: admisionId,
             convenio_numero: numero,
         }),
     })
@@ -656,4 +685,3 @@ function volverAModoVistaConvenioNumero() {
 window.activarEdicionConvenioNumero = activarEdicionConvenioNumero;
 window.cancelarEdicionConvenioNumero = cancelarEdicionConvenioNumero;
 window.guardarConvenioNumero = guardarConvenioNumero;
-

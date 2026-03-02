@@ -12,7 +12,7 @@ from dashboard.utils import (
     calcular_presupuesto_merienda,
     calcular_presupuesto_comida,
 )
-from core.soft_delete_signals import post_soft_delete, post_restore
+from core.soft_delete.signals import post_soft_delete, post_restore
 
 from .utils import table_exists
 

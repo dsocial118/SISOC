@@ -139,7 +139,8 @@
                 </div>
 
                 <div class="accordion-panel">
-                    <button type="button" class="accordion-header h5 accordion-header--responsables">Referente</button>
+                    <button type="button"
+                            class="accordion-header h5 accordion-header--responsables">Referente</button>
                     <div class="accordion-content">
                         <p class="mb-2">
                             <i class="bi bi-person me-2"></i><strong>Nombre:</strong> {{ centro.nombre_referente|default:"-" }}
@@ -298,11 +299,15 @@
                                            class="form-label">{{ intervencion_form.subintervencion.label }}</label>
                                     {{ intervencion_form.subintervencion }}
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="{{ intervencion_form.destinatario.id_for_label }}"
-                                           class="form-label">{{ intervencion_form.destinatario.label }}</label>
-                                    {{ intervencion_form.destinatario }}
-                                </div>
+                                {% if intervencion_form.destinatario.is_hidden %}
+                                    <div class="col-md-6 d-none">{{ intervencion_form.destinatario }}</div>
+                                {% else %}
+                                    <div class="col-md-6">
+                                        <label for="{{ intervencion_form.destinatario.id_for_label }}"
+                                               class="form-label">{{ intervencion_form.destinatario.label }}</label>
+                                        {{ intervencion_form.destinatario }}
+                                    </div>
+                                {% endif %}
                                 <div class="col-md-6">
                                     <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
                                            class="form-label">{{ intervencion_form.forma_contacto.label }}</label>
@@ -378,7 +383,7 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function() {
             const shell = document.querySelector(".accordion-shell");
             const accordion = document.querySelector(".accordion-horizontal");

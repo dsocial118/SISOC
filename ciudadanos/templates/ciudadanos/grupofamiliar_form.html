@@ -17,9 +17,7 @@
             </a>
         </div>
         <div>
-            <a href="#"
-               onclick="window.history.back(); return false;"
-               class="btn btn-secondary">Cancelar</a>
+            <a href="#" data-history-back="true" class="btn btn-secondary">Cancelar</a>
         </div>
     </div>
 
@@ -50,7 +48,7 @@
                 </div>
 
                 <div class="section-card" data-section="familiar">
-                    <div class="section-header" onclick="toggleSection('familiar')">
+                    <div class="section-header" data-toggle-section="familiar">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-user-friends"></i>
@@ -82,7 +80,7 @@
                 </div>
 
                 <div class="section-card" data-section="relacion">
-                    <div class="section-header" onclick="toggleSection('relacion')">
+                    <div class="section-header" data-toggle-section="relacion">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-heart"></i>
@@ -131,7 +129,7 @@
                 </div>
 
                 <div class="section-card" data-section="notas">
-                    <div class="section-header" onclick="toggleSection('notas')">
+                    <div class="section-header" data-toggle-section="notas">
                         <div class="section-header-left">
                             <div class="section-icon">
                                 <i class="fas fa-sticky-note"></i>
@@ -162,9 +160,7 @@
                         </a>
                     </div>
                     <div>
-                        <button type="button"
-                                onclick="window.history.back();"
-                                class="btn btn-secondary mr-2">
+                        <button type="button" data-history-back="true" class="btn btn-secondary mr-2">
                             <i class="fas fa-times mr-1"></i> Cancelar
                         </button>
                         <button type="submit" class="btn btn-success">
@@ -178,7 +174,7 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function () {
             const form = document.getElementById("grupoFamiliarForm");
             const progressBar = document.getElementById("progressBarFill");
