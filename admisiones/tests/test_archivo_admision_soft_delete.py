@@ -9,7 +9,12 @@ Valida que el cambio de QuerySet behavior con SoftDeleteManager no rompa:
 import pytest
 from django.contrib.auth import get_user_model
 
-from admisiones.models import Admision, ArchivoAdmision, Estado, Documentacion
+from admisiones.models.admisiones import (
+    Admision,
+    ArchivoAdmision,
+    EstadoAdmision,
+    Documentacion,
+)
 from comedores.models import Comedor
 
 
@@ -33,7 +38,7 @@ def comedor_fixture():
 
 @pytest.fixture
 def estado_fixture():
-    return Estado.objects.create(nombre="Pendiente")
+    return EstadoAdmision.objects.create(nombre="Pendiente")
 
 
 @pytest.fixture
