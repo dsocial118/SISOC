@@ -21,7 +21,7 @@ from core.services.column_preferences import (
     resolve_column_state,
 )
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from duplas.dupla_column_config import DUPLA_COLUMNS, DUPLA_LIST_KEY
 from duplas.dupla_filter_config import (

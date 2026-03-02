@@ -82,7 +82,7 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
   document.querySelectorAll(".campo-subsanar").forEach(function (checkbox) {
     checkbox.addEventListener("change", function () {
       const id = this.id.replace("check_", "input_");

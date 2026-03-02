@@ -7,15 +7,37 @@ logger = logging.getLogger("django")
 
 class RendicionCuentaMensualService:
     @staticmethod
+    def _get_archivos_adjuntos_data(data):
+        return data.get("archivos_adjuntos", data.get("arvhios_adjuntos"))
+
+    @staticmethod
+    def _asignar_archivos_adjuntos(rendicion, archivos_adjuntos):
+        if archivos_adjuntos is None:
+            return
+
+        manager = getattr(rendicion, "archivos_adjuntos", None)
+        if hasattr(manager, "set"):
+            manager.set(archivos_adjuntos)
+            return
+
+        # Compatibilidad con tests unitarios que usan SimpleNamespace.
+        setattr(rendicion, "archivos_adjuntos", archivos_adjuntos)
+
+    @staticmethod
     def crear_rendicion_cuenta_mensual(comedor, data):
         try:
+            archivos_adjuntos = (
+                RendicionCuentaMensualService._get_archivos_adjuntos_data(data)
+            )
             rendicion = RendicionCuentaMensual.objects.create(
                 comedor=comedor,
                 mes=data.get("mes"),
                 anio=data.get("anio"),
                 documento_adjunto=data.get("documento_adjunto"),
                 observaciones=data.get("observaciones"),
-                arvhios_adjuntos=data.get("arvhios_adjuntos"),
+            )
+            RendicionCuentaMensualService._asignar_archivos_adjuntos(
+                rendicion, archivos_adjuntos
             )
             return rendicion
         except Exception:
@@ -28,11 +50,16 @@ class RendicionCuentaMensualService:
     @staticmethod
     def actualizar_rendicion_cuenta_mensual(rendicion, data):
         try:
+            archivos_adjuntos = (
+                RendicionCuentaMensualService._get_archivos_adjuntos_data(data)
+            )
             rendicion.mes = data.get("mes")
             rendicion.anio = data.get("anio")
             rendicion.documento_adjunto = data.get("documento_adjunto")
             rendicion.observaciones = data.get("observaciones")
-            rendicion.arvhios_adjuntos = data.get("arvhios_adjuntos")
+            RendicionCuentaMensualService._asignar_archivos_adjuntos(
+                rendicion, archivos_adjuntos
+            )
             rendicion.save()
             return rendicion
         except Exception:
@@ -58,7 +85,7 @@ class RendicionCuentaMensualService:
         try:
             return RendicionCuentaMensual.objects.filter(
                 comedor=comedor
-            ).prefetch_related("arvhios_adjuntos")
+            ).prefetch_related("archivos_adjuntos")
         except Exception:
             logger.exception(
                 "Error en RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales",

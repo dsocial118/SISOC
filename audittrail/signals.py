@@ -20,7 +20,7 @@ from comedores.models import Comedor, ImagenComedor, Referente
 from audittrail.context import get_audit_context
 from audittrail.models import AuditEntryMeta
 from config.middlewares.threadlocals import get_current_user
-from core.soft_delete_signals import post_soft_delete
+from core.soft_delete.signals import post_soft_delete
 from intervenciones.models.intervenciones import Intervencion
 from organizaciones.models import Aval, Firmante, Organizacion
 from relevamientos.models import Relevamiento

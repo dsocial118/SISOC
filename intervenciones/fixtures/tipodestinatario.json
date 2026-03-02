@@ -19,5 +19,12 @@
       "fields": {
           "nombre": "Otros"
       }
+},
+{
+    "model": "intervenciones.tipodestinatario",
+    "pk": 4,
+    "fields": {
+        "nombre": "Centro"
+    }
   }
 ]

@@ -489,7 +489,7 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
 
 class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
     comprobantes = ComprobanteRendicionSerializer(
-        source="arvhios_adjuntos", many=True, read_only=True
+        source="archivos_adjuntos", many=True, read_only=True
     )
 
     class Meta(RendicionMensualListSerializer.Meta):

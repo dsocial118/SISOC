@@ -1,0 +1,62 @@
+<script nonce="{{ request.csp_nonce }}">
+(() => {
+    "use strict";
+
+    const setDarkTheme = (focus = false) => {
+        document.documentElement.setAttribute("data-bs-theme", "dark");
+        try {
+            localStorage.setItem("theme", "dark");
+        } catch (err) {
+            console.warn("No se pudo persistir el tema oscuro:", err);
+        }
+
+        const themeSwitcher = document.querySelector("#bd-theme");
+        const themeSwitcherText = document.querySelector("#bd-theme-text");
+        const activeThemeIcon = document.querySelector(".theme-icon-active i");
+        const darkButton = document.querySelector('[data-bs-theme-value="dark"]');
+
+        if (activeThemeIcon) {
+            activeThemeIcon.setAttribute("class", "bi bi-moon-fill me-2");
+        }
+
+        if (darkButton) {
+            darkButton.classList.add("active");
+            darkButton.setAttribute("aria-pressed", "true");
+        }
+
+        if (themeSwitcherText && themeSwitcher) {
+            themeSwitcher.setAttribute(
+                "aria-label",
+                `${themeSwitcherText.textContent} (dark)`
+            );
+        }
+
+        if (focus && themeSwitcher) {
+            themeSwitcher.focus();
+        }
+    };
+
+    setDarkTheme();
+
+    if (window.matchMedia) {
+        try {
+            window
+                .matchMedia("(prefers-color-scheme: dark)")
+                .addEventListener("change", () => setDarkTheme());
+        } catch (err) {
+            console.warn("No se pudo registrar el listener de tema oscuro:", err);
+        }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+        setDarkTheme();
+
+        document.querySelectorAll("[data-bs-theme-value]").forEach((toggle) => {
+            toggle.addEventListener("click", (event) => {
+                event.preventDefault();
+                setDarkTheme(true);
+            });
+        });
+    });
+})();
+</script>

@@ -540,7 +540,7 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
 $(document).ready(function() {
     const fechaField = $('#id_fecha_vencimiento_mandatos');
     const noCorrespondeCheckbox = $('#no_corresponde_fecha_vencimiento');

@@ -29,7 +29,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from core.soft_delete_views import SoftDeleteDeleteViewMixin
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from comedores.models import Comedor
 from relevamientos.form import RelevamientoForm

@@ -16,12 +16,12 @@ from django.views import View
 
 from core.forms import TrashFilterForm
 from core.security import safe_redirect
-from core.soft_delete_preview import build_restore_preview
-from core.soft_delete_registry import (
+from core.soft_delete.preview import build_restore_preview
+from core.soft_delete.registry import (
     get_soft_delete_model_choices,
     iter_soft_delete_models,
 )
-from core.soft_delete_views import SuperAdminRequiredMixin
+from core.soft_delete.view_helpers import SuperAdminRequiredMixin
 
 
 def _model_key(model):
@@ -141,6 +141,94 @@ def _instance_details(instance):
     return details
 
 
+def _build_filter_form_and_data(request, model_choices, models_by_key):
+    form_data = request.GET.copy() if request.GET else None
+    if form_data is not None:
+        selected_key = form_data.get("model", "")
+        if selected_key not in models_by_key:
+            selected_key = ""
+        form_data["model"] = selected_key
+        filter_form = TrashFilterForm(form_data, model_choices=model_choices)
+    else:
+        selected_key = ""
+        filter_form = TrashFilterForm(
+            model_choices=model_choices,
+            initial={"model": selected_key},
+        )
+
+    form_is_valid = filter_form.is_valid() if filter_form.is_bound else True
+    filter_data = (
+        filter_form.cleaned_data if filter_form.is_bound and form_is_valid else {}
+    )
+    return filter_form, selected_key, filter_data
+
+
+def _get_models_to_scan(selected_key, models_by_key, order_keys):
+    if selected_key:
+        return [models_by_key[selected_key]]
+    return [models_by_key[key] for key in order_keys]
+
+
+def _build_deleted_queryset(models_to_scan, filter_data):
+    """Build a combined queryset of deleted items without materializing rows."""
+    querysets = []
+
+    # Note: We cannot use UNION with different models because they have different
+    # column counts. For multiple models, we materialize and sort in Python.
+    for model in models_to_scan:
+        queryset = model.all_objects.filter(deleted_at__isnull=False)
+        if filter_data:
+            queryset = _search_queryset(model, queryset, filter_data.get("q", ""))
+            queryset = _apply_deleted_by_filter(queryset, filter_data.get("deleted_by"))
+            queryset = _apply_deleted_date_range_filter(
+                queryset,
+                filter_data.get("deleted_from"),
+                filter_data.get("deleted_to"),
+            )
+        querysets.append(queryset)
+
+    if not querysets:
+        return models_to_scan[0].all_objects.none()
+
+    # Single model: return queryset as-is for efficient DB-level pagination
+    if len(querysets) == 1:
+        return querysets[0].order_by("-deleted_at", "-pk")
+
+    # Multiple models: get top items from each, combine and sort in Python
+    # (UNION not viable due to different column counts across models)
+    items = []
+    for qs in querysets:
+        # Get top 200 from each model to avoid excessive memory usage
+        items.extend(list(qs.order_by("-deleted_at", "-pk")[:200]))
+
+    # Sort combined results by deleted_at desc, pk desc
+    items.sort(key=lambda x: (x.deleted_at, x.pk), reverse=True)
+    return items
+
+
+def _rows_from_items(items, models_by_key):
+    """Convert items into row dicts with metadata."""
+    rows = []
+    for item in items:
+        model = type(item)
+        model_label = str(model._meta.verbose_name).title()
+        rows.append(
+            {
+                "obj": item,
+                "app_label": item._meta.app_label,
+                "model_name": item._meta.model_name,
+                "model_label": model_label,
+            }
+        )
+    return rows
+
+
+def _build_pagination_querystring(request):
+    pagination_query_params = request.GET.copy()
+    pagination_query_params.pop("page", None)
+    return pagination_query_params.urlencode()
+
+
 class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
     """List soft-deleted records by model with basic search."""
 
@@ -154,22 +242,10 @@ class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
 
         models_by_key = _soft_models_by_key()
         order_keys = [key for key, _ in model_choices]
-        form_data = request.GET.copy() if request.GET else None
-        if form_data is not None:
-            selected_key = form_data.get("model", "")
-            if selected_key not in models_by_key:
-                selected_key = ""
-            form_data["model"] = selected_key
-            filter_form = TrashFilterForm(form_data, model_choices=model_choices)
-        else:
-            selected_key = ""
-            filter_form = TrashFilterForm(
-                model_choices=model_choices, initial={"model": selected_key}
-            )
-
-        form_is_valid = filter_form.is_valid() if filter_form.is_bound else True
-        filter_data = (
-            filter_form.cleaned_data if filter_form.is_bound and form_is_valid else {}
+        filter_form, selected_key, filter_data = _build_filter_form_and_data(
+            request=request,
+            model_choices=model_choices,
+            models_by_key=models_by_key,
         )
         selected_key = filter_data.get("model", selected_key or "")
         selected_model_label = (
@@ -178,55 +254,30 @@ class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
             else "Todos los modelos"
         )
 
-        models_to_scan = (
-            [models_by_key[selected_key]]
-            if selected_key
-            else [models_by_key[key] for key in order_keys]
+        # Get paginated queryset without materializing all rows
+        queryset = _build_deleted_queryset(
+            models_to_scan=_get_models_to_scan(
+                selected_key=selected_key,
+                models_by_key=models_by_key,
+                order_keys=order_keys,
+            ),
+            filter_data=filter_data,
         )
-
-        rows = []
-        for model in models_to_scan:
-            queryset = model.all_objects.filter(
-                deleted_at__isnull=False
-            ).select_related("deleted_by")
-            if filter_data:
-                queryset = _search_queryset(model, queryset, filter_data.get("q", ""))
-                queryset = _apply_deleted_by_filter(
-                    queryset, filter_data.get("deleted_by")
-                )
-                queryset = _apply_deleted_date_range_filter(
-                    queryset,
-                    filter_data.get("deleted_from"),
-                    filter_data.get("deleted_to"),
-                )
-            for item in queryset.order_by("-deleted_at", "-pk"):
-                rows.append(
-                    {
-                        "obj": item,
-                        "app_label": item._meta.app_label,
-                        "model_name": item._meta.model_name,
-                        "model_label": str(model._meta.verbose_name).title(),
-                    }
-                )
-
-        rows.sort(
-            key=lambda row: (row["obj"].deleted_at, row["obj"].pk),
-            reverse=True,
-        )
-
-        paginator = Paginator(rows, self.paginate_by)
+        paginator = Paginator(queryset, self.paginate_by)
         page_obj = paginator.get_page(request.GET.get("page") or 1)
-        pagination_query_params = request.GET.copy()
-        pagination_query_params.pop("page", None)
-        pagination_querystring = pagination_query_params.urlencode()
 
-        active_filters = []
-        if filter_data:
-            active_filters = _build_active_filters(
+        # Build rows only for the current page's items
+        rows = _rows_from_items(page_obj.object_list, models_by_key)
+
+        active_filters = (
+            _build_active_filters(
                 filter_data,
                 selected_model_label=selected_model_label,
                 default_model_key="",
             )
+            if filter_data
+            else []
+        )
 
         context = {
             "filter_form": filter_form,
@@ -234,10 +285,10 @@ class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
             "selected_model_key": selected_key,
             "selected_model_label": selected_model_label,
             "page_obj": page_obj,
-            "rows": page_obj.object_list,
+            "rows": rows,
             "search_query": filter_data.get("q", ""),
             "active_filters": active_filters,
-            "pagination_querystring": pagination_querystring,
+            "pagination_querystring": _build_pagination_querystring(request),
             "current_full_path": request.get_full_path(),
             "show_all_models": not selected_key,
         }
