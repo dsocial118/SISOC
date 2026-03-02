@@ -2,6 +2,7 @@ from datetime import datetime
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.db.utils import OperationalError
 from django.urls import reverse
 from django.utils import timezone
 
@@ -162,6 +163,35 @@ def test_papelera_list_invalid_date_range_shows_error(auth_client):
         in content
     )
     assert "alert alert-warning" in content
+
+
+@pytest.mark.django_db
+def test_papelera_list_fallbacks_when_queryset_count_fails(auth_client, monkeypatch):
+    user_model = get_user_model()
+    deleter = user_model.objects.create_user(username="count_fail_user", password="x")
+    deleted = _create_deleted_categoria("Categoria Count Fail", deleter)
+
+    failing_queryset = Categoria.all_objects.filter(
+        pk=deleted.pk,
+        deleted_at__isnull=False,
+    ).order_by("-deleted_at", "-pk")
+
+    def _raise_count_error():
+        raise OperationalError(
+            1222,
+            "The used SELECT statements have a different number of columns",
+        )
+
+    monkeypatch.setattr(failing_queryset, "count", _raise_count_error)
+    monkeypatch.setattr(
+        "core.trash_views._build_deleted_queryset",
+        lambda **kwargs: failing_queryset,
+    )
+
+    response = auth_client.get(reverse("papelera_list"), {"model": _categoria_model_key()})
+
+    assert response.status_code == 200
+    assert str(deleted) in response.content.decode()
 
 
 @pytest.mark.django_db
