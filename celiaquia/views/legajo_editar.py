@@ -171,34 +171,24 @@ class EditarLegajoView(View):
                 except Nacionalidad.DoesNotExist:
                     raise ValidationError("Nacionalidad inválida.")
 
-                # Teléfono (obligatorio, mín 8 dígitos)
+                # Teléfono (opcional)
                 telefono = request.POST.get("telefono", "").strip()
-                if not telefono or len(telefono) < 8:
-                    raise ValidationError("Teléfono debe tener al menos 8 dígitos.")
                 ciudadano.telefono = telefono
 
-                # Email (obligatorio)
+                # Email (opcional)
                 email = request.POST.get("email", "").strip()
-                if not email:
-                    raise ValidationError("Email es obligatorio.")
                 ciudadano.email = email
 
-                # Calle (obligatorio)
+                # Calle (opcional)
                 calle = request.POST.get("calle", "").strip()
-                if not calle:
-                    raise ValidationError("Calle es obligatoria.")
                 ciudadano.calle = calle
 
-                # Altura (obligatorio)
+                # Altura (opcional)
                 altura = request.POST.get("altura", "").strip()
-                if not altura:
-                    raise ValidationError("Altura es obligatoria.")
                 ciudadano.altura = altura
 
-                # Código postal (obligatorio)
+                # Código postal (opcional)
                 codigo_postal = request.POST.get("codigo_postal", "").strip()
-                if not codigo_postal:
-                    raise ValidationError("Código postal es obligatorio.")
                 ciudadano.codigo_postal = codigo_postal
 
                 # Municipio y Localidad (obligatorio)

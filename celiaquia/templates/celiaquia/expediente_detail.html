@@ -313,7 +313,7 @@
                                     <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 20px;"{% endif %}>
                                         <div class="fw-semibold">
                                             {% if not leg.es_responsable and leg.responsable_id %}<span class="text-muted">└─</span>{% endif %}
-                                            {% if leg.rol == 'beneficiario_y_responsable' %}
+                                            {% if leg.es_doble_rol %}
                                                 👨👩👧👦 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% elif leg.rol == 'responsable' %}
                                                 👨👩 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
@@ -326,7 +326,7 @@
                                             {% endif %}
                                         </div>
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
-                                        {% if leg.rol == 'beneficiario_y_responsable' %}
+                                        {% if leg.es_doble_rol %}
                                             <small class="badge bg-info mt-1">Beneficiario y Responsable</small>
                                             {% if leg.hijos_a_cargo %}
 
@@ -1589,44 +1589,39 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="editar-telefono" class="form-label">Teléfono *</label>
+                            <label for="editar-telefono" class="form-label">Teléfono</label>
                             <input type="text"
                                    class="form-control"
                                    id="editar-telefono"
-                                   name="telefono"
-                                   required />
+                                   name="telefono" />
                         </div>
                         <div class="col-md-6">
-                            <label for="editar-email" class="form-label">Email *</label>
+                            <label for="editar-email" class="form-label">Email</label>
                             <input type="email"
                                    class="form-control"
                                    id="editar-email"
-                                   name="email"
-                                   required />
+                                   name="email" />
                         </div>
                         <div class="col-md-4">
-                            <label for="editar-calle" class="form-label">Calle *</label>
+                            <label for="editar-calle" class="form-label">Calle</label>
                             <input type="text"
                                    class="form-control"
                                    id="editar-calle"
-                                   name="calle"
-                                   required />
+                                   name="calle" />
                         </div>
                         <div class="col-md-4">
-                            <label for="editar-altura" class="form-label">Altura *</label>
+                            <label for="editar-altura" class="form-label">Altura</label>
                             <input type="text"
                                    class="form-control"
                                    id="editar-altura"
-                                   name="altura"
-                                   required />
+                                   name="altura" />
                         </div>
                         <div class="col-md-4">
-                            <label for="editar-codigo-postal" class="form-label">Código Postal *</label>
+                            <label for="editar-codigo-postal" class="form-label">Código Postal</label>
                             <input type="text"
                                    class="form-control"
                                    id="editar-codigo-postal"
-                                   name="codigo_postal"
-                                   required />
+                                   name="codigo_postal" />
                         </div>
                         <div class="col-md-4">
                             <label for="editar-municipio" class="form-label">Municipio *</label>
@@ -1738,8 +1733,9 @@
                             <div class="col-12">
                                 <label class="form-label">Seleccionar archivo a actualizar</label>
                                 <select name="campo" id="campo-archivo" class="form-select" required>
-                                    <option value="archivo2" id="opt-archivo2">Biopsia / Constancia médica</option>
-                                    <option value="archivo3" id="opt-archivo3">Documento</option>
+                                    <option value="archivo1" id="opt-archivo1" style="display:none;">Biopsia / Constancia médica</option>
+                                    <option value="archivo2" id="opt-archivo2">Documento</option>
+                                    <option value="archivo3" id="opt-archivo3">Certificación</option>
                                 </select>
                             </div>
                             <div class="col-12">

@@ -490,6 +490,9 @@ class ExpedienteDetailView(DetailView):
             legajo.es_responsable = LegajoService._es_responsable(
                 legajo.ciudadano, responsables_ids
             )
+            legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
+                legajo.ciudadano.id
+            )
             hijos_list = []
             # Buscar hijos si es responsable O si el rol es beneficiario_y_responsable
             if (
@@ -500,11 +503,17 @@ class ExpedienteDetailView(DetailView):
                     legajo.ciudadano.id, expediente
                 )
 
-            # Determinar tipo de legajo segun los roles:
-            # - Responsable y Beneficiario: tiene hijos a cargo en el expediente.
-            # - Responsable: es responsable pero sin hijos a cargo en este expediente.
-            # - Beneficiario: no es responsable.
-            if legajo.es_responsable and hijos_list:
+            rol_normalizado = (getattr(legajo, "rol", "") or "").strip().lower()
+            legajo.es_doble_rol = (
+                rol_normalizado
+                == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            ) or (legajo.es_responsable and legajo.responsable_id is not None) or (
+                rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO
+                and bool(hijos_list)
+            )
+
+            # Determinar tipo de legajo segun roles efectivos.
+            if legajo.es_doble_rol:
                 legajo.tipo_legajo = "Responsable y Beneficiario"
             elif legajo.es_responsable:
                 legajo.tipo_legajo = "Responsable"
@@ -522,10 +531,6 @@ class ExpedienteDetailView(DetailView):
                 or legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
             ):
                 legajo.hijos_a_cargo = hijos_list
-                # Verificar si también es hijo de alguien
-                legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
-                    legajo.ciudadano.id
-                )
                 responsables_legajos.append(legajo)
                 # Si tiene responsable, agregarlo también a hijos_por_responsable
                 if legajo.responsable_id:
@@ -534,9 +539,6 @@ class ExpedienteDetailView(DetailView):
                     hijos_por_responsable[legajo.responsable_id].append(legajo)
             else:
                 legajo.hijos_a_cargo = []
-                legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
-                    legajo.ciudadano.id
-                )
                 if legajo.responsable_id:
                     if legajo.responsable_id not in hijos_por_responsable:
                         hijos_por_responsable[legajo.responsable_id] = []
@@ -657,10 +659,7 @@ class ExpedienteDetailView(DetailView):
         from core.models import Sexo, Municipio, Localidad
 
         sexos = Sexo.objects.all()
-        nacionalidades = [
-            {"id": nac.id, "nombre": nac.nacionalidad}
-            for nac in Nacionalidad.objects.all().order_by("nacionalidad")
-        ]
+        nacionalidades = Nacionalidad.objects.all().order_by("nacionalidad")
         municipios = []
         localidades = []
 

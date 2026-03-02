@@ -994,14 +994,21 @@ def _registrar_legajo_beneficiario_importacion(
     existentes_ids,
     abiertos,
     legajos_crear,
+    es_mismo_documento_resp=False,
 ):
     cid = ciudadano.pk
+    # Si el beneficiario es también responsable, asignar rol doble
+    rol = (
+        ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+        if es_mismo_documento_resp
+        else ExpedienteCiudadano.ROLE_BENEFICIARIO
+    )
     legajos_crear.append(
         ExpedienteCiudadano(
             expediente=expediente,
             ciudadano=ciudadano,
             estado_id=estado_id,
-            rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+            rol=rol,
         )
     )
     existentes_ids.add(cid)
@@ -1241,6 +1248,7 @@ def _procesar_beneficiario_importacion(
     excluidos,
     legajos_crear,
     get_or_create_ciudadano,
+    es_mismo_documento_resp=False,
 ):
     ciudadano = _crear_ciudadano_beneficiario_importacion(
         payload=payload,
@@ -1270,6 +1278,7 @@ def _procesar_beneficiario_importacion(
         existentes_ids=existentes_ids,
         abiertos=abiertos,
         legajos_crear=legajos_crear,
+        es_mismo_documento_resp=es_mismo_documento_resp,
     )
     return "ok", cid
 
@@ -1418,6 +1427,7 @@ def _procesar_beneficiario_desde_row_importacion(
     abiertos,
     excluidos,
     legajos_crear,
+    doble_rol_docs,
 ):
     del add_error  # Compatibilidad de firma con contexto de fila; no se usa en este paso.
     payload = _construir_payload_fila_importacion(
@@ -1433,6 +1443,18 @@ def _procesar_beneficiario_desde_row_importacion(
         normalizar_sexo=normalizar_sexo,
     )
 
+    # Detectar doble rol: mismo documento O documento en lista de doble rol
+    es_mismo_documento_resp = _es_mismo_documento_responsable_importacion(payload)
+    doc_beneficiario = str(payload.get('documento', '')).strip()
+    es_doble_rol = es_mismo_documento_resp or (doc_beneficiario in doble_rol_docs)
+    
+    if es_doble_rol:
+        add_warning(
+            offset,
+            "doble_rol",
+            f"Beneficiario con doble rol detectado (doc: {doc_beneficiario})",
+        )
+
     resultado_beneficiario, cid = _procesar_beneficiario_importacion(
         payload=payload,
         usuario=usuario,
@@ -1446,6 +1468,7 @@ def _procesar_beneficiario_desde_row_importacion(
         excluidos=excluidos,
         legajos_crear=legajos_crear,
         get_or_create_ciudadano=get_or_create_ciudadano,
+        es_mismo_documento_resp=es_doble_rol,
     )
     return payload, resultado_beneficiario, cid
 
@@ -1517,6 +1540,7 @@ def _procesar_fila_legajo_importacion(
     legajos_crear,
     relaciones_familiares_pairs,
     relaciones_familiares,
+    doble_rol_docs,
 ):
     try:
         payload, resultado_beneficiario, cid = (
@@ -1541,6 +1565,7 @@ def _procesar_fila_legajo_importacion(
                 abiertos=abiertos,
                 excluidos=excluidos,
                 legajos_crear=legajos_crear,
+                doble_rol_docs=doble_rol_docs,
             )
         )
         if resultado_beneficiario == "error":
@@ -1573,6 +1598,27 @@ def _procesar_fila_legajo_importacion(
         return 0, 1
 
 
+def _identificar_documentos_con_doble_rol(df):
+    """Identifica qué documentos de beneficiarios también son responsables de otros."""
+    documentos_beneficiarios = set()
+    documentos_responsables = set()
+    
+    for _, row in df.iterrows():
+        doc_benef = str(row.get('documento', '')).strip()
+        doc_resp = str(row.get('documento_responsable', '')).strip()
+        
+        if doc_benef and doc_benef not in ('', 'nan', 'None'):
+            documentos_beneficiarios.add(doc_benef)
+        
+        if doc_resp and doc_resp not in ('', 'nan', 'None'):
+            documentos_responsables.add(doc_resp)
+    
+    # Documentos que son tanto beneficiarios como responsables
+    doble_rol_docs = documentos_beneficiarios & documentos_responsables
+    logger.info(f"Documentos con doble rol detectados: {doble_rol_docs}")
+    return doble_rol_docs
+
+
 def _build_contexto_filas_importacion_legajos(
     *,
     df,
@@ -1595,6 +1641,9 @@ def _build_contexto_filas_importacion_legajos(
     precargas = _precargar_datos_importacion(df, provincia_usuario_id)
     sexos_cache = precargas["sexos_cache"]
     normalizar_sexo = _build_normalizar_sexo_importacion(sexos_cache)
+    
+    # Identificar documentos con doble rol
+    doble_rol_docs = _identificar_documentos_con_doble_rol(df)
 
     from celiaquia.services.ciudadano_service import CiudadanoService
 
@@ -1619,6 +1668,7 @@ def _build_contexto_filas_importacion_legajos(
         "legajos_crear": legajos_crear,
         "relaciones_familiares_pairs": relaciones_familiares_pairs,
         "relaciones_familiares": relaciones_familiares,
+        "doble_rol_docs": doble_rol_docs,
     }
 
 
