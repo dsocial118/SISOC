@@ -50,11 +50,10 @@ def documentacion_fixture():
 
 
 @pytest.fixture
-def admision_fixture(user_fixture, estado_fixture, comedor_fixture):
+def admision_fixture(estado_fixture, comedor_fixture):
     return Admision.objects.create(
         comedor=comedor_fixture,
         estado=estado_fixture,
-        usuario_provincia=user_fixture,
     )
 
 
