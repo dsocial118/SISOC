@@ -1,856 +1,870 @@
 [
-  {
+{
+    "model": "admisiones.documentacion",
+    "pk": 1,
+    "fields": {
+        "nombre": "Nota de solicitud e Inclusión al Programa",
+        "obligatorio": true,
+        "orden": 1,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 2,
+    "fields": {
+        "nombre": "Acta Constitutiva",
+        "obligatorio": true,
+        "orden": 2,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 3,
+    "fields": {
+        "nombre": "Estatuto",
+        "obligatorio": true,
+        "orden": 3,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 4,
+    "fields": {
+        "nombre": "Reso Personería Jurídica",
+        "obligatorio": true,
+        "orden": 4,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 5,
+    "fields": {
+        "nombre": "Acta de designación de autoridades",
+        "obligatorio": true,
+        "orden": 5,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 6,
+    "fields": {
+        "nombre": "DNI Presidente",
+        "obligatorio": true,
+        "orden": 6,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 7,
+    "fields": {
+        "nombre": "DNI Tesorero",
+        "obligatorio": true,
+        "orden": 7,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 8,
+    "fields": {
+        "nombre": "DNI Secretario",
+        "obligatorio": true,
+        "orden": 8,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 9,
+    "fields": {
+        "nombre": "Acta de Solicitud de Subsidio",
+        "obligatorio": true,
+        "orden": 9,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 10,
+    "fields": {
+        "nombre": "Constancia de ARCA",
+        "obligatorio": true,
+        "orden": 10,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 11,
+    "fields": {
+        "nombre": "Preinscripción RENACOM",
+        "obligatorio": false,
+        "orden": 11,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 12,
+    "fields": {
+        "nombre": "Validación RENACOM",
+        "obligatorio": false,
+        "orden": 12,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 13,
+    "fields": {
+        "nombre": "Inscripción RENACOM",
+        "obligatorio": false,
+        "orden": 13,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 14,
+    "fields": {
+        "nombre": "Relevamiento Programa PAC",
+        "obligatorio": true,
+        "orden": 14,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 15,
+    "fields": {
+        "nombre": "DNI Responsable Comedor",
+        "obligatorio": false,
+        "orden": 15,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 16,
+    "fields": {
+        "nombre": "DNI Titular Tarjeta",
+        "obligatorio": true,
+        "orden": 16,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 17,
+    "fields": {
+        "nombre": "Informe Comedores y Merenderos",
+        "obligatorio": true,
+        "orden": 17,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 18,
+    "fields": {
+        "nombre": "Memo PNUD",
+        "obligatorio": true,
+        "orden": 18,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 19,
+    "fields": {
+        "nombre": "Respuesta Memo PNUD",
+        "obligatorio": true,
+        "orden": 19,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 20,
+    "fields": {
+        "nombre": "Otro/s Documento/s",
+        "obligatorio": false,
+        "orden": 20,
+        "convenios": [
+            3
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 21,
+    "fields": {
+        "nombre": "Nota de Solicitud e Inclusión al Programa",
+        "obligatorio": true,
+        "orden": 1,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 22,
+    "fields": {
+        "nombre": "Personería Jurídica (o equivalente)",
+        "obligatorio": true,
+        "orden": 0,
+        "convenios": [
+            4
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 23,
+    "fields": {
+        "nombre": "Designación Autoridad Máxima",
+        "obligatorio": true,
+        "orden": 2,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 24,
+    "fields": {
+        "nombre": "Certificado de culto",
+        "obligatorio": true,
+        "orden": 3,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 25,
+    "fields": {
+        "nombre": "DNI Obispo",
+        "obligatorio": true,
+        "orden": 4,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 26,
+    "fields": {
+        "nombre": "Constancia de ARCA",
+        "obligatorio": true,
+        "orden": 5,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 27,
+    "fields": {
+        "nombre": "Preinscripción RENACOM",
+        "obligatorio": false,
+        "orden": 6,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 28,
+    "fields": {
+        "nombre": "Validación RENACOM",
+        "obligatorio": false,
+        "orden": 7,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 29,
+    "fields": {
+        "nombre": "Inscripción RENACOM",
+        "obligatorio": false,
+        "orden": 8,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 30,
+    "fields": {
+        "nombre": "Relevamiento Programa PAC",
+        "obligatorio": true,
+        "orden": 9,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 31,
+    "fields": {
+        "nombre": "DNI Responsable Comedor",
+        "obligatorio": false,
+        "orden": 10,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 32,
+    "fields": {
+        "nombre": "DNI Titular Tarjeta",
+        "obligatorio": true,
+        "orden": 11,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 33,
+    "fields": {
+        "nombre": "Informe Comedores y Merenderos",
+        "obligatorio": true,
+        "orden": 12,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 34,
+    "fields": {
+        "nombre": "Memo PNUD",
+        "obligatorio": true,
+        "orden": 13,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 35,
+    "fields": {
+        "nombre": "Respuesta Memo PNUD",
+        "obligatorio": true,
+        "orden": 14,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 36,
+    "fields": {
+        "nombre": "Otro/s Documento/s",
+        "obligatorio": false,
+        "orden": 15,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 37,
+    "fields": {
+        "nombre": "Nota de Solicitud e Inclusión al Programa",
+        "obligatorio": true,
+        "orden": 1,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 38,
+    "fields": {
+        "nombre": "Acta de asamblea",
+        "obligatorio": true,
+        "orden": 2,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 39,
+    "fields": {
+        "nombre": "DNI Responsable 1",
+        "obligatorio": true,
+        "orden": 3,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 40,
+    "fields": {
+        "nombre": "DNI Responsable 2",
+        "obligatorio": true,
+        "orden": 4,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 41,
+    "fields": {
+        "nombre": "Acta constitutiva - Aval 1",
+        "obligatorio": false,
+        "orden": 5,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 42,
+    "fields": {
+        "nombre": "Estatuto - Aval 1",
+        "obligatorio": false,
+        "orden": 6,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 43,
+    "fields": {
+        "nombre": "Reso Personería Jurídica - Aval 1",
+        "obligatorio": false,
+        "orden": 7,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 44,
+    "fields": {
+        "nombre": "Acta Designación Aval 1 - Designación de cargo Aval 1 (persona física)",
+        "obligatorio": true,
+        "orden": 8,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 45,
+    "fields": {
+        "nombre": "DNI Autoridad Máxima Aval 1- DNI Aval 1 (persona física)",
+        "obligatorio": true,
+        "orden": 9,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 46,
+    "fields": {
+        "nombre": "Acta constitutiva - Aval 2",
+        "obligatorio": false,
+        "orden": 10,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 47,
+    "fields": {
+        "nombre": "Estatuto - Aval 2",
+        "obligatorio": false,
+        "orden": 11,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 48,
+    "fields": {
+        "nombre": "Reso Personería Jurídica - Aval 2",
+        "obligatorio": false,
+        "orden": 12,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 49,
+    "fields": {
+        "nombre": "Acta Designación Aval 2 - Designación de cargo Aval 2 (persona física)",
+        "obligatorio": true,
+        "orden": 13,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 50,
+    "fields": {
+        "nombre": "DNI Autoridad Máxima Aval 2 - DNI Aval 2 (persona física)",
+        "obligatorio": true,
+        "orden": 14,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 51,
+    "fields": {
+        "nombre": "Nota Aval 1",
+        "obligatorio": true,
+        "orden": 15,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 52,
+    "fields": {
+        "nombre": "Nota Aval 2",
+        "obligatorio": true,
+        "orden": 16,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 53,
+    "fields": {
+        "nombre": "Preinscripción RENACOM",
+        "obligatorio": false,
+        "orden": 17,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 54,
+    "fields": {
+        "nombre": "Validación RENACOM",
+        "obligatorio": false,
+        "orden": 18,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 55,
+    "fields": {
+        "nombre": "Inscripción RENACOM",
+        "obligatorio": false,
+        "orden": 19,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 56,
+    "fields": {
+        "nombre": "Relevamiento Programa Alimentar Comunidad (PAC-AC)",
+        "obligatorio": true,
+        "orden": 20,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 57,
+    "fields": {
+        "nombre": "DNI Responsable comedor",
+        "obligatorio": false,
+        "orden": 21,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 58,
+    "fields": {
+        "nombre": "DNI Titular tarjeta",
+        "obligatorio": true,
+        "orden": 22,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 59,
+    "fields": {
+        "nombre": "Informe Comedores y Merenderos",
+        "obligatorio": true,
+        "orden": 23,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 60,
+    "fields": {
+        "nombre": "Memo PNUD",
+        "obligatorio": true,
+        "orden": 24,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 61,
+    "fields": {
+        "nombre": "Respuesta Memo PNUD",
+        "obligatorio": true,
+        "orden": 25,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 62,
+    "fields": {
+        "nombre": "Material de Difusión",
+        "obligatorio": true,
+        "orden": 26,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 63,
+    "fields": {
+        "nombre": "Otro/s Documento/s",
+        "obligatorio": false,
+        "orden": 27,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 64,
+    "fields": {
+        "nombre": "Decreto de Reconocimiento del Estado Nacional",
+        "obligatorio": false,
+        "orden": 16,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 65,
+    "fields": {
+        "nombre": "Apoderado",
+        "obligatorio": false,
+        "orden": 17,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 66,
+    "fields": {
+        "nombre": "DNI Apoderado",
+        "obligatorio": false,
+        "orden": 18,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 67,
+    "fields": {
+        "nombre": "Estatuto",
+        "obligatorio": false,
+        "orden": 19,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 68,
+    "fields": {
+        "nombre": "Conformación de la comisión diocesana",
+        "obligatorio": false,
+        "orden": 20,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 69,
+    "fields": {
+        "nombre": "Autorización para gestionar",
+        "obligatorio": false,
+        "orden": 21,
+        "convenios": [
+            2
+        ]
+    }
+},
+{
+    "model": "admisiones.documentacion",
+    "pk": 70,
+    "fields": {
+        "nombre": "Declaración Jurada de Inscripción al registro voluntario de simples asociaciones",
+        "obligatorio": true,
+        "orden": 28,
+        "convenios": [
+            1
+        ]
+    }
+},
+{
     "model": "admisiones.tipoconvenio",
     "pk": 1,
     "fields": {
-      "nombre": "Organización Base"
+        "nombre": "Organización Base"
     }
-  },
-  {
+},
+{
     "model": "admisiones.tipoconvenio",
     "pk": 2,
     "fields": {
-      "nombre": "Personería Jurídica Eclesiástica"
+        "nombre": "Personería Jurídica Eclesiástica"
     }
-  },
-  {
+},
+{
     "model": "admisiones.tipoconvenio",
     "pk": 3,
     "fields": {
-      "nombre": "Personería Jurídica"
+        "nombre": "Personería Jurídica"
     }
-  },
-  {
+},
+{
     "model": "admisiones.tipoconvenio",
     "pk": 4,
     "fields": {
-      "nombre": "Sin uso"
+        "nombre": "Sin uso"
     }
-  },
-{
-  "model": "admisiones.documentacion",
-  "pk": 1,
-  "fields": {
-    "nombre": "Nota de solicitud e Inclusión al Programa",
-    "convenios": [
-      3
-    ],
-    "orden": 1,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 2,
-  "fields": {
-    "nombre": "Acta Constitutiva",
-    "convenios": [
-      3
-    ],
-    "orden": 2,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 3,
-  "fields": {
-    "nombre": "Estatuto",
-    "convenios": [
-      3
-    ],
-    "orden": 3,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 4,
-  "fields": {
-    "nombre": "Reso Personería Jurídica",
-    "convenios": [
-      3
-    ],
-    "orden": 4,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 5,
-  "fields": {
-    "nombre": "Acta de designación de autoridades",
-    "convenios": [
-      3
-    ],
-    "orden": 5,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 6,
-  "fields": {
-    "nombre": "DNI Presidente",
-    "convenios": [
-      3
-    ],
-    "orden": 6,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 7,
-  "fields": {
-    "nombre": "DNI Tesorero",
-    "convenios": [
-      3
-    ],
-    "orden": 7,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 8,
-  "fields": {
-    "nombre": "DNI Secretario",
-    "convenios": [
-      3
-    ],
-    "orden": 8,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 9,
-  "fields": {
-    "nombre": "Acta de Solicitud de Subsidio",
-    "convenios": [
-      3
-    ],
-    "orden": 9,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 10,
-  "fields": {
-    "nombre": "Constancia de ARCA",
-    "convenios": [
-      3
-    ],
-    "orden": 10,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 11,
-  "fields": {
-    "nombre": "Preinscripción RENACOM",
-    "convenios": [
-      3
-    ],
-    "orden": 11,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 12,
-  "fields": {
-    "nombre": "Validación RENACOM",
-    "convenios": [
-      3
-    ],
-    "orden": 12,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 13,
-  "fields": {
-    "nombre": "Inscripción RENACOM",
-    "convenios": [
-      3
-    ],
-    "orden": 13,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 14,
-  "fields": {
-    "nombre": "Relevamiento Programa PAC",
-    "convenios": [
-      3
-    ],
-    "orden": 14,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 15,
-  "fields": {
-    "nombre": "DNI Responsable Comedor",
-    "convenios": [
-      3
-    ],
-    "orden": 15,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 16,
-  "fields": {
-    "nombre": "DNI Titular Tarjeta",
-    "convenios": [
-      3
-    ],
-    "orden": 16,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 17,
-  "fields": {
-    "nombre": "Informe Comedores y Merenderos",
-    "convenios": [
-      3
-    ],
-    "orden": 17,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 18,
-  "fields": {
-    "nombre": "Memo PNUD",
-    "convenios": [
-      3
-    ],
-    "orden": 18,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 19,
-  "fields": {
-    "nombre": "Respuesta Memo PNUD",
-    "convenios": [
-      3
-    ],
-    "orden": 19,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 20,
-  "fields": {
-    "nombre": "Otro/s Documento/s",
-    "convenios": [
-      3
-    ],
-    "orden": 20,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 21,
-  "fields": {
-    "nombre": "Nota de Solicitud e Inclusión al Programa",
-    "convenios": [
-      2
-    ],
-    "orden": 1,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 22,
-  "fields": {
-    "nombre": "Personería Jurídica (o equivalente)",
-    "convenios": [
-      4
-    ],
-    "orden": 0,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 23,
-  "fields": {
-    "nombre": "Designación Autoridad Máxima",
-    "convenios": [
-      2
-    ],
-    "orden": 2,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 24,
-  "fields": {
-    "nombre": "Certificado de culto",
-    "convenios": [
-      2
-    ],
-    "orden": 3,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 25,
-  "fields": {
-    "nombre": "DNI Obispo",
-    "convenios": [
-      2
-    ],
-    "orden": 4,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 26,
-  "fields": {
-    "nombre": "Constancia de ARCA",
-    "convenios": [
-      2
-    ],
-    "orden": 5,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 27,
-  "fields": {
-    "nombre": "Preinscripción RENACOM",
-    "convenios": [
-      2
-    ],
-    "orden": 6,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 28,
-  "fields": {
-    "nombre": "Validación RENACOM",
-    "convenios": [
-      2
-    ],
-    "orden": 7,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 29,
-  "fields": {
-    "nombre": "Inscripción RENACOM",
-    "convenios": [
-      2
-    ],
-    "orden": 8,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 30,
-  "fields": {
-    "nombre": "Relevamiento Programa PAC",
-    "convenios": [
-      2
-    ],
-    "orden": 9,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 31,
-  "fields": {
-    "nombre": "DNI Responsable Comedor",
-    "convenios": [
-      2
-    ],
-    "orden": 10,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 32,
-  "fields": {
-    "nombre": "DNI Titular Tarjeta",
-    "convenios": [
-      2
-    ],
-    "orden": 11,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 33,
-  "fields": {
-    "nombre": "Informe Comedores y Merenderos",
-    "convenios": [
-      2
-    ],
-    "orden": 12,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 34,
-  "fields": {
-    "nombre": "Memo PNUD",
-    "convenios": [
-      2
-    ],
-    "orden": 13,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 35,
-  "fields": {
-    "nombre": "Respuesta Memo PNUD",
-    "convenios": [
-      2
-    ],
-    "orden": 14,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 36,
-  "fields": {
-    "nombre": "Otro/s Documento/s",
-    "convenios": [
-      2
-    ],
-    "orden": 15,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 37,
-  "fields": {
-    "nombre": "Nota de Solicitud e Inclusión al Programa",
-    "convenios": [
-      1
-    ],
-    "orden": 1,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 38,
-  "fields": {
-    "nombre": "Acta de asamblea",
-    "convenios": [
-      1
-    ],
-    "orden": 2,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 39,
-  "fields": {
-    "nombre": "DNI Responsable 1",
-    "convenios": [
-      1
-    ],
-    "orden": 3,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 40,
-  "fields": {
-    "nombre": "DNI Responsable 2",
-    "convenios": [
-      1
-    ],
-    "orden": 4,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 41,
-  "fields": {
-    "nombre": "Acta constitutiva - Aval 1",
-    "convenios": [
-      1
-    ],
-    "orden": 5,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 42,
-  "fields": {
-    "nombre": "Estatuto - Aval 1",
-    "convenios": [
-      1
-    ],
-    "orden": 6,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 43,
-  "fields": {
-    "nombre": "Reso Personería Jurídica - Aval 1",
-    "convenios": [
-      1
-    ],
-    "orden": 7,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 44,
-  "fields": {
-    "nombre": "Acta Designación Aval 1 - Designación de cargo Aval 1 (persona física)",
-    "convenios": [
-      1
-    ],
-    "orden": 8,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 45,
-  "fields": {
-    "nombre": "DNI Autoridad Máxima Aval 1- DNI Aval 1 (persona física)",
-    "convenios": [
-      1
-    ],
-    "orden": 9,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 46,
-  "fields": {
-    "nombre": "Acta constitutiva - Aval 2",
-    "convenios": [
-      1
-    ],
-    "orden": 10,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 47,
-  "fields": {
-    "nombre": "Estatuto - Aval 2",
-    "convenios": [
-      1
-    ],
-    "orden": 11,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 48,
-  "fields": {
-    "nombre": "Reso Personería Jurídica - Aval 2",
-    "convenios": [
-      1
-    ],
-    "orden": 12,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 49,
-  "fields": {
-    "nombre": "Acta Designación Aval 2 - Designación de cargo Aval 2 (persona física)",
-    "convenios": [
-      1
-    ],
-    "orden": 13,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 50,
-  "fields": {
-    "nombre": "DNI Autoridad Máxima Aval 2 - DNI Aval 2 (persona física)",
-    "convenios": [
-      1
-    ],
-    "orden": 14,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 51,
-  "fields": {
-    "nombre": "Nota Aval 1",
-    "convenios": [
-      1
-    ],
-    "orden": 15,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 52,
-  "fields": {
-    "nombre": "Nota Aval 2",
-    "convenios": [
-      1
-    ],
-    "orden": 16,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 53,
-  "fields": {
-    "nombre": "Preinscripción RENACOM",
-    "convenios": [
-      1
-    ],
-    "orden": 17,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 54,
-  "fields": {
-    "nombre": "Validación RENACOM",
-    "convenios": [
-      1
-    ],
-    "orden": 18,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 55,
-  "fields": {
-    "nombre": "Inscripción RENACOM",
-    "convenios": [
-      1
-    ],
-    "orden": 19,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 56,
-  "fields": {
-    "nombre": "Relevamiento Programa Alimentar Comunidad (PAC-AC)",
-    "convenios": [
-      1
-    ],
-    "orden": 20,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 57,
-  "fields": {
-    "nombre": "DNI Responsable comedor",
-    "convenios": [
-      1
-    ],
-    "orden": 21,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 58,
-  "fields": {
-    "nombre": "DNI Titular tarjeta",
-    "convenios": [
-      1
-    ],
-    "orden": 22,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 59,
-  "fields": {
-    "nombre": "Informe Comedores y Merenderos",
-    "convenios": [
-      1
-    ],
-    "orden": 23,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 60,
-  "fields": {
-    "nombre": "Memo PNUD",
-    "convenios": [
-      1
-    ],
-    "orden": 24,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 61,
-  "fields": {
-    "nombre": "Respuesta Memo PNUD",
-    "convenios": [
-      1
-    ],
-    "orden": 25,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 62,
-  "fields": {
-    "nombre": "Material de Difusión",
-    "convenios": [
-      1
-    ],
-    "orden": 26,
-    "obligatorio": true
-  }
-},
-{
-  "model": "admisiones.documentacion",
-  "pk": 63,
-  "fields": {
-    "nombre": "Otro/s Documento/s",
-    "convenios": [
-      1
-    ],
-    "orden": 27,
-    "obligatorio": false
-  }
-},
-{
-  "model": "admisiones.documentacion",
-   "pk": 64,
-   "fields": {
-     "nombre": "Decreto de Reconocimiento del Estado Nacional",
-     "convenios": [2],
-     "orden": 16,
-     "obligatorio": false
-   }
-},
-  {
-   "model": "admisiones.documentacion",
-   "pk": 65,
-   "fields": {
-     "nombre": "Apoderado",
-     "convenios": [2],
-     "orden": 17,
-     "obligatorio": false
-   }
-  },
-  {
-   "model": "admisiones.documentacion",
-   "pk": 66,
-   "fields": {
-     "nombre": "DNI Apoderado",
-     "convenios": [2],
-     "orden": 18,
-     "obligatorio": false
-   }
-  },
-  {
-   "model": "admisiones.documentacion",
-   "pk": 67,
-   "fields": {
-     "nombre": "Estatuto",
-     "convenios": [2],
-     "orden": 19,
-     "obligatorio": false
-   }
-  },
-  {
-   "model": "admisiones.documentacion",
-   "pk": 68,
-   "fields": {
-     "nombre": "Conformación de la comisión diocesana",
-     "convenios": [2],
-     "orden": 20,
-     "obligatorio": false
-   }
-  },
-  {
-   "model": "admisiones.documentacion",
-   "pk": 69,
-   "fields": {
-     "nombre": "Autorización para gestionar",
-     "convenios": [2],
-     "orden": 21,
-     "obligatorio": false
-   }
-  },
-  {
-   "model": "admisiones.documentacion",
-   "pk": 70,
-   "fields": {
-     "nombre": "Declaración Jurada de Inscripción al registro voluntario de simples asociaciones",
-     "convenios": [1],
-     "orden": 28,
-     "obligatorio": true
-   }
-  }
+}
 ]

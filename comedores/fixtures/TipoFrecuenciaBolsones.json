@@ -1,30 +1,30 @@
 [
-    {
-        "model": "relevamientos.tipofrecuenciabolsones",
-        "pk": 1,
-        "fields": {
-            "nombre": "Semanal"
-        }
-    },
-    {
-        "model": "relevamientos.tipofrecuenciabolsones",
-        "pk": 2,
-        "fields": {
-            "nombre": "Mensual"
-        }
-    },
-    {
-        "model": "relevamientos.tipofrecuenciabolsones",
-        "pk": 3,
-        "fields": {
-            "nombre": "Quincenal"
-        }
-    },
-    {
-        "model": "relevamientos.tipofrecuenciabolsones",
-        "pk": 4,
-        "fields": {
-            "nombre": "Otros"
-        }
+{
+    "model": "relevamientos.tipofrecuenciabolsones",
+    "pk": 1,
+    "fields": {
+        "nombre": "Semanal"
     }
+},
+{
+    "model": "relevamientos.tipofrecuenciabolsones",
+    "pk": 2,
+    "fields": {
+        "nombre": "Mensual"
+    }
+},
+{
+    "model": "relevamientos.tipofrecuenciabolsones",
+    "pk": 3,
+    "fields": {
+        "nombre": "Quincenal"
+    }
+},
+{
+    "model": "relevamientos.tipofrecuenciabolsones",
+    "pk": 4,
+    "fields": {
+        "nombre": "Otros"
+    }
+}
 ]

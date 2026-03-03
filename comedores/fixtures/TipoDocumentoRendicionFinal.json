@@ -1,114 +1,146 @@
 [
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 1,
     "fields": {
-      "nombre": "Lista de beneficiarios",
-      "validador": "Dupla"
+        "nombre": "Lista de beneficiarios",
+        "validador": "Dupla",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 2,
     "fields": {
-      "nombre": "Certificación mensual de prestaciones mes 1",
-      "validador": "Dupla"
+        "nombre": "Certificación mensual de prestaciones mes 1",
+        "validador": "Dupla",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 3,
     "fields": {
-      "nombre": "Certificación mensual de prestaciones mes 2",
-      "validador": "Dupla"
+        "nombre": "Certificación mensual de prestaciones mes 2",
+        "validador": "Dupla",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 4,
     "fields": {
-      "nombre": "Certificación mensual de prestaciones mes 3",
-      "validador": "Dupla"
+        "nombre": "Certificación mensual de prestaciones mes 3",
+        "validador": "Dupla",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 5,
     "fields": {
-      "nombre": "Certificación mensual de prestaciones mes 4",
-      "validador": "Dupla"
+        "nombre": "Certificación mensual de prestaciones mes 4",
+        "validador": "Dupla",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 6,
     "fields": {
-      "nombre": "Certificación mensual de prestaciones mes 5",
-      "validador": "Dupla"
+        "nombre": "Certificación mensual de prestaciones mes 5",
+        "validador": "Dupla",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 7,
     "fields": {
-      "nombre": "Certificación mensual de prestaciones mes 6",
-      "validador": "Dupla"
+        "nombre": "Certificación mensual de prestaciones mes 6",
+        "validador": "Dupla",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 8,
     "fields": {
-      "nombre": "DDJJ sobre aplicación de fondos del subsidio + Anexo I",
-      "validador": "Contable"
+        "nombre": "DDJJ sobre aplicación de fondos del subsidio + Anexo I",
+        "validador": "Contable",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 9,
     "fields": {
-      "nombre": "Comprobantes de gastos",
-      "validador": "Contable"
+        "nombre": "Comprobantes de gastos",
+        "validador": "Contable",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 10,
     "fields": {
-      "nombre": "Constancias de CAE/CAI/CAEA",
-      "validador": "Contable"
+        "nombre": "Constancias de CAE/CAI/CAEA",
+        "validador": "Contable",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 11,
     "fields": {
-      "nombre": "Constancias de inscripción ARCA",
-      "validador": "Contable"
+        "nombre": "Constancias de inscripción ARCA",
+        "validador": "Contable",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 12,
     "fields": {
-      "nombre": "DDJJ para Facturas A",
-      "validador": "Contable"
+        "nombre": "DDJJ para Facturas A",
+        "validador": "Contable",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 13,
     "fields": {
-      "nombre": "Reporte mensual",
-      "validador": "Contable"
+        "nombre": "Reporte mensual",
+        "validador": "Contable",
+        "personalizado": false
     }
-  },
-  {
-    "model": "rendicioncuentasfinal.TipoDocumentoRendicionFinal",
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
     "pk": 14,
     "fields": {
-      "nombre": "Informe Técnico Final",
-      "validador": "Legales"
+        "nombre": "Informe Técnico Final",
+        "validador": "Legales",
+        "personalizado": false
     }
-  }
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
+    "pk": 15,
+    "fields": {
+        "nombre": "documento rendición",
+        "validador": "Dupla",
+        "personalizado": true
+    }
+},
+{
+    "model": "rendicioncuentasfinal.tipodocumentorendicionfinal",
+    "pk": 16,
+    "fields": {
+        "nombre": "SADSAD TEST",
+        "validador": "Dupla",
+        "personalizado": true
+    }
+}
 ]
