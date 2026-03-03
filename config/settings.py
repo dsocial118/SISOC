@@ -142,6 +142,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "sentry.context_processors.sentry_frontend",
             ],
         },
     },
@@ -290,6 +291,28 @@ SENTRY_DSN = (
     "https://REDACTED_SENTRY_KEY@"
     "REDACTED_SENTRY_ENDPOINT"
 )
+SENTRY_LOG_EVENT_LEVEL = "WARNING"
+if ENVIRONMENT == "qa":
+    SENTRY_ERROR_SAMPLE_RATE = 0.75
+    SENTRY_TRACES_SAMPLE_RATE = 0.75
+    SENTRY_PROFILES_SAMPLE_RATE = 0.0
+    SENTRY_REPLAY_ENABLED = False
+    SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 0.0
+    SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 0.0
+elif ENVIRONMENT == "prd":
+    SENTRY_ERROR_SAMPLE_RATE = 1.0
+    SENTRY_TRACES_SAMPLE_RATE = 1.0
+    SENTRY_PROFILES_SAMPLE_RATE = 0.0
+    SENTRY_REPLAY_ENABLED = True
+    SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 1.0
+    SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 1.0
+else:
+    SENTRY_ERROR_SAMPLE_RATE = 0.0
+    SENTRY_TRACES_SAMPLE_RATE = 0.0
+    SENTRY_PROFILES_SAMPLE_RATE = 0.0
+    SENTRY_REPLAY_ENABLED = False
+    SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 0.0
+    SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 0.0
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = "https://wsv2.secretarianaf.gob.ar/api"
@@ -402,7 +425,7 @@ LOGGING = {
             "formatter": "json_data",
         },
         "sentry": {
-            "level": "ERROR",
+            "level": SENTRY_LOG_EVENT_LEVEL,
             "class": "sentry.handlers.SentryEventHandler",
             "formatter": "verbose",
         },
