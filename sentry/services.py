@@ -26,7 +26,9 @@ def _env_to_float(value: str, default: float = 0.0) -> float:
     try:
         return float(value)
     except (TypeError, ValueError):
-        logger.warning("Valor inválido para float en configuración de Sentry: %s", value)
+        logger.warning(
+            "Valor inválido para float en configuración de Sentry: %s", value
+        )
         return default
 
 
