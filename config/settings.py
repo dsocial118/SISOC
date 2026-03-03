@@ -496,11 +496,11 @@ else:
 
 # Overrides y flags de endurecimiento CSP (migración gradual)
 ENABLE_CSP = os.getenv("ENABLE_CSP", str(ENABLE_CSP)).lower() == "true"
-CSP_REPORT_ONLY = os.getenv("CSP_REPORT_ONLY", "false").lower() == "true"
+CSP_REPORT_ONLY = os.getenv("CSP_REPORT_ONLY", "true").lower() == "true"
 CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
-    os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "true").lower() == "true"
+    os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "false").lower() == "true"
 )
-CSP_ALLOW_UNSAFE_EVAL = os.getenv("CSP_ALLOW_UNSAFE_EVAL", "true").lower() == "true"
+CSP_ALLOW_UNSAFE_EVAL = os.getenv("CSP_ALLOW_UNSAFE_EVAL", "false").lower() == "true"
 
 # Config propia (constantes)
 PROG_MILD = 24

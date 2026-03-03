@@ -4,6 +4,7 @@ Sistema de gestión basado en **Django** y **MySQL**, desplegable mediante **Doc
 Cada aplicación del repositorio representa un módulo funcional (ej. `comedores`, `relevamientos`, `users`).
 
 > Documentación organizada: ver `docs/indice.md` para el índice y referencias detalladas.
+> Infraestructura: resumen operativo en `docs/INFRA_README.md`.
 
 ---
 

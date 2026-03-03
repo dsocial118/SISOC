@@ -18,7 +18,6 @@
                                 {% if button.id %}id="{{ button.id }}"{% endif %}
                                 {% if button.name %}name="{{ button.name }}"{% endif %}
                                 class="btn btn-{{ button.style|default:'primary' }} mb-3 {% if button.class %}{{ button.class }}{% endif %} {% if not forloop.last %}me-2{% endif %}"
-                                {% if button.onclick %}onclick="{{ button.onclick }}"{% endif %}
                                 {% if button.data_confirm_click %}data-confirm-click="{{ button.data_confirm_click }}"{% endif %}
                                 {% if button.data_history_back %}data-history-back{% endif %}
                                 {% if button.data_page_reload %}data-page-reload{% endif %}

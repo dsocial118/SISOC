@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.db.utils import OperationalError
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -229,6 +230,18 @@ def _build_pagination_querystring(request):
     return pagination_query_params.urlencode()
 
 
+def _paginate_trash_items(queryset_or_items, page_number, paginate_by):
+    """Paginate trash data with a safe fallback for DB count failures."""
+    try:
+        paginator = Paginator(queryset_or_items, paginate_by)
+        return paginator.get_page(page_number)
+    except OperationalError:
+        if isinstance(queryset_or_items, list):
+            raise
+        paginator = Paginator(list(queryset_or_items), paginate_by)
+        return paginator.get_page(page_number)
+
+
 class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
     """List soft-deleted records by model with basic search."""
 
@@ -263,8 +276,11 @@ class TrashListView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
             ),
             filter_data=filter_data,
         )
-        paginator = Paginator(queryset, self.paginate_by)
-        page_obj = paginator.get_page(request.GET.get("page") or 1)
+        page_obj = _paginate_trash_items(
+            queryset_or_items=queryset,
+            page_number=request.GET.get("page") or 1,
+            paginate_by=self.paginate_by,
+        )
 
         # Build rows only for the current page's items
         rows = _rows_from_items(page_obj.object_list, models_by_key)

@@ -1,5 +1,7 @@
 """Tests unitarios para el middleware de CSP."""
 
+import base64
+
 from django.http import HttpResponse
 from django.test import RequestFactory
 
@@ -8,10 +10,11 @@ from config.middlewares.csp import ContentSecurityPolicyMiddleware
 
 def test_csp_agrega_header_y_nonce(mocker, settings):
     settings.ENABLE_CSP = True
-    settings.CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = True
+    settings.CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = False
+    settings.CSP_ALLOW_UNSAFE_EVAL = False
     mocker.patch(
-        "config.middlewares.csp.secrets.token_urlsafe",
-        return_value="nonce-prueba",
+        "config.middlewares.csp.secrets.token_bytes",
+        return_value=b"nonce-16-bytes!!",
     )
 
     middleware = ContentSecurityPolicyMiddleware(lambda request: HttpResponse("ok"))
@@ -19,12 +22,14 @@ def test_csp_agrega_header_y_nonce(mocker, settings):
 
     response = middleware(request)
 
-    assert request.csp_nonce == "nonce-prueba"
+    expected_nonce = base64.b64encode(b"nonce-16-bytes!!").decode("ascii").rstrip("=")
+    assert request.csp_nonce == expected_nonce
     assert "Content-Security-Policy" in response
     csp = response["Content-Security-Policy"]
     assert "script-src 'self'" in csp
-    assert "'nonce-nonce-prueba'" not in csp
-    assert "'unsafe-inline'" in csp
+    assert f"'nonce-{expected_nonce}'" in csp
+    assert "'unsafe-inline'" not in csp
+    assert "'unsafe-eval'" not in csp
 
 
 def test_csp_no_agrega_header_si_esta_deshabilitado(settings):
