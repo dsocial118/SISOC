@@ -38,7 +38,7 @@ from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.utils import convert_string_to_int
 from intervenciones.models.intervenciones import Intervencion
-from intervenciones.forms import IntervencionForm
+from intervenciones.forms import IntervencionForm, build_programa_aliases
 
 MESES_ES_CORTOS = [
     "Ene",
@@ -1026,7 +1026,12 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         presupuestos_data = self.get_presupuestos_data()
         relaciones_data = self.get_relaciones_optimizadas()
         env_config = self._get_environment_config()
-        intervencion_form = IntervencionForm()
+        programa_nombre = getattr(
+            getattr(self.object, "programa", None), "nombre", None
+        )
+        intervencion_form = IntervencionForm(
+            programa_aliases=build_programa_aliases(programa_nombre)
+        )
         selected_admision_context = _build_selected_admision_context(
             relaciones_data, self.request.GET
         )
