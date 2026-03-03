@@ -1372,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const actionUrl = `/expedientes/${expedienteId}/ciudadanos/${legajoId}/respuesta-subsanacion-renaper/`;
+      const actionUrl = `/celiaquia/expedientes/${expedienteId}/ciudadanos/${legajoId}/respuesta-subsanacion-renaper/`;
       formRespuesta.setAttribute('action', actionUrl);
       modalRespuestaRenaper.dataset.actionUrl = actionUrl;
 
