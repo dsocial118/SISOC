@@ -1,4 +1,4 @@
-import sentry_sdk
+import sentry_sdk  # pylint: disable=import-error
 
 
 class SentryUserContextMiddleware:

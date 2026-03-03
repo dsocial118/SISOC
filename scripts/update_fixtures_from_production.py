@@ -75,7 +75,7 @@ def models_for_fixture(fixture_path: Path) -> list[str]:
     except json.JSONDecodeError as exc:
         raise SystemExit(
             f"El fixture {fixture_path} no contiene JSON válido: {exc}"
-        )
+        ) from exc
 
     if not isinstance(data, list):
         raise SystemExit(
@@ -89,11 +89,17 @@ def models_for_fixture(fixture_path: Path) -> list[str]:
 
 def dump_models_to_fixture(models: list[str], fixture_path: Path) -> None:
     if not models:
-        logging.info("Omite %s (no lista modelos).", fixture_path.relative_to(REPO_ROOT))
+        logging.info(
+            "Omite %s (no lista modelos).", fixture_path.relative_to(REPO_ROOT)
+        )
         return
 
     cmd = [sys.executable, "manage.py", "dumpdata", *models, "--indent", "4"]
-    logging.info("Actualizando %s desde modelos %s", fixture_path.relative_to(REPO_ROOT), " ".join(models))
+    logging.info(
+        "Actualizando %s desde modelos %s",
+        fixture_path.relative_to(REPO_ROOT),
+        " ".join(models),
+    )
     with fixture_path.open("w", encoding="utf-8") as output:
         subprocess.run(cmd, cwd=REPO_ROOT, stdout=output, check=True)
 

@@ -1,11 +1,13 @@
 import logging
 import os
 
-import sentry_sdk
+import sentry_sdk  # pylint: disable=import-error
 from django.conf import settings
-from sentry_sdk.integrations.django import DjangoIntegration
-from sentry_sdk.integrations.logging import LoggingIntegration
-from sentry_sdk.utils import BadDsn, Dsn
+from sentry_sdk.integrations.django import DjangoIntegration  # pylint: disable=import-error
+from sentry_sdk.integrations.logging import (  # pylint: disable=import-error
+    LoggingIntegration,
+)
+from sentry_sdk.utils import BadDsn, Dsn  # pylint: disable=import-error
 
 logger = logging.getLogger(__name__)
 
@@ -113,8 +115,6 @@ def get_sentry_frontend_config() -> dict:
 
 
 def initialize_sentry_sdk() -> None:
-    global _SENTRY_INITIALIZED
-
     if _SENTRY_INITIALIZED:
         return
 
@@ -169,4 +169,4 @@ def initialize_sentry_sdk() -> None:
         sentry_kwargs["release"] = release
 
     sentry_sdk.init(**sentry_kwargs)
-    _SENTRY_INITIALIZED = True
+    globals()["_SENTRY_INITIALIZED"] = True

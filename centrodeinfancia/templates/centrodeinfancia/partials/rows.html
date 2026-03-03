@@ -21,7 +21,9 @@
                 {% with nombre=item.nombre_referente|default:"" apellido=item.apellido_referente|default:"" %}
                     <td data-referente="{{ nombre }} {{ apellido }}">
                         {% if nombre or apellido %}
-                            {{ nombre }}{% if nombre and apellido %}&nbsp;{% endif %}{{ apellido }}
+                            {{ nombre }}
+                            {% if nombre and apellido %}&nbsp;{% endif %}
+                            {{ apellido }}
                         {% else %}
                             -
                         {% endif %}
