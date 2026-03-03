@@ -18,7 +18,15 @@
             {% elif column_key == "telefono" %}
                 <td data-telefono="{{ item.telefono|default:'' }}">{{ item.telefono|default:"-" }}</td>
             {% elif column_key == "referente" %}
-                <td data-referente="{{ item.nombre_referente|default:'' }}">{{ item.nombre_referente|default:"-" }}</td>
+                {% with nombre=item.nombre_referente|default:"" apellido=item.apellido_referente|default:"" %}
+                    <td data-referente="{{ nombre }} {{ apellido }}">
+                        {% if nombre or apellido %}
+                            {{ nombre }}{% if nombre and apellido %}&nbsp;{% endif %}{{ apellido }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                {% endwith %}
             {% endif %}
         {% endfor %}
         <td>
