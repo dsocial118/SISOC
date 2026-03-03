@@ -340,7 +340,7 @@ def test_query_service_new_filters_and_export_guards(mocker):
 
     assert query_service._build_mysql_boolean_fulltext_query("aprobado convenio 1510")
     mocker.patch(
-        "audittrail.services.query_service._mysql_can_use_fulltext", return_value=True
+        "audittrail.services.query_service.impl._mysql_can_use_fulltext", return_value=True
     )
     qs_ft = _QS()
     out_ft = query_service.apply_optimized_keyword_filter(qs_ft, "aprobado convenio")
