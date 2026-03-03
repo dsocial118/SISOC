@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal, InvalidOperation
+from urllib.parse import quote_plus
 
 from django import template
 from django.templatetags.static import static
@@ -137,6 +138,24 @@ def google_maps_query(latitud, longitud):
     if lat_value is None or lng_value is None:
         return ""
     return f"{lat_value},{lng_value}"
+
+
+@register.simple_tag
+def google_maps_address(*components):
+    address_parts = []
+    for component in components:
+        if component is None:
+            continue
+        text = str(component).strip()
+        if not text:
+            continue
+        address_parts.append(text)
+
+    if not address_parts:
+        return ""
+
+    joined_address = ", ".join(address_parts)
+    return quote_plus(joined_address)
 
 
 @register.filter

@@ -154,7 +154,7 @@ def test_leer_tabla_csv_fallback_and_prd_csv_generation(mocker):
 
     # force excel/csv comma fail, then csv semicolon success
     mocker.patch(
-        "celiaquia.services.cruce_service.pd.read_excel", side_effect=ValueError("x")
+        "celiaquia.services.cruce_service.impl.pd.read_excel", side_effect=ValueError("x")
     )
 
     def _read_csv(_bio, dtype=str, sep=","):
@@ -162,7 +162,7 @@ def test_leer_tabla_csv_fallback_and_prd_csv_generation(mocker):
             return pd.DataFrame({"documento": ["20123456783"], "nombre": ["A"]})
         raise ValueError("bad")
 
-    mocker.patch("celiaquia.services.cruce_service.pd.read_csv", side_effect=_read_csv)
+    mocker.patch("celiaquia.services.cruce_service.impl.pd.read_csv", side_effect=_read_csv)
     df = CruceService._leer_tabla(F())
     assert "documento" in df.columns
 
@@ -198,7 +198,7 @@ def test_procesar_cruce_validations(mocker):
         save=mocker.Mock(),
     )
     mocker.patch(
-        "celiaquia.services.cruce_service.CupoService.metrics_por_provincia",
+        "celiaquia.services.cruce_service.impl.CupoService.metrics_por_provincia",
         side_effect=cruce_module.CupoNoConfigurado("sin cupo"),
     )
     with pytest.raises(ValidationError):
@@ -217,10 +217,10 @@ def test_leer_tabla_raises_when_all_formats_fail(mocker):
             return None
 
     mocker.patch(
-        "celiaquia.services.cruce_service.pd.read_excel", side_effect=ValueError("x")
+        "celiaquia.services.cruce_service.impl.pd.read_excel", side_effect=ValueError("x")
     )
     mocker.patch(
-        "celiaquia.services.cruce_service.pd.read_csv", side_effect=ValueError("x")
+        "celiaquia.services.cruce_service.impl.pd.read_csv", side_effect=ValueError("x")
     )
 
     with pytest.raises(ValidationError):
@@ -249,11 +249,11 @@ def test_generar_prd_pdf_html_success_with_weasy(mocker, monkeypatch):
         )
     )
     mocker.patch(
-        "celiaquia.services.cruce_service.render_to_string",
+        "celiaquia.services.cruce_service.impl.render_to_string",
         return_value="<html></html>",
     )
     mocker.patch(
-        "celiaquia.services.cruce_service.WPHTML",
+        "celiaquia.services.cruce_service.impl.WPHTML",
         return_value=SimpleNamespace(write_pdf=lambda: b"pdf-bytes"),
     )
 
@@ -356,7 +356,7 @@ def test_generar_prd_csv_with_writer_stub(mocker):
         def writerow(self, row):
             rows.append(row)
 
-    mocker.patch("celiaquia.services.cruce_service.csv.writer", return_value=_Writer())
+    mocker.patch("celiaquia.services.cruce_service.impl.csv.writer", return_value=_Writer())
 
     out = CruceService._generar_prd_csv(
         expediente=SimpleNamespace(),
