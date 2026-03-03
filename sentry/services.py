@@ -65,11 +65,8 @@ def _is_sentry_available_for_environment(environment: str) -> bool:
 
 
 def _resolve_sentry_environment(environment: str) -> str:
-    return (
-        os.getenv("SENTRY_ENVIRONMENT")
-        or _SENTRY_ENVIRONMENT_IDENTIFIERS.get(environment)
-        or environment
-    )
+    # Resolver siempre a partir de ENVIRONMENT, sin permitir override por variable extra
+    return _SENTRY_ENVIRONMENT_IDENTIFIERS.get(environment) or environment
 
 
 def get_sentry_frontend_config() -> dict:
