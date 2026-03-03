@@ -3,6 +3,7 @@ from datetime import date, datetime, time, timezone as dt_timezone
 from decimal import Decimal
 
 import pytest
+from unittest import mock
 from django.contrib.auth import get_user_model
 
 from core.models import MontoPrestacionPrograma, Programa
@@ -22,7 +23,7 @@ class TestHistorialService:
             password="testpass123",
             email="historial@example.com",
         )
-        monkeypatch.setattr(historial_service, "get_current_user", lambda: user)
+        monkeypatch.setattr("config.middlewares.threadlocals.get_current_user", lambda: user)
 
         programa = Programa.objects.create(nombre="Programa Test")
         prestacion = MontoPrestacionPrograma.objects.create(

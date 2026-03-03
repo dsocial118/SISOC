@@ -291,16 +291,30 @@ class LegajoService:
     @staticmethod
     def get_archivos_requeridos_por_legajo(legajo, responsables_ids=None):
         """Retorna los archivos requeridos segun el tipo de legajo y edad."""
+
+        rol_legajo = (getattr(legajo, "rol", "") or "").strip().lower()
+        es_doble_rol = bool(getattr(legajo, "es_doble_rol", False)) or (
+            rol_legajo == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+        )
+
         es_responsable = LegajoService._es_responsable(
             legajo.ciudadano, responsables_ids
         )
 
+        # Caso especial: Doble rol (beneficiario Y responsable)
+        if es_doble_rol:
+            return {
+                "archivo1": "Biopsia / Constancia medica",
+                "archivo2": "DNI (foto) o partida de nacimiento o certificacion de la justicia "
+                "(tutor legal)",
+                "archivo3": "Certificacion de ANSES",
+            }
+
+        # Solo responsable (sin ser beneficiario)
         if es_responsable:
             return {
-                "archivo2": (
-                    "DNI (foto) o partida de nacimiento o certificacion de la justicia "
-                    "(tutor legal)",
-                ),
+                "archivo2": "DNI (foto) o partida de nacimiento o certificacion de la justicia "
+                "(tutor legal)",
                 "archivo3": "Certificacion de ANSES",
             }
 

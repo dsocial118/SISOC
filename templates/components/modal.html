@@ -44,7 +44,6 @@
                                 <button type="button"
                                         class="btn btn-{{ button.style|default:'secondary' }} {{ button.class|default:'' }}"
                                         {% if button.dismiss %}data-bs-dismiss="modal"{% endif %}
-                                        {% if button.onclick %}onclick="{{ button.onclick }}"{% endif %}
                                         {% if button.data_confirm_click %}data-confirm-click="{{ button.data_confirm_click }}"{% endif %}
                                         {% if button.data_history_back %}data-history-back{% endif %}
                                         {% if button.data_page_reload %}data-page-reload{% endif %}
