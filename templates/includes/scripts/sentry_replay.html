@@ -1,0 +1,39 @@
+{% if sentry_frontend.enabled %}
+    <script src="https://cdn.jsdelivr.net/npm/@sentry/browser/build/bundle.tracing.replay.min.js"
+            crossorigin="anonymous"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            if (!window.Sentry || typeof window.Sentry.init !== "function") {
+                return;
+            }
+
+            const sentryIntegrations = [];
+            if (typeof window.Sentry.browserTracingIntegration === "function") {
+                sentryIntegrations.push(window.Sentry.browserTracingIntegration());
+            }
+            if (
+                {{ sentry_frontend.replay_enabled|yesno:"true,false" }} &&
+                typeof window.Sentry.replayIntegration === "function"
+            ) {
+                sentryIntegrations.push(window.Sentry.replayIntegration());
+            }
+
+            const sentryConfig = {
+                dsn: "{{ sentry_frontend.dsn|escapejs }}",
+                environment: "{{ sentry_frontend.environment|escapejs }}",
+                sendDefaultPii: {{ sentry_frontend.send_default_pii|yesno:"true,false" }},
+                sampleRate: {{ sentry_frontend.sample_rate }},
+                tracesSampleRate: {{ sentry_frontend.traces_sample_rate }},
+                replaysSessionSampleRate: {{ sentry_frontend.replays_session_sample_rate }},
+                replaysOnErrorSampleRate: {{ sentry_frontend.replays_on_error_sample_rate }},
+                integrations: sentryIntegrations,
+            };
+
+            {% if sentry_frontend.release %}
+                sentryConfig.release = "{{ sentry_frontend.release|escapejs }}";
+            {% endif %}
+
+            window.Sentry.init(sentryConfig);
+        })();
+    </script>
+{% endif %}

@@ -4,7 +4,7 @@ Esta guía explica cómo está integrada la app `sentry` en SISOC y cómo usarla
 
 ## 1. Qué hace la implementación actual
 
-La integración se apoya en 4 piezas:
+La integración se apoya en 5 piezas:
 
 1. `sentry/apps.py`
    - En `SentryConfig.ready()` llama `initialize_sentry_sdk()` al iniciar Django.
@@ -15,6 +15,8 @@ La integración se apoya en 4 piezas:
    - Handler de logging que reenvía eventos `ERROR`/`CRITICAL` a Sentry.
 4. `sentry/middleware.py`
    - Adjunta contexto de usuario autenticado (`id`, `username`) en cada request.
+5. `sentry/context_processors.py` + `templates/includes/scripts/sentry_replay.html`
+   - Exponen config de Sentry al frontend e inicializan Session Replay en templates base.
 
 Además, `config/settings.py` ya incluye:
 
@@ -41,39 +43,31 @@ Variables soportadas (configurables por `.env`):
 SENTRY_ENABLED=true
 SENTRY_RELEASE=
 SENTRY_SEND_DEFAULT_PII=false
-SENTRY_TRACES_SAMPLE_RATE=0.0
-SENTRY_PROFILES_SAMPLE_RATE=0.0
+# Rates/replay definidos en config/settings.py según ENVIRONMENT
 ```
 
 ### Recomendación para QA/PRD
 
-En `.env.qa` y `.env.prod` definir explícitamente:
-
-```env
-SENTRY_ENABLED=true
-SENTRY_ENVIRONMENT=sisoc-qa   # qa
-# SENTRY_ENVIRONMENT=sisoc-prd # prd
-SENTRY_RELEASE=<tag_o_sha_del_deploy>
-SENTRY_SEND_DEFAULT_PII=false
-SENTRY_TRACES_SAMPLE_RATE=0.0
-SENTRY_PROFILES_SAMPLE_RATE=0.0
-```
-
 Notas:
 
 - `SENTRY_DSN` se define en `config/settings.py`.
+- `SENTRY_LOG_EVENT_LEVEL` se define en `config/settings.py` con default `WARNING`.
 - Si `SENTRY_ENVIRONMENT` queda vacío, SISOC usa mapeo automático:
   - `qa -> sisoc-qa`
   - `prd -> sisoc-prd`
 - Mantener `SENTRY_SEND_DEFAULT_PII=false` salvo necesidad explícita.
+- Los rates se definen condicionalmente en `config/settings.py`:
+  - `ENVIRONMENT=qa`: `SENTRY_ERROR_SAMPLE_RATE=0.75`, `SENTRY_TRACES_SAMPLE_RATE=0.75`, sin replay.
+  - `ENVIRONMENT=prd`: `SENTRY_ERROR_SAMPLE_RATE=1.0`, `SENTRY_TRACES_SAMPLE_RATE=1.0`, replay al 100%.
 
 ## 4. Qué se reporta automáticamente
 
 1. Excepciones no manejadas en Django (integración `DjangoIntegration`).
-2. Logs con nivel `ERROR` o mayor (handler custom de Sentry).
+2. Logs con nivel configurable (`SENTRY_LOG_EVENT_LEVEL`, default `WARNING`) vía handler custom.
 3. Contexto de usuario autenticado en requests web:
    - `id`: `user.pk`
    - `username`: `user.get_username()`
+4. Session Replay en frontend (templates base) cuando `SENTRY_REPLAY_ENABLED=true`.
 
 ## 5. Cómo reportar errores desde código
 
@@ -94,7 +88,7 @@ except Exception:
 Comportamiento:
 
 - Con `logger.exception(...)` (o `exc_info=True`) el handler envía `capture_exception`.
-- Con `logger.error(...)` sin traceback, envía `capture_message`.
+- Con `logger.warning/error/critical(...)` sin traceback, envía `capture_message` con el nivel correspondiente.
 
 ## 6. Smoke test manual
 
