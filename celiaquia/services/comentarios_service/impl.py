@@ -1,7 +1,7 @@
 """Servicio para gestión de historial de comentarios."""
 
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import models, transaction
 
 from celiaquia.models import ExpedienteCiudadano, HistorialComentarios
 
