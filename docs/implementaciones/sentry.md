@@ -52,7 +52,7 @@ Notas:
 
 - `SENTRY_DSN` se define en `config/settings.py`.
 - `SENTRY_LOG_EVENT_LEVEL` se define en `config/settings.py` con default `WARNING`.
-- Si `SENTRY_ENVIRONMENT` queda vacío, SISOC usa mapeo automático:
+- El environment enviado a Sentry se deriva siempre de `ENVIRONMENT` (sin variable extra):
   - `qa -> sisoc-qa`
   - `prd -> sisoc-prd`
 - Mantener `SENTRY_SEND_DEFAULT_PII=false` salvo necesidad explícita.

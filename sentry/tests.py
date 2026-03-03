@@ -34,7 +34,6 @@ def test_initialize_sentry_with_dsn_inits_once(monkeypatch):
         services.settings, "SENTRY_DSN", "https://public@example.ingest.sentry.io/1"
     )
     monkeypatch.setenv("ENVIRONMENT", "prd")
-    monkeypatch.delenv("SENTRY_ENVIRONMENT", raising=False)
     monkeypatch.setattr(services.settings, "SENTRY_ERROR_SAMPLE_RATE", 0.75)
     monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
 
@@ -85,7 +84,6 @@ def test_initialize_sentry_qa_inits_with_qa_identifier(monkeypatch):
         services.settings, "SENTRY_DSN", "https://public@example.ingest.sentry.io/1"
     )
     monkeypatch.setenv("ENVIRONMENT", "qa")
-    monkeypatch.delenv("SENTRY_ENVIRONMENT", raising=False)
     monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
 
     calls = []
@@ -99,6 +97,28 @@ def test_initialize_sentry_qa_inits_with_qa_identifier(monkeypatch):
 
     assert len(calls) == 1
     assert calls[0]["environment"] == "sisoc-qa"
+
+
+def test_initialize_sentry_ignores_sentry_environment_env_var(monkeypatch):
+    monkeypatch.setenv("SENTRY_ENABLED", "true")
+    monkeypatch.setattr(
+        services.settings, "SENTRY_DSN", "https://public@example.ingest.sentry.io/1"
+    )
+    monkeypatch.setenv("ENVIRONMENT", "prd")
+    monkeypatch.setenv("SENTRY_ENVIRONMENT", "custom-env")
+    monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
+
+    calls = []
+
+    def fake_init(**kwargs):
+        calls.append(kwargs)
+
+    monkeypatch.setattr(services.sentry_sdk, "init", fake_init)
+
+    services.initialize_sentry_sdk()
+
+    assert len(calls) == 1
+    assert calls[0]["environment"] == "sisoc-prd"
 
 
 def test_initialize_sentry_invalid_dsn_does_not_init(monkeypatch, caplog):
