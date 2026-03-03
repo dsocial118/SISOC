@@ -1,5 +1,5 @@
 """Servicio para gestión de comedores."""
 
-from .impl import ComedorService
+from .impl import ComedorService, messages
 
-__all__ = ["ComedorService"]
+__all__ = ["ComedorService", "messages"]

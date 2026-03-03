@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
+from config.runtime import is_running_tests
 
 # Cargar variables de entorno
 load_dotenv()
@@ -205,9 +206,7 @@ DATABASES = {
 }
 
 # DB para testing
-RUNNING_TESTS = (
-    any("pytest" in arg for arg in sys.argv) or os.environ.get("PYTEST_RUNNING") == "1"
-)
+RUNNING_TESTS = is_running_tests(os.environ, sys.argv)
 if RUNNING_TESTS and not SECRET_KEY:
     SECRET_KEY = "test-secret-key"
 USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
@@ -523,6 +522,8 @@ else:
 # Overrides y flags de endurecimiento CSP (migración gradual)
 ENABLE_CSP = os.getenv("ENABLE_CSP", str(ENABLE_CSP)).lower() == "true"
 CSP_REPORT_ONLY = os.getenv("CSP_REPORT_ONLY", "true").lower() == "true"
+if RUNNING_TESTS and "CSP_REPORT_ONLY" not in os.environ:
+    CSP_REPORT_ONLY = False
 CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
     os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "false").lower() == "true"
 )
