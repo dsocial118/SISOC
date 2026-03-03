@@ -1,14 +1,9 @@
+import importlib
 import logging
 import os
 
 import sentry_sdk  # pylint: disable=import-error
 from django.conf import settings
-from sentry_sdk.integrations.django import (
-    DjangoIntegration,
-)  # pylint: disable=import-error
-from sentry_sdk.integrations.logging import (  # pylint: disable=import-error
-    LoggingIntegration,
-)
 from sentry_sdk.utils import BadDsn, Dsn  # pylint: disable=import-error
 
 logger = logging.getLogger(__name__)
@@ -71,6 +66,19 @@ def _is_sentry_available_for_environment(environment: str) -> bool:
 def _resolve_sentry_environment(environment: str) -> str:
     # Resolver siempre a partir de ENVIRONMENT, sin permitir override por variable extra
     return _SENTRY_ENVIRONMENT_IDENTIFIERS.get(environment) or environment
+
+
+def _build_sentry_integrations(sentry_log_event_level: int) -> list:
+    django_integration = importlib.import_module(
+        "sentry_sdk.integrations.django"
+    ).DjangoIntegration
+    logging_integration = importlib.import_module(
+        "sentry_sdk.integrations.logging"
+    ).LoggingIntegration
+    return [
+        django_integration(),
+        logging_integration(level=logging.INFO, event_level=sentry_log_event_level),
+    ]
 
 
 def get_sentry_frontend_config() -> dict:
@@ -160,10 +168,7 @@ def initialize_sentry_sdk() -> None:
         "profiles_sample_rate": _env_to_float(
             getattr(settings, "SENTRY_PROFILES_SAMPLE_RATE", 0.0), default=0.0
         ),
-        "integrations": [
-            DjangoIntegration(),
-            LoggingIntegration(level=logging.INFO, event_level=sentry_log_event_level),
-        ],
+        "integrations": _build_sentry_integrations(sentry_log_event_level),
     }
 
     release = (os.getenv("SENTRY_RELEASE") or "").strip()
