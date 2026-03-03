@@ -1,11 +1,17 @@
 import logging
+from types import SimpleNamespace
 
+from django.contrib.auth.models import AnonymousUser
+from django.test import RequestFactory
+
+from sentry.middleware import SentryUserContextMiddleware
 from sentry.handlers import SentryEventHandler
 from sentry import services
 
 
 def test_initialize_sentry_no_dsn_does_not_init(monkeypatch):
 	monkeypatch.setenv("SENTRY_ENABLED", "true")
+	monkeypatch.setenv("ENVIRONMENT", "prd")
 	monkeypatch.delenv("SENTRY_DSN", raising=False)
 	monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
 
@@ -24,7 +30,8 @@ def test_initialize_sentry_no_dsn_does_not_init(monkeypatch):
 def test_initialize_sentry_with_dsn_inits_once(monkeypatch):
 	monkeypatch.setenv("SENTRY_ENABLED", "true")
 	monkeypatch.setenv("SENTRY_DSN", "https://example.ingest.sentry.io/1")
-	monkeypatch.setenv("ENVIRONMENT", "dev")
+	monkeypatch.setenv("ENVIRONMENT", "prd")
+	monkeypatch.delenv("SENTRY_ENVIRONMENT", raising=False)
 	monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
 
 	calls = []
@@ -39,9 +46,47 @@ def test_initialize_sentry_with_dsn_inits_once(monkeypatch):
 
 	assert len(calls) == 1
 	assert calls[0]["dsn"] == "https://example.ingest.sentry.io/1"
-	assert calls[0]["environment"] == "dev"
+	assert calls[0]["environment"] == "sisoc-prd"
 	assert "integrations" in calls[0]
 	assert len(calls[0]["integrations"]) == 2
+
+
+def test_initialize_sentry_qa_inits_with_qa_identifier(monkeypatch):
+	monkeypatch.setenv("SENTRY_ENABLED", "true")
+	monkeypatch.setenv("SENTRY_DSN", "https://example.ingest.sentry.io/1")
+	monkeypatch.setenv("ENVIRONMENT", "qa")
+	monkeypatch.delenv("SENTRY_ENVIRONMENT", raising=False)
+	monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
+
+	calls = []
+
+	def fake_init(**kwargs):
+		calls.append(kwargs)
+
+	monkeypatch.setattr(services.sentry_sdk, "init", fake_init)
+
+	services.initialize_sentry_sdk()
+
+	assert len(calls) == 1
+	assert calls[0]["environment"] == "sisoc-qa"
+
+
+def test_initialize_sentry_non_production_does_not_init(monkeypatch):
+	monkeypatch.setenv("SENTRY_ENABLED", "true")
+	monkeypatch.setenv("SENTRY_DSN", "https://example.ingest.sentry.io/1")
+	monkeypatch.setenv("ENVIRONMENT", "dev")
+	monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
+
+	init_called = {"count": 0}
+
+	def fake_init(**kwargs):
+		init_called["count"] += 1
+
+	monkeypatch.setattr(services.sentry_sdk, "init", fake_init)
+
+	services.initialize_sentry_sdk()
+
+	assert init_called["count"] == 0
 
 
 def test_sentry_event_handler_captures_exception(monkeypatch):
@@ -95,3 +140,44 @@ def test_sentry_event_handler_captures_error_message(monkeypatch):
 
 	assert len(messages) == 1
 	assert messages[0][1] == "error"
+
+
+def test_sentry_user_context_middleware_sets_authenticated_user(monkeypatch):
+	request = RequestFactory().get("/")
+	request.user = SimpleNamespace(
+		is_authenticated=True,
+		pk=123,
+		get_username=lambda: "usuario.test",
+	)
+
+	user_calls = []
+
+	def fake_set_user(payload):
+		user_calls.append(payload)
+
+	monkeypatch.setattr("sentry.middleware.sentry_sdk.set_user", fake_set_user)
+
+	middleware = SentryUserContextMiddleware(lambda req: None)
+	middleware(request)
+
+	assert len(user_calls) == 1
+	assert user_calls[0]["id"] == "123"
+	assert user_calls[0]["username"] == "usuario.test"
+
+
+def test_sentry_user_context_middleware_clears_anonymous_user(monkeypatch):
+	request = RequestFactory().get("/")
+	request.user = AnonymousUser()
+
+	user_calls = []
+
+	def fake_set_user(payload):
+		user_calls.append(payload)
+
+	monkeypatch.setattr("sentry.middleware.sentry_sdk.set_user", fake_set_user)
+
+	middleware = SentryUserContextMiddleware(lambda req: None)
+	middleware(request)
+
+	assert len(user_calls) == 1
+	assert user_calls[0] is None
