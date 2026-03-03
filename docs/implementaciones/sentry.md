@@ -29,6 +29,7 @@ Además, `config/settings.py` ya incluye:
 1. `SENTRY_ENABLED=true` (si no existe, por defecto se toma `true`).
 2. `ENVIRONMENT` es `qa` o `prd`.
 3. `SENTRY_DSN` tiene valor.
+4. `SENTRY_DSN` es un DSN válido (incluye `public_key@...`).
 
 Si `ENVIRONMENT=dev`, Sentry no se inicializa aunque haya DSN.
 
@@ -132,8 +133,10 @@ Revisar:
 1. `ENVIRONMENT` sea `qa` o `prd`.
 2. `SENTRY_ENABLED=true`.
 3. `SENTRY_DSN` configurado.
-4. Reinicio del contenedor Django tras cambiar `.env`.
-5. Que el evento sea `ERROR` o mayor.
+4. `SENTRY_DSN` con formato válido: `https://<public_key>@o<org>.ingest.sentry.io/<project_id>`.
+5. Revisar logs de arranque por warning `SENTRY_DSN inválido...`.
+6. Reinicio del contenedor Django tras cambiar `.env`.
+7. Que el evento sea `ERROR` o mayor.
 
 ### El evento llega sin usuario
 

@@ -29,7 +29,7 @@ def test_initialize_sentry_no_dsn_does_not_init(monkeypatch):
 
 def test_initialize_sentry_with_dsn_inits_once(monkeypatch):
     monkeypatch.setenv("SENTRY_ENABLED", "true")
-    monkeypatch.setenv("SENTRY_DSN", "https://example.ingest.sentry.io/1")
+    monkeypatch.setenv("SENTRY_DSN", "https://public@example.ingest.sentry.io/1")
     monkeypatch.setenv("ENVIRONMENT", "prd")
     monkeypatch.delenv("SENTRY_ENVIRONMENT", raising=False)
     monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
@@ -45,7 +45,7 @@ def test_initialize_sentry_with_dsn_inits_once(monkeypatch):
     services.initialize_sentry_sdk()
 
     assert len(calls) == 1
-    assert calls[0]["dsn"] == "https://example.ingest.sentry.io/1"
+    assert calls[0]["dsn"] == "https://public@example.ingest.sentry.io/1"
     assert calls[0]["environment"] == "sisoc-prd"
     assert "integrations" in calls[0]
     assert len(calls[0]["integrations"]) == 2
@@ -53,7 +53,7 @@ def test_initialize_sentry_with_dsn_inits_once(monkeypatch):
 
 def test_initialize_sentry_qa_inits_with_qa_identifier(monkeypatch):
     monkeypatch.setenv("SENTRY_ENABLED", "true")
-    monkeypatch.setenv("SENTRY_DSN", "https://example.ingest.sentry.io/1")
+    monkeypatch.setenv("SENTRY_DSN", "https://public@example.ingest.sentry.io/1")
     monkeypatch.setenv("ENVIRONMENT", "qa")
     monkeypatch.delenv("SENTRY_ENVIRONMENT", raising=False)
     monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
@@ -71,9 +71,29 @@ def test_initialize_sentry_qa_inits_with_qa_identifier(monkeypatch):
     assert calls[0]["environment"] == "sisoc-qa"
 
 
-def test_initialize_sentry_non_production_does_not_init(monkeypatch):
+def test_initialize_sentry_invalid_dsn_does_not_init(monkeypatch, caplog):
     monkeypatch.setenv("SENTRY_ENABLED", "true")
     monkeypatch.setenv("SENTRY_DSN", "https://example.ingest.sentry.io/1")
+    monkeypatch.setenv("ENVIRONMENT", "prd")
+    monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
+
+    init_called = {"count": 0}
+
+    def fake_init(**kwargs):
+        init_called["count"] += 1
+
+    monkeypatch.setattr(services.sentry_sdk, "init", fake_init)
+
+    with caplog.at_level(logging.WARNING):
+        services.initialize_sentry_sdk()
+
+    assert init_called["count"] == 0
+    assert "SENTRY_DSN inválido." in caplog.text
+
+
+def test_initialize_sentry_non_production_does_not_init(monkeypatch):
+    monkeypatch.setenv("SENTRY_ENABLED", "true")
+    monkeypatch.setenv("SENTRY_DSN", "https://public@example.ingest.sentry.io/1")
     monkeypatch.setenv("ENVIRONMENT", "dev")
     monkeypatch.setattr(services, "_SENTRY_INITIALIZED", False)
 

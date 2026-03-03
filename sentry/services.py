@@ -4,6 +4,7 @@ import os
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
+from sentry_sdk.utils import BadDsn, Dsn
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,14 @@ def initialize_sentry_sdk() -> None:
 
     dsn = (os.getenv("SENTRY_DSN") or "").strip()
     if not dsn:
+        return
+    try:
+        Dsn(dsn)
+    except (BadDsn, ValueError) as exc:
+        logger.warning(
+            "SENTRY_DSN inválido. Se omite inicialización de Sentry. Motivo: %s",
+            exc,
+        )
         return
 
     sentry_kwargs = {
