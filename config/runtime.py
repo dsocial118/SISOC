@@ -9,4 +9,3 @@ def is_running_tests(environ, argv):
         or bool(environ.get("PYTEST_CURRENT_TEST"))
         or bool(environ.get("PYTEST_XDIST_WORKER"))
     )
-
