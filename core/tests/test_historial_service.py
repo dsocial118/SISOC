@@ -23,7 +23,9 @@ class TestHistorialService:
             password="testpass123",
             email="historial@example.com",
         )
-        monkeypatch.setattr("config.middlewares.threadlocals.get_current_user", lambda: user)
+        monkeypatch.setattr(
+            "config.middlewares.threadlocals.get_current_user", lambda: user
+        )
 
         programa = Programa.objects.create(nombre="Programa Test")
         prestacion = MontoPrestacionPrograma.objects.create(

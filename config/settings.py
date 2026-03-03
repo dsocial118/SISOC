@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     # Apps propias
     "users",
     "core",
+    "sentry.apps.SentryConfig",
     "dashboard",
     "comedores",
     "organizaciones",
@@ -115,6 +116,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "sentry.middleware.SentryUserContextMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -396,6 +398,11 @@ LOGGING = {
             "filename": str(LOG_DIR / "data.log"),
             "formatter": "json_data",
         },
+        "sentry": {
+            "level": "ERROR",
+            "class": "sentry.handlers.SentryEventHandler",
+            "formatter": "verbose",
+        },
     },
     "root": {
         "handlers": [
@@ -404,6 +411,7 @@ LOGGING = {
             "warning_file",
             "critical_file",
             "data_file",
+            "sentry",
         ],
         "level": "DEBUG" if DEBUG else "INFO",
     },
@@ -414,7 +422,7 @@ LOGGING = {
             "propagate": True,
         },
         "django.request": {
-            "handlers": ["error_file"],
+            "handlers": ["error_file", "sentry"],
             "level": "ERROR",
             "propagate": False,
         },
