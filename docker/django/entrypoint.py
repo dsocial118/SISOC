@@ -73,6 +73,11 @@ def run_django_commands():
         ).lower()
         == "true"
     )
+    # Backward compat: también aceptar RUN_MAKEMIGRATIONS
+    if not run_makemigrations_on_start:
+        run_makemigrations_on_start = (
+            os.getenv("RUN_MAKEMIGRATIONS", "").lower() == "true"
+        )
 
     if run_makemigrations_on_start:
         run_command(

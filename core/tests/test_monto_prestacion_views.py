@@ -61,8 +61,7 @@ def test_create_asigna_usuario_y_registra_historial(
 ):
     client.force_login(gestor_prestaciones_user)
     monkeypatch.setattr(
-        historial_service,
-        "get_current_user",
+        "config.middlewares.threadlocals.get_current_user",
         lambda: gestor_prestaciones_user,
     )
 
