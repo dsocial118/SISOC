@@ -18,7 +18,7 @@ from intervenciones.models.intervenciones import (
     TipoIntervencion,
     TipoDestinatario,
 )
-from intervenciones.forms import IntervencionForm
+from intervenciones.forms import IntervencionForm, build_programa_aliases
 
 
 @login_required
@@ -96,6 +96,15 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
     form_class = IntervencionForm
     template_name = "intervencion_form.html"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        comedor = ComedorService.get_comedor(self.kwargs["pk"])
+        programa_nombre = getattr(
+            getattr(comedor, "programa", None), "nombre", None
+        )
+        kwargs["programa_aliases"] = build_programa_aliases(programa_nombre)
+        return kwargs
+
     def form_valid(self, form):
         """Validar y guardar la intervención creada por el usuario."""
 
@@ -165,6 +174,15 @@ class IntervencionUpdateView(LoginRequiredMixin, UpdateView):
     model = Intervencion
     form_class = IntervencionForm
     template_name = "intervencion_form.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        comedor = ComedorService.get_comedor(self.kwargs["pk2"])
+        programa_nombre = getattr(
+            getattr(comedor, "programa", None), "nombre", None
+        )
+        kwargs["programa_aliases"] = build_programa_aliases(programa_nombre)
+        return kwargs
 
     def form_valid(self, form):
         """Guardar los cambios de la intervención seleccionada."""
