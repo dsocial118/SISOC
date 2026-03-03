@@ -99,9 +99,7 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         comedor = ComedorService.get_comedor(self.kwargs["pk"])
-        programa_nombre = getattr(
-            getattr(comedor, "programa", None), "nombre", None
-        )
+        programa_nombre = getattr(getattr(comedor, "programa", None), "nombre", None)
         kwargs["programa_aliases"] = build_programa_aliases(programa_nombre)
         return kwargs
 
@@ -178,9 +176,7 @@ class IntervencionUpdateView(LoginRequiredMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         comedor = ComedorService.get_comedor(self.kwargs["pk2"])
-        programa_nombre = getattr(
-            getattr(comedor, "programa", None), "nombre", None
-        )
+        programa_nombre = getattr(getattr(comedor, "programa", None), "nombre", None)
         kwargs["programa_aliases"] = build_programa_aliases(programa_nombre)
         return kwargs
 

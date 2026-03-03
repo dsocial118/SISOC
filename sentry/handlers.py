@@ -1,6 +1,6 @@
 import logging
 
-import sentry_sdk
+import sentry_sdk  # pylint: disable=import-error
 
 
 class SentryEventHandler(logging.Handler):

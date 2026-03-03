@@ -147,7 +147,9 @@
                             <p class="mb-2">
                                 <i class="bi bi-person me-2"></i><strong>Referente:</strong>
                                 {% if nombre or apellido %}
-                                    {{ nombre }}{% if nombre and apellido %}&nbsp;{% endif %}{{ apellido }}
+                                    {{ nombre }}
+                                    {% if nombre and apellido %}&nbsp;{% endif %}
+                                    {{ apellido }}
                                 {% else %}
                                     -
                                 {% endif %}

@@ -1,3 +1,1 @@
-from django.shortcuts import render
-
-# Create your views here.
+# Este módulo no define vistas por ahora.

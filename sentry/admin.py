@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+# Este módulo no registra modelos en el admin por ahora.
