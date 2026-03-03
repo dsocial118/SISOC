@@ -2,6 +2,7 @@ import logging
 import os
 
 import sentry_sdk
+from django.conf import settings
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.utils import BadDsn, Dsn
@@ -53,7 +54,7 @@ def initialize_sentry_sdk() -> None:
         or environment
     )
 
-    dsn = (os.getenv("SENTRY_DSN") or "").strip()
+    dsn = (getattr(settings, "SENTRY_DSN", "") or "").strip()
     if not dsn:
         return
     try:

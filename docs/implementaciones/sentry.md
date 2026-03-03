@@ -28,19 +28,17 @@ Además, `config/settings.py` ya incluye:
 
 1. `SENTRY_ENABLED=true` (si no existe, por defecto se toma `true`).
 2. `ENVIRONMENT` es `qa` o `prd`.
-3. `SENTRY_DSN` tiene valor.
+3. `SENTRY_DSN` (definido en `config/settings.py`) tiene valor.
 4. `SENTRY_DSN` es un DSN válido (incluye `public_key@...`).
 
 Si `ENVIRONMENT=dev`, Sentry no se inicializa aunque haya DSN.
 
 ## 3. Variables de entorno
 
-Variables soportadas (definidas en `.env.example`):
+Variables soportadas (configurables por `.env`):
 
 ```env
 SENTRY_ENABLED=true
-SENTRY_DSN=
-SENTRY_ENVIRONMENT=dev
 SENTRY_RELEASE=
 SENTRY_SEND_DEFAULT_PII=false
 SENTRY_TRACES_SAMPLE_RATE=0.0
@@ -53,7 +51,6 @@ En `.env.qa` y `.env.prod` definir explícitamente:
 
 ```env
 SENTRY_ENABLED=true
-SENTRY_DSN=https://<public_key>@o<org>.ingest.sentry.io/<project_id>
 SENTRY_ENVIRONMENT=sisoc-qa   # qa
 # SENTRY_ENVIRONMENT=sisoc-prd # prd
 SENTRY_RELEASE=<tag_o_sha_del_deploy>
@@ -64,6 +61,7 @@ SENTRY_PROFILES_SAMPLE_RATE=0.0
 
 Notas:
 
+- `SENTRY_DSN` se define en `config/settings.py`.
 - Si `SENTRY_ENVIRONMENT` queda vacío, SISOC usa mapeo automático:
   - `qa -> sisoc-qa`
   - `prd -> sisoc-prd`
@@ -132,7 +130,7 @@ Revisar:
 
 1. `ENVIRONMENT` sea `qa` o `prd`.
 2. `SENTRY_ENABLED=true`.
-3. `SENTRY_DSN` configurado.
+3. `SENTRY_DSN` definido en `config/settings.py`.
 4. `SENTRY_DSN` con formato válido: `https://<public_key>@o<org>.ingest.sentry.io/<project_id>`.
 5. Revisar logs de arranque por warning `SENTRY_DSN inválido...`.
 6. Reinicio del contenedor Django tras cambiar `.env`.

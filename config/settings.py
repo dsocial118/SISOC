@@ -286,9 +286,13 @@ SPECTACULAR_SETTINGS = {
 
 # Dominios / Integraciones
 DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
+SENTRY_DSN = (
+    "https://adeea29eb91a3def6f8a9df142019b21@"
+    "o4510947069788160.ingest.us.sentry.io/4510947077193728"
+)
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
-RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+RENAPER_API_URL = "https://wsv2.secretarianaf.gob.ar/api"
 RENAPER_VALIDACION_MAX_RETRIES = _safe_int_env(
     "RENAPER_VALIDACION_MAX_RETRIES",
     1,
@@ -300,9 +304,8 @@ RENAPER_VALIDACION_BACKOFF_SECONDS = _safe_float_env(
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 # Changelog
-CHANGELOG_GITHUB_URL = os.getenv(
-    "CHANGELOG_GITHUB_URL",
-    "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/main/CHANGELOG.md",
+CHANGELOG_GITHUB_URL = (
+    "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/main/CHANGELOG.md"
 )
 
 # IPs internas
