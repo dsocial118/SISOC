@@ -3492,7 +3492,7 @@
     "pk": 24,
     "fields": {
         "nombre": "Asistencia a Capacitación Formando Capital Humano",
-        "programa": null
+        "programa": "comedores"
     }
 }
 ]
