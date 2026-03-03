@@ -8,6 +8,10 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 logger = logging.getLogger(__name__)
 
 _SENTRY_INITIALIZED = False
+_SENTRY_ENVIRONMENT_IDENTIFIERS = {
+    "prd": "sisoc-prd",
+    "qa": "sisoc-qa",
+}
 
 
 def _env_to_bool(value: str, default: bool = False) -> bool:
@@ -36,13 +40,23 @@ def initialize_sentry_sdk() -> None:
     if not sentry_enabled:
         return
 
+    environment = (os.getenv("ENVIRONMENT") or "dev").strip().lower()
+    if environment not in _SENTRY_ENVIRONMENT_IDENTIFIERS:
+        return
+
+    sentry_environment = (
+        os.getenv("SENTRY_ENVIRONMENT")
+        or _SENTRY_ENVIRONMENT_IDENTIFIERS.get(environment)
+        or environment
+    )
+
     dsn = (os.getenv("SENTRY_DSN") or "").strip()
     if not dsn:
         return
 
     sentry_kwargs = {
         "dsn": dsn,
-        "environment": os.getenv("SENTRY_ENVIRONMENT") or os.getenv("ENVIRONMENT", "dev"),
+        "environment": sentry_environment,
         "send_default_pii": _env_to_bool(
             os.getenv("SENTRY_SEND_DEFAULT_PII"), default=False
         ),
