@@ -314,7 +314,8 @@ def test_agregar_nomina_and_crear_y_agregar(mocker):
 
     c = SimpleNamespace(id=9, delete=mocker.Mock())
     mocker.patch(
-        "comedores.services.comedor_service.impl.Ciudadano.objects.create", return_value=c
+        "comedores.services.comedor_service.impl.Ciudadano.objects.create",
+        return_value=c,
     )
     mocker.patch.object(
         module.ComedorService, "agregar_ciudadano_a_nomina", return_value=(False, "x")
@@ -352,7 +353,8 @@ def test_timeline_context_helpers_cover_both_states():
 def test_asignar_dupla_y_delete_images(mocker):
     comedor = SimpleNamespace(dupla_id=None, estado=None, save=mocker.Mock())
     mocker.patch(
-        "comedores.services.comedor_service.impl.Comedor.objects.get", return_value=comedor
+        "comedores.services.comedor_service.impl.Comedor.objects.get",
+        return_value=comedor,
     )
 
     out = module.ComedorService.asignar_dupla_a_comedor(5, 10)
@@ -601,7 +603,9 @@ def test_crear_admision_desde_comedor_flows(mocker):
     safe = mocker.patch(
         "comedores.services.comedor_service.impl.safe_redirect", return_value="safe"
     )
-    mocker.patch("comedores.services.comedor_service.impl.reverse", return_value="/detalle")
+    mocker.patch(
+        "comedores.services.comedor_service.impl.reverse", return_value="/detalle"
+    )
 
     out_missing = module.ComedorService.crear_admision_desde_comedor(request, comedor)
     assert out_missing[0][0] == "comedor_detalle"
@@ -611,7 +615,8 @@ def test_crear_admision_desde_comedor_flows(mocker):
     f = mocker.Mock()
     f.exists.return_value = False
     mocker.patch(
-        "comedores.services.comedor_service.impl.Admision.objects.filter", return_value=f
+        "comedores.services.comedor_service.impl.Admision.objects.filter",
+        return_value=f,
     )
     out_no_incorp = module.ComedorService.crear_admision_desde_comedor(request, comedor)
     assert out_no_incorp[0][0] == "comedor_detalle"
@@ -620,7 +625,8 @@ def test_crear_admision_desde_comedor_flows(mocker):
     f2 = mocker.Mock()
     f2.exists.return_value = True
     mocker.patch(
-        "comedores.services.comedor_service.impl.Admision.objects.filter", return_value=f2
+        "comedores.services.comedor_service.impl.Admision.objects.filter",
+        return_value=f2,
     )
     out_dup = module.ComedorService.crear_admision_desde_comedor(request, comedor)
     assert out_dup[0][0] == "comedor_detalle"
@@ -631,7 +637,8 @@ def test_crear_admision_desde_comedor_flows(mocker):
     filt.exists.side_effect = [True]
     filt.count.return_value = 4
     mocker.patch(
-        "comedores.services.comedor_service.impl.Admision.objects.filter", return_value=filt
+        "comedores.services.comedor_service.impl.Admision.objects.filter",
+        return_value=filt,
     )
     out_safe = module.ComedorService.crear_admision_desde_comedor(request, comedor)
     assert out_safe == "safe"
@@ -651,7 +658,8 @@ def test_crear_admision_desde_comedor_flows(mocker):
     )
     adm = SimpleNamespace(get_tipo_display=lambda: "Renovación")
     mocker.patch(
-        "comedores.services.comedor_service.impl.Admision.objects.create", return_value=adm
+        "comedores.services.comedor_service.impl.Admision.objects.create",
+        return_value=adm,
     )
     mocker.patch(
         "comedores.services.comedor_service.impl.Hitos.objects.filter",
