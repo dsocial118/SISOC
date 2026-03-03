@@ -1,5 +1,29 @@
 [
 {
+    "model": "organizaciones.tipoentidad",
+    "pk": 1,
+    "fields": {
+        "nombre": "Personería jurídica",
+        "descripcion": null
+    }
+},
+{
+    "model": "organizaciones.tipoentidad",
+    "pk": 2,
+    "fields": {
+        "nombre": "Personería jurídica eclesiástica",
+        "descripcion": null
+    }
+},
+{
+    "model": "organizaciones.tipoentidad",
+    "pk": 3,
+    "fields": {
+        "nombre": "Asociación de hecho",
+        "descripcion": null
+    }
+},
+{
     "model": "organizaciones.subtipoentidad",
     "pk": 1,
     "fields": {
@@ -69,30 +93,6 @@
     "fields": {
         "nombre": "Obispado",
         "tipo_entidad": 2
-    }
-},
-{
-    "model": "organizaciones.tipoentidad",
-    "pk": 1,
-    "fields": {
-        "nombre": "Personería jurídica",
-        "descripcion": null
-    }
-},
-{
-    "model": "organizaciones.tipoentidad",
-    "pk": 2,
-    "fields": {
-        "nombre": "Personería jurídica eclesiástica",
-        "descripcion": null
-    }
-},
-{
-    "model": "organizaciones.tipoentidad",
-    "pk": 3,
-    "fields": {
-        "nombre": "Asociación de hecho",
-        "descripcion": null
     }
 }
 ]
