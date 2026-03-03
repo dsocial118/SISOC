@@ -154,7 +154,8 @@ def test_leer_tabla_csv_fallback_and_prd_csv_generation(mocker):
 
     # force excel/csv comma fail, then csv semicolon success
     mocker.patch(
-        "celiaquia.services.cruce_service.impl.pd.read_excel", side_effect=ValueError("x")
+        "celiaquia.services.cruce_service.impl.pd.read_excel",
+        side_effect=ValueError("x"),
     )
 
     def _read_csv(_bio, dtype=str, sep=","):
@@ -162,7 +163,9 @@ def test_leer_tabla_csv_fallback_and_prd_csv_generation(mocker):
             return pd.DataFrame({"documento": ["20123456783"], "nombre": ["A"]})
         raise ValueError("bad")
 
-    mocker.patch("celiaquia.services.cruce_service.impl.pd.read_csv", side_effect=_read_csv)
+    mocker.patch(
+        "celiaquia.services.cruce_service.impl.pd.read_csv", side_effect=_read_csv
+    )
     df = CruceService._leer_tabla(F())
     assert "documento" in df.columns
 
@@ -217,7 +220,8 @@ def test_leer_tabla_raises_when_all_formats_fail(mocker):
             return None
 
     mocker.patch(
-        "celiaquia.services.cruce_service.impl.pd.read_excel", side_effect=ValueError("x")
+        "celiaquia.services.cruce_service.impl.pd.read_excel",
+        side_effect=ValueError("x"),
     )
     mocker.patch(
         "celiaquia.services.cruce_service.impl.pd.read_csv", side_effect=ValueError("x")
@@ -356,7 +360,9 @@ def test_generar_prd_csv_with_writer_stub(mocker):
         def writerow(self, row):
             rows.append(row)
 
-    mocker.patch("celiaquia.services.cruce_service.impl.csv.writer", return_value=_Writer())
+    mocker.patch(
+        "celiaquia.services.cruce_service.impl.csv.writer", return_value=_Writer()
+    )
 
     out = CruceService._generar_prd_csv(
         expediente=SimpleNamespace(),

@@ -223,7 +223,9 @@ def test_obtener_territoriales_para_comedor_paths(mocker):
         "_obtener_desde_db_por_provincia",
         return_value={"territoriales": [], "desactualizados": True},
     )
-    mocker.patch("comedores.services.territorial_service.impl.os.getenv", return_value="")
+    mocker.patch(
+        "comedores.services.territorial_service.impl.os.getenv", return_value=""
+    )
     out3 = module.TerritorialService.obtener_territoriales_para_comedor(
         10, forzar_sync=True
     )

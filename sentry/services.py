@@ -3,7 +3,9 @@ import os
 
 import sentry_sdk  # pylint: disable=import-error
 from django.conf import settings
-from sentry_sdk.integrations.django import DjangoIntegration  # pylint: disable=import-error
+from sentry_sdk.integrations.django import (
+    DjangoIntegration,
+)  # pylint: disable=import-error
 from sentry_sdk.integrations.logging import (  # pylint: disable=import-error
     LoggingIntegration,
 )
