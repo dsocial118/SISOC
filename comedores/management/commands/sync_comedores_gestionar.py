@@ -6,6 +6,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import reset_queries
 from django.db.models import Q
@@ -79,6 +80,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **opts):
+        if not getattr(settings, "GESTIONAR_INTEGRATION_ENABLED", False):
+            self.stdout.write(
+                self.style.WARNING(
+                    "Integración con GESTIONAR deshabilitada: comando permitido solo en producción."
+                )
+            )
+            return
+
         dry = opts["dry_run"]
         comedor_id = opts.get("comedor_id")
         limit = opts["limit"]

@@ -3,6 +3,7 @@ import threading
 import logging
 from concurrent.futures import ThreadPoolExecutor
 import requests
+from django.conf import settings
 from django.db import close_old_connections
 from django.utils import timezone
 
@@ -18,6 +19,10 @@ MAX_WORKERS = int(
     os.getenv("GESTIONAR_RELEVAMIENTOS_WORKERS", os.getenv("GESTIONAR_WORKERS", "2"))
 )
 _EXECUTOR = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+
+
+def _is_gestionar_integration_enabled() -> bool:
+    return bool(getattr(settings, "GESTIONAR_INTEGRATION_ENABLED", False))
 
 
 def _run_async_threads():
@@ -66,6 +71,11 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
         self.payload = payload
 
     def start(self):  # type: ignore[override]
+        if not _is_gestionar_integration_enabled():
+            logger.info(
+                "Integración con GESTIONAR deshabilitada: se omite sync de relevamiento"
+            )
+            return None
         # Encola la ejecución en un pool limitado para evitar demasiadas conexiones
         if _run_async_threads():
             _EXECUTOR.submit(self.run)
@@ -74,6 +84,8 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
         return None
 
     def run(self):
+        if not _is_gestionar_integration_enabled():
+            return
         # Asegura estado sano de conexiones en hilos de pool reutilizables
         close_old_connections()
         data = self.payload
@@ -125,6 +137,11 @@ class AsyncRemoveRelevamientoToGestionar(threading.Thread):
         self.relevamiento_id = relevamiento_id
 
     def start(self):  # type: ignore[override]
+        if not _is_gestionar_integration_enabled():
+            logger.info(
+                "Integración con GESTIONAR deshabilitada: se omite baja de relevamiento"
+            )
+            return None
         if _run_async_threads():
             _EXECUTOR.submit(self.run)
             return None
@@ -132,6 +149,8 @@ class AsyncRemoveRelevamientoToGestionar(threading.Thread):
         return None
 
     def run(self):
+        if not _is_gestionar_integration_enabled():
+            return
         close_old_connections()
         data = {
             "Action": "Delete",

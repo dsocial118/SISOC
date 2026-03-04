@@ -1016,6 +1016,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
     def _get_environment_config(self):
         """Obtiene configuración del entorno."""
+        if not getattr(settings, "GESTIONAR_INTEGRATION_ENABLED", False):
+            return {
+                "GESTIONAR_API_KEY": "",
+                "GESTIONAR_API_CREAR_COMEDOR": "",
+            }
         return {
             "GESTIONAR_API_KEY": os.getenv("GESTIONAR_API_KEY"),
             "GESTIONAR_API_CREAR_COMEDOR": os.getenv("GESTIONAR_API_CREAR_COMEDOR"),
