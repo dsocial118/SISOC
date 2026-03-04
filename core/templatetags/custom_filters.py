@@ -101,6 +101,16 @@ def es_menor_18(fecha_nacimiento):
     return edad_actual is not None and edad_actual < 18
 
 
+@register.filter
+def es_mayor_65_menor_66(fecha_nacimiento):
+    """Verifica si una persona tiene 65 años o más (hasta 66 años inclusive)"""
+    if not fecha_nacimiento:
+        return False
+
+    edad_actual = edad(fecha_nacimiento)
+    return edad_actual is not None and 65 <= edad_actual <= 66
+
+
 def _normalize_coordinate(value, min_value, max_value):
     if value is None:
         return None
