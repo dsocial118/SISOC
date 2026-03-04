@@ -216,6 +216,7 @@ class ExpedienteCiudadano(SoftDeleteModelMixin, models.Model):
         max_length=8, choices=EstadoCupo.choices, default=EstadoCupo.NO_EVAL
     )
     es_titular_activo = models.BooleanField(default=False)
+    subsanacion_tipo = models.CharField(max_length=50, null=True, blank=True)
     subsanacion_motivo = models.TextField(null=True, blank=True)
     subsanacion_solicitada_en = models.DateTimeField(null=True, blank=True)
     subsanacion_enviada_en = models.DateTimeField(null=True, blank=True)
