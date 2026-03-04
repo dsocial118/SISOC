@@ -13,6 +13,7 @@ from comedores.views import (
     NominaDetailView,
     NominaCreateView,
     NominaDeleteView,
+    NominaImportarView,
     AsignarDuplaListView,
     relevamiento_crear_editar_ajax,
     nomina_editar_ajax,
@@ -177,7 +178,7 @@ urlpatterns = [
         name="intervencion_detalle",
     ),
     path(
-        "comedores/<int:pk>/nomina/",
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/",
         group_required(["Comedores Nomina Ver"])(NominaDetailView.as_view()),
         name="nomina_ver",
     ),
@@ -187,14 +188,19 @@ urlpatterns = [
         name="nomina_editar_ajax",
     ),
     path(
-        "comedores/<int:pk>/nomina/crear/",
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/crear/",
         group_required(["Comedores Nomina Crear"])(NominaCreateView.as_view()),
         name="nomina_crear",
     ),
     path(
-        "comedores/<int:pk>/nomina/<int:pk2>/eliminar/",
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/<int:pk2>/eliminar/",
         group_required(["Comedores Nomina Borrar"])(NominaDeleteView.as_view()),
         name="nomina_borrar",
+    ),
+    path(
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/importar/",
+        group_required(["Comedores Nomina Crear"])(NominaImportarView.as_view()),
+        name="nomina_importar",
     ),
     path(
         "comedores/ajax/<int:pk>/relevamiento/",
