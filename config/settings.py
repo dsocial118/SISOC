@@ -14,6 +14,7 @@ load_dotenv()
 # Entorno
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "dev")  # dev|qa|prd
+GESTIONAR_INTEGRATION_ENABLED = ENVIRONMENT == "prd"
 ENABLE_API_DOCS = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 

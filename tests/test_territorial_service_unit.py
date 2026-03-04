@@ -301,3 +301,22 @@ def test_sync_calls_and_errors(mocker):
     )
     out3 = module.TerritorialService._sincronizar_con_gestionar_provincia(1, 2)
     assert out3["exitoso"] is True
+
+
+def test_sync_methods_return_disabled_when_not_production(mocker):
+    mocker.patch(
+        "comedores.services.territorial_service.impl.settings.GESTIONAR_INTEGRATION_ENABLED",
+        False,
+    )
+    post_mock = mocker.patch(
+        "comedores.services.territorial_service.impl.requests.post"
+    )
+
+    out = module.TerritorialService._sincronizar_con_gestionar(1)
+    out_prov = module.TerritorialService._sincronizar_con_gestionar_provincia(1, 2)
+
+    assert out["exitoso"] is False
+    assert "deshabilitada" in out["mensaje"]
+    assert out_prov["exitoso"] is False
+    assert "deshabilitada" in out_prov["mensaje"]
+    post_mock.assert_not_called()

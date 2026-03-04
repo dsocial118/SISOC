@@ -4,6 +4,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
+from django.conf import settings
 from django.db import close_old_connections
 
 from comedores.models import Observacion, Referente
@@ -15,6 +16,10 @@ MAX_WORKERS = int(
 _EXECUTOR = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
 logger = logging.getLogger("django")
+
+
+def _is_gestionar_integration_enabled() -> bool:
+    return bool(getattr(settings, "GESTIONAR_INTEGRATION_ENABLED", False))
 
 
 def build_comedor_payload(comedor):
@@ -104,9 +109,17 @@ class AsyncSendComedorToGestionar(threading.Thread):
         self.payload = payload
 
     def start(self):  # type: ignore[override]
+        if not _is_gestionar_integration_enabled():
+            logger.info(
+                "Integración con GESTIONAR deshabilitada: se omite sync de comedor"
+            )
+            return None
         _EXECUTOR.submit(self.run)
+        return None
 
     def run(self):
+        if not _is_gestionar_integration_enabled():
+            return
         close_old_connections()
         headers = {"applicationAccessKey": os.getenv("GESTIONAR_API_KEY")}
         url = os.getenv("GESTIONAR_API_CREAR_COMEDOR")
@@ -134,9 +147,17 @@ class AsyncRemoveComedorToGestionar(threading.Thread):
         self.comedor_id = comedor_id
 
     def start(self):  # type: ignore[override]
+        if not _is_gestionar_integration_enabled():
+            logger.info(
+                "Integración con GESTIONAR deshabilitada: se omite baja de comedor"
+            )
+            return None
         _EXECUTOR.submit(self.run)
+        return None
 
     def run(self):
+        if not _is_gestionar_integration_enabled():
+            return
         close_old_connections()
         data = {
             "Action": "Delete",
@@ -174,9 +195,17 @@ class AsyncSendReferenteToGestionar(threading.Thread):
         self.payload = payload
 
     def start(self):  # type: ignore[override]
+        if not _is_gestionar_integration_enabled():
+            logger.info(
+                "Integración con GESTIONAR deshabilitada: se omite sync de referente"
+            )
+            return None
         _EXECUTOR.submit(self.run)
+        return None
 
     def run(self):
+        if not _is_gestionar_integration_enabled():
+            return
         close_old_connections()
         data = self.payload
         try:
@@ -219,9 +248,17 @@ class AsyncSendObservacionToGestionar(threading.Thread):
         self.payload = payload
 
     def start(self):  # type: ignore[override]
+        if not _is_gestionar_integration_enabled():
+            logger.info(
+                "Integración con GESTIONAR deshabilitada: se omite sync de observación"
+            )
+            return None
         _EXECUTOR.submit(self.run)
+        return None
 
     def run(self):
+        if not _is_gestionar_integration_enabled():
+            return
         close_old_connections()
         data = self.payload
         try:

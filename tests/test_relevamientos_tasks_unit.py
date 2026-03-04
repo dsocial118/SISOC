@@ -41,3 +41,18 @@ def test_async_remove_start_uses_executor_fuera_de_tests(mocker, monkeypatch):
     assert result is None
     mock_submit.assert_called_once_with(mock_run)
     mock_run.assert_not_called()
+
+
+def test_async_send_start_omits_when_integration_disabled(mocker, monkeypatch):
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.delenv("DISABLE_ASYNC_THREADS", raising=False)
+    mocker.patch("relevamientos.tasks.settings.GESTIONAR_INTEGRATION_ENABLED", False)
+    thread = module.AsyncSendRelevamientoToGestionar(relevamiento_id=1, payload={})
+    mock_run = mocker.patch.object(thread, "run")
+    mock_submit = mocker.patch.object(module._EXECUTOR, "submit")
+
+    result = thread.start()
+
+    assert result is None
+    mock_submit.assert_not_called()
+    mock_run.assert_not_called()
