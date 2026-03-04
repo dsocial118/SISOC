@@ -1,4 +1,6 @@
 import logging
+import time
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.http import JsonResponse
@@ -44,6 +46,197 @@ def _in_group(user, name: str) -> bool:
     return user.is_authenticated and user.groups.filter(name=name).exists()
 
 
+def _mapear_sexo_para_renaper(ciudadano):
+    sexo_map = {"Masculino": "M", "Femenino": "F", "X": "X"}
+    sexo_valor = (getattr(getattr(ciudadano, "sexo", None), "sexo", "") or "").strip()
+    return sexo_map.get(sexo_valor)
+
+
+def _normalizar_documento_para_renaper(documento_original):
+    if len(documento_original) == 11:
+        return documento_original[2:10]
+    return documento_original
+
+
+def _es_dni_valido_para_renaper(documento_consulta):
+    return documento_consulta.isdigit() and len(documento_consulta) == 8
+
+
+def _build_datos_provincia(ciudadano, documento_consulta):
+    return {
+        "documento": documento_consulta,
+        "nombre": (getattr(ciudadano, "nombre", "") or "").title(),
+        "apellido": (getattr(ciudadano, "apellido", "") or "").title(),
+        "fecha_nacimiento": (
+            ciudadano.fecha_nacimiento.strftime("%d/%m/%Y")
+            if ciudadano.fecha_nacimiento
+            else None
+        ),
+        "sexo": getattr(getattr(ciudadano, "sexo", None), "sexo", None),
+        "calle": (getattr(ciudadano, "calle", "") or "").title(),
+        "altura": str(ciudadano.altura) if ciudadano.altura else "",
+        "piso_departamento": (
+            getattr(ciudadano, "piso_departamento", "") or ""
+        ).title(),
+        "ciudad": (getattr(ciudadano, "ciudad", "") or "").title(),
+        "provincia": ciudadano.provincia.nombre if ciudadano.provincia else None,
+        "codigo_postal": (
+            str(ciudadano.codigo_postal) if ciudadano.codigo_postal else ""
+        ),
+    }
+
+
+def _resolver_sexo_y_consulta_renaper(documento_consulta, sexo_renaper):
+    if sexo_renaper:
+        return sexo_renaper, None
+
+    for sexo_test in ["M", "F"]:
+        resultado_test = _consultar_datos_renaper_con_reintentos(
+            documento_consulta, sexo_test
+        )
+        if resultado_test.get("success"):
+            return sexo_test, resultado_test
+
+    return None, None
+
+
+def _get_renaper_retry_config():
+    max_retries = getattr(settings, "RENAPER_VALIDACION_MAX_RETRIES", 1)
+    backoff_seconds = getattr(settings, "RENAPER_VALIDACION_BACKOFF_SECONDS", 0.0)
+
+    try:
+        max_retries = max(int(max_retries or 1), 1)
+    except (TypeError, ValueError):
+        max_retries = 1
+
+    try:
+        backoff_seconds = max(float(backoff_seconds or 0), 0.0)
+    except (TypeError, ValueError):
+        backoff_seconds = 0.0
+
+    return max_retries, backoff_seconds
+
+
+def _consultar_datos_renaper_con_reintentos(documento_consulta, sexo_renaper):
+    max_retries, backoff_seconds = _get_renaper_retry_config()
+    ultimo_resultado = None
+
+    for intento in range(1, max_retries + 1):
+        ultimo_resultado = consultar_datos_renaper(documento_consulta, sexo_renaper)
+        if ultimo_resultado.get("success"):
+            return ultimo_resultado
+
+        if intento >= max_retries:
+            break
+
+        logger.warning(
+            "renaper.validation.retrying_remote_query",
+            extra={
+                "data": {
+                    "documento_consulta": documento_consulta,
+                    "sexo_consulta": sexo_renaper,
+                    "retry_attempt": intento + 1,
+                    "max_retries": max_retries,
+                    "error": ultimo_resultado.get("error"),
+                }
+            },
+        )
+
+        if backoff_seconds > 0:
+            time.sleep(backoff_seconds * (2 ** (intento - 1)))
+
+    return ultimo_resultado or {
+        "success": False,
+        "error": "Error desconocido al consultar Renaper",
+    }
+
+
+def _formatear_fecha_renaper(fecha_renaper):
+    if not fecha_renaper:
+        return fecha_renaper
+
+    try:
+        from datetime import datetime
+
+        if "-" in fecha_renaper and len(fecha_renaper) == 10:
+            fecha_obj = datetime.strptime(fecha_renaper, "%Y-%m-%d")
+            return fecha_obj.strftime("%d/%m/%Y")
+    except Exception:  # pylint: disable=broad-exception-caught
+        return fecha_renaper
+
+    return fecha_renaper
+
+
+def _formatear_datos_renaper(datos_renaper, sexo_renaper, documento_consulta=None):
+    datos_renaper_formateados = {
+        "documento": datos_renaper.get("documento") or documento_consulta,
+        "nombre": (datos_renaper.get("nombre") or "").title(),
+        "apellido": (datos_renaper.get("apellido") or "").title(),
+        "fecha_nacimiento": _formatear_fecha_renaper(
+            datos_renaper.get("fecha_nacimiento")
+        ),
+        "sexo": "Masculino" if sexo_renaper == "M" else "Femenino",
+        "calle": (datos_renaper.get("calle") or "").title(),
+        "altura": str(datos_renaper.get("altura") or ""),
+        "piso_departamento": (datos_renaper.get("piso_departamento") or "").title(),
+        "ciudad": (datos_renaper.get("ciudad") or "").title(),
+        "provincia": None,
+        "codigo_postal": str(datos_renaper.get("codigo_postal") or ""),
+    }
+
+    if datos_renaper.get("provincia"):
+        try:
+            from core.models import Provincia
+
+            provincia_obj = Provincia.objects.get(pk=datos_renaper["provincia"])
+            datos_renaper_formateados["provincia"] = provincia_obj.nombre
+        except (Provincia.DoesNotExist, ValueError, TypeError):
+            datos_renaper_formateados["provincia"] = "Provincia no encontrada"
+
+    return datos_renaper_formateados
+
+
+def _log_respuesta_renaper(log_data, resultado_renaper):
+    success = resultado_renaper.get("success", False)
+    fallecido = resultado_renaper.get("fallecido")
+    response_summary = {
+        "success": success,
+        "keys": sorted(list(resultado_renaper.keys())),
+        "fallecido": fallecido,
+    }
+
+    if not success:
+        response_summary["error"] = resultado_renaper.get("error")
+        response_summary["raw_response_excerpt"] = _truncate(
+            resultado_renaper.get("raw_response", "Sin respuesta")
+        )
+        logger.warning(
+            "renaper.validation.response_error",
+            extra={
+                "data": {
+                    **log_data,
+                    "stage": "response",
+                    "response": response_summary,
+                }
+            },
+        )
+        return
+
+    response_summary["data_keys"] = sorted(
+        list(resultado_renaper.get("data", {}).keys())
+    )
+    logger.info(
+        "renaper.validation.response_ok",
+        extra={
+            "data": {
+                **log_data,
+                "stage": "response",
+                "response": response_summary,
+            }
+        },
+    )
+
+
 class ValidacionRenaperView(View):
     """Vista para validar datos del ciudadano contra Renaper"""
 
@@ -64,24 +257,23 @@ class ValidacionRenaperView(View):
 
     @method_decorator(csrf_protect)
     def post(self, request, pk, legajo_id):
-        # Si viene el parámetro 'validacion_estado', guardar el estado
+        # Si viene el parámetro 'validacion_estado', guardar el estado.
         validacion_estado = request.POST.get("validacion_estado")
         if validacion_estado:
             return self._guardar_validacion_estado(
                 request, pk, legajo_id, validacion_estado
             )
 
-        # Si no, hacer la consulta normal a Renaper
+        # Si no, hacer la consulta normal a Renaper.
         return self._consultar_renaper(request, pk, legajo_id)
 
     def _guardar_validacion_estado(self, request, pk, legajo_id, validacion_estado):
-        """Guarda el estado de validación Renaper (1=correcto, 2=incorrecto)"""
+        """Guarda el estado de validación Renaper (1=correcto, 2=incorrecto, 3=subsanar)."""
         try:
             legajo = get_object_or_404(
                 ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk
             )
 
-            # Validar que el estado sea válido
             if validacion_estado not in ["1", "2", "3"]:
                 logger.warning(
                     "renaper.validation.invalid_status",
@@ -101,10 +293,8 @@ class ValidacionRenaperView(View):
                     {"success": False, "error": "Estado de validación inválido"}
                 )
 
-            # Guardar el estado
             legajo.estado_validacion_renaper = int(validacion_estado)
 
-            # Si es subsanación, guardar el comentario y cambiar estado de revisión
             comentario = request.POST.get("comentario")
             if validacion_estado == "3" and comentario:
                 legajo.subsanacion_motivo = comentario
@@ -148,8 +338,7 @@ class ValidacionRenaperView(View):
                     "validacion_estado": int(validacion_estado),
                 }
             )
-
-        except Exception as exc:  # pylint: disable=broad-exception-caught
+        except Exception:  # pylint: disable=broad-exception-caught
             logger.exception(
                 "renaper.validation.status_error",
                 extra={
@@ -241,12 +430,7 @@ class ValidacionRenaperView(View):
                     }
                 )
 
-            # Mapear sexo del ciudadano
-            sexo_renaper = None
-            if ciudadano.sexo:
-                sexo_map = {"Masculino": "M", "Femenino": "F", "X": "X"}
-                sexo_valor = (getattr(ciudadano.sexo, "sexo", "") or "").strip()
-                sexo_renaper = sexo_map.get(sexo_valor)
+            sexo_renaper = _mapear_sexo_para_renaper(ciudadano)
 
             if not sexo_renaper:
                 logger.warning(
@@ -254,16 +438,10 @@ class ValidacionRenaperView(View):
                     extra={"data": _build_log_data(user, legajo, ciudadano)},
                 )
 
-            # Convertir CUIT (11 dígitos) a DNI (8 dígitos) para Renaper
             documento_original = str(ciudadano.documento)
+            documento_consulta = _normalizar_documento_para_renaper(documento_original)
 
-            if len(documento_original) == 11:  # Es CUIT de provincia
-                documento_consulta = documento_original[2:10]
-            else:
-                documento_consulta = documento_original
-
-            # Validar que sea DNI válido (8 dígitos numéricos)
-            if not documento_consulta.isdigit() or len(documento_consulta) != 8:
+            if not _es_dni_valido_para_renaper(documento_consulta):
                 logger.warning(
                     "renaper.validation.invalid_documento",
                     extra={
@@ -282,30 +460,7 @@ class ValidacionRenaperView(View):
                     }
                 )
 
-            # Datos provinciales
-            datos_provincia = {
-                "documento": documento_consulta,
-                "nombre": (getattr(ciudadano, "nombre", "") or "").title(),
-                "apellido": (getattr(ciudadano, "apellido", "") or "").title(),
-                "fecha_nacimiento": (
-                    ciudadano.fecha_nacimiento.strftime("%d/%m/%Y")
-                    if ciudadano.fecha_nacimiento
-                    else None
-                ),
-                "sexo": ciudadano.sexo.sexo if ciudadano.sexo else None,
-                "calle": (getattr(ciudadano, "calle", "") or "").title(),
-                "altura": str(ciudadano.altura) if ciudadano.altura else "",
-                "piso_departamento": (
-                    getattr(ciudadano, "piso_departamento", "") or ""
-                ).title(),
-                "ciudad": (getattr(ciudadano, "ciudad", "") or "").title(),
-                "provincia": (
-                    ciudadano.provincia.nombre if ciudadano.provincia else None
-                ),
-                "codigo_postal": (
-                    str(ciudadano.codigo_postal) if ciudadano.codigo_postal else ""
-                ),
-            }
+            datos_provincia = _build_datos_provincia(ciudadano, documento_consulta)
 
             # Si no se pudo determinar sexo, intentar con ambos
             if not sexo_renaper:
@@ -321,14 +476,9 @@ class ValidacionRenaperView(View):
                         )
                     },
                 )
-                # Intentar primero con M, luego con F
-                for sexo_test in ["M", "F"]:
-                    resultado_test = consultar_datos_renaper(
-                        documento_consulta, sexo_test
-                    )
-                    if resultado_test.get("success"):
-                        sexo_renaper = sexo_test
-                        break
+                sexo_renaper, resultado_renaper = _resolver_sexo_y_consulta_renaper(
+                    documento_consulta, sexo_renaper
+                )
 
                 if not sexo_renaper:
                     return JsonResponse(
@@ -337,6 +487,9 @@ class ValidacionRenaperView(View):
                             "error": "No se pudo determinar el sexo del ciudadano. Configure el sexo manualmente.",
                         }
                     )
+
+            else:
+                resultado_renaper = None
 
             log_data = _build_log_data(
                 user,
@@ -357,47 +510,14 @@ class ValidacionRenaperView(View):
                 },
             )
 
-            resultado_renaper = consultar_datos_renaper(
-                documento_consulta, sexo_renaper
-            )
+            if resultado_renaper is None:
+                resultado_renaper = _consultar_datos_renaper_con_reintentos(
+                    documento_consulta, sexo_renaper
+                )
 
+            _log_respuesta_renaper(log_data, resultado_renaper)
             success = resultado_renaper.get("success", False)
             fallecido = resultado_renaper.get("fallecido")
-
-            response_summary = {
-                "success": success,
-                "keys": sorted(list(resultado_renaper.keys())),
-                "fallecido": fallecido,
-            }
-            if not success:
-                response_summary["error"] = resultado_renaper.get("error")
-                response_summary["raw_response_excerpt"] = _truncate(
-                    resultado_renaper.get("raw_response", "Sin respuesta"),
-                )
-                logger.warning(
-                    "renaper.validation.response_error",
-                    extra={
-                        "data": {
-                            **log_data,
-                            "stage": "response",
-                            "response": response_summary,
-                        }
-                    },
-                )
-            else:
-                response_summary["data_keys"] = sorted(
-                    list(resultado_renaper.get("data", {}).keys())
-                )
-                logger.info(
-                    "renaper.validation.response_ok",
-                    extra={
-                        "data": {
-                            **log_data,
-                            "stage": "response",
-                            "response": response_summary,
-                        }
-                    },
-                )
 
             if fallecido:
                 logger.warning(
@@ -446,45 +566,9 @@ class ValidacionRenaperView(View):
 
             datos_renaper = resultado_renaper["data"]
 
-            # Formatear fecha de Renaper al formato dd/mm/yyyy
-            fecha_renaper = datos_renaper.get("fecha_nacimiento")
-            if fecha_renaper:
-                try:
-                    from datetime import datetime
-
-                    # Si viene en formato YYYY-MM-DD, convertir a DD/MM/YYYY
-                    if "-" in fecha_renaper and len(fecha_renaper) == 10:
-                        fecha_obj = datetime.strptime(fecha_renaper, "%Y-%m-%d")
-                        fecha_renaper = fecha_obj.strftime("%d/%m/%Y")
-                except:
-                    pass  # Si hay error, mantener formato original
-
-            # Formatear datos de Renaper para comparación (mismo formato que provincia)
-            datos_renaper_formateados = {
-                "documento": datos_renaper.get("documento"),
-                "nombre": (datos_renaper.get("nombre") or "").title(),
-                "apellido": (datos_renaper.get("apellido") or "").title(),
-                "fecha_nacimiento": fecha_renaper,
-                "sexo": "Masculino" if sexo_renaper == "M" else "Femenino",
-                "calle": (datos_renaper.get("calle") or "").title(),
-                "altura": str(datos_renaper.get("altura") or ""),
-                "piso_departamento": (
-                    datos_renaper.get("piso_departamento") or ""
-                ).title(),
-                "ciudad": (datos_renaper.get("ciudad") or "").title(),
-                "provincia": None,  # Se mapea desde provincia_id
-                "codigo_postal": str(datos_renaper.get("codigo_postal") or ""),
-            }
-
-            # Mapear provincia desde ID
-            if datos_renaper.get("provincia"):
-                try:
-                    from core.models import Provincia
-
-                    provincia_obj = Provincia.objects.get(pk=datos_renaper["provincia"])
-                    datos_renaper_formateados["provincia"] = provincia_obj.nombre
-                except (Provincia.DoesNotExist, ValueError, TypeError):
-                    datos_renaper_formateados["provincia"] = "Provincia no encontrada"
+            datos_renaper_formateados = _formatear_datos_renaper(
+                datos_renaper, sexo_renaper, documento_consulta
+            )
 
             # La validación se guardará cuando el usuario elija "Datos correctos" o "Datos incorrectos"
 

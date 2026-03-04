@@ -35,6 +35,8 @@ from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.soft_delete.preview import build_delete_preview
+from core.soft_delete.view_helpers import is_soft_deletable_instance
 from core.security import safe_redirect
 from django.views.generic.edit import FormMixin
 from django.template.loader import render_to_string
@@ -47,6 +49,374 @@ from rendicioncuentasfinal.rendicion_cuentas_final_service import (
     RendicionCuentasFinalService,
 )
 from historial.services.historial_service import HistorialService
+
+
+def _obtener_informe_tecnico_para_subida_docx(admision, informe_id):
+    if informe_id:
+        return InformeTecnico.objects.filter(admision=admision, id=informe_id).first()
+    return (
+        InformeTecnico.objects.filter(admision=admision, estado="Docx generado")
+        .order_by("-id")
+        .first()
+    )
+
+
+def _procesar_subida_docx_final_informe_tecnico(request, admision):
+    archivo_docx = request.FILES.get("docx_final")
+    logger.debug(f"DOCX file received: {archivo_docx}")
+
+    if not archivo_docx:
+        messages.error(request, "Debe seleccionar un archivo DOCX.")
+        return None
+
+    if not (
+        request.user.is_superuser
+        or AdmisionService._verificar_permiso_tecnico_dupla(
+            request.user, admision.comedor
+        )
+    ):
+        return HttpResponse(status=403)
+
+    informe_tecnico = _obtener_informe_tecnico_para_subida_docx(
+        admision, request.POST.get("informe_id")
+    )
+    logger.debug(f"Informe tecnico found: {informe_tecnico}")
+
+    if not informe_tecnico:
+        messages.error(request, "No se encontró el informe técnico.")
+        return None
+
+    if (
+        admision.estado_admision != "informe_tecnico_finalizado"
+        or informe_tecnico.estado != "Docx generado"
+    ):
+        messages.error(
+            request,
+            "Estado inválido para subir el DOCX final del informe técnico.",
+        )
+        return None
+
+    resultado = InformeService.subir_docx_editado(
+        informe_tecnico, archivo_docx, request.user
+    )
+    logger.debug(f"Upload result: {resultado}")
+    if resultado:
+        messages.success(
+            request,
+            "DOCX final subido correctamente. El informe está ahora en revisión.",
+        )
+    else:
+        messages.error(request, "Error al subir el DOCX final.")
+
+    return None
+
+
+def _log_post_and_files_keys(request):
+    logger.debug("POST data keys: %s", list(request.POST.keys()))
+    logger.debug("FILES data keys: %s", list(request.FILES.keys()))
+
+
+def _run_post_handlers_until_response(handlers):
+    for handler in handlers:
+        response = handler()
+        if response is not None:
+            return response
+    return None
+
+
+def _collect_form_errors_for_messages(form):
+    errores = []
+    for field_name, field_errors in form.errors.items():
+        if field_name == "__all__":
+            errores.extend(field_errors)
+            continue
+        field = form.fields.get(field_name)
+        etiqueta_base = field.label if field and field.label else field_name
+        etiqueta = str(etiqueta_base).strip()
+        errores.append(f"{etiqueta}: {', '.join(field_errors)}")
+    return errores
+
+
+def _flash_informe_form_invalid_messages(request, form):
+    errores = _collect_form_errors_for_messages(form)
+    if errores:
+        messages.error(
+            request,
+            "No se pudo guardar el informe. Revisá los campos: " + " | ".join(errores),
+        )
+        return
+
+    messages.error(
+        request,
+        "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.",
+    )
+
+
+def _get_informe_form_action(request):
+    if request.method != "POST":
+        return None
+    return request.POST.get("action")
+
+
+def _build_informe_form_kwargs(base_kwargs, request, admision):
+    action = _get_informe_form_action(request)
+    kwargs = dict(base_kwargs)
+    kwargs.update({"admision": admision, "require_full": action == "submit"})
+    return kwargs
+
+
+def _get_informe_tecnico_edit_success_url(informe):
+    return reverse("admisiones_tecnicos_editar", args=[informe.admision.id])
+
+
+def _redirect_to_admision_tecnicos_editar(admision_id):
+    return HttpResponseRedirect(
+        reverse("admisiones_tecnicos_editar", args=[admision_id])
+    )
+
+
+def _handle_informe_tecnico_form_valid(view, form, admision_obj, es_creacion):
+    resultado = InformeService.guardar_informe(
+        form,
+        admision_obj,
+        es_creacion=es_creacion,
+        action=view.request.POST.get("action"),
+        usuario=view.request.user,
+    )
+
+    if not resultado.get("success"):
+        error_message = resultado.get("error", "No se pudo guardar el informe técnico.")
+        messages.error(view.request, error_message)
+        return view.render_to_response(view.get_context_data(form=form))
+
+    view.object = resultado.get("informe")
+    return HttpResponseRedirect(view.get_success_url())
+
+
+def _format_datetime_for_context(value):
+    if not value:
+        return "-"
+    if timezone.is_aware(value):
+        value = timezone.localtime(value)
+    return value.strftime("%d/%m/%Y %H:%M")
+
+
+def _build_admision_detail_rendiciones_context(comedor):
+    expedientes_pagos = []
+    rendiciones_mensuales = []
+    if comedor:
+        expedientes_pagos = list(
+            ExpedientesPagosService.obtener_expedientes_pagos(comedor)
+        )
+        rendiciones_mensuales = list(
+            RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(comedor)
+        )
+
+    rendicion_final = (
+        RendicionCuentasFinal.objects.filter(comedor=comedor)
+        .prefetch_related("documentos__tipo", "documentos__estado")
+        .first()
+        if comedor
+        else None
+    )
+
+    rendicion_final_documentos = []
+    rendicion_final_historial = []
+    if rendicion_final:
+        rendicion_final_documentos = list(
+            RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final(
+                rendicion_final
+            )
+        )
+        rendicion_final_historial = list(
+            HistorialService.get_historial_documentos_by_rendicion_cuentas_final(
+                rendicion_final
+            )
+        )
+
+    return {
+        "expedientes_pagos": expedientes_pagos,
+        "rendiciones_mensuales": rendiciones_mensuales,
+        "rendicion_final": rendicion_final,
+        "rendicion_final_documentos": rendicion_final_documentos,
+        "rendicion_final_historial": rendicion_final_historial,
+    }
+
+
+def _build_admision_detail_historial_context(admision, request):
+    historial_records = list(
+        admision.historial.select_related("usuario").order_by("-fecha")
+    )
+    historial_page_param = "historial_page"
+    historial_page_number = request.GET.get(historial_page_param) or 1
+    historial_paginator = Paginator(historial_records, 10)
+    historial_page = historial_paginator.get_page(historial_page_number)
+
+    historial_estados_records = list(
+        admision.historial_estados.select_related("usuario").order_by("-fecha")
+    )
+    historial_estados_page_param = "historial_estados_page"
+    historial_estados_page_number = request.GET.get(historial_estados_page_param) or 1
+    historial_estados_paginator = Paginator(historial_estados_records, 10)
+    historial_estados_page = historial_estados_paginator.get_page(
+        historial_estados_page_number
+    )
+
+    historial_headers = [
+        {"title": "Fecha"},
+        {"title": "Usuario"},
+        {"title": "Campo"},
+        {"title": "Valor nuevo"},
+        {"title": "Valor anterior"},
+    ]
+    historial_estados_headers = [
+        {"title": "Fecha"},
+        {"title": "Estado nuevo"},
+        {"title": "Estado anterior"},
+        {"title": "Usuario"},
+    ]
+
+    historial_items = []
+    for record in historial_page.object_list:
+        usuario = record.usuario
+        usuario_display = (
+            getattr(usuario, "get_full_name", lambda: "")()
+            or getattr(usuario, "username", None)
+            if usuario
+            else "-"
+        )
+        historial_items.append(
+            {
+                "cells": [
+                    {"content": _format_datetime_for_context(record.fecha)},
+                    {"content": usuario_display or "-"},
+                    {"content": record.campo or "-"},
+                    {"content": record.valor_nuevo or "-"},
+                    {"content": record.valor_anterior or "-"},
+                ]
+            }
+        )
+
+    historial_estados_items = []
+    from admisiones.templatetags.estado_filters import format_estado
+
+    for record in historial_estados_page.object_list:
+        usuario = record.usuario
+        usuario_display = (
+            getattr(usuario, "get_full_name", lambda: "")()
+            or getattr(usuario, "username", None)
+            if usuario
+            else "-"
+        )
+        estado_anterior_formatted = (
+            format_estado(record.estado_anterior) if record.estado_anterior else "-"
+        )
+        estado_nuevo_formatted = (
+            format_estado(record.estado_nuevo) if record.estado_nuevo else "-"
+        )
+        historial_estados_items.append(
+            {
+                "cells": [
+                    {"content": _format_datetime_for_context(record.fecha)},
+                    {"content": estado_nuevo_formatted},
+                    {"content": estado_anterior_formatted},
+                    {"content": usuario_display or "-"},
+                ]
+            }
+        )
+
+    return {
+        "admision_historial_headers": historial_headers,
+        "admision_historial_items": historial_items,
+        "admision_historial_page_obj": historial_page,
+        "admision_historial_is_paginated": historial_page.has_other_pages(),
+        "admision_historial_page_param": historial_page_param,
+        "historial_estados_headers": historial_estados_headers,
+        "historial_estados_items": historial_estados_items,
+        "historial_estados_page_obj": historial_estados_page,
+        "historial_estados_is_paginated": historial_estados_page.has_other_pages(),
+        "historial_estados_page_param": historial_estados_page_param,
+    }
+
+
+def _build_admision_detail_dupla_context(comedor):
+    dupla = getattr(comedor, "dupla", None)
+    if dupla:
+        tecnicos_dupla = [
+            (usuario.get_full_name() or usuario.username or str(usuario))
+            for usuario in dupla.tecnico.all()
+        ]
+    else:
+        tecnicos_dupla = []
+
+    return {
+        "dupla": dupla,
+        "dupla_tecnicos": tecnicos_dupla,
+        "dupla_abogado": getattr(dupla, "abogado", None),
+    }
+
+
+def _build_admision_detail_acompanamiento_context(comedor):
+    acompanamiento_data = (
+        AcompanamientoService.obtener_datos_admision(comedor) if comedor else {}
+    )
+    prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
+        acompanamiento_data.get("anexo")
+    )
+
+    return {
+        "acompanamiento_info": acompanamiento_data.get("info_relevante"),
+        "acompanamiento_numero_if": acompanamiento_data.get("numero_if"),
+        "acompanamiento_numero_disposicion": acompanamiento_data.get(
+            "numero_disposicion"
+        ),
+        "prestaciones_por_dia": prestaciones_detalle.get("prestaciones_por_dia", []),
+        "prestaciones_dias": prestaciones_detalle.get("prestaciones_dias", []),
+        "dias_semana": prestaciones_detalle.get("dias_semana", []),
+    }
+
+
+def _puede_editar_convenio_numero_admision_detail(user, comedor):
+    return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+        user, comedor
+    )
+
+
+def _get_informes_complementarios_admision_detail(admision):
+    informes_complementarios_queryset = (
+        InformeComplementario.objects.filter(admision=admision)
+        .select_related("informe_tecnico", "creado_por")
+        .prefetch_related("pdf_final")
+    )
+    return list(informes_complementarios_queryset)
+
+
+def _build_admision_detail_context_payload(
+    *,
+    comedor,
+    dupla_context,
+    admision_context,
+    informes_complementarios,
+    puede_editar_convenio_numero,
+    acompanamiento_context,
+    rendiciones_context,
+    historial_context,
+):
+    return {
+        "comedor": comedor,
+        **dupla_context,
+        "documentos": admision_context.get("documentos", []),
+        "documentos_personalizados": admision_context.get(
+            "documentos_personalizados", []
+        ),
+        "informe_tecnico": admision_context.get("informe_tecnico"),
+        "informe_tecnico_pdf": admision_context.get("pdf"),
+        "informes_complementarios": informes_complementarios,
+        "puede_editar_convenio_numero": puede_editar_convenio_numero,
+        **acompanamiento_context,
+        **rendiciones_context,
+        **historial_context,
+    }
 
 
 @login_required
@@ -136,6 +506,17 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
             status=400,
         )
 
+    get_data = getattr(request, "GET", {})
+    post_data = getattr(request, "POST", {})
+    preview_enabled = str(get_data.get("preview") or post_data.get("preview") or "")
+    if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(archivo):
+        return JsonResponse(
+            {
+                "success": True,
+                "preview": build_delete_preview(archivo),
+            }
+        )
+
     documentacion = archivo.documentacion
     nombre_documento = (
         documentacion.nombre
@@ -149,7 +530,7 @@ def eliminar_archivo_admision(request, admision_id, documentacion_id):
         if documentacion
         else None
     )
-    AdmisionService.delete_admision_file(archivo)
+    AdmisionService.delete_admision_file(archivo, user=request.user)
 
     response_data = {
         "success": True,
@@ -348,96 +729,48 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         )
         return context
 
-    def post(self, request, *args, **kwargs):
-        logger.debug(f"POST data keys: {list(request.POST.keys())}")
-        logger.debug(f"FILES data keys: {list(request.FILES.keys())}")
+    def _safe_redirect_to_edit(self, request, admision):
+        return safe_redirect(
+            request,
+            default=reverse("admisiones_tecnicos_editar", kwargs={"pk": admision.pk}),
+            target=request.get_full_path(),
+        )
 
-        # Manejar subida de DOCX final del informe técnico
-        if "subir_docx_final" in request.POST:
-            logger.debug("Processing DOCX final upload in technicos form")
-            archivo_docx = request.FILES.get("docx_final")
-            logger.debug(f"DOCX file received: {archivo_docx}")
+    def _handle_docx_final_post(self, request):
+        if "subir_docx_final" not in request.POST:
+            return None
 
-            if archivo_docx:
-                admision = self.get_object()
-                if not (
-                    request.user.is_superuser
-                    or AdmisionService._verificar_permiso_tecnico_dupla(
-                        request.user, admision.comedor
-                    )
-                ):
-                    return HttpResponse(status=403)
-
-                informe_id = request.POST.get("informe_id")
-                if informe_id:
-                    informe_tecnico = InformeTecnico.objects.filter(
-                        admision=admision, id=informe_id
-                    ).first()
-                else:
-                    informe_tecnico = (
-                        InformeTecnico.objects.filter(
-                            admision=admision, estado="Docx generado"
-                        )
-                        .order_by("-id")
-                        .first()
-                    )
-                logger.debug(f"Informe tecnico found: {informe_tecnico}")
-
-                if informe_tecnico:
-                    if (
-                        admision.estado_admision != "informe_tecnico_finalizado"
-                        or informe_tecnico.estado != "Docx generado"
-                    ):
-                        messages.error(
-                            request,
-                            "Estado inválido para subir el DOCX final del informe técnico.",
-                        )
-                        return safe_redirect(
-                            request,
-                            default=reverse(
-                                "admisiones_tecnicos_editar",
-                                kwargs={"pk": self.get_object().pk},
-                            ),
-                            target=request.get_full_path(),
-                        )
-                    resultado = InformeService.subir_docx_editado(
-                        informe_tecnico, archivo_docx, request.user
-                    )
-                    logger.debug(f"Upload result: {resultado}")
-                    if resultado:
-                        messages.success(
-                            request,
-                            "DOCX final subido correctamente. El informe está ahora en revisión.",
-                        )
-                    else:
-                        messages.error(request, "Error al subir el DOCX final.")
-                else:
-                    messages.error(request, "No se encontró el informe técnico.")
-            else:
-                messages.error(request, "Debe seleccionar un archivo DOCX.")
-            return safe_redirect(
-                request,
-                default=reverse(
-                    "admisiones_tecnicos_editar", kwargs={"pk": self.get_object().pk}
-                ),
-                target=request.get_full_path(),
-            )
-
+        logger.debug("Processing DOCX final upload in technicos form")
         admision = self.get_object()
-        success, message = AdmisionService.procesar_post_update(request, admision)
+        upload_response = _procesar_subida_docx_final_informe_tecnico(
+            request=request, admision=admision
+        )
+        if upload_response is not None:
+            return upload_response
+        return self._safe_redirect_to_edit(request, admision)
 
-        if success is not None:
-            if success:
-                messages.success(request, message)
-            else:
-                messages.error(request, message)
-            return safe_redirect(
-                self.request,
-                default=reverse(
-                    "admisiones_tecnicos_editar", kwargs={"pk": admision.pk}
-                ),
-                target=self.request.get_full_path(),
+    def _handle_post_update_actions(self, request, admision):
+        success, message = AdmisionService.procesar_post_update(request, admision)
+        if success is None:
+            return None
+
+        if success:
+            messages.success(request, message)
+        else:
+            messages.error(request, message)
+        return self._safe_redirect_to_edit(request, admision)
+
+    def post(self, request, *args, **kwargs):
+        _log_post_and_files_keys(request)
+
+        response = _run_post_handlers_until_response(
+            (
+                lambda: self._handle_docx_final_post(request),
+                lambda: self._handle_post_update_actions(request, self.get_object()),
             )
+        )
+        if response is not None:
+            return response
 
         return super().post(request, *args, **kwargs)
 
@@ -480,403 +813,154 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         admision = self.object
         comedor = admision.comedor
-
-        def _format_datetime(value):
-            if not value:
-                return "-"
-            if timezone.is_aware(value):
-                value = timezone.localtime(value)
-            return value.strftime("%d/%m/%Y %H:%M")
-
-        dupla = getattr(comedor, "dupla", None)
-        if dupla:
-            tecnicos_dupla = [
-                (usuario.get_full_name() or usuario.username or str(usuario))
-                for usuario in dupla.tecnico.all()
-            ]
-        else:
-            tecnicos_dupla = []
+        dupla_context = _build_admision_detail_dupla_context(comedor)
 
         admision_context = (
             AdmisionService.get_admision_update_context(admision, self.request.user)
             or {}
         )
-        puede_editar_convenio_numero = (
-            self.request.user.is_superuser
-            or AdmisionService._verificar_permiso_tecnico_dupla(
-                self.request.user, comedor
-            )
+        puede_editar_convenio_numero = _puede_editar_convenio_numero_admision_detail(
+            self.request.user, comedor
+        )
+        informes_complementarios = _get_informes_complementarios_admision_detail(
+            admision
         )
 
-        informes_complementarios_queryset = (
-            InformeComplementario.objects.filter(admision=admision)
-            .select_related("informe_tecnico", "creado_por")
-            .prefetch_related("pdf_final")
+        acompanamiento_context = _build_admision_detail_acompanamiento_context(comedor)
+        rendiciones_context = _build_admision_detail_rendiciones_context(comedor)
+        historial_context = _build_admision_detail_historial_context(
+            admision, self.request
         )
-        informes_complementarios = list(informes_complementarios_queryset)
-
-        acompanamiento_data = (
-            AcompanamientoService.obtener_datos_admision(comedor) if comedor else {}
-        )
-        prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(
-            acompanamiento_data.get("anexo")
-        )
-
-        expedientes_pagos = []
-        if comedor:
-            expedientes_pagos = list(
-                ExpedientesPagosService.obtener_expedientes_pagos(comedor)
-            )
-
-        rendiciones_mensuales = []
-        if comedor:
-            rendiciones_mensuales = list(
-                RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(
-                    comedor
-                )
-            )
-
-        rendicion_final = (
-            RendicionCuentasFinal.objects.filter(comedor=comedor)
-            .prefetch_related("documentos__tipo", "documentos__estado")
-            .first()
-            if comedor
-            else None
-        )
-
-        rendicion_final_documentos = []
-        rendicion_final_historial = []
-        if rendicion_final:
-            rendicion_final_documentos = list(
-                RendicionCuentasFinalService.get_documentos_rendicion_cuentas_final(
-                    rendicion_final
-                )
-            )
-            rendicion_final_historial = list(
-                HistorialService.get_historial_documentos_by_rendicion_cuentas_final(
-                    rendicion_final
-                )
-            )
-
-        historial_records = list(
-            admision.historial.select_related("usuario").order_by("-fecha")
-        )
-        historial_page_param = "historial_page"
-        historial_page_number = self.request.GET.get(historial_page_param) or 1
-        historial_paginator = Paginator(historial_records, 10)
-        historial_page = historial_paginator.get_page(historial_page_number)
-
-        # Historial de estados de admisión
-        historial_estados_records = list(
-            admision.historial_estados.select_related("usuario").order_by("-fecha")
-        )
-        historial_estados_page_param = "historial_estados_page"
-        historial_estados_page_number = (
-            self.request.GET.get(historial_estados_page_param) or 1
-        )
-        historial_estados_paginator = Paginator(historial_estados_records, 10)
-        historial_estados_page = historial_estados_paginator.get_page(
-            historial_estados_page_number
-        )
-
-        historial_headers = [
-            {"title": "Fecha"},
-            {"title": "Usuario"},
-            {"title": "Campo"},
-            {"title": "Valor nuevo"},
-            {"title": "Valor anterior"},
-        ]
-
-        historial_estados_headers = [
-            {"title": "Fecha"},
-            {"title": "Estado nuevo"},
-            {"title": "Estado anterior"},
-            {"title": "Usuario"},
-        ]
-
-        historial_items = []
-        for record in historial_page.object_list:
-            usuario = record.usuario
-            usuario_display = (
-                getattr(usuario, "get_full_name", lambda: "")()
-                or getattr(usuario, "username", None)
-                if usuario
-                else "-"
-            )
-            historial_items.append(
-                {
-                    "cells": [
-                        {"content": (_format_datetime(record.fecha))},
-                        {"content": usuario_display or "-"},
-                        {"content": record.campo or "-"},
-                        {"content": record.valor_nuevo or "-"},
-                        {"content": record.valor_anterior or "-"},
-                    ]
-                }
-            )
-
-        historial_estados_items = []
-        from admisiones.templatetags.estado_filters import format_estado
-
-        for record in historial_estados_page.object_list:
-            usuario = record.usuario
-            usuario_display = (
-                getattr(usuario, "get_full_name", lambda: "")()
-                or getattr(usuario, "username", None)
-                if usuario
-                else "-"
-            )
-
-            # Aplicar formato a los estados
-            estado_anterior_formatted = (
-                format_estado(record.estado_anterior) if record.estado_anterior else "-"
-            )
-            estado_nuevo_formatted = (
-                format_estado(record.estado_nuevo) if record.estado_nuevo else "-"
-            )
-
-            historial_estados_items.append(
-                {
-                    "cells": [
-                        {"content": (_format_datetime(record.fecha))},
-                        {"content": estado_nuevo_formatted},
-                        {"content": estado_anterior_formatted},
-                        {"content": usuario_display or "-"},
-                    ]
-                }
-            )
 
         context.update(
-            {
-                "comedor": comedor,
-                "dupla": dupla,
-                "dupla_tecnicos": tecnicos_dupla,
-                "dupla_abogado": getattr(dupla, "abogado", None),
-                "documentos": admision_context.get("documentos", []),
-                "documentos_personalizados": admision_context.get(
-                    "documentos_personalizados", []
-                ),
-                "informe_tecnico": admision_context.get("informe_tecnico"),
-                "informe_tecnico_pdf": admision_context.get("pdf"),
-                "informes_complementarios": informes_complementarios,
-                "puede_editar_convenio_numero": puede_editar_convenio_numero,
-                "acompanamiento_info": acompanamiento_data.get("info_relevante"),
-                "acompanamiento_numero_if": acompanamiento_data.get("numero_if"),
-                "acompanamiento_numero_disposicion": acompanamiento_data.get(
-                    "numero_disposicion"
-                ),
-                "prestaciones_por_dia": prestaciones_detalle.get(
-                    "prestaciones_por_dia", []
-                ),
-                "prestaciones_dias": prestaciones_detalle.get("prestaciones_dias", []),
-                "dias_semana": prestaciones_detalle.get("dias_semana", []),
-                "expedientes_pagos": expedientes_pagos,
-                "rendiciones_mensuales": rendiciones_mensuales,
-                "rendicion_final": rendicion_final,
-                "rendicion_final_documentos": rendicion_final_documentos,
-                "rendicion_final_historial": rendicion_final_historial,
-                "admision_historial_headers": historial_headers,
-                "admision_historial_items": historial_items,
-                "admision_historial_page_obj": historial_page,
-                "admision_historial_is_paginated": historial_page.has_other_pages(),
-                "admision_historial_page_param": historial_page_param,
-                "historial_estados_headers": historial_estados_headers,
-                "historial_estados_items": historial_estados_items,
-                "historial_estados_page_obj": historial_estados_page,
-                "historial_estados_is_paginated": historial_estados_page.has_other_pages(),
-                "historial_estados_page_param": historial_estados_page_param,
-            }
+            _build_admision_detail_context_payload(
+                comedor=comedor,
+                dupla_context=dupla_context,
+                admision_context=admision_context,
+                informes_complementarios=informes_complementarios,
+                puede_editar_convenio_numero=puede_editar_convenio_numero,
+                acompanamiento_context=acompanamiento_context,
+                rendiciones_context=rendiciones_context,
+                historial_context=historial_context,
+            )
         )
 
         return context
 
-    def post(self, request, *args, **kwargs):
-        if "forzar_cierre" in request.POST:
-            # Verificar permisos
-            if not (
-                request.user.is_superuser
-                or request.user.groups.filter(
-                    name="Coordinador Equipo Tecnico"
-                ).exists()
-            ):
-                messages.error(request, "No tiene permisos para realizar esta acción.")
-                return safe_redirect(
-                    request,
-                    default=reverse(
-                        "admision_detalle",
-                        kwargs={
-                            "comedor_pk": self.kwargs["comedor_pk"],
-                            "pk": self.kwargs["pk"],
-                        },
-                    ),
-                    target=request.get_full_path(),
-                )
+    def _safe_redirect_to_self(self, request):
+        return safe_redirect(
+            request,
+            default=reverse(
+                "admision_detalle",
+                kwargs={
+                    "comedor_pk": self.kwargs["comedor_pk"],
+                    "pk": self.kwargs["pk"],
+                },
+            ),
+            target=request.get_full_path(),
+        )
 
-            admision = self.get_object()
-            motivo = request.POST.get("motivo_forzar_cierre", "").strip()
+    def _handle_forzar_cierre_post(self, request):
+        if "forzar_cierre" not in request.POST:
+            return None
 
-            if not motivo:
-                messages.error(request, "El motivo del cierre forzado es obligatorio.")
-                return safe_redirect(
-                    request,
-                    default=reverse(
-                        "admision_detalle",
-                        kwargs={
-                            "comedor_pk": self.kwargs["comedor_pk"],
-                            "pk": self.kwargs["pk"],
-                        },
-                    ),
-                    target=request.get_full_path(),
-                )
+        if not (
+            request.user.is_superuser
+            or request.user.groups.filter(name="Coordinador Equipo Tecnico").exists()
+        ):
+            messages.error(request, "No tiene permisos para realizar esta acción.")
+            return self._safe_redirect_to_self(request)
 
-            admision.activa = False
-            admision.motivo_forzar_cierre = motivo
-            admision.estado_mostrar = "Inactivada"
-            admision.fecha_estado_mostrar = timezone.now().date()
+        admision = self.get_object()
+        motivo = request.POST.get("motivo_forzar_cierre", "").strip()
 
-            # Actualizar el estado correspondiente a "inactivada"
-            if admision.estado_legales:
-                admision.estado_legales = "Inactivada"
-                admision.save(
-                    update_fields=[
-                        "activa",
-                        "motivo_forzar_cierre",
-                        "estado_legales",
-                        "estado_mostrar",
-                        "fecha_estado_mostrar",
-                    ]
-                )
-            else:
-                admision.estado_admision = "inactivada"
-                admision.save(
-                    update_fields=[
-                        "activa",
-                        "motivo_forzar_cierre",
-                        "estado_admision",
-                        "estado_mostrar",
-                        "fecha_estado_mostrar",
-                    ]
-                )
+        if not motivo:
+            messages.error(request, "El motivo del cierre forzado es obligatorio.")
+            return self._safe_redirect_to_self(request)
 
-            messages.success(request, "La admisión ha sido cerrada forzadamente.")
-            return safe_redirect(
-                request,
-                default=reverse(
-                    "admision_detalle",
-                    kwargs={
-                        "comedor_pk": self.kwargs["comedor_pk"],
-                        "pk": self.kwargs["pk"],
-                    },
-                ),
-                target=request.get_full_path(),
-            )
+        self._aplicar_forzar_cierre_admision(admision, motivo)
 
-        # Manejar carga de archivos adicionales
-        if request.FILES.get("archivo") or request.POST.get("nombre"):
-            if not (request.FILES.get("archivo") and request.POST.get("nombre")):
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": "El archivo y el nombre son obligatorios.",
-                    },
-                    status=400,
-                )
+        messages.success(request, "La admisión ha sido cerrada forzadamente.")
+        return self._safe_redirect_to_self(request)
 
-            admision = self.get_object()
-            archivo = request.FILES.get("archivo")
-            nombre = request.POST.get("nombre")
+    def _aplicar_forzar_cierre_admision(self, admision, motivo):
+        admision.activa = False
+        admision.motivo_forzar_cierre = motivo
+        admision.estado_mostrar = "Inactivada"
+        admision.fecha_estado_mostrar = timezone.now().date()
 
-            archivo_admision, error = AdmisionService.crear_documento_personalizado(
-                admision.id, nombre, archivo, request.user
-            )
+        update_fields = [
+            "activa",
+            "motivo_forzar_cierre",
+            "estado_mostrar",
+            "fecha_estado_mostrar",
+        ]
+        if admision.estado_legales:
+            admision.estado_legales = "Inactivada"
+            update_fields.append("estado_legales")
+        else:
+            admision.estado_admision = "inactivada"
+            update_fields.append("estado_admision")
 
-            if archivo_admision:
-                return JsonResponse({"success": True})
+        admision.save(update_fields=update_fields)
+
+    def _handle_documento_personalizado_post(self, request):
+        if not (request.FILES.get("archivo") or request.POST.get("nombre")):
+            return None
+
+        if not (request.FILES.get("archivo") and request.POST.get("nombre")):
             return JsonResponse(
-                {"success": False, "error": error or "Error al subir archivo"},
+                {
+                    "success": False,
+                    "error": "El archivo y el nombre son obligatorios.",
+                },
                 status=400,
             )
 
-        # Manejar subida de DOCX final del informe técnico
-        logger.debug(f"POST data keys: {list(request.POST.keys())}")
-        logger.debug(f"FILES data keys: {list(request.FILES.keys())}")
+        admision = self.get_object()
+        archivo = request.FILES.get("archivo")
+        nombre = request.POST.get("nombre")
 
-        if "subir_docx_final" in request.POST:
-            logger.debug("Processing DOCX final upload")
-            archivo_docx = request.FILES.get("docx_final")
-            logger.debug(f"DOCX file received: {archivo_docx}")
+        archivo_admision, error = AdmisionService.crear_documento_personalizado(
+            admision.id, nombre, archivo, request.user
+        )
 
-            if archivo_docx:
-                admision = self.get_object()
-                if not (
-                    request.user.is_superuser
-                    or AdmisionService._verificar_permiso_tecnico_dupla(
-                        request.user, admision.comedor
-                    )
-                ):
-                    return HttpResponse(status=403)
+        if archivo_admision:
+            return JsonResponse({"success": True})
+        return JsonResponse(
+            {"success": False, "error": error or "Error al subir archivo"},
+            status=400,
+        )
 
-                informe_id = request.POST.get("informe_id")
-                if informe_id:
-                    informe_tecnico = InformeTecnico.objects.filter(
-                        admision=admision, id=informe_id
-                    ).first()
-                else:
-                    informe_tecnico = (
-                        InformeTecnico.objects.filter(
-                            admision=admision, estado="Docx generado"
-                        )
-                        .order_by("-id")
-                        .first()
-                    )
-                logger.debug(f"Informe tecnico found: {informe_tecnico}")
+    def _handle_docx_final_upload_post(self, request):
+        if "subir_docx_final" not in request.POST:
+            return None
 
-                if informe_tecnico:
-                    if (
-                        admision.estado_admision != "informe_tecnico_finalizado"
-                        or informe_tecnico.estado != "Docx generado"
-                    ):
-                        messages.error(
-                            request,
-                            "Estado inválido para subir el DOCX final del informe técnico.",
-                        )
-                        return safe_redirect(
-                            request,
-                            default=reverse(
-                                "admision_detalle",
-                                kwargs={
-                                    "comedor_pk": self.kwargs["comedor_pk"],
-                                    "pk": self.kwargs["pk"],
-                                },
-                            ),
-                            target=request.get_full_path(),
-                        )
-                    resultado = InformeService.subir_docx_editado(
-                        informe_tecnico, archivo_docx, request.user
-                    )
-                    logger.debug(f"Upload result: {resultado}")
-                    if resultado:
-                        messages.success(
-                            request,
-                            "DOCX final subido correctamente. El informe está ahora en revisión.",
-                        )
-                    else:
-                        messages.error(request, "Error al subir el DOCX final.")
-                else:
-                    messages.error(request, "No se encontró el informe técnico.")
-            else:
-                messages.error(request, "Debe seleccionar un archivo DOCX.")
-            return safe_redirect(
-                request,
-                default=reverse(
-                    "admision_detalle",
-                    kwargs={
-                        "comedor_pk": self.kwargs["comedor_pk"],
-                        "pk": self.kwargs["pk"],
-                    },
-                ),
-                target=request.get_full_path(),
+        logger.debug("Processing DOCX final upload")
+        admision = self.get_object()
+        upload_response = _procesar_subida_docx_final_informe_tecnico(
+            request=request, admision=admision
+        )
+        if upload_response is not None:
+            return upload_response
+        return self._safe_redirect_to_self(request)
+
+    def post(self, request, *args, **kwargs):
+        response = _run_post_handlers_until_response(
+            (
+                lambda: self._handle_forzar_cierre_post(request),
+                lambda: self._handle_documento_personalizado_post(request),
             )
+        )
+        if response is not None:
+            return response
+
+        _log_post_and_files_keys(request)
+        response = _run_post_handlers_until_response(
+            (lambda: self._handle_docx_final_upload_post(request),)
+        )
+        if response is not None:
+            return response
 
         return super().get(request, *args, **kwargs)
 
@@ -898,9 +982,7 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
                 request,
                 "El tipo de informe seleccionado no está disponible para carga online.",
             )
-            return HttpResponseRedirect(
-                reverse("admisiones_tecnicos_editar", args=[self.admision_obj.id])
-            )
+            return _redirect_to_admision_tecnicos_editar(self.admision_obj.id)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -911,14 +993,11 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
         return InformeService.get_queryset_informe_por_tipo(self.tipo)
 
     def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        action = (
-            self.request.POST.get("action") if self.request.method == "POST" else None
+        return _build_informe_form_kwargs(
+            base_kwargs=super().get_form_kwargs(),
+            request=self.request,
+            admision=self.admision_obj,
         )
-        kwargs.update(
-            {"admision": self.admision_obj, "require_full": action == "submit"}
-        )
-        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -933,52 +1012,19 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.tipo = self.tipo
-        action = self.request.POST.get("action")
-
-        resultado = InformeService.guardar_informe(
-            form,
-            self.admision_obj,
+        return _handle_informe_tecnico_form_valid(
+            view=self,
+            form=form,
+            admision_obj=self.admision_obj,
             es_creacion=True,
-            action=action,
-            usuario=self.request.user,
         )
 
-        if not resultado.get("success"):
-            error_message = resultado.get(
-                "error", "No se pudo guardar el informe técnico."
-            )
-            messages.error(self.request, error_message)
-            return self.render_to_response(self.get_context_data(form=form))
-
-        self.object = resultado.get("informe")
-        return HttpResponseRedirect(self.get_success_url())
-
     def form_invalid(self, form):
-        errores = []
-        for field_name, field_errors in form.errors.items():
-            if field_name == "__all__":
-                errores.extend(field_errors)
-                continue
-            field = form.fields.get(field_name)
-            etiqueta_base = field.label if field and field.label else field_name
-            etiqueta = str(etiqueta_base).strip()
-            errores.append(f"{etiqueta}: {', '.join(field_errors)}")
-
-        if errores:
-            messages.error(
-                self.request,
-                "No se pudo guardar el informe. Revisá los campos: "
-                + " | ".join(errores),
-            )
-        else:
-            messages.error(
-                self.request,
-                "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.",
-            )
+        _flash_informe_form_invalid_messages(self.request, form)
         return super().form_invalid(form)
 
     def get_success_url(self):
-        return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
+        return _get_informe_tecnico_edit_success_url(self.object)
 
 
 class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
@@ -993,9 +1039,7 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
                 request,
                 "El tipo de informe seleccionado no está disponible para carga online.",
             )
-            return HttpResponseRedirect(
-                reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
-            )
+            return _redirect_to_admision_tecnicos_editar(self.object.admision.id)
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -1009,14 +1053,11 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         )
 
     def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        action = (
-            self.request.POST.get("action") if self.request.method == "POST" else None
+        return _build_informe_form_kwargs(
+            base_kwargs=super().get_form_kwargs(),
+            request=self.request,
+            admision=self.object.admision,
         )
-        kwargs.update(
-            {"admision": self.object.admision, "require_full": action == "submit"}
-        )
-        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1025,50 +1066,19 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form):
-        resultado = InformeService.guardar_informe(
-            form,
-            form.instance.admision,
+        return _handle_informe_tecnico_form_valid(
+            view=self,
+            form=form,
+            admision_obj=form.instance.admision,
             es_creacion=False,
-            action=self.request.POST.get("action"),
-            usuario=self.request.user,
         )
 
-        if not resultado.get("success"):
-            error_message = resultado.get(
-                "error", "No se pudo guardar el informe técnico."
-            )
-            messages.error(self.request, error_message)
-            return self.render_to_response(self.get_context_data(form=form))
-
-        self.object = resultado.get("informe")
-        return HttpResponseRedirect(self.get_success_url())
-
     def form_invalid(self, form):
-        errores = []
-        for field_name, field_errors in form.errors.items():
-            if field_name == "__all__":
-                errores.extend(field_errors)
-                continue
-            field = form.fields.get(field_name)
-            etiqueta_base = field.label if field and field.label else field_name
-            etiqueta = str(etiqueta_base).strip()
-            errores.append(f"{etiqueta}: {', '.join(field_errors)}")
-
-        if errores:
-            messages.error(
-                self.request,
-                "No se pudo guardar el informe. Revisá los campos: "
-                + " | ".join(errores),
-            )
-        else:
-            messages.error(
-                self.request,
-                "No se pudo guardar el informe. Verificá que los campos obligatorios estén completos.",
-            )
+        _flash_informe_form_invalid_messages(self.request, form)
         return super().form_invalid(form)
 
     def get_success_url(self):
-        return reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
+        return _get_informe_tecnico_edit_success_url(self.object)
 
 
 class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
@@ -1080,60 +1090,69 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
             self.kwargs.get("tipo", "base")
         )
 
-    def post(self, request, *args, **kwargs):
-        tipo = self.kwargs.get("tipo", "base")
-        informe = InformeService.get_informe_por_tipo_y_pk(tipo, kwargs["pk"])
+    def _safe_redirect_to_informe_detalle(self, request, tipo, informe):
+        return safe_redirect(
+            request,
+            default=reverse(
+                "informe_tecnico_ver",
+                kwargs={"tipo": tipo, "pk": informe.pk},
+            ),
+            target=request.get_full_path(),
+        )
 
-        # Manejar subida de DOCX editado
-        if "subir_docx" in request.POST:
-            archivo_docx = request.FILES.get("docx_editado")
-            if archivo_docx:
-                if not (
-                    request.user.is_superuser
-                    or AdmisionService._verificar_permiso_tecnico_dupla(
-                        request.user, informe.admision.comedor
-                    )
-                ):
-                    return HttpResponse(status=403)
-
-                if informe.estado != "Docx generado":
-                    messages.error(
-                        request,
-                        "Estado inválido para subir el DOCX editado del informe técnico.",
-                    )
-                    return safe_redirect(
-                        request,
-                        default=reverse(
-                            "informe_tecnico_ver",
-                            kwargs={"tipo": tipo, "pk": informe.pk},
-                        ),
-                        target=request.get_full_path(),
-                    )
-                resultado = InformeService.subir_docx_editado(
-                    informe, archivo_docx, request.user
-                )
-                if resultado:
-                    messages.success(request, "DOCX enviado a validar correctamente.")
-                else:
-                    messages.error(request, "Error al subir el DOCX editado.")
-            else:
-                messages.error(request, "Debe seleccionar un archivo DOCX.")
-            return safe_redirect(
-                request,
-                default=reverse(
-                    "informe_tecnico_ver", kwargs={"tipo": tipo, "pk": informe.pk}
-                ),
-                target=request.get_full_path(),
+    def _puede_subir_docx_editado_informe(self, request, informe):
+        return (
+            request.user.is_superuser
+            or AdmisionService._verificar_permiso_tecnico_dupla(
+                request.user, informe.admision.comedor
             )
+        )
 
-        # Manejar revisión del informe (abogados)
+    def _handle_subir_docx_editado_post(self, request, tipo, informe):
+        if "subir_docx" not in request.POST:
+            return None
+
+        archivo_docx = request.FILES.get("docx_editado")
+        if not archivo_docx:
+            messages.error(request, "Debe seleccionar un archivo DOCX.")
+            return self._safe_redirect_to_informe_detalle(request, tipo, informe)
+
+        if not self._puede_subir_docx_editado_informe(request, informe):
+            return HttpResponse(status=403)
+
+        if informe.estado != "Docx generado":
+            messages.error(
+                request,
+                "Estado inválido para subir el DOCX editado del informe técnico.",
+            )
+            return self._safe_redirect_to_informe_detalle(request, tipo, informe)
+
+        resultado = InformeService.subir_docx_editado(
+            informe, archivo_docx, request.user
+        )
+        if resultado:
+            messages.success(request, "DOCX enviado a validar correctamente.")
+        else:
+            messages.error(request, "Error al subir el DOCX editado.")
+
+        return self._safe_redirect_to_informe_detalle(request, tipo, informe)
+
+    def _handle_revision_informe_post(self, request, tipo, informe):
         logger.debug(
             f"Processing informe revision - POST keys: {list(request.POST.keys())}"
         )
         InformeService.procesar_revision_informe(request, tipo, informe)
-        return HttpResponseRedirect(
-            reverse("admisiones_tecnicos_editar", args=[informe.admision.id])
-        )
+        return _redirect_to_admision_tecnicos_editar(informe.admision.id)
+
+    def post(self, request, *args, **kwargs):
+        tipo = self.kwargs.get("tipo", "base")
+        informe = InformeService.get_informe_por_tipo_y_pk(tipo, kwargs["pk"])
+
+        response = self._handle_subir_docx_editado_post(request, tipo, informe)
+        if response is not None:
+            return response
+
+        return self._handle_revision_informe_post(request, tipo, informe)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

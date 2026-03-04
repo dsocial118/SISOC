@@ -4,6 +4,7 @@ Sistema de gestión basado en **Django** y **MySQL**, desplegable mediante **Doc
 Cada aplicación del repositorio representa un módulo funcional (ej. `comedores`, `relevamientos`, `users`).
 
 > Documentación organizada: ver `docs/indice.md` para el índice y referencias detalladas.
+> Infraestructura: resumen operativo en `docs/INFRA_README.md`.
 
 ---
 
@@ -47,8 +48,8 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
 
 1. Clonar el repositorio:
    ```bash
-   git clone https://github.com/ORGANIZACION/SISOC.git
-   cd SISOC
+   git clone https://github.com/dsocial118/BACKOFFICE.git
+   cd BACKOFFICE
    ```
 2. (Opcional) Colocar un dump en `./docker/mysql/local-dump.sql`.  
 3. Levantar servicios:

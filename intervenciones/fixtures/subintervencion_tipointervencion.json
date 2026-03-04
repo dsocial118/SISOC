@@ -1,382 +1,3498 @@
 [
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 1,
-    "fields": {
-      "nombre": "Visitas"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 2,
-    "fields": {
-      "nombre": "Presentación del programa"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 3,
-    "fields": {
-      "nombre": "Solicitud de documentación"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 4,
-    "fields": {
-      "nombre": "Coordinación para firma de convenio"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 5,
-    "fields": {
-      "nombre": "Aviso para retiro de tarjeta"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 6,
-    "fields": {
-      "nombre": "Habilitación de tarjeta"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 7,
-    "fields": {
-      "nombre": "Alta de usuario en plataforma"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 8,
-    "fields": {
-      "nombre": "Invitación a capacitación"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 9,
-    "fields": {
-      "nombre": "Asistencia a capacitación"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 10,
-    "fields": {
-      "nombre": "Aviso de acreditación de fondos"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 11,
-    "fields": {
-      "nombre": "Consultas varias"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 12,
-    "fields": {
-      "nombre": "Aviso de utilización de saldo pendiente"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 13,
-    "fields": {
-      "nombre": "Certificación mensual"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 14,
-    "fields": {
-      "nombre": "Listado de beneficiarios"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 15,
-    "fields": {
-      "nombre": "Tarjeta"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 16,
-    "fields": {
-      "nombre": "Rendición presentada al programa"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 17,
-    "fields": {
-      "nombre": "Giro de expediente a PNSA Contable"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 18,
-    "fields": {
-      "nombre": "Informe técnico complementario"
-    }
-  },
-  {
-    "model": "intervenciones.tipointervencion",
-    "pk": 19,
-    "fields": {
-      "nombre": "Contacto"
-    }
-  },
-  {
-    "model":"intervenciones.tipointervencion",
-    "pk": 20,
-    "fields":{
-      "nombre": "Otros"
-    }
-  },
-  {
+{
     "model": "intervenciones.subintervencion",
     "pk": 1,
     "fields": {
-      "nombre": "Primera visita",
-      "tipo_intervencion": 1
+        "nombre": "Primera visita",
+        "tipo_intervencion": 1
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 2,
     "fields": {
-      "nombre": "Visita de seguimiento",
-      "tipo_intervencion": 1
+        "nombre": "Visita de seguimiento",
+        "tipo_intervencion": 1
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 3,
     "fields": {
-      "nombre": "Otra visita",
-      "tipo_intervencion": 1
+        "nombre": "Otra visita",
+        "tipo_intervencion": 1
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 4,
     "fields": {
-      "nombre": "Uso de plataforma",
-      "tipo_intervencion": 11
+        "nombre": "Uso de plataforma",
+        "tipo_intervencion": 11
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 5,
     "fields": {
-      "nombre": "Compras",
-      "tipo_intervencion": 11
+        "nombre": "Compras",
+        "tipo_intervencion": 11
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 6,
     "fields": {
-      "nombre": "Rendición",
-      "tipo_intervencion": 11
+        "nombre": "Rendición",
+        "tipo_intervencion": 11
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 7,
     "fields": {
-      "nombre": "Nómina total de beneficiarios",
-      "tipo_intervencion": 14
+        "nombre": "Nómina total de beneficiarios",
+        "tipo_intervencion": 14
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 8,
     "fields": {
-      "nombre": "Nómina alta/baja mes 2",
-      "tipo_intervencion": 14
+        "nombre": "Nómina alta/baja mes 2",
+        "tipo_intervencion": 14
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 9,
     "fields": {
-      "nombre": "Nómina alta/baja mes 3",
-      "tipo_intervencion": 14
+        "nombre": "Nómina alta/baja mes 3",
+        "tipo_intervencion": 14
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 10,
     "fields": {
-      "nombre": "Nómina alta/baja mes 4",
-      "tipo_intervencion": 14
+        "nombre": "Nómina alta/baja mes 4",
+        "tipo_intervencion": 14
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 11,
     "fields": {
-      "nombre": "Nómina alta/baja mes 5",
-      "tipo_intervencion": 14
+        "nombre": "Nómina alta/baja mes 5",
+        "tipo_intervencion": 14
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 12,
     "fields": {
-      "nombre": "Nómina alta/baja mes 6",
-      "tipo_intervencion": 14
+        "nombre": "Nómina alta/baja mes 6",
+        "tipo_intervencion": 14
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 13,
     "fields": {
-      "nombre": "No se encuentra en sucursal",
-      "tipo_intervencion": 15
+        "nombre": "No se encuentra en sucursal",
+        "tipo_intervencion": 15
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 14,
     "fields": {
-      "nombre": "Pérdida o robo",
-      "tipo_intervencion": 15
+        "nombre": "Pérdida o robo",
+        "tipo_intervencion": 15
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 15,
     "fields": {
-      "nombre": "Cambio de titularidad",
-      "tipo_intervencion": 15
+        "nombre": "Cambio de titularidad",
+        "tipo_intervencion": 15
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 16,
     "fields": {
-      "nombre": "Dificultades para el uso de la tarjeta",
-      "tipo_intervencion": 15
+        "nombre": "Dificultades para el uso de la tarjeta",
+        "tipo_intervencion": 15
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 17,
     "fields": {
-      "nombre": "Notificación",
-      "tipo_intervencion": 5
+        "nombre": "Notificación",
+        "tipo_intervencion": 5
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 18,
     "fields": {
-      "nombre": "Confirmación de retiro",
-      "tipo_intervencion": 5
+        "nombre": "Confirmación de retiro",
+        "tipo_intervencion": 5
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 19,
     "fields": {
-      "nombre": "Notificación de primera acreditación",
-      "tipo_intervencion": 10
+        "nombre": "Notificación de primera acreditación",
+        "tipo_intervencion": 10
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 20,
     "fields": {
-      "nombre": "Notificación de acreditación mes 2",
-      "tipo_intervencion": 10
+        "nombre": "Notificación de acreditación mes 2",
+        "tipo_intervencion": 10
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 21,
     "fields": {
-      "nombre": "Notificación de acreditación mes 3",
-      "tipo_intervencion": 10
+        "nombre": "Notificación de acreditación mes 3",
+        "tipo_intervencion": 10
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 22,
     "fields": {
-      "nombre": "Notificación de acreditación mes 4",
-      "tipo_intervencion": 10
+        "nombre": "Notificación de acreditación mes 4",
+        "tipo_intervencion": 10
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 23,
     "fields": {
-      "nombre": "Notificación de acreditación mes 5",
-      "tipo_intervencion": 10
+        "nombre": "Notificación de acreditación mes 5",
+        "tipo_intervencion": 10
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 24,
     "fields": {
-      "nombre": "Notificación de acreditación mes 6",
-      "tipo_intervencion": 10
+        "nombre": "Notificación de acreditación mes 6",
+        "tipo_intervencion": 10
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 25,
     "fields": {
-      "nombre": "Certificacion mes 1",
-      "tipo_intervencion": 13
+        "nombre": "Certificacion mes 1",
+        "tipo_intervencion": 13
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 26,
     "fields": {
-      "nombre": "Certificacion mes 2",
-      "tipo_intervencion": 13
+        "nombre": "Certificacion mes 2",
+        "tipo_intervencion": 13
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 27,
     "fields": {
-      "nombre": "Certificacion mes 3",
-      "tipo_intervencion": 13
+        "nombre": "Certificacion mes 3",
+        "tipo_intervencion": 13
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 28,
     "fields": {
-      "nombre": "Certificacion mes 4",
-      "tipo_intervencion": 13
+        "nombre": "Certificacion mes 4",
+        "tipo_intervencion": 13
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 29,
     "fields": {
-      "nombre": "Certificacion mes 5",
-      "tipo_intervencion": 13
+        "nombre": "Certificacion mes 5",
+        "tipo_intervencion": 13
     }
-  },
-  {
+},
+{
     "model": "intervenciones.subintervencion",
     "pk": 30,
     "fields": {
-      "nombre": "Certificacion mes 6",
-      "tipo_intervencion": 13
+        "nombre": "Certificacion mes 6",
+        "tipo_intervencion": 13
     }
-  }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 31,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 32,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 33,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 34,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 35,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 36,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 37,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 38,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 39,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 40,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 41,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 42,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 43,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 44,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 45,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 46,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 47,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 48,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 49,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 50,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 51,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 52,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 53,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 54,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 55,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 56,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 57,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 58,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 59,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 60,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 61,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 62,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 63,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 64,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 65,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 66,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 67,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 68,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 69,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 70,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 71,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 72,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 73,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 74,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 75,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 76,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 77,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 78,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 79,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 80,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 81,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 82,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 83,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 84,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 85,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 86,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 87,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 88,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 89,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 90,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 91,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 92,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 93,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 94,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 95,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 96,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 97,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 98,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 99,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 100,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 101,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 102,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 103,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 104,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 105,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 106,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 107,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 108,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 109,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 110,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 111,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 112,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 113,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 114,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 115,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 116,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 117,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 118,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 119,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 120,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 121,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 122,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 123,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 124,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 125,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 126,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 127,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 128,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 129,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 130,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 131,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 132,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 133,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 134,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 135,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 136,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 137,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 138,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 139,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 140,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 141,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 142,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 143,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 144,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 145,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 146,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 147,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 148,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 149,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 150,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 151,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 152,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 153,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 154,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 155,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 156,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 157,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 158,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 159,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 160,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 161,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 162,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 163,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 164,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 165,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 166,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 167,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 168,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 169,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 170,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 171,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 172,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 173,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 174,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 175,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 176,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 177,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 178,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 179,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 180,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 181,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 182,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 183,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 184,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 185,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 186,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 187,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 188,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 189,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 190,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 191,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 192,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 193,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 194,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 195,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 196,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 197,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 198,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 199,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 200,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 201,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 202,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 203,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 204,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 205,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 206,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 207,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 208,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 209,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 210,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 211,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 212,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 213,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 214,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 215,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 216,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 217,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 218,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 219,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 220,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 221,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 222,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 223,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 224,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 225,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 226,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 227,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 228,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 229,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 230,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 231,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 232,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 233,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 234,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 235,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 236,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 237,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 238,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 239,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 240,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 241,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 242,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 243,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 244,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 245,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 246,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 247,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 248,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 249,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 250,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 251,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 252,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 253,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 254,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 255,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 256,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 257,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 258,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 259,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 260,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 261,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 262,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 263,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 264,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 265,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 266,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 267,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 268,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 269,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 270,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 271,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 272,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 273,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 274,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 275,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 276,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 277,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 278,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 279,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 280,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 281,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 282,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 283,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 284,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 285,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 286,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 287,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 288,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 289,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 290,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 291,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 292,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 293,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 294,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 295,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 296,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 297,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 298,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 299,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 300,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 301,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 302,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 303,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 304,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 305,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 306,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 307,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 308,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 309,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 310,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 311,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 312,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 313,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 314,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 315,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 316,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 317,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 318,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 319,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 320,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 321,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 322,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 323,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 324,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 325,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 326,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 327,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 328,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 329,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 330,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 331,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 332,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 333,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 334,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 335,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 336,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 337,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 338,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 339,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 340,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 341,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 342,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 343,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 344,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 345,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 346,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 347,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 348,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 349,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 350,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 351,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 352,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 353,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 354,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 355,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 356,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 357,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 358,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 359,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 360,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 361,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 362,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 363,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 364,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 365,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 366,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 367,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 368,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 369,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 370,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 371,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 372,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 373,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 374,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 375,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 376,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 377,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 378,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 379,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 380,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 381,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 382,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 383,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 384,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 385,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 386,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 387,
+    "fields": {
+        "nombre": "Ingreso",
+        "tipo_intervencion": 21
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 388,
+    "fields": {
+        "nombre": "Actualización de datos",
+        "tipo_intervencion": 21
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 389,
+    "fields": {
+        "nombre": "Derivación interna",
+        "tipo_intervencion": 21
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 390,
+    "fields": {
+        "nombre": "Presencial",
+        "tipo_intervencion": 22
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 391,
+    "fields": {
+        "nombre": "Telefónico",
+        "tipo_intervencion": 22
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 392,
+    "fields": {
+        "nombre": "Domiciliario",
+        "tipo_intervencion": 22
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 393,
+    "fields": {
+        "nombre": "Escuela",
+        "tipo_intervencion": 23
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 394,
+    "fields": {
+        "nombre": "Salud",
+        "tipo_intervencion": 23
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 395,
+    "fields": {
+        "nombre": "Servicio local",
+        "tipo_intervencion": 23
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 396,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 397,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 398,
+    "fields": {
+        "nombre": "Creación de Usuario en Plataforma Alimentar Comunidad",
+        "tipo_intervencion": 24
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 399,
+    "fields": {
+        "nombre": "Uso de Plataforma Alimentar Comunidad: Cómo consultar saldo y subir comprobantes",
+        "tipo_intervencion": 24
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 400,
+    "fields": {
+        "nombre": "Retiro y Uso de la Tarjeta Alimentar Comunidad",
+        "tipo_intervencion": 24
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 401,
+    "fields": {
+        "nombre": "Criterios Nutricionales - Alimentar Comunidad",
+        "tipo_intervencion": 24
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 402,
+    "fields": {
+        "nombre": "Rendición de Cuentas Resolución 650/25 - Alimentar Comunidad",
+        "tipo_intervencion": 24
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 403,
+    "fields": {
+        "nombre": "Gastos Accesorios 6% - Resolución 650/25 - Alimentar Comunidad",
+        "tipo_intervencion": 24
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 404,
+    "fields": {
+        "nombre": "Pautas de Higiene - Alimentar Comunidad",
+        "tipo_intervencion": 24
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 405,
+    "fields": {
+        "nombre": "Seguridad en la Cocina - Alimentar Comunidad",
+        "tipo_intervencion": 24
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 406,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 407,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 408,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 409,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 410,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 411,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 412,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.subintervencion",
+    "pk": 413,
+    "fields": {
+        "nombre": "",
+        "tipo_intervencion": null
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 1,
+    "fields": {
+        "nombre": "Visitas",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 2,
+    "fields": {
+        "nombre": "Presentación del programa",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 3,
+    "fields": {
+        "nombre": "Solicitud de documentación",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 4,
+    "fields": {
+        "nombre": "Coordinación para firma de convenio",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 5,
+    "fields": {
+        "nombre": "Aviso para retiro de tarjeta",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 6,
+    "fields": {
+        "nombre": "Habilitación de tarjeta",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 7,
+    "fields": {
+        "nombre": "Alta de usuario en plataforma",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 8,
+    "fields": {
+        "nombre": "Invitación a capacitación",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 9,
+    "fields": {
+        "nombre": "Asistencia a Capacitación Sincrónica",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 10,
+    "fields": {
+        "nombre": "Aviso de acreditación de fondos",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 11,
+    "fields": {
+        "nombre": "Consultas varias",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 12,
+    "fields": {
+        "nombre": "Aviso de utilización de saldo pendiente",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 13,
+    "fields": {
+        "nombre": "Certificación mensual",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 14,
+    "fields": {
+        "nombre": "Listado de beneficiarios",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 15,
+    "fields": {
+        "nombre": "Tarjeta",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 16,
+    "fields": {
+        "nombre": "Rendición presentada al programa",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 17,
+    "fields": {
+        "nombre": "Giro de expediente a PNSA Contable",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 18,
+    "fields": {
+        "nombre": "Informe técnico complementario",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 19,
+    "fields": {
+        "nombre": "Contacto",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 20,
+    "fields": {
+        "nombre": "Otros",
+        "programa": "comedores"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 21,
+    "fields": {
+        "nombre": "Entrevista inicial",
+        "programa": "cdi"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 22,
+    "fields": {
+        "nombre": "Seguimiento familiar",
+        "programa": "cdi"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 23,
+    "fields": {
+        "nombre": "Articulación institucional",
+        "programa": "cdi"
+    }
+},
+{
+    "model": "intervenciones.tipointervencion",
+    "pk": 24,
+    "fields": {
+        "nombre": "Asistencia a Capacitación Formando Capital Humano",
+        "programa": "comedores"
+    }
+}
 ]

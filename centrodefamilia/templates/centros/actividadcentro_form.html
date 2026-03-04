@@ -22,7 +22,7 @@
           href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
   flatpickr(".timepicker", {
     enableTime: true,
     noCalendar: true,

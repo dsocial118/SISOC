@@ -3,27 +3,197 @@ Señales para crear entradas de auditoría adicionales asociadas a comedores y
 organizaciones.
 """
 
-from django.db import transaction
+import json
+
+from django.db import OperationalError, ProgrammingError, transaction
 from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 
 from auditlog.models import LogEntry
 from admisiones.models.admisiones import Admision
+from centrodeinfancia.models import (
+    CentroDeInfancia,
+    IntervencionCentroInfancia,
+    NominaCentroInfancia,
+)
 from comedores.models import Comedor, ImagenComedor, Referente
+from audittrail.context import get_audit_context
+from audittrail.models import AuditEntryMeta
 from config.middlewares.threadlocals import get_current_user
+from core.soft_delete.signals import post_soft_delete
 from intervenciones.models.intervenciones import Intervencion
 from organizaciones.models import Aval, Firmante, Organizacion
 from relevamientos.models import Relevamiento
+
+
+AUDITTRAIL_EXTRA_BATCH_KEYS = (
+    "audittrail_batch_key",
+    "batch_id",
+    "bulk_id",
+    "job_id",
+    "request_id",
+    "correlation_id",
+    "transaction_id",
+    "cid",
+)
+
+
+def _normalize_additional_data(value):
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except Exception:  # noqa: BLE001
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
+
+
+def _get_context_actor():
+    actor = get_audit_context().get("actor")
+    if actor and getattr(actor, "is_authenticated", False):
+        return actor
+    return None
 
 
 def _get_actor():
     """
     Obtiene el usuario autenticado actual, si está disponible.
     """
+    actor = _get_context_actor()
+    if actor:
+        return actor
     actor = get_current_user()
     if actor and getattr(actor, "is_authenticated", False):
         return actor
     return None
+
+
+def _build_custom_signal_additional_data(default_source=None):
+    """
+    Propaga metadata de Fase 2 en logs custom (on_commit), para no perder batch/source.
+    """
+    context = get_audit_context()
+    payload = {}
+
+    source = (context.get("source") or "").strip() if isinstance(context, dict) else ""
+    if not source and default_source:
+        source = default_source
+    if source:
+        payload["audittrail_source"] = source
+
+    batch_key = context.get("batch_key") if isinstance(context, dict) else None
+    if batch_key not in (None, ""):
+        payload["audittrail_batch_key"] = str(batch_key)
+
+    extra = context.get("extra") if isinstance(context, dict) else None
+    if isinstance(extra, dict) and extra:
+        payload["audittrail_context"] = extra
+
+    return payload or None
+
+
+def _extract_meta_batch_key(entry, context_data, additional_data):
+    context_batch_key = None
+    if isinstance(context_data, dict):
+        context_batch_key = context_data.get("batch_key")
+    if context_batch_key not in (None, ""):
+        return str(context_batch_key)
+
+    custom_batch_key = additional_data.get("audittrail_batch_key")
+    if custom_batch_key not in (None, ""):
+        return str(custom_batch_key)
+
+    cid = getattr(entry, "cid", None)
+    if cid not in (None, ""):
+        return f"cid:{cid}"
+
+    for key in AUDITTRAIL_EXTRA_BATCH_KEYS:
+        value = additional_data.get(key)
+        if value not in (None, ""):
+            return f"{key}:{value}"
+    return ""
+
+
+def _extract_meta_source(entry, context_data, additional_data):
+    context_source = ""
+    if isinstance(context_data, dict):
+        context_source = str(context_data.get("source") or "").strip()
+    if context_source:
+        return context_source
+
+    source = str(additional_data.get("audittrail_source") or "").strip()
+    if source:
+        return source
+
+    if getattr(entry, "cid", None):
+        return "http"
+    if getattr(entry, "actor", None) or getattr(entry, "actor_id", None):
+        return "http"
+    return "system"
+
+
+def _actor_snapshot_data(actor):
+    if not actor or not getattr(actor, "is_authenticated", False):
+        return {
+            "username": "",
+            "full_name": "",
+            "display": "",
+        }
+
+    username = ""
+    if hasattr(actor, "get_username"):
+        try:
+            username = str(actor.get_username() or "").strip()
+        except Exception:  # noqa: BLE001
+            username = ""
+    if not username:
+        username = str(getattr(actor, "username", "") or "").strip()
+
+    first_name = str(getattr(actor, "first_name", "") or "").strip()
+    last_name = str(getattr(actor, "last_name", "") or "").strip()
+    full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+
+    display = username or full_name
+    return {
+        "username": username,
+        "full_name": full_name,
+        "display": display,
+    }
+
+
+def _build_audit_entry_meta_defaults(entry):
+    """
+    Construye metadata persistida Fase 2 a partir de LogEntry + contexto thread-local.
+    """
+    context_data = get_audit_context()
+    additional_data = _normalize_additional_data(
+        getattr(entry, "additional_data", None)
+    )
+    actor = getattr(entry, "actor", None) or _get_context_actor()
+    actor_snapshot = _actor_snapshot_data(actor)
+    batch_key = _extract_meta_batch_key(entry, context_data, additional_data)
+    source = _extract_meta_source(entry, context_data, additional_data)
+
+    extra = {}
+    if isinstance(context_data, dict):
+        context_extra = context_data.get("extra")
+        if isinstance(context_extra, dict) and context_extra:
+            extra["context"] = context_extra
+    if additional_data.get("audittrail_context"):
+        extra["custom_signal_context"] = additional_data.get("audittrail_context")
+    if getattr(entry, "cid", None):
+        extra["cid"] = str(entry.cid)
+
+    return {
+        "actor_username_snapshot": actor_snapshot["username"],
+        "actor_full_name_snapshot": actor_snapshot["full_name"],
+        "actor_display_snapshot": actor_snapshot["display"],
+        "source": source,
+        "batch_key": batch_key,
+        "extra": extra,
+    }
 
 
 def _log_comedor_event(comedor: Comedor, changes: dict, action: int):
@@ -34,14 +204,44 @@ def _log_comedor_event(comedor: Comedor, changes: dict, action: int):
         return
 
     actor = _get_actor()
+    additional_data = _build_custom_signal_additional_data()
 
     def _create_log():
-        LogEntry.objects.log_create(
-            comedor,
-            action=action,
-            changes=changes,
-            actor=actor,
-        )
+        kwargs = {
+            "action": action,
+            "changes": changes,
+            "actor": actor,
+        }
+        if additional_data and hasattr(LogEntry, "additional_data"):
+            kwargs["additional_data"] = additional_data
+        LogEntry.objects.log_create(comedor, **kwargs)
+
+    transaction.on_commit(_create_log)
+
+
+def _log_centro_infancia_event(
+    centro: CentroDeInfancia,
+    changes: dict,
+    action: int,
+):
+    """
+    Genera una entrada de auditoría para un centro de infancia con los cambios provistos.
+    """
+    if not centro or not changes:
+        return
+
+    actor = _get_actor()
+    additional_data = _build_custom_signal_additional_data()
+
+    def _create_log():
+        kwargs = {
+            "action": action,
+            "changes": changes,
+            "actor": actor,
+        }
+        if additional_data and hasattr(LogEntry, "additional_data"):
+            kwargs["additional_data"] = additional_data
+        LogEntry.objects.log_create(centro, **kwargs)
 
     transaction.on_commit(_create_log)
 
@@ -54,16 +254,63 @@ def _log_organizacion_event(organizacion: Organizacion, changes: dict, action: i
         return
 
     actor = _get_actor()
+    additional_data = _build_custom_signal_additional_data()
 
     def _create_log():
-        LogEntry.objects.log_create(
-            organizacion,
-            action=action,
-            changes=changes,
-            actor=actor,
-        )
+        kwargs = {
+            "action": action,
+            "changes": changes,
+            "actor": actor,
+        }
+        if additional_data and hasattr(LogEntry, "additional_data"):
+            kwargs["additional_data"] = additional_data
+        LogEntry.objects.log_create(organizacion, **kwargs)
 
     transaction.on_commit(_create_log)
+
+
+def _mark_delete_event_logged(instance) -> bool:
+    """
+    Evita registrar dos veces el mismo delete cuando conviven señales soft/hard delete.
+    """
+    marker_attr = "_audittrail_delete_logged"  # pylint: disable=protected-access
+    if getattr(instance, marker_attr, False):
+        return True
+    setattr(instance, marker_attr, True)
+    return False
+
+
+def _log_related_organizacion_delete(instance, label: str):
+    """
+    Registra eliminación de una entidad relacionada a organización.
+    """
+    organizacion = getattr(instance, "organizacion", None)
+    if not organizacion or _mark_delete_event_logged(instance):
+        return
+    _log_organizacion_event(
+        organizacion,
+        {label: [str(instance), "Eliminado"]},
+        LogEntry.Action.DELETE,
+    )
+
+
+@receiver(post_save, sender=LogEntry)
+def ensure_audit_entry_meta(sender, instance: LogEntry, created: bool, **kwargs):
+    """
+    Persiste metadata de Fase 2 para cualquier evento de django-auditlog.
+    """
+    if not created:
+        return
+
+    defaults = _build_audit_entry_meta_defaults(instance)
+    try:
+        AuditEntryMeta.objects.update_or_create(
+            log_entry=instance,
+            defaults=defaults,
+        )
+    except (OperationalError, ProgrammingError):
+        # Permite bootstrapping previo a migrar audittrail (fase 2).
+        return
 
 
 @receiver(post_save, sender=Admision)
@@ -101,6 +348,55 @@ def log_intervencion_creation(sender, instance: Intervencion, created: bool, **k
 
     _log_comedor_event(
         instance.comedor,
+        {"Intervención": [None, description]},
+        LogEntry.Action.CREATE,
+    )
+
+
+@receiver(post_save, sender=NominaCentroInfancia)
+def log_nomina_centro_infancia_creation(
+    sender,
+    instance: NominaCentroInfancia,
+    created: bool,
+    **kwargs,
+):
+    """
+    Registra altas de nómina vinculadas a un centro de infancia.
+    """
+    if not created or not instance.centro:
+        return
+
+    description = f"Nómina #{instance.pk}"
+    if instance.ciudadano_id:
+        description = f"{description} - {instance.ciudadano}"
+
+    _log_centro_infancia_event(
+        instance.centro,
+        {"Nómina": [None, description]},
+        LogEntry.Action.CREATE,
+    )
+
+
+@receiver(post_save, sender=IntervencionCentroInfancia)
+def log_intervencion_centro_infancia_creation(
+    sender,
+    instance: IntervencionCentroInfancia,
+    created: bool,
+    **kwargs,
+):
+    """
+    Registra altas de intervenciones vinculadas a un centro de infancia.
+    """
+    if not created or not instance.centro:
+        return
+
+    tipo = getattr(instance, "tipo_intervencion", None)
+    description = f"Intervención #{instance.pk}"
+    if tipo:
+        description = f"{description} - {tipo}"
+
+    _log_centro_infancia_event(
+        instance.centro,
         {"Intervención": [None, description]},
         LogEntry.Action.CREATE,
     )
@@ -357,3 +653,21 @@ def log_aval_changes(sender, instance: Aval, created: bool, **kwargs):
 
     if changes:
         _log_organizacion_event(instance.organizacion, changes, LogEntry.Action.UPDATE)
+
+
+@receiver(post_soft_delete, sender=Firmante)
+@receiver(post_delete, sender=Firmante)
+def log_firmante_delete(sender, instance: Firmante, **kwargs):
+    """
+    Registra bajas (soft/hard) de firmantes sin duplicar eventos.
+    """
+    _log_related_organizacion_delete(instance, "Firmante")
+
+
+@receiver(post_soft_delete, sender=Aval)
+@receiver(post_delete, sender=Aval)
+def log_aval_delete(sender, instance: Aval, **kwargs):
+    """
+    Registra bajas (soft/hard) de avales sin duplicar eventos.
+    """
+    _log_related_organizacion_delete(instance, "Aval")

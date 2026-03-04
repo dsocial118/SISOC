@@ -103,7 +103,7 @@ def test_validar_comedor_rollback_on_historial_error(monkeypatch):
         raise IntegrityError("boom")
 
     monkeypatch.setattr(
-        "comedores.services.validacion_service.HistorialValidacion.objects.create",
+        "comedores.models.HistorialValidacion.objects.create",
         _raise_integrity_error,
     )
 
@@ -308,7 +308,9 @@ def test_relevamiento_create_edit_ajax_error(
 def test_borrar_foto_legajo_elimina_archivo_y_campo(tmp_path, monkeypatch):
     fs = FileSystemStorage(location=tmp_path)
     with override_settings(MEDIA_ROOT=tmp_path):
-        monkeypatch.setattr("comedores.services.comedor_service.default_storage", fs)
+        monkeypatch.setattr(
+            "comedores.services.comedor_service.impl.default_storage", fs
+        )
         archivo = SimpleUploadedFile(
             "test.jpg", b"contenido", content_type="image/jpeg"
         )

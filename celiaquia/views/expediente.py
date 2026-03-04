@@ -46,6 +46,8 @@ from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
+from core.soft_delete.preview import build_delete_preview
+from core.soft_delete.view_helpers import is_soft_deletable_instance
 
 logger = logging.getLogger("django")
 
@@ -170,12 +172,8 @@ class ExpedienteListView(ListView):
                 "numero_expediente",
             )
         )
-        if _is_admin(user):
+        if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             qs = qs.order_by("-fecha_creacion")
-        elif _user_in_group(user, "CoordinadorCeliaquia"):
-            qs = qs.filter(
-                estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
-            ).order_by("-fecha_creacion")
         elif _user_in_group(user, "TecnicoCeliaquia"):
             qs = (
                 qs.filter(asignaciones_tecnicos__tecnico=user)
@@ -488,6 +486,9 @@ class ExpedienteDetailView(DetailView):
             legajo.es_responsable = LegajoService._es_responsable(
                 legajo.ciudadano, responsables_ids
             )
+            legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
+                legajo.ciudadano.id
+            )
             hijos_list = []
             # Buscar hijos si es responsable O si el rol es beneficiario_y_responsable
             if (
@@ -498,11 +499,18 @@ class ExpedienteDetailView(DetailView):
                     legajo.ciudadano.id, expediente
                 )
 
-            # Determinar tipo de legajo segun los roles:
-            # - Responsable y Beneficiario: tiene hijos a cargo en el expediente.
-            # - Responsable: es responsable pero sin hijos a cargo en este expediente.
-            # - Beneficiario: no es responsable.
-            if legajo.es_responsable and hijos_list:
+            rol_normalizado = (getattr(legajo, "rol", "") or "").strip().lower()
+            legajo.es_doble_rol = (
+                (rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE)
+                or (legajo.es_responsable and legajo.responsable_id is not None)
+                or (
+                    rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO
+                    and bool(hijos_list)
+                )
+            )
+
+            # Determinar tipo de legajo segun roles efectivos.
+            if legajo.es_doble_rol:
                 legajo.tipo_legajo = "Responsable y Beneficiario"
             elif legajo.es_responsable:
                 legajo.tipo_legajo = "Responsable"
@@ -520,10 +528,6 @@ class ExpedienteDetailView(DetailView):
                 or legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
             ):
                 legajo.hijos_a_cargo = hijos_list
-                # Verificar si también es hijo de alguien
-                legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
-                    legajo.ciudadano.id
-                )
                 responsables_legajos.append(legajo)
                 # Si tiene responsable, agregarlo también a hijos_por_responsable
                 if legajo.responsable_id:
@@ -532,9 +536,6 @@ class ExpedienteDetailView(DetailView):
                     hijos_por_responsable[legajo.responsable_id].append(legajo)
             else:
                 legajo.hijos_a_cargo = []
-                legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
-                    legajo.ciudadano.id
-                )
                 if legajo.responsable_id:
                     if legajo.responsable_id not in hijos_por_responsable:
                         hijos_por_responsable[legajo.responsable_id] = []
@@ -655,10 +656,7 @@ class ExpedienteDetailView(DetailView):
         from core.models import Sexo, Municipio, Localidad
 
         sexos = Sexo.objects.all()
-        nacionalidades = [
-            {"id": nac.id, "nombre": nac.nacionalidad}
-            for nac in Nacionalidad.objects.all().order_by("nacionalidad")
-        ]
+        nacionalidades = Nacionalidad.objects.all().order_by("nacionalidad")
         municipios = []
         localidades = []
 
@@ -921,7 +919,25 @@ class AsignarTecnicoView(View):
             asignacion = AsignacionTecnico.objects.get(
                 expediente=expediente, tecnico_id=tecnico_id
             )
-            asignacion.delete()
+            get_data = getattr(request, "GET", {})
+            post_data = getattr(request, "POST", {})
+            preview_enabled = str(
+                get_data.get("preview") or post_data.get("preview") or ""
+            )
+            if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
+                asignacion
+            ):
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "preview": build_delete_preview(asignacion),
+                    }
+                )
+
+            if is_soft_deletable_instance(asignacion):
+                asignacion.delete(user=user, cascade=True)
+            else:
+                asignacion.delete()
             return JsonResponse(
                 {"success": True, "message": "Técnico removido correctamente."}
             )
@@ -1040,6 +1056,14 @@ class RevisarLegajoView(View):
                 {"success": False, "error": "Acción inválida."}, status=400
             )
 
+        # Validar RENAPER automáticamente antes de cualquier acción (excepto ELIMINAR)
+        if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
+            estado_validacion_renaper = getattr(leg, "estado_validacion_renaper", 0)
+            # Si no tiene validación RENAPER, marcar como aprobado automáticamente
+            if estado_validacion_renaper == 0:
+                leg.estado_validacion_renaper = 1
+                leg.save(update_fields=["estado_validacion_renaper", "modificado_en"])
+
         # Si RECHAZAR / SUBSANAR y estaba dentro de cupo -> liberar
         if accion in ("RECHAZAR", "SUBSANAR") and leg.estado_cupo == "DENTRO":
             try:
@@ -1058,9 +1082,13 @@ class RevisarLegajoView(View):
         if accion == "APROBAR":
             estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "APROBADO"
+            # Asegurar que RENAPER esté validado
+            if getattr(leg, "estado_validacion_renaper", 0) == 0:
+                leg.estado_validacion_renaper = 1
             leg.save(
                 update_fields=[
                     "revision_tecnico",
+                    "estado_validacion_renaper",
                     "modificado_en",
                     "estado_cupo",
                     "es_titular_activo",
@@ -1086,9 +1114,13 @@ class RevisarLegajoView(View):
         if accion == "RECHAZAR":
             estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "RECHAZADO"
+            # Marcar RENAPER como rechazado también
+            if getattr(leg, "estado_validacion_renaper", 0) == 0:
+                leg.estado_validacion_renaper = 2
             leg.save(
                 update_fields=[
                     "revision_tecnico",
+                    "estado_validacion_renaper",
                     "modificado_en",
                     "estado_cupo",
                     "es_titular_activo",
@@ -1119,6 +1151,23 @@ class RevisarLegajoView(View):
                 )
 
             try:
+                get_data = getattr(request, "GET", {})
+                post_data = getattr(request, "POST", {})
+                preview_enabled = str(
+                    post_data.get("preview") or get_data.get("preview") or ""
+                )
+                if preview_enabled in {
+                    "1",
+                    "true",
+                    "True",
+                } and is_soft_deletable_instance(leg):
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "preview": build_delete_preview(leg),
+                        }
+                    )
+
                 # Liberar cupo si estaba ocupado
                 if leg.estado_cupo == "DENTRO":
                     try:
@@ -1135,7 +1184,10 @@ class RevisarLegajoView(View):
                             exc_info=True,
                         )
 
-                leg.delete()
+                if is_soft_deletable_instance(leg):
+                    leg.delete(user=user, cascade=True)
+                else:
+                    leg.delete()
                 return JsonResponse(
                     {"success": True, "message": "Legajo eliminado correctamente."}
                 )
@@ -1153,6 +1205,7 @@ class RevisarLegajoView(View):
 
         # SUBSANAR
         motivo = (request.POST.get("motivo") or "").strip()
+        tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
         if not motivo:
             return JsonResponse(
                 {"success": False, "error": "Debe indicar un motivo de subsanación."},
@@ -1161,15 +1214,21 @@ class RevisarLegajoView(View):
 
         estado_anterior = leg.revision_tecnico
         leg.revision_tecnico = RevisionTecnico.SUBSANAR
+        leg.subsanacion_tipo = tipo_subsanacion if tipo_subsanacion else None
         leg.subsanacion_motivo = motivo[:500]
         leg.subsanacion_solicitada_en = timezone.now()
         leg.subsanacion_usuario = user
+        # Marcar RENAPER como subsanar también
+        if leg.estado_validacion_renaper == 0:
+            leg.estado_validacion_renaper = 3
         leg.save(
             update_fields=[
                 "revision_tecnico",
+                "subsanacion_tipo",
                 "subsanacion_motivo",
                 "subsanacion_solicitada_en",
                 "subsanacion_usuario",
+                "estado_validacion_renaper",
                 "modificado_en",
                 "estado_cupo",
                 "es_titular_activo",
@@ -1289,10 +1348,6 @@ class ReprocesarRegistrosErroneosView(View):
                     "fecha_nacimiento",
                     "sexo",
                     "nacionalidad",
-                    "telefono",
-                    "email",
-                    "calle",
-                    "altura",
                     "municipio",
                     "localidad",
                 ]
@@ -1302,7 +1357,7 @@ class ReprocesarRegistrosErroneosView(View):
                         f"Faltan campos obligatorios: {', '.join(campos_faltantes)}"
                     )
                 telefono = str(datos.get("telefono", "")).strip()
-                if len(telefono) < 8:
+                if telefono and len(telefono) < 8:
                     raise ValidationError("Telefono debe tener al menos 8 digitos")
                 tiene_responsable = any(
                     [
@@ -1602,7 +1657,23 @@ class EliminarRegistroErroneoView(View):
             RegistroErroneo, pk=registro_id, expediente=expediente
         )
 
-        registro.delete()
+        get_data = getattr(request, "GET", {})
+        post_data = getattr(request, "POST", {})
+        preview_enabled = str(post_data.get("preview") or get_data.get("preview") or "")
+        if preview_enabled in {"1", "true", "True"} and is_soft_deletable_instance(
+            registro
+        ):
+            return JsonResponse(
+                {
+                    "success": True,
+                    "preview": build_delete_preview(registro),
+                }
+            )
+
+        if is_soft_deletable_instance(registro):
+            registro.delete(user=user, cascade=True)
+        else:
+            registro.delete()
         return JsonResponse(
             {"success": True, "message": "Registro eliminado correctamente."}
         )

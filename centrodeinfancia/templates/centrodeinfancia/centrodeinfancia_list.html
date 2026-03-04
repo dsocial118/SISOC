@@ -1,0 +1,156 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Centros de Infancia{% endblock %}
+{% block breadcrumb %}
+    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
+{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    <div class="comedor-list-container">
+        {% url 'centrodeinfancia_exportar' as export_url %}
+        {% include 'components/search_bar.html' with titulo="Buscar Centro de Infancia" placeholder="Buscar por nombre u organización" help_text="Ingresar nombre u organización." reset_url='centrodeinfancia' add_url='centrodeinfancia_crear' add_text='Nuevo Centro' export_url=export_url query=query %}
+
+        <div class="row mt-5 max-width-100">
+            <div class="col-12">
+                <div class="card comedor-table-card">
+                    <div class="card-body">
+                        {% if column_config %}
+                            {{ column_config|json_script:column_config.script_id }}
+                            <div class="d-flex justify-content-start mb-2">
+                                <button type="button"
+                                        class="btn btn-outline-warning btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#{{ column_config.modal_id }}">Configurar columnas</button>
+                            </div>
+                            <div class="modal fade"
+                                 id="{{ column_config.modal_id }}"
+                                 tabindex="-1"
+                                 aria-hidden="true"
+                                 data-column-config="true"
+                                 data-config-id="{{ column_config.script_id }}">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Columnas visibles</h5>
+                                            <button type="button"
+                                                    class="btn-close"
+                                                    data-bs-dismiss="modal"
+                                                    aria-label="Cerrar"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="text-muted mb-3">Seleccioná qué columnas mostrar y ordenalas con las flechas.</p>
+                                            <div class="list-group column-config-list">
+                                                {% for col in column_config.available %}
+                                                    <div class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2"
+                                                         data-column-key="{{ col.key }}">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input column-config-checkbox"
+                                                                   type="checkbox"
+                                                                   id="{{ column_config.modal_id }}-{{ col.key }}"
+                                                                   {% if col.active %}checked{% endif %}
+                                                                   {% if col.required %}disabled{% endif %} />
+                                                            <label class="form-check-label"
+                                                                   for="{{ column_config.modal_id }}-{{ col.key }}">
+                                                                {{ col.title }}
+                                                            </label>
+                                                            {% if col.required %}<span class="badge bg-secondary ms-2">Obligatoria</span>{% endif %}
+                                                        </div>
+                                                        <div class="btn-group btn-group-sm" role="group">
+                                                            <button type="button"
+                                                                    class="btn btn-light column-move-up"
+                                                                    title="Mover arriba">
+                                                                <i class="fas fa-arrow-up"></i>
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="btn btn-light column-move-down"
+                                                                    title="Mover abajo">
+                                                                <i class="fas fa-arrow-down"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            <div class="alert alert-danger d-none mt-3 column-config-error"></div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-outline-secondary column-config-reset">Restablecer</button>
+                                            <button type="button" class="btn btn-primary column-config-save">Guardar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="table-responsive-lg">
+                            <table class="table table-comedor-moderno">
+                                <thead>
+                                    <tr>
+                                        {% for column_key in active_columns %}
+                                            {% if column_key == "nombre" %}
+                                                <th class="sortable" data-column="nombre">
+                                                    Nombre
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                            {% elif column_key == "organizacion" %}
+                                                <th class="sortable" data-column="organizacion">
+                                                    Organización
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                            {% elif column_key == "provincia" %}
+                                                <th class="sortable" data-column="provincia">
+                                                    Provincia
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                            {% elif column_key == "municipio" %}
+                                                <th class="sortable" data-column="municipio">
+                                                    Municipio
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                            {% elif column_key == "localidad" %}
+                                                <th class="sortable" data-column="localidad">
+                                                    Localidad
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                            {% elif column_key == "calle" %}
+                                                <th class="sortable" data-column="calle">
+                                                    Calle
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                            {% elif column_key == "telefono" %}
+                                                <th class="sortable" data-column="telefono">
+                                                    Teléfono
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                            {% elif column_key == "referente" %}
+                                                <th class="sortable" data-column="referente">
+                                                    Referente
+                                                    <i class="fas fa-sort sort-icon"></i>
+                                                </th>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <th class="notexport">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% include "centrodeinfancia/partials/rows.html" with centros=centros active_columns=active_columns %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% include "components/pagination.html" with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script src="{% static 'custom/js/listSort.js' %}"></script>
+    <script src="{% static 'custom/js/export_helper.js' %}"></script>
+    {% if column_config %}
+        <script src="{% static 'custom/js/column_config.js' %}"></script>
+    {% endif %}
+{% endblock %}

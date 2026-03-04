@@ -187,7 +187,7 @@
     </div>
 {% endblock %}
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
 document.addEventListener("DOMContentLoaded", function () {
     const estadoSelect = document.getElementById("estado");
     const checkboxes = document.querySelectorAll(".campo-subsanar");

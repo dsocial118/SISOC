@@ -8,12 +8,14 @@
             {{ comedor.provincia.nombre }}
         {% else %}
             Sin información
-        {% endif %},
+        {% endif %}
+        ,
         {% if comedor.municipio %}
             {{ comedor.municipio.nombre }}
         {% else %}
             Sin información
-        {% endif %},
+        {% endif %}
+        ,
         {% if comedor.localidad %}
             {{ comedor.localidad.nombre }}
         {% else %}
@@ -702,7 +704,7 @@
             </div>
         </div>
 
-        <script>
+        <script nonce="{{ request.csp_nonce }}">
         document.addEventListener('DOMContentLoaded', function() {
             const descartarModal = document.getElementById('descartarModal');
             descartarModal.addEventListener('show.bs.modal', function(event) {
@@ -843,7 +845,8 @@
                                                 <div class="imagen-overlay">
                                                     <button type="button"
                                                             class="btn-expandir"
-                                                            onclick="abrirModal({{ forloop.counter0 }})">
+                                                            data-call-click="abrirModal"
+                                                            data-call-args="[{{ forloop.counter0 }}]">
                                                         <i class="fas fa-expand-alt"></i>
                                                     </button>
                                                 </div>
@@ -953,12 +956,14 @@
                                 <div class="controles-navegacion">
                                     <button type="button"
                                             class="btn-nav btn-anterior"
-                                            onclick="cambiarImagen(-1)">
+                                            data-call-click="cambiarImagen"
+                                            data-call-args="[-1]">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
                                     <button type="button"
                                             class="btn-nav btn-siguiente"
-                                            onclick="cambiarImagen(1)">
+                                            data-call-click="cambiarImagen"
+                                            data-call-args="[1]">
                                         <i class="fas fa-chevron-right"></i>
                                     </button>
                                 </div>
@@ -973,7 +978,7 @@
                         <div class="acciones-imagen">
                             <button type="button"
                                     class="btn btn-outline-primary btn-sm"
-                                    onclick="descargarImagen()">
+                                    data-call-click="descargarImagen">
                                 <i class="fas fa-download me-1"></i>Descargar
                             </button>
                             <button type="button"
@@ -1041,10 +1046,10 @@
                         <div class="d-grid gap-2">
                             <button type="button"
                                     class="btn btn-success btn-lg"
-                                    onclick="validarComedor()">Validar</button>
+                                    data-call-click="validarComedor">Validar</button>
                             <button type="button"
                                     class="btn btn-danger btn-lg"
-                                    onclick="mostrarOpcionesNoValidar()">No Validar</button>
+                                    data-call-click="mostrarOpcionesNoValidar">No Validar</button>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1094,7 +1099,7 @@
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit"
                                     class="btn btn-danger"
-                                    onclick="return validarFormNoValidar()">No Validar</button>
+                                    data-call-click="validarFormNoValidar">No Validar</button>
                         </div>
                     </form>
                 </div>
@@ -1169,7 +1174,7 @@
         }
         </style>
 
-        <script>
+        <script nonce="{{ request.csp_nonce }}">
         const comedorId = "{{ comedor.id }}"
         const GESTIONAR_API_KEY = "{{ GESTIONAR_API_KEY }}";
         const GESTIONAR_API_CREAR_COMEDOR = "{{ GESTIONAR_API_CREAR_COMEDOR }}";

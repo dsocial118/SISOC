@@ -1,3 +1,33 @@
+# Versión SISOC 04.03.2026
+
+## Nuevas Funcionalidades
+
+- Lanzamiento del nuevo módulo de Comunicados, con mensajes internos y externos, adjuntos, destacados y control de visibilidad por perfil, para una comunicación institucional más ordenada y efectiva.
+- Habilitación de API REST para Comunicados externos para la PWA.
+- Implementación de una Papelera inteligente, con vista previa de impacto antes de eliminar y capacidad de recuperación, reduciendo riesgos operativos y mejorando el control de cambios.
+- Creacion del modulo de Centro de Infancia basico (listo para sumar implementaciones), con flujos para nómina, intervenciones y documentación, y segmentación por provincia para una gestión territorial más precisa.
+- Incorporación del ABM de Montos de Prestaciones vinculado a programas, permitiendo administrar valores con mayor trazabilidad y consistencia.
+- Evolución del esquema de capacitaciones con nuevas categorías (incluyendo Formando Capital Humano) y subtipos específicos para seguimiento más fino de acciones.
+
+## Actualizaciones
+
+- Gran evolución del módulo de Auditoría con nuevos filtros, exportaciones y metadata persistida, mejorando la lectura de actividad y la toma de decisiones.
+- Fortalecimiento de seguridad y confiabilidad con mejoras en políticas CSP y nueva integración de observabilidad con Sentry para detección temprana de incidentes.
+- Mejora de rendimiento en procesos críticos mediante optimización de consultas, reducción de sobrecarga en listados y ajustes de índices en base de datos.
+- Reorganización de servicios en una arquitectura modular, manteniendo compatibilidad y acelerando mantenimiento futuro.
+- Actualización de experiencia visual en pantallas clave (Expedientes de Pago, Centro de Infancia y Novedades), con navegación más clara y foco en productividad diaria.
+- Mayor robustez operativa con mejoras de entornos QA/PROD y sincronización de fixtures
+- Ampliación de cobertura de pruebas automatizadas a un 75% del codigo critico.
+
+## Corrección de Errores
+
+- Correcciones en validación de archivos y destinatarios en flujos de Admisiones y Comunicados para evitar cargas inconsistentes.
+- Ajustes en permisos y reglas de acceso a detalle de comunicados, alineando visibilidad según perfil y contexto.
+- Resolución de incidencias de paginación en Papelera para evitar consumo innecesario de memoria.
+- Corrección de compatibilidad en nonce CSP y cierre de vulnerabilidades de inyección en vistas de comunicados.
+- Ajustes de estabilidad en formularios y modales de intervenciones para evitar inconsistencias de selección.
+- Mejoras en parseo de respuestas RENAPER y compatibilidad con borrado lógico en flujos asociados.
+
 # Versión SISOC 18.02.2026
 
 ## Nuevas Funcionalidades

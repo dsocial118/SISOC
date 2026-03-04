@@ -1,82 +1,121 @@
 [
-  {
+{
     "model": "celiaquia.estadoexpediente",
     "pk": 1,
-    "fields": { "nombre": "CREADO" }
-  },
-  {
+    "fields": {
+        "nombre": "CREADO"
+    }
+},
+{
     "model": "celiaquia.estadoexpediente",
     "pk": 2,
-    "fields": { "nombre": "PROCESADO" }
-  },
-  {
+    "fields": {
+        "nombre": "PROCESADO"
+    }
+},
+{
     "model": "celiaquia.estadoexpediente",
     "pk": 3,
-    "fields": { "nombre": "EN_ESPERA" }
-  },
-  {
+    "fields": {
+        "nombre": "EN_ESPERA"
+    }
+},
+{
     "model": "celiaquia.estadoexpediente",
     "pk": 4,
-    "fields": { "nombre": "ASIGNADO" }
-  },
-  {
+    "fields": {
+        "nombre": "ASIGNADO"
+    }
+},
+{
     "model": "celiaquia.estadoexpediente",
     "pk": 5,
-    "fields": { "nombre": "PROCESO_DE_CRUCE" }
-  },
-  {
+    "fields": {
+        "nombre": "PROCESO_DE_CRUCE"
+    }
+},
+{
     "model": "celiaquia.estadoexpediente",
     "pk": 6,
-    "fields": { "nombre": "CRUCE_FINALIZADO" }
-  },
-  {
+    "fields": {
+        "nombre": "CRUCE_FINALIZADO"
+    }
+},
+{
     "model": "celiaquia.estadoexpediente",
     "pk": 7,
-    "fields": { "nombre": "PAGO_ABIERTO" }
-  },
-  {
+    "fields": {
+        "nombre": "PAGO_ABIERTO"
+    }
+},
+{
     "model": "celiaquia.estadoexpediente",
     "pk": 8,
-    "fields": { "nombre": "PAGO_CERRADO" }
-  },
-  {
+    "fields": {
+        "nombre": "PAGO_CERRADO"
+    }
+},
+{
     "model": "celiaquia.estadoexpediente",
     "pk": 9,
-    "fields": { "nombre": "CONFIRMACION_DE_ENVIO" }
-  },
-  {
+    "fields": {
+        "nombre": "CONFIRMACION_DE_ENVIO"
+    }
+},
+{
+    "model": "celiaquia.estadoexpediente",
+    "pk": 10,
+    "fields": {
+        "nombre": "RECEPCIONADO"
+    }
+},
+{
     "model": "celiaquia.estadolegajo",
     "pk": 10,
-    "fields": { "nombre": "DOCUMENTO_PENDIENTE" }
-  },
-  {
+    "fields": {
+        "nombre": "DOCUMENTO_PENDIENTE"
+    }
+},
+{
     "model": "celiaquia.estadolegajo",
     "pk": 11,
-    "fields": { "nombre": "ARCHIVO_CARGADO" }
-  },
-  {
+    "fields": {
+        "nombre": "ARCHIVO_CARGADO"
+    }
+},
+{
     "model": "celiaquia.organismo",
     "pk": 1,
-    "fields": { "nombre": "Syntis" }
-  },
-  {
+    "fields": {
+        "nombre": "Syntis"
+    }
+},
+{
     "model": "celiaquia.organismo",
     "pk": 2,
-    "fields": { "nombre": "Salud" }
-  },
-  {
+    "fields": {
+        "nombre": "Salud"
+    }
+},
+{
     "model": "celiaquia.organismo",
     "pk": 3,
-    "fields": { "nombre": "Renaper" }
-  },
-  {
+    "fields": {
+        "nombre": "Renaper"
+    }
+},
+{
     "model": "celiaquia.tipocruce",
     "pk": 1,
-    "fields": { "nombre": "Aprobado" }
-  },
-  {
+    "fields": {
+        "nombre": "Aprobado"
+    }
+},
+{
     "model": "celiaquia.tipocruce",
     "pk": 2,
-    "fields": { "nombre": "Rechazado" }
-  }
+    "fields": {
+        "nombre": "Rechazado"
+    }
+}
 ]

@@ -1,6 +1,8 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
+from core.soft_delete import SoftDeleteModelMixin
 
 
 def validar_rango_anio_fecha(value):
@@ -19,6 +21,32 @@ class TipoIntervencion(models.Model):
     """
 
     nombre = models.CharField(max_length=255)
+    programa = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name="Programa",
+        help_text="Texto libre para segmentar tipos por módulo (ej: comedores, cdi).",
+        db_index=True,
+    )
+
+    @classmethod
+    def para_programas(cls, *aliases, include_ids=None):
+        queryset = cls.objects.order_by("id")
+        include_ids = [pk for pk in (include_ids or []) if pk]
+        aliases = [alias for alias in aliases if alias]
+
+        if not aliases and not include_ids:
+            return queryset
+
+        condiciones = Q(programa__isnull=True) | Q(programa="")
+        for alias in aliases:
+            condiciones |= Q(programa__iexact=alias)
+
+        if include_ids:
+            condiciones |= Q(pk__in=include_ids)
+
+        return queryset.filter(condiciones).distinct()
 
     def __str__(self):
         return f"{self.nombre}"
@@ -85,7 +113,7 @@ class TipoContacto(models.Model):
         ordering = ["id"]
 
 
-class Intervencion(models.Model):
+class Intervencion(SoftDeleteModelMixin, models.Model):
     """
     Registro de intervenciones realizadas a comedores.
     """

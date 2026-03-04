@@ -3,6 +3,7 @@ from django.db import models
 
 from ciudadanos.models import Ciudadano
 from core.models import Provincia
+from core.soft_delete import SoftDeleteModelMixin
 
 User = get_user_model()
 
@@ -172,7 +173,7 @@ class ExpedienteEstadoHistorial(models.Model):
         return f"{self.expediente_id} {self.estado_anterior} -> {self.estado_nuevo}"
 
 
-class ExpedienteCiudadano(models.Model):
+class ExpedienteCiudadano(SoftDeleteModelMixin, models.Model):
     # Roles en minúsculas según requerimiento funcional.
     ROLE_BENEFICIARIO = "beneficiario"
     ROLE_RESPONSABLE = "responsable"
@@ -215,6 +216,7 @@ class ExpedienteCiudadano(models.Model):
         max_length=8, choices=EstadoCupo.choices, default=EstadoCupo.NO_EVAL
     )
     es_titular_activo = models.BooleanField(default=False)
+    subsanacion_tipo = models.CharField(max_length=50, null=True, blank=True)
     subsanacion_motivo = models.TextField(null=True, blank=True)
     subsanacion_solicitada_en = models.DateTimeField(null=True, blank=True)
     subsanacion_enviada_en = models.DateTimeField(null=True, blank=True)
@@ -373,7 +375,7 @@ class ExpedienteCiudadano(models.Model):
         return tipos_requeridos.exclude(id__in=tipos_cargados)
 
 
-class AsignacionTecnico(models.Model):
+class AsignacionTecnico(SoftDeleteModelMixin, models.Model):
     expediente = models.ForeignKey(
         Expediente, on_delete=models.CASCADE, related_name="asignaciones_tecnicos"
     )
@@ -557,7 +559,7 @@ class PagoNomina(models.Model):
         return f"{self.documento} - {self.nombre} {self.apellido} ({self.estado})"
 
 
-class RegistroErroneo(models.Model):
+class RegistroErroneo(SoftDeleteModelMixin, models.Model):
     expediente = models.ForeignKey(
         Expediente, on_delete=models.CASCADE, related_name="registros_erroneos"
     )

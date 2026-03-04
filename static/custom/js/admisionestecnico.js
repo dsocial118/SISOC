@@ -1,5 +1,21 @@
 const PERSONALIZED_FLAG = "1";
 
+function getAdmisionesTecnicosConfig() {
+    return document.getElementById("admisiones-tecnicos-config");
+}
+
+function getAdmisionesConfigValue(key, fallbackValue = null) {
+    const config = getAdmisionesTecnicosConfig();
+    if (config && config.dataset && config.dataset[key]) {
+        return config.dataset[key];
+    }
+    return fallbackValue;
+}
+
+function getCsrfToken() {
+    return getAdmisionesConfigValue("csrfToken", typeof CSRF_TOKEN !== "undefined" ? CSRF_TOKEN : null);
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const nombreInput = document.getElementById("nuevoDocumentoNombre");
     const archivoInput = document.getElementById("nuevoDocumentoArchivo");
@@ -7,7 +23,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const progressContainer = document.getElementById("progress-container-nuevo");
     const progressBar = document.getElementById("progress-bar-nuevo");
 
-    if (nombreInput && archivoInput && abrirBtn && window.URL_CREAR_DOCUMENTO_PERSONALIZADO) {
+    const urlCrearDocumentoPersonalizado = getAdmisionesConfigValue(
+        "urlCrearDocumentoPersonalizado",
+        window.URL_CREAR_DOCUMENTO_PERSONALIZADO
+    );
+
+    if (nombreInput && archivoInput && abrirBtn && urlCrearDocumentoPersonalizado) {
         abrirBtn.addEventListener("click", function () {
             if (!nombreInput.value.trim()) {
                 alert("Por favor, escriba un nombre antes de adjuntar un archivo.");
@@ -28,8 +49,8 @@ document.addEventListener("DOMContentLoaded", function () {
             progressBar.textContent = "0%";
 
             const xhr = new XMLHttpRequest();
-            xhr.open("POST", window.URL_CREAR_DOCUMENTO_PERSONALIZADO, true);
-            xhr.setRequestHeader("X-CSRFToken", CSRF_TOKEN);
+            xhr.open("POST", urlCrearDocumentoPersonalizado, true);
+            xhr.setRequestHeader("X-CSRFToken", getCsrfToken());
 
             xhr.upload.addEventListener("progress", function (e) {
                 if (e.lengthComputable) {
@@ -153,13 +174,42 @@ function subirArchivo(admisionId, documentoId) {
         }
     };
 
-    xhr.setRequestHeader("X-CSRFToken", CSRF_TOKEN);
+    xhr.setRequestHeader("X-CSRFToken", getCsrfToken());
     xhr.send(formData);
 }
 
 let admisionIdEliminar;
 let documentacionIdEliminar;
 let archivoIdEliminar;
+
+function construirUrlEliminar(admisionId, identifier, includePreview = false) {
+    let url = `/admision/${admisionId}/documentacion/${identifier}/eliminar/`;
+    const params = new URLSearchParams();
+    if (archivoIdEliminar !== null) {
+        params.append("archivo_id", archivoIdEliminar);
+    }
+    if (includePreview) {
+        params.append("preview", "1");
+    }
+    if ([...params].length) {
+        url += `?${params.toString()}`;
+    }
+    return url;
+}
+
+function renderizarPreview(preview) {
+    if (!preview || !Array.isArray(preview.desglose_por_modelo)) {
+        return "¿Estás seguro de que deseas dar de baja este archivo?";
+    }
+    const lineas = preview.desglose_por_modelo
+        .map((item) => `- ${item.modelo}: ${item.cantidad}`)
+        .join("<br>");
+    return `
+        <p>Se realizará una baja lógica en cascada.</p>
+        <p><strong>Total de registros afectados:</strong> ${preview.total_afectados}</p>
+        <p class="mb-0">${lineas || "-"}</p>
+    `;
+}
 
 function confirmarEliminar(admisionId, documentacionId, archivoId) {
     admisionIdEliminar = admisionId;
@@ -169,7 +219,40 @@ function confirmarEliminar(admisionId, documentacionId, archivoId) {
     archivoIdEliminar = archivoId !== undefined && archivoId !== null
         ? archivoId
         : null;
-    $("#modalConfirmarEliminar").modal("show");
+    const identifier = documentacionIdEliminar !== null ? documentacionIdEliminar : archivoIdEliminar;
+    const modalBody = document.getElementById("modalConfirmarEliminarBody");
+    if (!identifier) {
+        if (modalBody) {
+            modalBody.textContent = "No se pudo preparar la baja del archivo.";
+        }
+        $("#modalConfirmarEliminar").modal("show");
+        return;
+    }
+
+    if (modalBody) {
+        modalBody.innerHTML = "Cargando preview de impacto...";
+    }
+
+    fetch(construirUrlEliminar(admisionIdEliminar, identifier, true), {
+        method: "DELETE",
+        headers: { "X-CSRFToken": getCsrfToken() }
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (modalBody) {
+                modalBody.innerHTML = data.success
+                    ? renderizarPreview(data.preview)
+                    : "No se pudo obtener el preview de impacto.";
+            }
+        })
+        .catch(() => {
+            if (modalBody) {
+                modalBody.textContent = "No se pudo obtener el preview de impacto.";
+            }
+        })
+        .finally(() => {
+            $("#modalConfirmarEliminar").modal("show");
+        });
 }
 
 const botonConfirmarEliminar = document.getElementById("btnConfirmarEliminar");
@@ -191,14 +274,7 @@ function eliminarArchivo(admisionId) {
         return;
     }
 
-    let url = `/admision/${admisionId}/documentacion/${identifier}/eliminar/`;
-    const params = new URLSearchParams();
-    if (archivoIdEliminar !== null) {
-        params.append("archivo_id", archivoIdEliminar);
-    }
-    if ([...params].length) {
-        url += `?${params.toString()}`;
-    }
+    const url = construirUrlEliminar(admisionId, identifier, false);
 
     const removeObservationRows = (...ids) => {
         ids.filter(Boolean).forEach((id) => {
@@ -212,7 +288,7 @@ function eliminarArchivo(admisionId) {
     fetch(url, {
         method: "DELETE",
         headers: {
-            "X-CSRFToken": CSRF_TOKEN,
+            "X-CSRFToken": getCsrfToken(),
         }
     })
         .then(response => response.json())

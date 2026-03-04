@@ -1,9 +1,42 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from intervenciones.models.intervenciones import Intervencion
+
+from intervenciones.constants import PROGRAMA_ALIASES_COMEDORES
+from intervenciones.models.intervenciones import Intervencion, TipoIntervencion
+
+
+def _normalize_programa_aliases(aliases):
+    if aliases is None:
+        return tuple(PROGRAMA_ALIASES_COMEDORES)
+    if isinstance(aliases, str):
+        aliases = (aliases,)
+    normalized = []
+    seen = set()
+    for alias in aliases:
+        if not alias:
+            continue
+        if alias in seen:
+            continue
+        seen.add(alias)
+        normalized.append(alias)
+    return tuple(normalized)
+
+
+def build_programa_aliases(programa_nombre=None):
+    return _normalize_programa_aliases((*PROGRAMA_ALIASES_COMEDORES, programa_nombre))
 
 
 class IntervencionForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        programa_aliases = kwargs.pop("programa_aliases", None)
+        super().__init__(*args, **kwargs)
+        selected_tipo_id = getattr(self.instance, "tipo_intervencion_id", None)
+        normalized_aliases = _normalize_programa_aliases(programa_aliases)
+        self.fields["tipo_intervencion"].queryset = TipoIntervencion.para_programas(
+            *normalized_aliases,
+            include_ids=[selected_tipo_id] if selected_tipo_id else None,
+        )
+
     class Meta:
         model = Intervencion
         fields = [

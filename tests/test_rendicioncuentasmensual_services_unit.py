@@ -14,12 +14,15 @@ def test_crear_rendicion_cuenta_mensual_success(mocker):
         "anio": 2026,
         "documento_adjunto": "doc.pdf",
         "observaciones": "obs",
-        "arvhios_adjuntos": ["a"],
+        "archivos_adjuntos": ["a"],
     }
     created = object()
     mock_create = mocker.patch(
         "rendicioncuentasmensual.services.RendicionCuentaMensual.objects.create",
         return_value=created,
+    )
+    mock_set_archivos = mocker.patch.object(
+        RendicionCuentaMensualService, "_asignar_archivos_adjuntos"
     )
 
     result = RendicionCuentaMensualService.crear_rendicion_cuenta_mensual(
@@ -33,8 +36,8 @@ def test_crear_rendicion_cuenta_mensual_success(mocker):
         anio=2026,
         documento_adjunto="doc.pdf",
         observaciones="obs",
-        arvhios_adjuntos=["a"],
     )
+    mock_set_archivos.assert_called_once_with(created, ["a"])
 
 
 def test_crear_rendicion_cuenta_mensual_logs_and_raises(mocker):
@@ -57,7 +60,7 @@ def test_actualizar_rendicion_cuenta_mensual_success():
         anio=None,
         documento_adjunto=None,
         observaciones=None,
-        arvhios_adjuntos=None,
+        archivos_adjuntos=None,
         save=lambda: None,
     )
     payload = {
@@ -65,9 +68,8 @@ def test_actualizar_rendicion_cuenta_mensual_success():
         "anio": 2025,
         "documento_adjunto": "b.pdf",
         "observaciones": "ok",
-        "arvhios_adjuntos": ["x"],
+        "archivos_adjuntos": ["x"],
     }
-
     result = RendicionCuentaMensualService.actualizar_rendicion_cuenta_mensual(
         rendicion, payload
     )
@@ -77,7 +79,7 @@ def test_actualizar_rendicion_cuenta_mensual_success():
     assert rendicion.anio == 2025
     assert rendicion.documento_adjunto == "b.pdf"
     assert rendicion.observaciones == "ok"
-    assert rendicion.arvhios_adjuntos == ["x"]
+    assert rendicion.archivos_adjuntos == ["x"]
 
 
 def test_actualizar_rendicion_cuenta_mensual_logs_and_raises(mocker):
@@ -133,8 +135,26 @@ def test_obtener_rendiciones_cuentas_mensuales_success(mocker):
     assert result is prefetch_result
     mock_filter.assert_called_once_with(comedor=comedor)
     mock_filter.return_value.prefetch_related.assert_called_once_with(
-        "arvhios_adjuntos"
+        "archivos_adjuntos"
     )
+
+
+def test_get_archivos_adjuntos_data_acepta_key_legacy_y_nueva():
+    assert RendicionCuentaMensualService._get_archivos_adjuntos_data(
+        {"archivos_adjuntos": ["nuevo"], "arvhios_adjuntos": ["legacy"]}
+    ) == ["nuevo"]
+    assert RendicionCuentaMensualService._get_archivos_adjuntos_data(
+        {"arvhios_adjuntos": ["legacy"]}
+    ) == ["legacy"]
+
+
+def test_asignar_archivos_adjuntos_usa_manager_set_si_existe(mocker):
+    manager = mocker.Mock()
+    rendicion = SimpleNamespace(archivos_adjuntos=manager)
+
+    RendicionCuentaMensualService._asignar_archivos_adjuntos(rendicion, ["a"])
+
+    manager.set.assert_called_once_with(["a"])
 
 
 def test_obtener_rendiciones_cuentas_mensuales_logs_and_raises(mocker):
