@@ -2,44 +2,31 @@
 
 ## Nuevas Funcionalidades
 
-- Nuevo módulo de Comunicados con soporte para mensajes internos y externos, gestión de archivo adjuntos, destacados y control de visibilidad por permisos
-- Sistema de Papelera con vista previa de impacto antes de eliminar, permitiendo recuperación de registros eliminados y visualización de elementos afectados
-- Módulo Centro de Infancia completamente renovado con gestión de nómina, intervenciones, documentación y permisos por provincia
-- ABM de Montos de Prestaciones con vinculación directa a programas y gestión de histórico de valores
-- Nuevos tipos de capacitaciones: "Asistencia a Capacitación Formando Capital Humano" con 8 subtipos específicos y "Asistencia a Capacitación Sincrónica"
-- API REST para comunicados externos, permitiendo integración con SISOC Mobile
-- Validación individual y masiva de comedores mediante importación de archivos CSV
-- Consulta RENAPER con fallback automático para alta de beneficiarios en Centro de Infancia
+- Lanzamiento del nuevo módulo de Comunicados, con mensajes internos y externos, adjuntos, destacados y control de visibilidad por perfil, para una comunicación institucional más ordenada y efectiva.
+- Habilitación de API REST para Comunicados externos para la PWA.
+- Implementación de una Papelera inteligente, con vista previa de impacto antes de eliminar y capacidad de recuperación, reduciendo riesgos operativos y mejorando el control de cambios.
+- Creacion del modulo de Centro de Infancia basico (listo para sumar implementaciones), con flujos para nómina, intervenciones y documentación, y segmentación por provincia para una gestión territorial más precisa.
+- Incorporación del ABM de Montos de Prestaciones vinculado a programas, permitiendo administrar valores con mayor trazabilidad y consistencia.
+- Evolución del esquema de capacitaciones con nuevas categorías (incluyendo Formando Capital Humano) y subtipos específicos para seguimiento más fino de acciones.
 
 ## Actualizaciones
 
-- Mejoras en el módulo de Auditoría con nuevos filtros, exportación de datos, optimización de consultas e índices en base de datos, y persistencia de metadata
-- Renovación visual de Expedientes de Pago con mejoras gráficas en tarjetas y disposición de elementos
-- Mejoras en Centro de Infancia: detalle renovado, formularios optimizados, nómina con ajustes de interfaz, y gestión de intervenciones desde modales
-- Segmentación de tipos de intervención por programa con validación específica para subintervenciones de Centro de Infancia
-- Fortalecimiento de política de seguridad de contenidos (CSP) y saneamiento de plantillas y dependencias
-- Refactorización de servicios críticos en paquetes modulares manteniendo compatibilidad con código existente
-- Consolidación de infraestructura de borrado lógico en módulo central reutilizable
-- Ampliación de cobertura de pruebas automáticas en un 75% de codigo total cubierto
-- Mejoras de rendimiento eliminando consultas N+1 en listados de comunicados con annotate
-- Actualización de grupos de usuarios y optimización de consultas en vistas de prestaciones
-- Mejoras en Novedades del Sistema con tarjetas colapsables por versión
-- Columnas configurables y filtrado por provincia en Centro de Infancia
+- Gran evolución del módulo de Auditoría con nuevos filtros, exportaciones y metadata persistida, mejorando la lectura de actividad y la toma de decisiones.
+- Fortalecimiento de seguridad y confiabilidad con mejoras en políticas CSP y nueva integración de observabilidad con Sentry para detección temprana de incidentes.
+- Mejora de rendimiento en procesos críticos mediante optimización de consultas, reducción de sobrecarga en listados y ajustes de índices en base de datos.
+- Reorganización de servicios en una arquitectura modular, manteniendo compatibilidad y acelerando mantenimiento futuro.
+- Actualización de experiencia visual en pantallas clave (Expedientes de Pago, Centro de Infancia y Novedades), con navegación más clara y foco en productividad diaria.
+- Mayor robustez operativa con mejoras de entornos QA/PROD y sincronización de fixtures
+- Ampliación de cobertura de pruebas automatizadas a un 75% del codigo critico.
 
 ## Corrección de Errores
 
-- Corrección de validación de archivos en detalle de admisión con verificación de tipo y tamaño
-- Optimización de paginación en papelera para evitar sobrecarga de memoria
-- Corrección de codificación de nonce CSP utilizando base64 estándar
-- Corrección de reseteo de subintervención al cambiar tipo en modal de intervenciones de comedores
-- Botón de baja agregado en detalle de ciudadanos
-- Corrección de layout base de plantillas en Centro de Infancia
-- Ajustes en provincia lock de formularios y registro de auditoría
-- Corrección de parseo de respuestas RENAPER y compatibilidad con borrado lógico
-- Mejoras en validación de destinatarios obligatorios para comunicados externos
-- Corrección de acceso a detalle de comunicados según visibilidad y permisos del usuario
-- Corrección de vulnerabilidad XSS en comunicados con separación de código JavaScript a archivos externos
-- Mejoras en estabilidad y consistencia de pruebas automatizadas
+- Correcciones en validación de archivos y destinatarios en flujos de Admisiones y Comunicados para evitar cargas inconsistentes.
+- Ajustes en permisos y reglas de acceso a detalle de comunicados, alineando visibilidad según perfil y contexto.
+- Resolución de incidencias de paginación en Papelera para evitar consumo innecesario de memoria.
+- Corrección de compatibilidad en nonce CSP y cierre de vulnerabilidades de inyección en vistas de comunicados.
+- Ajustes de estabilidad en formularios y modales de intervenciones para evitar inconsistencias de selección.
+- Mejoras en parseo de respuestas RENAPER y compatibilidad con borrado lógico en flujos asociados.
 
 # Versión SISOC 18.02.2026
 

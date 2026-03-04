@@ -12,7 +12,7 @@ pytestmark = pytest.mark.django_db
 def test_agregar_comentario_and_specialized_wrappers(mocker):
     created = object()
     create_mock = mocker.patch(
-        "celiaquia.services.comentarios_service.HistorialComentarios.objects.create",
+        "celiaquia.services.comentarios_service.impl.HistorialComentarios.objects.create",
         return_value=created,
     )
 
@@ -102,7 +102,7 @@ def test_migrar_comentarios_existentes(mocker):
             return [leg1, leg2]
 
     mocker.patch(
-        "celiaquia.services.comentarios_service.ExpedienteCiudadano.objects.filter",
+        "celiaquia.services.comentarios_service.impl.ExpedienteCiudadano.objects.filter",
         return_value=_QS(),
     )
     s1 = mocker.patch(

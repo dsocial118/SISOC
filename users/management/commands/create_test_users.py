@@ -40,6 +40,98 @@ class Command(BaseCommand):
         if settings.DEBUG:
             self.stdout.write("👥 Creando usuarios para test...")
 
+            grupos_abogado = [
+                "Abogado Dupla",
+                "Acompanamiento Detalle",
+                "Acompanamiento Listar",
+                "Comedores",
+                "Comedores Intervencion Crear",
+                "Comedores Intervencion Editar",
+                "Comedores Intervencion Ver",
+                "Comedores Intervenciones Detalle",
+                "Comedores Listar",
+            ]
+            grupos_tecnico = [
+                "Acompanamiento Detalle",
+                "Acompanamiento Listar",
+                "Comedores",
+                "Comedores Editar",
+                "Comedores Intervencion Crear",
+                "Comedores Intervencion Editar",
+                "Comedores Intervencion Ver",
+                "Comedores Intervenciones Detalle",
+                "Comedores Listar",
+                "Comedores Observaciones Crear",
+                "Comedores Observaciones Detalle",
+                "Comedores Observaciones Editar",
+                "Comedores Observaciones Eliminar",
+                "Comedores Relevamiento Detalle",
+                "Comedores Ver",
+                "Tecnico Comedor",
+            ]
+            grupos_legales = [
+                "Comedores",
+                "Area Legales",
+                "Comedores Relevamiento Ver",
+                "Comedores Relevamiento Detalle",
+                "Comedores Observaciones Detalle",
+                "Comedores Intervencion Ver",
+                "Comedores Intervenciones Detalle",
+                "Comedores Nomina Ver",
+                "Acompanamiento Detalle",
+                "Acompanamiento Listar",
+            ]
+            grupos_coordinador = [
+                "Coordinador Equipo Tecnico",
+                "Comedores",
+                "Comedores Listar",
+                "Comedores Ver",
+                "Comedores Editar",
+                "Comedores Relevamiento Ver",
+                "Comedores Relevamiento Detalle",
+                "Comedores Observaciones Crear",
+                "Comedores Observaciones Detalle",
+                "Comedores Observaciones Editar",
+                "Comedores Observaciones Eliminar",
+                "Comedores Intervencion Ver",
+                "Comedores Intervencion Crear",
+                "Comedores Intervencion Editar",
+                "Comedores Intervenciones Detalle",
+                "Comedores Nomina Ver",
+                "Acompanamiento Detalle",
+                "Acompanamiento Listar",
+            ]
+            grupos_operador = [
+                "Comedores",
+                "Comedores Listar",
+                "Comedores Ver",
+                "Comedores Relevamiento Ver",
+                "Comedores Relevamiento Detalle",
+                "Comedores Observaciones Crear",
+                "Comedores Observaciones Detalle",
+                "Comedores Observaciones Editar",
+                "Comedores Intervencion Ver",
+                "Comedores Intervencion Crear",
+                "Comedores Intervencion Editar",
+                "Comedores Intervenciones Detalle",
+                "Comedores Nomina Ver",
+                "Acompanamiento Detalle",
+                "Acompanamiento Listar",
+            ]
+            grupos_auditor = [
+                "Comedores",
+                "Comedores Listar",
+                "Comedores Ver",
+                "Comedores Relevamiento Ver",
+                "Comedores Relevamiento Detalle",
+                "Comedores Observaciones Detalle",
+                "Comedores Intervencion Ver",
+                "Comedores Intervenciones Detalle",
+                "Comedores Nomina Ver",
+                "Acompanamiento Detalle",
+                "Acompanamiento Listar",
+            ]
+
             usuarios = [
                 {
                     "username": "1",
@@ -53,59 +145,21 @@ class Command(BaseCommand):
                     "email": "abogadoqa@example.com",
                     "password": "qa1234",
                     "is_superuser": False,
-                    "grupos": [
-                        "Abogado Dupla",
-                        "Acompanamiento Detalle",
-                        "Acompanamiento Listar",
-                        "Comedores",
-                        "Comedores Intervencion Crear",
-                        "Comedores Intervencion Editar",
-                        "Comedores Intervencion Ver",
-                        "Comedores Intervenciones Detalle",
-                        "Comedores Listar",
-                    ],
+                    "grupos": grupos_abogado,
                 },
                 {
                     "username": "tecnicoqa",
                     "email": "tecnicoqa@example.com",
                     "password": "qa1234",
                     "is_superuser": False,
-                    "grupos": [
-                        "Acompanamiento Detalle",
-                        "Acompanamiento Listar",
-                        "Comedores",
-                        "Comedores Editar",
-                        "Comedores Intervencion Crear",
-                        "Comedores Intervencion Editar",
-                        "Comedores Intervencion Ver",
-                        "Comedores Intervenciones Detalle",
-                        "Comedores Listar",
-                        "Comedores Observaciones Crear",
-                        "Comedores Observaciones Detalle",
-                        "Comedores Observaciones Editar",
-                        "Comedores Observaciones Eliminar",
-                        "Comedores Relevamiento Detalle",
-                        "Comedores Ver",
-                        "Tecnico Comedor",
-                    ],
+                    "grupos": grupos_tecnico,
                 },
                 {
                     "username": "legalesqa",
                     "email": "legalesqa@example.com",
                     "password": "qa1234",
                     "is_superuser": False,
-                    "grupos": [
-                        "Comedores",
-                        "Area Legales",
-                        "Comedores Relevamiento Ver",
-                        "Comedores Relevamiento Detalle",
-                        "Comedores Observaciones Detalle",
-                        "Comedores Intervencion Ver",
-                        "Comedores Intervenciones Detalle",
-                        "Comedores Nomina Ver",
-                        "Acompanamiento Detalle",
-                        "Acompanamiento Listar",
-                    ],
+                    "grupos": grupos_legales,
                 },
                 {
                     "username": "contableqa",
@@ -183,6 +237,40 @@ class Command(BaseCommand):
                     "grupos": ["ProvinciaCeliaquia", "Ciudadanos"],
                 },
             ]
+
+            qa_personas = ["Juan", "Agustina", "Facundo", "Camilo"]
+            qa_roles = {
+                "legales": grupos_legales,
+                "abogado": grupos_abogado,
+                "tec": grupos_tecnico,
+                "coordinador": grupos_coordinador,
+                "operador": grupos_operador,
+                "auditor": grupos_auditor,
+            }
+            for nombre in qa_personas:
+                for rol, grupos in qa_roles.items():
+                    username = f"{nombre.lower()}{rol}"
+                    usuarios.append(
+                        {
+                            "username": username,
+                            "email": f"{username}@example.com",
+                            "password": "1",
+                            "is_superuser": False,
+                            "grupos": grupos,
+                        }
+                    )
+
+            superadmins = ["asampaulo", "fsuarez", "jalfonso", "cparra"]
+            for username in superadmins:
+                usuarios.append(
+                    {
+                        "username": username,
+                        "email": f"{username}@example.com",
+                        "password": "1",
+                        "is_superuser": True,
+                        "grupos": [],
+                    }
+                )
 
             for conf in usuarios:
                 user, creado = crear_usuario_con_grupos(

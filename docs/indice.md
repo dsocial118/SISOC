@@ -16,6 +16,7 @@
 
 ### 3. Guías funcionales y de desarrollo
 - `docs/implementaciones/csp.md`: configuración y uso de CSP (nonce en templates, modo report-only, checklist de validación).
+- `docs/implementaciones/sentry.md`: implementación de Sentry (activación por entorno, variables, logging y validación).
 - `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
 - `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.
 - `docs/agentes.md`: guía rápida para asistentes automáticos y workflows de documentación.

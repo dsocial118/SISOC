@@ -1,23 +1,23 @@
 [
-    {
-        "model": "relevamientos.tipomodulobolsones",
-        "pk": 1,
-        "fields": {
-            "nombre": "Alimentos secos"
-        }
-    },
-    {
-        "model": "relevamientos.tipomodulobolsones",
-        "pk": 2,
-        "fields": {
-            "nombre": "Alimentos frescos"
-        }
-    },
-    {
-        "model": "relevamientos.tipomodulobolsones",
-        "pk": 3,
-        "fields": {
-            "nombre": "Mixto"
-        }
+{
+    "model": "relevamientos.tipomodulobolsones",
+    "pk": 1,
+    "fields": {
+        "nombre": "Alimentos secos"
     }
+},
+{
+    "model": "relevamientos.tipomodulobolsones",
+    "pk": 2,
+    "fields": {
+        "nombre": "Alimentos frescos"
+    }
+},
+{
+    "model": "relevamientos.tipomodulobolsones",
+    "pk": 3,
+    "fields": {
+        "nombre": "Mixto"
+    }
+}
 ]

@@ -126,6 +126,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
             "calle",
             "telefono",
             "nombre_referente",
+            "apellido_referente",
             "email_referente",
             "telefono_referente",
             "fecha_inicio",

@@ -3,6 +3,8 @@ import logging
 import os
 from datetime import date, datetime
 
+import json
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -51,6 +53,7 @@ from centrodeinfancia.models import (
     NominaCentroInfancia,
     ObservacionCentroInfancia,
 )
+from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
 
 CDI_LIST_HEADERS = [
@@ -442,11 +445,26 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["observaciones_page_obj"] = observaciones_page_obj
         context["observaciones_is_paginated"] = observaciones_page_obj.has_other_pages()
         context["observaciones_page_range"] = observaciones_page_range
-        context["intervencion_form"] = IntervencionCentroInfanciaForm(
+
+        intervencion_form = IntervencionCentroInfanciaForm(
             destinatario_fijo_nombre="Centro",
             hide_destinatario=True,
         )
+        context["intervencion_form"] = intervencion_form
         context["observacion_form"] = ObservacionCentroInfanciaForm()
+
+        tipo_intervencion_queryset = list(
+            intervencion_form.fields["tipo_intervencion"].queryset
+        )
+        tipo_programas_map = {
+            str(tipo.pk): (tipo.programa or "").strip()
+            for tipo in tipo_intervencion_queryset
+        }
+        alias_list = list(PROGRAMA_ALIASES_CENTRO_INFANCIA)
+        context["tipo_intervencion_programas"] = tipo_programas_map
+        context["tipo_intervencion_programa_aliases"] = alias_list
+        context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
+        context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
         return context
 
 

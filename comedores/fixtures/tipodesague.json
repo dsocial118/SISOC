@@ -1,23 +1,23 @@
 [
-    {
-        "model": "relevamientos.tipodesague",
-        "pk": 1,
-        "fields": {
-            "nombre": "Cloaca"
-        }
-    },
-    {
-        "model": "relevamientos.tipodesague",
-        "pk": 2,
-        "fields": {
-            "nombre": "Pozo ciego"
-        }
-    },
-    {
-        "model": "relevamientos.tipodesague",
-        "pk": 3,
-        "fields": {
-            "nombre": "Letrina"
-        }
+{
+    "model": "relevamientos.tipodesague",
+    "pk": 1,
+    "fields": {
+        "nombre": "Cloaca"
     }
+},
+{
+    "model": "relevamientos.tipodesague",
+    "pk": 2,
+    "fields": {
+        "nombre": "Pozo ciego"
+    }
+},
+{
+    "model": "relevamientos.tipodesague",
+    "pk": 3,
+    "fields": {
+        "nombre": "Letrina"
+    }
+}
 ]

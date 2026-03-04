@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
+from config.runtime import is_running_tests
 
 # Cargar variables de entorno
 load_dotenv()
@@ -86,6 +87,7 @@ INSTALLED_APPS = [
     # Apps propias
     "users",
     "core",
+    "sentry.apps.SentryConfig",
     "dashboard",
     "comedores",
     "organizaciones",
@@ -115,6 +117,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "sentry.middleware.SentryUserContextMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -140,6 +143,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "sentry.context_processors.sentry_frontend",
             ],
         },
     },
@@ -202,9 +206,7 @@ DATABASES = {
 }
 
 # DB para testing
-RUNNING_TESTS = (
-    any("pytest" in arg for arg in sys.argv) or os.environ.get("PYTEST_RUNNING") == "1"
-)
+RUNNING_TESTS = is_running_tests(os.environ, sys.argv)
 if RUNNING_TESTS and not SECRET_KEY:
     SECRET_KEY = "test-secret-key"
 USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
@@ -284,9 +286,35 @@ SPECTACULAR_SETTINGS = {
 
 # Dominios / Integraciones
 DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
+SENTRY_DSN = (
+    "https://REDACTED_SENTRY_KEY@"
+    "REDACTED_SENTRY_ENDPOINT"
+)
+SENTRY_LOG_EVENT_LEVEL = "WARNING"
+if ENVIRONMENT == "qa":
+    SENTRY_ERROR_SAMPLE_RATE = 0.75
+    SENTRY_TRACES_SAMPLE_RATE = 0.75
+    SENTRY_PROFILES_SAMPLE_RATE = 0.0
+    SENTRY_REPLAY_ENABLED = False
+    SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 0.0
+    SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 0.0
+elif ENVIRONMENT == "prd":
+    SENTRY_ERROR_SAMPLE_RATE = 1.0
+    SENTRY_TRACES_SAMPLE_RATE = 1.0
+    SENTRY_PROFILES_SAMPLE_RATE = 0.0
+    SENTRY_REPLAY_ENABLED = True
+    SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 1.0
+    SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 1.0
+else:
+    SENTRY_ERROR_SAMPLE_RATE = 0.0
+    SENTRY_TRACES_SAMPLE_RATE = 0.0
+    SENTRY_PROFILES_SAMPLE_RATE = 0.0
+    SENTRY_REPLAY_ENABLED = False
+    SENTRY_REPLAYS_SESSION_SAMPLE_RATE = 0.0
+    SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE = 0.0
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
-RENAPER_API_URL = os.getenv("RENAPER_API_URL")
+RENAPER_API_URL = "https://wsv2.secretarianaf.gob.ar/api"
 RENAPER_VALIDACION_MAX_RETRIES = _safe_int_env(
     "RENAPER_VALIDACION_MAX_RETRIES",
     1,
@@ -298,9 +326,8 @@ RENAPER_VALIDACION_BACKOFF_SECONDS = _safe_float_env(
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 # Changelog
-CHANGELOG_GITHUB_URL = os.getenv(
-    "CHANGELOG_GITHUB_URL",
-    "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/main/CHANGELOG.md",
+CHANGELOG_GITHUB_URL = (
+    "https://raw.githubusercontent.com/dsocial118/BACKOFFICE/main/CHANGELOG.md"
 )
 
 # IPs internas
@@ -396,6 +423,11 @@ LOGGING = {
             "filename": str(LOG_DIR / "data.log"),
             "formatter": "json_data",
         },
+        "sentry": {
+            "level": SENTRY_LOG_EVENT_LEVEL,
+            "class": "sentry.handlers.SentryEventHandler",
+            "formatter": "verbose",
+        },
     },
     "root": {
         "handlers": [
@@ -404,6 +436,7 @@ LOGGING = {
             "warning_file",
             "critical_file",
             "data_file",
+            "sentry",
         ],
         "level": "DEBUG" if DEBUG else "INFO",
     },
@@ -414,7 +447,7 @@ LOGGING = {
             "propagate": True,
         },
         "django.request": {
-            "handlers": ["error_file"],
+            "handlers": ["error_file", "sentry"],
             "level": "ERROR",
             "propagate": False,
         },
@@ -489,6 +522,8 @@ else:
 # Overrides y flags de endurecimiento CSP (migración gradual)
 ENABLE_CSP = os.getenv("ENABLE_CSP", str(ENABLE_CSP)).lower() == "true"
 CSP_REPORT_ONLY = os.getenv("CSP_REPORT_ONLY", "true").lower() == "true"
+if RUNNING_TESTS and "CSP_REPORT_ONLY" not in os.environ:
+    CSP_REPORT_ONLY = False
 CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
     os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "false").lower() == "true"
 )
