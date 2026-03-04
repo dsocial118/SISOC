@@ -242,6 +242,10 @@ def test_obtener_territoriales_para_comedor_paths(mocker):
 
 
 def test_sync_calls_and_errors(mocker):
+    mocker.patch(
+        "comedores.services.territorial_service.impl.settings.GESTIONAR_INTEGRATION_ENABLED",
+        True,
+    )
     sync_log = SimpleNamespace(
         exitoso=False,
         territoriales_sincronizados=0,

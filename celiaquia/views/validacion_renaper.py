@@ -257,8 +257,108 @@ class ValidacionRenaperView(View):
 
     @method_decorator(csrf_protect)
     def post(self, request, pk, legajo_id):
-        # Solo hacer la consulta a Renaper (sin guardar estado)
+        # Si viene el parámetro 'validacion_estado', guardar el estado.
+        validacion_estado = request.POST.get("validacion_estado")
+        if validacion_estado:
+            return self._guardar_validacion_estado(
+                request, pk, legajo_id, validacion_estado
+            )
+
+        # Si no, hacer la consulta normal a Renaper.
         return self._consultar_renaper(request, pk, legajo_id)
+
+    def _guardar_validacion_estado(self, request, pk, legajo_id, validacion_estado):
+        """Guarda el estado de validación Renaper (1=correcto, 2=incorrecto, 3=subsanar)."""
+        try:
+            legajo = get_object_or_404(
+                ExpedienteCiudadano, pk=legajo_id, expediente__pk=pk
+            )
+
+            if validacion_estado not in ["1", "2", "3"]:
+                logger.warning(
+                    "renaper.validation.invalid_status",
+                    extra={
+                        "data": {
+                            "legajo_id": legajo_id,
+                            "expediente_id": pk,
+                            "estado_recibido": validacion_estado,
+                            "user_id": getattr(request.user, "id", None),
+                            "username": getattr(
+                                request.user, "get_username", lambda: None
+                            )(),
+                        }
+                    },
+                )
+                return JsonResponse(
+                    {"success": False, "error": "Estado de validación inválido"}
+                )
+
+            legajo.estado_validacion_renaper = int(validacion_estado)
+
+            comentario = request.POST.get("comentario")
+            if validacion_estado == "3" and comentario:
+                legajo.subsanacion_motivo = comentario
+                legajo.revision_tecnico = "SUBSANAR"
+                legajo.save(
+                    update_fields=[
+                        "estado_validacion_renaper",
+                        "subsanacion_motivo",
+                        "revision_tecnico",
+                        "modificado_en",
+                    ]
+                )
+            else:
+                legajo.save(
+                    update_fields=["estado_validacion_renaper", "modificado_en"]
+                )
+
+            mensajes = {"1": "Aceptado", "2": "Rechazado", "3": "Subsanar"}
+            mensaje = mensajes.get(validacion_estado, "Desconocido")
+
+            logger.info(
+                "renaper.validation.status_saved",
+                extra={
+                    "data": {
+                        "legajo_id": legajo_id,
+                        "expediente_id": legajo.expediente_id,
+                        "estado_guardado": mensaje,
+                        "requiere_subsanacion": validacion_estado == "3",
+                        "user_id": getattr(request.user, "id", None),
+                        "username": getattr(
+                            request.user, "get_username", lambda: None
+                        )(),
+                    }
+                },
+            )
+
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": f"Validación Renaper guardada: {mensaje}",
+                    "validacion_estado": int(validacion_estado),
+                }
+            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            logger.exception(
+                "renaper.validation.status_error",
+                extra={
+                    "data": {
+                        "legajo_id": legajo_id,
+                        "expediente_id": pk,
+                        "user_id": getattr(request.user, "id", None),
+                        "username": getattr(
+                            request.user, "get_username", lambda: None
+                        )(),
+                    }
+                },
+            )
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "No se pudo guardar la validación por un error interno.",
+                },
+                status=500,
+            )
 
     def _consultar_renaper(self, request, pk, legajo_id):
         try:
