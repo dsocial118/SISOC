@@ -172,12 +172,8 @@ class ExpedienteListView(ListView):
                 "numero_expediente",
             )
         )
-        if _is_admin(user):
+        if _is_admin(user) or _user_in_group(user, "CoordinadorCeliaquia"):
             qs = qs.order_by("-fecha_creacion")
-        elif _user_in_group(user, "CoordinadorCeliaquia"):
-            qs = qs.filter(
-                estado__nombre__in=["CONFIRMACION_DE_ENVIO", "RECEPCIONADO", "ASIGNADO"]
-            ).order_by("-fecha_creacion")
         elif _user_in_group(user, "TecnicoCeliaquia"):
             qs = (
                 qs.filter(asignaciones_tecnicos__tecnico=user)
