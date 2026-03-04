@@ -40,18 +40,18 @@ def test_basic_helpers_parse_and_cache_update():
 
 def test_actualizar_cache_db_provincia_and_estadisticas(mocker):
     mocker.patch(
-        "comedores.services.territorial_service.transaction.atomic",
+        "comedores.services.territorial_service.impl.transaction.atomic",
         return_value=nullcontext(),
     )
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialCache.objects.filter",
+        "comedores.services.territorial_service.impl.TerritorialCache.objects.filter",
         return_value=SimpleNamespace(delete=mocker.Mock()),
     )
     create_mock = mocker.patch(
-        "comedores.services.territorial_service.TerritorialCache.objects.create"
+        "comedores.services.territorial_service.impl.TerritorialCache.objects.create"
     )
     mocker.patch(
-        "comedores.services.territorial_service.timezone.now",
+        "comedores.services.territorial_service.impl.timezone.now",
         return_value=datetime.now(),
     )
 
@@ -68,22 +68,21 @@ def test_actualizar_cache_db_provincia_and_estadisticas(mocker):
         return SimpleNamespace(count=lambda: next(counts))
 
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialCache.objects.filter",
+        "comedores.services.territorial_service.impl.TerritorialCache.objects.filter",
         side_effect=_filter_stats,
     )
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialSyncLog.objects.order_by",
+        "comedores.services.territorial_service.impl.TerritorialSyncLog.objects.order_by",
         return_value=SimpleNamespace(
             first=lambda: SimpleNamespace(fecha=datetime.now(), exitoso=True)
         ),
     )
     mocker.patch(
-        "comedores.services.territorial_service.Provincia.objects.all",
+        "comedores.services.territorial_service.impl.Provincia.objects.all",
         return_value=[SimpleNamespace(id=1)],
     )
-    mocker.patch.object(
-        module,
-        "cache",
+    mocker.patch(
+        "comedores.services.territorial_service.impl.cache",
         SimpleNamespace(
             get=lambda _k: [1], delete=lambda _k: True, set=lambda *_a, **_k: None
         ),
@@ -98,7 +97,7 @@ def test_actualizar_cache_db_provincia_and_estadisticas(mocker):
 def test_obtener_desde_db_variants(mocker):
     terrs = [SimpleNamespace(esta_desactualizado=False, to_dict=lambda: {"id": 1})]
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialCache.objects.filter",
+        "comedores.services.territorial_service.impl.TerritorialCache.objects.filter",
         return_value=terrs,
     )
     out = module.TerritorialService._obtener_desde_db()
@@ -108,7 +107,7 @@ def test_obtener_desde_db_variants(mocker):
     assert out2["desactualizados"] is False
 
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialCache.objects.filter",
+        "comedores.services.territorial_service.impl.TerritorialCache.objects.filter",
         side_effect=Exception("db"),
     )
     assert module.TerritorialService._obtener_desde_db()["desactualizados"] is True
@@ -117,20 +116,20 @@ def test_obtener_desde_db_variants(mocker):
 def test_necesita_sincronizacion_variants(mocker):
     now = datetime.now()
     mocker.patch(
-        "comedores.services.territorial_service.timezone.now", return_value=now
+        "comedores.services.territorial_service.impl.timezone.now", return_value=now
     )
     mocker.patch(
-        "comedores.services.territorial_service.timezone.timedelta",
+        "comedores.services.territorial_service.impl.timezone.timedelta",
         side_effect=lambda **k: timedelta(**k),
     )
 
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialCache.objects.filter",
+        "comedores.services.territorial_service.impl.TerritorialCache.objects.filter",
         return_value=SimpleNamespace(count=lambda: 1),
     )
     recent = SimpleNamespace(fecha=now)
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialSyncLog.objects.filter",
+        "comedores.services.territorial_service.impl.TerritorialSyncLog.objects.filter",
         return_value=SimpleNamespace(
             order_by=lambda *_a: SimpleNamespace(first=lambda: recent)
         ),
@@ -138,7 +137,7 @@ def test_necesita_sincronizacion_variants(mocker):
     assert module.TerritorialService._necesita_sincronizacion() is False
 
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialSyncLog.objects.filter",
+        "comedores.services.territorial_service.impl.TerritorialSyncLog.objects.filter",
         return_value=SimpleNamespace(
             order_by=lambda *_a: SimpleNamespace(first=lambda: None)
         ),
@@ -149,22 +148,22 @@ def test_necesita_sincronizacion_variants(mocker):
 def test_necesita_sincronizacion_provincia_and_limpiar_cache(mocker):
     now = datetime.now()
     mocker.patch(
-        "comedores.services.territorial_service.timezone.now", return_value=now
+        "comedores.services.territorial_service.impl.timezone.now", return_value=now
     )
     mocker.patch(
-        "comedores.services.territorial_service.timezone.timedelta",
+        "comedores.services.territorial_service.impl.timezone.timedelta",
         side_effect=lambda **k: timedelta(**k),
     )
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialCache.objects.filter",
+        "comedores.services.territorial_service.impl.TerritorialCache.objects.filter",
         return_value=SimpleNamespace(count=lambda: 1),
     )
     mocker.patch(
-        "comedores.services.territorial_service.Comedor.objects.filter",
+        "comedores.services.territorial_service.impl.Comedor.objects.filter",
         return_value=SimpleNamespace(values_list=lambda *a, **k: [1]),
     )
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialSyncLog.objects.filter",
+        "comedores.services.territorial_service.impl.TerritorialSyncLog.objects.filter",
         return_value=SimpleNamespace(
             order_by=lambda *_a: SimpleNamespace(first=lambda: None)
         ),
@@ -172,18 +171,17 @@ def test_necesita_sincronizacion_provincia_and_limpiar_cache(mocker):
     assert module.TerritorialService._necesita_sincronizacion_provincia(1) is True
 
     mocker.patch(
-        "comedores.services.territorial_service.Provincia.objects.all",
+        "comedores.services.territorial_service.impl.Provincia.objects.all",
         return_value=[SimpleNamespace(id=1)],
     )
-    mocker.patch.object(
-        module,
-        "cache",
+    mocker.patch(
+        "comedores.services.territorial_service.impl.cache",
         SimpleNamespace(
             get=lambda _k: None, delete=lambda _k: True, set=lambda *_a, **_k: None
         ),
     )
     upd = mocker.patch(
-        "comedores.services.territorial_service.TerritorialCache.objects.update"
+        "comedores.services.territorial_service.impl.TerritorialCache.objects.update"
     )
     module.TerritorialService.limpiar_cache_completo()
     assert upd.called
@@ -192,12 +190,11 @@ def test_necesita_sincronizacion_provincia_and_limpiar_cache(mocker):
 def test_obtener_territoriales_para_comedor_paths(mocker):
     comedor = SimpleNamespace(provincia=SimpleNamespace(id=1))
     mocker.patch(
-        "comedores.services.territorial_service.Comedor.objects.select_related",
+        "comedores.services.territorial_service.impl.Comedor.objects.select_related",
         return_value=SimpleNamespace(get=lambda **k: comedor),
     )
-    mocker.patch.object(
-        module,
-        "cache",
+    mocker.patch(
+        "comedores.services.territorial_service.impl.cache",
         SimpleNamespace(
             get=lambda _k: [{"id": 1}],
             delete=lambda _k: True,
@@ -207,9 +204,8 @@ def test_obtener_territoriales_para_comedor_paths(mocker):
     out = module.TerritorialService.obtener_territoriales_para_comedor(10)
     assert out["fuente"] == "cache_provincia"
 
-    mocker.patch.object(
-        module,
-        "cache",
+    mocker.patch(
+        "comedores.services.territorial_service.impl.cache",
         SimpleNamespace(
             get=lambda _k: None, delete=lambda _k: True, set=lambda *_a, **_k: None
         ),
@@ -227,14 +223,16 @@ def test_obtener_territoriales_para_comedor_paths(mocker):
         "_obtener_desde_db_por_provincia",
         return_value={"territoriales": [], "desactualizados": True},
     )
-    mocker.patch("comedores.services.territorial_service.os.getenv", return_value="")
+    mocker.patch(
+        "comedores.services.territorial_service.impl.os.getenv", return_value=""
+    )
     out3 = module.TerritorialService.obtener_territoriales_para_comedor(
         10, forzar_sync=True
     )
     assert out3["fuente"] == "sin_datos"
 
     mocker.patch(
-        "comedores.services.territorial_service.Comedor.objects.select_related",
+        "comedores.services.territorial_service.impl.Comedor.objects.select_related",
         return_value=SimpleNamespace(
             get=lambda **k: (_ for _ in ()).throw(module.Comedor.DoesNotExist())
         ),
@@ -251,7 +249,7 @@ def test_sync_calls_and_errors(mocker):
         save=mocker.Mock(),
     )
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialSyncLog",
+        "comedores.services.territorial_service.impl.TerritorialSyncLog",
         return_value=sync_log,
     )
     resp = SimpleNamespace(
@@ -259,10 +257,10 @@ def test_sync_calls_and_errors(mocker):
         json=lambda: [{"ListadoRelevadoresDisponibles": "u1/Uno"}],
     )
     mocker.patch(
-        "comedores.services.territorial_service.requests.post", return_value=resp
+        "comedores.services.territorial_service.impl.requests.post", return_value=resp
     )
     mocker.patch(
-        "comedores.services.territorial_service.os.getenv",
+        "comedores.services.territorial_service.impl.os.getenv",
         side_effect=["k", "http://x"],
     )
     mocker.patch.object(
@@ -272,7 +270,7 @@ def test_sync_calls_and_errors(mocker):
     assert out["exitoso"] is True
 
     mocker.patch(
-        "comedores.services.territorial_service.os.getenv", side_effect=["", ""]
+        "comedores.services.territorial_service.impl.os.getenv", side_effect=["", ""]
     )
     out2 = module.TerritorialService._sincronizar_con_gestionar(1)
     assert out2["exitoso"] is False
@@ -284,11 +282,11 @@ def test_sync_calls_and_errors(mocker):
         save=mocker.Mock(),
     )
     mocker.patch(
-        "comedores.services.territorial_service.TerritorialSyncLog",
+        "comedores.services.territorial_service.impl.TerritorialSyncLog",
         return_value=sync_log2,
     )
     mocker.patch(
-        "comedores.services.territorial_service.os.getenv",
+        "comedores.services.territorial_service.impl.os.getenv",
         side_effect=["k", "http://x"],
     )
     mocker.patch.object(

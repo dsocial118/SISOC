@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static custom_filters %}
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
@@ -93,13 +93,14 @@
                     <div class="accordion-content">
                         <div class="row">
                             <div class="col-12 col-lg-5">
-                                {% if centro.calle and centro.localidad and centro.municipio and centro.provincia %}
+                                {% google_maps_address centro.calle centro.localidad centro.municipio centro.provincia as centro_map_query %}
+                                {% if centro.calle and centro.municipio and centro.provincia and centro_map_query %}
                                     <div class="w-100 comedor-map-wrapper">
                                         <iframe width="100%"
                                                 height="365px"
                                                 frameborder="0"
                                                 class="comedor-map-iframe"
-                                                src="https://maps.google.com/maps?q={{ centro.calle|urlencode }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                                src="https://maps.google.com/maps?q={{ centro_map_query }}&output=embed"
                                                 allowfullscreen>
                                         </iframe>
                                     </div>
@@ -142,9 +143,18 @@
                     <button type="button"
                             class="accordion-header h5 accordion-header--responsables">Referente</button>
                     <div class="accordion-content">
-                        <p class="mb-2">
-                            <i class="bi bi-person me-2"></i><strong>Nombre:</strong> {{ centro.nombre_referente|default:"-" }}
-                        </p>
+                        {% with nombre=centro.nombre_referente|default:"" apellido=centro.apellido_referente|default:"" %}
+                            <p class="mb-2">
+                                <i class="bi bi-person me-2"></i><strong>Referente:</strong>
+                                {% if nombre or apellido %}
+                                    {{ nombre }}
+                                    {% if nombre and apellido %}&nbsp;{% endif %}
+                                    {{ apellido }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                        {% endwith %}
                         <p class="mb-2">
                             <i class="bi bi-envelope me-2"></i><strong>Email:</strong> {{ centro.email_referente|default:"-" }}
                         </p>
@@ -387,6 +397,8 @@
         document.addEventListener("DOMContentLoaded", function() {
             const shell = document.querySelector(".accordion-shell");
             const accordion = document.querySelector(".accordion-horizontal");
+            const tipoProgramasMap = {{ tipo_intervencion_programas_json|safe }};
+            const tipoAliasList = {{ tipo_intervencion_programa_aliases_json|safe }};
             const panels = Array.from(document.querySelectorAll(".accordion-panel"));
             const closedWidth = 60;
 
@@ -576,6 +588,39 @@
                     resetSubintervenciones();
                 });
             }
+
+            (function aplicarFiltroTipoIntervencion() {
+                if (!tipoIntervencionSelect) {
+                    return;
+                }
+                const aliasList = Array.isArray(tipoAliasList) ? tipoAliasList : [];
+                const programasMap =
+                    tipoProgramasMap && typeof tipoProgramasMap === "object"
+                        ? tipoProgramasMap
+                        : {};
+                const allowedProgramas = new Set(
+                    aliasList
+                        .filter(Boolean)
+                        .map(function(alias) {
+                            return alias.toString().trim().toLowerCase();
+                        })
+                        .concat("")
+                );
+
+                tipoIntervencionSelect.querySelectorAll("option").forEach(function(option) {
+                    const value = option.value;
+                    if (!value) {
+                        return;
+                    }
+                    const programa = (programasMap[value] || "")
+                        .toString()
+                        .trim()
+                        .toLowerCase();
+                    if (programa && !allowedProgramas.has(programa)) {
+                        option.remove();
+                    }
+                });
+            })();
 
             const fechaInput = document.getElementById("id_fecha");
             const fechaError = document.getElementById("fecha-error-intervencion");
