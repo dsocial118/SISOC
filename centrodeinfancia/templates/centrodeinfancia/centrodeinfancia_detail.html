@@ -93,7 +93,7 @@
                     <div class="accordion-content">
                         <div class="row">
                             <div class="col-12 col-lg-5">
-                                {% google_maps_address centro.calle centro.localidad centro.municipio centro.provincia as centro_map_query %}
+                                {% google_maps_address centro.calle centro.numero centro.localidad centro.municipio centro.provincia as centro_map_query %}
                                 {% if centro.calle and centro.municipio and centro.provincia and centro_map_query %}
                                     <div class="w-100 comedor-map-wrapper">
                                         <iframe width="100%"
@@ -129,7 +129,13 @@
                                     <i class="bi bi-geo-alt me-2"></i><strong>Localidad:</strong> {{ centro.localidad|default:"-" }}
                                 </p>
                                 <p class="mb-2">
-                                    <i class="bi bi-signpost me-2"></i><strong>Calle:</strong> {{ centro.calle|default:"-" }}
+                                    <i class="bi bi-signpost me-2"></i><strong>Calle:</strong>
+                                    {% if centro.calle %}
+                                        {{ centro.calle }}
+                                        {% if centro.numero %} {{ centro.numero }}{% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
                                 </p>
                                 <p class="mb-0">
                                     <i class="bi bi-telephone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono|default:"-" }}
