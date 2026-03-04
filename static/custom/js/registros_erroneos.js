@@ -131,11 +131,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const municipio = (form.querySelector('select[name="municipio"]')?.value || '').trim();
         const localidad = (form.querySelector('select[name="localidad"]')?.value || '').trim();
         
-        if (!apellido || !nombre || !documento || !fecha_nacimiento || !sexo || !nacionalidad || !telefono || !email || !calle || !altura || !municipio || !localidad) {
+        if (!apellido || !nombre || !documento || !fecha_nacimiento || !sexo || !nacionalidad || !municipio || !localidad) {
             return;
         }
         
-        if (telefono.length < 8) {
+        if (telefono && telefono.length < 8) {
             return;
         }
         
