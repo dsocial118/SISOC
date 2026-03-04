@@ -12,6 +12,7 @@ class UserGroups:
     # =========================================================================
     # Grupos base (roles principales)
     # =========================================================================
+    ADMIN = "Admin"
     ADMINISTRADOR = "Administrador"
     COORDINADOR_GESTION = "Coordinador Equipo Tecnico"
     COORDINADOR_GENERAL = "Coordinador general"
@@ -86,7 +87,7 @@ class UserGroups:
     # Nota: se conserva "Admin" por compatibilidad operativa. No reemplazar por
     # "Administrador" sin una migración funcional completa en el sistema.
     _SEED_CORE = (
-        "Admin",
+        ADMIN,
         "Comedores",
         "Exportar a csv",
         "Organizaciones",
