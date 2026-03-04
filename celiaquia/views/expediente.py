@@ -1058,8 +1058,9 @@ class RevisarLegajoView(View):
 
         # Validar RENAPER automáticamente antes de cualquier acción (excepto ELIMINAR)
         if accion in ("APROBAR", "RECHAZAR", "SUBSANAR"):
+            estado_validacion_renaper = getattr(leg, "estado_validacion_renaper", 0)
             # Si no tiene validación RENAPER, marcar como aprobado automáticamente
-            if leg.estado_validacion_renaper == 0:
+            if estado_validacion_renaper == 0:
                 leg.estado_validacion_renaper = 1
                 leg.save(update_fields=["estado_validacion_renaper", "modificado_en"])
 
@@ -1082,7 +1083,7 @@ class RevisarLegajoView(View):
             estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "APROBADO"
             # Asegurar que RENAPER esté validado
-            if leg.estado_validacion_renaper == 0:
+            if getattr(leg, "estado_validacion_renaper", 0) == 0:
                 leg.estado_validacion_renaper = 1
             leg.save(
                 update_fields=[
@@ -1114,7 +1115,7 @@ class RevisarLegajoView(View):
             estado_anterior = leg.revision_tecnico
             leg.revision_tecnico = "RECHAZADO"
             # Marcar RENAPER como rechazado también
-            if leg.estado_validacion_renaper == 0:
+            if getattr(leg, "estado_validacion_renaper", 0) == 0:
                 leg.estado_validacion_renaper = 2
             leg.save(
                 update_fields=[

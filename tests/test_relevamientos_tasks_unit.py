@@ -18,6 +18,7 @@ def test_run_async_threads_disabled_by_flag(monkeypatch):
 
 def test_async_send_start_runs_inline_in_tests(mocker, monkeypatch):
     monkeypatch.setenv("PYTEST_CURRENT_TEST", "tests::algo")
+    mocker.patch("relevamientos.tasks.settings.GESTIONAR_INTEGRATION_ENABLED", True)
     thread = module.AsyncSendRelevamientoToGestionar(relevamiento_id=1, payload={})
     mock_run = mocker.patch.object(thread, "run")
     mock_submit = mocker.patch.object(module._EXECUTOR, "submit")
@@ -32,6 +33,7 @@ def test_async_send_start_runs_inline_in_tests(mocker, monkeypatch):
 def test_async_remove_start_uses_executor_fuera_de_tests(mocker, monkeypatch):
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     monkeypatch.delenv("DISABLE_ASYNC_THREADS", raising=False)
+    mocker.patch("relevamientos.tasks.settings.GESTIONAR_INTEGRATION_ENABLED", True)
     thread = module.AsyncRemoveRelevamientoToGestionar(relevamiento_id=1)
     mock_run = mocker.patch.object(thread, "run")
     mock_submit = mocker.patch.object(module._EXECUTOR, "submit")
