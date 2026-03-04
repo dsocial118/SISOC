@@ -23,7 +23,7 @@
             </div>
             <div class="info flex-grow-1">
                 <p class="mb-1 text-white fw-bold">{{ request.user.get_full_name|default:request.user.username }}</p>
-                <p class="mb-0 text-white-50 small">{{ request.user.profile.rol }}</p>
+                <p class="mb-0 text-white-50 small">{{ request.user.profile.rol|default:"-" }}</p>
             </div>
         </div>
     </li>
@@ -41,6 +41,33 @@
             <i class="nav-icon bi bi-megaphone-fill"></i>
             <p>Novedades del sistema</p>
         </a>
+    </li>
+    <!-- COMUNICADOS -->
+    <li class="nav-item nav-main-item {% if 'comunicados' in pagina_actual %}menu-open{% endif %}">
+        <a href="#"
+           class="nav-link {% if 'comunicados' in pagina_actual %}active{% endif %}">
+            <i class="nav-icon bi bi-newspaper"></i>
+            <p>
+                Comunicados
+                <i class="nav-arrow bi bi-chevron-right"></i>
+            </p>
+        </a>
+        <ul class="nav nav-treeview">
+            <li class="nav-item">
+                <a href="{% url 'comunicados' %}"
+                   class="nav-link nav-dot ms-2 {% if 'comunicados/' == pagina_actual %}active{% endif %}">
+                    <p>Ver Comunicados</p>
+                </a>
+            </li>
+            {% if request.user|has_group:"Comunicado Crear" or request.user|has_group:"Comunicado Editar" or request.user|has_group:"Comunicado Publicar" or request.user|has_group:"Comunicado Archivar" or request.user|has_group:"Administrador" %}
+                <li class="nav-item">
+                    <a href="{% url 'comunicados_gestion' %}"
+                       class="nav-link nav-dot ms-2 {% if 'comunicados/gestion' in pagina_actual %}active{% endif %}">
+                        <p>Crear comunicado</p>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
     </li>
 
     {% if request.user|has_group:"Administrador" %}
@@ -72,11 +99,25 @@
                         <p>Equipos Técnicos</p>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a href="{% url 'montoprestacion_listar' %}"
+                       class="nav-link nav-dot ms-2 {% if 'montoprestacion' in pagina_actual %}active{% endif %}">
+                        <p>Monto de Prestaciones</p>
+                    </a>
+                </li>
                 {% if perms.auditlog.view_logentry %}
                     <li class="nav-item">
                         <a href="{% url 'audittrail:log_list' %}"
                            class="nav-link nav-dot ms-2 {% if 'auditoria/' in pagina_actual %}active{% endif %}">
                             <p>Auditoría</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user.is_superuser %}
+                    <li class="nav-item">
+                        <a href="{% url 'papelera_list' %}"
+                           class="nav-link nav-dot ms-2 {% if 'papelera/' in pagina_actual %}active{% endif %}">
+                            <p>Papelera</p>
                         </a>
                     </li>
                 {% endif %}
@@ -143,7 +184,7 @@
         {% endif %}
     {% endwith %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'cdi' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual %}menu-open{% endif %}">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
             <p>
@@ -290,23 +331,22 @@
                 </li>
             {% endif %}
 
-
-            <!-- CDI -->
-            {% if request.user|has_group:"CDI" %}
-                <li class="nav-item {% if 'cdi' in pagina_actual %}menu-open{% endif %}">
+            <!-- Centro de Infancia -->
+            {% if request.user|has_group:"Centro de Infancia Listar" %}
+                <li class="nav-item {% if 'centrodeinfancia' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
-                       class="nav-link nav-dot ms-2 {% if 'cdi' in pagina_actual %}active{% endif %}">
+                       class="nav-link nav-dot ms-2 {% if 'centrodeinfancia' in pagina_actual %}active{% endif %}">
                         <p>
-                            Centro Desarrollo Infantil
+                            Centro de Infancia
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="{% url 'cdi' %}"
-                               class="nav-link ms-4 {% if 'cdi/listar' in pagina_actual %}active{% endif %}">
+                            <a href="{% url 'centrodeinfancia' %}"
+                               class="nav-link ms-4 {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
                                 <i class="nav-icon bi bi-arrow-return-right"></i>
-                                <p>Ver Centro Desarrollo</p>
+                                <p>Ver Centros de Infancia</p>
                             </a>
                         </li>
                     </ul>

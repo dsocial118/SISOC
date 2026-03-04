@@ -11,14 +11,14 @@
 - `docs/instalacion.md`: pasos para poner el entorno local en marcha, variables de entorno y dependencias de Docker.
 - `docs/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
+- `docs/INFRA_README.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
 - `docs/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
 
 ### 3. Guías funcionales y de desarrollo
-- `docs/aplicaciones.md`: listado de apps de Django, rutas principales y responsabilidades generales.
-- `docs/implementaciones/filtros_avanzados.md`: motor compartido de filtros, favoritos y cómo integrarlos en un nuevo listado.
-- `docs/implementaciones/preferencias_columnas.md`: sistema de configuración de columnas, modal y helpers reutilizables.
-- `docs/implementaciones/exportar_listados.md`: mixin CSV y helper JS para exportar datos con filtros/columnas activos.
-- `docs/implementaciones/pwa_backend.md`: diseño e implementación actual de la API PWA (auth token, scope por comedor, endpoints y permisos).
+- `docs/implementaciones/csp.md`: configuración y uso de CSP (nonce en templates, modo report-only, checklist de validación).
+- `docs/implementaciones/sentry.md`: implementación de Sentry (activación por entorno, variables, logging y validación).
+- `docs/implementaciones/audittrail_mvp_fase1.md`: release notes y guía operativa de Fase 1 del MVP de auditoría (deploy/rollback, soporte, riesgos y métricas).
+- `docs/implementaciones/audittrail_fase2.md`: metadata persistida (`AuditEntryMeta`), contexto de auditoría para procesos y guía de deploy/rollback de Fase 2.
 - `docs/agentes.md`: guía rápida para asistentes automáticos y workflows de documentación.
 
 ### 4. Flujos y sincronizaciones

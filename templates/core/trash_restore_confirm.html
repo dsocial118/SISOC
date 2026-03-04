@@ -1,0 +1,103 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Confirmar Restauración{% endblock %}
+{% block titulo-pagina %}Confirmar restauración{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'inicio' %}">Inicio</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{{ back_url }}">Papelera</a>
+    </li>
+    <li class="breadcrumb-item active">Confirmar</li>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h3 class="card-title mb-0">Vista previa de restauración</h3>
+                    <span class="badge bg-info text-dark">ID {{ instance.pk }}</span>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        Se restaurará <strong>{{ instance }}</strong> y su cascada de registros relacionados.
+                    </p>
+                    <p class="text-muted mb-3">
+                        Revisá el impacto antes de confirmar. Esta acción volverá a habilitar los registros listados a continuación.
+                    </p>
+
+                    <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>Total afectados:</strong> {{ preview.total_afectados }}
+                        </div>
+                        <div class="small text-muted">Modelo: {{ model_identifier }}</div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm mb-3 text-white">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-semibold">Detalle de la instancia</span>
+                                <span class="small text-muted">{{ instance }}</span>
+                            </div>
+                            <div class="row g-2">
+                                {% for item in instance_details %}
+                                    <div class="col-6 col-md-4">
+                                        <div class="text-muted small">{{ item.label }}</div>
+                                        <div class="fw-semibold">{{ item.value|default:"-" }}</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Modelo</th>
+                                    <th>Cantidad</th>
+                                    <th>Ejemplos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in preview.desglose_por_modelo %}
+                                    <tr>
+                                        <td>{{ item.modelo }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ item.cantidad }}</span>
+                                        </td>
+                                        <td>
+                                            {% if item.ejemplos %}
+                                                {{ item.ejemplos|join:", " }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-center py-3">
+                                            <div class="fw-semibold">No hay elementos a restaurar.</div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form method="post"
+                          action="{{ restore_url }}"
+                          class="mt-3 d-flex flex-wrap gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="confirmed" value="1" />
+                        {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}" />{% endif %}
+                        <button type="submit" class="btn btn-success">Restaurar en cascada</button>
+                        <a href="{{ back_url }}" class="btn btn-outline-secondary">Volver al listado</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

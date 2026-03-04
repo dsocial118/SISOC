@@ -48,6 +48,6 @@
 
 - `GESTIONAR_API_CREAR_COMEDOR`: Base Endpoint for Comedores sync.
 - `GESTIONAR_API_KEY`: Auth Header `applicationAccessKey`.
-- `RENAPER_API_URL`: Base URL for Renaper.
+- `RENAPER_API_URL`: Base URL for Renaper (definida en `config/settings.py`, fija a PRD).
 - `RENAPER_API_USERNAME`: Login User.
 - `RENAPER_API_PASSWORD`: Login Pass.

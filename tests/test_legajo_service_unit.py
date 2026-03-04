@@ -224,6 +224,32 @@ def test_es_responsable_and_archivos_requeridos_fallbacks(mocker):
     assert out_minor["archivo3"] == "Foto DNI"
 
 
+def test_archivos_requeridos_doble_rol_devuelve_tres_labels_string():
+    leg_doble = SimpleNamespace(
+        pk=13,
+        rol="beneficiario_y_responsable",
+        ciudadano=SimpleNamespace(id=3, documento="3", fecha_nacimiento=None),
+    )
+    out = module.LegajoService.get_archivos_requeridos_por_legajo(leg_doble, {3})
+
+    assert out["archivo1"] == "Biopsia / Constancia medica"
+    assert isinstance(out["archivo2"], str)
+    assert out["archivo2"].startswith("DNI (foto)")
+    assert out["archivo3"] == "Certificacion de ANSES"
+
+
+def test_archivos_requeridos_respeta_flag_es_doble_rol():
+    leg = SimpleNamespace(
+        pk=14,
+        rol="responsable",
+        es_doble_rol=True,
+        ciudadano=SimpleNamespace(id=4, documento="4", fecha_nacimiento=None),
+    )
+    out = module.LegajoService.get_archivos_requeridos_por_legajo(leg, {4})
+    assert out["archivo1"] == "Biopsia / Constancia medica"
+    assert out["archivo3"] == "Certificacion de ANSES"
+
+
 def test_actualizar_subsanacion_warning_and_estado_cache_missing(mocker):
     class Missing(Exception):
         pass

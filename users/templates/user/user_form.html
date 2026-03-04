@@ -103,7 +103,7 @@
     </div>
 {% endblock content %}
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
   (() => {
     const repCheckbox = document.getElementById('id_es_representante_pwa');
     const permisosCard = document.getElementById('backoffice-permisos-card');

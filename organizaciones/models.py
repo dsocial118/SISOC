@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
 from core.models import Municipio, Provincia, Localidad
+from core.soft_delete import SoftDeleteModelMixin
 
 
 class TipoOrganizacion(models.Model):
@@ -60,7 +61,7 @@ class RolFirmante(models.Model):
         verbose_name_plural = "Roles de Firmante"
 
 
-class Firmante(models.Model):
+class Firmante(SoftDeleteModelMixin, models.Model):
     organizacion = models.ForeignKey(
         "Organizacion", on_delete=models.CASCADE, related_name="firmantes"
     )
@@ -83,7 +84,7 @@ class Firmante(models.Model):
         return f"{self.nombre} ({rol})"
 
 
-class Aval(models.Model):
+class Aval(SoftDeleteModelMixin, models.Model):
     organizacion = models.ForeignKey(
         "Organizacion",
         on_delete=models.CASCADE,
@@ -107,7 +108,7 @@ class Aval(models.Model):
         verbose_name_plural = "Avales"
 
 
-class Organizacion(models.Model):
+class Organizacion(SoftDeleteModelMixin, models.Model):
     nombre = models.CharField(max_length=255)
     cuit = models.BigIntegerField(
         blank=True,

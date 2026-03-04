@@ -1,23 +1,20 @@
 from auditlog.registry import auditlog
 
+from audittrail.constants import get_tracked_model_definitions
+
 
 def register_tracked_models():
     """
     Registra en django-auditlog los modelos de negocio críticos que se deben auditar.
     """
-    from ciudadanos.models import Ciudadano
-    from comedores.models import Comedor
-    from organizaciones.models import Organizacion
-    from relevamientos.models import Relevamiento
+    for definition in get_tracked_model_definitions():
+        model = definition.get_model()
+        registry = getattr(auditlog, "_registry", {})
+        try:
+            already_registered = model in registry
+        except TypeError:
+            already_registered = False
 
-    tracked_models = (
-        (Comedor, ["fecha_creacion", "fecha_actualizacion"]),
-        (Relevamiento, ["fecha_creacion"]),
-        (Ciudadano, ["creado", "modificado"]),
-        (Organizacion, ["fecha_creacion"]),
-    )
-
-    for model, excluded_fields in tracked_models:
-        if getattr(auditlog, "_registry", {}).get(model):
+        if already_registered:
             continue
-        auditlog.register(model, exclude_fields=excluded_fields)
+        auditlog.register(model, exclude_fields=definition.get_excluded_fields())

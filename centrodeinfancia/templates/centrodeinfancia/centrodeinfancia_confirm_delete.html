@@ -1,0 +1,8 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Eliminar Centro de Infancia{% endblock %}
+{% block titulo-pagina %}Eliminar Centro de Infancia{% endblock %}
+
+{% block content %}
+    {% include 'components/delete_confirm.html' with object_name=centro.nombre cancel_url='centrodeinfancia' confirm_text='Dar de baja' %}
+{% endblock %}

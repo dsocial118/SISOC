@@ -20,7 +20,7 @@ class RendicionCuentaMensualForm(forms.ModelForm):
             "anio": "Año",
             "documento_adjunto": "Documento Adjunto",
             "observaciones": "Observaciones",
-            "arvhios_adjuntos": "Archivos Adjuntos",
+            "archivos_adjuntos": "Archivos Adjuntos",
         }
 
 

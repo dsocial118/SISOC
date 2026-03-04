@@ -1,8 +1,9 @@
 from django.db import models
 from comedores.models import Comedor
+from core.soft_delete import SoftDeleteModelMixin
 
 
-class ExpedientePago(models.Model):
+class ExpedientePago(SoftDeleteModelMixin, models.Model):
     expediente_convenio = models.CharField(
         max_length=255,
         verbose_name="Expediente del Convenio",

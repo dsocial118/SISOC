@@ -1,8 +1,1 @@
-{% extends "includes/main.html" %}
-{% block title %}Confirmar Eliminación{% endblock %}
-{% block breadcrumb %}
-    {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
-{% endblock %}
-{% block content %}
-    {% include 'components/delete_confirm.html' with object_name=object_title message=delete_message cancel_url=cancel_url %}
-{% endblock %}
+{% extends "organizaciones_confirm_delete_shared.html" %}

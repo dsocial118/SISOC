@@ -313,7 +313,7 @@
                                     <div {% if not leg.es_responsable and leg.responsable_id %}style="padding-left: 20px;"{% endif %}>
                                         <div class="fw-semibold">
                                             {% if not leg.es_responsable and leg.responsable_id %}<span class="text-muted">└─</span>{% endif %}
-                                            {% if leg.rol == 'beneficiario_y_responsable' %}
+                                            {% if leg.es_doble_rol %}
                                                 👨👩👧👦 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
                                             {% elif leg.rol == 'responsable' %}
                                                 👨👩 {{ leg.ciudadano.nombre }} {{ leg.ciudadano.apellido }}
@@ -326,7 +326,7 @@
                                             {% endif %}
                                         </div>
                                         <small class="text-muted">DNI: {{ leg.ciudadano.documento }}</small>
-                                        {% if leg.rol == 'beneficiario_y_responsable' %}
+                                        {% if leg.es_doble_rol %}
                                             <small class="badge bg-info mt-1">Beneficiario y Responsable</small>
                                             {% if leg.hijos_a_cargo %}
 
@@ -335,6 +335,14 @@
                                                     {% if leg.hijos_a_cargo|length > 1 %}s{% endif %}
                                                 a cargo</small>
 
+                                            {% endif %}
+                                            {% if leg.ciudadano.fecha_nacimiento|es_menor_18 %}
+                                                <br />
+                                                <small class="badge bg-warning text-dark mt-1 alerta-intermitente">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                            {% endif %}
+                                            {% if leg.ciudadano.fecha_nacimiento|es_mayor_65_menor_66 %}
+                                                <br />
+                                                <small class="badge bg-warning text-dark mt-1 alerta-intermitente">⚠️ Adulto mayor de 65 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
                                             {% endif %}
                                         {% elif leg.rol == 'responsable' %}
                                             <small class="badge bg-warning mt-1">Solo Responsable</small>
@@ -346,7 +354,15 @@
                                             {% endif %}
                                             {% if leg.ciudadano.fecha_nacimiento|es_menor_18 %}
                                                 <br />
-                                                <small class="badge bg-warning text-dark mt-1">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                                <small class="badge bg-warning text-dark mt-1 alerta-intermitente">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                            {% endif %}
+                                            {% if not leg.ciudadano.fecha_nacimiento|es_menor_18 and not leg.hijos_a_cargo %}
+                                                <br />
+                                                <small class="badge bg-warning text-dark mt-1 alerta-intermitente">⚠️ Responsable sin menores a cargo</small>
+                                            {% endif %}
+                                            {% if leg.ciudadano.fecha_nacimiento|es_mayor_65_menor_66 %}
+                                                <br />
+                                                <small class="badge bg-warning text-dark mt-1 alerta-intermitente">⚠️ Adulto mayor de 65 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
                                             {% endif %}
                                         {% else %}
                                             {% if leg.hijos_a_cargo %}
@@ -357,10 +373,18 @@
                                                 a cargo</small>
                                                 {% if leg.ciudadano.fecha_nacimiento|es_menor_18 %}
                                                     <br />
-                                                    <small class="badge bg-warning text-dark mt-1">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                                    <small class="badge bg-warning text-dark mt-1 alerta-intermitente">⚠️ Responsable menor de 18 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                                {% endif %}
+                                                {% if leg.ciudadano.fecha_nacimiento|es_mayor_65_menor_66 %}
+                                                    <br />
+                                                    <small class="badge bg-warning text-dark mt-1 alerta-intermitente">⚠️ Adulto mayor de 65 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
                                                 {% endif %}
                                             {% else %}
                                                 <small class="badge bg-success mt-1">Solo Beneficiario</small>
+                                                {% if leg.ciudadano.fecha_nacimiento|es_mayor_65_menor_66 %}
+                                                    <br />
+                                                    <small class="badge bg-warning text-dark mt-1 alerta-intermitente">⚠️ Adulto mayor de 65 años ({{ leg.ciudadano.fecha_nacimiento|edad }} años)</small>
+                                                {% endif %}
                                             {% endif %}
                                         {% endif %}
                                     </div>
@@ -444,6 +468,7 @@
                                                 <!-- Col 2: Observaciones -->
                                                 <div class="col-lg-4 col-md-7">
                                                     {% if is_prov %}
+                                                        {% comment %}
                                                         <div class="small muted">Observación (subsanación):</div>
                                                         <div class="mt-1">
                                                             {% if leg.subsanacion_motivo %}
@@ -456,6 +481,7 @@
                                                                 <span class="muted">-</span>
                                                             {% endif %}
                                                         </div>
+                                                        {% endcomment %}
                                                         {% if leg.subsanacion_renaper_comentario %}
                                                             <div class="small muted mt-2">Respuesta provincia:</div>
                                                             <div class="mt-1">
@@ -496,7 +522,9 @@
                                                     {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
  
                                                     <!-- Comentarios Técnicos -->
-                                                    {% include 'components/legajo_comentarios.html' with legajo=leg is_tec=is_tec is_coord=is_coord %}
+                                                    {% if is_tec or is_coord or is_prov and leg.revision_tecnico == 'SUBSANAR' %}
+                                                        {% include 'components/legajo_comentarios.html' with legajo=leg is_tec=is_tec is_coord=is_coord %}
+                                                    {% endif %}
                                                     <!-- Botón confirmar subsanación individual (solo para subsanación técnica, no Renaper) -->
                                                     {% if is_prov and leg.revision_tecnico == 'SUBSANAR' and leg.estado_validacion_renaper != 3 and leg.archivo2 and leg.archivo3 %}
                                                         <div class="mt-3">
@@ -562,48 +590,32 @@
                                                          role="toolbar"
                                                          aria-label="Acciones del legajo">
                                                         {% with estado=leg.revision_tecnico %}
-                                                            {% if estado == 'SUBSANADO' and leg.estado_validacion_renaper != 1 %}
-                                                                <!-- Subsanado pero sin Validacion Renaper aprobada -->
-                                                                <div class="btn-group btn-group-sm" role="group">
-                                                                    <button type="button"
-                                                                            class="btn btn-info btn-validar-renaper"
-                                                                            data-legajo-id="{{ leg.pk }}"
-                                                                            data-bs-toggle="modal"
-                                                                            data-bs-target="#modalValidarRenaper">
-                                                                        Validar Renaper
-                                                                    </button>
-                                                                </div>
-                                                            {% elif leg.estado_validacion_renaper == 0 %}
-                                                                <!-- Sin validar Renaper -->
-                                                                <div class="btn-group btn-group-sm" role="group">
-                                                                    <button type="button"
-                                                                            class="btn btn-info btn-validar-renaper"
-                                                                            data-legajo-id="{{ leg.pk }}"
-                                                                            data-bs-toggle="modal"
-                                                                            data-bs-target="#modalValidarRenaper">
-                                                                        Validar Renaper
-                                                                    </button>
-                                                                </div>
-                                                            {% elif leg.estado_validacion_renaper == 1 %}
-                                                                <!-- Renaper aprobado: mostrar botones de revisiÃ³n -->
-                                                                <div class="btn-group btn-group-sm me-2" role="group">
-                                                                    <button type="button"
-                                                                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                                            data-legajo-id="{{ leg.pk }}"
-                                                                            data-accion="APROBAR">Aprobar</button>
-                                                                    <button type="button"
-                                                                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                                            data-legajo-id="{{ leg.pk }}"
-                                                                            data-bs-toggle="modal"
-                                                                            data-bs-target="#modalSubsanar">
-                                                                        Subsanar
-                                                                    </button>
-                                                                    <button type="button"
-                                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                                            data-legajo-id="{{ leg.pk }}"
-                                                                            data-accion="RECHAZAR">Rechazar</button>
-                                                                </div>
-                                                            {% endif %}
+                                                            <div class="btn-group btn-group-sm me-2" role="group">
+                                                                <button type="button"
+                                                                        class="btn btn-info btn-validar-renaper"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalValidarRenaper">
+                                                                    Validar Renaper
+                                                                </button>
+                                                            </div>
+                                                            <div class="btn-group btn-group-sm" role="group">
+                                                                <button type="button"
+                                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-accion="APROBAR">Aprobar</button>
+                                                                <button type="button"
+                                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalSubsanar">
+                                                                    Subsanar
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-accion="RECHAZAR">Rechazar</button>
+                                                            </div>
                                                         {% endwith %}
                                                     </div>
                                                 </div>
@@ -668,6 +680,7 @@
                                             </div>
                                         {% endif %}
                                     {% else %}
+                                        {% comment %}
                                         <div class="small muted">Comentario enviado a provincia:</div>
                                         <div class="mt-1">
                                             {% if leg.subsanacion_motivo %}
@@ -680,6 +693,7 @@
                                                 <span class="muted">-</span>
                                             {% endif %}
                                         </div>
+                                        {% endcomment %}
                                         {% if leg.subsanacion_renaper_comentario %}
                                             <div class="small muted mt-2">Respuesta de provincia:</div>
                                             <div class="mt-1">
@@ -760,47 +774,33 @@
                                          role="toolbar"
                                          aria-label="Acciones del legajo">
                                         {% with estado=leg.revision_tecnico %}
-                                            {% if estado == 'SUBSANADO' and leg.estado_validacion_renaper != 1 %}
-                                                <!-- Subsanado pero sin Validacion Renaper aprobada -->
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button"
-                                                            class="btn btn-info btn-validar-renaper"
-                                                            data-legajo-id="{{ leg.pk }}"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalValidarRenaper">
-                                                        Validar Renaper
-                                                    </button>
-                                                </div>
-                                            {% elif leg.estado_validacion_renaper == 0 %}
-                                                <!-- Sin validar Renaper -->
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button"
-                                                            class="btn btn-info btn-validar-renaper"
-                                                            data-legajo-id="{{ leg.pk }}"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalValidarRenaper">
-                                                        Validar Renaper
-                                                    </button>
-                                                </div>
-                                            {% elif leg.estado_validacion_renaper == 1 %}
-                                                <!-- Renaper aprobado: mostrar botones de revisiÃ³n -->
-                                                <div class="btn-group btn-group-sm me-2" role="group">
-                                                    <button type="button"
-                                                            class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
-                                                            data-legajo-id="{{ leg.pk }}"
-                                                            data-accion="APROBAR">âœ… Aprobar</button>
-                                                    <button type="button"
-                                                            class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
-                                                            data-legajo-id="{{ leg.pk }}"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalSubsanar">ðŸ“ Subsanar</button>
-                                                    <button type="button"
-                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
-                                                            data-legajo-id="{{ leg.pk }}"
-                                                            data-accion="RECHAZAR">âŒ Rechazar</button>
-                                                </div>
-                                            {% endif %}
-                                        {% endwith %}
+                                                            <div class="btn-group btn-group-sm me-2" role="group">
+                                                                <button type="button"
+                                                                        class="btn btn-info btn-validar-renaper"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalValidarRenaper">
+                                                                    Validar Renaper
+                                                                </button>
+                                                            </div>
+                                                            <div class="btn-group btn-group-sm" role="group">
+                                                                <button type="button"
+                                                                        class="btn {% if estado == 'APROBADO' %}btn-success active{% else %}btn-outline-success{% endif %} btn-revision"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-accion="APROBAR">Aprobar</button>
+                                                                <button type="button"
+                                                                        class="btn {% if estado == 'SUBSANAR' %}btn-warning active{% else %}btn-outline-warning{% endif %} btn-subsanar"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#modalSubsanar">
+                                                                    Subsanar
+                                                                </button>
+                                                                <button type="button"
+                                                                        class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                                        data-legajo-id="{{ leg.pk }}"
+                                                                        data-accion="RECHAZAR">Rechazar</button>
+                                                            </div>
+                                                        {% endwith %}
                                     </div>
                                 </div>
                             {% endif %}
@@ -999,36 +999,32 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Teléfono *</label>
+                                                    <label class="form-label">Teléfono</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="telefono"
-                                                           value="{{ registro.datos_raw.telefono|default:'' }}"
-                                                           required />
+                                                           value="{{ registro.datos_raw.telefono|default:'' }}" />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Email *</label>
+                                                    <label class="form-label">Email</label>
                                                     <input type="email"
                                                            class="form-control"
                                                            name="email"
-                                                           value="{{ registro.datos_raw.email|default:'' }}"
-                                                           required />
+                                                           value="{{ registro.datos_raw.email|default:'' }}" />
                                                 </div>
                                                 <div class="col-md-3">
-                                                    <label class="form-label">Calle *</label>
+                                                    <label class="form-label">Calle</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="calle"
-                                                           value="{{ registro.datos_raw.calle|default:'' }}"
-                                                           required />
+                                                           value="{{ registro.datos_raw.calle|default:'' }}" />
                                                 </div>
                                                 <div class="col-md-3">
-                                                    <label class="form-label">Altura *</label>
+                                                    <label class="form-label">Altura</label>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="altura"
-                                                           value="{{ registro.datos_raw.altura|default:'' }}"
-                                                           required />
+                                                           value="{{ registro.datos_raw.altura|default:'' }}" />
                                                 </div>
                                             </div>
 
@@ -1164,8 +1160,18 @@
             <div class="modal-body">
                 <input type="hidden" name="accion" value="SUBSANAR" />
                 <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
+                <div class="mb-3">
+                    <label for="subsanar-tipo" class="form-label">Tipo de subsanación *</label>
+                    <select id="subsanar-tipo" name="tipo_subsanacion" class="form-select" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="DOCUMENTACION">Documentación</option>
+                        <option value="DATOS_PERSONALES">Datos personales</option>
+                        <option value="RENAPER">RENAPER</option>
+                        <option value="OTROS">Otros</option>
+                    </select>
+                </div>
                 <div class="mb-2">
-                    <label for="subsanar-motivo" class="form-label">Indicar el motivo</label>
+                    <label for="subsanar-motivo" class="form-label">Indicar el motivo *</label>
                     <textarea id="subsanar-motivo"
                               name="motivo"
                               class="form-control"
@@ -1589,44 +1595,27 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label for="editar-telefono" class="form-label">Teléfono *</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editar-telefono"
-                                   name="telefono"
-                                   required />
+                            <label for="editar-telefono" class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" id="editar-telefono" name="telefono" />
                         </div>
                         <div class="col-md-6">
-                            <label for="editar-email" class="form-label">Email *</label>
-                            <input type="email"
-                                   class="form-control"
-                                   id="editar-email"
-                                   name="email"
-                                   required />
+                            <label for="editar-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editar-email" name="email" />
                         </div>
                         <div class="col-md-4">
-                            <label for="editar-calle" class="form-label">Calle *</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editar-calle"
-                                   name="calle"
-                                   required />
+                            <label for="editar-calle" class="form-label">Calle</label>
+                            <input type="text" class="form-control" id="editar-calle" name="calle" />
                         </div>
                         <div class="col-md-4">
-                            <label for="editar-altura" class="form-label">Altura *</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="editar-altura"
-                                   name="altura"
-                                   required />
+                            <label for="editar-altura" class="form-label">Altura</label>
+                            <input type="text" class="form-control" id="editar-altura" name="altura" />
                         </div>
                         <div class="col-md-4">
-                            <label for="editar-codigo-postal" class="form-label">Código Postal *</label>
+                            <label for="editar-codigo-postal" class="form-label">Código Postal</label>
                             <input type="text"
                                    class="form-control"
                                    id="editar-codigo-postal"
-                                   name="codigo_postal"
-                                   required />
+                                   name="codigo_postal" />
                         </div>
                         <div class="col-md-4">
                             <label for="editar-municipio" class="form-label">Municipio *</label>
@@ -1738,8 +1727,9 @@
                             <div class="col-12">
                                 <label class="form-label">Seleccionar archivo a actualizar</label>
                                 <select name="campo" id="campo-archivo" class="form-select" required>
-                                    <option value="archivo2" id="opt-archivo2">Biopsia / Constancia médica</option>
-                                    <option value="archivo3" id="opt-archivo3">Documento</option>
+                                    <option value="archivo1" id="opt-archivo1" style="display:none;">Biopsia / Constancia médica</option>
+                                    <option value="archivo2" id="opt-archivo2">Documento</option>
+                                    <option value="archivo3" id="opt-archivo3">Certificación</option>
                                 </select>
                             </div>
                             <div class="col-12">
@@ -1801,3 +1791,4 @@
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
 {% endblock %}
+

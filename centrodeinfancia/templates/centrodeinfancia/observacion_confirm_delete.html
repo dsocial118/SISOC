@@ -1,0 +1,7 @@
+{% extends "includes/main.html" %}
+
+{% block title %}Observación - {{ observacion.centro.nombre }}{% endblock %}
+
+{% block content %}
+    {% include 'components/delete_confirm.html' with object_name=observacion cancel_url='centrodeinfancia_observacion_detalle' cancel_url_with_id=True confirm_text='Dar de baja' %}
+{% endblock %}

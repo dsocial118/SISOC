@@ -410,7 +410,7 @@
                             <div class="my-3">
                                 <button class="btn btn-primary" type="submit">Confirmar</button>
                                 <a class='btn btn-secondary print mx-3 d-none d-sm-inline'>Imprimir</a>
-                                <a href='#' onclick='window.history.back();' class='btn btn-secondary'>Cancelar</a>
+                                <a href='#' data-history-back="true" class='btn btn-secondary'>Cancelar</a>
                             </div>
                         </form>
                     </div>
@@ -421,7 +421,7 @@
 {% endblock %}
 ;
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         const responsable = {
             esReferente: "{{ relevamiento.responsable_es_referente }}",
             nombre: "{{ responsable.nombre | default_if_none:'' }}",

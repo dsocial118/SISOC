@@ -113,7 +113,9 @@ class Command(BaseCommand):
         proceso = self._resolve_estado_proceso(actividad, options["estado_proceso"])
         detalle_label = (options.get("estado_detalle") or "").strip()
         detalle = (
-            self._resolve_estado_detalle(proceso, detalle_label) if detalle_label else None
+            self._resolve_estado_detalle(proceso, detalle_label)
+            if detalle_label
+            else None
         )
 
         stats = {
@@ -243,7 +245,9 @@ class Command(BaseCommand):
                 programa_needs_update,
                 validacion_needs_update,
                 estado_changed,
-                applied=programa_needs_update or validacion_needs_update or estado_changed,
+                applied=programa_needs_update
+                or validacion_needs_update
+                or estado_changed,
             )
             self.stdout.write(self.style.SUCCESS(description))
 
@@ -314,9 +318,7 @@ class Command(BaseCommand):
         try:
             return Programas.objects.get(pk=programa_id)
         except Programas.DoesNotExist:
-            raise CommandError(
-                f"No existe un programa con id {programa_id}."
-            ) from None
+            raise CommandError(f"No existe un programa con id {programa_id}.") from None
 
     def _resolve_estado_actividad(self, label: str) -> EstadoActividad:
         queryset = EstadoActividad.objects.filter(estado__iexact=label)
