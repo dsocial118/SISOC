@@ -76,9 +76,7 @@ def test_run_django_commands_omite_makemigrations_en_prd_por_defecto(
     mock_run_server.assert_called_once_with()
 
 
-def test_run_django_commands_ignora_flag_legacy_run_makemigrations(
-    mocker, monkeypatch
-):
+def test_run_django_commands_ignora_flag_legacy_run_makemigrations(mocker, monkeypatch):
     module = _load_entrypoint_module()
     mock_run_command = mocker.patch.object(module, "run_command")
     mocker.patch.object(module, "run_server")

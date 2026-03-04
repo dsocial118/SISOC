@@ -14,8 +14,10 @@ def _in_group(user, name: str) -> bool:
 
 def is_admin(user) -> bool:
     """Verifica si el usuario es administrador."""
-    return user.is_superuser or _in_group(user, UserGroups.ADMIN) or _in_group(
-        user, UserGroups.ADMINISTRADOR
+    return (
+        user.is_superuser
+        or _in_group(user, UserGroups.ADMIN)
+        or _in_group(user, UserGroups.ADMINISTRADOR)
     )
 
 

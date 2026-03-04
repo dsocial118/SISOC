@@ -260,8 +260,6 @@ class ValidacionRenaperView(View):
         # Solo hacer la consulta a Renaper (sin guardar estado)
         return self._consultar_renaper(request, pk, legajo_id)
 
-
-
     def _consultar_renaper(self, request, pk, legajo_id):
         try:
             user = request.user
