@@ -9,10 +9,10 @@ urlpatterns = [
         "acompanamiento/<int:comedor_id>/detalle/",
         permissions_any_required(
             [
-                "Acompanamiento Detalle",
-                "Area Legales",
-                "Tecnico Comedor",
-                "Coordinador Equipo Tecnico",
+                "acompanamientos.view_informacionrelevante",
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "expedientespagos.view_expedientepago",
             ]
         )(views.AcompanamientoDetailView.as_view()),
         name="detalle_acompanamiento",
@@ -21,34 +21,40 @@ urlpatterns = [
         "acompanamiento/",
         permissions_any_required(
             [
-                "Acompanamiento Listar",
-                "Area Legales",
-                "Tecnico Comedor",
-                "Coordinador Equipo Tecnico",
+                "acompanamientos.view_informacionrelevante",
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "expedientespagos.view_expedientepago",
             ]
         )(views.ComedoresAcompanamientoListView.as_view()),
         name="lista_comedores_acompanamiento",
     ),
     path(
         "acompanamiento/exportar/",
-        permissions_any_required(["Exportar a csv"])(AcompanamientoExportView.as_view()),
+        permissions_any_required(["auth.role_exportar_a_csv"])(
+            AcompanamientoExportView.as_view()
+        ),
         name="lista_comedores_acompanamiento_exportar",
     ),
     path(
         "comedor/<int:comedor_id>/restaurar-hito/",
-        permissions_any_required(["Tecnico Comedor", "Coordinador Equipo Tecnico"])(
-            views.restaurar_hito
-        ),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(views.restaurar_hito),
         name="restaurar_hito",
     ),
     path(
         "acompanamiento/ajax/",
         permissions_any_required(
             [
-                "Acompanamiento Listar",
-                "Area Legales",
-                "Tecnico Comedor",
-                "Coordinador Equipo Tecnico",
+                "acompanamientos.view_informacionrelevante",
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "expedientespagos.view_expedientepago",
             ]
         )(views.comedores_acompanamiento_ajax),
         name="comedores_acompanamiento_ajax",

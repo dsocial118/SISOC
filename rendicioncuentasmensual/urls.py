@@ -12,27 +12,57 @@ from rendicioncuentasmensual.views import (
 urlpatterns = [
     path(
         "rendicioncuentasmensual/<int:comedor_id>/",
-        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualListView.as_view()),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(RendicionCuentaMensualListView.as_view()),
         name="rendicioncuentasmensual_list",
     ),
     path(
         "rendicioncuentasmensual/detalle/<int:pk>/",
-        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualDetailView.as_view()),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(RendicionCuentaMensualDetailView.as_view()),
         name="rendicioncuentasmensual_detail",
     ),
     path(
         "rendicioncuentasmensual/eliminar/<int:pk>/",
-        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualDeleteView.as_view()),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(RendicionCuentaMensualDeleteView.as_view()),
         name="rendicioncuentasmensual_delete",
     ),
     path(
         "rendicioncuentasmensual/nuevo/<int:comedor_id>/",
-        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualCreateView.as_view()),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(RendicionCuentaMensualCreateView.as_view()),
         name="rendicioncuentasmensual_create",
     ),
     path(
         "rendicioncuentasmensual/editar/<int:pk>/",
-        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualUpdateView.as_view()),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(RendicionCuentaMensualUpdateView.as_view()),
         name="rendicioncuentasmensual_update",
     ),
     path(

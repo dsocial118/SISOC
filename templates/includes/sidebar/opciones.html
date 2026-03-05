@@ -125,7 +125,7 @@
         </li>
     {% endif %}
     {% tableros_para_sidebar as tableros %}
-    {% with has_dashboard_cf=request.user|has_perm_code:"Dashboard Centrodefamilia" %}
+    {% with has_dashboard_cf=request.user|has_perm_code:"dashboard.view_dashboard" %}
         {% if has_dashboard_cf or tableros %}
             <!-- Tableros -->
             <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
@@ -276,7 +276,7 @@
                         {% endif %}
                         {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
-                        {% if request.user|has_perm_code:"Area Legales" or request.user|has_perm_code:"Area Contable" or request.user|has_perm_code:"Tecnico Comedor" or request.user|has_perm_code:"Coordinador Equipo Tecnico" %}
+                        {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                             <li class="nav-item">
                                 <a href="{% url 'rendicion_cuentas_final_listar' %}" class="nav-link ms-4 {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
@@ -410,7 +410,7 @@
                                 <p>Expedientes</p>
                             </a>
                         </li>
-                        {% if request.user|has_perm_code:"CoordinadorCeliaquia" %}
+                        {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
                             <li class="nav-item">
                                 <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
                                     <i class="nav-icon fas fa-chart-bar"></i>
@@ -418,7 +418,7 @@
                                 </a>
                             </li>
                         {% endif %}
-                        {% if request.user|has_perm_code:"CoordinadorCeliaquia" or request.user|has_perm_code:"TecnicoCeliaquia" %}
+                        {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_expediente" %}
                             <li class="nav-item">
                                 <a href="{% url 'reporter_provincias' %}" class="nav-link ms-2">
                                     <i class="nav-icon fas fa-chart-pie"></i>

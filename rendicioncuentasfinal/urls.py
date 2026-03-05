@@ -16,9 +16,13 @@ from rendicioncuentasfinal.views import (
 urlpatterns = [
     path(
         "comedores/<int:pk>/rendicion_cuentas_final/",
-        permissions_any_required(["Tecnico Comedor", "Coordinador Equipo Tecnico"])(
-            RendicionCuentasFinalDetailView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(RendicionCuentasFinalDetailView.as_view()),
         name="rendicion_cuentas_final",
     ),
     path(
@@ -55,10 +59,10 @@ urlpatterns = [
         "rendicion_cuentas_final/listar/",
         permissions_any_required(
             [
-                "Area Contable",
-                "Area Legales",
-                "Tecnico Comedor",
-                "Coordinador Equipo Tecnico",
+                "comedores.view_comedor",
+                "expedientespagos.view_expedientepago",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
             ]
         )(DocumentosRendicionCuentasFinalListView.as_view()),
         name="rendicion_cuentas_final_listar",

@@ -16,9 +16,9 @@
         {% elif doc.estado == "Pendiente" %}
             <span class="badge bg-secondary">Pendiente</span>
         {% elif doc.estado == "A Validar Abogado" %}
-            {% if request.user|has_perm_code:"Tecnico Comedor" %}
+            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                 <span class="badge bg-primary">A Validar Abogado</span>
-            {% elif request.user|has_perm_code:"Abogado Dupla" and doc.archivo_id %}
+            {% elif request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and doc.archivo_id %}
                 <select class="form-control form-control-sm mb-2 border border-2 border-primary"
                         data-call-change="actualizarEstado"
                         data-call-pass-this="true"
@@ -36,7 +36,7 @@
                 {{ doc.estado }}
             {% endif %}
         {% else %}
-            {% if request.user|has_perm_code:"Tecnico Comedor" and doc.archivo_id %}
+            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and doc.archivo_id %}
                 <select class="form-control form-control-sm mb-2{% if doc.estado == 'Rectificar' %} border border-danger border-2{% endif %}"
                         data-call-change="actualizarEstado"
                         data-call-pass-this="true"
@@ -67,7 +67,7 @@
             <a href="{{ doc.archivo_url }}"
                target="_blank"
                class="btn btn-primary btn-sm">Ver Archivo</a>
-            {% if request.user|has_perm_code:"Tecnico Comedor" and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
+            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
                 {% if doc.estado_valor != "Aceptado" and doc.estado_valor != "A Validar Abogado" %}
                     <button class="btn btn-sm btn-danger px-3 ms-2"
                             data-call-click="confirmarEliminar"
@@ -77,7 +77,7 @@
                 {% endif %}
             {% endif %}
         {% else %}
-            {% if request.user|has_perm_code:"Tecnico Comedor" and not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
+            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
                 <input type="file"
                        id="file-{{ doc.documentacion_id }}"
                        class="d-none"
@@ -100,7 +100,7 @@
     </td>
     <td id="gde-{{ doc.id }}">
         {% if doc.estado == "Aceptado" %}
-            {% if request.user.is_superuser or request.user|has_perm_code:"Tecnico Comedor" %}
+            {% if request.user.is_superuser or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                 <!-- Modo vista (por defecto) -->
                 <div id="gde-display-{{ doc.id }}"
                      class="gde-display"

@@ -46,11 +46,9 @@ urlpatterns = [
         "comedores/listar",
         permissions_any_required(
             [
-                "Comedores Listar",
-                "Tecnico Comedor",
-                "Abogado Dupla",
-                "Coordinador Equipo Tecnico",
-                "Coordinador general",
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
             ]
         )(ComedorListView.as_view()),
         name="comedores",
@@ -58,98 +56,103 @@ urlpatterns = [
     path(
         "comedores/exportar",
         permissions_any_required(
-            [
-                "Exportar a csv",
-                "Administrador",
-            ]
+            ["auth.role_exportar_a_csv", "auth.role_administrador"]
         )(ComedorExportView.as_view()),
         name="comedor_export",
     ),
     path(
         "comedores/crear",
-        permissions_any_required(["Comedores Crear"])(ComedorCreateView.as_view()),
+        permissions_any_required(["comedores.add_comedor"])(
+            ComedorCreateView.as_view()
+        ),
         name="comedor_crear",
     ),
     path(
         "comedores/<int:pk>",
         permissions_any_required(
             [
-                "Comedores Ver",
-                "Tecnico Comedor",
-                "Abogado Dupla",
-                "Coordinador Equipo Tecnico",
-                "Coordinador general",
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
             ]
         )(ComedorDetailView.as_view()),
         name="comedor_detalle",
     ),
     path(
         "comedores/<int:pk>/editar",
-        permissions_any_required(["Comedores Editar"])(ComedorUpdateView.as_view()),
+        permissions_any_required(["comedores.change_comedor"])(
+            ComedorUpdateView.as_view()
+        ),
         name="comedor_editar",
     ),
     path(
         "comedores/<int:pk>/eliminar",
-        permissions_any_required(["Comedores Eliminar"])(ComedorDeleteView.as_view()),
+        permissions_any_required(["comedores.delete_comedor"])(
+            ComedorDeleteView.as_view()
+        ),
         name="comedor_eliminar",
     ),
     path(
         "comedores/<comedor_pk>/observacion/crear",
-        permissions_any_required(["Comedores Observaciones Crear"])(
+        permissions_any_required(["comedores.add_observacion"])(
             ObservacionCreateView.as_view()
         ),
         name="observacion_crear",
     ),
     path(
         "comedores/observacion/<int:pk>",
-        permissions_any_required(["Comedores Observaciones Detalle"])(
+        permissions_any_required(["comedores.view_observacion"])(
             ObservacionDetailView.as_view()
         ),
         name="observacion_detalle",
     ),
     path(
         "comedores/observacion/<int:pk>/editar",
-        permissions_any_required(["Comedores Observaciones Editar"])(
+        permissions_any_required(["comedores.change_observacion"])(
             ObservacionUpdateView.as_view()
         ),
         name="observacion_editar",
     ),
     path(
         "comedores/observacion/<int:pk>/eliminar",
-        permissions_any_required(["Comedores Observaciones Eliminar"])(
+        permissions_any_required(["comedores.delete_observacion"])(
             ObservacionDeleteView.as_view()
         ),
         name="observacion_eliminar",
     ),
     path(
         "comedores/intervencion/ver/<int:pk>",
-        permissions_any_required(["Comedores Intervencion Ver"])(
+        permissions_any_required(["intervenciones.view_intervencion"])(
             IntervencionDetailView.as_view()
         ),
         name="comedor_intervencion_ver",
     ),
     path(
         "comedores/intervencion/crear/<int:pk>",
-        permissions_any_required(["Comedores Intervencion Crear"])(
+        permissions_any_required(["intervenciones.add_intervencion"])(
             IntervencionCreateView.as_view()
         ),
         name="comedor_intervencion_crear",
     ),
     path(
         "comedores/intervencion/editar/<int:pk>/<int:pk2>",
-        permissions_any_required(["Comedores Intervencion Editar"])(
+        permissions_any_required(["intervenciones.change_intervencion"])(
             IntervencionUpdateView.as_view()
         ),
         name="comedores_intervencion_editar",
     ),
     path(
         "comedores/intervencion/borrar/<int:comedor_id>/<int:intervencion_id>/",
-        permissions_any_required(["Comedores Nomina Borrar"])(IntervencionDeleteView.as_view()),
+        permissions_any_required(["comedores.delete_nomina"])(
+            IntervencionDeleteView.as_view()
+        ),
         name="comedor_intervencion_borrar",
     ),
     path(
         "comedores/dupla/asignar/<int:pk>",
-        permissions_any_required(["Comedores Dupla Asignar"])(AsignarDuplaListView.as_view()),
+        permissions_any_required(["duplas.change_dupla"])(
+            AsignarDuplaListView.as_view()
+        ),
         name="dupla_asignar",
     ),
     path(
@@ -160,40 +163,54 @@ urlpatterns = [
     path(
         # TODO: Migrar a router DRF (estilo centrodefamilia).
         "intervencion/<int:intervencion_id>/documentacion/subir/",
-        permissions_any_required(["Tecnico Comedor"])(subir_archivo_intervencion),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(subir_archivo_intervencion),
         name="subir_archivo_intervencion",
     ),
     path(
         # TODO: Migrar a router DRF (estilo centrodefamilia).
         "intervencion/<int:intervencion_id>/documentacion/eliminar/",
-        permissions_any_required(["Tecnico Comedor"])(eliminar_archivo_intervencion),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(eliminar_archivo_intervencion),
         name="eliminar_archivo_intervencion",
     ),
     path(
         "intervencion/detalle/<int:pk>/",
-        permissions_any_required(["Comedores Intervenciones Detalle"])(
+        permissions_any_required(["intervenciones.view_intervencion"])(
             IntervencionDetailIndividualView.as_view()
         ),
         name="intervencion_detalle",
     ),
     path(
         "comedores/<int:pk>/nomina/",
-        permissions_any_required(["Comedores Nomina Ver"])(NominaDetailView.as_view()),
+        permissions_any_required(["comedores.view_nomina"])(NominaDetailView.as_view()),
         name="nomina_ver",
     ),
     path(
         "comedores/editar-nomina/<int:pk>/",
-        permissions_any_required(["Comedores Nomina Editar"])(nomina_editar_ajax),
+        permissions_any_required(["comedores.change_nomina"])(nomina_editar_ajax),
         name="nomina_editar_ajax",
     ),
     path(
         "comedores/<int:pk>/nomina/crear/",
-        permissions_any_required(["Comedores Nomina Crear"])(NominaCreateView.as_view()),
+        permissions_any_required(["comedores.add_nomina"])(NominaCreateView.as_view()),
         name="nomina_crear",
     ),
     path(
         "comedores/<int:pk>/nomina/<int:pk2>/eliminar/",
-        permissions_any_required(["Comedores Nomina Borrar"])(NominaDeleteView.as_view()),
+        permissions_any_required(["comedores.delete_nomina"])(
+            NominaDeleteView.as_view()
+        ),
         name="nomina_borrar",
     ),
     path(
@@ -206,11 +223,9 @@ urlpatterns = [
         "comedores_nuevo/<int:pk>",
         permissions_any_required(
             [
-                "Comedores Ver",
-                "Tecnico Comedor",
-                "Abogado Dupla",
-                "Coordinador Equipo Tecnico",
-                "Coordinador general",
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
             ]
         )(ComedorDetailView.as_view(template_name="comedor/new_comedor_detail.html")),
         name="nuevo_comedor_detalle",

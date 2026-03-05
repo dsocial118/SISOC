@@ -105,7 +105,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_perm_code:"Area Legales" or request.user|has_perm_code:"Area Contable" or request.user|has_perm_code:"Tecnico Comedor" or request.user|has_perm_code:"Coordinador Equipo Tecnico" %}
+            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicion_cuentas_final_listar' %}"
                        class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">

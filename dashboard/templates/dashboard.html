@@ -12,7 +12,7 @@
 {% block menu-adicional %}{% endblock %}
 {% block content %}
     <!-- Bloque SSE: sólo indicadores nuevos -->
-    {% if request.user|has_perm_code:"Dashboard Centrodefamilia" %}
+    {% if request.user|has_perm_code:"dashboard.view_dashboard" %}
         <div class="row">
             <div class="container">
                 <div class="card">
@@ -47,7 +47,7 @@
             </div>
         </div>
     </div>
-{% elif request.user|has_perm_code:"Dashboard Comedor" %}
+{% elif request.user|has_perm_code:"dashboard.view_dashboard" %}
     <div class="row mb-4">
         <div class="col-4">
             <div class="custom-card card-violet">
