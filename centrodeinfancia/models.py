@@ -40,6 +40,7 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
     )
     calle = models.CharField(max_length=255, blank=True, null=True)
+    numero = models.CharField(max_length=50, blank=True, null=True)
     telefono = models.CharField(max_length=50, blank=True, null=True)
     nombre_referente = models.CharField(max_length=255, blank=True, null=True)
     apellido_referente = models.CharField(max_length=255, blank=True, null=True)

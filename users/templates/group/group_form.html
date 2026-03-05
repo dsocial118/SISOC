@@ -1,0 +1,45 @@
+{% extends "includes/main.html" %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Grupos{% endblock %}
+{% block titulo-pagina %}{{ form_title }}{% endblock %}
+
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">Administración</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'grupos' %}">Grupos</a>
+        </li>
+        <li class="breadcrumb-item active">{{ form_title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'admin/css/select2templated.css' %}" />
+    <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/group_dual_listbox.css' %}" />
+    <script src="{% url 'admin:jsi18n' %}"></script>
+    {{ form.media }}
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">{{ form_title }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate autocomplete="off">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">{{ form.name|as_crispy_field }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 group-dual-listbox">{{ form.permissions|as_crispy_field }}</div>
+                        </div>
+                        {% include 'components/form_buttons.html' with cancel_url='grupos' default_save=True save_text=submit_text layout='start' %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

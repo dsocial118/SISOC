@@ -8,12 +8,14 @@ from django.views.decorators.csrf import csrf_protect
 
 from celiaquia.models import ExpedienteCiudadano
 from celiaquia.permissions import can_confirm_subsanacion
+from iam.services import user_has_permission_code
 
 logger = logging.getLogger("django")
+ROLE_PROVINCIA_CELIAQUIA_PERMISSION = "auth.role_provinciaceliaquia"
 
 
-def _in_group(user, name: str) -> bool:
-    return user.is_authenticated and user.groups.filter(name=name).exists()
+def _has_permission(user, permission_code: str) -> bool:
+    return user_has_permission_code(user, permission_code)
 
 
 class RespuestaSubsanacionRenaperView(View):
@@ -26,7 +28,7 @@ class RespuestaSubsanacionRenaperView(View):
             raise PermissionDenied("Autenticación requerida.")
 
         is_admin = user.is_superuser
-        is_prov = _in_group(user, "ProvinciaCeliaquia")
+        is_prov = _has_permission(user, ROLE_PROVINCIA_CELIAQUIA_PERMISSION)
 
         if not (is_admin or is_prov):
             raise PermissionDenied("Permiso denegado.")

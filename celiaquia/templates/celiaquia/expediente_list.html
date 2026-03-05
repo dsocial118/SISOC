@@ -14,15 +14,15 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h3">
-            {% if request.user|has_group:"CoordinadorCeliaquia" %}
+            {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
                 Bandeja de Subsecretaría
-            {% elif request.user|has_group:"TecnicoCeliaquia" %}
+            {% elif request.user|has_perm_code:"celiaquia.view_expediente" %}
                 Mis Expedientes Asignados
             {% else %}
                 Mis Expedientes
             {% endif %}
         </h2>
-        {% if request.user|has_group:"ProvinciaCeliaquia" %}
+        {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
             <a href="{% url 'expediente_create' %}" class="btn btn-primary">
                 <i class="fa fa-plus-circle me-1"></i> Nuevo Expediente
             </a>
@@ -66,7 +66,7 @@
                             Estado
                             <i class="fas fa-sort sort-icon"></i>
                         </th>
-                        {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
+                        {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_expediente" %}
                             <th>Técnico</th>
                         {% endif %}
                         <th class="text-end">Acciones</th>
@@ -91,9 +91,9 @@
                                     </div>
                                 {% endif %}
                             </td>
-                            {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
+                            {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_expediente" %}
                                 <td>
-                                    {% if request.user|has_group:"CoordinadorCeliaquia" %}
+                                    {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
                                         <!-- SOLO mostrar selector cuando el estado ya es RECEPCIONADO o ASIGNADO -->
                                         {% if exp.estado.nombre == 'RECEPCIONADO' or exp.estado.nombre == 'ASIGNADO' %}
                                             <div>
@@ -140,7 +140,7 @@
                                     Ver
                                 </a>
                                 <!-- PROVINCIA -->
-                                {% if request.user|has_group:"ProvinciaCeliaquia" %}
+                                {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
                                     {% if exp.estado.nombre == 'CREADO' %}
                                         <a href="{% url 'expediente_update' exp.pk %}"
                                            class="btn btn-editar"
@@ -166,7 +166,7 @@
                                     {% endif %}
                                 {% endif %}
                                 <!-- SUBSECRETARÍA -->
-                                {% if request.user|has_group:"CoordinadorCeliaquia" %}
+                                {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
                                     {% if exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}
                                         <button type="button"
                                                 class="btn btn-secondary js-recepcionar"
@@ -191,7 +191,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="{% if request.user|has_group:'CoordinadorCeliaquia' or request.user|has_group:'TecnicoCeliaquia' %}7{% else %}6{% endif %}"
+                            <td colspan="{% if request.user|has_perm_code:'celiaquia.view_expediente' or request.user|has_perm_code:'celiaquia.view_expediente' %}7{% else %}6{% endif %}"
                                 class="text-center text-muted py-3">No hay expedientes registrados.</td>
                         </tr>
                     {% endfor %}

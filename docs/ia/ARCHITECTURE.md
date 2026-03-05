@@ -3,8 +3,8 @@
 Guía operativa de arquitectura y boundaries para cambios hechos por IA en SISOC.
 
 Fuentes complementarias:
-- `../../docs/arquitectura.md`
-- `../../docs/dominio.md`
+- `../../docs/contexto/arquitectura.md`
+- `../../docs/contexto/dominio.md`
 - `../../README.md`
 
 ## Resumen real del sistema (alto nivel)

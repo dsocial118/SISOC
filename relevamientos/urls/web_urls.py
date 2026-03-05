@@ -1,5 +1,5 @@
 from django.urls import path
-from core.decorators import group_required
+from core.decorators import permissions_any_required
 from relevamientos.views.web_views import (
     RelevamientoCreateView,
     RelevamientoDeleteView,
@@ -11,33 +11,35 @@ from relevamientos.views.web_views import (
 urlpatterns = [
     path(
         "comedores/<comedor_pk>/relevamiento/listar",
-        group_required(["Comedores Relevamiento Ver"])(RelevamientoListView.as_view()),
+        permissions_any_required(["relevamientos.view_relevamiento"])(
+            RelevamientoListView.as_view()
+        ),
         name="relevamientos",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/crear",
-        group_required(["Comedores Relevamiento Crear"])(
+        permissions_any_required(["relevamientos.add_relevamiento"])(
             RelevamientoCreateView.as_view()
         ),
         name="relevamiento_crear",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<int:pk>",
-        group_required(["Comedores Relevamiento Detalle"])(
+        permissions_any_required(["relevamientos.view_relevamiento"])(
             RelevamientoDetailView.as_view()
         ),
         name="relevamiento_detalle",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<int:pk>/editar",
-        group_required(["Comedores Relevamiento Editar"])(
+        permissions_any_required(["relevamientos.change_relevamiento"])(
             RelevamientoUpdateView.as_view()
         ),
         name="relevamiento_editar",
     ),
     path(
         "comedores/<comedor_pk>/relevamiento/<int:pk>/eliminar",
-        group_required(["Comedores Relevamiento Editar"])(
+        permissions_any_required(["relevamientos.change_relevamiento"])(
             RelevamientoDeleteView.as_view()
         ),
         name="relevamiento_eliminar",

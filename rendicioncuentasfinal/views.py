@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.views.generic import DetailView, ListView
 from django.views.decorators.http import require_POST
 
-from core.decorators import group_required
+from core.decorators import permissions_any_required
 from core.security import safe_redirect
 
 from comedores.models import Comedor
@@ -232,12 +232,12 @@ def documentos_rendicion_cuentas_final_ajax(request):
     """Endpoint AJAX para búsqueda filtrada de documentos de rendición de cuentas final"""
 
     # Aplicar el decorador manualmente para mantener permisos
-    @group_required(
+    @permissions_any_required(
         [
-            "Area Contable",
-            "Area Legales",
-            "Tecnico Comedor",
-            "Coordinador Equipo Tecnico",
+            "comedores.view_comedor",
+            "expedientespagos.view_expedientepago",
+            "admisiones.view_admision",
+            "acompanamientos.view_informacionrelevante",
         ]
     )
     def _documentos_rendicion_ajax(request):

@@ -9,6 +9,7 @@ Leer primero `AGENTS.md`.
 ## Reglas críticas (resumen)
 
 - Buscar referencias reales en el repo antes de escribir código.
+- Leer `docs/indice.md`, `docs/ia/*` y docs del dominio afectado antes de implementar.
 - No inventar APIs, modelos, campos ni endpoints.
 - Hacer cambios mínimos (`small diffs`) y revisables.
 - Mantener compatibilidad hacia atrás salvo pedido.
@@ -17,6 +18,7 @@ Leer primero `AGENTS.md`.
 - Agregar test de regresión en bugfixes cuando sea viable.
 - Explicitar supuestos si falta información.
 - Respetar seguridad/permisos y no loggear secretos/PII.
+- Documentar cada cambio o decisión importante en `docs/` dentro de una subcarpeta temática (crearla si no existe).
 - Podés proponer mejoras cercanas, pero no implementarlas fuera de alcance sin aprobación.
 
 ## Comandos principales
@@ -39,6 +41,7 @@ pylint **/*.py --rcfile=.pylintrc
 - `docs/ia/TESTING.md`
 - `docs/ia/SECURITY_AI.md`
 - `docs/ia/ERRORS_LOGGING.md`
+- `docs/registro/README.md`
 
 ## Mini-template de prompt correcto
 
@@ -57,4 +60,5 @@ Incluir siempre:
 - archivos tocados,
 - validación ejecutada,
 - supuestos,
+- documento de `docs/<subcarpeta>/...` creado/actualizado (si aplica),
 - mejoras cercanas detectadas (opcional).

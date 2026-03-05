@@ -116,12 +116,3 @@ class SoftDeleteDeleteViewMixin:
                 messages.success(self.request, self.success_message)
             return HttpResponseRedirect(self.get_success_url())
         return super().form_valid(form)
-
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        if is_soft_deletable_instance(self.object):
-            self._soft_delete_instance(self.object)
-            if self.success_message:
-                messages.success(request, self.success_message)
-            return HttpResponseRedirect(self.get_success_url())
-        return super().delete(request, *args, **kwargs)

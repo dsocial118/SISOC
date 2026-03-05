@@ -10,7 +10,9 @@ Antes de implementar cambios, Codex debe:
 
 1. Leer `AGENTS.md`.
 2. Aplicar sus reglas como prioridad.
-3. Recién después leer `docs/ia/*` según el tipo de tarea.
+3. Leer `docs/indice.md` y luego `docs/ia/*` según el tipo de tarea.
+4. Leer la documentación funcional/técnica del dominio afectado dentro de `docs/`.
+5. Registrar cambios o decisiones importantes en `docs/` dentro de la subcarpeta que corresponda (crearla si no existe).
 
 Si la integración no cargó automáticamente `AGENTS.md`, Codex debe abrirlo manualmente.
 Si no puede acceder a `AGENTS.md`, debe:
@@ -21,11 +23,13 @@ Si no puede acceder a `AGENTS.md`, debe:
 ## Orden de lectura recomendado
 
 1. `AGENTS.md`
-2. `docs/ia/CONTEXT_HYGIENE.md`
-3. `docs/ia/STYLE_GUIDE.md`
-4. `docs/ia/ARCHITECTURE.md`
-5. `docs/ia/TESTING.md`
-6. Archivos concretos del módulo a modificar
+2. `docs/indice.md`
+3. `docs/ia/CONTEXT_HYGIENE.md`
+4. `docs/ia/STYLE_GUIDE.md`
+5. `docs/ia/ARCHITECTURE.md`
+6. `docs/ia/TESTING.md`
+7. `docs/registro/README.md`
+8. Archivos concretos del módulo a modificar y docs del dominio afectado
 
 ## Fallback mínimo (si `AGENTS.md` no está disponible)
 
@@ -37,6 +41,8 @@ Aplicar estas reglas como no negociables:
 - No tocar configs de tooling/CI/settings sin pedido explícito.
 - Agregar tests mínimos en features nuevas y regresión en bugfixes cuando sea viable.
 - No loggear secretos/PII y respetar permisos existentes.
+- Leer documentación relevante en `docs/` antes de proponer cambios.
+- Documentar decisiones/cambios importantes en `docs/<subcarpeta>/...` sin depender de herramientas específicas.
 - Podés proponer mejoras cercanas, pero no implementarlas fuera de alcance sin aprobación.
 - No asumir Celery/workers/colas: **actualmente no se usa Celery** en este repo.
 
@@ -70,6 +76,7 @@ Al entregar, incluir:
 - validación ejecutada,
 - supuestos,
 - riesgos,
+- registro en `docs/<subcarpeta>/...` para cambios/decisiones importantes (o motivo si no aplica),
 - mejoras cercanas detectadas (opcional).
 
 ## 4) Tareas grandes: trabajar por fases
@@ -112,6 +119,7 @@ Formato sugerido:
 - Mantuve diff chico y enfocado.
 - No toqué configs de tooling/CI sin pedido.
 - Agregué tests mínimos o expliqué por qué no.
+- Registré cambios/decisiones importantes en `docs/` (subcarpeta temática) o expliqué por qué no aplicaba.
 - Declaré supuestos y riesgos.
 - Reporté mejoras cercanas solo como propuesta.
 

@@ -1,6 +1,5 @@
 from django import template
 
-from core.constants import UserGroups
 from dashboard.models import Tablero
 
 register = template.Library()
@@ -19,11 +18,8 @@ def tableros_para_sidebar(context):
     if user.is_superuser:
         return tableros
 
-    grupos = Tablero.grupos_de_usuario(user)
-    if UserGroups.ADMINISTRADOR in grupos:
-        return tableros
-
-    if not grupos:
+    permission_codes = Tablero.permission_codes_de_usuario(user)
+    if not permission_codes:
         return []
 
-    return [tablero for tablero in tableros if tablero.tiene_acceso_para_grupos(grupos)]
+    return [tablero for tablero in tableros if tablero.usuario_puede_ver(user)]
