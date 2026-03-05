@@ -184,8 +184,9 @@ class PasswordResetConfirmCustomView(PasswordResetConfirmView):
     template_name = "user/password_reset_confirm.html"
     success_url = reverse_lazy("password_reset_complete")
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, *args, **kwargs):
         """Permite POST directo con token sin requerir paso intermedio set-password."""
+        request = args[0]
         token = kwargs.get("token")
         uidb64 = kwargs.get("uidb64")
 
@@ -199,9 +200,9 @@ class PasswordResetConfirmCustomView(PasswordResetConfirmView):
             if self.user and self.token_generator.check_token(self.user, token):
                 self.request.session[INTERNAL_RESET_SESSION_TOKEN] = token
                 self.validlink = True
-                return FormView.dispatch(self, request, *args, **kwargs)
+                return FormView.dispatch(self, *args, **kwargs)
 
-        return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(*args, **kwargs)
 
     def form_valid(self, form):
         user = form.user

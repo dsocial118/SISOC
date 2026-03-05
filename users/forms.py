@@ -249,7 +249,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             )
             profile.save()
             # Evita devolver un profile cacheado con valores viejos tras el signal de User.
-            user._state.fields_cache.pop("profile", None)
+            user.refresh_from_db()
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])
             if profile.es_coordinador and duplas:
@@ -401,7 +401,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
                     hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
                 )
             profile.save()
-            user._state.fields_cache.pop("profile", None)
+            user.refresh_from_db()
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])
             if profile.es_coordinador and duplas:

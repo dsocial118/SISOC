@@ -32,21 +32,20 @@ class FirstLoginPasswordChangeMiddleware:
         if path in exempt_paths:
             return True
 
-        static_prefixes = ("/static/", "/media/", "/api/")
-        if path.startswith(static_prefixes):
-            return True
-        if path.startswith("/password_reset/"):
-            return True
-        if path.startswith("/reset/"):
-            return True
-        if path.startswith("/password/reset/confirm/"):
+        exempt_prefixes = (
+            "/static/",
+            "/media/",
+            "/api/",
+            "/password_reset/",
+            "/reset/",
+            "/password/reset/confirm/",
+        )
+        if path.startswith(exempt_prefixes):
             return True
 
         try:
             login_path = reverse("login")
-            if login_path and login_path != "/" and path == login_path:
-                return True
         except NoReverseMatch:
-            pass
+            login_path = None
 
-        return False
+        return bool(login_path and login_path != "/" and path == login_path)
