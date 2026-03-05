@@ -78,6 +78,7 @@
                     </div>
                     <div class="card-body">
                         {{ form.groups | as_crispy_field }}
+                        {{ form.user_permissions | as_crispy_field }}
                         {{ form.rol|as_crispy_field }}
                     </div>
                 </div>

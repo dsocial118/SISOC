@@ -1,13 +1,17 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
-from core.decorators import group_required
+from core.decorators import permissions_all_required, permissions_any_required
 from users.views import (
-    UsuariosLoginView,
-    UserListView,
+    FirstLoginPasswordChangeView,
+    GroupCreateView,
     UserCreateView,
-    UserUpdateView,
     UserDeleteView,
     GroupListView,
+    GroupUpdateView,
+    PasswordResetConfirmCustomView,
+    UserListView,
+    UserUpdateView,
+    UsuariosLoginView,
 )
 from users.views_export import UserExportView, GroupExportView
 
@@ -16,38 +20,62 @@ urlpatterns = [
     path("", UsuariosLoginView.as_view(), name="login"),
     path("logout", (LogoutView.as_view()), name="logout"),
     path(
+        "password/first-change/",
+        FirstLoginPasswordChangeView.as_view(),
+        name="password_change_required",
+    ),
+    path(
+        "password/reset/confirm/<uidb64>/<token>/",
+        PasswordResetConfirmCustomView.as_view(),
+        name="password_reset_confirm_custom",
+    ),
+    path(
         "usuarios/",
-        group_required(["Usuario Ver"])(UserListView.as_view()),
+        permissions_any_required(["auth.view_user"])(UserListView.as_view()),
         name="usuarios",
     ),
     path(
         "usuarios/exportar/",
-        group_required(["Usuario Ver", "Exportar a csv"])(UserExportView.as_view()),
+        permissions_all_required(["auth.view_user", "auth.role_exportar_a_csv"])(
+            UserExportView.as_view()
+        ),
         name="usuarios_exportar",
     ),
     path(
         "usuarios/crear/",
-        group_required(["Usuario Crear"])(UserCreateView.as_view()),
+        permissions_any_required(["auth.add_user"])(UserCreateView.as_view()),
         name="usuario_crear",
     ),
     path(
         "usuarios/editar/<int:pk>/",
-        group_required(["Usuario Editar"])(UserUpdateView.as_view()),
+        permissions_any_required(["auth.change_user"])(UserUpdateView.as_view()),
         name="usuario_editar",
     ),
     path(
         "usuarios/borrar/<int:pk>/",
-        group_required(["Usuario Eliminar"])(UserDeleteView.as_view()),
+        permissions_any_required(["auth.delete_user"])(UserDeleteView.as_view()),
         name="usuario_borrar",
     ),
     path(
         "grupos/",
-        group_required(["Grupos Ver"])(GroupListView.as_view()),
+        permissions_any_required(["auth.view_group"])(GroupListView.as_view()),
         name="grupos",
     ),
     path(
         "grupos/exportar/",
-        group_required(["Grupos Ver", "Exportar a csv"])(GroupExportView.as_view()),
+        permissions_all_required(["auth.view_group", "auth.role_exportar_a_csv"])(
+            GroupExportView.as_view()
+        ),
         name="grupos_exportar",
+    ),
+    path(
+        "grupos/crear/",
+        permissions_any_required(["auth.add_group"])(GroupCreateView.as_view()),
+        name="grupo_crear",
+    ),
+    path(
+        "grupos/editar/<int:pk>/",
+        permissions_any_required(["auth.change_group"])(GroupUpdateView.as_view()),
+        name="grupo_editar",
     ),
 ]

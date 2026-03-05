@@ -14,7 +14,6 @@ from centrodefamilia.models import (
     Actividad,
 )
 from centrodefamilia.forms import ActividadCentroForm, ActividadForm
-from core.decorators import group_required
 from centrodefamilia.services.participante import ParticipanteService
 
 
