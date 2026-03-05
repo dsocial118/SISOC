@@ -11,13 +11,14 @@ from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from celiaquia.permissions import can_edit_legajo_files, can_review_legajo
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
+from iam.services import user_has_role
 
 
 logger = logging.getLogger("django")
 
 
 def _in_group(user, group_name):
-    return user.groups.filter(name=group_name).exists()
+    return user_has_role(user, group_name)
 
 
 class LegajoArchivoUploadView(View):

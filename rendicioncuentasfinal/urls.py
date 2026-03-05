@@ -1,6 +1,6 @@
 from django.urls import path
 
-from core.decorators import group_required
+from core.decorators import permissions_any_required
 from rendicioncuentasfinal.views import (
     DocumentosRendicionCuentasFinalListView,
     RendicionCuentasFinalDetailView,
@@ -16,7 +16,7 @@ from rendicioncuentasfinal.views import (
 urlpatterns = [
     path(
         "comedores/<int:pk>/rendicion_cuentas_final/",
-        group_required(["Tecnico Comedor", "Coordinador Equipo Tecnico"])(
+        permissions_any_required(["Tecnico Comedor", "Coordinador Equipo Tecnico"])(
             RendicionCuentasFinalDetailView.as_view()
         ),
         name="rendicion_cuentas_final",
@@ -53,7 +53,7 @@ urlpatterns = [
     ),
     path(
         "rendicion_cuentas_final/listar/",
-        group_required(
+        permissions_any_required(
             [
                 "Area Contable",
                 "Area Legales",

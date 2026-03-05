@@ -16,6 +16,16 @@ GRUPOS_COLUMNS = [
         sort_field="name",
     ),
     ColumnDefinition(
+        key="permissions_count",
+        title="Permisos",
+        header={"sortable": True, "sort_key": "permissions_count"},
+        field={"name": "permissions_count"},
+        default=True,
+        export_field="permissions_count",
+        export_title="Permisos",
+        sort_field="permissions_count",
+    ),
+    ColumnDefinition(
         key="id",
         title="ID",
         header={"sortable": True, "sort_key": "id"},

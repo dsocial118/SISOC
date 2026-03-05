@@ -7,16 +7,13 @@ from django.views.decorators.csrf import csrf_protect
 from django.core.exceptions import ObjectDoesNotExist
 
 from celiaquia.models import ExpedienteCiudadano, HistorialComentarios
+from iam.services import user_has_role
 
 logger = logging.getLogger("django")
 
 
 def _in_group(user, group_name):
-    return (
-        bool(user)
-        and user.is_authenticated
-        and user.groups.filter(name=group_name).exists()
-    )
+    return user_has_role(user, group_name)
 
 
 def _safe_profile(user):
@@ -31,7 +28,7 @@ def _safe_profile(user):
 def _user_has_group_cached(user, group_name):
     if not user:
         return False
-    return any(group.name == group_name for group in user.groups.all())
+    return user_has_role(user, group_name)
 
 
 ALLOWED_UPLOAD_TYPES = {"application/pdf", "image/jpeg", "image/png"}

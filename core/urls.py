@@ -15,7 +15,7 @@ from core.views import (
     MontoPrestacionProgramaDeleteView,
     MontoPrestacionProgramaDetailView,
 )
-from core.decorators import group_required
+from core.decorators import permissions_any_required
 from .trash_views import (
     TrashListView,
     TrashRestorePreviewView,
@@ -60,35 +60,35 @@ urlpatterns = [
     ),
     path(
         "montoprestacion/listar",
-        group_required(GRUPOS_MONTO_PRESTACION)(
+        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
             MontoPrestacionProgramaListView.as_view()
         ),
         name="montoprestacion_listar",
     ),
     path(
         "montoprestacion/crear",
-        group_required(GRUPOS_MONTO_PRESTACION)(
+        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
             MontoPrestacionProgramaCreateView.as_view()
         ),
         name="montoprestacion_crear",
     ),
     path(
         "montoprestacion/<int:pk>/editar",
-        group_required(GRUPOS_MONTO_PRESTACION)(
+        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
             MontoPrestacionProgramaUpdateView.as_view()
         ),
         name="montoprestacion_editar",
     ),
     path(
         "montoprestacion/<int:pk>/eliminar",
-        group_required(GRUPOS_MONTO_PRESTACION)(
+        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
             MontoPrestacionProgramaDeleteView.as_view()
         ),
         name="montoprestacion_eliminar",
     ),
     path(
         "montoprestacion/<int:pk>/detalle",
-        group_required(GRUPOS_MONTO_PRESTACION)(
+        permissions_any_required(GRUPOS_MONTO_PRESTACION)(
             MontoPrestacionProgramaDetailView.as_view()
         ),
         name="montoprestacion_detalle",

@@ -28,6 +28,7 @@
 - `docs/implementaciones/filtros_avanzados.md`: comportamiento y consideraciones de filtros avanzados.
 - `docs/implementaciones/preferencias_columnas.md`: preferencias de columnas en listados.
 - `docs/implementaciones/pwa_backend.md`: implementación backend de funcionalidades PWA.
+- `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.

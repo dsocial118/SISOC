@@ -1,7 +1,12 @@
+from datetime import timedelta
+
 from django import forms
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group, Permission, User
 from django.db import transaction
+from django.utils import timezone
 
 from comedores.models import Comedor
 from core.models import Provincia
@@ -23,6 +28,17 @@ class BackofficeAuthenticationForm(AuthenticationForm):
             raise forms.ValidationError(
                 "Este usuario solo puede ingresar desde la PWA.",
                 code="pwa_only",
+            )
+        profile = getattr(user, "profile", None)
+        expires_at = getattr(profile, "initial_password_expires_at", None)
+        if (
+            getattr(profile, "must_change_password", False)
+            and expires_at
+            and expires_at <= timezone.now()
+        ):
+            raise forms.ValidationError(
+                "La contraseña inicial expiró. Solicite un reinicio a un administrador.",
+                code="initial_password_expired",
             )
 
 
@@ -101,6 +117,22 @@ class PWAAccessMixin:
             return
         deactivate_representante_accesses(user)
 
+    def _validate_required_email(self, cleaned):
+        email = (cleaned.get("email") or "").strip()
+        if not email:
+            self.add_error("email", "Este campo es obligatorio.")
+            return cleaned
+
+        qs = User.objects.filter(email__iexact=email)
+        if getattr(self.instance, "pk", None):
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            self.add_error("email", "Ya existe un usuario con ese email.")
+            return cleaned
+
+        cleaned["email"] = email
+        return cleaned
+
 
 class UserCreationForm(PWAAccessMixin, forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
@@ -109,6 +141,18 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Grupos",
+    )
+    user_permissions = forms.ModelMultipleChoiceField(
+        queryset=Permission.objects.select_related("content_type").order_by(
+            "content_type__app_label", "name"
+        ),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "select2"}),
+        label="Permisos directos",
+        help_text=(
+            "Permisos adicionales específicos para este usuario, "
+            "independientes de sus grupos."
+        ),
     )
     es_usuario_provincial = forms.BooleanField(
         required=False,
@@ -140,6 +184,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             "email",
             "password",
             "groups",
+            "user_permissions",
             "es_usuario_provincial",
             "provincia",
             "es_coordinador",
@@ -152,9 +197,11 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._setup_pwa_fields()
+        self.fields["email"].required = True
 
     def clean(self):
         cleaned = super().clean()
+        cleaned = self._validate_required_email(cleaned)
         if cleaned.get("es_usuario_provincial") and not cleaned.get("provincia"):
             self.add_error("provincia", "Seleccione una provincia.")
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
@@ -168,6 +215,7 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
     def _save_atomic(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password"])
+        user.email = self.cleaned_data.get("email", "")
 
         if self.cleaned_data.get("es_representante_pwa", False):
             user.is_staff = False
@@ -178,8 +226,10 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             user.save()
             if self.cleaned_data.get("es_representante_pwa", False):
                 user.groups.clear()
+                user.user_permissions.clear()
             else:
                 user.groups.set(self.cleaned_data.get("groups", []))
+                user.user_permissions.set(self.cleaned_data.get("user_permissions", []))
 
             profile, _ = Profile.objects.get_or_create(user=user)
             profile.es_usuario_provincial = self.cleaned_data.get(
@@ -192,7 +242,14 @@ class UserCreationForm(PWAAccessMixin, forms.ModelForm):
             )
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
+            profile.must_change_password = True
+            profile.password_changed_at = None
+            profile.initial_password_expires_at = timezone.now() + timedelta(
+                hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
+            )
             profile.save()
+            # Evita devolver un profile cacheado con valores viejos tras el signal de User.
+            user._state.fields_cache.pop("profile", None)
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])
             if profile.es_coordinador and duplas:
@@ -216,6 +273,18 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Grupos",
+    )
+    user_permissions = forms.ModelMultipleChoiceField(
+        queryset=Permission.objects.select_related("content_type").order_by(
+            "content_type__app_label", "name"
+        ),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "select2"}),
+        label="Permisos directos",
+        help_text=(
+            "Permisos adicionales específicos para este usuario, "
+            "independientes de sus grupos."
+        ),
     )
     es_usuario_provincial = forms.BooleanField(
         required=False,
@@ -247,6 +316,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             "email",
             "password",
             "groups",
+            "user_permissions",
             "es_usuario_provincial",
             "provincia",
             "es_coordinador",
@@ -259,6 +329,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._setup_pwa_fields()
+        self.fields["email"].required = True
         self._original_password_hash = self.instance.password
         self.fields["password"].initial = ""
         self._init_pwa_fields()
@@ -277,6 +348,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
+        cleaned = self._validate_required_email(cleaned)
         if cleaned.get("es_usuario_provincial") and not cleaned.get("provincia"):
             self.add_error("provincia", "Seleccione una provincia.")
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
@@ -290,6 +362,7 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
     def _save_atomic(self, commit=True):
         new_pwd = self.cleaned_data.get("password")
         user = super().save(commit=False)
+        user.email = self.cleaned_data.get("email", "")
 
         if new_pwd:
             user.set_password(new_pwd)
@@ -305,8 +378,10 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             user.save()
             if self.cleaned_data.get("es_representante_pwa", False):
                 user.groups.clear()
+                user.user_permissions.clear()
             else:
                 user.groups.set(self.cleaned_data.get("groups", []))
+                user.user_permissions.set(self.cleaned_data.get("user_permissions", []))
 
             profile, _ = Profile.objects.get_or_create(user=user)
             profile.es_usuario_provincial = self.cleaned_data.get(
@@ -319,7 +394,14 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             )
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
+            if new_pwd:
+                profile.must_change_password = True
+                profile.password_changed_at = None
+                profile.initial_password_expires_at = timezone.now() + timedelta(
+                    hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
+                )
             profile.save()
+            user._state.fields_cache.pop("profile", None)
 
             duplas = self.cleaned_data.get("duplas_asignadas", [])
             if profile.es_coordinador and duplas:
@@ -330,3 +412,34 @@ class CustomUserChangeForm(PWAAccessMixin, forms.ModelForm):
             self._sync_pwa_access(user)
 
         return user
+
+
+class GroupForm(forms.ModelForm):
+    permissions = forms.ModelMultipleChoiceField(
+        queryset=Permission.objects.select_related("content_type").order_by(
+            "content_type__app_label", "name"
+        ),
+        required=False,
+        widget=FilteredSelectMultiple("Permisos", is_stacked=False),
+        label="Permisos (roles)",
+        help_text=(
+            "Selecciona los permisos del grupo. "
+            "Estos permisos se aplican a todos los usuarios del grupo."
+        ),
+    )
+
+    class Meta:
+        model = Group
+        fields = ["name", "permissions"]
+
+    def clean_name(self):
+        name = (self.cleaned_data.get("name") or "").strip()
+        if not name:
+            raise forms.ValidationError("Este campo es obligatorio.")
+
+        qs = Group.objects.filter(name__iexact=name)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError("Ya existe un grupo con ese nombre.")
+        return name

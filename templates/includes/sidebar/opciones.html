@@ -59,7 +59,7 @@
                     <p>Ver Comunicados</p>
                 </a>
             </li>
-            {% if request.user|has_group:"Comunicado Crear" or request.user|has_group:"Comunicado Editar" or request.user|has_group:"Comunicado Publicar" or request.user|has_group:"Comunicado Archivar" or request.user|has_group:"Administrador" %}
+            {% if request.user|has_any_perm:"comunicados.add_comunicado,comunicados.change_comunicado,auth.role_admin,auth.role_administrador,auth.role_superadmin" %}
                 <li class="nav-item">
                     <a href="{% url 'comunicados_gestion' %}"
                        class="nav-link nav-dot ms-2 {% if 'comunicados/gestion' in pagina_actual %}active{% endif %}">
@@ -70,7 +70,7 @@
         </ul>
     </li>
 
-    {% if request.user|has_group:"Administrador" %}
+    {% if request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group" %}
         <li class="nav-item nav-main-item">
             <a href="#" class="nav-link">
                 <img src="{% static 'custom/img/iconos_sidebar/administracion.svg' %}"
@@ -125,7 +125,7 @@
         </li>
     {% endif %}
     {% tableros_para_sidebar as tableros %}
-    {% with has_dashboard_cf=request.user|has_group:"Dashboard Centrodefamilia" %}
+    {% with has_dashboard_cf=request.user|has_perm_code:"Dashboard Centrodefamilia" %}
         {% if has_dashboard_cf or tableros %}
             <!-- Tableros -->
             <li class="nav-item nav-main-item {% if 'dashboard' in pagina_actual %}menu-open{% endif %}">
@@ -194,7 +194,7 @@
         </a>
         <ul class="nav nav-treeview">
             <!-- CIUDADANOS -->
-            {% if request.user|has_group:"Ciudadanos" %}
+            {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
                 <li class="nav-item {% if 'ciudadanos' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot ms-2 {% if 'ciudadanos' in pagina_actual %}active{% endif %}">
@@ -215,7 +215,7 @@
                 </li>
             {% endif %}
             <!-- COMEDORES -->
-            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Comedores Listar" or request.user|has_group:"Coordinador Equipo Tecnico" or request.user|has_group:"Coordinador general" %}
+            {% if request.user|has_perm_code:"comedores.view_comedor" %}
                 <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual %}active{% endif %}">
@@ -225,7 +225,7 @@
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
-                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Coordinador Equipo Tecnico" or request.user|has_group:"Coordinador general" %}
+                        {% if request.user|has_perm_code:"comedores.view_comedor" %}
                             <li class="nav-item">
                                 <a href="{% url 'comedores' %}"
                                    class="nav-link ms-4 {% if 'comedores/listar' in pagina_actual %}active{% endif %}">
@@ -235,7 +235,7 @@
                             </li>
                         {% endif %}
                         <!-- ADMISION -->
-                        {% if request.user|has_group:"Comedores Listar" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+                        {% if request.user|has_perm_code:"admisiones.view_admision" %}
                             <li class="nav-item ms-4 {% if 'admisiones' in pagina_actual %}menu-open{% endif %}">
                                 <a href="#" class="nav-link">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
@@ -245,7 +245,7 @@
                                     </p>
                                 </a>
                                 <ul class="nav nav-treeview">
-                                    {% if request.user|has_group:"Abogado Dupla" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+                                    {% if request.user|has_perm_code:"admisiones.view_admision" %}
                                         <li class="nav-item">
                                             <a href="{% url 'admisiones_tecnicos_listar' %}"
                                                class="nav-link nav-dot ms-4 {% if 'admisiones/tecnicos' in pagina_actual or 'admisiones_tecnicos' in pagina_actual %}active{% endif %}">
@@ -253,7 +253,7 @@
                                             </a>
                                         </li>
                                     {% endif %}
-                                    {% if request.user|has_group:"Area Legales" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+                                    {% if request.user|has_perm_code:"admisiones.view_admision" %}
                                         <li class="nav-item">
                                             <a href="{% url 'admisiones_legales_listar' %}"
                                                class="nav-link nav-dot ms-4 {% if 'admisiones/legales' in pagina_actual or 'admisiones_legales' in pagina_actual %}active{% endif %}">
@@ -265,7 +265,7 @@
                             </li>
                         {% endif %}
                         <!-- ACOMPAÑAMIENTO -->
-                        {% if request.user|has_group:"Area Legales" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+                        {% if request.user|has_perm_code:"acompanamientos.view_informacionrelevante" %}
                             <li class="nav-item">
                                 <a href="{% url 'lista_comedores_acompanamiento' %}"
                                    class="nav-link ms-4 {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
@@ -276,7 +276,7 @@
                         {% endif %}
                         {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
-                        {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+                        {% if request.user|has_perm_code:"Area Legales" or request.user|has_perm_code:"Area Contable" or request.user|has_perm_code:"Tecnico Comedor" or request.user|has_perm_code:"Coordinador Equipo Tecnico" %}
                             <li class="nav-item">
                                 <a href="{% url 'rendicion_cuentas_final_listar' %}" class="nav-link ms-4 {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
@@ -289,7 +289,7 @@
                 </li>
             {% endif %}
             <!-- ORGANIZACIONES -->
-            {% if request.user|has_group:"Organizaciones" %}
+            {% if request.user|has_perm_code:"organizaciones.view_organizacion" %}
                 <li class="nav-item {% if 'organizaciones' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot ms-2 {% if 'organizaciones' in pagina_actual %}active{% endif %}">
@@ -310,7 +310,7 @@
                 </li>
             {% endif %}
 
-            {% if request.user|has_group:"Importar Expediente" %}
+            {% if request.user|has_perm_code:"importarexpediente.view_archivosimportados" %}
                 <li class="nav-item {% if 'importarexpediente' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot ms-2 {% if 'importarexpediente' in pagina_actual %}active{% endif %}">
@@ -332,7 +332,7 @@
             {% endif %}
 
             <!-- Centro de Infancia -->
-            {% if request.user|has_group:"Centro de Infancia Listar" %}
+            {% if request.user|has_perm_code:"centrodeinfancia.view_centrodeinfancia" %}
                 <li class="nav-item {% if 'centrodeinfancia' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot ms-2 {% if 'centrodeinfancia' in pagina_actual %}active{% endif %}">
@@ -353,7 +353,7 @@
                 </li>
             {% endif %}
             <!-- CENTRO DE FAMILIA -->
-            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or request.user|has_group:"CDF SSE" %}
+            {% if request.user|has_perm_code:"centrodefamilia.view_centro" %}
                 <li class="nav-item {% if 'centros' in pagina_actual %}menu-open{% endif %}">
                     <a href="#"
                        class="nav-link nav-dot {% if 'centros' in pagina_actual %}active{% endif %} ms-2">
@@ -395,7 +395,7 @@
                 </li>
             {% endif %}
             <!-- CELIAQUÍA -->
-            {% if request.user|has_group:"TecnicoCeliaquia" or request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"ProvinciaCeliaquia" or request.user.is_superuser %}
+            {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user.is_superuser %}
                 <li class="nav-item">
                     <a href="#" class="nav-link nav-dot ms-2">
                         <p>
@@ -410,7 +410,7 @@
                                 <p>Expedientes</p>
                             </a>
                         </li>
-                        {% if request.user|has_group:"CoordinadorCeliaquia" %}
+                        {% if request.user|has_perm_code:"CoordinadorCeliaquia" %}
                             <li class="nav-item">
                                 <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
                                     <i class="nav-icon fas fa-chart-bar"></i>
@@ -418,7 +418,7 @@
                                 </a>
                             </li>
                         {% endif %}
-                        {% if request.user|has_group:"CoordinadorCeliaquia" or request.user|has_group:"TecnicoCeliaquia" %}
+                        {% if request.user|has_perm_code:"CoordinadorCeliaquia" or request.user|has_perm_code:"TecnicoCeliaquia" %}
                             <li class="nav-item">
                                 <a href="{% url 'reporter_provincias' %}" class="nav-link ms-2">
                                     <i class="nav-icon fas fa-chart-pie"></i>

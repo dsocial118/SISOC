@@ -4,12 +4,13 @@ Módulo centralizado para validaciones de permisos en comunicados.
 
 from django.core.exceptions import PermissionDenied
 from core.constants import UserGroups
+from iam.services import user_has_role
 from users.services import UserPermissionService
 
 
 def _in_group(user, name: str) -> bool:
     """Verifica si el usuario pertenece a un grupo específico."""
-    return user.is_authenticated and user.groups.filter(name=name).exists()
+    return user_has_role(user, name)
 
 
 def is_admin(user) -> bool:

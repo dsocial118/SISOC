@@ -11,7 +11,6 @@ from django.utils.decorators import method_decorator
 from django.shortcuts import get_object_or_404, render
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
-from core.decorators import group_required
 from centrodefamilia.services.informe_cabal_reprocess import (
     ReprocessError,
     reprocesar_registros_rechazados_por_codigo,

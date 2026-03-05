@@ -27,6 +27,7 @@ from acompanamientos.acompanamiento_service import AcompanamientoService
 from ..docx_service import DocumentTemplateService, TextFormatterService
 from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
+from iam.services import user_has_role
 from admisiones.services.admisiones_filter_config import (
     FIELD_MAP as ADMISION_FILTER_MAP,
     FIELD_TYPES as ADMISION_FIELD_TYPES,
@@ -1114,11 +1115,11 @@ class AdmisionService:
 
         try:
 
-            if user.groups.filter(name="Abogado Dupla").exists():
+            if user_has_role(user, "Abogado Dupla"):
 
                 return "Abogado Dupla"
 
-            elif user.groups.filter(name="Tecnico Comedor").exists():
+            elif user_has_role(user, "Tecnico Comedor"):
 
                 return "Tecnico Comedor"
 
@@ -1666,7 +1667,7 @@ class AdmisionService:
         try:
 
             return (
-                user.groups.filter(name="Tecnico Comedor").exists()
+                user_has_role(user, "Tecnico Comedor")
                 and comedor.dupla
                 and comedor.dupla.tecnico.filter(id=user.id).exists()
                 and comedor.dupla.estado == "Activo"
@@ -1753,11 +1754,8 @@ class AdmisionService:
     def _resolver_roles_para_botones(user):
         if not user:
             return False, False
-        groups = getattr(user, "groups", None)
-        if groups is None:
-            return False, False
-        es_tecnico = groups.filter(name=UserGroups.TECNICO_COMEDOR).exists()
-        es_abogado = groups.filter(name=UserGroups.ABOGADO_DUPLA).exists()
+        es_tecnico = user_has_role(user, UserGroups.TECNICO_COMEDOR)
+        es_abogado = user_has_role(user, UserGroups.ABOGADO_DUPLA)
         return es_tecnico, es_abogado
 
     @staticmethod

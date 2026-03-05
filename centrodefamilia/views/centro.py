@@ -35,6 +35,7 @@ from centrodefamilia.forms import CentroForm
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from iam.services import user_has_role
 
 
 BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
@@ -46,6 +47,10 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
         "boolean": CENTRO_BOOL_OPS,
     },
 )
+
+
+def _has_role(user, role_name):
+    return user_has_role(user, role_name)
 
 
 class CentroListView(LoginRequiredMixin, ListView):
@@ -62,9 +67,9 @@ class CentroListView(LoginRequiredMixin, ListView):
         user = self.request.user
         busq = self.request.GET.get("busqueda", "").strip()
 
-        if user.is_superuser or user.groups.filter(name="CDF SSE").exists():
+        if user.is_superuser or _has_role(user, "CDF SSE"):
             pass
-        elif user.groups.filter(name="ReferenteCentro").exists():
+        elif _has_role(user, "ReferenteCentro"):
             base_qs = base_qs.filter(referente=user)
         else:
             return Centro.objects.none()
@@ -92,9 +97,7 @@ class CentroListView(LoginRequiredMixin, ListView):
             }
         )
 
-        ctx["can_add"] = (
-            user.is_superuser or user.groups.filter(name="CDF SSE").exists()
-        )
+        ctx["can_add"] = user.is_superuser or _has_role(user, "CDF SSE")
 
         ctx["table_headers"] = [
             {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
@@ -137,7 +140,7 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             and obj.faro_asociado
             and obj.faro_asociado.referente_id == user.id
         )
-        es_cdf_sse = user.groups.filter(name="CDF SSE").exists()
+        es_cdf_sse = _has_role(user, "CDF SSE")
         if not (es_ref or es_adherido or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return obj
@@ -293,7 +296,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-        es_cdf_sse = user.groups.filter(name="CDF SSE").exists()
+        es_cdf_sse = _has_role(user, "CDF SSE")
         if not (centro.referente_id == user.id or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
@@ -315,7 +318,7 @@ class CentroDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
     def dispatch(self, request, *args, **kwargs):
         centro = self.get_object()
         user = request.user
-        es_cdf_sse = user.groups.filter(name="CDF SSE").exists()
+        es_cdf_sse = _has_role(user, "CDF SSE")
         if not (centro.referente_id == user.id or user.is_superuser or es_cdf_sse):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
@@ -375,7 +378,6 @@ def centros_ajax(request):
     from django.template.loader import render_to_string
     from django.core.paginator import Paginator
     from django.http import JsonResponse
-    from core.decorators import group_required
 
     def _centros_ajax(request):
         query = request.GET.get("busqueda", "")
@@ -386,9 +388,9 @@ def centros_ajax(request):
 
         if user.is_superuser:
             pass
-        elif user.groups.filter(name="CDF SSE").exists():
+        elif _has_role(user, "CDF SSE"):
             pass
-        elif user.groups.filter(name="ReferenteCentro").exists():
+        elif _has_role(user, "ReferenteCentro"):
             qs = qs.filter(referente=user)
         else:
             qs = Centro.objects.none()
@@ -402,7 +404,7 @@ def centros_ajax(request):
         paginator = Paginator(qs, 10)
         page_obj = paginator.get_page(page)
 
-        can_add = user.is_superuser or user.groups.filter(name="CDF SSE").exists()
+        can_add = user.is_superuser or _has_role(user, "CDF SSE")
 
         context = {
             "centros": page_obj,

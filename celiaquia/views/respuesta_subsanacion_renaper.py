@@ -8,12 +8,13 @@ from django.views.decorators.csrf import csrf_protect
 
 from celiaquia.models import ExpedienteCiudadano
 from celiaquia.permissions import can_confirm_subsanacion
+from iam.services import user_has_role
 
 logger = logging.getLogger("django")
 
 
 def _in_group(user, name: str) -> bool:
-    return user.is_authenticated and user.groups.filter(name=name).exists()
+    return user_has_role(user, name)
 
 
 class RespuestaSubsanacionRenaperView(View):

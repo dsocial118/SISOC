@@ -16,6 +16,7 @@ from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
 from expedientespagos.services import ExpedientesPagosService
 from comedores.models import Comedor
+from iam.services import user_has_role
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -90,13 +91,11 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
     form_class = ExpedientePagoForm
 
     def _get_role_flags(self):
-        es_area_legales = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Area Legales").exists()
+        es_area_legales = self.request.user.is_superuser or user_has_role(
+            self.request.user, "Area Legales"
         )
-        es_tecnico_comedor = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+        es_tecnico_comedor = self.request.user.is_superuser or user_has_role(
+            self.request.user, "Tecnico Comedor"
         )
         return es_area_legales, es_tecnico_comedor
 
@@ -151,13 +150,11 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
     form_class = ExpedientePagoForm
 
     def _get_role_flags(self):
-        es_area_legales = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Area Legales").exists()
+        es_area_legales = self.request.user.is_superuser or user_has_role(
+            self.request.user, "Area Legales"
         )
-        es_tecnico_comedor = (
-            self.request.user.is_superuser
-            or self.request.user.groups.filter(name="Tecnico Comedor").exists()
+        es_tecnico_comedor = self.request.user.is_superuser or user_has_role(
+            self.request.user, "Tecnico Comedor"
         )
         return es_area_legales, es_tecnico_comedor
 

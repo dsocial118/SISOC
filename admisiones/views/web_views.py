@@ -43,6 +43,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from expedientespagos.services import ExpedientesPagosService
+from iam.services import user_has_role
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasfinal.models import RendicionCuentasFinal
 from rendicioncuentasfinal.rendicion_cuentas_final_service import (
@@ -866,7 +867,7 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
 
         if not (
             request.user.is_superuser
-            or request.user.groups.filter(name="Coordinador Equipo Tecnico").exists()
+            or user_has_role(request.user, "Coordinador Equipo Tecnico")
         ):
             messages.error(request, "No tiene permisos para realizar esta acción.")
             return self._safe_redirect_to_self(request)
@@ -1164,7 +1165,7 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
 
         # Agregar información para el botón de revisión del técnico
         if (
-            self.request.user.groups.filter(name="Tecnico Comedor").exists()
+            user_has_role(self.request.user, "Tecnico Comedor")
             and self.object.estado == "Docx generado"
         ):
             context["mostrar_revision_tecnico"] = True
@@ -1378,9 +1379,9 @@ def admisiones_legales_ajax(request):
     """Endpoint AJAX para búsqueda filtrada de admisiones legales"""
     from django.template.loader import render_to_string
     from django.core.paginator import Paginator
-    from core.decorators import group_required
+    from core.decorators import permissions_any_required
 
-    @group_required(["Abogado Dupla", "Coordinador Gestion"])
+    @permissions_any_required(["Abogado Dupla", "Coordinador Gestion"])
     def _ajax_handler(request):
         query = request.GET.get("busqueda", "")
         page = request.GET.get("page", 1)

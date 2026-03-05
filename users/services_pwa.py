@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Iterable
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from users.models import AccesoComedorPWA
+from users.models import AccesoComedorPWA, Profile
 
 User = get_user_model()
 
@@ -141,6 +143,19 @@ def create_operador_for_comedor(
             {"username": "Ya existe un usuario con ese username."}
         ) from exc
     operador.groups.clear()
+    profile, _ = Profile.objects.get_or_create(user=operador)
+    profile.must_change_password = True
+    profile.password_changed_at = None
+    profile.initial_password_expires_at = timezone.now() + timedelta(
+        hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
+    )
+    profile.save(
+        update_fields=[
+            "must_change_password",
+            "password_changed_at",
+            "initial_password_expires_at",
+        ]
+    )
 
     acceso = AccesoComedorPWA.objects.create(
         user=operador,

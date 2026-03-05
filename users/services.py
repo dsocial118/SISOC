@@ -6,6 +6,7 @@ from django.db.models import F
 from django.urls import reverse
 
 from core.constants import UserGroups
+from iam.services import user_has_any_role, user_has_role
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.column_preferences import build_columns_context
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
@@ -163,7 +164,7 @@ class UserPermissionService:
         if user.is_superuser:
             return True
 
-        return user.groups.filter(name=grupo_nombre).exists()
+        return user_has_role(user, grupo_nombre)
 
     @staticmethod
     def tiene_alguno_de_los_grupos(user: User, grupos: List[str]) -> bool:
@@ -183,7 +184,7 @@ class UserPermissionService:
         if user.is_superuser:
             return True
 
-        return user.groups.filter(name__in=grupos).exists()
+        return user_has_any_role(user, grupos)
 
     @staticmethod
     def es_tecnico_o_abogado(user: User) -> bool:
