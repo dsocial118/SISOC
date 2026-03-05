@@ -19,7 +19,7 @@
                    class="btn btn-secondary mr-1 backbutton-handler">Volver</a>
             </div>
             <div class="col-auto">
-                {% if request.user|has_group:"Tecnico Comedor" or request.user.is_superuser %}
+                {% if request.user|has_perm_code:"Tecnico Comedor" or request.user.is_superuser %}
                     {% if object.estado == "Docx generado" and pdf_borrador and pdf_borrador.archivo_docx %}
                         <a href="{{ pdf_borrador.archivo_docx.url }}"
                            class="btn btn-success mr-1"
@@ -30,7 +30,7 @@
                                 data-bs-target="#subirDocxModal">📤 Subir DOCX Editado</button>
                     {% endif %}
                 {% endif %}
-                {% if request.user|has_group:"Abogado Dupla" or request.user.is_superuser %}
+                {% if request.user|has_perm_code:"Abogado Dupla" or request.user.is_superuser %}
                     {% if object.estado == "Docx editado" and pdf_borrador and pdf_borrador.archivo_docx_editado %}
                         <a href="{{ pdf_borrador.archivo_docx_editado.url }}"
                            class="btn btn-info mr-1"
@@ -47,7 +47,7 @@
                     <a href="{{ pdf.archivo.url }}" class="btn btn-primary" target="_blank">&#128196; PDF Final</a>
                 {% elif pdf_borrador %}
                     {% if pdf_borrador.archivo_docx_editado %}
-                        {% if request.user|has_group:"Abogado Dupla" or request.user.is_superuser %}
+                        {% if request.user|has_perm_code:"Abogado Dupla" or request.user.is_superuser %}
                             {% if object.estado != "Docx editado" %}
                                 <a href="{{ pdf_borrador.archivo_docx_editado.url }}"
                                    class="btn btn-info"
@@ -86,7 +86,7 @@
                             <p class="mb-1">{{ valor }}</p>
                         </div>
                         {% if object.estado != "Validado" %}
-                            {% if request.user|has_group:"Abogado Dupla" or request.user.is_superuser %}
+                            {% if request.user|has_perm_code:"Abogado Dupla" or request.user.is_superuser %}
                                 <div class="form-check">
                                     <input class="form-check-input campo-subsanar"
                                            type="checkbox"

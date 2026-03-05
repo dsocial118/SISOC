@@ -14,7 +14,7 @@
             <p>Novedades del sistema</p>
         </a>
     </li>
-    {% if request.user|has_group:"Administrador" %}
+    {% if request.user|has_any_perm:"auth.view_user,auth.add_user,auth.change_user,auth.delete_user,auth.view_group,auth.add_group,auth.change_group" %}
         <li class="nav-item">
             <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-users"></i>
@@ -62,7 +62,7 @@
             </p>
         </a>
         <ul class="nav nav-treeview">
-            {% if request.user|has_group:"Comedor Ver" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Area Legales" or request.user|has_group:"Comedores Listar" or request.user|has_group:"Coordinador Equipo Tecnico" or request.user|has_group:"Coordinador general" %}
+            {% if request.user|has_perm_code:"comedores.view_comedor" %}
                 <li class="nav-item">
                     <a href="{% url 'comedores' %}"
                        class="nav-link {% if 'comedores_nuevo/' in pagina_actual %}active{% endif %}">
@@ -96,7 +96,7 @@
                     </ul>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Abogado Dupla" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+            {% if request.user|has_perm_code:"acompanamientos.view_informacionrelevante" %}
                 <li class="nav-item">
                     <a href="{% url 'lista_comedores_acompanamiento' %}"
                        class="nav-link {% if 'acompanamiento' in pagina_actual %}active{% endif %}">
@@ -105,7 +105,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"Area Legales" or request.user|has_group:"Area Contable" or request.user|has_group:"Tecnico Comedor" or request.user|has_group:"Coordinador Equipo Tecnico" %}
+            {% if request.user|has_perm_code:"Area Legales" or request.user|has_perm_code:"Area Contable" or request.user|has_perm_code:"Tecnico Comedor" or request.user|has_perm_code:"Coordinador Equipo Tecnico" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicion_cuentas_final_listar' %}"
                        class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
@@ -114,7 +114,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"Organizaciones" %}
+            {% if request.user|has_perm_code:"organizaciones.view_organizacion" %}
                 <li class="nav-item">
                     <a href="{% url 'organizaciones' %}"
                        class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
@@ -123,7 +123,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"Centro de Infancia Listar" %}
+            {% if request.user|has_perm_code:"centrodeinfancia.view_centrodeinfancia" %}
                 <li class="nav-item">
                     <a href="{% url 'centrodeinfancia' %}"
                        class="nav-link {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
@@ -132,7 +132,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"Ciudadanos" %}
+            {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
                 <li class="nav-item">
                     <a href="{% url 'ciudadanos' %}"
                        class="nav-link {% if 'ciudadanos/listar' in pagina_actual %}active{% endif %}">
@@ -141,7 +141,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_group:"superadmin" or request.user|has_group:"ReferenteCentro" or request.user|has_group:"CDF SSE" %}
+            {% if request.user|has_perm_code:"centrodefamilia.view_centro" %}
                 <li class="nav-item">
                     <a href="{% url 'centro_list' %}"
                        class="nav-link {% if 'centros/' in pagina_actual %}active{% endif %}">

@@ -9,6 +9,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from celiaquia.models import Expediente
 from celiaquia.services.padron_final_service import PadronFinalService
+from iam.services import user_has_any_role
 
 
 class ExpedientePadronFinalExportView(LoginRequiredMixin, View):
@@ -49,4 +50,4 @@ class ExpedientePadronFinalExportView(LoginRequiredMixin, View):
 
         # Verificar grupos permitidos
         grupos_permitidos = ["CoordinadorCeliaquia", "TecnicoCeliaquia"]
-        return user.groups.filter(name__in=grupos_permitidos).exists()
+        return user_has_any_role(user, grupos_permitidos)

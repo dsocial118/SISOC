@@ -118,6 +118,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "users.middleware.FirstLoginPasswordChangeMiddleware",
     "sentry.middleware.SentryUserContextMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -163,12 +164,34 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "inicio"
 LOGOUT_REDIRECT_URL = "login"
 ACCOUNT_FORMS = {"login": "users.forms.UserLoginForm"}
+INITIAL_PASSWORD_MAX_AGE_HOURS = _safe_int_env("INITIAL_PASSWORD_MAX_AGE_HOURS", 72)
+PASSWORD_RESET_TIMEOUT = _safe_int_env("PASSWORD_RESET_TIMEOUT", 3600)
 
 # Email
-if ENVIRONMENT == "prd":
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-else:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "").strip()
+if not EMAIL_BACKEND:
+    if ENVIRONMENT == "prd":
+        EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    else:
+        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = _safe_int_env("EMAIL_PORT", 587)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "false").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+EMAIL_TIMEOUT = _safe_int_env("EMAIL_TIMEOUT", 10)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@sisoc.local")
 
 # Mensajes / Crispy
 MESSAGE_TAGS = {
@@ -523,7 +546,8 @@ else:
 # Overrides y flags de endurecimiento CSP (migración gradual)
 ENABLE_CSP = os.getenv("ENABLE_CSP", str(ENABLE_CSP)).lower() == "true"
 CSP_REPORT_ONLY = os.getenv("CSP_REPORT_ONLY", "true").lower() == "true"
-if RUNNING_TESTS and "CSP_REPORT_ONLY" not in os.environ:
+# En tests usamos modo enforce por defecto para evitar dependencia del .env local.
+if RUNNING_TESTS:
     CSP_REPORT_ONLY = False
 CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
     os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "false").lower() == "true"

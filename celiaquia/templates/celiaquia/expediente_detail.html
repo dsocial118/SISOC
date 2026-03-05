@@ -10,7 +10,7 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% with is_tec=request.user|has_group:"TecnicoCeliaquia" is_coord=request.user|has_group:"CoordinadorCeliaquia" is_prov=request.user|has_group:"ProvinciaCeliaquia" %}
+    {% with is_tec=request.user|has_perm_code:"TecnicoCeliaquia" is_coord=request.user|has_perm_code:"CoordinadorCeliaquia" is_prov=request.user|has_perm_code:"ProvinciaCeliaquia" %}
         <div class="mb-3 d-flex justify-content-between align-items-center">
             <div>
                 <a href="{% url 'expediente_list' %}"

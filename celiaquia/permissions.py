@@ -4,11 +4,12 @@ Módulo centralizado para validaciones de permisos en celiaquia.
 
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from celiaquia.models import RevisionTecnico
+from iam.services import user_has_role
 
 
 def _in_group(user, name: str) -> bool:
     """Verifica si el usuario pertenece a un grupo específico."""
-    return user.is_authenticated and user.groups.filter(name=name).exists()
+    return user_has_role(user, name)
 
 
 def _safe_profile(user):

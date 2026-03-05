@@ -21,6 +21,7 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
+from iam.services import user_has_role
 
 from celiaquia.forms import ExpedienteForm, ConfirmarEnvioForm
 from celiaquia.models import (
@@ -53,7 +54,7 @@ logger = logging.getLogger("django")
 
 
 def _user_in_group(user, group_name: str) -> bool:
-    return user.is_authenticated and user.groups.filter(name=group_name).exists()
+    return user_has_role(user, group_name)
 
 
 def _is_admin(user) -> bool:

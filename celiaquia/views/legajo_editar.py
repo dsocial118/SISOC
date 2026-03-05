@@ -10,12 +10,13 @@ from django.db import transaction
 
 from celiaquia.models import Expediente, ExpedienteCiudadano
 from core.models import Nacionalidad, Sexo
+from iam.services import user_has_role
 
 logger = logging.getLogger("django")
 
 
 def _user_in_group(user, group_name: str) -> bool:
-    return user.is_authenticated and user.groups.filter(name=group_name).exists()
+    return user_has_role(user, group_name)
 
 
 def _is_admin(user) -> bool:

@@ -1,5 +1,5 @@
 from django.urls import path
-from core.decorators import group_required
+from core.decorators import permissions_any_required
 from rendicioncuentasmensual.views import (
     RendicionCuentaMensualListView,
     RendicionCuentaMensualDetailView,
@@ -12,27 +12,27 @@ from rendicioncuentasmensual.views import (
 urlpatterns = [
     path(
         "rendicioncuentasmensual/<int:comedor_id>/",
-        group_required(["Tecnico Comedor"])(RendicionCuentaMensualListView.as_view()),
+        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualListView.as_view()),
         name="rendicioncuentasmensual_list",
     ),
     path(
         "rendicioncuentasmensual/detalle/<int:pk>/",
-        group_required(["Tecnico Comedor"])(RendicionCuentaMensualDetailView.as_view()),
+        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualDetailView.as_view()),
         name="rendicioncuentasmensual_detail",
     ),
     path(
         "rendicioncuentasmensual/eliminar/<int:pk>/",
-        group_required(["Tecnico Comedor"])(RendicionCuentaMensualDeleteView.as_view()),
+        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualDeleteView.as_view()),
         name="rendicioncuentasmensual_delete",
     ),
     path(
         "rendicioncuentasmensual/nuevo/<int:comedor_id>/",
-        group_required(["Tecnico Comedor"])(RendicionCuentaMensualCreateView.as_view()),
+        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualCreateView.as_view()),
         name="rendicioncuentasmensual_create",
     ),
     path(
         "rendicioncuentasmensual/editar/<int:pk>/",
-        group_required(["Tecnico Comedor"])(RendicionCuentaMensualUpdateView.as_view()),
+        permissions_any_required(["Tecnico Comedor"])(RendicionCuentaMensualUpdateView.as_view()),
         name="rendicioncuentasmensual_update",
     ),
     path(

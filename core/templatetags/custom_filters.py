@@ -6,6 +6,9 @@ from django import template
 from django.templatetags.static import static
 from django.utils.html import format_html
 
+from core.permissions.registry import resolve_permission_codes
+from iam.services import user_has_permission_code
+
 register = template.Library()
 
 _DAYS = (
@@ -21,13 +24,25 @@ _MEALS = ("desayuno", "almuerzo", "merienda", "merienda_reforzada", "cena")
 
 
 @register.filter
-def has_group(user, group_name):
-    try:
-        if not hasattr(user, "cached_groups"):
-            user.cached_groups = list(user.groups.values_list("name", flat=True))
-        return group_name in user.cached_groups or user.is_superuser
-    except Exception:
+def has_perm_code(user, permission_alias):
+    permission_codes = resolve_permission_codes([permission_alias])
+    if not permission_codes:
         return False
+    return any(user_has_permission_code(user, code) for code in permission_codes)
+
+
+@register.filter
+def has_any_perm(user, permission_aliases):
+    if not permission_aliases:
+        return False
+    if isinstance(permission_aliases, str):
+        aliases = [part.strip() for part in permission_aliases.split(",") if part.strip()]
+    else:
+        aliases = list(permission_aliases)
+    permission_codes = resolve_permission_codes(aliases)
+    if not permission_codes:
+        return False
+    return any(user_has_permission_code(user, code) for code in permission_codes)
 
 
 @register.filter
