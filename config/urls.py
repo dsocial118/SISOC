@@ -58,7 +58,7 @@ urlpatterns = [
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
     path(
         "reporter-provincias/",
-        permissions_any_required(["CoordinadorCeliaquia", "TecnicoCeliaquia"])(
+        permissions_any_required(["celiaquia.view_expediente"])(
             ReporterProvinciasView.as_view()
         ),
         name="reporter_provincias",

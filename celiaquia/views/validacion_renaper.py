@@ -10,9 +10,12 @@ from django.views.decorators.csrf import csrf_protect
 
 from celiaquia.models import ExpedienteCiudadano
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
-from iam.services import user_has_role
+from iam.services import user_has_permission_code
 
 logger = logging.getLogger(__name__)
+
+ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
+ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
 
 
 def _truncate(value, length=500):
@@ -43,8 +46,8 @@ def _build_log_data(
     return {k: v for k, v in data.items() if v is not None}
 
 
-def _in_group(user, name: str) -> bool:
-    return user_has_role(user, name)
+def _has_permission(user, permission_code: str) -> bool:
+    return user_has_permission_code(user, permission_code)
 
 
 def _mapear_sexo_para_renaper(ciudadano):
@@ -73,9 +76,7 @@ def _build_datos_provincia(ciudadano, documento_consulta):
         "nombre": (getattr(ciudadano, "nombre", "") or "").title(),
         "apellido": (getattr(ciudadano, "apellido", "") or "").title(),
         "fecha_nacimiento": (
-            fecha_nacimiento.strftime("%d/%m/%Y")
-            if fecha_nacimiento
-            else None
+            fecha_nacimiento.strftime("%d/%m/%Y") if fecha_nacimiento else None
         ),
         "sexo": getattr(getattr(ciudadano, "sexo", None), "sexo", None),
         "calle": (getattr(ciudadano, "calle", "") or "").title(),
@@ -250,8 +251,8 @@ class ValidacionRenaperView(View):
             raise PermissionDenied("Autenticación requerida.")
 
         is_admin = user.is_superuser
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
-        is_tec = _in_group(user, "TecnicoCeliaquia")
+        is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
 
         if not (is_admin or is_coord or is_tec):
             raise PermissionDenied("Permiso denegado.")
@@ -373,7 +374,10 @@ class ValidacionRenaperView(View):
             )
 
             # Si es técnico, verificar que esté asignado al expediente
-            if _in_group(user, "TecnicoCeliaquia") and not user.is_superuser:
+            if (
+                _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+                and not user.is_superuser
+            ):
                 asignaciones = legajo.expediente.asignaciones_tecnicos.filter(
                     tecnico=user
                 )

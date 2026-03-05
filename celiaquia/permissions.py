@@ -4,12 +4,15 @@ Módulo centralizado para validaciones de permisos en celiaquia.
 
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from celiaquia.models import RevisionTecnico
-from iam.services import user_has_role
+from iam.services import user_has_permission_code
+
+ROLE_COORDINADOR_PERMISSION = "auth.role_coordinadorceliaquia"
+ROLE_TECNICO_PERMISSION = "auth.role_tecnicoceliaquia"
+ROLE_PROVINCIA_PERMISSION = "auth.role_provinciaceliaquia"
 
 
-def _in_group(user, name: str) -> bool:
-    """Verifica si el usuario pertenece a un grupo específico."""
-    return user_has_role(user, name)
+def _has_permission(user, permission_code: str) -> bool:
+    return user_has_permission_code(user, permission_code)
 
 
 def _safe_profile(user):
@@ -41,9 +44,9 @@ def can_edit_legajo_files(user, expediente, legajo=None):
         raise PermissionDenied("Autenticación requerida.")
 
     is_admin = user.is_superuser
-    is_coord = _in_group(user, "CoordinadorCeliaquia")
-    is_tec = _in_group(user, "TecnicoCeliaquia")
-    is_prov = _in_group(user, "ProvinciaCeliaquia")
+    is_coord = _has_permission(user, ROLE_COORDINADOR_PERMISSION)
+    is_tec = _has_permission(user, ROLE_TECNICO_PERMISSION)
+    is_prov = _has_permission(user, ROLE_PROVINCIA_PERMISSION)
 
     if not (is_admin or is_coord or is_tec or is_prov):
         raise PermissionDenied("Permiso denegado.")
@@ -85,8 +88,8 @@ def can_review_legajo(user, expediente):
         raise PermissionDenied("Autenticación requerida.")
 
     is_admin = user.is_superuser
-    is_coord = _in_group(user, "CoordinadorCeliaquia")
-    is_tec = _in_group(user, "TecnicoCeliaquia")
+    is_coord = _has_permission(user, ROLE_COORDINADOR_PERMISSION)
+    is_tec = _has_permission(user, ROLE_TECNICO_PERMISSION)
 
     if not (is_admin or is_coord or is_tec):
         raise PermissionDenied("Permiso denegado.")
@@ -107,7 +110,7 @@ def can_confirm_subsanacion(user, expediente):
         raise PermissionDenied("Autenticación requerida.")
 
     is_admin = user.is_superuser
-    is_prov = _in_group(user, "ProvinciaCeliaquia")
+    is_prov = _has_permission(user, ROLE_PROVINCIA_PERMISSION)
 
     if not (is_admin or is_prov):
         raise PermissionDenied(

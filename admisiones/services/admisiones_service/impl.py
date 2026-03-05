@@ -25,9 +25,8 @@ from admisiones.forms.admisiones_forms import (
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from ..docx_service import DocumentTemplateService, TextFormatterService
-from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
-from iam.services import user_has_role
+from iam.services import user_has_any_permission_codes, user_has_permission_code
 from admisiones.services.admisiones_filter_config import (
     FIELD_MAP as ADMISION_FILTER_MAP,
     FIELD_TYPES as ADMISION_FIELD_TYPES,
@@ -1115,11 +1114,25 @@ class AdmisionService:
 
         try:
 
-            if user_has_role(user, "Abogado Dupla"):
+            if user_has_any_permission_codes(
+                user,
+                [
+                    "comedores.view_comedor",
+                    "admisiones.view_admision",
+                    "acompanamientos.view_informacionrelevante",
+                ],
+            ):
 
                 return "Abogado Dupla"
 
-            elif user_has_role(user, "Tecnico Comedor"):
+            elif user_has_any_permission_codes(
+                user,
+                [
+                    "comedores.view_comedor",
+                    "admisiones.view_admision",
+                    "acompanamientos.view_informacionrelevante",
+                ],
+            ):
 
                 return "Tecnico Comedor"
 
@@ -1667,7 +1680,14 @@ class AdmisionService:
         try:
 
             return (
-                user_has_role(user, "Tecnico Comedor")
+                user_has_any_permission_codes(
+                    user,
+                    [
+                        "comedores.view_comedor",
+                        "admisiones.view_admision",
+                        "acompanamientos.view_informacionrelevante",
+                    ],
+                )
                 and comedor.dupla
                 and comedor.dupla.tecnico.filter(id=user.id).exists()
                 and comedor.dupla.estado == "Activo"
@@ -1754,8 +1774,8 @@ class AdmisionService:
     def _resolver_roles_para_botones(user):
         if not user:
             return False, False
-        es_tecnico = user_has_role(user, UserGroups.TECNICO_COMEDOR)
-        es_abogado = user_has_role(user, UserGroups.ABOGADO_DUPLA)
+        es_tecnico = user_has_permission_code(user, "auth.role_tecnico_comedor")
+        es_abogado = user_has_permission_code(user, "auth.role_abogado_dupla")
         return es_tecnico, es_abogado
 
     @staticmethod

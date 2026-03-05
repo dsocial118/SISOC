@@ -8,7 +8,7 @@ from rendicioncuentasfinal.models import (
     DocumentoRendicionFinal,
 )
 from historial.services.historial_service import HistorialService
-from iam.services import user_has_role
+from iam.services import user_has_any_permission_codes
 
 logger = logging.getLogger("django")
 
@@ -101,11 +101,29 @@ class RendicionCuentasFinalService:
                     tipo__validador__in=["Contable", "Legales", "Dupla"]
                 )
             else:
-                if user_has_role(user, "Area Contable"):
+                if user_has_any_permission_codes(
+                    user,
+                    ["comedores.view_comedor", "expedientespagos.view_expedientepago"],
+                ):
                     filtros_validador |= Q(tipo__validador="Contable")
-                if user_has_role(user, "Area Legales"):
+                if user_has_any_permission_codes(
+                    user,
+                    [
+                        "comedores.view_comedor",
+                        "admisiones.view_admision",
+                        "acompanamientos.view_informacionrelevante",
+                        "expedientespagos.view_expedientepago",
+                    ],
+                ):
                     filtros_validador |= Q(tipo__validador="Legales")
-                if user_has_role(user, "Tecnico Comedor"):
+                if user_has_any_permission_codes(
+                    user,
+                    [
+                        "comedores.view_comedor",
+                        "admisiones.view_admision",
+                        "acompanamientos.view_informacionrelevante",
+                    ],
+                ):
                     filtros_validador |= Q(tipo__validador="Dupla")
 
                 # Coordinador de Gestión: ver documentos de duplas asignadas

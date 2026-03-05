@@ -43,7 +43,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from expedientespagos.services import ExpedientesPagosService
-from iam.services import user_has_role
+from iam.services import user_has_any_permission_codes
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasfinal.models import RendicionCuentasFinal
 from rendicioncuentasfinal.rendicion_cuentas_final_service import (
@@ -867,7 +867,14 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
 
         if not (
             request.user.is_superuser
-            or user_has_role(request.user, "Coordinador Equipo Tecnico")
+            or user_has_any_permission_codes(
+                request.user,
+                [
+                    "comedores.view_comedor",
+                    "admisiones.view_admision",
+                    "acompanamientos.view_informacionrelevante",
+                ],
+            )
         ):
             messages.error(request, "No tiene permisos para realizar esta acción.")
             return self._safe_redirect_to_self(request)
@@ -1165,7 +1172,14 @@ class InformeTecnicoDetailView(LoginRequiredMixin, DetailView):
 
         # Agregar información para el botón de revisión del técnico
         if (
-            user_has_role(self.request.user, "Tecnico Comedor")
+            user_has_any_permission_codes(
+                self.request.user,
+                [
+                    "comedores.view_comedor",
+                    "admisiones.view_admision",
+                    "acompanamientos.view_informacionrelevante",
+                ],
+            )
             and self.object.estado == "Docx generado"
         ):
             context["mostrar_revision_tecnico"] = True
@@ -1381,7 +1395,13 @@ def admisiones_legales_ajax(request):
     from django.core.paginator import Paginator
     from core.decorators import permissions_any_required
 
-    @permissions_any_required(["Abogado Dupla", "Coordinador Gestion"])
+    @permissions_any_required(
+        [
+            "comedores.view_comedor",
+            "admisiones.view_admision",
+            "acompanamientos.view_informacionrelevante",
+        ]
+    )
     def _ajax_handler(request):
         query = request.GET.get("busqueda", "")
         page = request.GET.get("page", 1)

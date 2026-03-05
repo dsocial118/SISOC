@@ -10,14 +10,8 @@ from django.utils import timezone
 from celiaquia.models import Expediente, ExpedienteCiudadano, RevisionTecnico
 from celiaquia.permissions import can_confirm_subsanacion
 from celiaquia.utils import error_response, success_response
-from iam.services import user_has_role
 
 logger = logging.getLogger("django")
-
-
-def _in_group(user, name):
-    """Verifica si el usuario pertenece a un grupo específico."""
-    return user_has_role(user, name)
 
 
 def _same_owner(user, exp) -> bool:

@@ -503,7 +503,7 @@ class CentroDeInfanciaDeleteView(
 
 @login_required
 def centrodeinfancia_ajax(request):
-    @permissions_any_required(["Centro de Infancia Listar"])
+    @permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])
     def _centrodeinfancia_ajax(req):
         query = req.GET.get("busqueda", "")
         page = req.GET.get("page", 1)
