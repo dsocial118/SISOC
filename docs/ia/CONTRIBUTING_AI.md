@@ -104,17 +104,54 @@ Evitar PRs que mezclen:
 - cambios funcionales en múltiples dominios sin relación,
 - limpieza masiva sin criterio de aceptación claro.
 
-## Convenciones de commits (recomendadas)
+## Convenciones de commits (obligatorias)
 
-Alineadas al uso actual del equipo (`README.md`):
+Reglas obligatorias para commits hechos por IA:
+- Mensaje en español.
+- Primera línea obligatoria con patrón: `<type>(<scope>): <subject>`.
+- Usar `scope` semántico y concreto (app, módulo o área real afectada).
+
+Plantilla:
 
 ```text
-feat: agregar filtro por estado en comunicados
-fix: corregir 500 al parsear page en core views
-refactor: extraer helper de normalización en filtros favoritos
-test: agregar regresión para rollback de historial
-docs: actualizar guía IA para testing
-chore: ajustar script local de desarrollo
+Obligatorio:
+<type>(<scope>): <subject>
+
+Opcional:
+<why> (por qué se hace; contexto del problema)
+<what> (qué cambió; bullets si aplica)
+<how>  (cómo se resolvió; opcional, sólo si aporta)
+
+<impact> (impacto / migraciones / flags / backwards-compat)
+<tests>  (cómo se probó)
+
+<refs>   (Refs #123 / Closes #123)
+<breaking> (BREAKING CHANGE: ...)
+```
+
+Ejemplos:
+
+```text
+fix(core): corregir 500 al parsear page en load_organizaciones
+
+why: el endpoint devolvía 500 ante valores no numéricos en `page`.
+what:
+- valida `page` antes de convertirla a entero
+- responde 400 con mensaje de error controlado
+tests:
+- docker compose exec django pytest -n auto core/tests/test_views.py
+refs: Refs #123
+```
+
+```text
+feat(comunicados): agregar filtro opcional por estado en API
+
+what:
+- agrega parámetro `estado` en query params
+- mantiene comportamiento previo cuando no se envía
+impact: sin migraciones; backward compatible
+tests:
+- docker compose exec django pytest -n auto comunicados/tests/
 ```
 
 ## Supuestos explícitos (obligatorio si faltan datos)
