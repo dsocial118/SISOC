@@ -18,7 +18,7 @@ def build_legacy_permission_code(alias: str) -> str:
 
 
 # Alias legacy -> permisos Django canónicos.
-# Para acciones sin mapeo explícito se usa fallback auth.role_<slug>.
+# Uso limitado a bootstrap/sincronización histórica de grupos.
 LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
     # Usuarios / administración
     "Usuario Ver": ("auth.view_user",),
@@ -237,17 +237,34 @@ def permission_codes_for_alias(alias: str) -> tuple[str, ...]:
     return (build_legacy_permission_code(normalized),)
 
 
+def _normalize_permission_code(value: str) -> str:
+    normalized = str(value or "").strip()
+    if not normalized:
+        return ""
+    if "." not in normalized:
+        return ""
+    app_label, codename = normalized.split(".", 1)
+    if not app_label or not codename:
+        return ""
+    return f"{app_label}.{codename}"
+
+
 def resolve_permission_codes(values: str | Iterable[str]) -> tuple[str, ...]:
+    """
+    Resuelve únicamente permisos canónicos en formato app_label.codename.
+
+    No convierte aliases legacy por nombre de grupo.
+    """
     if isinstance(values, str):
         values = [values]
 
     result: list[str] = []
     seen: set[str] = set()
     for value in values or []:
-        for code in permission_codes_for_alias(value):
-            if code and code not in seen:
-                seen.add(code)
-                result.append(code)
+        code = _normalize_permission_code(str(value))
+        if code and code not in seen:
+            seen.add(code)
+            result.append(code)
     return tuple(result)
 
 
@@ -259,4 +276,13 @@ def aliases_for_bootstrap_group(group_name: str) -> tuple[str, ...]:
 
 
 def permission_codes_for_bootstrap_group(group_name: str) -> tuple[str, ...]:
-    return resolve_permission_codes(aliases_for_bootstrap_group(group_name))
+    aliases = aliases_for_bootstrap_group(group_name)
+    result: list[str] = []
+    seen: set[str] = set()
+    for alias in aliases:
+        for code in permission_codes_for_alias(alias):
+            normalized = _normalize_permission_code(code)
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                result.append(normalized)
+    return tuple(result)

@@ -34,32 +34,21 @@ def get_effective_role_names(user) -> set[str]:
 
 
 def user_has_role(user, role_name: str) -> bool:
-    if not user or not getattr(user, "is_authenticated", False):
-        return False
-    if getattr(user, "is_superuser", False):
-        return True
-    if not role_name:
-        return False
-    permission_codes = resolve_permission_codes([role_name])
-    if not permission_codes:
-        return False
-    return any(user.has_perm(code) for code in permission_codes)
+    """
+    Compatibilidad histórica: valida un único permiso canónico.
+
+    Nota: ya no resuelve aliases legacy por nombre de grupo.
+    """
+    return user_has_permission_code(user, role_name)
 
 
 def user_has_any_role(user, role_names: Iterable[str]) -> bool:
-    if not user or not getattr(user, "is_authenticated", False):
-        return False
-    if getattr(user, "is_superuser", False):
-        return True
+    """
+    Compatibilidad histórica: valida si tiene alguno de los permisos canónicos.
 
-    normalized = _normalize(role_names)
-    if not normalized:
-        return False
-
-    permission_codes = resolve_permission_codes(normalized)
-    if not permission_codes:
-        return False
-    return any(user.has_perm(code) for code in permission_codes)
+    Nota: ya no resuelve aliases legacy por nombre de grupo.
+    """
+    return user_has_any_permission_codes(user, role_names)
 
 
 def get_effective_permission_codes(user) -> set[str]:
@@ -82,7 +71,44 @@ def user_has_permission_code(user, permission_code: str) -> bool:
         return False
     if not permission_code:
         return False
-    return user.has_perm(permission_code)
+    permission_codes = resolve_permission_codes([permission_code])
+    if not permission_codes:
+        return False
+    return user.has_perm(permission_codes[0])
+
+
+def user_has_any_permission_codes(user, permission_codes: Iterable[str]) -> bool:
+    """Valida si el usuario tiene al menos uno de los permisos indicados."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+
+    normalized = _normalize(permission_codes)
+    if not normalized:
+        return False
+
+    resolved = resolve_permission_codes(normalized)
+    if not resolved:
+        return False
+    return any(user.has_perm(code) for code in resolved)
+
+
+def user_has_all_permission_codes(user, permission_codes: Iterable[str]) -> bool:
+    """Valida si el usuario tiene todos los permisos indicados."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+
+    normalized = _normalize(permission_codes)
+    if not normalized:
+        return False
+
+    resolved = resolve_permission_codes(normalized)
+    if not resolved:
+        return False
+    return all(user.has_perm(code) for code in resolved)
 
 
 def ensure_role_for_group(group: Group) -> None:

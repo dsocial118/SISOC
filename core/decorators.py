@@ -10,35 +10,35 @@ def _is_authenticated(user):
     return bool(user and getattr(user, "is_authenticated", False))
 
 
-def _has_any_permissions(user, permission_aliases):
+def _has_any_permissions(user, permission_codes):
     if not _is_authenticated(user):
         return False
     if getattr(user, "is_superuser", False):
         return True
 
-    permission_codes = resolve_permission_codes(permission_aliases)
-    return any(user_has_permission_code(user, code) for code in permission_codes)
+    resolved = resolve_permission_codes(permission_codes)
+    return any(user_has_permission_code(user, code) for code in resolved)
 
 
-def _has_all_permissions(user, permission_aliases):
+def _has_all_permissions(user, permission_codes):
     if not _is_authenticated(user):
         return False
     if getattr(user, "is_superuser", False):
         return True
 
-    permission_codes = resolve_permission_codes(permission_aliases)
-    if not permission_codes:
+    resolved = resolve_permission_codes(permission_codes)
+    if not resolved:
         return False
-    return all(user_has_permission_code(user, code) for code in permission_codes)
+    return all(user_has_permission_code(user, code) for code in resolved)
 
 
-def permissions_any_required(permission_aliases):
+def permissions_any_required(permission_codes):
     """Permite acceso cuando el usuario posee al menos un permiso indicado."""
 
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            if not _has_any_permissions(request.user, permission_aliases):
+            if not _has_any_permissions(request.user, permission_codes):
                 raise PermissionDenied
             return view_func(request, *args, **kwargs)
 
@@ -47,13 +47,13 @@ def permissions_any_required(permission_aliases):
     return decorator
 
 
-def permissions_all_required(permission_aliases):
+def permissions_all_required(permission_codes):
     """Permite acceso cuando el usuario posee todos los permisos indicados."""
 
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            if not _has_all_permissions(request.user, permission_aliases):
+            if not _has_all_permissions(request.user, permission_codes):
                 raise PermissionDenied
             return view_func(request, *args, **kwargs)
 

@@ -24,25 +24,25 @@ _MEALS = ("desayuno", "almuerzo", "merienda", "merienda_reforzada", "cena")
 
 
 @register.filter
-def has_perm_code(user, permission_alias):
-    permission_codes = resolve_permission_codes([permission_alias])
+def has_perm_code(user, permission_code):
+    permission_codes = resolve_permission_codes([permission_code])
     if not permission_codes:
         return False
     return any(user_has_permission_code(user, code) for code in permission_codes)
 
 
 @register.filter
-def has_any_perm(user, permission_aliases):
-    if not permission_aliases:
-        return False
-    if isinstance(permission_aliases, str):
-        aliases = [part.strip() for part in permission_aliases.split(",") if part.strip()]
-    else:
-        aliases = list(permission_aliases)
-    permission_codes = resolve_permission_codes(aliases)
+def has_any_perm(user, permission_codes):
     if not permission_codes:
         return False
-    return any(user_has_permission_code(user, code) for code in permission_codes)
+    if isinstance(permission_codes, str):
+        codes = [part.strip() for part in permission_codes.split(",") if part.strip()]
+    else:
+        codes = list(permission_codes)
+    resolved = resolve_permission_codes(codes)
+    if not resolved:
+        return False
+    return any(user_has_permission_code(user, code) for code in resolved)
 
 
 @register.filter

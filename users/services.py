@@ -5,8 +5,7 @@ from django.contrib.auth.models import User
 from django.db.models import F
 from django.urls import reverse
 
-from core.constants import UserGroups
-from iam.services import user_has_any_role, user_has_role
+from iam.services import user_has_any_permission_codes, user_has_permission_code
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.column_preferences import build_columns_context
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
@@ -20,6 +19,10 @@ from users.users_filter_config import (
 from users.usuarios_column_config import USUARIOS_COLUMNS, USUARIOS_LIST_KEY
 
 logger = logging.getLogger("django")
+TECHNICAL_ROLE_PERMISSION_CODES = (
+    "auth.role_tecnico_comedor",
+    "auth.role_abogado_dupla",
+)
 
 BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
     field_map=BENEFICIARIO_FILTER_MAP,
@@ -147,16 +150,16 @@ class UserPermissionService:
             return False, []
 
     @staticmethod
-    def tiene_grupo(user: User, grupo_nombre: str) -> bool:
+    def tiene_grupo(user: User, permiso_codigo: str) -> bool:
         """
-        Verifica si un usuario pertenece a un grupo específico.
+        Verifica si un usuario tiene un permiso específico.
 
         Args:
             user: Usuario a verificar
-            grupo_nombre: Nombre del grupo
+            permiso_codigo: Permiso app_label.codename
 
         Returns:
-            True si el usuario pertenece al grupo, False en caso contrario
+            True si el usuario tiene el permiso, False en caso contrario
         """
         if not user or not user.is_authenticated:
             return False
@@ -164,19 +167,19 @@ class UserPermissionService:
         if user.is_superuser:
             return True
 
-        return user_has_role(user, grupo_nombre)
+        return user_has_permission_code(user, permiso_codigo)
 
     @staticmethod
-    def tiene_alguno_de_los_grupos(user: User, grupos: List[str]) -> bool:
+    def tiene_alguno_de_los_grupos(user: User, permisos: List[str]) -> bool:
         """
-        Verifica si un usuario pertenece a al menos uno de los grupos especificados.
+        Verifica si un usuario tiene al menos uno de los permisos especificados.
 
         Args:
             user: Usuario a verificar
-            grupos: Lista de nombres de grupos
+            permisos: Lista de permisos app_label.codename
 
         Returns:
-            True si el usuario pertenece a al menos un grupo, False en caso contrario
+            True si el usuario tiene al menos un permiso, False en caso contrario
         """
         if not user or not user.is_authenticated:
             return False
@@ -184,7 +187,7 @@ class UserPermissionService:
         if user.is_superuser:
             return True
 
-        return user_has_any_role(user, grupos)
+        return user_has_any_permission_codes(user, permisos)
 
     @staticmethod
     def es_tecnico_o_abogado(user: User) -> bool:
@@ -198,7 +201,7 @@ class UserPermissionService:
             True si es técnico o abogado, False en caso contrario
         """
         return UserPermissionService.tiene_alguno_de_los_grupos(
-            user, UserGroups.DUPLA_ROLES
+            user, list(TECHNICAL_ROLE_PERMISSION_CODES)
         )
 
     @staticmethod

@@ -21,9 +21,11 @@ No se asignan permisos por lógica de `if grupo == "X"` como mecanismo principal
 
 Compatibilidad:
 
-- Se mantiene un registro de alias legacy en `core/permissions/registry.py`.
-- Los aliases (`"Comedores Ver"`, `"Tecnico Comedor"`, etc.) se resuelven a permisos Django canónicos.
-- Para aliases sin mapeo explícito se usa fallback `auth.role_<slug>`.
+- **Runtime canónico**: decorators, filtros y helpers aceptan solo permisos
+  `app_label.codename`.
+- Los aliases legacy quedaron deprecados para enforcement en runtime.
+- Se mantiene mapeo legacy únicamente para sincronizar permisos en grupos bootstrap
+  existentes (`sync_group_permissions_from_registry`).
 
 ## 2) Componentes clave
 
@@ -36,14 +38,16 @@ Compatibilidad:
   - `has_perm_code`
   - `has_any_perm`
 - `iam/services.py`
-  - `user_has_role` y `user_has_any_role` resueltos sobre permisos efectivos.
+  - `user_has_permission_code`
+  - `user_has_any_permission_codes`
+  - `user_has_all_permission_codes`
+  - `user_has_role` / `user_has_any_role` solo como wrappers de compatibilidad.
 
 ### Registro IAM
 
 - `core/permissions/registry.py`
-  - `LEGACY_ALIAS_TO_PERMISSION_CODES`
-  - `GROUP_BOOTSTRAP_PERMISSION_ALIASES`
-  - Helpers de resolución de aliases/permisos.
+  - `resolve_permission_codes` (canónico, sin aliases).
+  - Mapeos legacy solo para bootstrap de grupos existentes.
 
 ### Sincronización de permisos por grupo
 
@@ -130,16 +134,14 @@ Toda nueva feature debe depender de **permisos Django** (`app_label.codename`), 
    - Evitar `request.user.groups...` para control de acceso.
 
 4. **Compatibilidad de grupos existentes**
-   - Si la feature reemplaza checks legacy, mapear alias en:
-     - `LEGACY_ALIAS_TO_PERMISSION_CODES`
-     - `GROUP_BOOTSTRAP_PERMISSION_ALIASES` (si corresponde)
+   - Agregar permisos canónicos al mapeo bootstrap por grupo.
    - Si impacta producción, agregar data migration o usar sync command.
 
 5. **Testing mínimo**
    - Caso feliz con permiso.
    - Caso sin permiso (`403`).
    - Visibilidad de UI (si aplica).
-   - Regresión para alias legacy si reemplaza lógica existente.
+   - Verificar que aliases legacy no otorguen acceso en runtime.
 
 ## Convención recomendada
 
@@ -159,4 +161,3 @@ Toda nueva feature debe depender de **permisos Django** (`app_label.codename`), 
 - [ ] Sidebar/menú usa permisos.
 - [ ] Grupos bootstrap conservan permisos equivalentes.
 - [ ] Tests de permisos agregados.
-

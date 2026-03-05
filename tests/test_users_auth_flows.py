@@ -15,7 +15,8 @@ from rest_framework.test import APIClient
 from comedores.models import Comedor
 from core.templatetags.custom_filters import has_perm_code
 from core.decorators import permissions_any_required
-from iam.services import user_has_role
+from core.permissions.registry import resolve_permission_codes
+from iam.services import user_has_permission_code
 from users.forms import CustomUserChangeForm, GroupForm, UserCreationForm
 from users.services_group_permissions import sync_permissions_for_group
 
@@ -94,7 +95,7 @@ def test_custom_user_change_form_assigns_direct_permissions(user):
     assert form.is_valid(), form.errors
     saved_user = form.save()
     assert saved_user.user_permissions.filter(id=permission.id).exists()
-    assert user_has_role(saved_user, "Comedores Eliminar") is True
+    assert user_has_permission_code(saved_user, "comedores.delete_comedor") is True
 
 
 @pytest.mark.django_db
@@ -187,8 +188,9 @@ def test_password_reset_request_sends_email_for_existing_user():
 def test_password_reset_form_uses_sisoc_template(client):
     response = client.get(reverse("password_reset"))
     assert response.status_code == 200
-    assert "Ingresa tu email para recibir un enlace de recuperación." in response.content.decode(
-        "utf-8"
+    assert (
+        "Ingresa tu email para recibir un enlace de recuperación."
+        in response.content.decode("utf-8")
     )
 
 
@@ -280,12 +282,12 @@ def test_group_required_uses_group_permissions():
     group.permissions.add(permission)
     user.groups.add(group)
 
-    assert user_has_role(user, "Comedores Ver") is True
+    assert user_has_permission_code(user, "comedores.view_comedor") is True
 
     request = RequestFactory().get("/fake")
     request.user = user
 
-    @permissions_any_required(["Comedores Ver"])
+    @permissions_any_required(["comedores.view_comedor"])
     def _dummy_view(req):
         return "ok"
 
@@ -293,7 +295,7 @@ def test_group_required_uses_group_permissions():
 
 
 @pytest.mark.django_db
-def test_template_has_perm_code_with_alias():
+def test_template_has_perm_code_is_canonical_only():
     user = User.objects.create_user(
         username="perm_alias_user",
         email="perm_alias_user@example.com",
@@ -309,8 +311,15 @@ def test_template_has_perm_code_with_alias():
     group.permissions.add(permission)
     user.groups.add(group)
 
-    assert has_perm_code(user, "Comedores Ver") is True
+    assert has_perm_code(user, "Comedores Ver") is False
     assert has_perm_code(user, "comedores.view_comedor") is True
+
+
+@pytest.mark.django_db
+def test_resolve_permission_codes_ignores_legacy_aliases():
+    assert resolve_permission_codes(["Comedores Ver", "comedores.view_comedor"]) == (
+        "comedores.view_comedor",
+    )
 
 
 @pytest.mark.django_db
