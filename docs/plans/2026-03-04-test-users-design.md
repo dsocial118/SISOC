@@ -7,7 +7,7 @@ Extender el comando `users/management/commands/create_test_users.py` para que, e
 - Agregar creación automática de usuarios QA por cada persona (Juan, Agustina, Facundo, Camilo) y roles (legales, abogado, tec), con contraseña `"1"`.
 - Crear usuarios `asampaulo`, `fsuarez`, `jalfonso`, `cparra` como superadmins con contraseña `"1"`.
 - Agregar nuevos roles QA: `coordinador`, `operador`, `auditor`.
-- Documentar los usuarios en `docs/usuarios_test.md`.
+- Documentar los usuarios en `docs/testing/usuarios_test.md`.
 
 ## Decisiones de diseño
 - Reutilizar exactamente los grupos actuales de `legalesqa`, `abogadoqa` y `tecnicoqa` para los roles `legales`, `abogado`, `tec`.
