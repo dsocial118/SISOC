@@ -10,13 +10,15 @@ from django.db import transaction
 
 from celiaquia.models import Expediente, ExpedienteCiudadano
 from core.models import Nacionalidad, Sexo
-from iam.services import user_has_role
+from iam.services import user_has_permission_code
 
 logger = logging.getLogger("django")
+ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
+ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
 
 
-def _user_in_group(user, group_name: str) -> bool:
-    return user_has_role(user, group_name)
+def _user_has_permission(user, permission_code: str) -> bool:
+    return user_has_permission_code(user, permission_code)
 
 
 def _is_admin(user) -> bool:
@@ -44,8 +46,8 @@ class EditarLegajoView(View):
         # Verificar permisos
         if not (
             _is_admin(user)
-            or _user_in_group(user, "TecnicoCeliaquia")
-            or _user_in_group(user, "CoordinadorCeliaquia")
+            or _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+            or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         ):
             if _is_provincial(user):
                 # Provincias solo pueden editar en ciertos estados
@@ -102,8 +104,8 @@ class EditarLegajoView(View):
         # Verificar permisos
         if not (
             _is_admin(user)
-            or _user_in_group(user, "TecnicoCeliaquia")
-            or _user_in_group(user, "CoordinadorCeliaquia")
+            or _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+            or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         ):
             if _is_provincial(user):
                 # Provincias solo pueden editar en ciertos estados

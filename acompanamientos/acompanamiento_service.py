@@ -12,7 +12,7 @@ from acompanamientos.models.acompanamiento import InformacionRelevante, Prestaci
 from duplas.models import Dupla
 from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
-from iam.services import user_has_role
+from iam.services import user_has_any_permission_codes
 from users.services import UserPermissionService
 
 logger = logging.getLogger("django")
@@ -574,7 +574,14 @@ class AcompanamientoService:
             bool: True si tiene permisos, False en caso contrario.
         """
         try:
-            return user.is_superuser or user_has_role(user, "Tecnico Comedor")
+            return user.is_superuser or user_has_any_permission_codes(
+                user,
+                [
+                    "comedores.view_comedor",
+                    "admisiones.view_admision",
+                    "acompanamientos.view_informacionrelevante",
+                ],
+            )
         except Exception:
             logger.exception(
                 f"Error en Acompanamiento.verificar_permisos_tecnico_comedor para user: {user.pk}",
