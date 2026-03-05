@@ -25,10 +25,9 @@ urlpatterns = [
         "comedores/admisiones/tecnicos/listar",
         permissions_any_required(
             [
-                "Comedores",
-                "Tecnico Comedor",
-                "Abogado Dupla",
-                "Coordinador Equipo Tecnico",
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
             ]
         )(AdmisionesTecnicosListView.as_view()),
         name="admisiones_tecnicos_listar",
@@ -37,10 +36,9 @@ urlpatterns = [
         "comedores/admisiones/tecnicos/editar/<int:pk>",
         permissions_any_required(
             [
-                "Comedores",
-                "Tecnico Comedor",
-                "Abogado Dupla",
-                "Coordinador Equipo Tecnico",
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
             ]
         )(AdmisionesTecnicosUpdateView.as_view()),
         name="admisiones_tecnicos_editar",
@@ -49,10 +47,9 @@ urlpatterns = [
         "comedores/<int:comedor_pk>/admision/<int:pk>/detalle/",
         permissions_any_required(
             [
-                "Comedores",
-                "Tecnico Comedor",
-                "Abogado Dupla",
-                "Coordinador Equipo Tecnico",
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
             ]
         )(AdmisionDetailView.as_view()),
         name="admision_detalle",
@@ -74,30 +71,46 @@ urlpatterns = [
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:admision_id>/crear/",
-        permissions_any_required(["Comedores", "Tecnico Comedor"])(
-            InformeTecnicosCreateView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(InformeTecnicosCreateView.as_view()),
         name="informe_tecnico_crear",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/editar/",
-        permissions_any_required(["Comedores", "Tecnico Comedor"])(
-            InformeTecnicosUpdateView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(InformeTecnicosUpdateView.as_view()),
         name="informe_tecnico_editar",
     ),
     path(
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/ver/",
-        permissions_any_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
-            InformeTecnicoDetailView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(InformeTecnicoDetailView.as_view()),
         name="informe_tecnico_ver",
     ),
     path(
         "comedores/admision/informe_complementario/<str:tipo>/<int:pk>/ver/",
-        permissions_any_required(["Comedores", "Tecnico Comedor", "Abogado Dupla"])(
-            InformeTecnicoComplementarioDetailView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(InformeTecnicoComplementarioDetailView.as_view()),
         name="informe_complementario_ver",
     ),
     path(
@@ -118,23 +131,38 @@ urlpatterns = [
     # Legales
     path(
         "comedores/admisiones/legales/listar",
-        permissions_any_required(["Area Legales", "Coordinador Equipo Tecnico"])(
-            AdmisionesLegalesListView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+                "expedientespagos.view_expedientepago",
+            ]
+        )(AdmisionesLegalesListView.as_view()),
         name="admisiones_legales_listar",
     ),
     path(
         "comedores/admisiones/legales/ver/<int:pk>",
-        permissions_any_required(["Area Legales", "Coordinador Equipo Tecnico"])(
-            AdmisionesLegalesDetailView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+                "expedientespagos.view_expedientepago",
+            ]
+        )(AdmisionesLegalesDetailView.as_view()),
         name="admisiones_legales_ver",
     ),
     path(
         "comedores/admisiones/legales/revisar-complementario/<int:pk>",
-        permissions_any_required(["Area Legales"])(
-            InformeTecnicoComplementarioReviewView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+                "expedientespagos.view_expedientepago",
+            ]
+        )(InformeTecnicoComplementarioReviewView.as_view()),
         name="revisar_informe_complementario",
     ),
     # AJAX endpoints

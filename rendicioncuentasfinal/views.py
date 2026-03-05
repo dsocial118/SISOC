@@ -234,10 +234,10 @@ def documentos_rendicion_cuentas_final_ajax(request):
     # Aplicar el decorador manualmente para mantener permisos
     @permissions_any_required(
         [
-            "Area Contable",
-            "Area Legales",
-            "Tecnico Comedor",
-            "Coordinador Equipo Tecnico",
+            "comedores.view_comedor",
+            "expedientespagos.view_expedientepago",
+            "admisiones.view_admision",
+            "acompanamientos.view_informacionrelevante",
         ]
     )
     def _documentos_rendicion_ajax(request):
