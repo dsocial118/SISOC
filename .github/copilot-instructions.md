@@ -7,11 +7,12 @@ Estas instrucciones están alineadas con `AGENTS.md` y la documentación en `doc
 Copilot debe priorizar, en este orden:
 
 1. `AGENTS.md` (reglas principales)
-2. `docs/ia/CONTEXT_HYGIENE.md`
-3. `docs/ia/STYLE_GUIDE.md`
-4. `docs/ia/ARCHITECTURE.md`
-5. `docs/ia/TESTING.md`
-6. `docs/ia/SECURITY_AI.md` / `docs/ia/ERRORS_LOGGING.md` si aplica
+2. `docs/indice.md`
+3. `docs/ia/CONTEXT_HYGIENE.md`
+4. `docs/ia/STYLE_GUIDE.md`
+5. `docs/ia/ARCHITECTURE.md`
+6. `docs/ia/TESTING.md`
+7. `docs/ia/SECURITY_AI.md` / `docs/ia/ERRORS_LOGGING.md` si aplica
 
 Si `AGENTS.md` no fue cargado automáticamente por el entorno, usar estas instrucciones como fallback mínimo y evitar cambios grandes de arquitectura/refactor hasta tener contexto.
 
@@ -40,6 +41,8 @@ Si `AGENTS.md` no fue cargado automáticamente por el entorno, usar estas instru
 - Agregar tests mínimos en features nuevas y regresión en bugfixes cuando sea viable.
 - No loggear secretos, tokens ni PII.
 - Respetar permisos/autenticación existentes.
+- Leer documentación relevante en `docs/` antes de proponer cambios.
+- Documentar cambios/decisiones importantes en `docs/` dentro de subcarpeta temática (crearla si no existe).
 - Podés proponer mejoras cercanas, pero no implementarlas fuera de alcance sin aprobación.
 
 ## Higiene de contexto (muy importante)
