@@ -7,8 +7,8 @@ register = template.Library()
 
 
 @register.filter(name="has_perm_code")
-def has_perm_code(user, permission_alias):
-    permission_codes = resolve_permission_codes([permission_alias])
+def has_perm_code(user, permission_code):
+    permission_codes = resolve_permission_codes([permission_code])
     if not permission_codes:
         return False
     return any(user_has_permission_code(user, code) for code in permission_codes)
