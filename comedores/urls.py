@@ -209,12 +209,16 @@ urlpatterns = [
     ),
     path(
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/<int:pk2>/eliminar/",
-        permissions_any_required(["comedores.delete_nomina"])(NominaDeleteView.as_view()),
+        permissions_any_required(["comedores.delete_nomina"])(
+            NominaDeleteView.as_view()
+        ),
         name="nomina_borrar",
     ),
     path(
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/importar/",
-        permissions_any_required(["comedores.add_nomina"])(NominaImportarView.as_view()),
+        permissions_any_required(["comedores.add_nomina"])(
+            NominaImportarView.as_view()
+        ),
         name="nomina_importar",
     ),
     path(

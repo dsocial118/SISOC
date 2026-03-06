@@ -1022,7 +1022,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 nomina_espera,
                 nomina_total,
                 nomina_rangos,
-            ) = ComedorService.get_nomina_detail(selected_admision.pk, page=1, per_page=1)
+            ) = ComedorService.get_nomina_detail(
+                selected_admision.pk, page=1, per_page=1
+            )
         else:
             nomina_m = nomina_f = nomina_espera = nomina_total = 0
             nomina_rangos = {}
