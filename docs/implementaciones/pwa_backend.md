@@ -1,24 +1,24 @@
-# Implementación PWA en Backend (Django + DRF)
+﻿# ImplementaciÃ³n PWA en Backend (Django + DRF)
 
 ## Objetivo
 
-Documentar el estado actual de la API usada por la PWA, el modelo de acceso por comedor y los contratos principales de autenticación y alcance.
+Documentar el estado actual de la API usada por la PWA, el modelo de acceso por comedor y los contratos principales de autenticaciÃ³n y alcance.
 
-## Resumen de implementación
+## Resumen de implementaciÃ³n
 
-- Autenticación PWA por token DRF:
+- AutenticaciÃ³n PWA por token DRF:
   - `POST /api/users/login/`
   - `GET /api/users/me/`
   - `POST /api/users/logout/`
 - Contexto de usuario en `/api/users/me/` con bloque `pwa`.
-- Alcance por comedor aplicado en endpoints PWA de comedores y nómina:
+- Alcance por comedor aplicado en endpoints PWA de comedores y nÃ³mina:
   - si el usuario tiene accesos PWA activos, solo ve/gestiona esos comedores;
   - si no es PWA, se mantiene el filtrado legacy de backoffice.
-- Gestión de usuarios de comedor desde PWA:
+- GestiÃ³n de usuarios de comedor desde PWA:
   - representantes crean/listan/desactivan operadores por comedor.
 - Web/backoffice:
-  - usuarios con acceso PWA activo no pueden iniciar sesión web.
-  - usuarios web siguen pudiendo usar API con token.
+  - usuarios con acceso PWA activo no pueden iniciar sesiÃ³n web.
+  - usuarios sin acceso PWA activo no pueden iniciar sesiÃ³n en API PWA.
 
 ## Modelo de acceso PWA
 
@@ -33,7 +33,7 @@ Modelo: `users.AccesoComedorPWA`
   - timestamps
 - Restricciones:
   - unicidad por `user + comedor`
-  - índices para lookup por usuario/comedor/actor.
+  - Ã­ndices para lookup por usuario/comedor/actor.
 
 Servicios de dominio: `users/services_pwa.py`
 
@@ -66,7 +66,7 @@ Servicios de dominio: `users/services_pwa.py`
 
 - `GET /api/comedores/{id}/`
 
-Devuelve datos completos del comedor y relacionados (organización, dupla, imágenes, estado, relevamientos, observaciones, clasificaciones, rendiciones, cambios de programa), condicionado por alcance de usuario.
+Devuelve datos completos del comedor y relacionados (organizaciÃ³n, dupla, imÃ¡genes, estado, relevamientos, observaciones, clasificaciones, rendiciones, cambios de programa), condicionado por alcance de usuario.
 
 ### 3) Documentos de espacio
 
@@ -75,21 +75,21 @@ Devuelve datos completos del comedor y relacionados (organización, dupla, imág
   - respuesta paginada: `count`, `num_pages`, `current_page`, `results`
 - `GET /api/comedores/{id}/documentos/{documento_id}/download/`
 
-Fuentes de documentos consolidadas: foto legajo, imágenes de comedor, documentación de intervenciones, documentos de rendición final y adjuntos de rendición mensual.
+Fuentes de documentos consolidadas: foto legajo, imÃ¡genes de comedor, documentaciÃ³n de intervenciones, documentos de rendiciÃ³n final y adjuntos de rendiciÃ³n mensual.
 
-### 4) Nómina
+### 4) NÃ³mina
 
 - `GET /api/comedores/{id}/nomina/`
 - `POST /api/comedores/{id}/nomina/`
 - `PATCH /api/comedores/nomina/{nomina_id}/`
 
-### 5) Prestación alimentaria
+### 5) PrestaciÃ³n alimentaria
 
 - `GET /api/comedores/{id}/prestacion-alimentaria/`
 - `GET /api/comedores/{id}/prestacion-alimentaria/historial/`
   - filtros: `desde`, `hasta`, `page`
 
-Se exponen campos de aprobadas del informe técnico (`aprobadas_*`), tomando informes con `estado_formulario="finalizado"`.
+Se exponen campos de aprobadas del informe tÃ©cnico (`aprobadas_*`), tomando informes con `estado_formulario="finalizado"`.
 
 ### 6) Rendiciones
 
@@ -100,12 +100,24 @@ Se exponen campos de aprobadas del informe técnico (`aprobadas_*`), tomando inf
   - multipart con `archivo` y opcional `nombre`
 - `POST /api/comedores/{id}/rendiciones/{rendicion_id}/presentar/`
 
-### 7) Gestión PWA de usuarios por comedor (representante)
+### 7) GestiÃ³n PWA de usuarios por comedor (representante)
 
 - `GET /api/comedores/{id}/usuarios/`
 - `POST /api/comedores/{id}/usuarios/`
   - body: `username`, `email`, `password`
 - `PATCH /api/comedores/{id}/usuarios/{user_id}/desactivar/`
+
+### 8) Colaboradores del espacio (representante)
+
+- `GET /api/pwa/espacios/{comedor_id}/colaboradores/`
+- `POST /api/pwa/espacios/{comedor_id}/colaboradores/`
+- `PATCH /api/pwa/espacios/{comedor_id}/colaboradores/{id}/`
+- `DELETE /api/pwa/espacios/{comedor_id}/colaboradores/{id}/`
+
+Reglas:
+- baja lÃ³gica (`activo=False`, `fecha_baja`) en `DELETE`
+- no se permite duplicar `dni` activo dentro del mismo espacio
+- validaciones de formato para `dni`, `email` y `telefono`
 
 ## Reglas de permisos y alcance
 
@@ -113,8 +125,24 @@ Se exponen campos de aprobadas del informe técnico (`aprobadas_*`), tomando inf
 - Scope por comedor:
   - usuarios PWA: `AccesoComedorPWA.activo=True`.
   - usuarios no PWA: filtros existentes de `ComedorService`.
-- Gestión de `/usuarios/` protegida con `IsPWARepresentativeForComedor`.
+- GestiÃ³n de `/usuarios/` protegida con `IsPWARepresentativeForComedor`.
 - Usuarios PWA bloqueados en login web por `BackofficeAuthenticationForm`.
+
+## Auditoria de operaciones PWA
+
+Modelo: `pwa.AuditoriaOperacionPWA`
+
+- Registra eventos de negocio con:
+  - `entidad`, `entidad_id`, `accion`
+  - `user`, `comedor`, `fecha_evento`
+  - `snapshot_antes`, `snapshot_despues`, `metadata`
+- Alcance actual:
+  - colaboradores: alta/edicion/baja logica
+  - actividades: alta/edicion/baja logica
+  - nomina/perfil PWA: alta/edicion/baja logica
+  - inscripciones de actividad: alta/reactivacion/desactivacion
+- Objetivo:
+  - conservar trazabilidad de cambios y estado de registros ante bajas o ediciones.
 
 ## Tests automatizados relevantes
 
@@ -123,13 +151,15 @@ Se exponen campos de aprobadas del informe técnico (`aprobadas_*`), tomando inf
 - `tests/test_users_pwa_forms.py`
 - `tests/test_pwa_comedores_api.py`
 
-Cobertura actual incluye auth, contexto, scope por comedor, gestión de operadores, nómina, rendiciones, documentos y prestación.
+Cobertura actual incluye auth, contexto, scope por comedor, gestiÃ³n de operadores, nÃ³mina, rendiciones, documentos y prestaciÃ³n.
 
 ## Notas operativas
 
-- Para ejecución estable de tests API en contenedor local:
+- Para ejecuciÃ³n estable de tests API en contenedor local:
   - usar `DJANGO_DEBUG=False` para evitar interferencias de debug toolbar/silk.
 - Smoke manual Postman:
-  - colección `postman/PWA Smoke.postman_collection.json`
+  - colecciÃ³n `postman/PWA Smoke.postman_collection.json`
   - environment `postman/PWA Smoke.postman_environment.json`
   - runner `scripts/run_pwa_smoke_postman.sh`
+
+
