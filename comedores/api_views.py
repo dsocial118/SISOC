@@ -980,7 +980,9 @@ class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     serializer_class = NominaUpdateSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = Nomina.objects.select_related("ciudadano", "ciudadano__sexo", "comedor")
+    queryset = Nomina.objects.select_related(
+        "ciudadano", "ciudadano__sexo", "admision__comedor"
+    )
     http_method_names = ["patch", "head", "options"]
 
     def get_queryset(self):
@@ -992,7 +994,7 @@ class NominaViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
                 self.request, user=user
             )
             comedor_ids = [row["id"] for row in filtered_rows]
-        return self.queryset.filter(comedor_id__in=comedor_ids)
+        return self.queryset.filter(admision__comedor_id__in=comedor_ids)
 
     @extend_schema(request=NominaUpdateSerializer)
     def partial_update(self, request, *args, **kwargs):
