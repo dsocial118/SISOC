@@ -4,14 +4,17 @@ from unittest import mock
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError
-from django.test import RequestFactory, override_settings
+from django.test import Client, RequestFactory, override_settings
 from django.urls import reverse
 from django.utils.html import escape
 
-from comedores.models import Comedor, HistorialValidacion
+from admisiones.models.admisiones import Admision
+from ciudadanos.models import Ciudadano
+from comedores.models import Comedor, HistorialValidacion, Nomina
 from comedores.services.comedor_service import ComedorService
 from comedores.services.validacion_service import ValidacionService
 from comedores.views import ComedorDetailView
@@ -321,3 +324,204 @@ def test_borrar_foto_legajo_elimina_archivo_y_campo(tmp_path, monkeypatch):
 
         assert not comedor.foto_legajo
         assert not fs.exists(ruta)
+
+
+# ---------------------------------------------------------------------------
+# Fixtures para tests de nómina
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def client_nomina_fixture(db):
+    """Cliente autenticado con permisos de nómina."""
+    user_model = get_user_model()
+    user = user_model.objects.create_user(username="nomina_user", password="testpass")
+    for group_name in [
+        "Comedores Nomina Ver",
+        "Comedores Nomina Crear",
+        "Comedores Nomina Editar",
+        "Comedores Nomina Borrar",
+    ]:
+        group, _ = Group.objects.get_or_create(name=group_name)
+        user.groups.add(group)
+    client = Client()
+    client.login(username="nomina_user", password="testpass")
+    return client
+
+
+@pytest.fixture
+def admision_fixture(db):
+    """Comedor + Admisión activa mínima para tests de nómina."""
+    comedor = Comedor.objects.create(nombre="Comedor Test Nómina")
+    admision = Admision.objects.create(comedor=comedor)
+    return admision
+
+
+@pytest.fixture
+def ciudadano_fixture(db):
+    """Ciudadano mínimo para tests de nómina."""
+    from datetime import date
+
+    return Ciudadano.objects.create(
+        nombre="Juan",
+        apellido="Test",
+        fecha_nacimiento=date(1990, 1, 1),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Tests de servicios
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_agregar_ciudadano_a_nomina_caso_feliz(admision_fixture, ciudadano_fixture):
+    """Agrega un ciudadano a la nómina de una admisión correctamente."""
+    ok, _msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    assert ok is True
+    assert Nomina.objects.filter(
+        admision=admision_fixture, ciudadano=ciudadano_fixture
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_agregar_ciudadano_ya_en_nomina(admision_fixture, ciudadano_fixture):
+    """Retorna False si el ciudadano ya está en la nómina de esa admisión."""
+    Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    ok, msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+    )
+
+    assert ok is False
+    assert "ya está en la nómina" in msg
+
+
+@pytest.mark.django_db
+def test_importar_nomina_ultimo_convenio_caso_feliz(ciudadano_fixture):
+    """Copia los registros de nómina de la admisión anterior a la actual."""
+    comedor = Comedor.objects.create(nombre="Comedor Importar")
+    admision_anterior = Admision.objects.create(comedor=comedor)
+    admision_actual = Admision.objects.create(comedor=comedor)
+    Nomina.objects.create(
+        admision=admision_anterior,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    ok, _msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_actual.pk,
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is True
+    assert cantidad == 1
+    assert Nomina.objects.filter(
+        admision=admision_actual, ciudadano=ciudadano_fixture
+    ).exists()
+    # El registro importado queda en PENDIENTE
+    nomina_importada = Nomina.objects.get(admision=admision_actual)
+    assert nomina_importada.estado == Nomina.ESTADO_PENDIENTE
+
+
+@pytest.mark.django_db
+def test_importar_nomina_sin_convenio_anterior_con_nomina():
+    """Retorna False si no hay admisión anterior con nómina."""
+    comedor = Comedor.objects.create(nombre="Comedor Sin Anterior")
+    admision_actual = Admision.objects.create(comedor=comedor)
+
+    ok, _msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_actual.pk,
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is False
+    assert cantidad == 0
+
+
+@pytest.mark.django_db
+def test_importar_nomina_evita_duplicados(ciudadano_fixture):
+    """No duplica personas que ya están en la nómina destino."""
+    comedor = Comedor.objects.create(nombre="Comedor Duplicados")
+    admision_anterior = Admision.objects.create(comedor=comedor)
+    admision_actual = Admision.objects.create(comedor=comedor)
+    # El ciudadano está en ambas admisiones
+    Nomina.objects.create(
+        admision=admision_anterior,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+    Nomina.objects.create(
+        admision=admision_actual,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    ok, _msg, cantidad = ComedorService.importar_nomina_ultimo_convenio(
+        admision_id=admision_actual.pk,
+        comedor_id=comedor.pk,
+    )
+
+    assert ok is True
+    assert cantidad == 0  # nada nuevo importado
+    assert Nomina.objects.filter(admision=admision_actual).count() == 1
+
+
+# ---------------------------------------------------------------------------
+# Tests de vistas
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_nomina_detail_view_responde_ok(client_nomina_fixture, admision_fixture):
+    """NominaDetailView responde 200 y tiene las claves de contexto esperadas."""
+    comedor = admision_fixture.comedor
+    url = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_fixture.pk},
+    )
+    response = client_nomina_fixture.get(url)
+
+    assert response.status_code == 200
+    for key in ["nomina", "cantidad_nomina", "object", "admision_pk"]:
+        assert key in response.context
+
+
+@pytest.mark.django_db
+def test_nomina_importar_view_redirige(
+    client_nomina_fixture, admision_fixture, ciudadano_fixture
+):
+    """POST a NominaImportarView redirige a nomina_ver."""
+    comedor = admision_fixture.comedor
+    admision_nueva = Admision.objects.create(comedor=comedor)
+    # Hay nómina en la admisión anterior para poder importar
+    Nomina.objects.create(
+        admision=admision_fixture,
+        ciudadano=ciudadano_fixture,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    url = reverse(
+        "nomina_importar",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_nueva.pk},
+    )
+    response = client_nomina_fixture.post(url)
+
+    assert response.status_code == 302
+    expected_redirect = reverse(
+        "nomina_ver",
+        kwargs={"pk": comedor.pk, "admision_pk": admision_nueva.pk},
+    )
+    assert expected_redirect in response.url
