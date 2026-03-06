@@ -10,8 +10,12 @@ from django.views.decorators.csrf import csrf_protect
 
 from celiaquia.models import ExpedienteCiudadano
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from iam.services import user_has_permission_code
 
 logger = logging.getLogger(__name__)
+
+ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
+ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
 
 
 def _truncate(value, length=500):
@@ -42,8 +46,8 @@ def _build_log_data(
     return {k: v for k, v in data.items() if v is not None}
 
 
-def _in_group(user, name: str) -> bool:
-    return user.is_authenticated and user.groups.filter(name=name).exists()
+def _has_permission(user, permission_code: str) -> bool:
+    return user_has_permission_code(user, permission_code)
 
 
 def _mapear_sexo_para_renaper(ciudadano):
@@ -63,26 +67,26 @@ def _es_dni_valido_para_renaper(documento_consulta):
 
 
 def _build_datos_provincia(ciudadano, documento_consulta):
+    fecha_nacimiento = getattr(ciudadano, "fecha_nacimiento", None)
+    altura = getattr(ciudadano, "altura", None)
+    provincia = getattr(ciudadano, "provincia", None)
+    codigo_postal = getattr(ciudadano, "codigo_postal", None)
     return {
         "documento": documento_consulta,
         "nombre": (getattr(ciudadano, "nombre", "") or "").title(),
         "apellido": (getattr(ciudadano, "apellido", "") or "").title(),
         "fecha_nacimiento": (
-            ciudadano.fecha_nacimiento.strftime("%d/%m/%Y")
-            if ciudadano.fecha_nacimiento
-            else None
+            fecha_nacimiento.strftime("%d/%m/%Y") if fecha_nacimiento else None
         ),
         "sexo": getattr(getattr(ciudadano, "sexo", None), "sexo", None),
         "calle": (getattr(ciudadano, "calle", "") or "").title(),
-        "altura": str(ciudadano.altura) if ciudadano.altura else "",
+        "altura": str(altura) if altura else "",
         "piso_departamento": (
             getattr(ciudadano, "piso_departamento", "") or ""
         ).title(),
         "ciudad": (getattr(ciudadano, "ciudad", "") or "").title(),
-        "provincia": ciudadano.provincia.nombre if ciudadano.provincia else None,
-        "codigo_postal": (
-            str(ciudadano.codigo_postal) if ciudadano.codigo_postal else ""
-        ),
+        "provincia": getattr(provincia, "nombre", None),
+        "codigo_postal": str(codigo_postal) if codigo_postal else "",
     }
 
 
@@ -247,8 +251,8 @@ class ValidacionRenaperView(View):
             raise PermissionDenied("Autenticación requerida.")
 
         is_admin = user.is_superuser
-        is_coord = _in_group(user, "CoordinadorCeliaquia")
-        is_tec = _in_group(user, "TecnicoCeliaquia")
+        is_coord = _has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        is_tec = _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
 
         if not (is_admin or is_coord or is_tec):
             raise PermissionDenied("Permiso denegado.")
@@ -370,7 +374,10 @@ class ValidacionRenaperView(View):
             )
 
             # Si es técnico, verificar que esté asignado al expediente
-            if _in_group(user, "TecnicoCeliaquia") and not user.is_superuser:
+            if (
+                _has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
+                and not user.is_superuser
+            ):
                 asignaciones = legajo.expediente.asignaciones_tecnicos.filter(
                     tecnico=user
                 )

@@ -16,6 +16,7 @@ from acompanamientos.models.hitos import Hitos
 from comedores.models import Comedor
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.security import safe_redirect
+from iam.services import user_has_permission_code
 
 
 @login_required
@@ -53,9 +54,9 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
         comedor = self.object
         admision_id = self.request.GET.get("admision_id")
 
-        user_groups = list(self.request.user.groups.values_list("name", flat=True))
         context["es_tecnico_comedor"] = (
-            self.request.user.is_superuser or "Tecnico Comedor" in user_groups
+            self.request.user.is_superuser
+            or user_has_permission_code(self.request.user, "auth.role_tecnico_comedor")
         )
 
         context["hitos"] = AcompanamientoService.obtener_hitos(comedor)

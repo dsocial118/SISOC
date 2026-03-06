@@ -6,7 +6,8 @@
 - `debug_queries`: ejecuta depuración de queries para vistas (todas o Ciudadanos). Evidencia: core/management/commands/debug_queries.py:1-33.
 
 ## Users
-- `create_groups`: crea grupos predeterminados. Evidencia: users/management/commands/create_groups.py:1-61.
+- `create_groups`: crea grupos predeterminados y sincroniza permisos bootstrap según el registro IAM. Evidencia: users/management/commands/create_groups.py:1-17.
+- `sync_group_permissions_from_registry`: sincroniza permisos Django por grupo para grupos ya existentes. Útil post-migración en staging/prod. Evidencia: users/management/commands/sync_group_permissions_from_registry.py:1-13.
 - `create_test_users`: genera usuarios de prueba cuando `DEBUG=True`. Evidencia: users/management/commands/create_test_users.py:1-80.
 - `import_users_from_csv`: crea/actualiza usuarios replicando grupos desde un usuario de referencia. Evidencia: users/management/commands/import_users_from_csv.py:1-35.
 - `assign_provincia_to_test_user`: asigna provincia_id=1 al usuario `ProvinciaCeliaquia`. Evidencia: users/management/commands/assign_provincia_to_test_user.py:1-32.

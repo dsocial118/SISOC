@@ -5,6 +5,7 @@ import logging
 import tempfile
 from pathlib import Path
 from django.contrib.messages import constants as messages
+from django.utils.module_loading import import_string
 from dotenv import load_dotenv
 from config.runtime import is_running_tests
 
@@ -59,6 +60,19 @@ def _safe_float_env(var_name: str, default: float) -> float:
         return float(raw_value)
     except ValueError:
         return default
+
+
+def _safe_bool_env(var_name: str, default: bool) -> bool:
+    raw_value = os.getenv(var_name)
+    if raw_value is None or raw_value.strip() == "":
+        return default
+
+    normalized = raw_value.strip().lower()
+    if normalized in ("1", "true", "yes", "on"):
+        return True
+    if normalized in ("0", "false", "no", "off"):
+        return False
+    return default
 
 
 CSRF_TRUSTED_ORIGINS = [_to_origin(h) for h in ALLOWED_HOSTS]
@@ -119,6 +133,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "users.middleware.FirstLoginPasswordChangeMiddleware",
     "sentry.middleware.SentryUserContextMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -164,11 +179,65 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "inicio"
 LOGOUT_REDIRECT_URL = "login"
 ACCOUNT_FORMS = {"login": "users.forms.UserLoginForm"}
+INITIAL_PASSWORD_MAX_AGE_HOURS = _safe_int_env("INITIAL_PASSWORD_MAX_AGE_HOURS", 336)
+PASSWORD_RESET_TIMEOUT = _safe_int_env("PASSWORD_RESET_TIMEOUT", 3600)
 
 # Email
-if ENVIRONMENT == "prd":
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-else:
+settings_logger = logging.getLogger(__name__)
+
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "").strip()
+if not EMAIL_BACKEND:
+    # Fallback seguro por defecto: no rompe entornos sin .env o sin SMTP válido.
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+try:
+    import_string(EMAIL_BACKEND)
+except Exception:  # pragma: no cover - fallback defensivo de configuración
+    settings_logger.warning(
+        "EMAIL_BACKEND inválido (%s). Se usa backend de consola.",
+        EMAIL_BACKEND,
+    )
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+EMAIL_HOST = os.getenv("EMAIL_HOST", "").strip() or "localhost"
+EMAIL_PORT = _safe_int_env("EMAIL_PORT", 587)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = _safe_bool_env("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = _safe_bool_env("EMAIL_USE_SSL", False)
+EMAIL_TIMEOUT = _safe_int_env("EMAIL_TIMEOUT", 10)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "no-reply@sisoc.local")
+
+email_backend_errors = []
+if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
+    raw_port = os.getenv("EMAIL_PORT", "").strip()
+    if raw_port:
+        try:
+            parsed_port = int(raw_port)
+            if parsed_port <= 0:
+                email_backend_errors.append("EMAIL_PORT debe ser > 0")
+        except ValueError:
+            email_backend_errors.append("EMAIL_PORT inválido")
+
+    raw_tls = os.getenv("EMAIL_USE_TLS", "").strip().lower()
+    raw_ssl = os.getenv("EMAIL_USE_SSL", "").strip().lower()
+    valid_bool_values = ("1", "true", "yes", "on", "0", "false", "no", "off")
+    if raw_tls and raw_tls not in valid_bool_values:
+        email_backend_errors.append("EMAIL_USE_TLS inválido")
+    if raw_ssl and raw_ssl not in valid_bool_values:
+        email_backend_errors.append("EMAIL_USE_SSL inválido")
+
+    if EMAIL_USE_TLS and EMAIL_USE_SSL:
+        email_backend_errors.append("EMAIL_USE_TLS y EMAIL_USE_SSL no pueden ser true")
+
+    if not os.getenv("EMAIL_HOST", "").strip():
+        email_backend_errors.append("EMAIL_HOST vacío")
+
+if email_backend_errors:
+    settings_logger.warning(
+        "Configuración SMTP inválida. Se usa backend de consola. Errores: %s",
+        "; ".join(email_backend_errors),
+    )
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Mensajes / Crispy
@@ -524,7 +593,8 @@ else:
 # Overrides y flags de endurecimiento CSP (migración gradual)
 ENABLE_CSP = os.getenv("ENABLE_CSP", str(ENABLE_CSP)).lower() == "true"
 CSP_REPORT_ONLY = os.getenv("CSP_REPORT_ONLY", "true").lower() == "true"
-if RUNNING_TESTS and "CSP_REPORT_ONLY" not in os.environ:
+# En tests usamos modo enforce por defecto para evitar dependencia del .env local.
+if RUNNING_TESTS:
     CSP_REPORT_ONLY = False
 CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
     os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "false").lower() == "true"

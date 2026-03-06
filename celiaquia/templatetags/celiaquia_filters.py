@@ -1,9 +1,14 @@
 # custom_filters.py
 from django import template
+from core.permissions.registry import resolve_permission_codes
+from iam.services import user_has_permission_code
 
 register = template.Library()
 
 
-@register.filter(name="has_group")
-def has_group(user, group_name):
-    return user.groups.filter(name=group_name).exists()
+@register.filter(name="has_perm_code")
+def has_perm_code(user, permission_code):
+    permission_codes = resolve_permission_codes([permission_code])
+    if not permission_codes:
+        return False
+    return any(user_has_permission_code(user, code) for code in permission_codes)

@@ -46,7 +46,7 @@
 
 
 - C4 Container Diagram (Mermaid):
-![Diagrama de red SISOC](imgs/net_diagram.png)
+![Diagrama de red SISOC](../imgs/net_diagram.png)
 
 ## 4. Networking / Edge
 

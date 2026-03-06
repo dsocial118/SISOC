@@ -53,7 +53,6 @@ from duplas.models import Dupla
 
 logger = logging.getLogger("django")
 
-from core.constants import UserGroups
 from core.security import safe_redirect
 from core.services.advanced_filters import AdvancedFilterEngine
 from comedores.services.filter_config import (
@@ -349,7 +348,7 @@ def _user_tiene_scope_global_comedores(user):
 
     from users.services import UserPermissionService
 
-    return UserPermissionService.tiene_grupo(user, UserGroups.COORDINADOR_GENERAL)
+    return UserPermissionService.tiene_grupo(user, "auth.role_coordinador_general")
 
 
 def _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids):

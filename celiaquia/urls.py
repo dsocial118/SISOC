@@ -1,5 +1,5 @@
 from django.urls import path
-from core.decorators import group_required
+from core.decorators import permissions_any_required
 
 from celiaquia.views.expediente_subsanacion import (
     ExpedienteConfirmSubsanacionView,
@@ -63,134 +63,170 @@ urlpatterns = [
     ),
     path(
         "expedientes/<int:pk>/legajos/<int:legajo_id>/subsanar/",
-        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(
+        permissions_any_required(["celiaquia.view_expediente"])(
             LegajoSubsanarView.as_view()
         ),
         name="legajo_subsanar",
     ),
     path(
         "expedientes/<int:pk>/legajos/<int:legajo_id>/validar-renaper/",
-        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(
+        permissions_any_required(["celiaquia.view_expediente"])(
             ValidacionRenaperView.as_view()
         ),
         name="legajo_validar_renaper",
     ),
     path(
         "expedientes/<int:pk>/ciudadanos/<int:legajo_id>/respuesta-subsanacion-renaper/",
-        group_required(["ProvinciaCeliaquia"])(
+        permissions_any_required(["celiaquia.view_expediente"])(
             RespuestaSubsanacionRenaperView.as_view()
         ),
         name="respuesta_subsanacion_renaper",
     ),
     path(
         "expedientes/",
-        group_required(
-            ["ProvinciaCeliaquia", "CoordinadorCeliaquia", "TecnicoCeliaquia"]
-        )(ExpedienteListView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedienteListView.as_view()
+        ),
         name="expediente_list",
     ),
     path(
         "expedientes/nuevo/",
-        group_required(["ProvinciaCeliaquia"])(ExpedienteCreateView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedienteCreateView.as_view()
+        ),
         name="expediente_create",
     ),
     path(
         "expedientes/preview_excel/",
-        group_required(["ProvinciaCeliaquia"])(ExpedientePreviewExcelView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedientePreviewExcelView.as_view()
+        ),
         name="expediente_preview_excel",
     ),
     path(
         "expedientes/plantilla_excel/",
-        group_required(["ProvinciaCeliaquia"])(ExpedientePlantillaExcelView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedientePlantillaExcelView.as_view()
+        ),
         name="expediente_plantilla_excel",
     ),
     path(
         "expedientes/localidades_lookup/",
-        group_required(["ProvinciaCeliaquia"])(LocalidadesLookupView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            LocalidadesLookupView.as_view()
+        ),
         name="expediente_localidades_lookup",
     ),
     path(
         "expedientes/<int:pk>/",
-        group_required(
-            ["ProvinciaCeliaquia", "CoordinadorCeliaquia", "TecnicoCeliaquia"]
-        )(ExpedienteDetailView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedienteDetailView.as_view()
+        ),
         name="expediente_detail",
     ),
     path(
         "expedientes/<int:pk>/editar/",
-        group_required(["ProvinciaCeliaquia"])(ExpedienteUpdateView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedienteUpdateView.as_view()
+        ),
         name="expediente_update",
     ),
     path(
         "expedientes/<int:pk>/importar/",
-        group_required(["ProvinciaCeliaquia"])(ExpedienteImportView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedienteImportView.as_view()
+        ),
         name="expediente_import",
     ),
     path(
         "expedientes/<int:pk>/procesar/",
-        group_required(["ProvinciaCeliaquia"])(ProcesarExpedienteView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ProcesarExpedienteView.as_view()
+        ),
         name="expediente_procesar",
     ),
     path(
         "expedientes/<int:pk>/crear-legajos/",
-        group_required(["ProvinciaCeliaquia"])(CrearLegajosView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            CrearLegajosView.as_view()
+        ),
         name="crear_legajos",
     ),
     path(
         "expedientes/<int:pk>/confirmar/",
-        group_required(["ProvinciaCeliaquia"])(ExpedienteConfirmView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ExpedienteConfirmView.as_view()
+        ),
         name="expediente_confirm",
     ),
     path(
         "expedientes/<int:expediente_id>/ciudadanos/<int:pk>/archivo/",
-        group_required(["ProvinciaCeliaquia"])(LegajoArchivoUploadView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            LegajoArchivoUploadView.as_view()
+        ),
         name="legajo_archivo_upload",
     ),
     path(
         "expedientes/<int:pk>/recepcionar/",
-        group_required(["CoordinadorCeliaquia"])(RecepcionarExpedienteView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            RecepcionarExpedienteView.as_view()
+        ),
         name="expediente_recepcionar",
     ),
     path(
         "expedientes/<int:pk>/asignar-tecnico/",
-        group_required(["CoordinadorCeliaquia"])(AsignarTecnicoView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            AsignarTecnicoView.as_view()
+        ),
         name="expediente_asignar_tecnico",
     ),
     path(
         "expedientes/<int:pk>/exportar-nomina-sintys/",
-        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(
+        permissions_any_required(["celiaquia.view_expediente"])(
             ExpedienteNominaSintysExportView.as_view()
         ),
         name="expediente_nomina_sintys_export",
     ),
     path(
         "expedientes/<int:pk>/cruce-cuit/",
-        group_required(["TecnicoCeliaquia"])(SubirCruceExcelView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            SubirCruceExcelView.as_view()
+        ),
         name="expediente_cruce_cuit",
     ),
     path(
         "expedientes/<int:pk>/cruce/",
-        group_required(["TecnicoCeliaquia"])(SubirCruceExcelView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            SubirCruceExcelView.as_view()
+        ),
         name="expediente_subir_cruce",
     ),
     path(
         "cupos/",
-        group_required(["CoordinadorCeliaquia"])(CupoDashboardView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            CupoDashboardView.as_view()
+        ),
         name="cupo_dashboard",
     ),
     path(
         "cupos/provincia/<int:provincia_id>/",
-        group_required(["CoordinadorCeliaquia"])(CupoProvinciaDetailView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            CupoProvinciaDetailView.as_view()
+        ),
         name="cupo_provincia_detail",
     ),
     path(
         "cupos/provincia/<int:provincia_id>/legajo/<int:legajo_id>/baja/",
-        group_required(["CoordinadorCeliaquia"])(CupoBajaLegajoView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            CupoBajaLegajoView.as_view()
+        ),
         name="cupo_legajo_baja",
     ),
     path(
         "cupos/provincia/<int:provincia_id>/legajo/<int:legajo_id>/suspender/",
-        group_required(["CoordinadorCeliaquia"])(CupoSuspenderLegajoView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            CupoSuspenderLegajoView.as_view()
+        ),
         name="cupo_legajo_suspender",
     ),
     path(
@@ -230,50 +266,56 @@ urlpatterns = [
     ),
     path(
         "expedientes/<int:pk>/registros-erroneos/<int:registro_id>/actualizar/",
-        group_required(["ProvinciaCeliaquia"])(ActualizarRegistroErroneoView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            ActualizarRegistroErroneoView.as_view()
+        ),
         name="registro_erroneo_actualizar",
     ),
     path(
         "expedientes/<int:pk>/registros-erroneos/reprocesar/",
-        group_required(["ProvinciaCeliaquia"])(
+        permissions_any_required(["celiaquia.view_expediente"])(
             ReprocesarRegistrosErroneosView.as_view()
         ),
         name="registros_erroneos_reprocesar",
     ),
     path(
         "expedientes/<int:pk>/registros-erroneos/<int:registro_id>/eliminar/",
-        group_required(["ProvinciaCeliaquia"])(EliminarRegistroErroneoView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            EliminarRegistroErroneoView.as_view()
+        ),
         name="registro_erroneo_eliminar",
     ),
     path(
         "expedientes/<int:pk>/legajos/<int:legajo_id>/eliminar/",
-        group_required(["CoordinadorCeliaquia"])(LegajoEliminarView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            LegajoEliminarView.as_view()
+        ),
         name="legajo_eliminar",
     ),
     path(
         "expedientes/<int:pk>/legajos/<int:legajo_id>/editar/",
-        group_required(
-            ["ProvinciaCeliaquia", "TecnicoCeliaquia", "CoordinadorCeliaquia"]
-        )(EditarLegajoView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            EditarLegajoView.as_view()
+        ),
         name="legajo_editar",
     ),
     path(
         "expedientes/<int:expediente_id>/padron-final/",
-        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(
+        permissions_any_required(["celiaquia.view_expediente"])(
             ExpedientePadronFinalExportView.as_view()
         ),
         name="expediente_padron_final_export",
     ),
     path(
         "expedientes/<int:expediente_id>/legajos/<int:legajo_id>/comentarios/",
-        group_required(
-            ["ProvinciaCeliaquia", "TecnicoCeliaquia", "CoordinadorCeliaquia"]
-        )(LegajoComentarioListView.as_view()),
+        permissions_any_required(["celiaquia.view_expediente"])(
+            LegajoComentarioListView.as_view()
+        ),
         name="legajo_comentarios_list",
     ),
     path(
         "expedientes/<int:expediente_id>/legajos/<int:legajo_id>/comentarios/crear/",
-        group_required(["TecnicoCeliaquia", "CoordinadorCeliaquia"])(
+        permissions_any_required(["celiaquia.view_expediente"])(
             LegajoComentarioCreateView.as_view()
         ),
         name="legajo_comentario_create",

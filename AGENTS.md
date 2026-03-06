@@ -14,6 +14,18 @@ Aplica a:
 
 No reemplaza documentación funcional o técnica profunda. Para detalle, usar `docs/` y las guías en `docs/ia/`.
 
+## Política Spec-as-Source (obligatoria)
+
+Para trabajar en SISOC con asistentes, la documentación en `docs/` es fuente de verdad operacional:
+
+- Antes de proponer o implementar cambios, es obligatorio leer `docs/indice.md`, `docs/ia/` y la documentación del dominio afectado.
+- Cada cambio y cada decisión importante debe quedar documentada en `docs/` dentro de la subcarpeta que corresponda al dominio/tema.
+- No se busca depender de herramientas específicas de spec-driven development: la fuente de verdad son archivos Markdown versionados en el repo.
+- Convención recomendada (no exclusiva):
+  - `docs/registro/cambios/YYYY-MM-DD-<tema>.md`
+  - `docs/registro/decisiones/YYYY-MM-DD-<tema>.md`
+- Si la subcarpeta necesaria no existe, debe crearse dentro de `docs/`.
+
 ## Stack real del repo (resumen)
 
 - Backend: `Python 3.11`, `Django 4.2`, `Django REST Framework`.
@@ -125,6 +137,12 @@ pylint **/*.py --rcfile=.pylintrc
 - No loggear credenciales, tokens ni PII.
 - Respetar permisos/autenticación existentes.
 
+## 11) Disciplina de documentación (spec-as-source)
+
+- Es obligatorio leer documentación vigente en `docs/` antes de implementar.
+- Es obligatorio registrar en `docs/` (subcarpeta temática) cada cambio o decisión importante del trabajo realizado.
+- Si una tarea no requiere registro, se debe explicitar por qué en la entrega.
+
 ## Flujo de trabajo por tamaño de cambio
 
 ## Tamaño S (bugfix / feature chica)
@@ -174,6 +192,7 @@ Antes de cerrar una tarea, la IA debe verificar (o declarar por qué no pudo):
 - Tests mínimos agregados cuando aplica.
 - Test de regresión agregado en bugfix cuando aplica.
 - Documentación actualizada si cambió comportamiento.
+- Registro de cambios/decisiones importantes en `docs/<subcarpeta>/...` (o justificación explícita si no aplica).
 - Supuestos y límites explicitados.
 - Riesgos o follow-ups listados (si existen).
 
@@ -183,6 +202,7 @@ Antes de cerrar una tarea, la IA debe verificar (o declarar por qué no pudo):
 - Archivos tocados.
 - Validación ejecutada (tests/lint/format).
 - Supuestos.
+- Documento spec-as-source creado/actualizado en `docs/<subcarpeta>/...` (si aplica).
 - Mejoras cercanas detectadas (opcional).
 
 ## Índice de guías especializadas (`docs/ia/`)
@@ -381,5 +401,5 @@ Mantener compatibilidad hacia atrás.
 
 - `README.md`
 - `docs/indice.md`
-- `docs/arquitectura.md`
-- `docs/dominio.md`
+- `docs/contexto/arquitectura.md`
+- `docs/contexto/dominio.md`
