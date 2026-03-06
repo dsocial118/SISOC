@@ -548,7 +548,9 @@ class ComedorDetailViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     def nomina(self, request, pk=None):
         comedor = self.get_object()
         admision = (
-            Admision.objects.filter(comedor=comedor, activa=True).order_by("-id").first()
+            Admision.objects.filter(comedor=comedor, activa=True)
+            .order_by("-id")
+            .first()
             or Admision.objects.filter(comedor=comedor).order_by("-id").first()
         )
         if not admision:
