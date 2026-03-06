@@ -66,12 +66,14 @@ Podés proponer mejoras cercanas: sí/no
 - Definir el cambio mínimo viable.
 - Identificar el test mínimo necesario.
 - Separar refactor de comportamiento cuando sea posible.
+- Confirmar ubicación correcta del cambio en la arquitectura actual: mantener cohesión, evitar acoplamiento innecesario y no sumar estructuras nuevas si no aportan valor claro.
 
 ## 3) Implementar
 
 - Reutilizar patrones existentes de la app.
 - Mantener compatibilidad hacia atrás por defecto.
 - Evitar cambios masivos no solicitados.
+- Mantener criterio de profesionalismo técnico: decisiones estructurales (incluyendo crear una app nueva) solo cuando exista un boundary de dominio o necesidad técnica real y documentada.
 
 ## 4) Validar
 
@@ -193,6 +195,8 @@ Formato recomendado para PR/comentario:
 - Tests mínimos agregados cuando aplica.
 - Test de regresión agregado en bugfix cuando aplica.
 - Lint/formato ejecutado si corresponde.
+- Docstrings nuevos o modificados en español, breves y descriptivos.
+- Comentarios nuevos o modificados sin redundancia (solo decisiones/edge cases/contexto útil).
 - Docs actualizadas si cambia comportamiento.
 - Decisiones/cambios importantes registrados en `docs/` (subcarpeta temática) o justificación de excepción.
 - Supuestos y riesgos documentados.

@@ -112,6 +112,11 @@ pylint **/*.py --rcfile=.pylintrc
 - Escribir código profesional, simple, eficiente y mantenible.
 - Priorizar claridad sobre cleverness.
 - Mantener nombres y estructura coherentes con el módulo existente.
+- Mantener prolijidad técnica general: cambios cohesionados, bajo acoplamiento, responsabilidades claras y consistencia con la arquitectura vigente.
+- Evitar sobreingeniería o fragmentación innecesaria (por ejemplo, crear apps nuevas, capas o abstracciones cuando el cambio puede resolverse prolijamente dentro del diseño existente).
+- Si se requiere una decisión estructural nueva, explicitar la justificación técnica y registrar el criterio en `docs/`.
+- Mantener documentación de código prolija y profesional: docstrings en español, breves y descriptivas cuando correspondan.
+- Los comentarios deben ser no redundantes: usar solo los que expliquen decisiones, contexto o edge cases relevantes.
 
 ## 7) Idioma y naming (regla del equipo)
 
