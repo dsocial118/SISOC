@@ -40,7 +40,7 @@ from intervenciones.views import (
     IntervencionDetailIndividualView,
     IntervencionDetailView,
 )
-from core.decorators import permissions_any_required, group_required
+from core.decorators import permissions_any_required
 
 urlpatterns = [
     path(
@@ -194,7 +194,7 @@ urlpatterns = [
     ),
     path(
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/",
-        group_required(["Comedores Nomina Ver"])(NominaDetailView.as_view()),
+        permissions_any_required(["comedores.view_nomina"])(NominaDetailView.as_view()),
         name="nomina_ver",
     ),
     path(
@@ -204,17 +204,17 @@ urlpatterns = [
     ),
     path(
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/crear/",
-        group_required(["Comedores Nomina Crear"])(NominaCreateView.as_view()),
+        permissions_any_required(["comedores.add_nomina"])(NominaCreateView.as_view()),
         name="nomina_crear",
     ),
     path(
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/<int:pk2>/eliminar/",
-        group_required(["Comedores Nomina Borrar"])(NominaDeleteView.as_view()),
+        permissions_any_required(["comedores.delete_nomina"])(NominaDeleteView.as_view()),
         name="nomina_borrar",
     ),
     path(
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/importar/",
-        group_required(["Comedores Nomina Crear"])(NominaImportarView.as_view()),
+        permissions_any_required(["comedores.add_nomina"])(NominaImportarView.as_view()),
         name="nomina_importar",
     ),
     path(
